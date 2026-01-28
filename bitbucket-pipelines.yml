@@ -2,7 +2,7 @@ image: php:8.1
 
 pipelines:
   branches:
-    master:
+    main:
       - step:
           name: Build and check PHP version
           size: 4x
