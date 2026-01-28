@@ -1,33 +1,38 @@
 image: php:8.1
- 
+
 pipelines:
-    branches:
-        main:
-            - step:
-                name: Build and check php version
-                size: 4x
-                runtime:
-                    cloud:
-                        atlassian-ip-ranges: true
-                script:
-                    - php -v
-            - step:
-                name: Deploy To Live
-                size: 4x
-                runtime:
-                    cloud:
-                        atlassian-ip-ranges: true
-                deployment: production
-                trigger: manual
-                caches:
-                    - git-ftp
-                script:
-                    - apt-get update
-                    - apt-get -qq install git-ftp
-                    - >
-                        echo Public IP of this pipeline is: $(curl -s ifconfig.me)
-                    - git ftp init -vv --insecure --user $FTP_USERNAME --passwd $FTP_PASSWORD ftp://$FTP_HOST
- 
+  branches:
+    master:
+      - step:
+          name: Build and check PHP version
+          size: 4x
+          runtime:
+            cloud:
+              atlassian-ip-ranges: true
+          script:
+            - php -v
+
+      - step:
+          name: Deploy To Demo
+          size: 4x
+          runtime:
+            cloud:
+              atlassian-ip-ranges: true
+          deployment: production
+          trigger: manual
+          caches:
+            - git-ftp
+          script:
+            - apt-get update
+            - apt-get install -y git-ftp curl
+            - |
+                echo "Public IP of this pipeline is:"
+                curl -s ifconfig.me
+
+            # First time deploy only
+            - |
+                git ftp init -vv --insecure --user $FTP_USERNAME --passwd $FTP_PASSWORD sftp://$FTP_HOST:8443//home/seatoutlet-beta/htdocs/beta.seatoutlet.com/
+
 definitions:
-    caches:
-        git-ftp: /usr/bin/git-ftp
+  caches:
+    git-ftp: /usr/bin/git-ftp
