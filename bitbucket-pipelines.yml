@@ -31,7 +31,7 @@ pipelines:
 
             # First time deploy only
             - |
-                git ftp init -vv --insecure --user $FTP_USERNAME --passwd $FTP_PASSWORD sftp://$FTP_HOST:8443//home/seatoutlet-beta/htdocs/beta.seatoutlet.com/
+                git ftp init -vv --insecure --user $FTP_USERNAME --passwd $FTP_PASSWORD sftp://$FTP_HOST:4124//home/seatoutlet-beta/htdocs/beta.seatoutlet.com/
 
 definitions:
   caches:
