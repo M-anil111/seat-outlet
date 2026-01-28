@@ -13,7 +13,7 @@ pipelines:
             - php -v
 
       - step:
-          name: Deploy To Demo
+          name: Deploy To Demo 
           size: 4x
           runtime:
             cloud:
