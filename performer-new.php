@@ -1,4 +1,4 @@
-<?php include 'header-new.php'; 
+<?php include 'header-new.php';
 $page = $_GET['page'] ?? 1;
 $perPage  = 20;
 $slug = $_GET['slug'];
@@ -6,8 +6,8 @@ $parts = explode('-', $slug);
 $id = end($parts);
 $performer = getTnPerformerById($id);
 $eventsResponse = getTnPerformerEvents($id, [
-    'page'    => (int)$page,
-    'perPage' => $perPage
+	'page'    => (int)$page,
+	'perPage' => $perPage
 ]);
 $count = $eventsResponse['count'] ?? count($eventsResponse['results']);
 $hasMore = ($count === $perPage);
@@ -92,11 +92,13 @@ $relatedPerformers = $relatedPerformersResponse;
 
 <section>
 	<div class="container">
-        <div class="tab-pane-fade-show section-performer-content" id="default">
+		<div class="tab-pane-fade-show section-performer-content" id="default">
 			<div class="row mt-3 gap-5">
 				<div class="col-sm-12 col-md-8">
 					<div class="mb-3 mb-md-4 mb-lg-4">
 						<div class="d-flex justify-content-between align-items-center results-header">
+
+							<!-- Left -->
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h2>
@@ -104,6 +106,8 @@ $relatedPerformers = $relatedPerformersResponse;
 									<span class="count"> <?php echo $count; ?> RESULTS</span>
 								</h2>
 							</div>
+
+							<!-- Right -->
 							<div class="view-toggle btn-group d-none">
 								<button class="btn btn-toggle active" aria-label="List view">
 									<i class="bi bi-list"></i>
@@ -112,6 +116,7 @@ $relatedPerformers = $relatedPerformersResponse;
 									<i class="bi bi-calendar3"></i>
 								</button>
 							</div>
+
 						</div>
 					</div>
 					<div class="filter-bar">
@@ -135,9 +140,10 @@ $relatedPerformers = $relatedPerformersResponse;
 						<h3 id="locationHeading" class="mt-2 fs-5"></h3>
 						<div id="location-no-results" class="text-center no-location"></div>
 					</div>
-					<?php if(!empty($events)) { ?>
-						<div id="eventsSection" class="section-artist-content">		
-							<?php foreach ($events as $event) { $class = 'so-cta-tickets'; ?>
+					<?php if (!empty($events)) { ?>
+						<div id="eventsSection" class="section-artist-content">
+							<?php foreach ($events as $event) {
+								$class = 'so-cta-tickets'; ?>
 								<div class="performer-event-item">
 									<div class="row">
 										<div class="performer-event-item-info col-sm-9">
@@ -149,7 +155,7 @@ $relatedPerformers = $relatedPerformersResponse;
 													<span class="location"><?php echo $event['city']['text']['name']; ?>, <?php echo $event['stateProvince']['text']['abbr']; ?></span>
 												</li>
 												<li class="col-sm-4">
-													<span><?php echo $daynames[$event['date']['weekday']-1]; ?></span>
+													<span><?php echo $daynames[$event['date']['weekday'] - 1]; ?></span>
 													<?php echo date('F. jS, Y', strtotime($event['date']['date'])); ?>
 												</li>
 												<li class="col-sm-3">
@@ -159,7 +165,8 @@ $relatedPerformers = $relatedPerformersResponse;
 											</ul>
 										</div>
 										<div class="performer-event-item-price col-sm-3">
-											<?php if(!empty($event['pricingInfo'])) { $class = ''; ?>
+											<?php if (!empty($event['pricingInfo'])) {
+												$class = ''; ?>
 												<span>Price From</span>
 												<strong><?php echo $event['pricingInfo']['lowPrice']['text']['formatted']; ?></strong>
 											<?php } ?>
@@ -167,18 +174,18 @@ $relatedPerformers = $relatedPerformersResponse;
 										</div>
 									</div>
 								</div>
-							<?php } ?>			
-						</div>		
+							<?php } ?>
+						</div>
 						<?php if ($hasMore): ?>
-							<div class="load-more-wrapper text-center">
+							<div class="load-more-wrapper text-center mt-5">
 								<button id="loadMoreBtn" data-page="<?php echo $page + 1; ?>" data-performer="<?php echo $id; ?>" data-perpage="<?php echo $perPage; ?>" class="btn btn-loadmore w-100">
 									Load More <i class="bi bi-box-arrow-in-down fs-4"></i>
 								</button>
 							</div>
 						<?php endif; ?>
-					<?php }else{ ?>
+					<?php } else { ?>
 						<h4 style="padding: 20px;">No <?php echo strtoupper($breadcrumbs[1]['label']); ?> found!</h4>
-					<?php } ?>					
+					<?php } ?>
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="ad-container mx-auto mx-md-0">
@@ -197,7 +204,7 @@ $relatedPerformers = $relatedPerformersResponse;
 						<div class="guarantee-icon">
 							<i class="bi bi-shield-check"></i>
 						</div>
-					</div>						
+					</div>
 					<div class="sidebar-card">
 						<h4><?php echo $performer['text']['name']; ?> Tickets Promo Codes</h4>
 						<div class="promo-list">
@@ -238,12 +245,12 @@ $relatedPerformers = $relatedPerformersResponse;
 			<h2 class="so-heading mb-3">Frequently Asked Questions</h2>
 			<div class="accordion" id="faqAccordion">
 				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading1">
-						<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1" aria-expanded="true" aria-controls="collapse1">
+					<h2 class="accordion-header" id="headingOne">
+						<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
 							Are <?php echo $performer['text']['name']; ?> tickets guaranteed?
 						</button>
 					</h2>
-					<div id="collapse1" class="accordion-collapse collapse show" aria-labelledby="heading1" data-bs-parent="#faqAccordion">
+					<div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
 						<div class="accordion-body">
 							Yes, all tickets are backed by a 100% guarantee to ensure authenticity and timely delivery.
 							<a href="#" class="read-more-btn">Read more</a>
@@ -251,12 +258,12 @@ $relatedPerformers = $relatedPerformersResponse;
 					</div>
 				</div>
 				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading2">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2" aria-expanded="false" aria-controls="collapse2">
+					<h2 class="accordion-header" id="headingTwo">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
 							Can I use promo codes on tickets?
 						</button>
 					</h2>
-					<div id="collapse2" class="accordion-collapse collapse" aria-labelledby="heading2" data-bs-parent="#faqAccordion">
+					<div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
 						<div class="accordion-body">
 							Promo codes like SAVE5 and SAVE10 can be applied during checkout.
 							<a href="#" class="read-more-btn">Read more</a>
@@ -264,12 +271,12 @@ $relatedPerformers = $relatedPerformersResponse;
 					</div>
 				</div>
 				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading3">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3" aria-expanded="false" aria-controls="collapse3">
+					<h2 class="accordion-header" id="headingThree">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
 							When will I receive my tickets?
 						</button>
 					</h2>
-					<div id="collapse3" class="accordion-collapse collapse" aria-labelledby="heading3" data-bs-parent="#faqAccordion">
+					<div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
 						<div class="accordion-body">
 							Delivery timing depends on the venue and ticket type.
 							<a href="#" class="read-more-btn">Read more</a>
@@ -277,12 +284,12 @@ $relatedPerformers = $relatedPerformersResponse;
 					</div>
 				</div>
 				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading4">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse4" aria-expanded="false" aria-controls="collapse4">
+					<h2 class="accordion-header" id="headingFour">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
 							Are tickets mobile friendly?
 						</button>
 					</h2>
-					<div id="collapse4" class="accordion-collapse collapse" aria-labelledby="heading4" data-bs-parent="#faqAccordion">
+					<div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
 						<div class="accordion-body">
 							Most tickets are available for mobile entry.
 							<a href="#" class="read-more-btn">Read more</a>
@@ -290,12 +297,12 @@ $relatedPerformers = $relatedPerformersResponse;
 					</div>
 				</div>
 				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading5">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse5" aria-expanded="false" aria-controls="collapse5">
+					<h2 class="accordion-header" id="headingFive">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
 							Can I get a refund if the event is canceled?
 						</button>
 					</h2>
-					<div id="collapse5" class="accordion-collapse collapse" aria-labelledby="heading5" data-bs-parent="#faqAccordion">
+					<div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#faqAccordion">
 						<div class="accordion-body">
 							Yes, canceled events are eligible for refunds.
 							<a href="#" class="read-more-btn">Read more</a>
@@ -303,12 +310,12 @@ $relatedPerformers = $relatedPerformersResponse;
 					</div>
 				</div>
 				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading6">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse6" aria-expanded="false" aria-controls="collapse6">
+					<h2 class="accordion-header" id="headingSix">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
 							Do ticket prices change?
 						</button>
 					</h2>
-					<div id="collapse6" class="accordion-collapse collapse" aria-labelledby="heading6" data-bs-parent="#faqAccordion">
+					<div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#faqAccordion">
 						<div class="accordion-body">
 							Prices may fluctuate based on demand and availability.
 							<a href="#" class="read-more-btn">Read more</a>
@@ -332,5 +339,5 @@ $relatedPerformers = $relatedPerformersResponse;
 	</div>
 </section>
 
-	
+
 <?php include 'footer.php'; ?>

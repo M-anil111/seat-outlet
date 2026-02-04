@@ -5,3 +5,6 @@ define('WEBSITE_CONFIG_ID', 12498);
 define('BASE_URL', 'https://sandbox.tn-apis.com');
 define('DAY_NAMES', ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']);
 define('HOME_URL', 'https://beta.seatoutlet.com');
+define('REDIS_HOST', '127.0.0.1');
+define('REDIS_PORT', 6379);
+define('REDIS_PASSWORD', '41jyV8D6znX9#');

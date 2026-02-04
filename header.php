@@ -14,7 +14,7 @@
 <body>
 
 <!-- Top Utility Bar -->
-<div class="top-bar ">
+<div class="top-bar">
     <div class="top-bar-inner">
         <span>100% Buyer Guarantee</span>
         <span>Secure Checkout</span>

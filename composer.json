@@ -1,0 +1,17 @@
+{
+    "name": "tarun.jain/seatoutlet",
+    "autoload": {
+        "psr-4": {
+            "TarunJain\\Seatoutlet\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "tarun406",
+            "email": "tarun@mindshare.consulting"
+        }
+    ],
+    "require": {
+        "predis/predis": "^3.3"
+    }
+}
