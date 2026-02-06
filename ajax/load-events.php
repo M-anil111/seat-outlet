@@ -48,40 +48,39 @@ if (empty($events)) {
     exit;
 }
 
-$daynames = DAY_NAMES;
-
 foreach ($events as $event) {
-    $class = 'so-cta-tickets';
-    $pricinginfo = '';
-    if(!empty($event['pricingInfo'])) { 
-        $class = '';
-        $pricinginfo .= '<span>Price From</span><strong>'.$event['pricingInfo']['lowPrice']['text']['formatted'].'</strong>';
-    }
+    $evtPerformers = $event['performers'];
+    $names = array_map(function ($performer) {
+        return $performer['name'] ?? null;
+    }, $evtPerformers);
+    $dataPerformers = implode('|', array_filter($names));
     echo '
-    <div class="performer-event-item">
-        <div class="row">
-            <div class="performer-event-item-info col-sm-9">
-                <h3>'.$event['text']['name'].'</h3>
-                <ul class="row ps-0">
-                    <li class="col-sm-5">
-                        <span>Venue</span>
-                        '.$event['venue']['text']['name'].'
-                        <span class="location">'.$event['city']['text']['name'].', '.$event['stateProvince']['text']['abbr'].'</span>
-                    </li>
-                    <li class="col-sm-4">
-                        <span>'.$daynames[$event['date']['weekday']-1].'</span>
-                        '.date('F. jS, Y', strtotime($event['date']['date'])).'
-                    </li>
-                    <li class="col-sm-3">
-                        <span>Time</span>
-                        '.$event['date']['text']['time'].'
-                    </li>
-                </ul>
+    <div class="d-flex align-items-center justify-content-between performer-event-item">
+        <div class="date-box text-center me-3">
+            <div class="month">'.strtoupper(date('M', strtotime($event['date']['date']))).'</div>
+            <div class="day">'.date('d', strtotime($event['date']['date'])).'</div>
+        </div>
+        <div class="flex-grow-1 w-50">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fw-semibold day-weeks">'.date('D', strtotime($event['date']['date'])).'</span>
+                <span class="dot">·</span>
+                <span class="time-clock">'.$event['date']['text']['time'].'</span>
+                <i class="bi bi-info-circle text-muted icon-i" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight" data-id="'.$event['id'].'" data-date="'.date('D, M d', strtotime($event['date']['date'])).'" data-venue="'.$event['venue']['text']['name'].'" data-location="'.$event['city']['text']['name'].', '.$event['stateProvince']['text']['abbr'].'" data-title="'.$event['text']['name'].'" data-performers="'.$dataPerformers.'"></i>
             </div>
-            <div class="performer-event-item-price col-sm-3">
-                '.$pricinginfo.'
-                <a href="/event.php?id='.$event['id'].'" class="'.$class.'">Get Tickets</a>
+            <div class="fw-semibold">
+                '.$event['city']['text']['name'].', '.$event['stateProvince']['text']['abbr'].' · '.$event['venue']['text']['name'].'
             </div>
+            <div class="text-muted small">
+                '.$event['text']['name'].'
+            </div>
+        </div>
+        <div class="ms-3">
+            <a href="/event.php?id='.$event['id'].'" class="btn btn-primary d-flex align-items-center gap-2">
+                <span class="d-none d-md-inline">
+                    Find Tickets
+                </span>
+                <i class="bi bi-chevron-right"></i>
+            </a>
         </div>
     </div>
     ';

@@ -1,29 +1,3 @@
-
-
-@font-face {
-    font-family: '';
-    src: url('./fonts/AvertaDemoPE-ExtraBold.eot');
-    src: url('./fonts/AvertaDemoPE-ExtraBold.eot?#iefix') format('embedded-opentype'),
-        url('./fonts/AvertaDemoPE-ExtraBold.woff2') format('woff2'),
-        url('./fonts/AvertaDemoPE-ExtraBold.woff') format('woff'),
-        url('./fonts/AvertaDemoPE-ExtraBold.ttf') format('truetype');
-    font-weight: bold;
-    font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Averta Demo PE Cutted Demo';
-    src: url('./fonts/AvertaDemoPECuttedDemo-Regular.eot');
-    src: url('./fonts/AvertaDemoPECuttedDemo-Regular.eot?#iefix') format('embedded-opentype'),
-        url('./fonts/AvertaDemoPECuttedDemo-Regular.woff2') format('woff2'),
-        url('./fonts/AvertaDemoPECuttedDemo-Regular.woff') format('woff'),
-        url('./fonts/AvertaDemoPECuttedDemo-Regular.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-
 /* RESET */
 * {
     outline: none;
@@ -31,8 +5,10 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+
 :root {
     --ac-black: #000000;
     --ac-white: #FFFFFF;
@@ -46,12 +22,13 @@
     --ac-grey: #CCCCCC;
     --ac-light-grey: #F6F5F2;
 }
-
+.btn-close:focus{box-shadow: none;}
 
 body {
     margin: 0;
     background: #f2f2f2;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 img {
     max-width: 100%;
@@ -73,7 +50,7 @@ li {
 }
 p {
     /* font-family: 'Fira Sans', sans-serif; */
-    font-size: 18px;
+    font-size: 16px;
     line-height: 152%;
 }
 
@@ -84,7 +61,7 @@ h1,
 }
 h2,
 .h2 {
-    font-size: 46px;
+    font-size: 32px;
 }
 h3,
 .h3 {
@@ -432,7 +409,8 @@ h3,
     padding: 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
-
+.sidebar-inner{top:80px;z-index: unset;     gap: 20px;
+    display: grid;}
 .buy-later {
     background: #1c1c1c;
     color: #ffffff;
@@ -599,8 +577,8 @@ h3,
 }
 
 /* Brand */
-.tm-footer-col .logo {  
-  font-size: 24px;
+.tm-footer-col .tm-logo {  
+  font-size: 32px !important;
   font-weight: 800;
   margin-bottom: 24px;
 }
@@ -753,12 +731,16 @@ h3,
     /* background: #f8f8f8; */
     padding: 40px 0;
 }
+.section-artist-content .performer-event-item{border-bottom: 1px #bfbfbf solid;
+    padding: 16px 0;}
 
-.section-performer-content .performer-event-item{
+
+.section-artist-content .performer-event-item:last-child {border-bottom: none;}  
+/* .section-performer-content .performer-event-item{
 	padding:25px 30px 15px 30px;
 	background:#fff;
 	border-radius:5px;
-	/* margin:0 0 35px; */
+	margin:0 0 35px;
 	position:relative;
 	overflow:hidden;
 }
@@ -766,7 +748,8 @@ h3,
 .section-performer-content .performer-event-item .performer-event-item-info h3{
 	font-size:18px;
 	color:#6f6f6f;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	padding: 0 0 15px;
 	margin: 0 0 15px;
 	border-bottom:1px solid #dedede
@@ -779,13 +762,15 @@ h3,
 .section-performer-content .performer-event-item .performer-event-item-info ul li{
 	font-size:13px;
 	color:#6f6f6f;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .section-performer-content .performer-event-item .performer-event-item-info ul li span{
 	font-size:13px;
 	color:#6f6f6f;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	margin: 0 0 15px;
 	display:block;
 	font-weight: 600;
@@ -794,7 +779,8 @@ h3,
 .section-performer-content .performer-event-item .performer-event-item-info ul li span.location{
 	font-size:13px;
 	color:#6f6f6f;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	display:block;
 	font-weight: 500;
 }
@@ -804,7 +790,8 @@ h3,
 	text-align:center;
 	color:#6f6f6f;
 	font-size:14px;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	margin: 0 0 15px;
 }
 
@@ -813,7 +800,8 @@ h3,
 	text-align:center;
 	color:#0b63f6;
 	font-size:14px;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	margin: 0 0 10px;
 }
 
@@ -822,7 +810,8 @@ h3,
 	text-align:center;
 	color:#6f6f6f;
 	font-size:28px;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	margin: 0 0 15px;
 }
 
@@ -831,7 +820,8 @@ h3,
 	text-align:center;
 	color:#6f6f6f;
 	font-size:17px;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	text-decoration: line-through;
 	margin:0 15px 0 0;
 }
@@ -853,7 +843,8 @@ h3,
     font-size: 13px;
     font-weight: bold;
     line-height: 40px;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     padding: 63px 0 0;
     position: absolute;
     right: -23px;
@@ -869,7 +860,8 @@ h3,
 	text-align:center;
 	color:#fff;
 	font-size:16px;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	padding:14px;
 	background:#0b63f6;
 	border-radius:5px;
@@ -888,7 +880,8 @@ h3,
 	text-align:center;
 	color:#fff;
 	font-size:16px;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	padding:18px;
 	background:#dedede;
 	border-radius:5px;
@@ -896,7 +889,7 @@ h3,
 	pointer-events: none;
 	cursor: default;
 	text-transform:uppercase
-}
+} */
 
 .section-performer-content .performer-event-footer{
 	margin:30px 0 0;
@@ -918,7 +911,8 @@ h3,
 .section-performer-content .performer-event-footer .pagination > li > a{
 	font-size:14px;
 	color:#6f6f6f;
-	font-family: 'Averta Demo PE Cutted Demo', Arial, Helvetica, sans-serif;
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	padding:0;
 	border:none;
 	margin:10px 5px;
@@ -957,9 +951,9 @@ h3,
 	margin:0 5px;
 }
 
-.section-performer-content .performer-event-item .so-cta-tickets{
+/* .section-performer-content .performer-event-item .so-cta-tickets{
     margin-top: 70px;
-}
+} */
 
 /* Performers Listing */
 .area-container {
@@ -1026,7 +1020,7 @@ h3,
     text-transform: uppercase;
     font-weight: 600;
 }
-
+.artist-category a{color: #fff;}
 .artist-title {
     font-size: 36px;
     font-weight: bold;
@@ -1157,28 +1151,22 @@ h3,
     color: #fff;
     border-color: #000;
 }
-
-    
-
     .filter-bar {
-    background: #ffffff;
-    padding: 20px 20px 20px 20px;
-    /* border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08); */
+    padding: 20px 20px 10px 20px;
 }
 
 /* Labels */
 .filter-label {
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 400;
     display: block;
-    color: #111;
+    color: #646464;
 }
 
 /* Inputs */
 .filter-input {
     position: relative;
-    top: -15px;
+    top: -18px;
 }
 
 .filter-input i {
@@ -1193,9 +1181,10 @@ h3,
 
 .filter-input .form-control {
     padding-left: 42px;
-    height: 46px;
-    border-radius: 6px;
+    height: 44px;
+    border-radius: 0px;
     font-size: 14px;
+    border: 1px #949494 solid;
 }
 
 /* Buttons */
@@ -1369,6 +1358,57 @@ h3,
 .tn-dropdown-menu .dropdown-divider {
     margin: 6px 0;
 }
+
+.load-progress {
+    background: #f5f5f5;
+    border-radius: 999px;
+    padding: 16px 20px;
+    max-width: 420px;
+}
+
+/* Thin progress bar */
+.progress-thin {
+    height: 4px;
+    background-color: #d6d6d6;
+}
+
+.progress-thin .progress-bar {
+    background-color: #111;
+    border-radius: 4px;
+    width: 0;
+    transition: width 0.6s ease;
+}
+
+/* More Events button */
+.more-events-btn {
+    border: 1.5px solid #111;
+    border-radius: 999px;
+    padding: 10px 22px;
+    font-weight: 600;
+    background: #fff;
+    color: #111;
+}
+
+.more-events-btn:hover {
+    background: #111;
+    color: #fff;
+}
+
+/* Back to top */
+.backToTop {
+    position: fixed;
+    right: 20px;
+    bottom: 30px;
+    display: none;
+    z-index: 999;
+    width: 50px;
+    height: 50px;
+}
+/* .backToTopJs{position: fixed;
+    right: 20px;
+    bottom: 30px;
+    display: none;
+    z-index: 999;} */
 .load-more-wrapper .btn-loadmore {
     padding: 15px 20px 15px 20px;
     background: transparent;
@@ -1396,16 +1436,86 @@ h3,
     height: auto;
     display: block;
 }
+.event-row-all {
+    padding: 14px 16px;
+}
+.list-category-bg{ box-shadow: rgba(18, 18, 18, 0.18) 0px 3px 12px 0px; background: #fff;}
+
+/* Date box */
+.date-box {
+    background: #f5f5f5;
+    border-radius: 4px;
+    width: 60px;
+    padding: 8px 0;
+    line-height: 1.1;
+}
+
+.date-box .month {
+    font-size: 13px;
+    font-weight: 700;
+    color: #555;
+}
+
+.date-box .day {
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.event-row-all .icon-i, .event-row-all .time-clock, .event-row-all .day-weeks {font-size: 14px; color: #646464;}
+.event-row-all .icon-i:hover::before{background-color: #807e7e; border-radius: 20px;}
+.event-row-all .dot {font-size: 22px; color: #646464; font-weight: bold; line-height: 0px;}
 
 
 
+/* Header title highlight */
+.event-title {
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* Partner label */
+.partner-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: #000;
+}
+
+/* Find tickets link */
+.find-tickets-link {
+    font-weight: 600;
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.find-tickets-link:hover {
+    text-decoration: underline;
+}
+
+/* Venue */
+.venue-label {
+    /* font-size: 20px;
+    font-weight: 600; */
+    letter-spacing: 1.2px;
+}
+
+.venue-link {
+    font-weight: 400;
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.venue-link:hover {
+    text-decoration: underline;
+}
 
 
-
-@media (max-width: 991px){.section-performer-content .performer-event-item .performer-event-item-price a{ font-size: 13.5px;}}
+/* @media (max-width: 991px){.section-performer-content .performer-event-item .performer-event-item-price a{ font-size: 13.5px;}} */
 @media (max-width: 880px){.filter-input{top: -20px;}
 
-.sidebar, .so-performer {width: 100%; flex: auto;}
+.left-bar, .sidebar, .so-performer {width: 100%; flex: auto;}
+
 }
 						
 @media (max-width: 767.98px){.artist-heading  {margin-top: 10px;}  .artist-tabs-nav {
@@ -1433,8 +1543,8 @@ h3,
 }
 @media (max-width: 575.98px){.section-featured-header.all-sports-events{text-align: center;} 
 .breadcrumb{justify-content:center;} .artist-title {font-size: 30px;}
-.section-performer-content .performer-event-item .performer-event-item-price a{ font-size: 16px;}
-.section-performer-content .performer-event-item .so-cta-tickets{margin-top: 0;}
+/* .section-performer-content .performer-event-item .performer-event-item-price a{ font-size: 16px;}
+.section-performer-content .performer-event-item .so-cta-tickets{margin-top: 0;} */
  }
 @media (max-width: 415){
 .top-bar-inner {flex-wrap: wrap; gap:unset;}

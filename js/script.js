@@ -109,6 +109,11 @@ function updateEventsSection(location) {
                 document.getElementById('location-no-results').innerHTML = '<strong>No ' + location.dcat + ' available in your selected area</strong><p>Try changing locations or browse through the available ' + location.dcat + ' below</p>';
             }else{
                 document.getElementById('location-no-results').innerHTML = '';
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                const count = temp.querySelectorAll('.performer-event-item').length;
+                const countmsg = count > 1 ? ' RESULTS' : ' RESULT';
+                document.getElementById('results_count').innerHTML = count + countmsg;
                 document.getElementById('eventsSection').innerHTML = html;
             }            
         })
@@ -120,14 +125,16 @@ function updateEventsSection(location) {
 function updateHeading(city, state, zip, dcat) {
     const heading = document.getElementById('locationHeading');
     if (!heading) return;
-    const capitalized = dcat.charAt(0).toUpperCase() + dcat.slice(1);
-    
-    if (zip) {        
-        heading.textContent = `${capitalized} near ${zip}`;
-    } else if (city && state) {
-        heading.textContent = `${capitalized} near ${city}, ${state}`;
-    } else {
-        heading.textContent = '';
+    if(dcat && (city || state || zip)) {
+        const capitalized = dcat.charAt(0).toUpperCase() + dcat.slice(1);
+        
+        if (zip) {        
+            heading.textContent = `${capitalized} near ${zip}`;
+        } else if (city && state) {
+            heading.textContent = `${capitalized} near ${city}, ${state}`;
+        } else {
+            heading.textContent = '';
+        }
     }
 }
 
@@ -211,17 +218,21 @@ function scrollToElement(id) {
 /* Load more events */
 
 const loadMoreBtn = document.getElementById('loadMoreBtn');
+const backToTopBtn = document.getElementById('backToTopJs');
 const eventsSection = document.getElementById('eventsSection');
+const progressBar = document.getElementById('progressBar');
+const loadedCount = document.getElementById('loadedCount');
 
 if (loadMoreBtn) {
     loadMoreBtn.addEventListener('click', function () {
         const page        = this.dataset.page;
         const performerId = this.dataset.performer;
         const perPage     = this.dataset.perpage;
+        const total     = this.dataset.total;
 
         this.disabled = true;
-        this.innerHTML = 'Loading...';
-
+        loadMoreBtn.querySelector('#btnSpinner').classList.remove('d-none');
+       
         fetch(`./ajax/load-more-events.php?page=${page}&perPage=${perPage}&performerId=${performerId}`)
             .then(res => res.json())
             .then(data => {
@@ -230,83 +241,142 @@ if (loadMoreBtn) {
                     eventsSection.insertAdjacentHTML('beforeend', renderEvent(event));
                 });
 
-                if (data.hasMore) {
-                    loadMoreBtn.dataset.page = data.nextPage;
-                    loadMoreBtn.disabled = false;
-                    loadMoreBtn.innerHTML = 'Load More <i class="bi bi-box-arrow-in-down fs-4"></i>';
+                let loaded = eventsSection.querySelectorAll('.performer-event-item').length;
+                const countmsg = loaded === 1 ? ' RESULT' : ' RESULTS';
+                document.getElementById('results_count').innerHTML = loaded + countmsg;
+
+                if (data.hasMore) { 
+                    loadMoreBtn.dataset.page = data.nextPage;   
+                    loadMoreBtn.disabled = false;                 
+                    loadMoreBtn.querySelector('#btnSpinner').classList.add('d-none');
                 } else {
-                    loadMoreBtn.remove();
+                    loadMoreBtn.classList.add('d-none');
+                    backToTopBtn.classList.remove('d-none');
                 }
+                loaded = Math.min(loaded, total);
+                const percent = (loaded / total) * 100;
+                progressBar.style.width = percent + '%';
+                loadedCount.textContent = loaded;
             });
     });
 }
 
-function formatEventDate(dateStr) {
-    const date = new Date(dateStr);
 
-    const month = date.toLocaleString('en-US', { month: 'long' });
-    const day   = date.getDate();
-    const year  = date.getFullYear();
-
-    // ordinal suffix
-    const suffix = (day % 10 === 1 && day !== 11) ? 'st'
-                 : (day % 10 === 2 && day !== 12) ? 'nd'
-                 : (day % 10 === 3 && day !== 13) ? 'rd'
-                 : 'th';
-
-    return `${month}. ${day}${suffix}, ${year}`;
-}
-
-function getWeekdayName(weekdayNumber) {
-    const days = [
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday'
-    ];
-
-    return days[weekdayNumber - 1] || '';
-}
 
 function renderEvent(event) {
+    const evtdate = new Date(event.date.date);
+    const emonth = evtdate.toLocaleString('en-US', { month: 'short' });
+    const edate = evtdate.getDate();
+    const eday = evtdate.toLocaleString('en-US', { weekday: 'short' });
+    const formattedDate = evtdate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: '2-digit'
+    });
+    const eperformers = event.performers;
+    const names = eperformers.map(performer => performer.name ?? null).filter(Boolean);
+    const dataPerformers = names.join('|');
     return `
-        <div class="performer-event-item">
-            <div class="row">
-                <div class="performer-event-item-info col-sm-9">
-                    <h3>${event.text.name}</h3>
-                    <ul class="row ps-0">
-                        <li class="col-sm-5">
-                            <span>Venue</span>
-                            ${event.venue.text.name}
-                            <span class="location">${event.city.text.name}, ${event.stateProvince.text.abbr}</span>
-                        </li>
-                        <li class="col-sm-4">
-                            <span>${getWeekdayName(event.date.weekday)}</span>
-                            ${formatEventDate(event.date.date)}
-                        </li>
-                        <li class="col-sm-3">
-                            <span>Time</span>
-                            ${event.date.text.time}
-                        </li>
-                    </ul>
+        <div class="d-flex align-items-center justify-content-between performer-event-item">
+            <div class="date-box text-center me-3">
+                <div class="month">${emonth.toUpperCase()}</div>
+                <div class="day">${edate}</div>
+            </div>
+            <div class="flex-grow-1 w-50">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-semibold day-weeks">${eday}</span>
+                    <span class="dot">·</span>
+                    <span class="time-clock">${event.date.text.time}</span>
+                    <i class="bi bi-info-circle text-muted icon-i" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight" 
+                    data-id="${event.id}" data-date="${formattedDate}" data-venue="${event.venue.text.name}" 
+                    data-location="${event.city.text.name}, ${event.stateProvince.text.abbr}" data-title="${event.text.name}" data-performers="${dataPerformers}"></i>
                 </div>
-                <div class="performer-event-item-price col-sm-3">
-                    ${event.pricingInfo ? `
-                        <span>Price From</span>
-                        <strong>${event.pricingInfo.lowPrice.text.formatted}</strong>
-                        <a href="/event.php?id=${event.id}">Get Tickets</a>
-                    ` : `
-                        <a href="/event.php?id=${event.id}" class="so-cta-tickets">Get Tickets</a>
-                    `}                   
+                <div class="fw-semibold">
+                    ${event.city.text.name}, ${event.stateProvince.text.abbr} · ${event.venue.text.name}
                 </div>
+                <div class="text-muted small">
+                    ${event.text.name}
+                </div>
+            </div>
+            <div class="ms-3">
+                <a href="/event.php?id=${event.id}" class="btn btn-primary d-flex align-items-center gap-2">
+                    <span class="d-none d-md-inline">
+                        Find Tickets
+                    </span>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
             </div>
         </div>
     `;
 }
 
+document.addEventListener('click', function (e) {
+    const icon = e.target.closest('[data-bs-toggle="offcanvas"]');
+    if (!icon) return;
+
+    const eid = icon.getAttribute('data-id');
+    const edate = icon.getAttribute('data-date');
+    const evenue = icon.getAttribute('data-venue');
+    const elocation = icon.getAttribute('data-location');
+    const etitle = icon.getAttribute('data-title');
+    const eperformers = icon.getAttribute('data-performers');
+
+    document.getElementById('offcanvasDate').textContent = edate;
+    document.getElementById('offcanvasVenue').innerHTML = evenue;
+    document.getElementById('offcanvasLocation').innerHTML = elocation;
+    document.getElementById('offcanvasTitle').innerHTML = etitle;
+    document.getElementById('offcanvasId').href = '/event.php?id=' + eid;
+    const eplist = document.getElementById('offcanvasPerformers');
+    eplist.innerHTML = '';
+    eperformers.split('|').forEach(name => {
+        const li = document.createElement('li');
+        li.innerHTML = `<a href="#">${name.trim()}</a>`;
+        eplist.appendChild(li);
+    });
+    document.getElementById('venue-link').innerHTML = evenue;
+});
+
+const tabs = document.querySelectorAll('#artistTabs .nav-link');
+const sections = document.querySelectorAll('.tab-section');
+const offset = 120;
+
+window.addEventListener('scroll', () => {
+    let currentId = null;
+
+    sections.forEach(section => {
+        const rect = section.getBoundingClientRect();
+        if (rect.top <= offset && rect.bottom > offset) {
+            currentId = section.id;
+        }
+    });
+
+    if (currentId) {
+        tabs.forEach(tab => {
+            tab.classList.toggle(
+                'active',
+                tab.dataset.target === currentId
+            );
+        });
+    }
+});
+
+backToTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+const backToTop = document.getElementById('backToTop');
+
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 400) {
+        backToTop.style.display = 'block';
+    } else {
+        backToTop.style.display = 'none';
+    }
+});
+
+backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
 flatpickr("#dateRange", {
     mode: "range",

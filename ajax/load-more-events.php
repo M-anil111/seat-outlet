@@ -14,8 +14,11 @@ $response = getTnPerformerEvents($performerId, [
 $results = $response['results'] ?? [];
 $count   = $response['count'] ?? count($results);
 
+$total_count = getTnPerformerEventsCount($performerId);
+$total_pages = ceil($total_count / $perPage);
+
 echo json_encode([
     'events'  => $results,
-    'hasMore' => ($count === $perPage),
+    'hasMore' => ($page < $total_pages),
     'nextPage'=> $page + 1
 ]);

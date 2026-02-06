@@ -126,8 +126,13 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
 
     $accessToken = getTnAccessToken();
 
-    if($performerId > 0) $params['performerFilter'] = 'id eq ' . $performerId;
-   
+    if($performerId > 0) {
+        $params['performerFilter'] = 'id eq ' . $performerId;
+    }
+
+    $today = date('Y-m-d');
+    $params['filter'] = "date/date ge $today";
+    
     $url = BASE_URL . '/catalog/v2/events/';
     
     if (!empty($params)) {
@@ -162,7 +167,54 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
     return json_decode($response, true);
 }
 
+function getTnPerformerEventsCount($performerId = 0, $params = []) {
 
+    $accessToken = getTnAccessToken();
+
+    if($performerId > 0) {
+        $params['performerFilter'] = 'id eq ' . $performerId;
+    }
+
+    $today = date('Y-m-d');
+    $params['filter'] = "date/date ge $today";
+    $params['page'] = 1;
+    $params['perPage'] = 500;
+    
+    $url = BASE_URL . '/catalog/v2/events/';
+    
+    if (!empty($params)) {
+        $url .= '?' . http_build_query($params);
+    }
+    
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 30
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        throw new Exception(curl_error($ch));
+    }
+
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200) {
+        throw new Exception('HTTP ' . $httpCode . ': ' . $response);
+    }
+
+    $json_decode = json_decode($response, true);
+
+    return $json_decode['count'];
+}
 
 
 function getTnPerformerById($performerId) {
@@ -306,7 +358,7 @@ function getLocationSuggestions($keyword) {
     $params = [
         'filter'  => "contains(city/text/name,'$keyword') or contains(stateProvince/text/abbr,'$stateKeyword') or contains(stateProvince/text/name,'$keyword')",
         'rollup'  => 'city',
-        'perPage' => 10
+        'perPage' => 100
     ];
     
     $url = BASE_URL . '/catalog/v2/events?' . http_build_query($params);
