@@ -16,10 +16,13 @@
 
     <?php if (!empty($performers)) { ?>
 
-        <div class="area-container mt-5">
-            <?php foreach ($performers as $performer) { ?>
+        <div class="area-container mt-5 mb-5">
+            <?php foreach ($performers as $performer) { 
+                $count = getTnPerformerEventsCount($performer['id']);
+                if($count > 0) {
+            ?>
                 <a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" target="_blank" class="area-box"><?php echo $performer['text']['name']; ?></a>
-            <?php } ?>
+            <?php } } ?>
         </div>
 
     <?php } else { ?>

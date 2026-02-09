@@ -1,4 +1,4 @@
-<?php include 'header-new.php'; 
+<?php include 'header.php';
 $page = $_GET['page'] ?? 1;
 $perPage  = 20;
 $slug = $_GET['slug'];
@@ -6,8 +6,8 @@ $parts = explode('-', $slug);
 $id = end($parts);
 $performer = getTnPerformerById($id);
 $eventsResponse = getTnPerformerEvents($id, [
-    'page'    => (int)$page,
-    'perPage' => $perPage
+	'page'    => (int)$page,
+	'perPage' => $perPage
 ]);
 $total_count = getTnPerformerEventsCount($id);
 $total_pages = ceil($total_count / $perPage);
@@ -52,12 +52,6 @@ $percent = ($perPage / $total_count) * 100;
 							<div class="artist-heading text-center text-md-start text-lg-start text-xl-start text-xxl-start">
 								<div class="artist-category"><a href="<?php echo sanitize_title(end($breadcrumbs)['label']); ?>"><?php echo end($breadcrumbs)['label']; ?></a></div>
 								<h1 class="artist-title"><?php echo $performer['text']['name']; ?> Tickets</h1>
-								<div class="d-flex gap-3 mt-3 justify-content-center justify-content-md-start">
-									<div class="icon-circle"><i class="bi bi-heart fs-6 pt-1"></i></div>
-									<div class="rating">
-										⭐ <strong>5.0</strong>
-									</div>
-								</div>
 							</div>
 						</div>
 					</div>
@@ -76,13 +70,13 @@ $percent = ($perPage / $total_count) * 100;
 				</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-link" type="button"  data-target="about" onclick="scrollToElement('about')">About</button>
+				<button class="nav-link" type="button" data-target="about" onclick="scrollToElement('about')">About</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-link" type="button"  data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
+				<button class="nav-link" type="button" data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-link" type="button"  data-target="fans" onclick="scrollToElement('fans')">
+				<button class="nav-link" type="button" data-target="fans" onclick="scrollToElement('fans')">
 					Fans Also Viewed
 				</button>
 			</li>
@@ -132,6 +126,48 @@ $percent = ($perPage / $total_count) * 100;
 										<i class="bi bi-calendar3"></i>
 										<input type="text" id="dateRange" class="form-control" placeholder="All Dates" readonly>
 									</div>
+									<div class="date-picker-wrapper">
+
+										<!-- Main input -->
+										<!-- <input
+											type="text"
+											id="dateRange"
+											class="form-control mb-3"
+											placeholder="MM/DD/YYYY - MM/DD/YYYY"
+											readonly
+										> -->
+
+										<!-- Hidden picker section -->
+										<div id="datePickerSection" class="opacity-zero picker-wrapper">
+
+											<!-- Start / End inputs -->
+											<div class="row g-3">
+												<div class="col">
+													<label class="form-label">Start Date</label>
+													<input type="text" id="startInput" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
+												</div>
+												<div class="col">
+													<label class="form-label">End Date</label>
+													<input type="text" id="endInput" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
+												</div>
+											</div>
+
+											<!-- Calendar -->
+											<div class="calendar-wrapper">
+												<div id="calendar"></div>
+											</div>
+
+											<!-- Footer -->
+											<div class="footer-actions">
+												<span class="reset-link" id="resetDates">Reset</span>
+												<div class="d-flex gap-2">
+													<button class="btn btn-outline-secondary" id="cancelDates">Cancel</button>
+													<button class="btn btn-primary" id="applyDates">Apply</button>
+												</div>
+											</div>
+
+										</div>
+									</div>
 								</div>
 							</div>
 							<h3 id="locationHeading" class="mt-2 fs-5"></h3>
@@ -139,7 +175,7 @@ $percent = ($perPage / $total_count) * 100;
 						</div>
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">
-								<?php foreach ($events as $event) { 
+								<?php foreach ($events as $event) {
 									$evtPerformers = $event['performers'];
 									$names = array_map(function ($performer) {
 										return $performer['name'] ?? null;
@@ -248,24 +284,24 @@ $percent = ($perPage / $total_count) * 100;
 			<div class="row">
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about me-3">
-					<h2 class="so-heading mb-3"><?php echo $performer['text']['name']; ?> Tickets and Tour Information</h2>
-					<p><?php echo $performer['text']['name']; ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
-					<ul>
-						<li>Browse upcoming <?php echo $performer['text']['name']; ?> tour dates</li>
-						<li>Compare ticket prices from trusted sellers</li>
-						<li>Secure seats for popular venues</li>
-						<li>Mobile friendly ticket delivery</li>
-						<li>Backed by a 100% buyer guarantee</li>
-					</ul>
-					<p class="one-liner">Buy with confidence and enjoy live music the way it was meant to be experienced.</p>
-				</div>
+						<h2 class="so-heading mb-3"><?php echo $performer['text']['name']; ?> Tickets and Tour Information</h2>
+						<p><?php echo $performer['text']['name']; ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
+						<ul>
+							<li>Browse upcoming <?php echo $performer['text']['name']; ?> tour dates</li>
+							<li>Compare ticket prices from trusted sellers</li>
+							<li>Secure seats for popular venues</li>
+							<li>Mobile friendly ticket delivery</li>
+							<li>Backed by a 100% buyer guarantee</li>
+						</ul>
+						<p class="one-liner">Buy with confidence and enjoy live music the way it was meant to be experienced.</p>
+					</div>
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
-					<div class="so-about">
+					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
 						<img src="../artists/closeup.jpg" alt="" class="img-fluid" />
 					</div>
 				</div>
-				
+
 			</div>
 		</div>
 		<div class="tab-section content-section-detail" id="faqs">
@@ -352,20 +388,148 @@ $percent = ($perPage / $total_count) * 100;
 			</div>
 		</div>
 		<div class="tab-section content-section-detail" id="fans">
-			<h2 class="so-heading mb-4">Fans Also Viewed</h2>
-			<?php if (!empty($relatedPerformers)) { ?>
-				<div class="area-container">
-					<?php foreach ($relatedPerformers as $performer) { ?>
-						<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" target="_blank" class="area-box"><?php echo $performer['text']['name']; ?></a>
-					<?php } ?>
+			<div class="container my-5">
+
+				<div class="row g-4">
+					<h2 class="so-heading mb-4">Fans Also Viewed</h2>
+
+					<!-- Card -->
+					<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+						<a href="#" class="band-card-bootstrap text-decoration-none">
+							<div class="position-relative overflow-hidden rounded">
+								<img src="../artists/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="Mötley Crüe">
+								<div class="band-overlay"></div>
+								<div class="band-content d-flex justify-content-between align-items-center ">
+									<span class="band-name"></span>
+									<span class="band-arrow"><i class="bi bi-chevron-right fs-4"></i></span>
+								</div>
+							</div>
+							<div class="band-name-title text-black mt-2">Mötley Crüe</div>
+						</a>
+					</div>
+
+					<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+						<a href="#" class="band-card-bootstrap text-decoration-none">
+							<div class="position-relative overflow-hidden rounded">
+								<img src="../artists/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="Mötley Crüe">
+								<div class="band-overlay"></div>
+								<div class="band-content d-flex justify-content-between align-items-center ">
+									<span class="band-name"></span>
+									<span class="band-arrow"><i class="bi bi-chevron-right fs-4"></i></span>
+								</div>
+							</div>
+							<div class="band-name-title text-black mt-2">Mötley Crüe</div>
+						</a>
+					</div>
+
+					<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+						<a href="#" class="band-card-bootstrap text-decoration-none">
+							<div class="position-relative overflow-hidden rounded">
+								<img src="../artists/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="Mötley Crüe">
+								<div class="band-overlay"></div>
+								<div class="band-content d-flex justify-content-between align-items-center ">
+									<span class="band-name"></span>
+									<span class="band-arrow"><i class="bi bi-chevron-right fs-4"></i></span>
+								</div>
+							</div>
+							<div class="band-name-title text-black mt-2">Mötley Crüe</div>
+						</a>
+					</div>
+
+					<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+						<a href="#" class="band-card-bootstrap text-decoration-none">
+							<div class="position-relative overflow-hidden rounded">
+								<img src="../artists/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="Mötley Crüe">
+								<div class="band-overlay"></div>
+								<div class="band-content d-flex justify-content-between align-items-center ">
+									<span class="band-name"></span>
+									<span class="band-arrow"><i class="bi bi-chevron-right fs-4"></i></span>
+								</div>
+							</div>
+							<div class="band-name-title text-black mt-2">Mötley Crüe</div>
+						</a>
+					</div>
+
+					<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+						<a href="#" class="band-card-bootstrap text-decoration-none">
+							<div class="position-relative overflow-hidden rounded">
+								<img src="../artists/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="Mötley Crüe">
+								<div class="band-overlay"></div>
+								<div class="band-content d-flex justify-content-between align-items-center ">
+									<span class="band-name"></span>
+									<span class="band-arrow"><i class="bi bi-chevron-right fs-4"></i></span>
+								</div>
+							</div>
+							<div class="band-name-title text-black mt-2">Mötley Crüe</div>
+						</a>
+					</div>
+
+					<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+						<a href="#" class="band-card-bootstrap text-decoration-none">
+							<div class="position-relative overflow-hidden rounded">
+								<img src="../artists/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="Mötley Crüe">
+								<div class="band-overlay"></div>
+								<div class="band-content d-flex justify-content-between align-items-center ">
+									<span class="band-name"></span>
+									<span class="band-arrow"><i class="bi bi-chevron-right fs-4"></i></span>
+								</div>
+							</div>
+							<div class="band-name-title text-black mt-2">Mötley Crüe</div>
+						</a>
+					</div>
+
+					<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+						<a href="#" class="band-card-bootstrap text-decoration-none">
+							<div class="position-relative overflow-hidden rounded">
+								<img src="../artists/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="Mötley Crüe">
+								<div class="band-overlay"></div>
+								<div class="band-content d-flex justify-content-between align-items-center ">
+									<span class="band-name"></span>
+									<span class="band-arrow"><i class="bi bi-chevron-right fs-4"></i></span>
+								</div>
+							</div>
+							<div class="band-name-title text-black mt-2">Mötley Crüe</div>
+						</a>
+					</div>
+
+					<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+						<a href="#" class="band-card-bootstrap text-decoration-none">
+							<div class="position-relative overflow-hidden rounded">
+								<img src="../artists/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="Mötley Crüe">
+								<div class="band-overlay"></div>
+								<div class="band-content d-flex justify-content-between align-items-center ">
+									<span class="band-name"></span>
+									<span class="band-arrow"><i class="bi bi-chevron-right fs-4"></i></span>
+								</div>
+							</div>
+							<div class="band-name-title text-black mt-2">Mötley Crüe</div>
+						</a>
+					</div>
+
 				</div>
-			<?php } else { ?>
-				<p>No related performers found.</p>
-			<?php } ?>
+
+			</div>
+
+			<?php //if (!empty($relatedPerformers)) { 
+			?>
+			<!-- <div class="area-container">
+
+					<?php //foreach ($relatedPerformers as $performer) { 
+					?>
+						<a href="/artist/<?php //echo strtolower($performer['uriComponent']); 
+											?>" target="_blank" class="area-box"><?php //echo $performer['text']['name']; 
+																																	?></a>
+					<?php //} 
+					?>
+				</div> -->
+			<?php //} else { 
+			?>
+			<!-- <p>No related performers found.</p> -->
+			<?php //} 
+			?>
 		</div>
 	</div>
 </section>
 
 
 <?php include 'footer.php'; ?>
-

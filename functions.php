@@ -1,6 +1,27 @@
 <?php 
 
 include 'constants.php';
+require 'vendor/autoload.php';
+
+use Predis\Client as PredisClient;
+
+function redis() {
+    static $redis = null;
+
+    if ($redis === null) {
+        $redis = new PredisClient([
+            'scheme'   => 'tcp',
+            'host'     => REDIS_HOST,
+            'port'     => REDIS_PORT,
+            'password' => REDIS_PASSWORD,
+            'database' => 0,
+        ]);
+    }
+
+    return $redis;
+}
+
+
 
 function getTnAccessToken() {
 
@@ -167,7 +188,66 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
     return json_decode($response, true);
 }
 
-function getTnPerformerEventsCount($performerId = 0, $params = []) {
+function getTnPerformerEventsCount($performerId = 0, $params = [])
+{
+    $redis = redis();
+
+    // Unique cache key
+    $cacheKey = 'tn:performer:event_count:' . ($performerId ?: 'all');
+
+    // Return cached value if exists
+    if ($redis->exists($cacheKey)) {
+        return (int) $redis->get($cacheKey);
+    }
+
+    $accessToken = getTnAccessToken();
+
+    if ($performerId > 0) {
+        $params['performerFilter'] = 'id eq ' . $performerId;
+    }
+
+    $today = date('Y-m-d');
+    $params['filter']  = "date/date ge $today";
+    $params['page']    = 1;
+    $params['perPage'] = 500;
+
+    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 30
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        throw new Exception(curl_error($ch));
+    }
+
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200) {
+        throw new Exception('HTTP ' . $httpCode . ': ' . $response);
+    }
+
+    $json = json_decode($response, true);
+
+    $count = (int) ($json['count'] ?? 0);
+
+    // Cache for 30 minutes (adjust if needed)
+    $redis->setex($cacheKey, 1800, $count);
+
+    return $count;
+}
+
+/*function getTnPerformerEventsCount($performerId = 0, $params = []) {
 
     $accessToken = getTnAccessToken();
 
@@ -214,7 +294,7 @@ function getTnPerformerEventsCount($performerId = 0, $params = []) {
     $json_decode = json_decode($response, true);
 
     return $json_decode['count'];
-}
+}*/
 
 
 function getTnPerformerById($performerId) {

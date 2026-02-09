@@ -1,4 +1,4 @@
-<?php include 'functions.php'; ?>
+<?php require_once __DIR__ . '/functions.php'; ?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,7 +12,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/style-view.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo asset_url('css/style-view.css'); ?>">
 
 
 
@@ -115,10 +115,8 @@
                     <button class="btn p-0 text-white" data-bs-toggle="collapse" data-bs-target="#mobileSearch">
                         <i class="bi bi-search fs-5"></i>
                     </button>
-                    <a href="#" class="text-dark">
-                        <a href="#" class="tm-account">
-                            <i class="bi bi-person"></i>
-                        </a>
+                    <a href="#" class="tm-account">
+                        <i class="bi bi-person"></i>
                     </a>
                 </div>
 

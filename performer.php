@@ -1,4 +1,4 @@
-<?php include 'header-new.php'; 
+<?php include 'header.php'; 
 $page = $_GET['page'] ?? 1;
 $perPage  = 20;
 $slug = $_GET['slug'];
@@ -52,12 +52,6 @@ $percent = ($perPage / $total_count) * 100;
 							<div class="artist-heading text-center text-md-start text-lg-start text-xl-start text-xxl-start">
 								<div class="artist-category"><a href="<?php echo sanitize_title(end($breadcrumbs)['label']); ?>"><?php echo end($breadcrumbs)['label']; ?></a></div>
 								<h1 class="artist-title"><?php echo $performer['text']['name']; ?> Tickets</h1>
-								<div class="d-flex gap-3 mt-3 justify-content-center justify-content-md-start">
-									<div class="icon-circle"><i class="bi bi-heart fs-6 pt-1"></i></div>
-									<div class="rating">
-										⭐ <strong>5.0</strong>
-									</div>
-								</div>
 							</div>
 						</div>
 					</div>
@@ -131,6 +125,48 @@ $percent = ($perPage / $total_count) * 100;
 									<div class="filter-input">
 										<i class="bi bi-calendar3"></i>
 										<input type="text" id="dateRange" class="form-control" placeholder="All Dates" readonly>
+									</div>
+									<div class="date-picker-wrapper">
+
+										<!-- Main input -->
+										<!-- <input
+											type="text"
+											id="dateRange"
+											class="form-control mb-3"
+											placeholder="MM/DD/YYYY - MM/DD/YYYY"
+											readonly
+										> -->
+
+										<!-- Hidden picker section -->
+										<div id="datePickerSection" class="opacity-zero picker-wrapper">
+
+											<!-- Start / End inputs -->
+											<div class="row g-3">
+												<div class="col">
+													<label class="form-label">Start Date</label>
+													<input type="text" id="startInput" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
+												</div>
+												<div class="col">
+													<label class="form-label">End Date</label>
+													<input type="text" id="endInput" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
+												</div>
+											</div>
+
+											<!-- Calendar -->
+											<div class="calendar-wrapper">
+												<div id="calendar"></div>
+											</div>
+
+											<!-- Footer -->
+											<div class="footer-actions">
+												<span class="reset-link" id="resetDates">Reset</span>
+												<div class="d-flex gap-2">
+													<button class="btn btn-outline-secondary" id="cancelDates">Cancel</button>
+													<button class="btn btn-primary" id="applyDates">Apply</button>
+												</div>
+											</div>
+
+										</div>
 									</div>
 								</div>
 							</div>
