@@ -14,11 +14,11 @@
                     <a href="#"><i class="bi bi-instagram fs-4"></i></a>
       </div>
 
-      <p class="section-title mt">Download Our Apps</p>
+      <!-- <p class="section-title mt">Download Our Apps</p>
       <div class="app-buttons">
         <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="App Store">
         <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play">
-      </div>
+      </div> -->
 
       <p class="terms">
         By continuing past this page, you agree to our
@@ -99,6 +99,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
+<script src="<?php echo HOME_URL; ?>/js/calendar.js?v=<?php echo time(); ?>"></script> 
 <script src="<?php echo HOME_URL; ?>/js/script.js?v=<?php echo time(); ?>"></script>
 
 <?php include 'modals.php'; ?>

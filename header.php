@@ -12,8 +12,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">    
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
     <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/style.css?v=<?php echo time(); ?>">
 
 
@@ -37,7 +36,7 @@
                 </div>
 
                 <div class="tm-top-links d-none d-md-flex align-items-center">
-                    <a href="#"><i class="bi bi-building"></i> Hotels</a>
+                    <a href="#"><i class="bi bi-question-square"></i> Help</a>
                      <a href="#" class="tm-account">
                             <i class="bi bi-person"></i>
                             <span class="d-none d-xxl-inline">Sign In/Register</span>
