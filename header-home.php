@@ -146,18 +146,45 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
           </svg>
           <input type="text" placeholder="City or Zip Code" class="w-100" id="locationInputHeader" />
+          <div id="locationResultsHeader" class="tn-dropdown-menu dropdown"></div>
         </div>
         <div class="d-flex align-items-center gap-2 px-3 py-2 flex-fill border-start" style="border-color: rgba(255,255,255,0.1);">
           <svg class="icon" style="color: rgba(255,255,255,0.9);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
           </svg>
           <input type="text" placeholder="All Dates" class="w-100" id="dateRangeHeader" />
+          <div class="filter-arrow"><i id="dateArrowHeader" class="bi bi-chevron-down"></i></div>
+        </div>
+        <div class="date-picker-wrapper">
+            <div id="datePickerSectionHeader" class="opacity-zero picker-wrapper">
+                <div class="row g-3 d-none">
+                    <div class="col">
+                        <label class="form-label">Start Date</label>
+                        <input type="text" id="startInputHeader" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
+                    </div>
+                    <div class="col">
+                        <label class="form-label">End Date</label>
+                        <input type="text" id="endInputHeader" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
+                    </div>
+                </div>
+                <div class="calendar-wrapper">
+                    <div id="calendarHeader"></div>
+                </div>
+                <div class="footer-actions">
+                    <span class="reset-link" id="resetDatesHeader">Reset</span>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary" id="cancelDatesHeader">Cancel</button>
+                        <button class="btn btn-primary" id="applyDatesHeader">Apply</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="d-flex align-items-center gap-2 px-3 py-2 flex-fill border-start" style="border-color: rgba(255,255,255,0.1);">
           <svg class="icon" style="color: rgba(255,255,255,0.9);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
-          <input type="text" placeholder="Artist, Event or Venue" class="w-100" />
+          <input type="text" placeholder="Artist, Event or Venue" class="w-100" id="keywordHeader" />
+          <div id="keywordResultsHeader" class="tn-dropdown-menu dropdown"></div>
         </div>
         <button class="btn btn-stub-primary px-4 py-2 small fw-semibold rounded">Search</button>
       </div>
