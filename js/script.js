@@ -1,93 +1,85 @@
-function copyPromoCode(code, el) {
-    navigator.clipboard.writeText(code).then(function () {
-        const originalText = el.innerHTML;
-        el.innerHTML = '<div class="promo text-success border-success"><strong>COPIED!</strong></div>';
-        el.classList.add('copied');
-
-        setTimeout(function () {
-            el.innerHTML = originalText;
-            el.classList.remove('copied');
-        }, 1500);
-    });
-}
-
 const input = document.getElementById('locationInput');
 const results = document.getElementById('locationResults');
 
-input.addEventListener('click', function () {
-    const q = this.value.trim();
+if(input) {
+    input.addEventListener('click', function () {
+        const q = this.value.trim();
 
-    if (q.length === 0) {
-        results.innerHTML = `
-            <div class="current-location" id="useCurrentLocation">
-                Current location
-            </div>
-        `;
-        return;
-    }
-});
+        if (q.length === 0) {
+            results.innerHTML = `
+                <div class="current-location" id="useCurrentLocation">
+                    <i class="bi bi-send ms-1 me-2"></i> <span class="ms-4 ps-2"> Current location </span>  
+                </div>
+            `;
+            return;
+        }
+    });
 
-input.addEventListener('keyup', function () {
-    const q = this.value.trim();
+    input.addEventListener('keyup', function () {
+        const q = this.value.trim();
 
-    if (q.length === 0) {
-        results.innerHTML = `
-            <div class="current-location" id="useCurrentLocation">
-                Current location
-            </div>
-        `;
-        return;
-    }
-    
-    if (q.length < 2) {
-        results.innerHTML = '';
-        return;
-    }
+        if (q.length === 0) {
+            results.innerHTML = `
+                <div class="current-location" id="useCurrentLocation">
+                    <i class="bi bi-send ms-1 me-2"></i> <span class="ms-4 ps-2"> Current location </span>
+                </div>
+            `;
+            return;
+        }
+        
+        if (q.length < 2) {
+            results.innerHTML = '';
+            return;
+        }
 
-    fetch(`./ajax/location-search.php?q=${q}`)
-        .then(res => res.json())
-        .then(data => {
-            let html = '<ul>';
-            data.forEach(item => {
-                html += `<li class="result-item"
-                    data-city="${item.city}"
-                    data-state="${item.state}"
-                    data-zip="${item.zip ?? ''}">
-                    <strong>${item.city}</strong>, ${item.state}
-                    ${item.zip ? ' ' + item.zip : ''}
-                </li>`;
+        fetch(`./ajax/location-search.php?q=${q}`)
+            .then(res => res.json())
+            .then(data => {
+                let html = '<ul>';
+                data.forEach(item => {
+                    html += `<li class="result-item"
+                        data-city="${item.city}"
+                        data-state="${item.state}"
+                        data-zip="${item.zip ?? ''}">
+                        ${item.zip ? item.zip + ', ' : ''}${item.city}, ${item.state}
+                    </li>`;
+                });
+                html += '</ul>'
+                results.innerHTML = html;
             });
-            html += '</ul>'
-            results.innerHTML = html;
-        });
-});
+    });
+}
 
-results.addEventListener('click', function (e) {
+if(results) {
+    results.addEventListener('click', function (e) {
 
-    if (e.target.id === 'useCurrentLocation') {
-        getCurrentLocation();
-        return;
-    }
+        if (e.target.id === 'useCurrentLocation') {
+            getCurrentLocation();
+            return;
+        }
 
-    const item = e.target.closest('.result-item');
-    if (!item) return;
+        const item = e.target.closest('.result-item');
+        if (!item) return;
 
-    const city  = item.dataset.city;
-    const state = item.dataset.state;
-    const zip   = item.dataset.zip;
-    const cpid  = input.dataset.cpid;
-    const dcat  = input.dataset.dcat;
+        const city  = item.dataset.city;
+        const state = item.dataset.state;
+        const zip   = item.dataset.zip;
+        const cpid  = input.dataset.cpid;
+        const dcat  = input.dataset.dcat;
 
-    input.value = zip
-        ? `${city}, ${state} ${zip}`
-        : `${city}, ${state}`;
+        input.value = zip
+            ? `${zip}, ${city}, ${state}`
+            : `${city}, ${state}`;
 
-    results.innerHTML = '';
+        results.innerHTML = '';
 
-    updateHeading(city, state, zip, dcat);
+        updateHeading(city, state, zip, dcat);
 
-    updateEventsSection({ city, state, zip, cpid, dcat });
-});
+        updateEventsSection({ city, state, zip, cpid, dcat });   
+    });
+}
+
+
 
 function updateEventsSection(location) {
     
@@ -105,7 +97,9 @@ function updateEventsSection(location) {
     fetch(`./ajax/load-events.php?${params}`)
         .then(res => res.text())
         .then(html => {
-            if(html == 'no') {
+            const list = html.split("|");
+            if(list[0] == 'no') {   
+                input.value = list[1] + ', ' + list[2];             
                 document.getElementById('location-no-results').innerHTML = '<strong>No ' + location.dcat + ' available in your selected area</strong><p>Try changing locations or browse through the available ' + location.dcat + ' below</p>';
             }else{
                 document.getElementById('location-no-results').innerHTML = '';
@@ -115,12 +109,29 @@ function updateEventsSection(location) {
                 const countmsg = count > 1 ? ' RESULTS' : ' RESULT';
                 document.getElementById('results_count').innerHTML = count + countmsg;
                 document.getElementById('eventsSection').innerHTML = html;
-            }            
+            }
+            if(location.flag !== 'reset') {
+                input.disabled = true;   
+                const resetBtn = document.getElementById('locationInputReset');
+                resetBtn.classList.remove('d-none');
+                resetBtn.addEventListener('click', function () {
+                    input.disabled = false;
+                    input.value = '';
+                    this.classList.add('d-none');       
+                    document.getElementById('location-no-results').innerHTML = '';
+                    document.getElementById('locationHeading').innerHTML = '';
+                    updateEventsSection({ cpid: input.dataset.cpid, flag: 'reset' });
+                }); 
+            }     
         })
-        .catch(err => {
-            console.error('Failed to load events', err);
-        });
+    .catch(err => {
+        console.error('Failed to load events', err);
+    }); 
+    
 }
+
+
+
 
 function updateHeading(city, state, zip, dcat) {
     const heading = document.getElementById('locationHeading');
@@ -129,7 +140,7 @@ function updateHeading(city, state, zip, dcat) {
         const capitalized = dcat.charAt(0).toUpperCase() + dcat.slice(1);
         
         if (zip) {        
-            heading.textContent = `${capitalized} near ${zip}`;
+            heading.textContent = `${capitalized} near ${zip}, ${city}, ${state}`;
         } else if (city && state) {
             heading.textContent = `${capitalized} near ${city}, ${state}`;
         } else {
@@ -253,15 +264,22 @@ if (loadMoreBtn) {
     });
 }
 
-/*backToTopBtn.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-});*/
+if (backToTopBtn) { 
+    backToTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
 
 function renderEvent(event) {
     const evtdate = new Date(event.date.date);
     const emonth = evtdate.toLocaleString('en-US', { month: 'short' });
     const edate = evtdate.getDate();
     const eday = evtdate.toLocaleString('en-US', { weekday: 'short' });
+    const year = evtdate.getFullYear();
+    let y = '';
+    if(year > new Date().getFullYear()) { 
+        y = '<div class="month">'+year+'</div>';
+    }
     const formattedDate = evtdate.toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
@@ -275,6 +293,7 @@ function renderEvent(event) {
             <div class="date-box text-center me-3">
                 <div class="month">${emonth.toUpperCase()}</div>
                 <div class="day">${edate}</div>
+                ${y}
             </div>
             <div class="flex-grow-1 w-50">
                 <div class="d-flex align-items-center gap-2">
@@ -285,8 +304,8 @@ function renderEvent(event) {
                     data-id="${event.id}" data-date="${formattedDate}" data-venue="${event.venue.text.name}" 
                     data-location="${event.city.text.name}, ${event.stateProvince.text.abbr}" data-title="${event.text.name}" data-performers="${dataPerformers}"></i>
                 </div>
-                <div class="fw-semibold">
-                    ${event.city.text.name}, ${event.stateProvince.text.abbr} · ${event.venue.text.name}
+                <div class="fw-semibold location-venue-name">
+                    <a href="#">${event.city.text.name}, ${event.stateProvince.text.abbr}</a> · <a href="#">${event.venue.text.name}</a>
                 </div>
                 <div class="text-muted small">
                     ${event.text.name}
@@ -372,3 +391,53 @@ backToTop.addEventListener('click', () => {
 
 
 
+
+  document.querySelectorAll(".offer-copy-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const code = btn.dataset.code || btn.previousElementSibling.textContent.trim();
+      navigator.clipboard
+        .writeText(code)
+        .then(() => {
+          btn.textContent = "Copied";
+          setTimeout(() => (btn.textContent = "Copy"), 1500);
+        })
+        .catch(() => {
+          alert("Unable to copy code. Please copy manually.");
+        });
+    });
+  });
+
+
+if (navigator.geolocation) {
+
+    console.log('geolocation supported');
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+
+            console.log('position', position);
+
+            fetch('./ajax/save-location.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                })
+            })
+            .then(res => res.text())
+            .then(data => console.log('Server response:', data))
+            .catch(err => console.error('Fetch error:', err));
+
+        },
+        function(error) {
+            console.error('Geolocation error:', error.message);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}

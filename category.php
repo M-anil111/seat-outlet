@@ -1,5 +1,7 @@
 <?php 
     include 'header.php'; 
+
+    // Fetch performers; default to empty list if response is malformed.
     $performersResponse = getTnPerformers();
     $performers = $performersResponse['results'] ?? [];
 ?>
@@ -14,22 +16,40 @@
 <!-- Main Layout -->
 <div class="container">
 
-    <?php if (!empty($performers)) { ?>
+    <?php if (!empty($performers)): ?>
 
         <div class="area-container mt-5">
-            <?php foreach ($performers as $performer) { ?>
-                <a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" target="_blank" class="area-box"><?php echo $performer['text']['name']; ?></a>
-            <?php } ?>
+            <?php foreach ($performers as $performer): ?>
+                <?php
+                    if (
+                        empty($performer['id']) ||
+                        empty($performer['text']['name']) ||
+                        empty($performer['uriComponent'])
+                    ) {
+                        continue;
+                    }
+
+                    $artistUrl  = '/artist/' . strtolower($performer['uriComponent']);
+                    $artistName = $performer['text']['name'];
+                ?>
+                <a
+                    href="<?php echo htmlspecialchars($artistUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="area-box"
+                >
+                    <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>
+                </a>
+            <?php endforeach; ?>
         </div>
 
-    <?php } else { ?>
+    <?php else: ?>
 
         <p>No performers found.</p>
 
-    <?php } ?>    
+    <?php endif; ?>    
 
 </div>
-
 
 <?php include 'footer.php'; ?>
 

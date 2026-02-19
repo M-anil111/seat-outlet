@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StubHub - Ticket Marketplace</title>
+  <meta name="description" content="World's top marketplace for ticket buyers and resellers" />
+  <meta name="author" content="StubHub" />
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <!-- Slick slider CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link href="css/style.css" rel="stylesheet">
+</head>
+<style>
+    .location-section {
+  background: linear-gradient(135deg, var(--clr-primary) 0%, #1a3fa8 40%, #0e2272 100%);
+  position: relative;
+}
+
+/* Optional decorative shapes */
+.location-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.location-box {
+  display: block;
+  padding: 14px 18px;
+  text-align: center;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.7);
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.3s ease;
+  background: rgba(0,0,0,0.15);
+}
+
+.location-box:hover {
+  background: #fff;
+  color: #1a3fa8;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+
+.lake-links-section {
+  background: linear-gradient(135deg, var(--clr-primary) 0%, #1a3fa8 40%, #0e2272 100%);
+  position: relative;
+}
+
+/* Optional decorative effect */
+.lake-links-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Map styling */
+.map-wrapper iframe {
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+/* Link boxes */
+.lake-link-box {
+  display: block;
+  padding: 14px 20px;
+  border: 1px solid rgba(255,255,255,0.8);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  text-align: center;
+  transition: 0.3s ease;
+  background: rgba(0,0,0,0.2);
+}
+
+.lake-link-box:hover {
+  background: #ffffff;
+  color: #1a3fa8;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+/* Responsive heading alignment */
+@media (max-width: 992px) {
+  .links-wrapper h2 {
+    text-align: center;
+  }
+}
+</style>
+
+<body>
+<section class="location-section py-5">
+    <div class="container">
+  
+      <div class="row g-3">
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">Covelli Centre in Youngstown, OH</a>
+        </div>
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">Stambaugh Stadium in Youngstown, OH</a>
+        </div>
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">Packard Music Hall in Warren, OH</a>
+        </div>
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">Progressive Field in Cleveland, OH</a>
+        </div>
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">Nationwide Arena in Columbus, OH</a>
+        </div>
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">Rocket Arena in Cleveland, OH</a>
+        </div>
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">PNC Park in Pittsburgh, PA</a>
+        </div>
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">PPG Paints Arena in Pittsburgh, PA</a>
+        </div>
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">Fiserv Forum in Milwaukee, WI</a>
+        </div>
+  
+        
+  
+      </div>
+    </div>
+  </section>
+
+
+  <!-- <section class="lake-links-section py-5">
+    <div class="container">
+      <div class="row align-items-center g-4">
+  
+        
+        <div class="col-12 col-lg-6">
+          <div class="map-wrapper">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2158608.9795183195!2d-83.98849735386874!3d40.357997487913934!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8836e97ab54d8ec1%3A0xe5cd64399c9fd916!2sOhio%2C%20USA!5e1!3m2!1sen!2sin!4v1771256866510!5m2!1sen!2sin" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </iframe>
+          </div>
+        </div>
+  
+        
+        <div class="col-12 col-lg-6">
+          <div class="links-wrapper text-center text-lg-start">
+  
+            <h2 class="mb-4 fw-bold text-white">
+               OH Links:
+            </h2>
+  
+            <div class="row g-3">
+                <div class="col-12">
+                    <a href="#" class="lake-link-box">OH News</a>
+                  </div>
+      
+                  <div class="col-12">
+                    <a href="#" class="lake-link-box">Weather in OH</a>
+                  </div>
+      
+                  <div class="col-12">
+                    <a href="#" class="lake-link-box">About OH</a>
+                  </div>
+      
+                  <div class="col-12">
+                    <a href="#" class="lake-link-box">Local Traffic of OH</a>
+                  </div>
+      
+                  <div class="col-12">
+                    <a href="#" class="lake-link-box">Business Financing in OH</a>
+                  </div>
+      
+                  <div class="col-12">
+                    <a href="#" class="lake-link-box">Business Networking OH</a>
+                  </div>
+            </div>
+  
+          </div>
+        </div>
+  
+      </div>
+    </div>
+  </section> -->
+
+
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="js/bootstrap.bundle.min.js"></script>
+  <!-- Slick slider dependencies (jQuery + Slick) -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+  <!-- Custom JS -->
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -68,18 +68,26 @@ let picker = flatpickr('#calendar', {
 });
 
 // Open picker on input click
-dateRange.addEventListener('click', (e) => {
-    e.stopPropagation();
+const dateArrow = document.getElementById('dateArrow');
+if(dateRange) {
+    dateRange.addEventListener('click', (e) => {
+        e.stopPropagation();
 
-    if (datePickerSection.classList.contains('opacity-zero')) {
-        datePickerSection.classList.remove('opacity-zero');
+        const isHidden = datePickerSection.classList.toggle('opacity-zero');
 
-        setTimeout(() => {
-            picker.redraw();
-        }, 10);
-    }
-});
+        if (isHidden) {
+            dateArrow.classList.remove('bi-chevron-up');
+            dateArrow.classList.add('bi-chevron-down');
+        } else {
+            dateArrow.classList.remove('bi-chevron-down');
+            dateArrow.classList.add('bi-chevron-up');
 
+            setTimeout(() => {
+                picker.redraw();
+            }, 10);
+        }
+    });
+}
 // Close on outside click
 document.addEventListener('click', (e) => {
     if (
@@ -90,33 +98,38 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Reset
-document.getElementById('resetDates').addEventListener('click', () => {
-    picker.clear();
-    selectedStart = selectedEnd = null;
-    startInput.value = '';
-    endInput.value = '';
-    dateRange.value = '';
-});
+const resetDates = document.getElementById('resetDates');
+if(resetDates) {
+    resetDates.addEventListener('click', () => {
+        picker.clear();
+        selectedStart = selectedEnd = null;
+        startInput.value = '';
+        endInput.value = '';
+        dateRange.value = '';
+    });
+}
 
-// Cancel
-document.getElementById('cancelDates').addEventListener('click', () => {
-    datePickerSection.classList.add('opacity-zero');
-});
 
-// Apply
-document.getElementById('applyDates').addEventListener('click', () => {
-    if (!selectedStart || !selectedEnd) return;
+const cancelDates = document.getElementById('cancelDates');
+if(cancelDates) {
+    cancelDates.addEventListener('click', () => {
+        datePickerSection.classList.add('opacity-zero');
+    });
+}
 
-    const startText = flatpickr.formatDate(selectedStart, 'm/d/Y');
-    const endText = flatpickr.formatDate(selectedEnd, 'm/d/Y');
+const applyDates = document.getElementById('applyDates');
+if(applyDates) {
+    applyDates.addEventListener('click', () => {
+        if (!selectedStart || !selectedEnd) return;
 
-    dateRange.value = startText + ' - ' + endText;
+        const startText = flatpickr.formatDate(selectedStart, 'm/d/Y');
+        const endText = flatpickr.formatDate(selectedEnd, 'm/d/Y');
 
-    const apiStart = flatpickr.formatDate(selectedStart, 'Y-m-d');
-    const apiEnd = flatpickr.formatDate(selectedEnd, 'Y-m-d');
+        dateRange.value = startText + ' - ' + endText;
 
-    //console.log('Apply Dates:', apiStart, apiEnd);
+        const apiStart = flatpickr.formatDate(selectedStart, 'Y-m-d');
+        const apiEnd = flatpickr.formatDate(selectedEnd, 'Y-m-d');
 
-    datePickerSection.classList.add('opacity-zero');
-});
+        datePickerSection.classList.add('opacity-zero');
+    });
+}
