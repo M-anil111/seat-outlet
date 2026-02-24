@@ -115,6 +115,9 @@ $faqs = getFaqs($mysqli, 'performer');
 				</button>
 			</li>
 			<li class="nav-item">
+				<button class="nav-link" type="button" data-target="promocode" onclick="scrollToElement('promocode')">Promocode</button>
+			</li>
+			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="about" onclick="scrollToElement('about')">About</button>
 			</li>
 			
@@ -225,6 +228,7 @@ $faqs = getFaqs($mysqli, 'performer');
 										return $performer['name'] ?? null;
 									}, $evtPerformers);
 									$dataPerformers = implode('|', array_filter($names));	
+
 								?>
 									<div class="d-flex align-items-center justify-content-between performer-event-item">
 										<div class="date-box text-center me-3">
@@ -339,14 +343,29 @@ $faqs = getFaqs($mysqli, 'performer');
 								<i class="bi bi-shield-check"></i>
 							</div>
 						</div>						
-						<div class="sidebar-card" id="promo">
-							<h4><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Tickets Promo Codes</h4>
-							<p>Apply verified {Artist Name} ticket promo codes and save instantly on your concert tickets at checkout.</p>
-							<div class="offer-pill d-flex align-items-center justify-content-between mt-3">
+						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
+							<div class="mt-3 mt-md-3 mt-lg-0">
+								<img src="<?php echo HOME_URL; ?>/artists/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="tab-section content-section-detail" id="promocode">
+			<div class="row">
+				<div class="" id="promo">
+					<h2><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> concert Promo Codes in {country}</h2>
+					<p>Apply verified {Artist Name} ticket promo codes and save instantly on your concert tickets at checkout.</p>
+					<div class="row g-3 mt-2">
+
+						<div class="col-md-6">
+							<div class="offer-pill d-flex align-items-center justify-content-between">
 								<div class="d-flex align-items-center">
 									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
 										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+												stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
 											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
 										</svg>
 									</div>
@@ -356,16 +375,22 @@ $faqs = getFaqs($mysqli, 'performer');
 									</div>
 								</div>
 								<div class="offer-copy text-end">
-									<button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="TAKE5">
-									Copy
+									<button type="button"
+										class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+										data-code="TAKE5">
+										Copy
 									</button>
 								</div>
 							</div>
-							<div class="offer-pill d-flex align-items-center justify-content-between mt-3">
+						</div>
+
+						<div class="col-md-6">
+							<div class="offer-pill d-flex align-items-center justify-content-between">
 								<div class="d-flex align-items-center">
 									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
 										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+												stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
 											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
 										</svg>
 									</div>
@@ -375,12 +400,15 @@ $faqs = getFaqs($mysqli, 'performer');
 									</div>
 								</div>
 								<div class="offer-copy text-end">
-									<button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="TAKE10">
-									Copy
+									<button type="button"
+										class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+										data-code="TAKE10">
+										Copy
 									</button>
 								</div>
 							</div>
 						</div>
+
 					</div>
 				</div>
 			</div>
@@ -412,7 +440,7 @@ $faqs = getFaqs($mysqli, 'performer');
 		</div>
 		<?php if (!empty($faqs)) { ?>
 			<div class="tab-section content-section-detail" id="faqs">
-				<h2 class="so-heading mb-3">FAQs about Performer <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Events</h2>
+				<h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Events</h2>
 				<div class="accordion" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;

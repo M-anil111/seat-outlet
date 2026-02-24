@@ -15,6 +15,7 @@ $q = preg_replace('/[^a-zA-Z0-9\s,\-]/u', '', $q);
 
 try {
     $response = getLocationSuggestions($q);
+    $searchType = $response['searchType'];
 } catch (Throwable $e) {
     echo json_encode([]);
     exit;
@@ -44,12 +45,19 @@ if (!empty($response['results'])) {
         }
 
         $unique[$key] = true;
-
-        $results[] = [
-            'city'  => $city,
-            'state' => $state,
-            'zip'   => $zip,
-        ];
+        if($searchType == 'zip') {
+            $results[] = [
+                'city'  => $city,
+                'state' => $state,
+                'zip'   => $zip,
+            ];
+        }else{
+            $results[] = [
+                'city'  => $city,
+                'state' => $state,
+                'zip'   => '',
+            ];
+        }
     }
 }
 

@@ -113,10 +113,22 @@ $faqs = getFaqs($mysqli, 'performer');
 				</button>
 			</li>
 			<li class="nav-item">
+				<button class="nav-link" type="button"  data-target="promocode" onclick="scrollToElement('promocode')">promocode</button>
+			</li>
+			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="about" onclick="scrollToElement('about')">About</button>
 			</li>
 			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
+			</li>
+			<li class="nav-item">
+				<button class="nav-link" type="button"  data-target="city" onclick="scrollToElement('city')">City</button>
+			</li>
+			<li class="nav-item">
+				<button class="nav-link" type="button"  data-target="more" onclick="scrollToElement('more')">More</button>
+			</li>
+			<li class="nav-item">
+				<button class="nav-link" type="button"  data-target="map" onclick="scrollToElement('map')">Map</button>
 			</li>
 			<!-- <li class="nav-item">
 				<button class="nav-link" type="button"  data-target="promo" onclick="scrollToElement('promo')">Promo Codes</button>
@@ -315,6 +327,67 @@ $faqs = getFaqs($mysqli, 'performer');
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="<?php echo HOME_URL; ?>/artists/adsens.webp" alt="Sponsored advertisement"	class="ad-image-left" />
+					</div>
+					<div class="tab-section content-section-detail" id="promocode">
+						<div class="row">
+							<div class="" id="promo">
+								<h2><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> concert Promo Codes in {country}</h2>
+								<p>Apply verified {Artist Name} ticket promo codes and save instantly on your concert tickets at checkout.</p>
+								<div class="row g-3 mt-2">
+
+									<div class="col-md-6">
+										<div class="offer-pill d-flex align-items-center justify-content-between">
+											<div class="d-flex align-items-center">
+												<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
+													<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+														<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+															stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+														<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
+													</svg>
+												</div>
+												<div class="offer-text">
+													<div class="offer-title">5% OFF</div>
+													<div class="offer-subtitle">TAKE5</div>
+												</div>
+											</div>
+											<div class="offer-copy text-end">
+												<button type="button"
+													class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+													data-code="TAKE5">
+													Copy
+												</button>
+											</div>
+										</div>
+									</div>
+
+									<div class="col-md-6">
+										<div class="offer-pill d-flex align-items-center justify-content-between">
+											<div class="d-flex align-items-center">
+												<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
+													<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+														<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+															stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+														<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
+													</svg>
+												</div>
+												<div class="offer-text">
+													<div class="offer-title">10% OFF</div>
+													<div class="offer-subtitle">TAKE10</div>
+												</div>
+											</div>
+											<div class="offer-copy text-end">
+												<button type="button"
+													class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+													data-code="TAKE10">
+													Copy
+												</button>
+											</div>
+										</div>
+									</div>
+
+								</div>
+							</div>
+						</div>
 					</div>				
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
@@ -333,57 +406,21 @@ $faqs = getFaqs($mysqli, 'performer');
 								<i class="bi bi-shield-check"></i>
 							</div>
 						</div>						
-						<div class="sidebar-card" id="promo">
-							<h4><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Promo Codes in the {city}, {state}</h4>
-							<p>Apply verified {Artist Name} ticket promo codes and save instantly on your concert tickets at checkout.</p>
-							<div class="offer-pill d-flex align-items-center justify-content-between mt-3">
-								<div class="d-flex align-items-center">
-									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-										</svg>
-									</div>
-									<div class="offer-text">
-										<div class="offer-title">5% OFF</div>
-										<div class="offer-subtitle">TAKE5</div>
-									</div>
-								</div>
-								<div class="offer-copy text-end">
-									<button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="TAKE5">
-									Copy
-									</button>
-								</div>
-							</div>
-							<div class="offer-pill d-flex align-items-center justify-content-between mt-3">
-								<div class="d-flex align-items-center">
-									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-										</svg>
-									</div>
-									<div class="offer-text">
-										<div class="offer-title">10% OFF</div>
-										<div class="offer-subtitle">TAKE10</div>
-									</div>
-								</div>
-								<div class="offer-copy text-end">
-									<button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="TAKE10">
-									Copy
-									</button>
-								</div>
+						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
+							<div class="mt-3 mt-md-3 mt-lg-0">
+								<img src="<?php echo HOME_URL; ?>/artists/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
+	
 		<div class="tab-section content-section-detail" id="about">
 			<div class="row">
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about me-3">
-						<h2 class="so-heading mb-3">About <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> in the {city}, {state}</h2>
+						<h2 class="so-heading mb-3">About <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> in {city}, {state}</h2>
 						<p><?php echo getArtistBioFromWikipedia($artistName); ?></p>
 						<!-- <p><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
 						<ul>
@@ -404,35 +441,7 @@ $faqs = getFaqs($mysqli, 'performer');
 				</div>				
 			</div>
 		</div>
-		<div class="content-section-detail">
-			<div class="row">
-				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
-					<div class="so-about me-3">
-						<h2 class="so-heading mb-3">About <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> in the {city}, {state}</h2>
-						<p><?php //echo getArtistBioFromWikipedia($artistName); ?></p>
-						<!-- <p><?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
-						<ul>
-							<li>Browse upcoming <?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> tour dates</li>
-							<li>Compare ticket prices from trusted sellers</li>
-							<li>Secure seats for popular venues</li>
-							<li>Mobile friendly ticket delivery</li>
-							<li>Backed by a 100% buyer guarantee</li>
-						</ul>
-						<p class="one-liner">Buy with confidence and enjoy live music the way it was meant to be experienced.</p> -->
-						<p>Aaron Lewis performs in Jersey City, New Jersey, bringing his signature country sound to fans at local venues such as White Eagle Hall. His live shows in the New York metropolitan area continue to draw strong regional audiences.</p>
-					</div>
-				</div>
-				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
-					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-						<!-- <img src="../artists/closeup.jpg" alt="" class="img-fluid" /> -->
-						<!-- <img src="<?php //echo $performer_image; ?>" alt="<?php //echo $artistName; ?>" /> -->
-						 <div class="img-thub">
-						 <img src="../artists/closeup.jpg" alt="" class="img-fluid" />
-						 </div>
-					</div>
-				</div>				
-			</div>
-		</div>
+		
 		<?php if (!empty($faqs)) { ?>
 			<div class="tab-section content-section-detail" id="faqs">
 				<h2 class="so-heading mb-3">FAQs about Aaron Lewis Tickets in {city}, {state} </h2>
@@ -468,68 +477,98 @@ $faqs = getFaqs($mysqli, 'performer');
 				</div>
 			</div>
 		<?php } ?>
+
+		<div class="tab-section  content-section-detail" id="city">
+			<div class="row">
+				<div class="col-sm-12 col-md-8 col-lg-8 col-xl-8 col-xxl-8">
+					<div class="so-about me-3">
+						<h2 class="so-heading mb-3"> <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>Concert Tickets in {city}  </h2>
+						<p><?php //echo getArtistBioFromWikipedia($artistName); ?></p>
+						<!-- <p><?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
+						<ul>
+							<li>Browse upcoming <?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> tour dates</li>
+							<li>Compare ticket prices from trusted sellers</li>
+							<li>Secure seats for popular venues</li>
+							<li>Mobile friendly ticket delivery</li>
+							<li>Backed by a 100% buyer guarantee</li>
+						</ul>
+						<p class="one-liner">Buy with confidence and enjoy live music the way it was meant to be experienced.</p> -->
+						<p>Aaron Lewis performs in Jersey City, New Jersey, bringing his signature country sound to fans at local venues such as White Eagle Hall. His live shows in the New York metropolitan area continue to draw strong regional audiences.</p>
+					</div>
+				</div>
+				<div class="col-sm-12 col-md-4 col-lg-4 col-xl-4 col-xxl-4">
+					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0 image-area">
+						<!-- <img src="../artists/closeup.jpg" alt="" class="img-fluid" /> -->
+						<!-- <img src="<?php //echo $performer_image; ?>" alt="<?php //echo $artistName; ?>" /> -->
+						 <div class="img-thub ad-image">
+						 <img src="../assets/images/city.webp" alt="" class="img-fluid fixed-img" />
+						 </div>
+					</div>
+				</div>				
+			</div>
+		</div>
 		
 	</div>
 </section>
 
-<section class="location-section py-5">
+<section class="location-section py-5 tab-section " id="more">
     <div class="container">
 	
       <div class="row g-3">
 	  <h2 class="mb-4 fw-bold text-white text-center">
-                {Venue Name} Concert in City
+	  		{Artist Name} Concerts in {City}
       </h2>
 
       <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
         </div>
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
-        </div>
-  
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} in {city}, {state}</a>
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
+        </div>
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">{Artist} Concerts in {city}, {state}</a>
         </div>
         
   
       </div>
     </div>
   </section>
-<section class="lake-links-section py-5">
+<section class="tab-section lake-links-section py-5" id="map">
     <div class="container">
       <div class="row align-items-center g-4">
   

@@ -16,9 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/style.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/home.css?v=<?php echo time(); ?>">
-
-    
+    <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/home.css?v=<?php echo time(); ?>">    
 
 </head>
 
@@ -139,55 +137,50 @@
                     </div>
 
                 </div>
-                <div class="search-bar-container d-flex flex-column flex-sm-row p-1 w-50 m-auto">
-        <div class="d-flex align-items-center gap-2 px-3 py-2 flex-fill">
-          <svg class="icon" style="color: rgba(255,255,255,0.9);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-          </svg>
-          <input type="text" placeholder="City or Zip Code" class="w-100" id="locationInputHeader" />
-          <div id="locationResultsHeader" class="tn-dropdown-menu dropdown"></div>
-        </div>
-        <div class="d-flex align-items-center gap-2 px-3 py-2 flex-fill border-start" style="border-color: rgba(255,255,255,0.1);">
-          <svg class="icon" style="color: rgba(255,255,255,0.9);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <input type="text" placeholder="All Dates" class="w-100" id="dateRangeHeader" />
-          <div class="filter-arrow"><i id="dateArrowHeader" class="bi bi-chevron-down"></i></div>
-        </div>
-        <div class="date-picker-wrapper">
-            <div id="datePickerSectionHeader" class="opacity-zero picker-wrapper">
-                <div class="row g-3 d-none">
-                    <div class="col">
-                        <label class="form-label">Start Date</label>
-                        <input type="text" id="startInputHeader" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
+                <form method="post" action="<?php echo HOME_URL; ?>/search.php">
+                    <div class="search-bar-container d-flex flex-column flex-sm-row p-1 w-50 m-auto">
+                        <div class="d-flex align-items-center gap-2 px-3 py-2 flex-fill">
+                            <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <input type="text" placeholder="City or Zip Code" class="w-100" autocomplete="off" id="locationInputHeader" value="<?php echo !empty($title) ? $title : ''; ?>" />
+                            <div id="locationResultsHeader" class="tn-dropdown-menu dropdown"></div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 px-3 py-2 flex-fill border-start" style="border-color: rgba(0,0,0,0.1);">
+                            <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <input type="text" placeholder="All Dates" class="w-100" autocomplete="off" id="dateRangeHeader" value="<?php echo !empty($dateTitle) ? $dateTitle : ''; ?>" />
+                            <div class="filter-arrow"><i id="dateArrowHeader" class="bi bi-chevron-down"></i></div>
+                        </div>
+                        <div class="date-picker-wrapper">
+                            <div id="datePickerSectionHeader" class="opacity-zero picker-wrapper">
+                                <div class="calendar-wrapper">
+                                    <div id="calendarHeader"></div>
+                                </div>
+                                <div class="footer-actions">
+                                    <span class="reset-link" id="resetDatesHeader">Reset</span>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-secondary" id="cancelDatesHeader" type="button">Cancel</button>
+                                        <button class="btn btn-primary" id="applyDatesHeader" type="button">Apply</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 px-3 py-2 flex-fill border-start" style="border-color: rgba(0,0,0,0.1);">
+                            <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" placeholder="Artist, Event or Venue" class="w-100" autocomplete="off" id="keywordHeader" name="keywordHeader" value="<?php echo !empty($keywordTitle) ? $keywordTitle : ''; ?>" />
+                            <div id="keywordResultsHeader" class="tn-dropdown-menu dropdown"></div>
+                        </div>
+                        <input type="hidden" id="latHeader" name="latHeader"><input type="hidden" id="lngHeader" name="lngHeader">
+                        <input type="hidden" id="startInputHeader" name="startInputHeader"><input type="hidden" id="endInputHeader" name="endInputHeader">
+                        <input type="hidden" id="keywordType" name="keywordType"><input type="hidden" id="keywordId" name="keywordId">
+                        <button class="btn btn-stub-primary px-4 py-2 small fw-semibold rounded-pill">Search</button>
                     </div>
-                    <div class="col">
-                        <label class="form-label">End Date</label>
-                        <input type="text" id="endInputHeader" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
-                    </div>
-                </div>
-                <div class="calendar-wrapper">
-                    <div id="calendarHeader"></div>
-                </div>
-                <div class="footer-actions">
-                    <span class="reset-link" id="resetDatesHeader">Reset</span>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary" id="cancelDatesHeader">Cancel</button>
-                        <button class="btn btn-primary" id="applyDatesHeader">Apply</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="d-flex align-items-center gap-2 px-3 py-2 flex-fill border-start" style="border-color: rgba(255,255,255,0.1);">
-          <svg class="icon" style="color: rgba(255,255,255,0.9);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-          <input type="text" placeholder="Artist, Event or Venue" class="w-100" id="keywordHeader" />
-          <div id="keywordResultsHeader" class="tn-dropdown-menu dropdown"></div>
-        </div>
-        <button class="btn btn-stub-primary px-4 py-2 small fw-semibold rounded">Search</button>
-      </div>
+                </form>
             </div>
         </header>
     </div>

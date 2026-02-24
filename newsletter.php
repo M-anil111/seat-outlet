@@ -26,7 +26,7 @@
           </div>
           </div>
           <div class="col-lg-8">
-            <div class="d-flex align-items-center gap-3">
+            <div class="newsletter-icontact">
             <div class="col-12 col-md-4 col-lg-3" data-validation-type="1" data-label="First Name">
               <input 
                 maxlength="50"

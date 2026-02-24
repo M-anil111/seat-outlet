@@ -1,5 +1,5 @@
-<?php 
-include 'header.php'; 
+<?php
+include 'header.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -26,8 +26,8 @@ if (empty($performer) || empty($performer['defaultCategory'])) {
 }
 
 $eventsResponse = getTnPerformerEvents($id, [
-    'page'    => $page,
-    'perPage' => $perPage
+	'page'    => $page,
+	'perPage' => $perPage
 ]);
 
 $total_count = getTnPerformerEventsCount($id);
@@ -78,14 +78,14 @@ $faqs = getFaqs($mysqli, 'performer');
 				<div class="col-12">
 					<div class="row align-items-center text-center text-md-start">
 						<div class="col-md-4">
-							<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" />							
+							<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" />
 						</div>
 						<div class="col-md-8 text-white">
 							<div class="artist-heading text-center text-md-start text-lg-start text-xl-start text-xxl-start">
-								<?php 
-									$lastBreadcrumb = end($breadcrumbs);
-									$categoryLabel  = $lastBreadcrumb['label'] ?? '';
-									$categorySlug   = sanitize_title($categoryLabel);
+								<?php
+								$lastBreadcrumb = end($breadcrumbs);
+								$categoryLabel  = $lastBreadcrumb['label'] ?? '';
+								$categorySlug   = sanitize_title($categoryLabel);
 								?>
 								<div class="artist-category">
 									<a href="<?php echo htmlspecialchars($categorySlug, ENT_QUOTES, 'UTF-8'); ?>">
@@ -93,7 +93,8 @@ $faqs = getFaqs($mysqli, 'performer');
 									</a>
 								</div>
 								<h1 class="artist-title">
-									<?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>Aaron Lewis in {country}
+									<?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); 
+									?>Aaron Lewis in {country}
 								</h1>
 							</div>
 						</div>
@@ -113,11 +114,22 @@ $faqs = getFaqs($mysqli, 'performer');
 				</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-link" type="button"  data-target="about" onclick="scrollToElement('about')">About</button>
+				<button class="nav-link" type="button" data-target="promocode" onclick="scrollToElement('promocode')">Promocode</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-link" type="button"  data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
+				<button class="nav-link" type="button" data-target="about" onclick="scrollToElement('about')">About</button>
 			</li>
+			<li class="nav-item">
+				<button class="nav-link" type="button" data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
+			</li>
+			<li class="nav-item">
+				<button class="nav-link" type="button" data-target="country" onclick="scrollToElement('country')">Country</button>
+			</li>
+			<li class="nav-item">
+				<button class="nav-link" type="button" data-target="state" onclick="scrollToElement('state')">Location</button>
+			</li>
+
+
 			<!-- <li class="nav-item">
 				<button class="nav-link" type="button"  data-target="promo" onclick="scrollToElement('promo')">Promo Codes</button>
 			</li> -->
@@ -133,7 +145,7 @@ $faqs = getFaqs($mysqli, 'performer');
 
 <section>
 	<div class="container">
-        <div class="tab-section section-performer-content" id="default">
+		<div class="tab-section section-performer-content" id="default">
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">
 					<div class="mb-3 mb-md-4 mb-lg-4">
@@ -165,10 +177,12 @@ $faqs = getFaqs($mysqli, 'performer');
 											autocomplete="off"
 											data-cpid="<?php echo (int) $id; ?>"
 											data-dcat="<?php echo htmlspecialchars(strtolower($breadcrumbs[1]['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-											<button type="button" id="locationInputReset" class="d-none">
-												<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M23 3.88H5.66L1 12l4.66 8.12H23zM2.74 12l3.8-6.62h14.95v13.24H6.54zm13.98 4.4-3.38-3.34-3.37 3.34-1.07-1.06L12.27 12 8.9 8.65l1.07-1.06 3.37 3.34 3.38-3.34 1.07 1.06L14.4 12l3.38 3.34z"></path></svg>
-											</button>
-											<div id="locationResults" class="tn-dropdown-menu dropdown"></div>
+										<button type="button" id="locationInputReset" class="d-none">
+											<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false">
+												<path d="M23 3.88H5.66L1 12l4.66 8.12H23zM2.74 12l3.8-6.62h14.95v13.24H6.54zm13.98 4.4-3.38-3.34-3.37 3.34-1.07-1.06L12.27 12 8.9 8.65l1.07-1.06 3.37 3.34 3.38-3.34 1.07 1.06L14.4 12l3.38 3.34z"></path>
+											</svg>
+										</button>
+										<div id="locationResults" class="tn-dropdown-menu dropdown"></div>
 									</div>
 								</div>
 								<div class="col-md-6">
@@ -211,14 +225,14 @@ $faqs = getFaqs($mysqli, 'performer');
 						</div>
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">
-								<?php foreach ($events as $event) { 
+								<?php foreach ($events as $event) {
 									$eventDateRaw = $event['date']['date'];
 									$timestamp    = strtotime($eventDateRaw);
 									$evtPerformers = $event['performers'] ?? [];
 									$names = array_map(function ($performer) {
 										return $performer['name'] ?? null;
 									}, $evtPerformers);
-									$dataPerformers = implode('|', array_filter($names));	
+									$dataPerformers = implode('|', array_filter($names));
 								?>
 									<div class="d-flex align-items-center justify-content-between performer-event-item">
 										<div class="date-box text-center me-3">
@@ -228,7 +242,7 @@ $faqs = getFaqs($mysqli, 'performer');
 											<div class="day">
 												<?php echo htmlspecialchars(date('d', $timestamp), ENT_QUOTES, 'UTF-8'); ?>
 											</div>
-											<?php if(date('Y', $timestamp) > $year) { ?>
+											<?php if (date('Y', $timestamp) > $year) { ?>
 												<div class="month">
 													<?php echo htmlspecialchars(date('Y', $timestamp), ENT_QUOTES, 'UTF-8'); ?>
 												</div>
@@ -253,8 +267,7 @@ $faqs = getFaqs($mysqli, 'performer');
 													data-venue="<?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
 													data-location="<?php echo htmlspecialchars(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
 													data-title="<?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-													data-performers="<?php echo htmlspecialchars($dataPerformers, ENT_QUOTES, 'UTF-8'); ?>"
-												></i>
+													data-performers="<?php echo htmlspecialchars($dataPerformers, ENT_QUOTES, 'UTF-8'); ?>"></i>
 											</div>
 											<div class="fw-semibold location-venue-name">
 												<a href="#">
@@ -312,10 +325,71 @@ $faqs = getFaqs($mysqli, 'performer');
 								No <?php echo htmlspecialchars(strtoupper($breadcrumbs[1]['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> found!
 							</h4>
 						<?php } ?>
-					</div>	
+					</div>
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="<?php echo HOME_URL; ?>/artists/adsens.webp" alt="Sponsored advertisement"	class="ad-image-left" />
-					</div>				
+						<img src="<?php echo HOME_URL; ?>/artists/adsens.webp" alt="Sponsored advertisement" class="ad-image-left" />
+					</div>
+					<div class="tab-section content-section-detail" id="promocode">
+			<div class="row">
+				<div class="" id="promo">
+					<h2><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> concert Promo Codes in {country}</h2>
+					<p>Apply verified {Artist Name} ticket promo codes and save instantly on your concert tickets at checkout.</p>
+					<div class="row g-3 mt-2">
+
+						<div class="col-md-6">
+							<div class="offer-pill d-flex align-items-center justify-content-between">
+								<div class="d-flex align-items-center">
+									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
+										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+												stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
+										</svg>
+									</div>
+									<div class="offer-text">
+										<div class="offer-title">5% OFF</div>
+										<div class="offer-subtitle">TAKE5</div>
+									</div>
+								</div>
+								<div class="offer-copy text-end">
+									<button type="button"
+										class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+										data-code="TAKE5">
+										Copy
+									</button>
+								</div>
+							</div>
+						</div>
+
+						<div class="col-md-6">
+							<div class="offer-pill d-flex align-items-center justify-content-between">
+								<div class="d-flex align-items-center">
+									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
+										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+												stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
+										</svg>
+									</div>
+									<div class="offer-text">
+										<div class="offer-title">10% OFF</div>
+										<div class="offer-subtitle">TAKE10</div>
+									</div>
+								</div>
+								<div class="offer-copy text-end">
+									<button type="button"
+										class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+										data-code="TAKE10">
+										Copy
+									</button>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
@@ -332,53 +406,19 @@ $faqs = getFaqs($mysqli, 'performer');
 							<div class="guarantee-icon">
 								<i class="bi bi-shield-check"></i>
 							</div>
-						</div>						
-						<div class="sidebar-card" id="promo">
-							<h4><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> concert Promo Codes in {country}</h4>
-							<p>Apply verified {Artist Name} ticket promo codes and save instantly on your concert tickets at checkout.</p>
-							<div class="offer-pill d-flex align-items-center justify-content-between mt-3">
-								<div class="d-flex align-items-center">
-									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-										</svg>
-									</div>
-									<div class="offer-text">
-										<div class="offer-title">5% OFF</div>
-										<div class="offer-subtitle">TAKE5</div>
-									</div>
-								</div>
-								<div class="offer-copy text-end">
-									<button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="TAKE5">
-									Copy
-									</button>
-								</div>
-							</div>
-							<div class="offer-pill d-flex align-items-center justify-content-between mt-3">
-								<div class="d-flex align-items-center">
-									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-										</svg>
-									</div>
-									<div class="offer-text">
-										<div class="offer-title">10% OFF</div>
-										<div class="offer-subtitle">TAKE10</div>
-									</div>
-								</div>
-								<div class="offer-copy text-end">
-									<button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="TAKE10">
-									Copy
-									</button>
-								</div>
+						</div>
+						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
+							<div class="mt-3 mt-md-3 mt-lg-0">
+								<img src="<?php echo HOME_URL; ?>/artists/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
 							</div>
 						</div>
+
+
 					</div>
 				</div>
 			</div>
 		</div>
+	
 		<div class="tab-section content-section-detail" id="about">
 			<div class="row">
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
@@ -401,12 +441,14 @@ $faqs = getFaqs($mysqli, 'performer');
 						<!-- <img src="../artists/closeup.jpg" alt="" class="img-fluid" /> -->
 						<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" />
 					</div>
-				</div>				
+				</div>
 			</div>
 		</div>
+
+
 		<?php if (!empty($faqs)) { ?>
 			<div class="tab-section content-section-detail" id="faqs">
-				<h2 class="so-heading mb-3">FAQs About Aaron Lewis Tickets in {Country}</h2>
+				<h2 class="so-heading mb-3">FAQs About Aaron Lewis Concert Tickets in {Country}</h2>
 				<div class="accordion" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;
@@ -417,18 +459,18 @@ $faqs = getFaqs($mysqli, 'performer');
 					?>
 						<div class="accordion-item">
 							<h2 class="accordion-header" id="<?php echo $headingId; ?>">
-								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>" 
-										type="button"
-										data-bs-toggle="collapse"
-										data-bs-target="#<?php echo $collapseId; ?>"
-										aria-expanded="<?php echo $isFirst ? 'true' : 'false'; ?>"
-										aria-controls="<?php echo $collapseId; ?>">
+								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>"
+									type="button"
+									data-bs-toggle="collapse"
+									data-bs-target="#<?php echo $collapseId; ?>"
+									aria-expanded="<?php echo $isFirst ? 'true' : 'false'; ?>"
+									aria-controls="<?php echo $collapseId; ?>">
 									<?php echo htmlspecialchars($question); ?>
 								</button>
 							</h2>
-							<div id="<?php echo $collapseId; ?>" 
-								class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>" 
-								aria-labelledby="<?php echo $headingId; ?>" 
+							<div id="<?php echo $collapseId; ?>"
+								class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>"
+								aria-labelledby="<?php echo $headingId; ?>"
 								data-bs-parent="#faqAccordion">
 								<div class="accordion-body">
 									<?php echo nl2br(htmlspecialchars($answer)); ?>
@@ -439,38 +481,102 @@ $faqs = getFaqs($mysqli, 'performer');
 				</div>
 			</div>
 		<?php } ?>
-		
+
+		<div class="tab-section content-section-detail" id="country">
+			<div class="row">
+				<div class="col-sm-12 col-md-8 col-lg-8 col-xl-8 col-xxl-8">
+					<div class="so-about me-3">
+						<h2 class="so-heading mb-3"> <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Concert Tickets in {Country} </h2>
+						<p><?php //echo getArtistBioFromWikipedia($artistName); 
+							?></p>
+						<!-- <p><?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); 
+								?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
+						<ul>
+							<li>Browse upcoming <?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); 
+												?> tour dates</li>
+							<li>Compare ticket prices from trusted sellers</li>
+							<li>Secure seats for popular venues</li>
+							<li>Mobile friendly ticket delivery</li>
+							<li>Backed by a 100% buyer guarantee</li>
+						</ul>
+						<p class="one-liner">Buy with confidence and enjoy live music the way it was meant to be experienced.</p> -->
+						<p>Aaron Lewis performs in Jersey City, New Jersey, bringing his signature country sound to fans at local venues such as White Eagle Hall. His live shows in the New York metropolitan area continue to draw strong regional audiences.</p>
+					</div>
+				</div>
+				<div class="col-sm-12 col-md-4 col-lg-4 col-xl-4 col-xxl-4">
+					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0 image-area">
+						<!-- <img src="../artists/closeup.jpg" alt="" class="img-fluid" /> -->
+						<!-- <img src="<?php //echo $performer_image; 
+										?>" alt="<?php //echo $artistName; 
+																				?>" /> -->
+						<div class="img-thub ad-image">
+							<img src="../assets/images/usa.webp" alt="" class="img-fluid" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
 	</div>
 </section>
 
-<section class="location-section py-5">
-    <div class="container">
-	<h2 class="mb-4 fw-bold text-white text-center">
-               Upcoming {Venue Name} Concert in Other Countries
+<section class="location-section tab-section py-5" id="state">
+	<div class="container">
 
-            </h2>
-      <div class="row g-3">
-  
-       
-  
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">Aaron Lewis in Canada</a>
-        </div>
-  
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">Aaron Lewis in UK</a>
-        </div>
-  
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">Aaron Lewis in Australia</a>
-        </div>
-  
-        
-  
-      </div>
-    </div>
-  </section>
+		<div class="row g-3">
+			<h2 class="mb-4 fw-bold text-white text-center">
+				{Artist Name} Concerts in {State}
+			</h2>
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
+
+			<div class="col-12 col-md-6 col-lg-4">
+				<a href="#" class="location-box">{Artist} Concerts in {State}, {country}</a>
+			</div>
 
 
-	
+		</div>
+	</div>
+</section>
+
+
+
 <?php include 'footer.php'; ?>

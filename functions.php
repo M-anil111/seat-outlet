@@ -8,29 +8,8 @@ include 'db/config.php';
 include 'constants.php';
 require 'vendor/autoload.php';
 
-use Predis\Client as PredisClient;
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
-/**
- * Get shared Redis client instance.
- *
- * Uses a static in-memory cache per PHP request to avoid reconnect overhead.
- */
-function redis() {
-    static $redis = null;
-
-    if ($redis === null) {
-        $redis = new PredisClient([
-            'scheme'   => 'tcp',
-            'host'     => REDIS_HOST,
-            'port'     => REDIS_PORT,
-            'password' => REDIS_PASSWORD,
-            'database' => 0,
-        ]);
-    }
-
-    return $redis;
-}
 
 function getS3Client() {
 
@@ -117,15 +96,6 @@ function getTnAccessToken() {
     return $accessToken;
 }
 
-/**
- * Generic helper for calling TicketNetwork APIs.
- *
- * @param string $endpoint Relative endpoint starting with "/"
- * @param array  $params   Query parameters
- * @param string $method   HTTP method, currently only GET is used
- *
- * @return array Decoded JSON response
- */
 function tnRequest($endpoint, $params = [], $method = 'GET') {
     $accessToken = getTnAccessToken(); 
    
@@ -189,18 +159,7 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
     return tnRequest('/catalog/v2/events/', $params);
 }
 
-function getTnPerformerEventsCount($performerId = 0, $params = [])
-{
-    $redis = redis();
-
-    // Unique cache key
-    $cacheKey = 'tn:performer:event_count:' . ($performerId ?: 'all');
-
-    // Return cached value if exists
-    if ($redis->exists($cacheKey)) {
-        return (int) $redis->get($cacheKey);
-    }
-
+function getTnPerformerEventsCount($performerId = 0, $params = []) {
     if ($performerId > 0) {
         $params['performerFilter'] = 'id eq ' . (int) $performerId;
     }
@@ -213,9 +172,6 @@ function getTnPerformerEventsCount($performerId = 0, $params = [])
     $json = tnRequest('/catalog/v2/events/', $params);
 
     $count = (int) ($json['count'] ?? 0);
-
-    // Cache for 30 minutes (adjust if needed)
-    $redis->setex($cacheKey, 1800, $count);
 
     return $count;
 }
@@ -283,6 +239,7 @@ function getLocationSuggestions($keyword) {
         $location = getLocationFromInput($keyword);
         $latVal = $location['latitude'];
         $lngVal = $location['longitude'];
+        $output['searchType'] = 'zip';
         $output['results'][0]['city']['text']['name'] = $location['city'];
         $output['results'][0]['stateProvince']['text']['abbr'] = $location['state'];
         $output['results'][0]['postalCode'] = $location['zip'];        
@@ -296,6 +253,7 @@ function getLocationSuggestions($keyword) {
             'page'   => 1
         ];
         $output = tnRequest('/catalog/v2/events', $params);
+        $output['searchType'] = 'city';
     }   
 
     return $output;
@@ -514,7 +472,7 @@ function getArtistBioFromWikipedia($artistName) {
     return trim($page['extract'] ?? '');
 }
 
-function getFaqs(mysqli $mysqli, $type = null) {
+function getFaqs($mysqli, $type = null) {
 
     $faqs = [];
 
@@ -571,7 +529,7 @@ function getConcertEvents($limit = 12) {
 
     $data = json_decode($response, true);
 
-    return $data['results'];
+    return $data['results'] ?? [];
 }
 
  /*
@@ -1089,11 +1047,11 @@ function getAllFestivalsNestedCategories() {
     return $names;
 }
 
-function getPerformerUriComponent($performerId) {
+function getPerformerUriComponent($performerId, $key = 'uriComponent') {
 
     $data = getTnPerformerById($performerId);
 
-    return $data['uriComponent'] ?? '';
+    return $data[$key] ?? '';
 }
 
 function getOneEventPerSportNearby($sportsCategories, $latitude = '', $longitude = '') {
@@ -1230,7 +1188,7 @@ function getKeywordSearchSuggestions($q)
     */
     $artistParams = [
         'q'       => $q,
-        'numberOfSuggestions' => 5
+        'numberOfSuggestions' => 10
     ];
 
     $artistUrl = BASE_URL . '/catalog/v2/performers/suggest/?' . http_build_query($artistParams);
@@ -1254,7 +1212,7 @@ function getKeywordSearchSuggestions($q)
     */
     $eventParams = [
         'q'       => $q,
-        'numberOfSuggestions' => 5
+        'numberOfSuggestions' => 10
     ];
 
     $eventUrl = BASE_URL . '/catalog/v2/events/suggest/?' . http_build_query($eventParams);
@@ -1279,7 +1237,7 @@ function getKeywordSearchSuggestions($q)
     */
     $venueParams = [
         'q'       => $q,
-        'numberOfSuggestions' => 5
+        'numberOfSuggestions' => 10
     ];
 
     $venueUrl = BASE_URL . '/catalog/v2/venues/suggest/?' . http_build_query($venueParams);
@@ -1314,4 +1272,175 @@ function tnCurlRequest($url, $headers) {
     curl_close($ch);
 
     return json_decode($response, true);
+}
+
+function getHeaderSearchEvents($params = []) {
+
+    $accessToken = getTnAccessToken();
+
+    $url = BASE_URL . '/catalog/v2/events/search';
+
+    if (!empty($params)) {
+        $url .= '?' . http_build_query($params);
+    }
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data ?? [];
+}
+
+function getMostPopularEvents($catPath = '', $lat = '', $lng = '') {
+    
+    $accessToken = getTnAccessToken();
+    $today = date('Y-m-d');
+    if(!empty($lat) && !empty($lng)) {
+        $params = [
+            'perPage' => 20,
+            'page'    => 1,
+            'filter'  => "date/date ge " . $today . " and contains(defaultCategory/path,'$catPath')",
+            'geoFilter' => "nearby($lat, $lng, '50mi')",
+            'sort'    => 'salesRank'
+        ];
+    }else{
+        $params = [
+            'perPage' => 20,
+            'page'    => 1,
+            'filter'  => "date/date ge " . $today . " and contains(defaultCategory/path,'$catPath')",
+            'sort'    => 'salesRank'
+        ];
+    }
+    
+
+    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data['results'] ?? [];
+}
+
+function tnGetCategoryNearby($rootPath, $lat, $lng, $limit = 12) {
+
+    $accessToken = getTnAccessToken();
+
+    $params = [
+        'filter'    => "defaultCategory/path eq '$rootPath'",
+        'geoFilter' => sprintf('nearby(%F,%F,50mi)', $lat, $lng),
+        'perPage'   => $limit
+    ];
+
+    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data['results'] ?? [];
+}
+
+function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2) {
+    $accessToken = getTnAccessToken();
+    $rootPath = tnEscapeFilterValue($rootPath);
+    if($type === 'll') {
+        $lat = floatval($loc1);
+        $lng = floatval($loc2);
+        $params = [
+            'filter' => "contains(defaultCategory/path,'$rootPath')",
+            'geoFilter' => sprintf('nearby(%F,%F,50mi)', $lat, $lng),
+            'perPage' => 12
+        ];
+    }elseif($type === 'cs') {
+        $city  = ucfirst(strtolower($loc1));
+        $state = strtoupper($loc2);
+        $params = [
+            'filter' => "contains(defaultCategory/path,'$rootPath') and city/text/name eq '$city' and stateProvince/text/abbr eq '$state'",
+            'perPage' => 12
+        ];
+    }else{
+        $params = [
+            'filter' => "contains(defaultCategory/path,'$rootPath')",
+            'perPage' => 12
+        ];
+    }
+
+    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data['results'] ?? [];
 }

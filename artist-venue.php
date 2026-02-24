@@ -113,10 +113,16 @@ $faqs = getFaqs($mysqli, 'performer');
 				</button>
 			</li>
 			<li class="nav-item">
+				<button class="nav-link" type="button" data-target="promocode" onclick="scrollToElement('promocode')">promocode</button>
+			</li>
+			<li class="nav-item">
 				<button class="nav-link" type="button" data-target="about" onclick="scrollToElement('about')">About</button>
 			</li>
 			<li class="nav-item">
 				<button class="nav-link" type="button" data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
+			</li>
+			<li class="nav-item">
+				<button class="nav-link" type="button" data-target="map" onclick="scrollToElement('map')">Map</button>
 			</li>
 			<!-- <li class="nav-item">
 				<button class="nav-link" type="button"  data-target="promo" onclick="scrollToElement('promo')">Promo Codes</button>
@@ -317,6 +323,67 @@ $faqs = getFaqs($mysqli, 'performer');
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="<?php echo HOME_URL; ?>/artists/adsens.webp" alt="Sponsored advertisement" class="ad-image-left" />
 					</div>
+					<div class="tab-section content-section-detail" id="promocode">
+						<div class="row">
+							<div class="" id="promo">
+								<h2><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> concert Promo Codes in {country}</h2>
+								<p>Apply verified {Artist Name} ticket promo codes and save instantly on your concert tickets at checkout.</p>
+								<div class="row g-3 mt-2">
+
+									<div class="col-md-6">
+										<div class="offer-pill d-flex align-items-center justify-content-between">
+											<div class="d-flex align-items-center">
+												<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
+													<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+														<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+															stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+														<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
+													</svg>
+												</div>
+												<div class="offer-text">
+													<div class="offer-title">5% OFF</div>
+													<div class="offer-subtitle">TAKE5</div>
+												</div>
+											</div>
+											<div class="offer-copy text-end">
+												<button type="button"
+													class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+													data-code="TAKE5">
+													Copy
+												</button>
+											</div>
+										</div>
+									</div>
+
+									<div class="col-md-6">
+										<div class="offer-pill d-flex align-items-center justify-content-between">
+											<div class="d-flex align-items-center">
+												<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
+													<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+														<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+															stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+														<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
+													</svg>
+												</div>
+												<div class="offer-text">
+													<div class="offer-title">10% OFF</div>
+													<div class="offer-subtitle">TAKE10</div>
+												</div>
+											</div>
+											<div class="offer-copy text-end">
+												<button type="button"
+													class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+													data-code="TAKE10">
+													Copy
+												</button>
+											</div>
+										</div>
+									</div>
+
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
@@ -334,59 +401,22 @@ $faqs = getFaqs($mysqli, 'performer');
 								<i class="bi bi-shield-check"></i>
 							</div>
 						</div>
-						<div class="sidebar-card" id="promo">
-							<h4><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Promo Codes at White Eagle Hall – {city}, {state}</h4>
-							<p>Use verified promo codes to save instantly on event tickets at checkout.</p>
-							<div class="offer-pill d-flex align-items-center justify-content-between mt-3">
-								<div class="d-flex align-items-center">
-									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-										</svg>
-									</div>
-									<div class="offer-text">
-										<div class="offer-title">5% OFF</div>
-										<div class="offer-subtitle">TAKE5</div>
-									</div>
-								</div>
-								<div class="offer-copy text-end">
-									<button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="TAKE5">
-										Copy
-									</button>
-								</div>
-							</div>
-							<div class="offer-pill d-flex align-items-center justify-content-between mt-3">
-								<div class="d-flex align-items-center">
-									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-										</svg>
-									</div>
-									<div class="offer-text">
-										<div class="offer-title">10% OFF</div>
-										<div class="offer-subtitle">TAKE10</div>
-									</div>
-								</div>
-								<div class="offer-copy text-end">
-									<button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="TAKE10">
-										Copy
-									</button>
-								</div>
+						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
+							<div class="mt-3 mt-md-3 mt-lg-0">
+								<img src="<?php echo HOME_URL; ?>/artists/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		<div class="tab-section content-section-detail" id="about">
-			<div class="row">
-				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
-					<div class="so-about me-3">
-						<h2 class="so-heading mb-3">About <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> at {Venue Name} – {City}, {State}</h2>
-						<p><?php echo getArtistBioFromWikipedia($artistName); ?></p>
-						<!-- <p><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
+
+			<div class="tab-section content-section-detail" id="about">
+				<div class="row">
+					<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
+						<div class="so-about me-3">
+							<h2 class="so-heading mb-3">About <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> at {Venue Name} – {City}, {State}</h2>
+							<p><?php echo getArtistBioFromWikipedia($artistName); ?></p>
+							<!-- <p><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
 						<ul>
 							<li>Browse upcoming <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> tour dates</li>
 							<li>Compare ticket prices from trusted sellers</li>
@@ -395,64 +425,64 @@ $faqs = getFaqs($mysqli, 'performer');
 							<li>Backed by a 100% buyer guarantee</li>
 						</ul>
 						<p class="one-liner">Buy with confidence and enjoy live music the way it was meant to be experienced.</p> -->
+						</div>
 					</div>
-				</div>
-				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
-					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-						<!-- <img src="../artists/closeup.jpg" alt="" class="img-fluid" /> -->
-						<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" />
+					<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
+						<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
+							<!-- <img src="../artists/closeup.jpg" alt="" class="img-fluid" /> -->
+							<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" />
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		<?php if (!empty($faqs)) { ?>
-			<div class="tab-section content-section-detail" id="faqs">
-				<h2 class="so-heading mb-3"> FAQs About {Artist Name} at {Venue Name}</h2>
-				<div class="accordion" id="faqAccordion">
-					<?php foreach ($faqs as $index => $faq) {
-						$collapseId = 'collapse' . $index;
-						$headingId  = 'heading' . $index;
-						$question = str_replace('[artist_name]', $artistName, $faq['question']);
-						$answer   = str_replace('[artist_name]', $artistName, $faq['answer']);
-						$isFirst = ($index === 0);
-					?>
-						<div class="accordion-item">
-							<h2 class="accordion-header" id="<?php echo $headingId; ?>">
-								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>"
-									type="button"
-									data-bs-toggle="collapse"
-									data-bs-target="#<?php echo $collapseId; ?>"
-									aria-expanded="<?php echo $isFirst ? 'true' : 'false'; ?>"
-									aria-controls="<?php echo $collapseId; ?>">
-									<?php echo htmlspecialchars($question); ?>
-								</button>
-							</h2>
-							<div id="<?php echo $collapseId; ?>"
-								class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>"
-								aria-labelledby="<?php echo $headingId; ?>"
-								data-bs-parent="#faqAccordion">
-								<div class="accordion-body">
-									<?php echo nl2br(htmlspecialchars($answer)); ?>
+			<?php if (!empty($faqs)) { ?>
+				<div class="tab-section content-section-detail" id="faqs">
+					<h2 class="so-heading mb-3"> FAQs About {Artist Name} at {Venue Name}</h2>
+					<div class="accordion" id="faqAccordion">
+						<?php foreach ($faqs as $index => $faq) {
+							$collapseId = 'collapse' . $index;
+							$headingId  = 'heading' . $index;
+							$question = str_replace('[artist_name]', $artistName, $faq['question']);
+							$answer   = str_replace('[artist_name]', $artistName, $faq['answer']);
+							$isFirst = ($index === 0);
+						?>
+							<div class="accordion-item">
+								<h2 class="accordion-header" id="<?php echo $headingId; ?>">
+									<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>"
+										type="button"
+										data-bs-toggle="collapse"
+										data-bs-target="#<?php echo $collapseId; ?>"
+										aria-expanded="<?php echo $isFirst ? 'true' : 'false'; ?>"
+										aria-controls="<?php echo $collapseId; ?>">
+										<?php echo htmlspecialchars($question); ?>
+									</button>
+								</h2>
+								<div id="<?php echo $collapseId; ?>"
+									class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>"
+									aria-labelledby="<?php echo $headingId; ?>"
+									data-bs-parent="#faqAccordion">
+									<div class="accordion-body">
+										<?php echo nl2br(htmlspecialchars($answer)); ?>
+									</div>
 								</div>
 							</div>
-						</div>
-					<?php } ?>
+						<?php } ?>
+					</div>
 				</div>
-			</div>
-		<?php } ?>
+			<?php } ?>
 
-	</div>
+		</div>
 </section>
 
 
-<section class="lake-links-section py-5">
+<section class="tab-section lake-links-section py-5" id="map">
 	<div class="container">
 		<div class="row align-items-center g-4">
 
 
 			<div class="col-12 col-lg-6">
 				<div class="map-wrapper">
-				<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4192.99738225647!2d-74.0515528!3d40.7250028!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c250b5312d5141%3A0xd3be6df92d9de094!2sWhite%20Eagle%20Hall!5e1!3m2!1sen!2sin!4v1771509672282!5m2!1sen!2sin" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+					<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4192.99738225647!2d-74.0515528!3d40.7250028!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c250b5312d5141%3A0xd3be6df92d9de094!2sWhite%20Eagle%20Hall!5e1!3m2!1sen!2sin!4v1771509672282!5m2!1sen!2sin" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
 				</div>
 			</div>
 
@@ -461,7 +491,7 @@ $faqs = getFaqs($mysqli, 'performer');
 				<div class="links-wrapper text-center text-lg-start">
 
 					<h2 class="mb-4 fw-bold text-white">
-						White Eagle Hall Links
+						{Venue Name} in {City} Links
 					</h2>
 
 					<div class="row g-3">
@@ -489,32 +519,7 @@ $faqs = getFaqs($mysqli, 'performer');
 	</div>
 </section>
 
-<section class="location-section py-5">
-	<div class="container">
-		<h2 class="mb-4 fw-bold text-white text-center">
-			Upcoming {Venue Name} Concert in Other Countries
-		</h2>
-		<div class="row g-3">
 
-
-
-			<div class="col-12 col-md-6 col-lg-4">
-				<a href="#" class="location-box">Aaron Lewis in Canada</a>
-			</div>
-
-			<div class="col-12 col-md-6 col-lg-4">
-				<a href="#" class="location-box">Aaron Lewis in UK</a>
-			</div>
-
-			<div class="col-12 col-md-6 col-lg-4">
-				<a href="#" class="location-box">Aaron Lewis in Australia</a>
-			</div>
-
-
-
-		</div>
-	</div>
-</section>
 
 
 <?php include 'footer.php'; ?>

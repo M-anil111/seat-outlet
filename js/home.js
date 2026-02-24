@@ -1,19 +1,23 @@
 $(document).ready(function () {
  
-  $('.event-slider').slick({
-      slidesToShow: 4,
-      slidesToScroll: 1,
-      infinite: true,
-      autoplay:false,
-      arrows: true,
-      dots: false,
-      adaptiveHeight: false,
-      responsive: [
-          { breakpoint: 992, settings: { slidesToShow: 3 } },
-          { breakpoint: 768, settings: { slidesToShow: 2 } },
-          { breakpoint: 576, settings: { slidesToShow: 1 } }
-      ]
-  });
+    $('.custom-slider').slick({
+        slidesToShow: 4,
+        slidesToScroll: 1,
+        infinite: true,
+        arrows: true,
+        autoplay: true,
+        dots: false,
+        responsive: [
+            { breakpoint: 992, settings: { slidesToShow: 3 } },
+            { breakpoint: 768, settings: { slidesToShow: 2 } },
+            { breakpoint: 576, settings: { slidesToShow: 1 } }
+        ]
+    });
+
+    $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function (e) {
+        var target = $(e.target).data('bs-target');
+        $(target).find('.custom-slider').slick('setPosition');
+    });
 
   $('.team-slider').slick({
       slidesToShow: 4,
@@ -37,6 +41,29 @@ $(document).ready(function () {
           }
       ]
   });
+
+  $('.venue-slider').slick({
+    slidesToShow: 4,
+    slidesToScroll: 1,
+    arrows: true,
+    autoplay:true,
+    dots: false,
+    infinite: false,
+    responsive: [
+        {
+            breakpoint: 992,
+            settings: { slidesToShow: 3 }
+        },
+        {
+            breakpoint: 768,
+            settings: { slidesToShow: 2 }
+        },
+        {
+            breakpoint: 576,
+            settings: { slidesToShow: 1 }
+        }
+    ]
+});
 
 });
 
@@ -133,6 +160,8 @@ function isValidEmail(email) {
 /* Location Input Header Start */
 const inputHeader = document.getElementById('locationInputHeader');
 const resultsHeader = document.getElementById('locationResultsHeader');
+const latHeader = document.getElementById('latHeader');
+const lngHeader = document.getElementById('lngHeader');
 
 if(inputHeader) {
   inputHeader.addEventListener('click', function () {
@@ -170,10 +199,7 @@ if(inputHeader) {
           .then(data => {
               let html = '<ul>';
               data.forEach(item => {
-                  html += `<li class="result-item"
-                      data-city="${item.city}"
-                      data-state="${item.state}"
-                      data-zip="${item.zip ?? ''}">
+                  html += `<li class="result-item">
                       ${item.zip ? item.zip + ', ' : ''}${item.city}, ${item.state}
                   </li>`;
               });
@@ -187,27 +213,19 @@ if(resultsHeader) {
     resultsHeader.addEventListener('click', function (e) {
 
         if (e.target.id === 'useCurrentLocationHeader') {
-            getCurrentLocation();
+            getCurrentLocationHeader();
             return;
         }
 
         const item = e.target.closest('.result-item');
         if (!item) return;
 
-        const city  = item.dataset.city;
-        const state = item.dataset.state;
-        const zip   = item.dataset.zip;
-
-        inputHeader.value = zip
-            ? `${zip}, ${city}, ${state}`
-            : `${city}, ${state}`;
-
+        inputHeader.value = item.textContent.trim();
 		resultsHeader.innerHTML = '';
-  
     });
 }
 
-function getCurrentLocation() {
+function getCurrentLocationHeader() {
 
     if (!navigator.geolocation) {
         alert('Geocoding is not supported by your browser');
@@ -222,7 +240,10 @@ function getCurrentLocation() {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
 
-            inputHeader.value = '';
+            latHeader.value = lat;
+            lngHeader.value = lng;
+
+            inputHeader.value = 'Current location';
            
         },
         error => {
@@ -255,8 +276,8 @@ function toApiDateHeader(dateObj) {
 const dateRangeHeader = document.getElementById('dateRangeHeader');
 const datePickerSectionHeader = document.getElementById('datePickerSectionHeader');
 
-const startInputHeader = document.getElementById('startInputHeader');
-const endInputHeader = document.getElementById('endInputHeader');
+let startInputHeader = document.getElementById('startInputHeader');
+let endInputHeader = document.getElementById('endInputHeader');
 
 let selectedStart = null;
 let selectedEnd = null;
@@ -275,7 +296,8 @@ let pickerHeader = flatpickr('#calendarHeader', {
             const startDate = toApiDateHeader(selectedStart);
             const endDate   = toApiDateHeader(selectedEnd);
 
-            
+            startInputHeader.value = startDate;
+            endInputHeader.value = endDate;
         }
     }
 });
@@ -327,6 +349,8 @@ const cancelDatesHeader = document.getElementById('cancelDatesHeader');
 if(cancelDatesHeader) {
     cancelDatesHeader.addEventListener('click', () => {
         datePickerSectionHeader.classList.add('opacity-zero');
+        startInputHeader.value = '';
+        endInputHeader.value = '';
     });
 }
 
@@ -340,9 +364,6 @@ if(applyDatesHeader) {
 
         dateRangeHeader.value = startText + ' - ' + endText;
 
-        const apiStart = flatpickr.formatDate(selectedStart, 'Y-m-d');
-        const apiEnd = flatpickr.formatDate(selectedEnd, 'Y-m-d');
-
         datePickerSectionHeader.classList.add('opacity-zero');
     });
 }
@@ -355,6 +376,8 @@ if(applyDatesHeader) {
 
 const keywordHeader = document.getElementById('keywordHeader');
 const keywordResultsHeader = document.getElementById('keywordResultsHeader');
+const keywordType = document.getElementById('keywordType');
+const keywordId = document.getElementById('keywordId');
 
 if(keywordHeader) {	
 
@@ -428,6 +451,19 @@ if(keywordHeader) {
 			keywordResultsHeader.innerHTML = html;
 		});
   	});
+}
+
+if(keywordResultsHeader) {
+    keywordResultsHeader.addEventListener('click', function (e) {
+
+        const item = e.target.closest('.result-item');
+        if (!item) return;
+
+        keywordHeader.value = item.textContent.trim();
+        keywordType.value = item.dataset.type;
+        keywordId.value = item.dataset.id;
+		keywordResultsHeader.innerHTML = '';
+    });
 }
 
 /* Keyword Input Header End */
