@@ -1,23 +1,23 @@
 <?php
 require_once '../functions.php';
 
-$lat = 33.6973;
-$lng = -117.9087;
+$slug = $_GET['slug'] ?? '';
 
-$sportsCategories   = getAllSportsNestedCategories();
-$nearbySportsTeams  = getOneEventPerSportNearby($sportsCategories, $lat, $lng);
+$teams = getTeamsByCategory($slug);
 
-$result = [];
+if (empty($teams)) {
+    echo json_encode([]);
+    exit;
+}
 
-foreach ($nearbySportsTeams as $sportName => $teamData) {
-
-    $result[] = [
-        'sport' => $sportName,
-        'name'  => $teamData[0] ?? '',
-        'url'   => $teamData[1] ?? ''
+foreach ($teams as $team) {
+    $response[] = [
+        'id'         => $team['id'],
+        'name'       => $team['text']['name'],
+        'slug'       => strtolower($team['uriComponent'])
     ];
 }
 
 header('Content-Type: application/json');
-echo json_encode($result);
+echo json_encode($response);
 exit;

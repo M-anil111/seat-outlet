@@ -1,16 +1,13 @@
 <?php 
     include 'header.php'; 
 
+    echo '<pre>';
 
-
-    // $location = getUserLocationFromCookie();
-    // $location['latitude'];
-    // $location['longitude'];
+    $teams = getTeamsByCategory('NFL');
+    print_r($teams);
     
-    $lat = 33.6973;
-    $lng = -117.9087;
-    
-    
+    // $all = getAllSportsNestedCategories2(200);
+    // print_r($all);
 
     include 'footer.php'; 
 

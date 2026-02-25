@@ -44,7 +44,7 @@ $output = [];
 foreach ($events as $event) {
 
     $venueName = $event['venue']['text']['name'] ?? '';
-    $imageUrl  = getWikipediaVenueImage($venueName);
+    $imageUrl  = getVenueImageFromWikimedia($venueName);
 
     $ext = pathinfo($imageUrl, PATHINFO_EXTENSION);
 
@@ -63,6 +63,5 @@ foreach ($events as $event) {
     ];
 }
 
-//echo json_encode([$rootPath, $tab, $type, $loc1, $loc2]);
 echo json_encode($output);
 exit;

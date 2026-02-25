@@ -1,7 +1,44 @@
-/* Updated Js Start */
+/* Save Location Start */
+
+if (navigator.geolocation) {
+
+  navigator.geolocation.getCurrentPosition(
+      function(position) {
+
+          fetch('./ajax/save-location.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude
+              })
+          })
+          .then(res => res.text())
+          .then(data => console.log('Server response:', data))
+          .catch(err => console.error('Fetch error:', err));
+
+      },
+      function(error) {
+          console.error('Geolocation error:', error.message);
+      },
+      {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+      }
+  );
+}
+
+/* Save Location End */
+
+
+/* Events Section Start */
 
 (function () {
     document.addEventListener('DOMContentLoaded', function () {
+
+         
       // ---------------------------
       // Elements
       // ---------------------------
@@ -188,7 +225,7 @@
         return loadLocationCategory(tabId, '', '', '');
     }
   
-      reloadActiveTab('', {});
+      
   
       // ---------------------------
       // Bootstrap tab switching
@@ -210,6 +247,20 @@
       
         return { mode: '', data: {} };
       }
+
+      (function init() {
+          const savedLabel = getCookie('so_label');
+          if (savedLabel && locationText) {
+            locationText.textContent = savedLabel;
+          }
+          const { mode, data } = detectLocationMode();
+          reloadActiveTab(mode, data).then(() => {
+            setTimeout(() => {
+              $('.slick-slider').slick('setPosition');
+            }, 50);
+          });
+      })();
+                  
 
       const pills = document.querySelectorAll('button[data-bs-toggle="pill"]');
       pills.forEach(pill => {
@@ -402,62 +453,66 @@
     });
   })();
 
-/* Updated Js End */
+/* Events Section End */
 
 /* =====================================================
    TEAMS
 ===================================================== */
 
-function loadNearbyTeams() {
+document.addEventListener('DOMContentLoaded', function () {
 
-    return new Promise((resolve) => {
+  const container = document.getElementById('sportsTabContent');
 
-        const container = document.querySelector('.team-slider');
-        if (!container) {
-            resolve();
-            return;
-        }
+  function loadTeams(slug) {
 
-        fetch('./ajax/get-nearby-teams.php')
-            .then(res => res.json())
-            .then(data => {
+      container.innerHTML = '<div class="loader"></div>';
+      
+      fetch(`./ajax/get-nearby-teams.php?slug=${slug}`)
+          .then(res => res.json())
+          .then(data => {
 
-                if (!data || !data.length) {
-                    container.innerHTML = '<p>No nearby teams found</p>';
-                    resolve();
-                    return;
-                }
+              if (!data.length) {
+                  container.innerHTML = '<p>No teams available.</p>';
+                  return;
+              }
 
-                let html = '';
+              let html = `<div class="tab-pane show active" id="${slug}" role="tabpanel"><div class="team-slider new-slider px-4">`;
 
-                data.forEach(team => {
-                    html += `
-                        <a href="/artist/${team.url}" class="team-link">
-                            <div class="team-card">
-                                <div class="team-icon bg-primary">
-                                    ${getTeamIconJS(team.sport)}
-                                </div>
-                                <span>${team.name}</span>
-                            </div>
-                        </a>
-                    `;
-                });
+              data.forEach(team => {
+                  html += `
+                      <a href="/artist/${team.slug}" class="team-link">
+                        <div class="team-card">
+                          <div class="team-icon bg-primary">${getTeamIconJS(slug)}</div>
+                          <span>${team.name}</span>
+                        </div>                              
+                      </a>                      
+                  `;
+              });
 
-                container.innerHTML = html;
+              html += `</div></div>`;
 
-                setTimeout(() => {
-                    initTeamSlider();
-                    resolve();
-                }, 50);
+              container.innerHTML = html;
 
-            })
-            .catch(() => {
-                container.innerHTML = '<p>Error loading teams</p>';
-                resolve();
-            });
+              initTeamSlider();
+          });
+  }
 
-    });
-}
+  // Default load
+  const activeBtn = document.querySelector('.sport-cat.active');
+  if (activeBtn) {
+      loadTeams(activeBtn.dataset.slug);
+  }
+
+  // On tab switch
+  const teams = document.querySelectorAll('button.sport-cat');
+  teams.forEach(pillTeam => {
+    pillTeam.addEventListener('shown.bs.tab', function () {
+      loadTeams(this.dataset.slug);
+    });  
+  });
+ 
+
+});
 
 function initTeamSlider() {
 
@@ -482,19 +537,17 @@ function initTeamSlider() {
     });
 }
 
-function getTeamIconJS(sport) {
+function getTeamIconJS(league) {
 
-    const icons = {
-        BASEBALL: '⚾',
-        BASKETBALL: '🏀',
-        FOOTBALL: '🏈',
-        SOCCER: '⚽',
-        HOCKEY: '🏒',
-        TENNIS: '🎾',
-        RACING: '🏎️'
-    };
+  const icons = {
+      NFL: '🏈',
+      NBA: '🏀',
+      MLB: '⚾',
+      NHL: '🏒',
+      MLS: '⚽'
+  };
 
-    return icons[sport?.toUpperCase()] || '🏟️';
+  return icons[league?.toUpperCase()] || '🏟️';
 }
 
 
@@ -504,134 +557,74 @@ function getTeamIconJS(sport) {
 
 function loadBrowseCategories() {
 
-    return new Promise((resolve) => {
+  const wrapper = document.getElementById('browseCategoriesWrapper');
+  if (!wrapper) return;
 
-        const wrapper = document.getElementById('browseCategoriesWrapper');
-        if (!wrapper) {
-            resolve();
-            return;
-        }
+  fetch('./ajax/get-home-categories.php')
+      .then(res => res.json())
+      .then(data => {
 
-        fetch('./ajax/get-home-categories.php')
-            .then(res => res.json())
-            .then(data => {
-                wrapper.innerHTML = buildCategoryHTML(data);
-                const loader = document.getElementById('bbcLoader');
-                if (loader) {
-                    loader.remove();
-                }
-                resolve();
-            })
-            .catch(() => {
-                wrapper.innerHTML = '<p>Error loading categories</p>';
-                resolve();
-            });
+          wrapper.innerHTML = buildCategoryHTML(data ?? {});
 
-    });
+          const loader = document.getElementById('bbcLoader');
+          if (loader) loader.remove();
+      })
+      .catch(() => {
+          wrapper.innerHTML = '<p>Error loading categories</p>';
+      });
 }
 
-function buildCategoryHTML(data) {
-
-    return `
-        ${buildColumn('Concerts', data.concerts)}
-        ${buildColumn('Sports', data.sports)}
-        ${buildColumn('Theater', data.theater)}
-        ${buildColumn('Festivals', data.festivals)}
-        ${buildCitiesColumn(data.cities)}
-    `;
+function buildCategoryHTML(data = {}) {
+  return `
+      ${buildColumn('Concerts', data.concerts ?? [])}
+      ${buildColumn('Sports', data.sports ?? [])}
+      ${buildColumn('Theater', data.theater ?? [])}
+      ${buildColumn('Festivals', data.festivals ?? [])}
+      ${buildCitiesColumn('Cities', data.cities ?? [])}
+  `;
 }
 
 function buildColumn(title, items) {
 
-    if (!items || !items.length) return '';
+  if (!Array.isArray(items) || items.length === 0) return '';
 
-    let list = '<ul class="categories__list">';
-    items.forEach(item => {
-        list += `<li><a href="#">${Array.isArray(item) ? item[1] : item}</a></li>`;
-    });
-    list += '</ul>';
+  let list = `<ul class="categories__list">`;
+  items.forEach(item => {
+      list += `<li><a href="#">${Array.isArray(item) ? item[1] : item}</a></li>`;
+  });
+  list += `</ul>`;
 
-    return `
-        <div class="categories__col">
-            <h3 class="categories__heading">${title}</h3>
-            ${list}
-        </div>
-    `;
+  return `
+      <div class="categories__col">
+          <h3 class="categories__heading">${title}</h3>
+          ${list}
+      </div>
+  `;
 }
 
-function buildCitiesColumn(cities) {
+function buildCitiesColumn(title, cities) {
 
-    if (!cities || !cities.length) return '';
+  if (!Array.isArray(cities) || cities.length === 0) return '';
 
-    let list = '<ul class="categories__list">';
-    cities.forEach(city => {
-        list += `<li><a href="#">${city.name}, ${city.state}</a></li>`;
-    });
-    list += '</ul>';
+  let list = `<ul class="categories__list">`;
+  cities.forEach(city => {
+      list += `<li><a href="#">${city.name}, ${city.state}</a></li>`;
+  });
+  list += `</ul>`;
 
-    return `
-        <div class="categories__col">
-            <h3 class="categories__heading">Cities</h3>
-            ${list}
-        </div>
-    `;
+  return `
+      <div class="categories__col">
+          <h3 class="categories__heading">${title}</h3>
+          ${list}
+      </div>
+  `;
 }
 
+loadBrowseCategories();
 
 /* =====================================================
    VENUES
 ===================================================== */
-
-// function loadNearbyVenues() {
-
-//     return new Promise((resolve) => {
-
-//         const container = document.querySelector('.venue-slider');
-//         if (!container) {
-//             resolve();
-//             return;
-//         }
-
-//         fetch('./ajax/get-nearby-venues.php')
-//             .then(res => res.json())
-//             .then(data => {
-
-//                 if (!data || !data.length) {
-//                     container.innerHTML = '<p>No nearby venues found</p>';
-//                     resolve();
-//                     return;
-//                 }
-
-//                 let html = '';
-
-//                 data.forEach(venue => {
-//                     html += `
-//                         <a href="/venue/${venue.slug}" class="team-link">
-//                             <div class="card venue-card venue-list-card p-3">
-//                                 <h6 class="fw-semibold mb-1">${venue.name}</h6>
-//                                 <p class="text-stub-muted mb-0" style="font-size: 1rem;">
-//                                     ${venue.city}, ${venue.state}
-//                                 </p>
-//                             </div>
-//                         </a>
-//                     `;
-//                 });
-
-//                 container.innerHTML = html;
-
-//                 setTimeout(() => {
-//                     initVenueSlider();
-//                     resolve();
-//                 }, 50);
-
-//             })
-//             .catch(() => {
-//                 container.innerHTML = '<p>Error loading venues</p>';
-//                 resolve();
-//             });
-
-//     });
-// }
 
 function loadNearbyVenues() {
 
@@ -710,6 +703,11 @@ function initVenueSlider() {
     });
 }
 
+loadNearbyVenues();
+
+/* =====================================================
+   iContact Newsletter
+===================================================== */
 
 function loadNewsletter() {
 

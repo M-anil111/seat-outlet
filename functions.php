@@ -842,6 +842,18 @@ function getNearbyCities($latitude = '', $longitude = '') {
     return $data['results'] ?? [];
 }
 
+function getLocationDataByLatLng($lat, $lng) {
+    $latitude = number_format($lat, 4);
+    $longitude = number_format($lng, 4);
+    $mysqli = MYSQLI;
+    $stmt = $mysqli->prepare("SELECT city, short_state, country, postal_code, latitude, longitude FROM postal_codes_worldwide WHERE latitude = ? AND longitude = ? LIMIT 1");
+    $stmt->bind_param("ss", $latitude, $longitude);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if ($result) return $result;
+}
+
 function getUserLocationFromCookie() {
 
     if (!empty($_COOKIE['so_location'])) {
@@ -859,14 +871,14 @@ function getUserLocationFromCookie() {
     return null;
 }
 
-function getAllConcertsNestedCategories() {
+function getAllConcertsNestedCategories($limit = 8) {
 
     $accessToken = getTnAccessToken();
 
     $params = [
         'filter'  => "contains(path,'.1859.1986.') and depth eq 2 and _metadata/hasEvents eq true",
         'sort'    => '_metadata/eventCount',
-        'perPage' => 8
+        'perPage' => $limit
     ];
 
     $url = BASE_URL . '/catalog/v2/categories/?' . http_build_query($params);
@@ -906,14 +918,14 @@ function getAllConcertsNestedCategories() {
     return $names;
 }
 
-function getAllSportsNestedCategories() {
+function getAllSportsNestedCategories($limit = 8) {
 
     $accessToken = getTnAccessToken();
 
     $params = [
         'filter'  => "contains(path,'.1859.1988.') and depth eq 2 and _metadata/hasEvents eq true",
         'sort'    => '_metadata/eventCount',
-        'perPage' => 8
+        'perPage' => $limit
     ];
 
     $url = BASE_URL . '/catalog/v2/categories/?' . http_build_query($params);
@@ -953,14 +965,14 @@ function getAllSportsNestedCategories() {
     return $names;
 }
 
-function getAllTheaterNestedCategories() {
+function getAllTheaterNestedCategories($limit = 8) {
 
     $accessToken = getTnAccessToken();
 
     $params = [
         'filter'  => "contains(path,'.1859.1987.') and depth eq 2 and _metadata/hasEvents eq true",
         'sort'    => '_metadata/eventCount',
-        'perPage' => 8
+        'perPage' => $limit
     ];
 
     $url = BASE_URL . '/catalog/v2/categories/?' . http_build_query($params);
@@ -1000,14 +1012,14 @@ function getAllTheaterNestedCategories() {
     return $names;
 }
 
-function getAllFestivalsNestedCategories() {
+function getAllFestivalsNestedCategories($limit = 8) {
 
     $accessToken = getTnAccessToken();
 
     $params = [
         'filter'  => "contains(path,'.1859.1989.') and depth eq 2 and _metadata/hasEvents eq true",
         'sort'    => '_metadata/eventCount',
-        'perPage' => 8
+        'perPage' => $limit
     ];
 
     $url = BASE_URL . '/catalog/v2/categories/?' . http_build_query($params);
@@ -1054,113 +1066,7 @@ function getPerformerUriComponent($performerId, $key = 'uriComponent') {
     return $data[$key] ?? '';
 }
 
-function getOneEventPerSportNearby($sportsCategories, $latitude = '', $longitude = '') {
-
-    $location = getUserLocationFromCookie();
-    if(!empty($latitude)) { 
-        $lat = $latitude;
-    }else{
-        $lat = $location['latitude'];
-    }
-    if(!empty($longitude)) {
-        $lng = $longitude;
-    }else{
-        $lng = $location['longitude'];
-    }
-    
-    $radius = '50mi';
-    $geoFilter = "nearby($lat, $lng, $radius)";
-
-    $accessToken = getTnAccessToken();
-    $today = date('Y-m-d');
-    $results = [];
-
-    foreach ($sportsCategories as $path => $sportName) { 
-
-        $params = [
-            'filter'  => "date/date ge $today and contains(defaultCategory/path,'$path')",
-            'geoFilter' => $geoFilter,
-            'perPage' => 1,
-            'page'    => 1
-        ];
-
-        $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
-
-        $ch = curl_init($url);
-
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => [
-                'Accept: application/json',
-                'Authorization: Bearer ' . $accessToken,
-                'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-            ],
-            CURLOPT_TIMEOUT => 20
-        ]);
-
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        $data = json_decode($response, true);
-
-        if (!empty($data['results'][0])) {
-            $results[$sportName[1]] = $data['results'][0];
-        }
-    }
-
-    $names = [];
-
-    if (!empty($results)) {
-        foreach ($results as $sportName => $event) {
-            $performers = $event['performers'] ?? [];
-            $performerUriComponent = getPerformerUriComponent($performers[0]['id']);
-            $names[$sportName][] = $performers[0]['name'];
-            $names[$sportName][] = strtolower($performerUriComponent);            
-        }
-    } 
-
-    return $names;
-}
-
-function getTeamIcon($sportName) {
-    switch(strtolower($sportName)) {
-        case 'basketball':
-            return '🏀';
-        case 'soccer':
-            return '⚽';
-        case 'football':
-            return '🏈';
-        case 'baseball':
-            return '⚾';
-        case 'hockey':
-            return '🏒';
-        case 'rugby':
-            return '🏉';
-        case 'golf':
-            return '⛳';
-        case 'tennis':
-            return '🎾';
-        case 'cricket':
-            return '🏏';
-        case 'volleyball':
-            return '🏐';
-        case 'handball':
-            return '🤾';
-        case 'badminton':
-            return '🏸';
-        case 'tabletennis':
-            return '🏓';
-        case 'wrestling':
-            return '🤼';
-        case 'racing':
-            return '🏎';
-        case 'boxing':
-            return '🥊';
-    }
-}
-
-function getKeywordSearchSuggestions($q)
-{
+function getKeywordSearchSuggestions($q) {
     $q = trim($q);
 
     if (strlen($q) < 2) {
@@ -1438,6 +1344,56 @@ function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2) {
         return [];
     }
 
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data['results'] ?? [];
+}
+
+function getTeamsByCategory($categorySlug) {
+
+    $accessToken = getTnAccessToken();
+    $location = getUserLocationFromCookie();   
+
+    // Map category slug to TN category path
+    $categoryPaths = [
+        'NFL' => '.1859.1988.1879.1959.',   // example path (update as per your TN path)
+        'NBA' => '.1859.1988.1865.1971.',
+        'MLB' => '.1859.1988.1864.1969.',
+        'NHL' => '.1859.1988.1883.1972.',
+        'MLS' => '.1859.1988.1913.1970.',
+    ];
+
+    if (!isset($categoryPaths[$categorySlug])) {
+        return [];
+    }
+
+    $params = [
+        'filter'  => "contains(defaultCategory/path,'{$categoryPaths[$categorySlug]}') and _metadata/hasEvents eq true",
+        'sort' => 'salesRank',
+        'perPage' => 10,
+        'page'    => 1
+    ];
+
+    if(!empty($location)) {
+        $params['eventFilter'] = "country/alphaCode eq 'US'";        
+    }
+
+    $url = BASE_URL . '/catalog/v2/performers?' . http_build_query($params);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ]
+    ]);
+
+    $response = curl_exec($ch);
     curl_close($ch);
 
     $data = json_decode($response, true);

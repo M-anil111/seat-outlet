@@ -29,7 +29,7 @@ include 'header-home.php';
             <button type="button" class="location-input-clear" id="locationClearBtn" aria-label="Clear location">
               ✕
             </button>
-			<div id="cityLocationDd" class="cityLocationDd w-100" style="display:none;"></div>
+			      <div id="cityLocationDd" class="cityLocationDd w-100" style="display:none;"></div>
           </div>
         </div>
 
@@ -54,8 +54,6 @@ include 'header-home.php';
           <li class="nav-item">
             <button class="category-pill active" data-bs-toggle="pill" data-bs-target="#concerts" type="button">Concerts</button>
           </li>
-        
-        
           <li class="nav-item">
             <button class="category-pill" data-bs-toggle="pill" data-bs-target="#sports" type="button">Sports</button>
           </li>
@@ -140,22 +138,34 @@ include 'header-home.php';
   </div>
 </section>
 
+
 <section class="teams-nearby py-3">
-  <div class="container py-5 slider-bg text-white">
-    <div class="d-flex justify-content-between align-items-center mb-4 px-4">
-    <h2 class="section__title section__title--center fw-bold fs-4 mb-4 text-black">
-    Teams Nearby
-		</h2>
-      <div class="slider-arrows"></div>
-    </div>
-
-    <div class="team-slider new-slider px-4">
-      <div class="text-center py-5 w-100">
-        <div class="loader"></div>
+  	<div class="container py-5 slider-bg text-white">
+      <div class="d-flex justify-content-between align-items-center mb-4 px-4">
+        <h2 class="section__title section__title--center fw-bold fs-4 mb-4 text-black">
+          Teams Nearby
+        </h2>
+        <div class="slider-arrows"></div>
       </div>
-    </div>
-
-  </div>
+      <ul class="nav nav-pills mb-3" role="tablist">
+          <li class="nav-item" role="presentation">
+              <button class="sport-cat category-pill active" data-bs-toggle="pill" data-bs-target="#tab-NFL" type="button" data-slug="NFL">NFL</button>
+          </li>
+          <li class="nav-item" role="presentation">
+              <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-NBA" type="button" data-slug="NBA">NBA</button>
+          </li>
+          <li class="nav-item" role="presentation">
+              <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-MLB" type="button" data-slug="MLB">MLB</button>
+          </li>
+          <li class="nav-item" role="presentation">
+              <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-NHL" type="button" data-slug="NHL">NHL</button>
+          </li>
+          <li class="nav-item" role="presentation">
+              <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-MLS" type="button" data-slug="MLS">MLS</button>
+          </li>
+        </ul>
+    	  <div class="tab-content" id="sportsTabContent"><div class="loader"></div></div>
+  	</div>
 </section>
 
 <!-- Personalized Picks -->
@@ -298,10 +308,10 @@ include 'header-home.php';
 
 <section class="section categories teams-nearby py-5" aria-labelledby="categories-heading">
   	<div class="container">
-		<h2 id="categories-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
-			Browse by Category
-		</h2>
-		<div class="loader" id="bbcLoader"></div>
+      <h2 id="categories-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
+        Browse by Category
+      </h2>
+		  <div class="loader" id="bbcLoader"></div>
     	<div class="categories__grid" id="browseCategoriesWrapper">
       		<div class="text-center py-5 w-100">	  			
       		</div>
