@@ -106,23 +106,20 @@
     
 
 </footer>
+
 <div class="backtotop">
-<button id="backToTop" class="btn btn-primary backToTop rounded-circle">
-									<i class="bi bi-arrow-up"></i>
-								</button>
+  <button id="backToTop" class="btn btn-primary backToTop rounded-circle">
+		<i class="bi bi-arrow-up"></i>
+	</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-<script src="<?php echo HOME_URL; ?>/js/calendar.js?v=<?php echo time(); ?>"></script> 
-<script src="<?php echo HOME_URL; ?>/js/script.js?v=<?php echo time(); ?>"></script>
-
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
 <script src="<?php echo HOME_URL; ?>/js/main.js?v=<?php echo time(); ?>"></script>
 
 <?php include 'modals.php'; ?>
 
-</body>
+  </body>
 </html>

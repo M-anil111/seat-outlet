@@ -1,5 +1,5 @@
 <?php
-include 'header-home.php';
+include 'header.php';
 ?>
 
 
@@ -306,15 +306,75 @@ include 'header-home.php';
     </div>
   </section>*/ ?>
 
-<section class="section categories teams-nearby py-5" aria-labelledby="categories-heading">
+<section class="section categories teams-nearby py-5">
   	<div class="container">
-      <h2 id="categories-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
-        Browse by Category
-      </h2>
-		  <div class="loader" id="bbcLoader"></div>
-    	<div class="categories__grid" id="browseCategoriesWrapper">
-      		<div class="text-center py-5 w-100">	  			
-      		</div>
+      	<h2 class="section__title section__title--center fw-bold fs-4 mb-4">
+        	Browse by Category
+      	</h2>
+		<div class="categories__grid">      
+			<div class="categories__col">
+				<h3 class="categories__heading">Concerts</h3>
+				<ul class="categories__list">
+					<li><a href="#">Reggae / Reggaeton</a></li>
+					<li><a href="#">Religious</a></li>
+					<li><a href="#">50s / 60s Era</a></li>
+					<li><a href="#">Children / Family</a></li>
+					<li><a href="#">New Age</a></li>
+					<li><a href="#">Bluegrass</a></li>
+					<li><a href="#">Performance Series</a></li>
+					<li><a href="#">Holiday</a></li>
+				</ul>
+			</div>
+			<div class="categories__col">
+				<h3 class="categories__heading">Sports</h3>
+				<ul class="categories__list">
+					<li><a href="#">Golf</a></li>
+					<li><a href="#">Baseball</a></li>
+					<li><a href="#">Olympics</a></li>
+					<li><a href="#">Cricket</a></li>
+					<li><a href="#">Gymnastics</a></li>
+					<li><a href="#">Rugby</a></li>
+					<li><a href="#">Tennis</a></li>
+					<li><a href="#">Mixed Martial Arts</a></li>
+				</ul>
+			</div>
+			<div class="categories__col">
+				<h3 class="categories__heading">Theater</h3>
+				<ul class="categories__list">
+					<li><a href="#">Adult</a></li>
+					<li><a href="#">Circus</a></li>
+					<li><a href="#">Lecture</a></li>
+					<li><a href="#">Taped Program (tv / Radio)</a></li>
+					<li><a href="#">Film</a></li>
+					<li><a href="#">Museum / Exhibit</a></li>
+					<li><a href="#">Magic Shows</a></li>
+					<li><a href="#">Fairs / Festivals</a></li>
+				</ul>
+			</div>
+			<div class="categories__col">
+				<h3 class="categories__heading">Festivals</h3>
+				<ul class="categories__list">
+					<li><a href="#">Broadway</a></li>
+					<li><a href="#">Other</a></li>
+					<li><a href="#">Children / Family</a></li>
+					<li><a href="#">Off-broadway</a></li>
+					<li><a href="#">Ballet</a></li>
+					<li><a href="#">Opera</a></li>
+					<li><a href="#">Cirque Du Soleil</a></li>
+					<li><a href="#">Dance</a></li>
+				</ul>
+			</div>  
+      	</div>
+  	</div>
+</section>
+
+<section class="section categories teams-nearby py-5" aria-labelledby="cities-heading">
+  	<div class="container">
+      	<h2 id="cities-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
+        	Browse by City
+      	</h2>		
+    	<div class="categories__grid" id="browseCitiesWrapper">
+			<div class="loader"></div>
     	</div>
   	</div>
 </section>
@@ -531,4 +591,4 @@ include 'header-home.php';
 </section>
 
 
-<?php include 'footer-home2.php'; ?>
+<?php include 'footer.php'; ?>

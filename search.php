@@ -110,7 +110,7 @@ $params['page'] = 1;
 $params['perPage'] = 20;
 $params['q'] = "*";
 
-include 'header-home.php'; 
+include 'header.php'; 
 
 if (empty($params)) {
 	echo '<div class="container"><p>Invalid search.</p></div>';
