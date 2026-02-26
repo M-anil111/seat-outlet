@@ -1431,3 +1431,29 @@ function getVenueImage($venue) {
     }
     return $imageUrl;
 }
+
+function cache_get($key, $ttl = 600) {
+
+    $dir  = __DIR__ . '/cache/';
+    $file = $dir . md5($key) . '.json';
+
+    if (!file_exists($file)) return false;
+    if ((time() - filemtime($file)) > $ttl) return false;
+
+    $json = file_get_contents($file);
+    if (!$json) return false;
+
+    $data = json_decode($json, true);
+    return is_array($data) ? $data : false;
+}
+
+function cache_set($key, $data) {
+
+    $dir = __DIR__ . '/cache/';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+
+    $file = $dir . md5($key) . '.json';
+    file_put_contents($file, json_encode($data, JSON_UNESCAPED_SLASHES));
+}

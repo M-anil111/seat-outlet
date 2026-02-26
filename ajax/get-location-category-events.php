@@ -7,10 +7,15 @@ header('Content-Type: application/json');
    VALIDATE INPUT
 ============================== */
 
-$tab  = isset($_GET['tab']) ? $_GET['tab'] : '';
-$type  = isset($_GET['type']) ? $_GET['type'] : '';
-$loc1  = isset($_GET['loc1']) ? $_GET['loc1'] : '';
-$loc2  = isset($_GET['loc2']) ? $_GET['loc2'] : '';
+$tab  = $_GET['tab']  ?? '';
+$type = $_GET['type'] ?? '';
+$loc1 = $_GET['loc1'] ?? '';
+$loc2 = $_GET['loc2'] ?? '';
+
+$tab  = preg_replace('/[^a-z]/', '', strtolower($tab));
+$type = preg_replace('/[^a-z0-9\-_]/i', '', $type);
+$loc1 = trim($loc1);
+$loc2 = trim($loc2);
 
 /* ==============================
    MAP TAB TO TN CATEGORY PATH
@@ -31,8 +36,27 @@ if (!isset($categoryMap[$tab])) {
 $rootPath = $categoryMap[$tab];
 
 /* ==============================
+   CACHE KEY
+============================== */
+
+$loc1Key = strtolower(str_replace(' ', '_', $loc1));
+$loc2Key = strtolower(str_replace(' ', '_', $loc2));
+
+$cacheKey = "home_loc_events_{$tab}_{$type}_{$loc1Key}_{$loc2Key}";
+
+$cached = cache_get($cacheKey, 900);
+
+if ($cached) {
+    header('Cache-Control: public, max-age=600');
+    header('X-Cache: HIT');
+    echo json_encode($cached);
+    exit;
+}
+
+/* ==============================
    FETCH EVENTS FROM TN
 ============================== */
+
 $events = fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2);
 
 /* ==============================
@@ -41,22 +65,36 @@ $events = fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2);
 
 $output = [];
 
-foreach ($events as $event) {
+if (!empty($events)) {
 
-    $venueName = $event['venue']['text']['name'] ?? '';
-    $evtPerformer = $event['performers'][0]['name'];
-    $imageUrl  = getEventImage($evtPerformer, $venueName);
+    foreach ($events as $event) {
 
-    $output[] = [
-        'id'    => (int)($event['id'] ?? 0),
-        'name'  => $event['text']['name'] ?? '',
-        'date'  => $event['date']['date'] ?? '',
-        'venue' => $venueName,
-        'price' => $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '',
-        'image' => $imageUrl,
-        'loc'   => $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr']
-    ];
+        $venueName = $event['venue']['text']['name'] ?? '';
+        $evtPerformer = $event['performers'][0]['name'] ?? '';
+        $imageUrl = getEventImage($evtPerformer, $venueName);
+
+        $city  = $event['city']['text']['name'] ?? '';
+        $state = $event['stateProvince']['text']['abbr'] ?? '';
+
+        $output[] = [
+            'id'    => (int)($event['id'] ?? 0),
+            'name'  => $event['text']['name'] ?? '',
+            'date'  => $event['date']['date'] ?? '',
+            'venue' => $venueName,
+            'price' => $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '',
+            'image' => $imageUrl,
+            'loc'   => trim($city . ', ' . $state, ', ')
+        ];
+    }
 }
 
+/* ==============================
+   SAVE CACHE
+============================== */
+
+cache_set($cacheKey, $output);
+
+header('Cache-Control: public, max-age=600');
+header('X-Cache-Status: ' . (isset($cached) && $cached !== false ? 'HIT' : 'MISS'));
 echo json_encode($output);
 exit;
