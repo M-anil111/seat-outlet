@@ -23,13 +23,13 @@ include 'header.php';
             <input
               type="text"
               class="location-input"
-			  id="cityLocationInput"
-			  autocomplete="off"
+              id="cityLocationInput"
+              autocomplete="off"
               placeholder="Austin, TX" />
             <button type="button" class="location-input-clear" id="locationClearBtn" aria-label="Clear location">
               ✕
             </button>
-			      <div id="cityLocationDd" class="cityLocationDd w-100" style="display:none;"></div>
+            <div id="cityLocationDd" class="cityLocationDd w-100" style="display:none;"></div>
           </div>
         </div>
 
@@ -48,45 +48,45 @@ include 'header.php';
 
   <div class="">
 
-      <!-- Nav Pills -->
-      <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-        
-          <li class="nav-item">
-            <button class="category-pill active" data-bs-toggle="pill" data-bs-target="#concerts" type="button">Concerts</button>
-          </li>
-          <li class="nav-item">
-            <button class="category-pill" data-bs-toggle="pill" data-bs-target="#sports" type="button">Sports</button>
-          </li>
-        
-          <li class="nav-item">
-            <button class="category-pill" data-bs-toggle="pill" data-bs-target="#theater" type="button">Theater</button>
-          </li>
-        
-          <li class="nav-item">
-            <button class="category-pill" data-bs-toggle="pill" data-bs-target="#festival" type="button">Festival</button>
-          </li>
-       
-      </ul>
+    <!-- Nav Pills -->
+    <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
 
-      <div class="tab-content">
-          <div class="tab-pane show active" id="concerts">
-              <div class="custom-slider new-left-right"></div>
-          </div>
+      <li class="nav-item">
+        <button class="category-pill active" data-bs-toggle="pill" data-bs-target="#concerts" type="button">Concerts</button>
+      </li>
+      <li class="nav-item">
+        <button class="category-pill" data-bs-toggle="pill" data-bs-target="#sports" type="button">Sports</button>
+      </li>
 
-          <div class="tab-pane" id="sports">
-              <div class="custom-slider new-left-right"></div>
-          </div>
+      <li class="nav-item">
+        <button class="category-pill" data-bs-toggle="pill" data-bs-target="#theater" type="button">Theater</button>
+      </li>
 
-          <div class="tab-pane" id="theater">
-              <div class="custom-slider new-left-right"></div>
-          </div>
+      <li class="nav-item">
+        <button class="category-pill" data-bs-toggle="pill" data-bs-target="#festival" type="button">Festival</button>
+      </li>
 
-          <div class="tab-pane" id="festival">
-              <div class="custom-slider new-left-right"></div>
-          </div>
+    </ul>
+
+    <div class="tab-content">
+      <div class="tab-pane show active" id="concerts">
+        <div class="custom-slider new-left-right"></div>
       </div>
 
+      <div class="tab-pane" id="sports">
+        <div class="custom-slider new-left-right"></div>
+      </div>
+
+      <div class="tab-pane" id="theater">
+        <div class="custom-slider new-left-right"></div>
+      </div>
+
+      <div class="tab-pane" id="festival">
+        <div class="custom-slider new-left-right"></div>
+      </div>
     </div>
+
+  </div>
 
 </section>
 
@@ -140,32 +140,34 @@ include 'header.php';
 
 
 <section class="teams-nearby py-3">
-  	<div class="container py-5 slider-bg text-white">
-      <div class="d-flex justify-content-between align-items-center mb-4 px-4">
-        <h2 class="section__title section__title--center fw-bold fs-4 mb-4 text-black">
-          Teams Nearby
-        </h2>
-        <div class="slider-arrows"></div>
-      </div>
-      <ul class="nav nav-pills mb-3" role="tablist">
-          <li class="nav-item" role="presentation">
-              <button class="sport-cat category-pill active" data-bs-toggle="pill" data-bs-target="#tab-NFL" type="button" data-slug="NFL">NFL</button>
-          </li>
-          <li class="nav-item" role="presentation">
-              <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-NBA" type="button" data-slug="NBA">NBA</button>
-          </li>
-          <li class="nav-item" role="presentation">
-              <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-MLB" type="button" data-slug="MLB">MLB</button>
-          </li>
-          <li class="nav-item" role="presentation">
-              <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-NHL" type="button" data-slug="NHL">NHL</button>
-          </li>
-          <li class="nav-item" role="presentation">
-              <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-MLS" type="button" data-slug="MLS">MLS</button>
-          </li>
-        </ul>
-    	  <div class="tab-content" id="sportsTabContent"><div class="loader"></div></div>
-  	</div>
+  <div class="container py-5 slider-bg text-white">
+    <div class="d-flex justify-content-between align-items-center mb-4 px-4">
+      <h2 class="section__title section__title--center fw-bold fs-4 mb-4 text-black">
+        Teams Nearby
+      </h2>
+      <div class="slider-arrows"></div>
+    </div>
+    <ul class="nav nav-pills mb-3" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="sport-cat category-pill active" data-bs-toggle="pill" data-bs-target="#tab-NFL" type="button" data-slug="NFL">NFL</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-NBA" type="button" data-slug="NBA">NBA</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-MLB" type="button" data-slug="MLB">MLB</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-NHL" type="button" data-slug="NHL">NHL</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-MLS" type="button" data-slug="MLS">MLS</button>
+      </li>
+    </ul>
+    <div class="tab-content" id="sportsTabContent">
+      <div class="loader"></div>
+    </div>
+  </div>
 </section>
 
 <!-- Personalized Picks -->
@@ -307,85 +309,86 @@ include 'header.php';
   </section>*/ ?>
 
 <section class="section categories teams-nearby py-5">
-  	<div class="container">
-      	<h2 class="section__title section__title--center fw-bold fs-4 mb-4">
-        	Browse by Category
-      	</h2>
-		<div class="categories__grid">      
-			<div class="categories__col">
-				<h3 class="categories__heading">Concerts</h3>
-				<ul class="categories__list">
-					<li><a href="#">Reggae / Reggaeton</a></li>
-					<li><a href="#">Religious</a></li>
-					<li><a href="#">50s / 60s Era</a></li>
-					<li><a href="#">Children / Family</a></li>
-					<li><a href="#">New Age</a></li>
-					<li><a href="#">Bluegrass</a></li>
-					<li><a href="#">Performance Series</a></li>
-					<li><a href="#">Holiday</a></li>
-				</ul>
-			</div>
-			<div class="categories__col">
-				<h3 class="categories__heading">Sports</h3>
-				<ul class="categories__list">
-					<li><a href="#">Golf</a></li>
-					<li><a href="#">Baseball</a></li>
-					<li><a href="#">Olympics</a></li>
-					<li><a href="#">Cricket</a></li>
-					<li><a href="#">Gymnastics</a></li>
-					<li><a href="#">Rugby</a></li>
-					<li><a href="#">Tennis</a></li>
-					<li><a href="#">Mixed Martial Arts</a></li>
-				</ul>
-			</div>
-			<div class="categories__col">
-				<h3 class="categories__heading">Theater</h3>
-				<ul class="categories__list">
-					<li><a href="#">Adult</a></li>
-					<li><a href="#">Circus</a></li>
-					<li><a href="#">Lecture</a></li>
-					<li><a href="#">Taped Program (tv / Radio)</a></li>
-					<li><a href="#">Film</a></li>
-					<li><a href="#">Museum / Exhibit</a></li>
-					<li><a href="#">Magic Shows</a></li>
-					<li><a href="#">Fairs / Festivals</a></li>
-				</ul>
-			</div>
-			<div class="categories__col">
-				<h3 class="categories__heading">Festivals</h3>
-				<ul class="categories__list">
-					<li><a href="#">Broadway</a></li>
-					<li><a href="#">Other</a></li>
-					<li><a href="#">Children / Family</a></li>
-					<li><a href="#">Off-broadway</a></li>
-					<li><a href="#">Ballet</a></li>
-					<li><a href="#">Opera</a></li>
-					<li><a href="#">Cirque Du Soleil</a></li>
-					<li><a href="#">Dance</a></li>
-				</ul>
-			</div>  
-      	</div>
-  	</div>
+  <div class="container">
+    <h2 class="section__title section__title--center fw-bold fs-4 mb-4">
+      Browse by Category
+    </h2>
+    <div class="categories__grid">
+      <div class="categories__col">
+        <h3 class="categories__heading">Concerts</h3>
+        <ul class="categories__list">
+          <li><a href="#">Reggae / Reggaeton</a></li>
+          <li><a href="#">Religious</a></li>
+          <li><a href="#">50s / 60s Era</a></li>
+          <li><a href="#">Children / Family</a></li>
+          <li><a href="#">New Age</a></li>
+          <li><a href="#">Bluegrass</a></li>
+          <li><a href="#">Performance Series</a></li>
+          <li><a href="#">Holiday</a></li>
+        </ul>
+      </div>
+      <div class="categories__col">
+        <h3 class="categories__heading">Sports</h3>
+        <ul class="categories__list">
+          <li><a href="#">Golf</a></li>
+          <li><a href="#">Baseball</a></li>
+          <li><a href="#">Olympics</a></li>
+          <li><a href="#">Cricket</a></li>
+          <li><a href="#">Gymnastics</a></li>
+          <li><a href="#">Rugby</a></li>
+          <li><a href="#">Tennis</a></li>
+          <li><a href="#">Mixed Martial Arts</a></li>
+        </ul>
+      </div>
+      <div class="categories__col">
+        <h3 class="categories__heading">Theater</h3>
+        <ul class="categories__list">
+          <li><a href="#">Adult</a></li>
+          <li><a href="#">Circus</a></li>
+          <li><a href="#">Lecture</a></li>
+          <li><a href="#">Taped Program (tv / Radio)</a></li>
+          <li><a href="#">Film</a></li>
+          <li><a href="#">Museum / Exhibit</a></li>
+          <li><a href="#">Magic Shows</a></li>
+          <li><a href="#">Fairs / Festivals</a></li>
+        </ul>
+      </div>
+      <div class="categories__col">
+        <h3 class="categories__heading">Festivals</h3>
+        <ul class="categories__list">
+          <li><a href="#">Broadway</a></li>
+          <li><a href="#">Other</a></li>
+          <li><a href="#">Children / Family</a></li>
+          <li><a href="#">Off-broadway</a></li>
+          <li><a href="#">Ballet</a></li>
+          <li><a href="#">Opera</a></li>
+          <li><a href="#">Cirque Du Soleil</a></li>
+          <li><a href="#">Dance</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="section categories teams-nearby py-5" aria-labelledby="cities-heading">
-  	<div class="container">
-      	<h2 id="cities-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
-        	Browse by City
-      	</h2>		
-    	<div class="categories__grid" id="browseCitiesWrapper">
-			<div class="loader"></div>
-    	</div>
-  	</div>
+  <div class="container">
+    <h2 id="cities-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
+      Popular cities
+    </h2>
+    <div class="row g-3" id="browseCitiesWrapper">
+      <div class="loader"></div>
+    </div>
+  </div>
 </section>
 
 <section class="container new-slider py-5">
-  	<h2 class="fw-bold fs-4 mb-4">Top Venues Near You</h2>
-  	<div class="venue-slider px-4">
-      	<div class="text-center py-5 w-100">
-		  	<div class="loader"></div>
-      	</div>
-  	</div>
+  <h2 class="fw-bold fs-4 mb-4">Top Venues Near You</h2>
+  <div class="venue-slider px-4">
+    <div class="text-center py-5 w-100">
+      <div class="loader"></div>
+    
+    </div>
+  </div>
 </section>
 
 <section class="section reasons teams-nearby py-5 mt-3" aria-labelledby="reasons-heading">
@@ -530,62 +533,62 @@ include 'header.php';
   </section>
 </div>
 
-<div id="newsletterSection"><div class="loader my-5"></div></div>
+<?php include "newsletter.php"; ?>
 
 <section class="partners-section teams-nearby py-5">
   <div class="container">
     <h2 class="mb-4 fw-bold fs-4 mb-5 text-center">Partners</h2>
- 
+
     <div class="row g-3 g-md-4 justify-content-center">
- 
+
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
           <img src="assets/team-event.webp" class="img-fluid" alt="Partner">
         </div>
       </div>
- 
+
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
           <img src="assets/lite.webp" class="img-fluid" alt="Partner">
         </div>
       </div>
- 
+
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
           <img src="assets/bmi.webp" class="img-fluid" alt="Partner">
         </div>
       </div>
- 
+
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
           <img src="assets/electolit.webp" class="img-fluid" alt="Partner">
         </div>
       </div>
- 
+
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
           <img src="assets/jimbeam.png" class="img-fluid" alt="Partner">
         </div>
       </div>
- 
+
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
           <img src="assets/rambler.webp" class="img-fluid" alt="Partner">
         </div>
       </div>
- 
+
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
           <img src="assets/patron.png" class="img-fluid" alt="Partner">
         </div>
       </div>
- 
+
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
           <img src="assets/lyft.png" class="img-fluid" alt="Partner">
         </div>
       </div>
- 
+
     </div>
   </div>
 </section>

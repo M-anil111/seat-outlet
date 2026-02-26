@@ -1,9 +1,6 @@
 <?php
 require_once '../functions.php';
 
-$location = getUserLocationFromCookie(); 
-$lat = $location['latitude'];
-$lng = $location['longitude'];
 $lat = 33.6973;
 $lng = -117.9087;
 
@@ -11,13 +8,17 @@ $nearbyVenues = getNearbyVenues($lat, $lng);
 
 $result = [];
 
-foreach ($nearbyVenues as $venue) {
+foreach ($nearbyVenues as $venue) { 
+
+    $venuename = $venue['text']['name'];
+    $imageUrl = getVenueImage($venuename);
 
     $result[] = [
         'slug'  => strtolower($venue['uriComponent'] ?? ''),
         'name'  => $venue['text']['name'] ?? '',
         'city'  => $venue['city']['text']['name'] ?? '',
-        'state' => $venue['stateProvince']['text']['abbr'] ?? ''
+        'state' => $venue['stateProvince']['text']['abbr'] ?? '',
+        'image' => $imageUrl
     ];
 }
 

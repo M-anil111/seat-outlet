@@ -1,9 +1,6 @@
 <?php
 require_once '../functions.php';
 
-$location = getUserLocationFromCookie(); 
-$lat = $location['latitude'];
-$lng = $location['longitude'];
 $lat = 33.6973;
 $lng = -117.9087;
 

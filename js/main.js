@@ -572,7 +572,7 @@ function loadBrowseCities() {
 
   wrapper.innerHTML = '<div class="loader"></div>';
 
-  fetch('./ajax/get-home-categories.php')
+  fetch('./ajax/get-home-cities.php')
       .then(res => res.json())
       .then(data => {
           wrapper.innerHTML = buildCityHTML(data ?? {});
@@ -584,26 +584,21 @@ function loadBrowseCities() {
 
 function buildCityHTML(data = {}) {
     return `
-        ${buildCities('Cities', data.cities ?? [])}
+        ${buildCities(data.cities ?? [])}
     `;
 }
 
-function buildCities(title, cities) {
+function buildCities(cities) {
 
   if (!Array.isArray(cities) || cities.length === 0) return '';
 
-  let list = `<ul class="categories__list">`;
+  let list = ``;
   cities.forEach(city => {
-      list += `<li><a href="#">${city.name}, ${city.state}</a></li>`;
+      list += `<div class="col-auto"><a href="#" class="city-pill">${city.name}, ${city.state}</a></div>`;
   });
-  list += `</ul>`;
+ 
 
-  return `
-      <div class="categories__col">
-          <h3 class="categories__heading">${title}</h3>
-          ${list}
-      </div>
-  `;
+  return `${list}`;
 }
 
 loadBrowseCities();
@@ -629,24 +624,28 @@ function loadNearbyVenues() {
         fetch('./ajax/get-nearby-venues.php')
             .then(res => res.json())
             .then(data => {
-
+                
                 if (!data || !data.length) {
                     container.innerHTML = '<p>No nearby venues found</p>';
                     resolve();
-                    loadNewsletter();
                     return;
                 }
 
-                let html = '';
+                let html = ``;
 
                 data.forEach(venue => {
                     html += `
                         <a href="/venue/${venue.slug}" class="team-link">
-                            <div class="card venue-card venue-list-card p-3">
-                                <h6 class="fw-semibold mb-1">${venue.name}</h6>
-                                <p class="text-stub-muted mb-0" style="font-size: 1rem;">
-                                    ${venue.city}, ${venue.state}
-                                </p>
+                            <div class="card venue-card">
+                                <div class="venue-img">
+                                    <img src="${venue.image}" alt="${venue.name}" class="img-fluid">
+                                </div>
+                                <div class="venue-content text-center">
+                                    <h5 class="venue-title">${venue.name}</h5>
+                                    <p class="venue-location mb-0">
+                                        ${venue.city}, ${venue.state}
+                                    </p>
+                                </div>
                             </div>
                         </a>
                     `;
@@ -657,14 +656,12 @@ function loadNearbyVenues() {
                 setTimeout(() => {
                     initVenueSlider();
                     resolve();
-                    loadNewsletter(); // 👈 load newsletter AFTER venues
                 }, 50);
 
             })
             .catch(() => {
                 container.innerHTML = '<p>Error loading venues</p>';
                 resolve();
-                loadNewsletter();
             });
 
     });
@@ -697,60 +694,6 @@ loadNearbyVenues();
 
 /* =====================================================
    VENUES End
-===================================================== */
-
-/* =====================================================
-   NEWSLETTER
-===================================================== */
-
-function loadNewsletter() {
-
-    const wrapper = document.getElementById('newsletterSection');
-    if (!wrapper) return;
-
-    fetch('./ajax/load-newsletter.php')
-        .then(res => res.text())
-        .then(html => {
-            wrapper.innerHTML = html;
-        })
-        .catch(() => {
-            wrapper.innerHTML = '';
-        });
-}
-
-
-// Newsletter form submission
-const newsletterForm = document.getElementById('newsletter-submit');
-const newsletterEmail = document.getElementById('newsletter-email');
-
-if (newsletterForm && newsletterEmail) {
-  newsletterForm.addEventListener('click', function(e) {
-      e.preventDefault();
-      const email = newsletterEmail.value.trim();      
-      if (email && isValidEmail(email)) {
-        // Here you would typically send the email to a server
-        alert('Thank you for subscribing!');
-        newsletterEmail.value = '';
-      } else {
-        alert('Please enter a valid email address.');
-      }
-  });
-  // Allow Enter key to submit
-  newsletterEmail.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        newsletterForm.click();
-      }
-  });
-}
-
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-/* =====================================================
-   NEWSLETTER End
 ===================================================== */
 
 /* =====================================================

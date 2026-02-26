@@ -52,7 +52,7 @@ $faqs = getFaqs($mysqli, 'performer');
 
 <section class="section-featured-header text-sm-center text-md-start">
 	<div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-		style="background-image: url('<?php echo HOME_URL; ?>/artists/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+		style="background-image: url('<?php echo HOME_URL; ?>/assets/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
 		<div class="container mx-xl-5 mx-lg-5 mx-md-3">
 			<div class="row">
 				<div class="col-12 mb-4">
@@ -314,14 +314,14 @@ $faqs = getFaqs($mysqli, 'performer');
 						<?php } ?>
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="<?php echo HOME_URL; ?>/artists/adsens.webp" alt="Sponsored advertisement"	class="ad-image-left" />
+						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement"	class="ad-image-left" />
 					</div>				
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
 						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="<?php echo HOME_URL; ?>/artists/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
+								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
 							</div>
 						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
@@ -398,7 +398,6 @@ $faqs = getFaqs($mysqli, 'performer');
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-						<!-- <img src="../artists/closeup.jpg" alt="" class="img-fluid" /> -->
 						<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" />
 					</div>
 				</div>				
@@ -453,7 +452,7 @@ $faqs = getFaqs($mysqli, 'performer');
 									<?php if ($performer_image) { ?>
 										<img src="<?php echo $performer_image; ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
 									<?php }else{ ?>
-										<img src="<?php echo HOME_URL; ?>/artists/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
+										<img src="<?php echo HOME_URL; ?>/assets/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
 									<?php } ?>							
 									<div class="band-content d-flex justify-content-between align-items-center">
 										<span class="band-name"></span>								

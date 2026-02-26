@@ -773,7 +773,7 @@ function getNearbyVenues($latitude = '', $longitude = '') {
     
     $params = [
         'geoFilter' => "nearby($lat, $lng, $radius)",
-        'perPage'   => 500
+        'perPage'   => 10
     ];
 
     $url = BASE_URL . '/catalog/v2/venues/?' . http_build_query($params);
@@ -817,7 +817,7 @@ function getNearbyCities($latitude = '', $longitude = '') {
     $params = [
         'q'         => '*',
         'geoFilter' => "nearby($lat, $lng, $radius)",
-        'numberOfSuggestions'   => 8
+        'numberOfSuggestions'   => 15
     ];
 
     $url = BASE_URL . '/catalog/v2/cities/suggest/?' . http_build_query($params);
@@ -1399,4 +1399,35 @@ function getTeamsByCategory($categorySlug) {
     $data = json_decode($response, true);
 
     return $data['results'] ?? [];
+}
+
+function getEventImage($artist, $venue) {
+    $artistImageUrl = getArtistImageFromWikimedia($artist);
+    $venueImageUrl = getVenueImageFromWikimedia($venue);
+    if(!empty($artistImageUrl)) {
+        $imageUrl = $artistImageUrl;
+    }elseif(!empty($venueImageUrl)) {
+        $imageUrl = $venueImageUrl;
+    }else{
+        $imageUrl = HOME_URL . '/assets/placeholder.webp';
+    }    
+    $ext = pathinfo($imageUrl, PATHINFO_EXTENSION);
+    if(in_array(strtolower($ext), ['pdf', 'tif'])) {
+        $imageUrl = HOME_URL . '/assets/placeholder.webp';
+    }
+    return $imageUrl;
+}
+
+function getVenueImage($venue) {
+    $venueImageUrl = getVenueImageFromWikimedia($venue);
+    if(!empty($venueImageUrl)) {
+        $imageUrl = $venueImageUrl;
+    }else{
+        $imageUrl = HOME_URL . '/assets/placeholder.webp';
+    }
+    $ext = pathinfo($imageUrl, PATHINFO_EXTENSION);
+    if(in_array(strtolower($ext), ['pdf', 'tif'])) {
+        $imageUrl = HOME_URL . '/assets/placeholder.webp';
+    }
+    return $imageUrl;
 }

@@ -44,13 +44,8 @@ $output = [];
 foreach ($events as $event) {
 
     $venueName = $event['venue']['text']['name'] ?? '';
-    $imageUrl  = getVenueImageFromWikimedia($venueName);
-
-    $ext = pathinfo($imageUrl, PATHINFO_EXTENSION);
-
-    if (empty($imageUrl) || in_array(strtolower($ext), ['pdf', 'tif'])) {
-        $imageUrl = HOME_URL . '/assets/event-concert.jpg';
-    }
+    $evtPerformer = $event['performers'][0]['name'];
+    $imageUrl  = getEventImage($evtPerformer, $venueName);
 
     $output[] = [
         'id'    => (int)($event['id'] ?? 0),
