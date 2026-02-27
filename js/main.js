@@ -41,422 +41,467 @@ if (navigator.geolocation) {
 ===================================================== */
 
 (function () {
-    document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', function () {
 
-         
-      // ---------------------------
-      // Elements
-      // ---------------------------
-      const cityInput = document.getElementById('cityLocationInput');
-      const dd = document.getElementById('cityLocationDd');
-      const locationText = document.getElementById('locationSelectorText');
-      const useCurrentLocationBtn = document.getElementById('useCurrentLocationCity');
+    async function fetchWithSessionCache(url, key, ttl = 600000) {
   
-      // Optional: if you add ids as suggested
-      const locationToggleBtn = document.getElementById('locationToggleBtn');
-      const locationPanel = document.getElementById('locationPanel');
-      const locationClearBtn = document.getElementById('locationClearBtn');
+        const cached = sessionStorage.getItem(key);
   
-      // ---------------------------
-      // Helpers
-      // ---------------------------
-      function getCookie(name) {
-        const v = document.cookie.split('; ').find(row => row.startsWith(name + '='));
-        return v ? decodeURIComponent(v.split('=')[1]) : '';
-      }
-  
-      function setCookie(name, value) {
-        document.cookie = name + '=' + value + ';path=/';
-      }
-  
-      function escapeHtml(str) {
-        return String(str)
-          .replaceAll('&', '&amp;')
-          .replaceAll('<', '&lt;')
-          .replaceAll('>', '&gt;')
-          .replaceAll('"', '&quot;')
-          .replaceAll("'", '&#039;');
-      }
-  
-      function debounce(fn, wait) {
-        let t;
-        return function (...args) {
-          clearTimeout(t);
-          t = setTimeout(() => fn.apply(this, args), wait);
-        };
-      }
-  
-      function openDd() {
-        if (!dd) return;
-        dd.style.display = 'block';
-        dd.classList.add('show');
-      }
-  
-      function closeDd() {
-        if (!dd) return;
-        dd.style.display = 'none';
-        dd.classList.remove('show');
-        dd.innerHTML = '';
-      }
-  
-      function getActiveTabId() {
-        const activePane = document.querySelector('.tab-pane.show.active');
-        return activePane ? activePane.id : 'concerts';
-      }
-  
-      // ---------------------------
-      // Slick / Cards
-      // ---------------------------
-      function buildCards(data) {
-        let html = '';
-  
-        data.forEach(event => {
-          const date = new Date(event.date);
-          const formattedDate = date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: '2-digit'
-          });
-  
-          html += `
-            <a href="/event.php?id=${event.id}" class="team-link px-3">
-              <article class="event-card">
-                <div class="event-card__img" style="background-image:url('${event.image}')"></div>
-                <div class="event-card__body">
-                  <h3 class="event-card__title venu-name-hide">${event.name}</h3>
-                  <div class="mb-1">
-                    <span class="venu-date">${formattedDate}</span>
-                    <span class="venu-name">${event.venue}</span>
-                  </div>
-                  ${event.price ? `<p class="event-card__price mb-0">from <strong>${event.price}</strong></p>` : ''}
-                </div>
-              </article>
-            </a>
-          `;
-        });
-  
-        return html;
-      }
-  
-      function initSlider(selector) {
-        const $slider = $(selector);
-  
-        if ($slider.hasClass('slick-initialized')) {
-          $slider.slick('unslick');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Date.now() - parsed.time < ttl) {
+            return Promise.resolve(parsed.data);
+          }
         }
   
-        $slider.slick({
-          slidesToShow: 4,
-          slidesToScroll: 1,
-          infinite: false,
-          arrows: true,
-          autoplay: true,
-          dots: false,
-          responsive: [
-            { breakpoint: 992, settings: { slidesToShow: 3 } },
-            { breakpoint: 768, settings: { slidesToShow: 2 } },
-            { breakpoint: 576, settings: { slidesToShow: 1 } }
-          ]
-        });
+        const res = await fetch(url);
+        const data = await res.json();
+        sessionStorage.setItem(key, JSON.stringify({
+            time: Date.now(),
+            data: data
+        }));
+        return data;
       }
-  
-      let locationFetchController = null;
+       
+    // ---------------------------
+    // Elements
+    // ---------------------------
+    const cityInput = document.getElementById('cityLocationInput');
+    const dd = document.getElementById('cityLocationDd');
+    const locationText = document.getElementById('locationSelectorText');
+    const useCurrentLocationBtn = document.getElementById('useCurrentLocationCity');
+
+    // Optional: if you add ids as suggested
+    const locationToggleBtn = document.getElementById('locationToggleBtn');
+    const locationPanel = document.getElementById('locationPanel');
+    const locationClearBtn = document.getElementById('locationClearBtn');
+
+    // ---------------------------
+    // Helpers
+    // ---------------------------
+    function getCookie(name) {
+      const v = document.cookie.split('; ').find(row => row.startsWith(name + '='));
+      return v ? decodeURIComponent(v.split('=')[1]) : '';
+    }
+
+    function setCookie(name, value) {
+      document.cookie = name + '=' + value + ';path=/';
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function debounce(fn, wait) {
+      let t;
+      return function (...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+      };
+    }
+
+    function openDd() {
+      if (!dd) return;
+      dd.style.display = 'block';
+      dd.classList.add('show');
+    }
+
+    function closeDd() {
+      if (!dd) return;
+      dd.style.display = 'none';
+      dd.classList.remove('show');
+      dd.innerHTML = '';
+    }
+
+    function getActiveTabId() {
+      const activePane = document.querySelector('.tab-pane.show.active');
+      return activePane ? activePane.id : 'concerts';
+    }
+
+    // ---------------------------
+    // Slick / Cards
+    // ---------------------------
+    function buildCards(data) {
+      let html = '';
+
+      data.forEach(event => {
+        const date = new Date(event.date);
+        const formattedDate = date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: '2-digit'
+        });
+
+        html += `
+          <a href="/event.php?id=${event.id}" class="team-link px-3">
+            <article class="event-card">
+              <div class="event-card__img" style="background-image:url('${event.image}')"></div>
+              <div class="event-card__body">
+                <h3 class="event-card__title venu-name-hide">${event.name}</h3>
+                <div class="mb-1">
+                  <span class="venu-date">${formattedDate}</span>
+                  <span class="venu-name">${event.venue}</span>
+                </div>
+                ${event.price ? `<p class="event-card__price mb-0">from <strong>${event.price}</strong></p>` : ''}
+              </div>
+            </article>
+          </a>
+        `;
+      });
+
+      return html;
+    }
+
+    function initSlider(selector) {
+      const $slider = $(selector);
+
+      if ($slider.hasClass('slick-initialized')) {
+        $slider.slick('unslick');
+      }
+
+      $slider.slick({
+        slidesToShow: 4,
+        slidesToScroll: 1,
+        infinite: false,
+        arrows: true,
+        autoplay: true,
+        dots: false,
+        responsive: [
+          { breakpoint: 992, settings: { slidesToShow: 3 } },
+          { breakpoint: 768, settings: { slidesToShow: 2 } },
+          { breakpoint: 576, settings: { slidesToShow: 1 } }
+        ]
+      });
+    }
 
     function loadLocationCategory(tabId, type, loc1, loc2) {
-
         return new Promise((resolve) => {
-    
-            const selector = '#' + tabId + ' .custom-slider';
-            const container = document.querySelector(selector);
-            if (!container) return resolve();
-    
-            // Cancel previous request
-            if (locationFetchController) {
-                locationFetchController.abort();
+          const selector = '#' + tabId + ' .custom-slider';
+          const container = document.querySelector(selector);
+          if (!container) return resolve();
+
+          let cacheKey;
+
+            if (type === '') {
+
+            cacheKey = `home_events_${tabId}`;
+
+            } else {
+
+            const loc1Key = (loc1 || '')
+                .toLowerCase()
+                .replace(/\./g, '')     // remove dots
+                .replace(/ /g, '_');    // space → underscore
+
+            const loc2Key = (loc2 || '')
+                .toLowerCase()
+                .replace(/\./g, '');    // remove dots only
+
+            cacheKey = `home_events_${tabId}_${type}_${loc1Key}_${loc2Key}`;
             }
-    
-            locationFetchController = new AbortController();
-    
-            container.innerHTML = '<div class="loader"></div>';
-    
-            const url = `./ajax/get-location-category-events.php?tab=${encodeURIComponent(tabId)}&type=${encodeURIComponent(type)}&loc1=${encodeURIComponent(loc1)}&loc2=${encodeURIComponent(loc2)}`;
-    
-            fetch(url, { signal: locationFetchController.signal })
-                .then(res => res.json())
-                .then(data => {
-    
-                    // If aborted, do nothing
-                    if (locationFetchController.signal.aborted) return resolve();
-    
-                    if (!data || !data.length) {
-                        container.innerHTML = '<p>No events found</p>';
-                        return resolve();
-                    }
-    
-                    // Destroy previous slick BEFORE replacing content
-                    const $slider = $(selector);
-                    if ($slider.hasClass('slick-initialized')) {
-                        $slider.slick('unslick');
-                    }
-    
-                    container.innerHTML = buildCards(data);
-    
-                    setTimeout(() => {
-                        initSlider(selector);
-                        resolve();
-                    }, 50);
-                })
-                .catch((err) => {
-    
-                    if (err.name === 'AbortError') return resolve();
-    
-                    container.innerHTML = '<p>Error loading events</p>';
-                    resolve();
-                });
-        });
-    }
-  
-      function reloadActiveTab(mode = '', loc = {}) {
-        
-        const tabId = getActiveTabId();
-    
-        if (mode === 'll' && loc.lat && loc.lng) {
-            return loadLocationCategory(tabId, 'll', loc.lat, loc.lng);
-        }
-    
-        if (mode === 'cs' && loc.city && loc.state) {
-            return loadLocationCategory(tabId, 'cs', loc.city, loc.state);
-        }
-    
-        return loadLocationCategory(tabId, '', '', '');
-    }
-  
-      
-  
-      // ---------------------------
-      // Bootstrap tab switching
-      // ---------------------------
-      function detectLocationMode() {
 
-        const lat   = getCookie('so_lat');
-        const lng   = getCookie('so_lng');
-        const city  = getCookie('so_city');
-        const state = getCookie('so_state');
+            const jsonUrl = `./cache/${cacheKey}.json`;
       
-        if (lat && lng) {
-          return { mode: 'll', data: { lat, lng } };
-        }
+          // 2) Fallback to AJAX
+          const ajaxUrl =
+            `./ajax/get-location-category-events.php?tab=${encodeURIComponent(tabId)}` +
+            `&type=${encodeURIComponent(type)}&loc1=${encodeURIComponent(loc1)}&loc2=${encodeURIComponent(loc2)}`;
       
-        if (city && state) {
-          return { mode: 'cs', data: { city, state } };
-        }
+          container.innerHTML = '<div class="loader"></div>';
       
-        return { mode: '', data: {} };
-      }
-
-      (function init() {
-          const savedLabel = getCookie('so_label');
-          if (savedLabel && locationText) {
-            locationText.textContent = savedLabel;
-          }
-          const { mode, data } = detectLocationMode();
-          reloadActiveTab(mode, data).then(() => {
+          const render = (data) => {
+            if (!data || !data.length) {
+              container.innerHTML = '<p class="text-center">No events found</p>';
+              return resolve();
+            }
+      
+            const $slider = $(selector);
+            if ($slider.hasClass('slick-initialized')) {
+              $slider.slick('unslick');
+            }
+      
+            container.innerHTML = buildCards(data);
+      
             setTimeout(() => {
-              $('.slick-slider').slick('setPosition');
+              initSlider(selector);
+              resolve();
             }, 50);
-          });
-      })();
-                  
-
-      const pills = document.querySelectorAll('button[data-bs-toggle="pill"]');
-      pills.forEach(pill => {
-
-        pill.addEventListener('shown.bs.tab', function () {
+          };
       
-          const { mode, data } = detectLocationMode();
+          const tryJsonFirst = () => {
+            return fetch(jsonUrl, { cache: 'no-store', credentials: 'same-origin' })
+              .then((res) => {
+                if (!res.ok) throw new Error('json_not_ok');
+                return res.json();
+              })
+              .then((data) => {
+                if (!Array.isArray(data) || data.length === 0) throw new Error('json_empty');
+                return data;
+              });
+          };
       
-          reloadActiveTab(mode, data).then(() => {
-            setTimeout(() => {
-              $('.slick-slider').slick('setPosition');
-            }, 50);
-          });
+          const fallbackToAjax = () => {
+            return fetchWithSessionCache(ajaxUrl, cacheKey);
+          };
       
+          tryJsonFirst()
+            .catch(() => fallbackToAjax())
+            .then((data) => render(data))
+            .catch(() => {
+              container.innerHTML = '<p class="text-center">Error loading events</p>';
+              resolve();
+            });
         });
+      }
+    
+
+    function reloadActiveTab(mode = '', loc = {}) {
       
+      const tabId = getActiveTabId();
+  
+      if (mode === 'll' && loc.lat && loc.lng) {
+          return loadLocationCategory(tabId, 'll', loc.lat, loc.lng);
+      }
+  
+      if (mode === 'cs' && loc.city && loc.state) {
+          return loadLocationCategory(tabId, 'cs', loc.city, loc.state);
+      }
+  
+      return loadLocationCategory(tabId, '', '', '');
+  }
+
+    
+
+    // ---------------------------
+    // Bootstrap tab switching
+    // ---------------------------
+    function detectLocationMode() {
+
+      const lat   = getCookie('so_lat');
+      const lng   = getCookie('so_lng');
+      const city  = getCookie('so_city');
+      const state = getCookie('so_state');
+    
+      if (lat && lng) {
+        return { mode: 'll', data: { lat, lng } };
+      }
+    
+      if (city && state) {
+        return { mode: 'cs', data: { city, state } };
+      }
+    
+      return { mode: '', data: {} };
+    }
+
+    (function init() {
+        const savedLabel = getCookie('so_label');
+        if (savedLabel && locationText) {
+          locationText.textContent = savedLabel;
+        }
+        const { mode, data } = detectLocationMode();
+        reloadActiveTab(mode, data).then(() => {
+          setTimeout(() => {
+            $('.slick-slider').slick('setPosition');
+          }, 50);
+        });
+    })();
+                
+
+    const pills = document.querySelectorAll('button[data-bs-toggle="pill"]');
+    pills.forEach(pill => {
+
+      pill.addEventListener('shown.bs.tab', function () {
+    
+        const { mode, data } = detectLocationMode();
+    
+        reloadActiveTab(mode, data).then(() => {
+          setTimeout(() => {
+            $('.slick-slider').slick('setPosition');
+          }, 50);
+        });
+    
       });
     
-  
-      // ---------------------------
-      // City search dropdown
-      // ---------------------------
-      const MIN_CHARS = 3;
-      let controller = null;
-  
-      async function searchCities(q) {
-        if (!dd) return;
-  
-        if (controller) controller.abort();
-        controller = new AbortController();
-  
-        dd.innerHTML = `<div class="dropdown-item text-muted">Searching...</div>`;
-        openDd();
-  
-        try {
-          const res = await fetch(`./ajax/city-suggest.php?q=${encodeURIComponent(q)}`, {
-            signal: controller.signal
-          });
-  
-          const data = await res.json();
-  
-          if (!Array.isArray(data) || data.length === 0) {
-            dd.innerHTML = `<div class="dropdown-item text-muted">No results</div>`;
-            openDd();
-            return;
-          }
-  
-          dd.innerHTML = data.map(item => {
-            const label =
-              item.label ||
-              `${item.city || ''}${item.state ? ', ' + item.state : ''}`;
-  
-            return `
-              <button type="button"
-                class="dropdown-item city-dd-item"
-                data-city="${item.city ?? ''}"
-                data-state="${item.state ?? ''}"
-                data-label="${escapeHtml(label)}">
-                ${escapeHtml(label)}
-              </button>
-            `;
-          }).join('');
-  
-          openDd();
-        } catch (e) {
-          if (e.name === 'AbortError') return;
-          dd.innerHTML = `<div class="dropdown-item text-danger">Error loading results</div>`;
-          openDd();
-        }
-      }
-  
-      if (cityInput) {
-        cityInput.addEventListener('keyup', debounce(function () {
-          const q = cityInput.value.trim();
-          if (q.length < MIN_CHARS) {
-            closeDd();
-            return;
-          }
-          searchCities(q);
-        }, 250));
-  
-        cityInput.addEventListener('focus', function () {
-          if (dd && dd.innerHTML.trim() !== '') openDd();
-        });
-      }
-  
-      // Select city from dropdown
-      document.addEventListener('click', function (e) {
-        const btn = e.target.closest('.city-dd-item');
-        if (!btn) return;
-        
-        const label = btn.getAttribute('data-label') || '';
-        const city = btn.getAttribute('data-city') || '';
-        const state = btn.getAttribute('data-state') || '';
-        if (!city || !state) return;
-  
-        if (locationText) locationText.textContent = label;
-        if (cityInput) cityInput.value = label;
-  
-        closeDd();
-  
-        if (locationPanel) locationPanel.classList.remove('show');
-        setCookie('so_city', city);
-        setCookie('so_state', state);
-        setCookie('so_label', city + ', ' + state);
-        reloadActiveTab('cs', {city, state});
-      });
-  
-      // Close dropdown on outside click
-      document.addEventListener('click', function (e) {
-        if (!dd || !cityInput) return;
-        if (e.target === cityInput || dd.contains(e.target)) return;
-        closeDd();
-      });
-  
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeDd();
-      });
-  
-      // ---------------------------
-      // Current location button
-      // ---------------------------
-      if (useCurrentLocationBtn) {
-        useCurrentLocationBtn.addEventListener('click', function () {
-          if (!navigator.geolocation) {
-            alert('Geolocation not supported');
-            return;
-          }
-  
-          useCurrentLocationBtn.classList.add('loading');
-  
-          navigator.geolocation.getCurrentPosition(
-            function (position) {
-              const lat = String(position.coords.latitude);
-              const lng = String(position.coords.longitude);
-  
-              setCookie('so_lat', lat);
-              setCookie('so_lng', lng);
-              setCookie('so_label', encodeURIComponent('Current Location'));
-  
-              if (locationText) locationText.textContent = 'Current Location';
-              if (cityInput) cityInput.value = 'Current Location';
-  
-              if (locationPanel) locationPanel.classList.remove('show');
-  
-              useCurrentLocationBtn.classList.remove('loading');
-              reloadActiveTab('ll', {lat, lng});
-            },
-            function () {
-              alert('Unable to get your location');
-              useCurrentLocationBtn.classList.remove('loading');
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-          );
-        });
-      }
-  
-      // ---------------------------
-      // Optional: panel toggle + clear
-      // ---------------------------
-      if (locationToggleBtn && locationPanel) {
-        locationToggleBtn.addEventListener('click', function (e) {
-          e.preventDefault();
-          locationPanel.classList.toggle('show');
-          if (cityInput) cityInput.focus();
-        });
-  
-        document.addEventListener('click', function (e) {
-          if (!locationPanel.classList.contains('show')) return;
-          if (locationPanel.contains(e.target) || e.target === locationToggleBtn) return;
-          locationPanel.classList.remove('show');
-        });
-      }
-  
-      if (locationClearBtn) {
-        locationClearBtn.addEventListener('click', function () {
-          setCookie('so_lat', '');
-          setCookie('so_lng', '');
-          setCookie('so_city', '');
-          setCookie('so_state', '');
-          setCookie('so_label', '');
-  
-          if (locationText) locationText.textContent = 'Select your location';
-          if (cityInput) cityInput.value = '';
-          closeDd();
-  
-          reloadActiveTab('', {});
-        });
-      }
     });
-  })();
+  
+
+    // ---------------------------
+    // City search dropdown
+    // ---------------------------
+    const MIN_CHARS = 3;
+    let controller = null;
+
+    async function searchCities(q) {
+      if (!dd) return;
+
+      if (controller) controller.abort();
+      controller = new AbortController();
+
+      dd.innerHTML = `<div class="dropdown-item text-muted">Searching...</div>`;
+      openDd();
+
+      try {
+        const res = await fetch(`./ajax/city-suggest.php?q=${encodeURIComponent(q)}`, {
+          signal: controller.signal
+        });
+
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+          dd.innerHTML = `<div class="dropdown-item text-muted">No results</div>`;
+          openDd();
+          return;
+        }
+
+        dd.innerHTML = data.map(item => {
+          const label =
+            item.label ||
+            `${item.city || ''}${item.state ? ', ' + item.state : ''}`;
+
+          return `
+            <button type="button"
+              class="dropdown-item city-dd-item"
+              data-city="${item.city ?? ''}"
+              data-state="${item.state ?? ''}"
+              data-label="${escapeHtml(label)}">
+              ${escapeHtml(label)}
+            </button>
+          `;
+        }).join('');
+
+        openDd();
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+        dd.innerHTML = `<div class="dropdown-item text-danger">Error loading results</div>`;
+        openDd();
+      }
+    }
+
+    if (cityInput) {
+      cityInput.addEventListener('keyup', debounce(function () {
+        const q = cityInput.value.trim();
+        if (q.length < MIN_CHARS) {
+          closeDd();
+          return;
+        }
+        searchCities(q);
+      }, 250));
+
+      cityInput.addEventListener('focus', function () {
+        if (dd && dd.innerHTML.trim() !== '') openDd();
+      });
+    }
+
+    // Select city from dropdown
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('.city-dd-item');
+      if (!btn) return;
+      
+      const label = btn.getAttribute('data-label') || '';
+      const city = btn.getAttribute('data-city') || '';
+      const state = btn.getAttribute('data-state') || '';
+      if (!city || !state) return;
+
+      if (locationText) locationText.textContent = label;
+      if (cityInput) cityInput.value = label;
+
+      closeDd();
+
+      if (locationPanel) locationPanel.classList.remove('show');
+      setCookie('so_city', city);
+      setCookie('so_state', state);
+      setCookie('so_label', city + ', ' + state);
+      reloadActiveTab('cs', {city, state});
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function (e) {
+      if (!dd || !cityInput) return;
+      if (e.target === cityInput || dd.contains(e.target)) return;
+      closeDd();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeDd();
+    });
+
+    // ---------------------------
+    // Current location button
+    // ---------------------------
+    if (useCurrentLocationBtn) {
+      useCurrentLocationBtn.addEventListener('click', function () {
+        if (!navigator.geolocation) {
+          alert('Geolocation not supported');
+          return;
+        }
+
+        useCurrentLocationBtn.classList.add('loading');
+
+        navigator.geolocation.getCurrentPosition(
+          function (position) {
+            const lat = String(position.coords.latitude);
+            const lng = String(position.coords.longitude);
+
+            setCookie('so_lat', lat);
+            setCookie('so_lng', lng);
+            setCookie('so_label', encodeURIComponent('Current Location'));
+
+            if (locationText) locationText.textContent = 'Current Location';
+            if (cityInput) cityInput.value = 'Current Location';
+
+            if (locationPanel) locationPanel.classList.remove('show');
+
+            useCurrentLocationBtn.classList.remove('loading');
+            reloadActiveTab('ll', {lat, lng});
+          },
+          function () {
+            alert('Unable to get your location');
+            useCurrentLocationBtn.classList.remove('loading');
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+    }
+
+    // ---------------------------
+    // Optional: panel toggle + clear
+    // ---------------------------
+    if (locationToggleBtn && locationPanel) {
+      locationToggleBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        locationPanel.classList.toggle('show');
+        if (cityInput) cityInput.focus();
+      });
+
+      document.addEventListener('click', function (e) {
+        if (!locationPanel.classList.contains('show')) return;
+        if (locationPanel.contains(e.target) || e.target === locationToggleBtn) return;
+        locationPanel.classList.remove('show');
+      });
+    }
+
+    if (locationClearBtn) {
+      locationClearBtn.addEventListener('click', function () {
+        setCookie('so_lat', '');
+        setCookie('so_lng', '');
+        setCookie('so_city', '');
+        setCookie('so_state', '');
+        setCookie('so_label', '');
+
+        if (locationText) locationText.textContent = 'Select your location';
+        if (cityInput) cityInput.value = '';
+        closeDd();
+
+        reloadActiveTab('', {});
+      });
+    }
+  });
+})();
+
 
 /* =====================================================
    EVENTS End

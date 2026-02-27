@@ -378,7 +378,7 @@ function getArtistImageFromWikimedia($artistName) {
 }
 
 
-function resizeAndConvertToWebP($imageContent, $maxWidth = 800, $quality = 80) {
+function resizeAndConvertToWebP($imageContent, $maxWidth = 500, $quality = 80) {
 
     $source = imagecreatefromstring($imageContent);
     if (!$source) return false;
@@ -798,28 +798,17 @@ function getNearbyVenues($latitude = '', $longitude = '') {
     return $data['results'] ?? [];
 }
 
-function getNearbyCities($latitude = '', $longitude = '') {
+function getNearbyCities($lat, $lng) {
 
     $accessToken = getTnAccessToken();
-    $location = getUserLocationFromCookie();
-    if(!empty($latitude)) { 
-        $lat = $latitude;
-    }else{
-        $lat = $location['latitude'];
-    }
-    if(!empty($longitude)) {
-        $lng = $longitude;
-    }else{
-        $lng = $location['longitude'];
-    }
+
     $radius = '50mi';
-    
     $params = [
         'q'         => '*',
         'geoFilter' => "nearby($lat, $lng, $radius)",
         'numberOfSuggestions'   => 15
     ];
-
+    
     $url = BASE_URL . '/catalog/v2/cities/suggest/?' . http_build_query($params);
 
     $ch = curl_init($url);
@@ -1298,7 +1287,7 @@ function tnGetCategoryNearby($rootPath, $lat, $lng, $limit = 12) {
     return $data['results'] ?? [];
 }
 
-function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2) {
+function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, $limit = 12) {
     $accessToken = getTnAccessToken();
     $rootPath = tnEscapeFilterValue($rootPath);
     if($type === 'll') {
@@ -1307,19 +1296,19 @@ function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2) {
         $params = [
             'filter' => "contains(defaultCategory/path,'$rootPath')",
             'geoFilter' => sprintf('nearby(%F,%F,50mi)', $lat, $lng),
-            'perPage' => 12
+            'perPage' => $limit
         ];
     }elseif($type === 'cs') {
         $city  = ucfirst(strtolower($loc1));
         $state = strtoupper($loc2);
         $params = [
             'filter' => "contains(defaultCategory/path,'$rootPath') and city/text/name eq '$city' and stateProvince/text/abbr eq '$state'",
-            'perPage' => 12
+            'perPage' => $limit
         ];
     }else{
         $params = [
             'filter' => "contains(defaultCategory/path,'$rootPath')",
-            'perPage' => 12
+            'perPage' => $limit
         ];
     }
 
@@ -1432,28 +1421,40 @@ function getVenueImage($venue) {
     return $imageUrl;
 }
 
-function cache_get($key, $ttl = 600) {
+function cache_dir() {
+    $dir = __DIR__ . '/cache/';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
 
-    $dir  = __DIR__ . '/cache/';
-    $file = $dir . md5($key) . '.json';
+function cache_file_path($key) {
+    $safeKey = preg_replace('/[^a-z0-9_\-]/i', '_', (string)$key);
+    return cache_dir() . $safeKey . '.json';
+}
 
-    if (!file_exists($file)) return false;
-    if ((time() - filemtime($file)) > $ttl) return false;
+function cache_get($key, $ttl = 86400) {
+    $file = cache_file_path($key);
+
+    if (!is_file($file)) return false;
+    if ($ttl > 0 && (time() - filemtime($file)) > $ttl) return false;
 
     $json = file_get_contents($file);
-    if (!$json) return false;
+    if ($json === false || $json === '') return false;
 
     $data = json_decode($json, true);
     return is_array($data) ? $data : false;
 }
 
 function cache_set($key, $data) {
+    $file = cache_file_path($key);
 
-    $dir = __DIR__ . '/cache/';
-    if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
-    }
+    $tmp = $file . '.' . uniqid('tmp_', true);
+    $json = json_encode($data, JSON_UNESCAPED_SLASHES);
 
-    $file = $dir . md5($key) . '.json';
-    file_put_contents($file, json_encode($data, JSON_UNESCAPED_SLASHES));
+    if ($json === false) return false;
+
+    if (file_put_contents($tmp, $json, LOCK_EX) === false) return false;
+    return rename($tmp, $file);
 }

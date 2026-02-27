@@ -6,12 +6,12 @@ include 'header.php';
 <!-- Top Picks Section -->
 <section class="container pt-5">
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <div class="location-selector-wrapper d-flex align-items-center ">
-      <h2 class="fw-bold fs-4 mb-0">Our top picks</h2>
+    <div class="location-selector-wrapper d-flex flex-wrap align-items-center ">
+      <h2 class="fw-bold fs-4 mb-0">Our top picks near </h2>
       <button type="button" class="location-selector" id="locationToggleBtn">
-        <span class="location-selector-label">near</span>
-        <span class="location-selector-link" id="locationSelectorText">Select your location</span>
-        <span class="location-selector-caret">▾</span>
+        <!-- <span class="location-selector-label"></span> -->
+        <span class="location-selector-link" id="locationSelectorText">Select your location <i class="bi bi-chevron-down"></i></span>
+        <!-- <span class="location-selector-caret"></span> -->
       </button>
 
       <!-- Location dropdown panel -->
@@ -46,10 +46,10 @@ include 'header.php';
     </div>
   </div>
 
-  <div class="">
+  <div class="category-scroll-wrapper">
 
     <!-- Nav Pills -->
-    <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+    <ul class="nav category-scroll nav-pills mb-3" id="pills-tab" role="tablist">
 
       <li class="nav-item">
         <button class="category-pill active" data-bs-toggle="pill" data-bs-target="#concerts" type="button">Concerts</button>
@@ -67,6 +67,7 @@ include 'header.php';
       </li>
 
     </ul>
+    </div>
 
     <div class="tab-content">
       <div class="tab-pane show active" id="concerts">
@@ -86,7 +87,7 @@ include 'header.php';
       </div>
     </div>
 
-  </div>
+
 
 </section>
 
@@ -141,13 +142,15 @@ include 'header.php';
 
 <section class="teams-nearby py-3">
   <div class="container py-5 slider-bg text-white">
-    <div class="d-flex justify-content-between align-items-center mb-4 px-4">
+    <div class="d-flex justify-content-between align-items-center">
       <h2 class="section__title section__title--center fw-bold fs-4 mb-4 text-black">
         Teams Nearby
       </h2>
       <div class="slider-arrows"></div>
     </div>
-    <ul class="nav nav-pills mb-3" role="tablist">
+   
+    <div class="category-scroll-wrapper">
+    <ul class="nav nav-pills mb-3 category-scroll" role="tablist">
       <li class="nav-item" role="presentation">
         <button class="sport-cat category-pill active" data-bs-toggle="pill" data-bs-target="#tab-NFL" type="button" data-slug="NFL">NFL</button>
       </li>
@@ -164,6 +167,7 @@ include 'header.php';
         <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-MLS" type="button" data-slug="MLS">MLS</button>
       </li>
     </ul>
+</div>
     <div class="tab-content" id="sportsTabContent">
       <div class="loader"></div>
     </div>
@@ -356,8 +360,8 @@ include 'header.php';
       <div class="categories__col">
         <h3 class="categories__heading">Festivals</h3>
         <ul class="categories__list">
+          <li><a href="#">Musical / Play</a></li>
           <li><a href="#">Broadway</a></li>
-          <li><a href="#">Other</a></li>
           <li><a href="#">Children / Family</a></li>
           <li><a href="#">Off-broadway</a></li>
           <li><a href="#">Ballet</a></li>
@@ -373,7 +377,7 @@ include 'header.php';
 <section class="section categories teams-nearby py-5" aria-labelledby="cities-heading">
   <div class="container">
     <h2 id="cities-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
-      Popular cities
+      Popular Cities
     </h2>
     <div class="row g-3" id="browseCitiesWrapper">
       <div class="loader"></div>
@@ -381,7 +385,7 @@ include 'header.php';
   </div>
 </section>
 
-<section class="container new-slider py-5">
+<section class="container new-slider left-right-btn py-5">
   <h2 class="fw-bold fs-4 mb-4">Top Venues Near You</h2>
   <div class="venue-slider px-4">
     <div class="text-center py-5 w-100">

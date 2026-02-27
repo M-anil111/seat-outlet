@@ -382,7 +382,7 @@ $faqs = getFaqs($mysqli, 'performer');
 		<div class="tab-section content-section-detail" id="about">
 			<div class="row">
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
-					<div class="so-about me-3">
+					<div class="me-3">
 						<h2 class="so-heading mb-3">About <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
 						<p><?php echo getArtistBioFromWikipedia($artistName); ?></p>
 						<!-- <p><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
@@ -398,7 +398,7 @@ $faqs = getFaqs($mysqli, 'performer');
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-						<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" />
+						<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-about img-fluid rounded"/>
 					</div>
 				</div>				
 			</div>

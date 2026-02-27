@@ -12,11 +12,6 @@ $type = $_GET['type'] ?? '';
 $loc1 = $_GET['loc1'] ?? '';
 $loc2 = $_GET['loc2'] ?? '';
 
-$tab  = preg_replace('/[^a-z]/', '', strtolower($tab));
-$type = preg_replace('/[^a-z0-9\-_]/i', '', $type);
-$loc1 = trim($loc1);
-$loc2 = trim($loc2);
-
 /* ==============================
    MAP TAB TO TN CATEGORY PATH
 ============================== */
@@ -39,15 +34,19 @@ $rootPath = $categoryMap[$tab];
    CACHE KEY
 ============================== */
 
-$loc1Key = strtolower(str_replace(' ', '_', $loc1));
-$loc2Key = strtolower(str_replace(' ', '_', $loc2));
+$loc1Key = strtolower(str_replace(['.', ' '], ['', '_'], $loc1));
+$loc2Key = strtolower(str_replace('.', '', $loc2));
 
-$cacheKey = "home_loc_events_{$tab}_{$type}_{$loc1Key}_{$loc2Key}";
+if($type == '') {
+    $cacheKey = "home_events_{$tab}";
+}else{
+    $cacheKey = "home_loc_events_{$tab}_{$type}_{$loc1Key}_{$loc2Key}";
+}
 
-$cached = cache_get($cacheKey, 900);
+$cached = cache_get($cacheKey);
 
 if ($cached) {
-    header('Cache-Control: public, max-age=600');
+    header('Cache-Control: public, max-age=86400');
     header('X-Cache: HIT');
     echo json_encode($cached);
     exit;
@@ -57,7 +56,7 @@ if ($cached) {
    FETCH EVENTS FROM TN
 ============================== */
 
-$events = fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2);
+$events = fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, 8);
 
 /* ==============================
    FORMAT RESPONSE
@@ -94,7 +93,7 @@ if (!empty($events)) {
 
 cache_set($cacheKey, $output);
 
-header('Cache-Control: public, max-age=600');
+header('Cache-Control: public, max-age=86400');
 header('X-Cache-Status: ' . (isset($cached) && $cached !== false ? 'HIT' : 'MISS'));
 echo json_encode($output);
 exit;

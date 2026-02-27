@@ -118,7 +118,7 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
 <script src="<?php echo HOME_URL; ?>/js/main.js?v=<?php echo time(); ?>"></script>
-<script src="<?php echo HOME_URL; ?>/js/home-events.js?v=<?php echo time(); ?>" defer></script>
+
 
 <?php include 'modals.php'; ?>
 

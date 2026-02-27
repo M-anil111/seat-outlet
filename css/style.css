@@ -306,6 +306,8 @@ h3,
     .search-box {
         display: none;
     }
+
+    .container.main-layout, .container{width: 100%;}
 }
 
 /* ---------------- MAIN LAYOUT ---------------- */
@@ -693,6 +695,18 @@ h3,
 }
 /* Mobile */
 @media (max-width: 576px) {
+  .new-slider .team-slider .slick-prev, .new-slider .slick-prev, .new-slider .slick-next, .new-slider .team-slider .slick-next{top:55px !important;}
+
+  .new-slider .team-slider .slick-prev, .new-slider .slick-prev{left: unset !important;
+    right: unset !important; z-index: 1;
+}
+ .left-right-btn .slick-prev{left: 0px; z-index: 1;} .left-right-btn .slick-next, .left-right-btn .slick-prev{left: unset;
+  top: 50% !important;
+  transform: translate(0, -50%);}
+  .location-panel{
+    left: 0px !important;
+    min-width: 300px !important;
+  }
   .tm-footer {
     padding: 40px 20px;
   }
@@ -872,9 +886,16 @@ h3,
 } */
 .section-content .breadcrumb a{color: #fff;}
 .section-content .breadcrumb .current, .section-content .breadcrumb a:hover{color: #a5c8fd; text-decoration: none;}
+.img-artist{    height: 250px;
+  overflow: hidden;
+  border-radius: 10px;
+}
 .artist-img {
-    max-height: 260px;
-    object-fit: cover;
+  height: auto;
+  width: 100%;
+  object-fit: cover;
+  background-position: top;
+  background-repeat: no-repeat;
 }
 
 /* Text */
@@ -1110,13 +1131,25 @@ h3,
     padding: 30px;
     /* border-radius: 10px; */
 }
-.so-about ul{list-style: none; padding-left: 15px;}
+.so-about{        height: 100%;
+  overflow: hidden;
+  border-radius: 5px;
+  max-height: 350px;
+}
+.so-about img {
+  height: auto;
+  width: 100%;
+  object-fit: cover;
+  background-position: top;
+  background-repeat: no-repeat;
+}
+/* .so-about ul{list-style: none; padding-left: 15px;}
 .so-about ul li{padding-left: 10px; margin: 6px 0 0 0;}
 .so-about ul li::marker {
     content: "✔ ";
     color: #0b63f6;
     font-size: 14px;
-}
+} */
 .section-artist-content .artist-event-footer
  {
     margin: 30px 0 30px 0;
@@ -1420,14 +1453,14 @@ h3,
 }
 						
 @media (max-width: 767.98px){.artist-heading  {margin-top: 10px;}  .artist-tabs-nav {
-        justify-content: flex-start;
+        justify-content: center;
         overflow-x: auto;
         flex-wrap: nowrap;
         gap: 20px;
         padding: 0 16px;
         scrollbar-width: none;
     }
-    .picker-wrapper{left: 4%;}
+    /* .picker-wrapper{left: 4%; padding:0px !important; display: flex !important;} */
 
     .artist-tabs-nav::-webkit-scrollbar {
         display: none;
@@ -1440,10 +1473,11 @@ h3,
         font-size: 13px;
         padding: 14px 0;
     }
-    
+    .artist-img{width: 50%;     margin: 0 auto;}
 
 }
 @media (max-width: 575.98px){.section-featured-header.all-sports-events{text-align: center;} 
+
 .breadcrumb{justify-content:center;} .artist-title {font-size: 30px;}
 /* .section-performer-content .performer-event-item .performer-event-item-price a{ font-size: 16px;}
 .section-performer-content .performer-event-item .so-cta-tickets{margin-top: 0;} */
@@ -1549,8 +1583,8 @@ h3,
 
 /* Image sizing */
 .band-img {
-  height: 220px;
-  object-fit: cover;
+  height: 170px !important;
+  object-fit: inherit;
   transition: transform 0.4s ease;
 }
 
@@ -1680,7 +1714,7 @@ h3,
 .top-ticker {
     position: sticky;
     top: 0;
-    z-index: 9999;
+    /* z-index: 9999; */
     /* background: #0d6efd; */
     overflow: hidden;
     height: 42px;
@@ -1872,9 +1906,10 @@ h3,
   }
   
   .category-pill {
-    border: none;
+    border: 1px #4265f3 solid;
     border-radius: 50px;
     padding: 6px 18px;
+    margin: 0 6px 0 2px;
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
@@ -1888,8 +1923,8 @@ h3,
   }
   
   .category-pill:not(.active) {
-    background-color: #f1f5f9;
-    color: #333;
+    background-color: transparent;
+    color: #4265f3;
   }
   
   .category-pill:not(.active):hover {
@@ -1952,11 +1987,11 @@ h3,
     color: rgba(255, 255, 255, 0.8);
   }
   
-  .search-bar-container {
+  /* .search-bar-container {
     background-color: rgb(95 128 252);
     border-radius: 8px;
-  }
-  
+  } */
+/*   
   .search-bar-container input {
     background: transparent;
     border: none;
@@ -1967,7 +2002,7 @@ h3,
   
   .search-bar-container input::placeholder {
     color: rgba(255, 255, 255, 0.8);
-  }
+  } */
   
   /* Icon styles */
   .icon {
@@ -2202,7 +2237,7 @@ h3,
   }
   
   
-  
+/*   
   .category-pill {
     border: none;
     border-radius: 50px;
@@ -2226,7 +2261,7 @@ h3,
   
   .category-pill:not(.active):hover {
     background-color: #e2e8f0;
-  }
+  } */
   
   .team-pill {
     border: none;
@@ -2362,13 +2397,18 @@ h3,
   .location-selector-link {
     color: #2563eb;
     font-weight: 700;
+    margin-left: 5px;
   }
   
-  .location-selector-caret {
+  /* .location-selector-caret {
     margin-left: 2px;
     font-size: 1.2rem;
+  } */
+  .location-selector .bi-chevron-down::before {
+    content: "\f282"; position: relative;
+    right: 0;
+    top: 3px;
   }
-  
   .location-panel {
     display: none;
     position: absolute;
@@ -2450,6 +2490,28 @@ h3,
   .location-panel-option:hover {
     background-color: #f3f4f6;
     border-radius: 4px;
+  }
+
+  .category-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .category-scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    /* gap: 10px; */
+    min-width: max-content;
+    padding-bottom: 5px;
+  }
+  
+  /* Hide scrollbar */
+  .category-scroll-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .category-scroll-wrapper {
+    scrollbar-width: none;
   }
   
   .team-slider, .venue-slider{margin: 0 -15px;}
@@ -2656,7 +2718,7 @@ h3,
     position: relative;
     height: 180px;
     background-size: cover;
-    background-position: center;
+    background-position: top;
     background-color: var(--clr-surface);
     overflow: hidden;
   }
@@ -2731,7 +2793,7 @@ h3,
     font-family: "bootstrap-icons" !important;
     font-size: medium;
     font-weight: bold;}
-  .new-left-right .slick-next:hover:before,
+  .new-left-right .slick-next:hover:before, .new-slider .slick-next:hover:before, .new-slider .slick-prev:hover:before,
   .new-left-right .slick-prev:hover:before {
       color: #ffffff !important;
   }
@@ -2742,7 +2804,7 @@ h3,
   .new-left-right .slick-prev:hover, .new-left-right .slick-next:hover, .new-slider .slick-prev:hover, .new-slider .slick-next:hover  {
     background: var(--clr-primary);
     border-color: var(--clr-primary);
-    color: var(--clr-white);
+    color: var(--clr-white) !important;
     box-shadow: var(--shadow-glow);
   }
   .new-slider .team-slider .slick-next, .new-slider .slick-next {right: 30px;}
@@ -2882,12 +2944,12 @@ h3,
     background: var(--clr-bg-card);
     border: 1px solid var(--clr-border);
     border-radius: var(--radius-lg);
-    padding: 20px 20px 20px 20px;
+    /* padding: 20px 20px 20px 20px; */
     text-align: center;
     transition: all var(--duration) var(--ease);
     box-shadow: var(--shadow-sm);
     height: 100%;
-    min-height: 350px;
+    min-height: 315px;
     /* align-items: center;
     justify-content: center; */
     display: flex;
@@ -2895,14 +2957,14 @@ h3,
   
   .venue-card:hover {
     background: var(--clr-bg-card-hover);
-    border-color: var(--clr-primary);
+    /* border-color: var(--clr-primary); */
     transform: translateY(-4px);
     box-shadow: var(--shadow-md);
   }
   .venue-img {
     height: 200px;
     overflow: hidden;
-    border-radius: 10px;
+    border-radius: 10px 10px 0px 0px;
   }
   
   .venue-img img {
@@ -2917,8 +2979,8 @@ h3,
   
   .venue-title {
     font-weight: 600;
-    font-size: 18px;
-    margin-bottom: 6px;
+    font-size: 16px;
+
   }
   
   .venue-location {
@@ -3107,9 +3169,9 @@ h3,
   
   @media (max-width: 480px) {
   
-    .categories__grid {
+    /* .categories__grid {
       grid-template-columns: 1fr;
-    }
+    } */
   }
   
   .newsletter-icontact{
@@ -3480,11 +3542,11 @@ h3,
     padding: 10px 18px;
     background: #f1f3f6;
     border-radius: 999px;
-    border: 1px #3c56e0 solid;
+    border: 1px #4e4b4bb5 solid;
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
-    color: #1c1c1c;
+    color: #767272;
     transition: all 0.2s ease;
   }
   
@@ -3499,6 +3561,7 @@ h3,
     color: #000; */
     background: #3255dd;
     color: #fff;
+    border: 1px #0528af solid;
   }
   
   /* .city-pill:hover .arrow {
@@ -3510,3 +3573,5 @@ h3,
     color: #b8b8b8;
     pointer-events: none;
   } */
+
+  
