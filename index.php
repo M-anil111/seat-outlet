@@ -71,7 +71,7 @@ include 'header.php';
 
     <div class="tab-content">
       <div class="tab-pane show active" id="concerts">
-        <div class="custom-slider new-left-right"></div>
+        <div class="custom-slider new-left-right"><?php renderSkeletonCardsEvents(4); ?></div>
       </div>
 
       <div class="tab-pane" id="sports">
@@ -140,7 +140,7 @@ include 'header.php';
 </section>
 
 
-<section class="teams-nearby py-3">
+<section class="teams-nearby bg-white py-3">
   <div class="container py-5 slider-bg text-white">
     <div class="d-flex justify-content-between align-items-center">
       <h2 class="section__title section__title--center fw-bold fs-4 mb-4 text-black">
@@ -150,26 +150,26 @@ include 'header.php';
     </div>
    
     <div class="category-scroll-wrapper">
-    <ul class="nav nav-pills mb-3 category-scroll" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="sport-cat category-pill active" data-bs-toggle="pill" data-bs-target="#tab-NFL" type="button" data-slug="NFL">NFL</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-NBA" type="button" data-slug="NBA">NBA</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-MLB" type="button" data-slug="MLB">MLB</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-NHL" type="button" data-slug="NHL">NHL</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="sport-cat category-pill" data-bs-toggle="pill" data-bs-target="#tab-MLS" type="button" data-slug="MLS">MLS</button>
-      </li>
-    </ul>
-</div>
-    <div class="tab-content" id="sportsTabContent">
-      <div class="loader"></div>
+      <ul class="nav nav-pills mb-3 category-scroll" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="sport-cat active" data-bs-toggle="pill" data-bs-target="#tab-NFL" type="button" data-slug="NFL">NFL</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="sport-cat" data-bs-toggle="pill" data-bs-target="#tab-NBA" type="button" data-slug="NBA">NBA</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="sport-cat" data-bs-toggle="pill" data-bs-target="#tab-MLB" type="button" data-slug="MLB">MLB</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="sport-cat" data-bs-toggle="pill" data-bs-target="#tab-NHL" type="button" data-slug="NHL">NHL</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="sport-cat" data-bs-toggle="pill" data-bs-target="#tab-MLS" type="button" data-slug="MLS">MLS</button>
+        </li>
+      </ul>
+    </div>
+    <div class="tab-content tab-pane show active" id="sportsTabContent">
+      <?php echo generateTeamSkeleton(4); ?>
     </div>
   </div>
 </section>
@@ -374,13 +374,13 @@ include 'header.php';
   </div>
 </section>
 
-<section class="section categories teams-nearby py-5" aria-labelledby="cities-heading">
+<section class="section categories bg-white teams-nearby py-5" aria-labelledby="cities-heading">
   <div class="container">
     <h2 id="cities-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
       Popular Cities
     </h2>
-    <div class="row g-3" id="browseCitiesWrapper">
-      <div class="loader"></div>
+    <div id="browseCitiesWrapper">
+      <?php generateCitySkeleton(); ?>
     </div>
   </div>
 </section>
@@ -389,15 +389,14 @@ include 'header.php';
   <h2 class="fw-bold fs-4 mb-4">Top Venues Near You</h2>
   <div class="venue-slider px-4">
     <div class="text-center py-5 w-100">
-      <div class="loader"></div>
-    
+      <?php echo buildVenueSkeleton(4); ?>    
     </div>
   </div>
 </section>
 
 <section class="section reasons teams-nearby py-5 mt-3" aria-labelledby="reasons-heading">
   <div class="container">
-    <h2 id="reasons-heading" class="section__title section__title--center fw-bold fs-4 mb-5 text-center">The Seat Outlet Advantage</h2>
+    <h2 id="reasons-heading" class="section__title section__title--center fw-bold fs-4 mb-5">The Seat Outlet Advantage</h2>
     <!-- <p class="section__subtitle text-center">Great seats, amazing prices.</p> -->
     <div class="reasons__grid">
       <article class="reason-card">
@@ -434,7 +433,7 @@ include 'header.php';
 <div class="testimonial-page">
   <section class="section-padding">
     <div class="container">
-      <h2 id="testimonials-heading" class="section__title section__title--center text-center fw-bold fs-4 mb-5 text-center">Trusted by Thousands of Fans</h2>
+      <h2 id="testimonials-heading" class="section__title section__title--center fw-bold fs-4 mb-5">Trusted by Thousands of Fans</h2>
       <div class="testimonials-grid">
         <div class="testimonial-card">
 
@@ -541,7 +540,7 @@ include 'header.php';
 
 <section class="partners-section teams-nearby py-5">
   <div class="container">
-    <h2 class="mb-4 fw-bold fs-4 mb-5 text-center">Partners</h2>
+    <h2 class="mb-4 fw-bold fs-4 mb-5">Partners</h2>
 
     <div class="row g-3 g-md-4 justify-content-center">
 

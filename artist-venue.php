@@ -77,10 +77,12 @@ $faqs = getFaqs($mysqli, 'performer');
 				</div>
 				<div class="col-12">
 					<div class="row align-items-center text-center text-md-start">
-						<div class="col-md-4">
-							<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" />
+						<div class="col-md-3">
+							<div class="img-artist">
+								<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" />	
+							</div>	
 						</div>
-						<div class="col-md-8 text-white">
+						<div class="col-md-9 text-white">
 							<div class="artist-heading text-center text-md-start text-lg-start text-xl-start text-xxl-start">
 								<?php
 								$lastBreadcrumb = end($breadcrumbs);
@@ -183,7 +185,8 @@ $faqs = getFaqs($mysqli, 'performer');
 									<label class="filter-label">Dates</label>
 									<div class="filter-input">
 										<i class="bi bi-calendar3"></i>
-										<input type="text" id="dateRange" class="form-control" placeholder="All Dates" readonly>
+										<!-- <input type="text" id="dateRange" class="form-control" placeholder="All Dates" readonly> -->
+										<input type="text" id="parformerDatePicker" placeholder="Select Date Range" class="form-control" autocomplete="off" readonly value="<?php echo !empty($dateTitle) ? $dateTitle : ''; ?>">
 										<div class="filter-arrow">
 											<i id="dateArrow" class="bi bi-chevron-down"></i>
 										</div>
@@ -323,7 +326,7 @@ $faqs = getFaqs($mysqli, 'performer');
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
 					</div>
-					<div class="tab-section content-section-detail" id="promocode">
+					<div class="tab-section content-section-detail mb-3" id="promocode">
 						<div class="row">
 							<div class="" id="promo">
 								<h2><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> concert Promo Codes in {country}</h2>
@@ -519,6 +522,59 @@ $faqs = getFaqs($mysqli, 'performer');
 </section>
 
 
+<script>
 
+document.addEventListener("DOMContentLoaded", function () {
+
+let selectedDatesTemp = [];
+
+function getMonthCount() {
+	return window.innerWidth <= 689 ? 1 : 2;
+}
+
+let fp = flatpickr("#parformerDatePicker", {
+	mode: "range",
+	dateFormat: "M j, Y",
+	showMonths: getMonthCount(),
+	disableMobile: true,
+	clickOpens: true,
+
+	onChange: function(selectedDates) {
+		selectedDatesTemp = selectedDates;
+	},
+
+	onReady: function(selectedDates, dateStr, instance) {
+
+		instance.calendarContainer.classList.add("so-date-picker");
+
+		const footer = document.createElement("div");
+		footer.className = "fp-footer";
+
+		footer.innerHTML = `
+			<div class="fp-footer-left">
+				<button class="fp-reset">Reset</button>
+			</div>
+		`;
+
+		instance.calendarContainer.appendChild(footer);
+
+		footer.querySelector(".fp-reset").addEventListener("click", () => {
+			instance.clear();
+		});
+	}
+});
+
+// 🔥 Handle resize dynamically
+window.addEventListener("resize", function () {
+	const newMonthCount = getMonthCount();
+
+	if (fp.config.showMonths !== newMonthCount) {
+		fp.set("showMonths", newMonthCount);
+		fp.redraw();
+	}
+});
+
+});
+</script>
 
 <?php include 'footer.php'; ?>

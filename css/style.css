@@ -195,17 +195,15 @@ h3,
 }
 
 /* More hidden by default */
-.more-item {
-    display: none;
-}
+
 
 /* Search */
-.tm-search {
+/* .tm-search {
     display: flex;
     align-items: center;
     gap: 10px;
 
-    background: #3f67e8;                /* inner blue */
+    background: #3f67e8;                
     border: 1px solid rgba(255,255,255,0.6);
     border-radius: 6px;
 
@@ -252,7 +250,7 @@ h3,
 .tm-search:focus-within {
     border-color: #ffffff;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.4);
-}
+} */
 /* Account */
 .tm-account {
     display: flex;
@@ -288,6 +286,7 @@ h3,
     padding: 12px 0;
     font-size: 16px;
     color: #333;
+    font-weight: 500;
     text-decoration: none;
 }
 
@@ -296,19 +295,16 @@ h3,
 }
 
 /* ---------------- RESPONSIVE ---------------- */
-@media (max-width: 992px) {
+
+
+/* @media (max-width: 992px) {
     .header-nav {
         display: none;
     }
-}
+} */
 
-@media (max-width: 768px) {
-    .search-box {
-        display: none;
-    }
+@media (max-width: 768px) {  .container.main-layout, .container{width: 100%;}}
 
-    .container.main-layout, .container{width: 100%;}
-}
 
 /* ---------------- MAIN LAYOUT ---------------- */
 /* IMPORTANT: do not override Bootstrap .container globally */
@@ -679,7 +675,7 @@ h3,
 @media (max-width: 1290px){.tm-account{font-size: 16px;}}
 @media (min-width: 1155px) {.mobile-header {display: none;} .tm-header{display: block;}}
 
-@media (max-width: 1154px) {.mobile-header {display: block;} .tm-header{display: none;}}
+/* @media (max-width: 1154px) {.mobile-header {display: block;} .tm-header{display: none;}} */
 /* ---------------- RESPONSIVE ---------------- */
 
 /* Tablet */
@@ -1006,6 +1002,7 @@ h3,
 
 .results-title .dot {
     margin: 0 6px;
+    background: transparent;
 }
 
 .results-title .count {
@@ -1339,6 +1336,13 @@ h3,
        max-width: 335px;
     text-align: center;
 }
+.ad-container-fixe {
+  height: 100%;
+  overflow: hidden;
+  border-radius: 5px;
+  max-height: 350px;
+}
+
 
 /* .ad-card {
     position: relative;
@@ -1445,6 +1449,7 @@ h3,
 
 /* @media (max-width: 991px){.section-performer-content .performer-event-item .performer-event-item-price a{ font-size: 13.5px;}} */
 @media (max-width: 1366px){.picker-wrapper{left: 15%;}}
+@media (max-width: 1280px){.search-bar-container{width: 100% !important;}}
 @media (max-width: 1049px){.left-bar, .sidebar{width: 100%; flex: auto;}}
 @media (max-width: 880px){.filter-input{top: -20px;}
 
@@ -1453,13 +1458,14 @@ h3,
 }
 						
 @media (max-width: 767.98px){.artist-heading  {margin-top: 10px;}  .artist-tabs-nav {
-        justify-content: center;
+        justify-content: flex-start;
         overflow-x: auto;
         flex-wrap: nowrap;
         gap: 20px;
         padding: 0 16px;
         scrollbar-width: none;
     }
+    .picker-wrapper{left: 4%;}
     /* .picker-wrapper{left: 4%; padding:0px !important; display: flex !important;} */
 
     .artist-tabs-nav::-webkit-scrollbar {
@@ -1723,16 +1729,16 @@ h3,
 }
 
 /* ===== Fade Edges ===== */
-.ticker-fade {
+/* .ticker-fade {
     position: absolute;
     top: 0;
     width: 60px;
     height: 100%;
     z-index: 2;
     pointer-events: none;
-}
+} */
 
-.ticker-fade-left {
+/* .ticker-fade-left {
     left: 0;
     background: linear-gradient(to right, #0d6efd 0%, rgba(13,110,253,0) 100%);
 } 
@@ -1740,7 +1746,7 @@ h3,
  .ticker-fade-right {
     right: 0;
     background: linear-gradient(to left, #0d6efd 0%, rgba(13,110,253,0) 100%);
-}
+} */
 
 /* ===== Track ===== */
 .ticker-track {
@@ -1905,7 +1911,7 @@ h3,
     color: rgba(20, 24, 33, 0.7);
   }
   
-  .category-pill {
+  .category-pill, .sport-cat {
     border: 1px #4265f3 solid;
     border-radius: 50px;
     padding: 6px 18px;
@@ -1917,17 +1923,17 @@ h3,
     white-space: nowrap;
   }
   
-  .category-pill.active {
+  .category-pill.active, .sport-cat.active {
     background-color: var(--stub-primary);
     color: #fff;
   }
   
-  .category-pill:not(.active) {
+  .category-pill:not(.active), .sport-cat:not(.active) {
     background-color: transparent;
     color: #4265f3;
   }
   
-  .category-pill:not(.active):hover {
+  .category-pill:not(.active):hover, .sport-cat:not(.active):hover {
     background-color: #e2e8f0;
   }
   
@@ -2322,6 +2328,8 @@ h3,
   .search-bar-container {
     background-color: #fff;
     border-radius: 25px;
+    width: 50%;
+    margin: 0 auto;
   }
   
   .search-bar-container input {
@@ -2519,7 +2527,7 @@ h3,
     padding: 10px; margin-right:15px; 
     /* margin-left:15px; */
   }
-  .slider-bg{background: #f0f8ff;}
+  /* .slider-bg{background: #f0f8ff;} */
   
   .team-link{color: #fff; text-decoration: none; margin-top: 10px;}
   .team-card {
@@ -2704,7 +2712,7 @@ h3,
     border-radius: var(--radius-lg);
     overflow: hidden;
     transition: all var(--duration) var(--ease);
-    box-shadow: var(--shadow-sm);
+    /* box-shadow: var(--shadow-sm); */
   }
   
   .event-card:hover {
@@ -2727,7 +2735,8 @@ h3,
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.35) 0%, transparent 50%);
+    background: linear-gradient (to top, rgba(0, 0, 0, 0.35) 0%, transparent 50%);
+    
   }
   
   .event-card__badge {
@@ -3427,7 +3436,7 @@ h3,
   
   #keywordResultsHeader{top: 56px;
          position: absolute; left: 0px; width: 100%;
-    z-index: 1;}
+    z-index: 9999;}
   
     .search-bar-container .tn-dropdown-menu ul:before {
       content: '';
@@ -3575,3 +3584,115 @@ h3,
   } */
 
   
+
+
+  /* custom date picker */
+/* .so-date-picker{top: 210px !important;} */
+/* .so-date-picker-custom{top: 210px !important; left: 40.5% !important;}  */
+.so-date-picker-custom{top: 210px !important;}
+.so-date-picker {z-index: 1;}
+  #customDatePicker {
+    /* height: 44px;
+    border-radius: 10px;
+    border: 1px solid #ddd; 
+    padding: 10px 14px;*/
+    width: 100%;
+    max-width: 320px;
+}
+
+/* Calendar box */
+.flatpickr-calendar {
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+    border: none;
+    padding-bottom: 60px;
+}
+
+/* Month title */
+.flatpickr-current-month {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+/* Day styling */
+.flatpickr-day {
+    border-radius: 50%;
+    height: 38px;
+    line-height: 38px;
+    font-size: 14px;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #fff;
+}
+
+.flatpickr-day.inRange {
+    background: rgba(59,130,246,0.15);
+}
+
+/* Footer */
+.fp-footer {
+    position: absolute;
+    bottom: 10px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fp-footer button {
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    background: #fff;
+}
+
+.fp-reset {
+    color: #3b82f6;
+    border: none;
+    background: transparent;
+}
+
+.fp-apply {
+    background: #3b82f6 !important;
+    color: #fff;
+    border: none;
+}
+
+.fp-cancel {
+    margin-right: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  /* .so-date-picker-custom{top: 210px !important;} */
+    .flatpickr-calendar {
+        position: fixed !important;
+        left: 10px !important;
+        right: 10px !important;
+        bottom: auto !important;
+        top: 220px !important;
+        width: auto !important;
+    }
+    .flatpickr-current-month {
+      font-weight: 600;
+      font-size: 14px;
+      padding: 0px !important;
+  }
+
+    .flatpickr-days {
+        width: 100% !important;
+    }
+
+    .flatpickr-day {
+        height: 44px;
+        line-height: 44px;
+    }
+  }

@@ -40,6 +40,8 @@ if ($cpidInt > 0) {
     $params['performerFilter'] = 'id eq ' . $cpidInt;
 }
 
+$flag = 0;
+
 if ($latVal !== null && $lngVal !== null) {
     $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $latVal, $lngVal);
 } elseif ($zip !== '') {
@@ -54,11 +56,12 @@ if ($latVal !== null && $lngVal !== null) {
 } elseif ($city !== '' && $state !== '') {
     $params['filter'] = "city/text/name eq '$city' and stateProvince/text/abbr eq '$state'";
 } elseif ($startDate !== '' && $endDate !== '') {
+    $flag = 1;
     $params['filter'] = "date/date ge $startDate and date/date le $endDate";
 }
 
 try {
-    $response = getTnEvents($params);
+    $response = getTnEvents($params, $flag);
 } catch (Throwable $e) {
     http_response_code(500);
     echo '<div class="error">Failed to load events</div>';
@@ -82,7 +85,7 @@ foreach ($events as $event) {
     }, $evtPerformers);
     $dataPerformers = implode('|', array_filter($names));
     $year = date('Y');
-    $cy = date('Y', strtotime($timestamp));
+    $cy = date('Y', $timestamp);
     $y = '';
     if($cy > $year) { 
         $y = '<div class="month">'.$cy.'</div>';
@@ -90,13 +93,13 @@ foreach ($events as $event) {
     echo '
     <div class="d-flex align-items-center justify-content-between performer-event-item">
         <div class="date-box text-center me-3">
-            <div class="month">'.strtoupper(date('M', strtotime($timestamp))).'</div>
-            <div class="day">'.date('d', strtotime($timestamp)).'</div>
+            <div class="month">'.strtoupper(date('M', $timestamp)).'</div>
+            <div class="day">'.date('d', $timestamp).'</div>
             '.$y.'
         </div>
         <div class="flex-grow-1 w-50">
             <div class="d-flex align-items-center gap-2">
-                <span class="fw-semibold day-weeks">'.date('D', strtotime($timestamp)).'</span>
+                <span class="fw-semibold day-weeks">'.date('D', $timestamp).'</span>
                 <span class="dot">·</span>
                 <span class="time-clock">'.$event['date']['text']['time'].'</span>
                 <i 
@@ -105,7 +108,7 @@ foreach ($events as $event) {
                     data-bs-target="#offcanvasRight" 
                     aria-controls="offcanvasRight" 
                     data-id="'.$event['id'].'" 
-                    data-date="'.date('D, M d', strtotime($timestamp)).'" 
+                    data-date="'.date('D, M d', $timestamp).'" 
                     data-venue="'.$event['venue']['text']['name'].'" 
                     data-location="'.$event['city']['text']['name'].', '.$event['stateProvince']['text']['abbr'].'" 
                     data-title="'.$event['text']['name'].'" 

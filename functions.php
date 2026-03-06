@@ -259,7 +259,7 @@ function getLocationSuggestions($keyword) {
     return $output;
 }
 
-function getTnEvents($params = []) {
+function getTnEvents($params = [], $flag = 0) {
     // Base endpoint (IMPORTANT: no /search)
     $url = BASE_URL . '/catalog/v2/events';
 
@@ -269,8 +269,10 @@ function getTnEvents($params = []) {
         'perPage' => 20,
     ];
 
-    $today = date('Y-m-d');
-    $params['filter'] = "date/date ge $today";
+    if(!$flag) { 
+        $today = date('Y-m-d');
+        $params['filter'] = "date/date ge $today";
+    }
 
     $params = array_merge($defaultParams, $params);
 
@@ -1066,7 +1068,7 @@ function getKeywordSearchSuggestions($q) {
 
     $results = [
         'artists' => [],
-        'events'  => [],
+        'cities'  => [],
         'venues'  => []
     ];
 
@@ -1081,12 +1083,15 @@ function getKeywordSearchSuggestions($q) {
     ARTISTS
     ==========================
     */
+   
     $artistParams = [
-        'q'       => $q,
-        'numberOfSuggestions' => 10
+        'filter' => "contains(text/name,'$q')",
+        'sort' => '-salesRank',
+        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
+        'perPage' => 10
     ];
 
-    $artistUrl = BASE_URL . '/catalog/v2/performers/suggest/?' . http_build_query($artistParams);
+    $artistUrl = BASE_URL . '/catalog/v2/performers/?' . http_build_query($artistParams);    
 
     $artistData = tnCurlRequest($artistUrl, $headers);
 
@@ -1094,7 +1099,7 @@ function getKeywordSearchSuggestions($q) {
         foreach ($artistData['results'] as $artist) {
             $results['artists'][] = [
                 'id'   => $artist['id'] ?? '',
-                'name' => $artist['name'] ?? '',
+                'name' => $artist['text']['name'] ?? '',
                 'slug' => $artist['uriComponent'] ?? ''
             ];
         }
@@ -1102,25 +1107,27 @@ function getKeywordSearchSuggestions($q) {
 
     /*
     ==========================
-    EVENTS
+    CITIES
     ==========================
     */
-    $eventParams = [
-        'q'       => $q,
-        'numberOfSuggestions' => 10
+    $cityParams = [
+        'filter' => "contains(text/name,'$q')",
+        'sort' => '-salesRank',
+        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
+        'perPage' => 10
     ];
+    
+    $cityUrl = BASE_URL . '/catalog/v2/cities/?' . http_build_query($cityParams);
 
-    $eventUrl = BASE_URL . '/catalog/v2/events/suggest/?' . http_build_query($eventParams);
+    $cityData = tnCurlRequest($cityUrl, $headers);
 
-    $eventData = tnCurlRequest($eventUrl, $headers);
-
-    if (!empty($eventData['results'])) {
-        foreach ($eventData['results'] as $event) {
-            $results['events'][] = [
-                'id'   => $event['id'] ?? '',
-                'name' => $event['name'] ?? '',
-                'date' => $event['date'] ?? '',
-                'slug' => $event['uriComponent'] ?? ''
+    if (!empty($cityData['results'])) {
+        foreach ($cityData['results'] as $city) {
+            $results['cities'][] = [
+                'id'   => $city['id'] ?? '',
+                'name' => $city['text']['name'] ?? '',
+                'state' => $city['stateProvince']['text']['abbr'] ?? '',
+                'slug' => $city['uriComponent'] ?? ''
             ];
         }
     }
@@ -1131,11 +1138,13 @@ function getKeywordSearchSuggestions($q) {
     ==========================
     */
     $venueParams = [
-        'q'       => $q,
-        'numberOfSuggestions' => 10
+        'filter' => "contains(text/name,'$q')",
+        'sort' => '-salesRank',
+        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
+        'perPage' => 10
     ];
 
-    $venueUrl = BASE_URL . '/catalog/v2/venues/suggest/?' . http_build_query($venueParams);
+    $venueUrl = BASE_URL . '/catalog/v2/venues/?' . http_build_query($venueParams);
 
     $venueData = tnCurlRequest($venueUrl, $headers);
 
@@ -1143,9 +1152,9 @@ function getKeywordSearchSuggestions($q) {
         foreach ($venueData['results'] as $venue) {
             $results['venues'][] = [
                 'id'    => $venue['id'] ?? '',
-                'name'  => $venue['name'] ?? '',
-                'city'  => $venue['city']['name'] ?? '',
-                'state' => $venue['stateProvince']['abbr'] ?? '',
+                'name'  => $venue['text']['name'] ?? '',
+                'city'  => $venue['city']['text']['name'] ?? '',
+                'state' => $venue['stateProvince']['text']['abbr'] ?? '',
                 'slug'  => $venue['uriComponent'] ?? ''
             ];
         }
@@ -1342,12 +1351,27 @@ function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, $limit = 12
 
 function getTeamsByCategory($categorySlug) {
 
-    $accessToken = getTnAccessToken();
-    $location = getUserLocationFromCookie();   
+    $categorySlug = strtoupper(trim((string)$categorySlug));
+    if ($categorySlug === '') return [];
+
+    $location = getUserLocationFromCookie(); // whatever you return here
+    $locKey = 'default';
+
+    if (!empty($location)) {
+        $locKey = strtolower(str_replace([' ', '.', ','], ['_', '', ''], (string)$location));
+    }
+
+    $cacheKey = "teams_{$categorySlug}";
+
+    // 1) cache first
+    $cached = cache_get($cacheKey, 86400); // 24h
+    if ($cached !== false) {
+        return $cached;
+    }
 
     // Map category slug to TN category path
     $categoryPaths = [
-        'NFL' => '.1859.1988.1879.1959.',   // example path (update as per your TN path)
+        'NFL' => '.1859.1988.1879.1959.',
         'NBA' => '.1859.1988.1865.1971.',
         'MLB' => '.1859.1988.1864.1969.',
         'NHL' => '.1859.1988.1883.1972.',
@@ -1358,21 +1382,23 @@ function getTeamsByCategory($categorySlug) {
         return [];
     }
 
+    $accessToken = getTnAccessToken();
+
     $params = [
         'filter'  => "contains(defaultCategory/path,'{$categoryPaths[$categorySlug]}') and _metadata/hasEvents eq true",
-        'sort' => 'salesRank',
+        'sort'    => 'salesRank',
         'perPage' => 10,
         'page'    => 1
     ];
 
-    if(!empty($location)) {
-        $params['eventFilter'] = "country/alphaCode eq 'US'";        
+    // If you meant: if location exists then country filter, keep as-is
+    if (!empty($location)) {
+        $params['eventFilter'] = "country/alphaCode eq 'US'";
     }
 
     $url = BASE_URL . '/catalog/v2/performers?' . http_build_query($params);
 
     $ch = curl_init($url);
-
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => [
@@ -1385,9 +1411,13 @@ function getTeamsByCategory($categorySlug) {
     $response = curl_exec($ch);
     curl_close($ch);
 
-    $data = json_decode($response, true);
+    $data = json_decode((string)$response, true);
+    $results = $data['results'] ?? [];
 
-    return $data['results'] ?? [];
+    // 2) save cache (even if empty is okay, but your choice)
+    cache_set($cacheKey, $results);
+
+    return $results;
 }
 
 function getEventImage($artist, $venue) {
@@ -1457,4 +1487,82 @@ function cache_set($key, $data) {
 
     if (file_put_contents($tmp, $json, LOCK_EX) === false) return false;
     return rename($tmp, $file);
+}
+
+function renderSkeletonCardsEvents($count = 8) {
+    for ($i = 0; $i < $count; $i++) {
+        echo '
+        <a href="javascript:void(0)" class="team-link skeleton-link">
+            <article class="event-card skeleton-card">
+                <div class="event-card__img skeleton-img"></div>
+                <div class="event-card__body">
+                    <div class="skeleton-line skeleton-title"></div>
+                    <div class="skeleton-meta">
+                        <span class="skeleton-line skeleton-date"></span>
+                        <span class="dot"></span>
+                        <span class="skeleton-line skeleton-venue"></span>
+                    </div>
+                    <div class="skeleton-line skeleton-price"></div>
+                </div>
+            </article>
+        </a>';
+    }
+}
+
+function generateCitySkeleton($count = 15) {
+
+    $html = '<div class="row g-3 city-skeleton-wrapper">';
+
+    for ($i = 0; $i < $count; $i++) {
+
+        $randomWidth = rand(100, 180);
+
+        $html .= '
+            <div class="col-auto">
+                <div class="city-pill-skeleton" style="width:' . $randomWidth . 'px;"></div>
+            </div>
+        ';
+    }
+
+     $html .= '</div>';
+
+    return $html;
+}
+
+function generateTeamSkeleton($count = 6) {
+
+    $html = '<div class="team-slider">';
+
+    for ($i = 0; $i < $count; $i++) {
+
+        $html .= '
+        <a href="javascript:void(0)" class="team-link skeleton-link">
+            <div class="team-card team-card-skeleton">
+                <span class="skeleton-line skeleton-team-name"></span>
+            </div>
+        </a>
+        ';
+    }
+
+    return $html . '</div>';
+}
+
+function buildVenueSkeleton($count = 8) {
+
+    $html = '<div class="venue-slider">';
+
+    for ($i = 0; $i < $count; $i++) {
+
+        $html .= '
+            <div class="venue-card-skeleton">
+                <div class="skeleton-img shimmer"></div>
+                <div class="venue-content text-center p-3">
+                    <div class="skeleton-line skeleton-title shimmer"></div>
+                    <div class="skeleton-line skeleton-location shimmer"></div>
+                </div>
+            </div>
+        ';
+    }
+
+    return $html . '</div>';
 }

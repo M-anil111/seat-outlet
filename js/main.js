@@ -1,3 +1,7 @@
+function getMonthCount() {
+  return window.innerWidth <= 689 ? 1 : 2;
+}
+
 /* =====================================================
    SAVE LOCATION
 ===================================================== */
@@ -22,7 +26,7 @@ if (navigator.geolocation) {
 
       },
       function(error) {
-          console.error('Geolocation error:', error.message);
+          //console.error('Geolocation error:', error.message);
       },
       {
           enableHighAccuracy: true,
@@ -178,6 +182,33 @@ if (navigator.geolocation) {
       });
     }
 
+    function generateEventSkeleton(count = 6) {
+
+      let html = '';
+  
+      for (let i = 0; i < count; i++) {
+  
+          html += `
+          <a href="javascript:void(0)" class="team-link px-3 skeleton-link">
+              <article class="event-card skeleton-card">  
+                  <div class="event-card__img skeleton-img"></div>  
+                  <div class="event-card__body">
+                      <div class="skeleton-line skeleton-title"></div>  
+                      <div class="skeleton-meta">
+                          <span class="skeleton-line skeleton-date"></span>
+                          <span class="dot"></span>
+                          <span class="skeleton-line skeleton-venue"></span>
+                      </div>  
+                      <div class="skeleton-line skeleton-price"></div>
+                  </div>  
+              </article>
+          </a>
+          `;
+      }
+  
+      return html;
+    }
+
     function loadLocationCategory(tabId, type, loc1, loc2) {
         return new Promise((resolve) => {
           const selector = '#' + tabId + ' .custom-slider';
@@ -211,7 +242,8 @@ if (navigator.geolocation) {
             `./ajax/get-location-category-events.php?tab=${encodeURIComponent(tabId)}` +
             `&type=${encodeURIComponent(type)}&loc1=${encodeURIComponent(loc1)}&loc2=${encodeURIComponent(loc2)}`;
       
-          container.innerHTML = '<div class="loader"></div>';
+          container.innerHTML = generateEventSkeleton(6);
+          initSlider(selector);
       
           const render = (data) => {
             if (!data || !data.length) {
@@ -300,7 +332,7 @@ if (navigator.geolocation) {
     (function init() {
         const savedLabel = getCookie('so_label');
         if (savedLabel && locationText) {
-          locationText.textContent = savedLabel;
+          locationText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
         }
         const { mode, data } = detectLocationMode();
         reloadActiveTab(mode, data).then(() => {
@@ -311,8 +343,8 @@ if (navigator.geolocation) {
     })();
                 
 
-    const pills = document.querySelectorAll('button[data-bs-toggle="pill"]');
-    pills.forEach(pill => {
+    
+    document.querySelectorAll('button.category-pill').forEach(pill => {
 
       pill.addEventListener('shown.bs.tab', function () {
     
@@ -406,7 +438,7 @@ if (navigator.geolocation) {
       const state = btn.getAttribute('data-state') || '';
       if (!city || !state) return;
 
-      if (locationText) locationText.textContent = label;
+      if (locationText) locationText.innerHTML = label + ' <i class="bi bi-chevron-down"></i>';
       if (cityInput) cityInput.value = label;
 
       closeDd();
@@ -450,7 +482,7 @@ if (navigator.geolocation) {
             setCookie('so_lng', lng);
             setCookie('so_label', encodeURIComponent('Current Location'));
 
-            if (locationText) locationText.textContent = 'Current Location';
+            if (locationText) locationText.innerHTML = 'Current Location <i class="bi bi-chevron-down"></i>';
             if (cityInput) cityInput.value = 'Current Location';
 
             if (locationPanel) locationPanel.classList.remove('show');
@@ -492,7 +524,7 @@ if (navigator.geolocation) {
         setCookie('so_state', '');
         setCookie('so_label', '');
 
-        if (locationText) locationText.textContent = 'Select your location';
+        if (locationText) locationText.innerHTML = 'Select your location <i class="bi bi-chevron-down"></i>';
         if (cityInput) cityInput.value = '';
         closeDd();
 
@@ -514,93 +546,127 @@ if (navigator.geolocation) {
 document.addEventListener('DOMContentLoaded', function () {
 
   const container = document.getElementById('sportsTabContent');
+  if (!container) return;
 
-  function loadTeams(slug) {
-
-      container.innerHTML = '<div class="loader"></div>';
-      
-      fetch(`./ajax/get-nearby-teams.php?slug=${slug}`)
-          .then(res => res.json())
-          .then(data => {
-
-              if (!data.length) {
-                  container.innerHTML = '<p>No teams available.</p>';
-                  return;
-              }
-
-              let html = `<div class="tab-pane show active" id="${slug}" role="tabpanel"><div class="team-slider new-slider px-4">`;
-
-              data.forEach(team => {
-                  html += `
-                      <a href="/artist/${team.slug}" class="team-link">
-                        <div class="team-card">
-                          <div class="team-icon bg-primary">${getTeamIconJS(slug)}</div>
-                          <span>${team.name}</span>
-                        </div>                              
-                      </a>                      
-                  `;
-              });
-
-              html += `</div></div>`;
-
-              container.innerHTML = html;
-
-              initTeamSlider();
-          });
+  function escapeHtml(str) {
+    return String(str ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
   }
 
-  // Default load
-  const activeBtn = document.querySelector('.sport-cat.active');
-  if (activeBtn) {
-      loadTeams(activeBtn.dataset.slug);
-  }
+  function generateTeamSkeleton(count = 6) {
 
-  // On tab switch
-  const teams = document.querySelectorAll('button.sport-cat');
-  teams.forEach(pillTeam => {
-    pillTeam.addEventListener('shown.bs.tab', function () {
-      loadTeams(this.dataset.slug);
-    });  
-  });
- 
-
-});
-
-function initTeamSlider() {
-
-    const $slider = $('.team-slider');
-
-    if ($slider.hasClass('slick-initialized')) {
-        $slider.slick('unslick');
+    let html = '<div class="team-slider">';
+  
+    for (let i = 0; i < count; i++) {
+  
+      html += `
+      <a href="javascript:void(0)" class="team-link skeleton-link">
+        <div class="team-card team-card-skeleton">
+          <span class="skeleton-line skeleton-team-name"></span>
+        </div>
+      </a>
+      `;
     }
+  
+    return html + '</div>';
+  }
 
-    $slider.slick({
-        slidesToShow: 4,
-        slidesToScroll: 1,
-        arrows: true,
-        autoplay: true,
-        dots: false,
-        infinite: false,
-        responsive: [
-            { breakpoint: 992, settings: { slidesToShow: 3 } },
-            { breakpoint: 768, settings: { slidesToShow: 2 } },
-            { breakpoint: 576, settings: { slidesToShow: 1 } }
-        ]
-    });
-}
-
-function getTeamIconJS(league) {
-
-  const icons = {
+  function getTeamIconJS(league) {
+    const icons = {
       NFL: '🏈',
       NBA: '🏀',
       MLB: '⚾',
       NHL: '🏒',
       MLS: '⚽'
-  };
+    };
+    return icons[String(league || '').toUpperCase()] || '🏟️';
+  }
 
-  return icons[league?.toUpperCase()] || '🏟️';
-}
+  function initTeamSlider() {
+    const $slider = $('.team-slider');
+    if (!$slider.length) return;
+
+    if ($slider.hasClass('slick-initialized')) {
+      $slider.slick('unslick');
+    }
+
+    $slider.slick({
+      slidesToShow: 4,
+      slidesToScroll: 1,
+      arrows: true,
+      autoplay: true,
+      dots: false,
+      infinite: false,
+      responsive: [
+        { breakpoint: 992, settings: { slidesToShow: 3 } },
+        { breakpoint: 768, settings: { slidesToShow: 2 } },
+        { breakpoint: 576, settings: { slidesToShow: 1 } }
+      ]
+    });
+  }
+
+  function loadTeams(slug) {
+    const league = String(slug || '').toUpperCase().trim();
+    if (!league) return;
+
+    container.innerHTML = generateTeamSkeleton(4);
+    
+    fetch(`./ajax/get-nearby-teams.php?slug=${encodeURIComponent(league)}`, {
+      headers: { 'Accept': 'application/json' }
+    })
+      .then(res => res.ok ? res.json() : Promise.reject(res))
+      .then(data => {
+
+        if (!Array.isArray(data) || !data.length) {
+          container.innerHTML = '<p>No teams available.</p>';
+          return;
+        }
+
+        let html = `<div class="tab-pane show active" id="${escapeHtml(league)}" role="tabpanel">
+                      <div class="team-slider new-slider px-4">`;
+
+        data.forEach(team => {
+          const teamSlug = escapeHtml(team.slug);
+          const teamName = escapeHtml(team.name);
+
+          html += `
+            <a href="/artist/${teamSlug}" class="team-link">
+              <div class="team-card">
+                <div class="team-icon bg-primary">${escapeHtml(getTeamIconJS(league))}</div>
+                <span>${teamName}</span>
+              </div>
+            </a>
+          `;
+        });
+
+        html += `</div></div>`;
+
+        container.innerHTML = html;
+        initTeamSlider();
+      })
+      .catch(() => {
+        container.innerHTML = '<p>Error loading teams.</p>';
+      });
+  }
+
+  // default load
+  const activeBtn = document.querySelector('.sport-cat.active');
+  if (activeBtn && activeBtn.dataset.slug) {
+    loadTeams(activeBtn.dataset.slug);
+  }
+
+  // on tab switch
+  document.querySelectorAll('button.sport-cat').forEach(btn => {
+    btn.addEventListener('shown.bs.tab', function () {
+      loadTeams(this.dataset.slug);
+    });
+  });
+
+});
 
 /* =====================================================
    TEAMS End
@@ -610,12 +676,30 @@ function getTeamIconJS(league) {
    CITIES
 ===================================================== */
 
+function generateCitySkeleton(count = 15) {
+  let html = '<div class="row g-3 city-skeleton-wrapper">';
+
+  for (let i = 0; i < count; i++) {
+    const randomWidth = 100 + Math.floor(Math.random() * 80);
+
+    html += `
+      <div class="col-auto">
+        <div class="city-pill-skeleton" style="width:${randomWidth}px"></div>
+      </div>
+    `;
+  }
+
+  html += '</div>';
+
+  return html;
+}
+
 function loadBrowseCities() {
 
   const wrapper = document.getElementById('browseCitiesWrapper');
   if (!wrapper) return;
 
-  wrapper.innerHTML = '<div class="loader"></div>';
+  wrapper.innerHTML = generateCitySkeleton();
 
   fetch('./ajax/get-home-cities.php')
       .then(res => res.json())
@@ -641,9 +725,8 @@ function buildCities(cities) {
   cities.forEach(city => {
       list += `<div class="col-auto"><a href="#" class="city-pill">${city.name}, ${city.state}</a></div>`;
   });
- 
 
-  return `${list}`;
+  return `<div class="row g-3">${list}</div>`;
 }
 
 loadBrowseCities();
@@ -656,6 +739,26 @@ loadBrowseCities();
    VENUES
 ===================================================== */
 
+function buildVenueSkeleton(count = 8) {
+
+  let html = '<div class="venue-slider">';
+
+  for (let i = 0; i < count; i++) {
+
+      html += `
+          <div class="venue-card-skeleton">
+              <div class="skeleton-img shimmer"></div>
+              <div class="venue-content text-center p-3">
+                  <div class="skeleton-line skeleton-title shimmer"></div>
+                  <div class="skeleton-line skeleton-location shimmer"></div>
+              </div>
+          </div>
+      `;
+  }
+
+  return html + '</div>';
+}
+
 function loadNearbyVenues() {
 
     return new Promise((resolve) => {
@@ -666,6 +769,8 @@ function loadNearbyVenues() {
             return;
         }
 
+        container.innerHTML = buildVenueSkeleton(4);
+        
         fetch('./ajax/get-nearby-venues.php')
             .then(res => res.json())
             .then(data => {
@@ -852,110 +957,81 @@ function getCurrentLocationHeader() {
    HEADER DATERANGE FIELD
 ===================================================== */
 
-function toApiDateHeader(dateObj) {
-    if (!dateObj) return null;
+function toApiDate(dateObj) {
+  if (!dateObj) return null;
 
-    const year  = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const day   = String(dateObj.getDate()).padStart(2, '0');
+  const year  = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day   = String(dateObj.getDate()).padStart(2, '0');
 
-    return `${year}-${month}-${day}`;
+  return `${year}-${month}-${day}`;
 }
 
-const dateRangeHeader = document.getElementById('dateRangeHeader');
-const datePickerSectionHeader = document.getElementById('datePickerSectionHeader');
+document.addEventListener("DOMContentLoaded", function () {
 
-let startInputHeader = document.getElementById('startInputHeader');
-let endInputHeader = document.getElementById('endInputHeader');
+  let selectedDatesTemp = [];  
+  let startInputHeader = document.getElementById('startInputHeader');
+  let endInputHeader = document.getElementById('endInputHeader');
+  let selectedStart = null;
+  let selectedEnd = null;
 
-let selectedStart = null;
-let selectedEnd = null;
+ 
 
-let pickerHeader = flatpickr('#calendarHeader', {
-    inline: true,
+  let fp = flatpickr("#customDatePicker", {
+    mode: "range",
     minDate: "today",
-    mode: 'range',
-    showMonths: 2,
-    dateFormat: "M d, Y",
+    dateFormat: "M j, Y",
+    showMonths: getMonthCount(),
+    disableMobile: true,
+    clickOpens: true,
+  
     onChange: function(selectedDates) {
-        selectedStart = selectedDates[0] || null;
-        selectedEnd   = selectedDates[1] || null;
+      selectedStart = selectedDates[0] || null;
+      selectedEnd   = selectedDates[1] || null;
+      if (selectedDates.length === 2) {
+          selectedDatesTemp = selectedDates;
+          const startDate = toApiDate(selectedStart);
+          const endDate   = toApiDate(selectedEnd);
 
-        if (selectedDates.length === 2) {
-            const startDate = toApiDateHeader(selectedStart);
-            const endDate   = toApiDateHeader(selectedEnd);
+          startInputHeader.value = startDate;
+          endInputHeader.value = endDate;
+      }
+    },
+  
+    onReady: function(selectedDates, dateStr, instance) {
+  
+      instance.calendarContainer.classList.add("so-date-picker-custom");
+  
+      const footer = document.createElement("div");
+      footer.className = "fp-footer";
+  
+      footer.innerHTML = `
+        <div class="fp-footer-left">
+          <button class="fp-reset">Reset</button>
+        </div>
+      `;
+  
+      instance.calendarContainer.appendChild(footer);
+  
+      footer.querySelector(".fp-reset").addEventListener("click", () => {
+        instance.clear();
+      });
 
-            startInputHeader.value = startDate;
-            endInputHeader.value = endDate;
-        }
+      
+
     }
-});
+  });
 
-// Open picker on input click
-const dateArrowHeader = document.getElementById('dateArrowHeader');
-if(dateRangeHeader) {
-    dateRangeHeader.addEventListener('click', (e) => {
-        e.stopPropagation();
-
-        const isHidden = datePickerSectionHeader.classList.toggle('opacity-zero');
-
-        if (isHidden) {
-            dateArrowHeader.classList.remove('bi-chevron-up');
-            dateArrowHeader.classList.add('bi-chevron-down');
-        } else {
-            dateArrowHeader.classList.remove('bi-chevron-down');
-            dateArrowHeader.classList.add('bi-chevron-up');
-
-            setTimeout(() => {
-                pickerHeader.redraw();
-            }, 10);
-        }
-    });
-}
-// Close on outside click
-document.addEventListener('click', (e) => {
-    if (
-        !datePickerSectionHeader.contains(e.target) &&
-        e.target !== dateRangeHeader
-    ) {
-        datePickerSectionHeader.classList.add('opacity-zero');
+  window.addEventListener("resize", function () {
+    const newMonthCount = getMonthCount();
+  
+    if (fp.config.showMonths !== newMonthCount) {
+      fp.set("showMonths", newMonthCount);
+      fp.redraw();
     }
+  });
+
 });
-
-const resetDatesHeader = document.getElementById('resetDatesHeader');
-if(resetDatesHeader) {
-    resetDatesHeader.addEventListener('click', () => {
-        pickerHeader.clear();
-        selectedStart = selectedEnd = null;
-        startInputHeader.value = '';
-        endInputHeader.value = '';
-        dateRangeHeader.value = '';
-    });
-}
-
-
-const cancelDatesHeader = document.getElementById('cancelDatesHeader');
-if(cancelDatesHeader) {
-    cancelDatesHeader.addEventListener('click', () => {
-        datePickerSectionHeader.classList.add('opacity-zero');
-        startInputHeader.value = '';
-        endInputHeader.value = '';
-    });
-}
-
-const applyDatesHeader = document.getElementById('applyDatesHeader');
-if(applyDatesHeader) {
-    applyDatesHeader.addEventListener('click', () => {
-        if (!selectedStart || !selectedEnd) return;
-
-        const startText = flatpickr.formatDate(selectedStart, 'm/d/Y');
-        const endText = flatpickr.formatDate(selectedEnd, 'm/d/Y');
-
-        dateRangeHeader.value = startText + ' - ' + endText;
-
-        datePickerSectionHeader.classList.add('opacity-zero');
-    });
-}
 
 /* =====================================================
    HEADER DATERANGE FIELD End
@@ -1003,18 +1079,17 @@ if(keywordHeader) {
 			}
 
 			// =====================
-			// EVENTS
+			// CITIES
 			// =====================
-			if (data.events && data.events.length > 0) {
-				html += '<li class="suggestion-label">Events</li>';
-				data.events.forEach(item => {
+			if (data.cities && data.cities.length > 0) {
+				html += '<li class="suggestion-label">Cities</li>';
+				data.cities.forEach(item => {
 					html += `
 					<li class="result-item"
-						data-type="event"
+						data-type="city"
 						data-id="${item.id}"
 						data-slug="${item.slug}">
-						${item.name}
-						${item.date ? `<span class="small text-muted">(${item.date})</span>` : ''}
+						${item.name}${item.state ? ', ' + item.state : ''}            
 					</li>`;
 				});
 			}
@@ -1175,7 +1250,7 @@ function updateEventsSection(location) {
                 document.getElementById('results_count').innerHTML = count + countmsg;
                 document.getElementById('eventsSection').innerHTML = html;
             }
-            if(location.flag !== 'reset') {
+            if(location.flag !== 'reset' && input.value !== '') {
                 input.disabled = true;   
                 const resetBtn = document.getElementById('locationInputReset');
                 resetBtn.classList.remove('d-none');
@@ -1253,32 +1328,22 @@ function getCurrentLocation() {
 
 /* Date Range */
 
-function toApiDate(dateObj) {
-  if (!dateObj) return null;
-
-  const year  = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const day   = String(dateObj.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-
-const dateRange = document.getElementById('dateRange');
-const datePickerSection = document.getElementById('datePickerSection');
-
 const startInput = document.getElementById('startInput');
 const endInput = document.getElementById('endInput');
-
+let performerSelectedDatesTemp = [];
 let selectStart = null;
 let selectEnd = null;
 
-let picker = flatpickr('#calendar', {
-  inline: true,
+let picker = flatpickr("#performerDatePicker", {
+	mode: "range",
   minDate: "today",
-  mode: 'range',
-  showMonths: 2,
-  dateFormat: "M d, Y",
-  onChange: function(selectedDates) {
+	dateFormat: "M j, Y",
+	showMonths: getMonthCount(),
+	disableMobile: true,
+	clickOpens: true,
+
+	onChange: function(selectedDates) {
+		
       selectStart = selectedDates[0] || null;
       selectEnd   = selectedDates[1] || null;
 
@@ -1286,6 +1351,7 @@ let picker = flatpickr('#calendar', {
       const dcat = input.dataset.dcat;
 
       if (selectedDates.length === 2) {
+          performerSelectedDatesTemp = selectedDates;
           const startDate = toApiDate(selectStart);
           const endDate   = toApiDate(selectEnd);
 
@@ -1297,75 +1363,37 @@ let picker = flatpickr('#calendar', {
               dcat
           });
       }
-  }
+	},
+
+	onReady: function(selectedDates, dateStr, instance) {
+
+		instance.calendarContainer.classList.add("so-date-picker");
+
+		const footer = document.createElement("div");
+		footer.className = "fp-footer";
+
+		footer.innerHTML = `
+			<div class="fp-footer-left">
+				<button class="fp-reset">Reset</button>
+			</div>
+		`;
+
+		instance.calendarContainer.appendChild(footer);
+
+		footer.querySelector(".fp-reset").addEventListener("click", () => {
+			instance.clear();
+		});
+	}
 });
 
-// Open picker on input click
-const dateArrow = document.getElementById('dateArrow');
-if(dateRange) {
-  dateRange.addEventListener('click', (e) => {
-      e.stopPropagation();
+window.addEventListener("resize", function () {
+	const newMonthCount = getMonthCount();
 
-      const isHidden = datePickerSection.classList.toggle('opacity-zero');
-
-      if (isHidden) {
-          dateArrow.classList.remove('bi-chevron-up');
-          dateArrow.classList.add('bi-chevron-down');
-      } else {
-          dateArrow.classList.remove('bi-chevron-down');
-          dateArrow.classList.add('bi-chevron-up');
-
-          setTimeout(() => {
-              picker.redraw();
-          }, 10);
-      }
-  });
-}
-// Close on outside click
-document.addEventListener('click', (e) => {
-  if (
-      !datePickerSection.contains(e.target) &&
-      e.target !== dateRange
-  ) {
-      datePickerSection.classList.add('opacity-zero');
-  }
+	if (picker.config.showMonths !== newMonthCount) {
+		picker.set("showMonths", newMonthCount);
+		picker.redraw();
+	}
 });
-
-const resetDates = document.getElementById('resetDates');
-if(resetDates) {
-  resetDates.addEventListener('click', () => {
-      picker.clear();
-      selectStart = selectEnd = null;
-      startInput.value = '';
-      endInput.value = '';
-      dateRange.value = '';
-  });
-}
-
-
-const cancelDates = document.getElementById('cancelDates');
-if(cancelDates) {
-  cancelDates.addEventListener('click', () => {
-      datePickerSection.classList.add('opacity-zero');
-  });
-}
-
-const applyDates = document.getElementById('applyDates');
-if(applyDates) {
-  applyDates.addEventListener('click', () => {
-      if (!selectStart || !selectEnd) return;
-
-      const startText = flatpickr.formatDate(selectStart, 'm/d/Y');
-      const endText = flatpickr.formatDate(selectEnd, 'm/d/Y');
-
-      dateRange.value = startText + ' - ' + endText;
-
-      const apiStart = flatpickr.formatDate(selectStart, 'Y-m-d');
-      const apiEnd = flatpickr.formatDate(selectEnd, 'Y-m-d');
-
-      datePickerSection.classList.add('opacity-zero');
-  });
-}
 
 /* =====================================================
    ARTIST FILTER End
@@ -1623,3 +1651,5 @@ window.addEventListener('scroll', () => {
 /* =====================================================
    ARTIST SUBMENU CHANGE ON SCROLL End
 ===================================================== */
+
+

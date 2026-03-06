@@ -126,12 +126,6 @@ $faqs = getFaqs($mysqli, 'performer');
 			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
 			</li>
-			<!-- <li class="nav-item">
-				<button class="nav-link" type="button"  data-target="more" onclick="scrollToElement('more')">More</button>
-			</li> -->
-			<!-- <li class="nav-item">
-				<button class="nav-link" type="button"  data-target="promo" onclick="scrollToElement('promo')">Promo Codes</button>
-			</li> -->
 			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="fans" onclick="scrollToElement('fans')">
 					Fans Also Viewed
@@ -186,34 +180,8 @@ $faqs = getFaqs($mysqli, 'performer');
 									<label class="filter-label">Dates</label>
 									<div class="filter-input">
 										<i class="bi bi-calendar3"></i>
-										<input type="text" id="dateRange" class="form-control" placeholder="All Dates" readonly>
-										<div class="filter-arrow">
-											<i id="dateArrow" class="bi bi-chevron-down"></i>
-										</div>
-									</div>
-									<div class="date-picker-wrapper">
-										<div id="datePickerSection" class="opacity-zero picker-wrapper">
-											<div class="row g-3 d-none">
-												<div class="col">
-													<label class="form-label">Start Date</label>
-													<input type="text" id="startInput" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
-												</div>
-												<div class="col">
-													<label class="form-label">End Date</label>
-													<input type="text" id="endInput" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
-												</div>
-											</div>
-											<div class="calendar-wrapper">
-												<div id="calendar"></div>
-											</div>
-											<div class="footer-actions">
-												<span class="reset-link" id="resetDates">Reset</span>
-												<div class="d-flex gap-2">
-													<button class="btn btn-outline-secondary" id="cancelDates">Cancel</button>
-													<button class="btn btn-primary" id="applyDates">Apply</button>
-												</div>
-											</div>
-										</div>
+										<input type="text" id="performerDatePicker" placeholder="Select Date Range" class="form-control" autocomplete="off" readonly value="<?php echo !empty($dateTitle) ? $dateTitle : ''; ?>">  
+										<div class="filter-arrow"><i id="dateArrow" class="bi bi-chevron-down"></i></div>
 									</div>
 								</div>
 							</div>
@@ -328,7 +296,7 @@ $faqs = getFaqs($mysqli, 'performer');
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement"	class="ad-image-left" />
 					</div>
-					<div class="tab-section content-section-detail" id="promocode">
+					<div class="tab-section content-section-detail mb-2" id="promocode">
 			<div class="row">
 				<div class="" id="promo">
 					<h2><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> concert Promo Codes in {country}</h2>
@@ -394,7 +362,7 @@ $faqs = getFaqs($mysqli, 'performer');
 					<div class="sticky-top sidebar-inner">
 						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
+								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image img-fluid" />
 							</div>
 						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
@@ -406,9 +374,9 @@ $faqs = getFaqs($mysqli, 'performer');
 								<i class="bi bi-shield-check"></i>
 							</div>
 						</div>						
-						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
+						<div class="ad-container-fixe mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
+								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image img-fluid" />
 							</div>
 						</div>
 					</div>
