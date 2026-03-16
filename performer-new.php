@@ -296,7 +296,7 @@ $faqs = getFaqs($mysqli, 'performer');
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement"	class="ad-image-left" />
 					</div>
-					<div class="tab-section content-section-detail mb-2" id="promocode">
+					<div class="tab-section content-section-detail mb-0" id="promocode">
 			<div class="row">
 				<div class="" id="promo">
 					<h2><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> concert Promo Codes in {country}</h2>
@@ -453,12 +453,12 @@ $faqs = getFaqs($mysqli, 'performer');
 						$performer_image = getArtistImageFromWikimedia($artistName);	
 					?>
 						<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-							<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
+							<a href="/<?php echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
 								<div class="position-relative overflow-hidden rounded">
 									<?php if ($performer_image) { ?>
 										<img src="<?php echo $performer_image; ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
 									<?php }else{ ?>
-										<img src="<?php echo HOME_URL; ?>/assets/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
+										<img src="<?php echo HOME_URL; ?>/assets/placeholder.webp" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
 									<?php } ?>							
 									<div class="band-content d-flex justify-content-between align-items-center">
 										<span class="band-name"></span>								

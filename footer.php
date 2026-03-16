@@ -4,7 +4,7 @@
 
     <!-- Column 1 -->
     <div class="tm-footer-col brand">
-      <div class="logo fs-2"><a href="/" class="tm-logo">SeatOutlet</a></div>
+      <div class="logo fs-2" style="width:256px; height:auto;"> <a href="/" class="tm-logo"><img src="../assets/seatoutlet-logo.svg"></a></div>
 
       <p class="section-title">Let’s connect</p>
       <div class="social-icons">
@@ -29,8 +29,8 @@
     <div class="tm-footer-col">
       <h4>Trust</h4>
       <a href="#">Guarantee</a>
-      <a href="<?php echo HOME_URL; ?>/testimonials.php">Testimonials</a>
-      <a href="<?php echo HOME_URL; ?>/reviews.php">Reviews</a>
+      <a href="<?php echo HOME_URL; ?>/testimonials">Testimonials</a>
+      <a href="<?php echo HOME_URL; ?>/reviews">Reviews</a>
       <a href="#">BBB</a>
       <a href="#">Why Us</a>
     </div>
@@ -48,10 +48,10 @@
     <!-- Column 4 -->
     <div class="tm-footer-col">
       <h4>About Us</h4>
-      <a href="<?php echo HOME_URL; ?>/about-us.php">Who we are</a>
+      <a href="<?php echo HOME_URL; ?>/about-us">Who we are</a>
       <a href="#">What we do</a>
-      <a href="<?php echo HOME_URL; ?>/faq.php">FAQ's</a>
-      <a href="<?php echo HOME_URL; ?>//contact-us.php">Contact</a>
+      <a href="<?php echo HOME_URL; ?>/faq">FAQ's</a>
+      <a href="<?php echo HOME_URL; ?>/contact">Contact</a>
       <a href="#">Blog</a>
     </div>
     
@@ -75,9 +75,9 @@
   <!-- Bottom bar -->
   <div class="tm-footer-bottom d-flex align-items-center">
     <div class="policies">
-      <a href="<?php echo HOME_URL; ?>/privacy-policy.php">Privacy Policy</a>
-      <a href="<?php echo HOME_URL; ?>/terms-of-use.php">Terms of Use</a>
-      <a href="<?php echo HOME_URL; ?>/cookie-policy.php">Cookie Policy</a>
+      <a href="<?php echo HOME_URL; ?>/privacy-policy">Privacy Policy</a>
+      <a href="<?php echo HOME_URL; ?>/terms-and-conditions">Terms of Use</a>
+      <a href="<?php echo HOME_URL; ?>/cookie-policy">Cookie Policy</a>
       <a href="#">Sitemap</a>
     </div>
     <div class="keyword-bottombar">
@@ -117,8 +117,8 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+<!-- <script src="<?php echo AWS_CDN_URL; ?>js/main.js?v=<?php echo time(); ?>"></script> -->
 <script src="<?php echo HOME_URL; ?>/js/main.js?v=<?php echo time(); ?>"></script>
-
 
 <?php include 'modals.php'; ?>
 

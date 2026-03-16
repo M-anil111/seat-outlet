@@ -1,25 +1,42 @@
 <?php
 require_once '../functions.php';
 
-$lat = 33.6973;
-$lng = -117.9087;
-
-$nearbyVenues = getNearbyVenues($lat, $lng);
+$nearbyVenues = getNearbyVenues();
 
 $result = [];
+if(!empty($nearbyVenues)) {
+    foreach ($nearbyVenues as $venue) { 
 
-foreach ($nearbyVenues as $venue) { 
-
-    $venuename = $venue['text']['name'];
-    $imageUrl = getVenueImage($venuename);
-
-    $result[] = [
-        'slug'  => strtolower($venue['uriComponent'] ?? ''),
-        'name'  => $venue['text']['name'] ?? '',
-        'city'  => $venue['city']['text']['name'] ?? '',
-        'state' => $venue['stateProvince']['text']['abbr'] ?? '',
-        'image' => $imageUrl
-    ];
+        $venuename = $venue['text']['name'];
+        $imageUrl = getWikimediaImage($venuename);
+        if($imageUrl) {
+            $result[] = [
+                'slug'  => strtolower($venue['uriComponent'] ?? ''),
+                'name'  => $venue['text']['name'] ?? '',
+                'city'  => $venue['city']['text']['name'] ?? '',
+                'state' => $venue['stateProvince']['text']['abbr'] ?? '',
+                'image' => $imageUrl
+            ];
+        }
+    }
+}else{
+    $nearbyVenuesFallback = getNearbyVenuesFallback();
+    if(!empty($nearbyVenuesFallback)) {
+        foreach ($nearbyVenuesFallback as $fvenue) { 
+    
+            $venuename = $fvenue['text']['name'];
+            $imageUrl = getWikimediaImage($venuename);
+            if($imageUrl) {
+                $result[] = [
+                    'slug'  => strtolower($fvenue['uriComponent'] ?? ''),
+                    'name'  => $fvenue['text']['name'] ?? '',
+                    'city'  => $fvenue['city']['text']['name'] ?? '',
+                    'state' => $fvenue['stateProvince']['text']['abbr'] ?? '',
+                    'image' => $imageUrl
+                ];
+            }
+        }
+    }
 }
 
 header('Content-Type: application/json');

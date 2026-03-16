@@ -16,29 +16,32 @@ foreach ($tabs as $tab) {
     }
 
     $rootPath = $categoryMap[$tab];
-    $events = fetchLocationCategoryEvents($rootPath, '', '', '', 8);
+    $events = fetchLocationCategoryEvents($rootPath, '', '', '', 25);
 
     $output = [];
     if (!empty($events) && is_array($events)) {
 
         foreach ($events as $event) {
-
+            $eventName = $event['text']['name'] ?? '';
             $venueName = $event['venue']['text']['name'] ?? '';
             $performer = $event['performers'][0]['name'] ?? '';
-            $imageUrl  = getEventImage($performer, $venueName);
-
+            $imageUrl  = getEventImage($performer, $venueName, $eventName);
+            $eventDateRaw = $event['date']['date'];
+            $timestamp    = strtotime($eventDateRaw);
+            $time = $event['date']['text']['time'];
             $city  = $event['city']['text']['name'] ?? '';
             $state = $event['stateProvince']['text']['abbr'] ?? '';
-
-            $output[] = [
-                'id'    => (int)($event['id'] ?? 0),
-                'name'  => $event['text']['name'] ?? '',
-                'date'  => $event['date']['date'] ?? '',
-                'venue' => $venueName,
-                'price' => $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '',
-                'image' => $imageUrl,
-                'loc'   => trim($city . ', ' . $state, ', ')
-            ];
+            if($imageUrl) {
+                $output[] = [
+                    'id'    => (int)($event['id'] ?? 0),
+                    'name'  => $eventName,
+                    'date'  => date('D, d M y', $timestamp) . ', ' . $time,
+                    'venue' => $venueName,
+                    'price' => $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '',
+                    'image' => $imageUrl,
+                    'loc'   => trim($city . ', ' . $state)
+                ];
+            }
         }
     }
 

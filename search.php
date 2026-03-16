@@ -14,8 +14,7 @@ if (
     $_POST['latHeader'] !== '' &&
     $_POST['lngHeader'] !== ''
 ) {
-	$title = 'Current location';
-    $lat = floatval($_POST['latHeader']);
+	$lat = floatval($_POST['latHeader']);
     $lng = floatval($_POST['lngHeader']);
 
     $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $lat, $lng);
@@ -24,8 +23,7 @@ if (
 		isset($_POST['locationInputHeader']) && 
 		$_POST['locationInputHeader'] !== ''
 	) {
-		$title = $_POST['locationInputHeader'];
-		$explode = explode(',', $title); 
+		$explode = explode(',', $_POST['locationInputHeader']); 
 		if (count($explode) == 2) { 
 			$city = trim($explode[0]); 
 			$state = trim($explode[1]); 
@@ -48,8 +46,7 @@ if (
 	$_POST['startInputHeader'] !== '' &&
     $_POST['endInputHeader'] !== ''
 ) {
-	$dateTitle = $_POST['startInputHeader'] . ' - ' . $_POST['endInputHeader'];
-    $startTimestamp = strtotime($_POST['startInputHeader']);
+	$startTimestamp = strtotime($_POST['startInputHeader']);
     $endTimestamp   = strtotime($_POST['endInputHeader']);
 
     if ($startTimestamp && $endTimestamp) {
@@ -77,7 +74,7 @@ if (
 
         $params['performerFilter'] = "id eq " . $keywordID;
 
-    } elseif ($_POST['keywordType'] === 'event') {
+    } elseif ($_POST['keywordType'] === 'city') {
 
         $filterParts[] = "id eq " . $keywordID;
 
@@ -105,9 +102,9 @@ if (
 if (!empty($filterParts)) {
     $params['filter'] = implode(' and ', $filterParts);
 }
-
+$perPage = 20;
 $params['page'] = 1;
-$params['perPage'] = 20;
+$params['perPage'] = $perPage;
 $params['q'] = "*";
 
 include 'header.php'; 
@@ -118,9 +115,13 @@ if (empty($params)) {
 	exit;
 }
 
+$year = date('Y');
 $results = getHeaderSearchEvents($params);
-$count = $results['totalCount'];
+$total_count = $results['totalCount'];
+$total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'];
+$count = count($events);
+$percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 ?>
 
 <section>
@@ -135,8 +136,8 @@ $events = $results['results'];
 								<h2>
 									EVENTS <span class="dot">·</span>
 									<span class="count" id="results_count">
-										<?php echo (int) $count; ?>
-										<?php echo $count > 1 ? 'RESULTS' : 'RESULT'; ?>
+										<?php echo (int) $total_count; ?>
+										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
 									</span>
 								</h2>							
 							</div>
@@ -157,25 +158,25 @@ $events = $results['results'];
 									<div class="d-flex align-items-center justify-content-between performer-event-item">
 										<div class="date-box text-center me-3">
 											<div class="month">
-												<?php echo htmlspecialchars(strtoupper(date('M', $timestamp)), ENT_QUOTES, 'UTF-8'); ?>
+												<?php echo strtoupper(date('M', $timestamp)); ?>
 											</div>
 											<div class="day">
-												<?php echo htmlspecialchars(date('d', $timestamp), ENT_QUOTES, 'UTF-8'); ?>
+												<?php echo date('d', $timestamp); ?>
 											</div>
 											<?php if(date('Y', $timestamp) > $year) { ?>
 												<div class="month">
-													<?php echo htmlspecialchars(date('Y', $timestamp), ENT_QUOTES, 'UTF-8'); ?>
+													<?php echo date('Y', $timestamp); ?>
 												</div>
 											<?php } ?>
 										</div>
 										<div class="flex-grow-1 w-50">
 											<div class="d-flex align-items-center gap-2">
 												<span class="fw-semibold day-weeks">
-													<?php echo htmlspecialchars(date('D', $timestamp), ENT_QUOTES, 'UTF-8'); ?>
+													<?php echo date('D', $timestamp); ?>
 												</span>
 												<span class="dot">·</span>
 												<span class="time-clock">
-													<?php echo htmlspecialchars($event['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+													<?php echo $event['date']['text']['time']; ?>
 												</span>
 												<i
 													class="bi bi-info-circle text-muted icon-i"
@@ -183,23 +184,23 @@ $events = $results['results'];
 													data-bs-target="#offcanvasRight"
 													aria-controls="offcanvasRight"
 													data-id="<?php echo (int) ($event['id'] ?? 0); ?>"
-													data-date="<?php echo htmlspecialchars(date('D, M d', $timestamp), ENT_QUOTES, 'UTF-8'); ?>"
-													data-venue="<?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-													data-location="<?php echo htmlspecialchars(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
-													data-title="<?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-													data-performers="<?php echo htmlspecialchars($dataPerformers, ENT_QUOTES, 'UTF-8'); ?>"
+													data-date="<?php echo date('D, M d', $timestamp); ?>"
+													data-venue="<?php echo $event['venue']['text']['name']; ?>"
+													data-location="<?php echo $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr']; ?>"
+													data-title="<?php echo $event['text']['name']; ?>"
+													data-performers="<?php echo $dataPerformers; ?>"
 												></i>
 											</div>
 											<div class="fw-semibold location-venue-name">
 												<a href="#">
-													<?php echo htmlspecialchars($event['city']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>,
-													<?php echo htmlspecialchars($event['stateProvince']['text']['abbr'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+													<?php echo $event['city']['text']['name']; ?>,
+													<?php echo $event['stateProvince']['text']['abbr']; ?>
 												</a>
 												·
-												<a href="#"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+												<a href="#"><?php echo $event['venue']['text']['name']; ?></a>
 											</div>
 											<div class="text-muted small">
-												<?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+												<a href="/event.php?id=<?php echo (int) ($event['id'] ?? 0); ?>"><?php echo $event['text']['name']; ?></a>
 											</div>
 										</div>
 										<div class="ms-3">
@@ -228,7 +229,7 @@ $events = $results['results'];
 										id="loadMoreBtn"
 										data-total="<?php echo (int) $total_count; ?>"
 										data-page="2"
-										data-performer="<?php echo (int) $id; ?>"
+										data-params="<?php echo htmlspecialchars(json_encode($params), ENT_QUOTES, 'UTF-8'); ?>"
 										data-perpage="<?php echo (int) $perPage; ?>">
 										<span class="btn-text">More Events</span>
 										<span class="spinner-border spinner-border-sm d-none" id="btnSpinner"></span>

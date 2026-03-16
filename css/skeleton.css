@@ -60,7 +60,7 @@
 }
 
 /* Dot between date and venue */
-.dot {
+.skeleton-card .dot {
     width: 6px;
     height: 6px;
     background: #d1d5db;

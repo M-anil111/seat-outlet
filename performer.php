@@ -45,9 +45,7 @@ $year = date('Y');
 $artistName = $performer['text']['name'];
 $performer_bio = getArtistBioFromWikipedia($artistName);
 $performer_image = getArtistImageFromWikimedia($artistName);
-
 $faqs = getFaqs($mysqli, 'performer');
-
 ?>
 
 <section class="section-featured-header text-sm-center text-md-start">
@@ -64,23 +62,25 @@ $faqs = getFaqs($mysqli, 'performer');
 								<?php } ?>
 								<?php if ($index < count($breadcrumbs)) { ?>
 									<a href="#">
-										<?php echo htmlspecialchars($item['label']); ?>
+										<?php echo $item['label']; ?>
 									</a>
 								<?php } ?>
 							<?php } ?>
 							<?php echo $sep; ?>
 							<span class="current">
-								<?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+								<?php echo $artistName; ?>
 							</span>
 						</nav>
 					</div>
 				</div>
 				<div class="col-12">
 					<div class="row align-items-center text-center text-md-start">
-						<div class="col-md-4">
-							<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" />							
+						<div class="col-md-3">
+							<div class="img-artist">
+								<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" />
+							</div>
 						</div>
-						<div class="col-md-8 text-white">
+						<div class="col-md-9 text-white">
 							<div class="artist-heading text-center text-md-start text-lg-start text-xl-start text-xxl-start">
 								<?php 
 									$lastBreadcrumb = end($breadcrumbs);
@@ -88,12 +88,12 @@ $faqs = getFaqs($mysqli, 'performer');
 									$categorySlug   = sanitize_title($categoryLabel);
 								?>
 								<div class="artist-category">
-									<a href="<?php echo htmlspecialchars($categorySlug, ENT_QUOTES, 'UTF-8'); ?>">
-										<?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?>
+									<a href="<?php echo $categorySlug; ?>">
+										<?php echo $categoryLabel; ?>
 									</a>
 								</div>
 								<h1 class="artist-title">
-									<?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Tickets
+								<?php echo $artistName; ?> Tickets
 								</h1>
 							</div>
 						</div>
@@ -109,18 +109,18 @@ $faqs = getFaqs($mysqli, 'performer');
 		<ul class="nav nav-tabs artist-tabs-nav" id="artistTabs">
 			<li class="nav-item">
 				<button class="nav-link active" type="button" data-target="default" onclick="scrollToElement('default')">
-					<?php echo htmlspecialchars($breadcrumbs[1]['label'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+					<?php echo $breadcrumbs[1]['label']; ?>
 				</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-link" type="button"  data-target="about" onclick="scrollToElement('about')">About</button>
+				<button class="nav-link" type="button" data-target="promocode" onclick="scrollToElement('promocode')">Promocode</button>
+			</li>
+			<li class="nav-item">
+				<button class="nav-link" type="button" data-target="about" onclick="scrollToElement('about')">About</button>
 			</li>
 			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
 			</li>
-			<!-- <li class="nav-item">
-				<button class="nav-link" type="button"  data-target="promo" onclick="scrollToElement('promo')">Promo Codes</button>
-			</li> -->
 			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="fans" onclick="scrollToElement('fans')">
 					Fans Also Viewed
@@ -133,7 +133,7 @@ $faqs = getFaqs($mysqli, 'performer');
 
 <section>
 	<div class="container">
-        <div class="tab-section section-performer-content" id="default">
+		<div class="tab-section section-performer-content" id="default">
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">
 					<div class="mb-3 mb-md-4 mb-lg-4">
@@ -141,7 +141,7 @@ $faqs = getFaqs($mysqli, 'performer');
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h2>
-									<?php echo strtoupper(htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8')); ?> <?php echo htmlspecialchars(strtoupper($breadcrumbs[1]['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> IN UNITED STATES <span class="dot">·</span>
+									<?php echo strtoupper($artistName); ?> <?php echo strtoupper($breadcrumbs[1]['label']); ?> IN US <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $count; ?>
 										<?php echo $count > 1 ? 'RESULTS' : 'RESULT'; ?>
@@ -164,9 +164,12 @@ $faqs = getFaqs($mysqli, 'performer');
 											id="locationInput"
 											autocomplete="off"
 											data-cpid="<?php echo (int) $id; ?>"
-											data-dcat="<?php echo htmlspecialchars(strtolower($breadcrumbs[1]['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-											<button type="button" id="locationInputReset" class="d-none">
-												<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M23 3.88H5.66L1 12l4.66 8.12H23zM2.74 12l3.8-6.62h14.95v13.24H6.54zm13.98 4.4-3.38-3.34-3.37 3.34-1.07-1.06L12.27 12 8.9 8.65l1.07-1.06 3.37 3.34 3.38-3.34 1.07 1.06L14.4 12l3.38 3.34z"></path></svg>
+											data-dcat="<?php echo strtolower($breadcrumbs[1]['label']); ?>">
+											<button type="button" id="locationInputReset" class="d-none so-close-octagon">
+												<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
+												<path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
+												<path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+												</svg>
 											</button>
 											<div id="locationResults" class="tn-dropdown-menu dropdown"></div>
 									</div>
@@ -175,38 +178,12 @@ $faqs = getFaqs($mysqli, 'performer');
 									<label class="filter-label">Dates</label>
 									<div class="filter-input">
 										<i class="bi bi-calendar3"></i>
-										<input type="text" id="dateRange" class="form-control" placeholder="All Dates" readonly>
-										<div class="filter-arrow">
-											<i id="dateArrow" class="bi bi-chevron-down"></i>
-										</div>
-									</div>
-									<div class="date-picker-wrapper">
-										<div id="datePickerSection" class="opacity-zero picker-wrapper">
-											<div class="row g-3 d-none">
-												<div class="col">
-													<label class="form-label">Start Date</label>
-													<input type="text" id="startInput" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
-												</div>
-												<div class="col">
-													<label class="form-label">End Date</label>
-													<input type="text" id="endInput" class="form-control date-input" placeholder="MM/DD/YYYY" readonly>
-												</div>
-											</div>
-											<div class="calendar-wrapper">
-												<div id="calendar"></div>
-											</div>
-											<div class="footer-actions">
-												<span class="reset-link" id="resetDates">Reset</span>
-												<div class="d-flex gap-2">
-													<button class="btn btn-outline-secondary" id="cancelDates">Cancel</button>
-													<button class="btn btn-primary" id="applyDates">Apply</button>
-												</div>
-											</div>
-										</div>
+										<input type="text" id="performerDatePicker" placeholder="Select Date Range" class="form-control" autocomplete="off" readonly value="<?php echo !empty($dateTitle) ? $dateTitle : ''; ?>">  
+										<div class="filter-arrow"><i id="dateArrow" class="bi bi-chevron-down"></i></div>
 									</div>
 								</div>
 							</div>
-							<h3 id="locationHeading" class="mt-2 fs-5"></h3>
+							<h3 id="locationHeading" class="mt-4 fs-5"></h3>
 							<div id="location-no-results" class="text-center no-location"></div>
 						</div>
 						<?php if (!empty($events)) { ?>
@@ -223,25 +200,25 @@ $faqs = getFaqs($mysqli, 'performer');
 									<div class="d-flex align-items-center justify-content-between performer-event-item">
 										<div class="date-box text-center me-3">
 											<div class="month">
-												<?php echo htmlspecialchars(strtoupper(date('M', $timestamp)), ENT_QUOTES, 'UTF-8'); ?>
+												<?php echo strtoupper(date('M', $timestamp)); ?>
 											</div>
 											<div class="day">
-												<?php echo htmlspecialchars(date('d', $timestamp), ENT_QUOTES, 'UTF-8'); ?>
+												<?php echo date('d', $timestamp); ?>
 											</div>
 											<?php if(date('Y', $timestamp) > $year) { ?>
 												<div class="month">
-													<?php echo htmlspecialchars(date('Y', $timestamp), ENT_QUOTES, 'UTF-8'); ?>
+													<?php echo date('Y', $timestamp); ?>
 												</div>
 											<?php } ?>
 										</div>
 										<div class="flex-grow-1 w-50">
 											<div class="d-flex align-items-center gap-2">
 												<span class="fw-semibold day-weeks">
-													<?php echo htmlspecialchars(date('D', $timestamp), ENT_QUOTES, 'UTF-8'); ?>
+													<?php echo date('D', $timestamp); ?>
 												</span>
 												<span class="dot">·</span>
 												<span class="time-clock">
-													<?php echo htmlspecialchars($event['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+													<?php echo $event['date']['text']['time']; ?>
 												</span>
 												<i
 													class="bi bi-info-circle text-muted icon-i"
@@ -249,23 +226,23 @@ $faqs = getFaqs($mysqli, 'performer');
 													data-bs-target="#offcanvasRight"
 													aria-controls="offcanvasRight"
 													data-id="<?php echo (int) ($event['id'] ?? 0); ?>"
-													data-date="<?php echo htmlspecialchars(date('D, M d', $timestamp), ENT_QUOTES, 'UTF-8'); ?>"
-													data-venue="<?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-													data-location="<?php echo htmlspecialchars(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
-													data-title="<?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-													data-performers="<?php echo htmlspecialchars($dataPerformers, ENT_QUOTES, 'UTF-8'); ?>"
+													data-date="<?php echo date('D, M d', $timestamp) ?>"
+													data-venue="<?php echo $event['venue']['text']['name']; ?>"
+													data-location="<?php echo $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr']; ?>"
+													data-title="<?php echo $event['text']['name']; ?>"
+													data-performers="<?php echo $dataPerformers; ?>"
 												></i>
 											</div>
 											<div class="fw-semibold location-venue-name">
 												<a href="#">
-													<?php echo htmlspecialchars($event['city']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>,
-													<?php echo htmlspecialchars($event['stateProvince']['text']['abbr'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+													<?php echo $event['city']['text']['name']; ?>,
+													<?php echo $event['stateProvince']['text']['abbr']; ?>
 												</a>
 												·
-												<a href="#"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+												<a href="#"><?php echo $event['venue']['text']['name']; ?></a>
 											</div>
 											<div class="text-muted small">
-												<?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+												<a href="/event.php?id=<?php echo (int) ($event['id'] ?? 0); ?>"><?php echo $event['text']['name']; ?></a>
 											</div>
 										</div>
 										<div class="ms-3">
@@ -309,19 +286,73 @@ $faqs = getFaqs($mysqli, 'performer');
 							<?php } ?>
 						<?php } else { ?>
 							<h4 style="padding: 20px;">
-								No <?php echo htmlspecialchars(strtoupper($breadcrumbs[1]['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> found!
+								No <?php echo strtoupper($breadcrumbs[1]['label']); ?> found!
 							</h4>
 						<?php } ?>
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement"	class="ad-image-left" />
+					</div>
+					<div class="tab-section content-section-detail mb-0" id="promocode">
+						<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo $artistName; ?> Concert Promo Codes in US</h2>
+						<p>Apply verified <?php echo $artistName; ?> ticket promo codes and save instantly on your concert tickets at checkout.</p>
+						<div class="row g-3 mt-2">
+							<div class="col-md-6">
+								<div class="offer-pill d-flex align-items-center justify-content-between">
+									<div class="d-flex align-items-center">
+										<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
+											<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+												<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+													stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+												<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
+											</svg>
+										</div>
+										<div class="offer-text">
+											<div class="offer-title">5% OFF</div>
+											<div class="offer-subtitle">TAKE5</div>
+										</div>
+									</div>
+									<div class="offer-copy text-end">
+										<button type="button"
+											class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+											data-code="TAKE5">
+											Copy
+										</button>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="offer-pill d-flex align-items-center justify-content-between">
+									<div class="d-flex align-items-center">
+										<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
+											<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+												<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+													stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+												<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
+											</svg>
+										</div>
+										<div class="offer-text">
+											<div class="offer-title">10% OFF</div>
+											<div class="offer-subtitle">TAKE10</div>
+										</div>
+									</div>
+									<div class="offer-copy text-end">
+										<button type="button"
+											class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+											data-code="TAKE10">
+											Copy
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>				
 					</div>				
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
 						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
+								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image img-fluid" />
 							</div>
 						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
@@ -332,47 +363,10 @@ $faqs = getFaqs($mysqli, 'performer');
 							<div class="guarantee-icon">
 								<i class="bi bi-shield-check"></i>
 							</div>
-						</div>						
-						<div class="sidebar-card" id="promo">
-							<h4><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Tickets Promo Codes</h4>
-							<p>Use verified promo codes to save instantly on event tickets at checkout.</p>
-							<div class="offer-pill d-flex align-items-center justify-content-between mt-3">
-								<div class="d-flex align-items-center">
-									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-										</svg>
-									</div>
-									<div class="offer-text">
-										<div class="offer-title">5% OFF</div>
-										<div class="offer-subtitle">TAKE5</div>
-									</div>
-								</div>
-								<div class="offer-copy text-end">
-									<button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="TAKE5">
-									Copy
-									</button>
-								</div>
-							</div>
-							<div class="offer-pill d-flex align-items-center justify-content-between mt-3">
-								<div class="d-flex align-items-center">
-									<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-										<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-											<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-											<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-										</svg>
-									</div>
-									<div class="offer-text">
-										<div class="offer-title">10% OFF</div>
-										<div class="offer-subtitle">TAKE10</div>
-									</div>
-								</div>
-								<div class="offer-copy text-end">
-									<button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="TAKE10">
-									Copy
-									</button>
-								</div>
+						</div>	
+						<div class="ad-container-fixe mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
+							<div class="mt-3 mt-md-3 mt-lg-0">
+								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image img-fluid" />	
 							</div>
 						</div>
 					</div>
@@ -382,30 +376,21 @@ $faqs = getFaqs($mysqli, 'performer');
 		<div class="tab-section content-section-detail" id="about">
 			<div class="row">
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
-					<div class="me-3">
-						<h2 class="so-heading mb-3">About <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+					<div class="me-0 me-md-3 me-lg-3 me-xl-3 me-xxl-3">
+						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">About <?php echo $artistName; ?></h2>
 						<p><?php echo getArtistBioFromWikipedia($artistName); ?></p>
-						<!-- <p><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
-						<ul>
-							<li>Browse upcoming <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> tour dates</li>
-							<li>Compare ticket prices from trusted sellers</li>
-							<li>Secure seats for popular venues</li>
-							<li>Mobile friendly ticket delivery</li>
-							<li>Backed by a 100% buyer guarantee</li>
-						</ul>
-						<p class="one-liner">Buy with confidence and enjoy live music the way it was meant to be experienced.</p> -->
 					</div>
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-						<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-about img-fluid rounded"/>
+						<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-about img-fluid rounded" />
 					</div>
 				</div>				
 			</div>
 		</div>
 		<?php if (!empty($faqs)) { ?>
 			<div class="tab-section content-section-detail" id="faqs">
-				<h2 class="so-heading mb-3">Frequently Asked Questions</h2>
+				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo $artistName; ?> Events</h2>
 				<div class="accordion" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;
@@ -422,7 +407,7 @@ $faqs = getFaqs($mysqli, 'performer');
 										data-bs-target="#<?php echo $collapseId; ?>"
 										aria-expanded="<?php echo $isFirst ? 'true' : 'false'; ?>"
 										aria-controls="<?php echo $collapseId; ?>">
-									<?php echo htmlspecialchars($question); ?>
+									<?php echo $question; ?>
 								</button>
 							</h2>
 							<div id="<?php echo $collapseId; ?>" 
@@ -430,7 +415,7 @@ $faqs = getFaqs($mysqli, 'performer');
 								aria-labelledby="<?php echo $headingId; ?>" 
 								data-bs-parent="#faqAccordion">
 								<div class="accordion-body">
-									<?php echo nl2br(htmlspecialchars($answer)); ?>
+									<?php echo nl2br($answer); ?>
 								</div>
 							</div>
 						</div>
@@ -438,21 +423,24 @@ $faqs = getFaqs($mysqli, 'performer');
 				</div>
 			</div>
 		<?php } ?>
-		<?php if (!empty($relatedPerformers)) { ?>
+		<?php if (!empty($relatedPerformers)) { $i = 0; ?>
 			<div class="tab-section content-section-detail" id="fans">
 				<div class="row g-4">
-					<h2 class="so-heading mb-4">Fans Also Viewed</h2>
+					<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Fans Also Viewed</h2>
 					<?php foreach ($relatedPerformers as $performer) { 
 						$artistName = $performer['text']['name'];
-						$performer_image = getArtistImageFromWikimedia($artistName);	
+						$performer_image = getArtistImageFromWikimedia($artistName);
+						if(empty($performer_image))	continue;
+						$i++;
+						if($i > 8) continue;
 					?>
 						<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-							<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
+							<a href="/<?php echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
 								<div class="position-relative overflow-hidden rounded">
 									<?php if ($performer_image) { ?>
 										<img src="<?php echo $performer_image; ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
 									<?php }else{ ?>
-										<img src="<?php echo HOME_URL; ?>/assets/new-event.webp" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
+										<img src="<?php echo HOME_URL; ?>/assets/placeholder.webp" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
 									<?php } ?>							
 									<div class="band-content d-flex justify-content-between align-items-center">
 										<span class="band-name"></span>								

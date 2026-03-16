@@ -9,16 +9,32 @@ $perPage    = isset($_GET['perPage']) ? max(1, min(100, (int) $_GET['perPage']))
 $performerId= isset($_GET['performerId']) ? max(0, (int) $_GET['performerId']) : 0;
 
 try {
-    $response = getTnPerformerEvents($performerId, [
-        'page'    => $page,
-        'perPage' => $perPage,
-    ]);
+    if($performerId) {
+        $response = getTnPerformerEvents($performerId, [
+            'page'    => $page,
+            'perPage' => $perPage,
+        ]);
+        $total_count = getTnPerformerEventsCount($performerId);
+        $total_pages = $perPage > 0 ? (int) ceil($total_count / $perPage) : 0;
+    }else{
+        $params = [];
+
+        if (!empty($_GET['params'])) {
+            $params = json_decode($_GET['params'], true) ?? [];
+        }
+
+        $params['page']    = $page;
+        $params['perPage'] = $perPage;
+
+        //echo json_encode($params);
+
+        $response = getHeaderSearchEvents($params);
+        $total_count = $response['totalCount'];
+        $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
+    }
 
     $results = $response['results'] ?? [];
     $count   = $response['count'] ?? count($results);
-
-    $total_count = getTnPerformerEventsCount($performerId);
-    $total_pages = $perPage > 0 ? (int) ceil($total_count / $perPage) : 0;
 
     echo json_encode([
         'events'   => $results,

@@ -1,9 +1,5 @@
 <?php 
 
-// error_reporting(E_ALL);
-// ini_set('display_errors', 1);
-// ini_set('display_startup_errors', 1);
-
 include 'db/config.php';
 include 'constants.php';
 require 'vendor/autoload.php';
@@ -45,11 +41,6 @@ function downloadImage($url) {
     return $data;
 }
 
-/**
- * Retrieve TicketNetwork access token.
- *
- * Uses a static per-request cache to avoid multiple token calls in a single request.
- */
 function getTnAccessToken() {
     static $accessToken = null;
 
@@ -129,9 +120,7 @@ function tnRequest($endpoint, $params = [], $method = 'GET') {
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    if ($httpCode < 200 || $httpCode >= 300) {
-        throw new Exception('TicketNetwork API error. HTTP ' . $httpCode . ' Response: ' . $response);
-    }
+    
 
     $decoded = json_decode($response, true);
 
@@ -143,7 +132,6 @@ function tnRequest($endpoint, $params = [], $method = 'GET') {
 }
 
 function getTnPerformers($params = []) {
-
     return tnRequest('/catalog/v2/performers', $params);
 }
 
@@ -190,13 +178,11 @@ function buildCategoryBreadcrumb($defaultCategory) {
 
     $breadcrumb = [];
 
-    // Home (optional)
     $breadcrumb[] = [
         'label' => 'Home',
         'url'   => '/'
     ];
 
-    // Ancestors (parent categories)
     if (!empty($defaultCategory['ancestors'])) {
         foreach ($defaultCategory['ancestors'] as $ancestor) {
             $breadcrumb[] = [
@@ -206,7 +192,6 @@ function buildCategoryBreadcrumb($defaultCategory) {
         }
     }
 
-    // Current category
     $breadcrumb[] = [
         'label' => ucwords(strtolower($defaultCategory['text']['name'])),
         'url'   => '/category' . $defaultCategory['path']
@@ -215,18 +200,18 @@ function buildCategoryBreadcrumb($defaultCategory) {
     return $breadcrumb;
 }
 
-function getRelatedPerformers($categoryPath, $currentPerformerId, $limit = 8) {
+function getRelatedPerformers($categoryPath, $currentPerformerId, $limit = 20) {
     $categoryPathEsc = tnEscapeFilterValue($categoryPath);
     $params = [
         'filter' => "defaultCategory/path eq '$categoryPathEsc'",
         'sort'   => 'salesRank',
+        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'page'   => 1,
-        'perPage'=> 20
+        'perPage'=> $limit
     ];
 
     $data = tnRequest('/catalog/v2/performers', $params);
 
-    // Remove current performer
     $related = array_filter($data['results'], function ($p) use ($currentPerformerId) {
         return $p['id'] != $currentPerformerId;
     });
@@ -247,7 +232,7 @@ function getLocationSuggestions($keyword) {
         $keyword      = tnEscapeFilterValue($keyword);
         $stateKeyword = strtoupper(tnEscapeFilterValue($keyword));
         $params = [
-            'filter'  => "contains(city/text/name,'$keyword') or contains(stateProvince/text/abbr,'$stateKeyword') or contains(stateProvince/text/name,'$keyword')",
+            'filter' => "startswith(city/text/name,'$keyword')",
             'rollup'  => 'city',
             'perPage' => 100,
             'page'   => 1
@@ -260,10 +245,8 @@ function getLocationSuggestions($keyword) {
 }
 
 function getTnEvents($params = [], $flag = 0) {
-    // Base endpoint (IMPORTANT: no /search)
     $url = BASE_URL . '/catalog/v2/events';
 
-    // Default params
     $defaultParams = [
         'page'    => 1,
         'perPage' => 20,
@@ -279,9 +262,6 @@ function getTnEvents($params = [], $flag = 0) {
     return tnRequest('/catalog/v2/events', $params);
 }
 
-/**
- * Escape single quotes for use inside TicketNetwork filter strings.
- */
 function tnEscapeFilterValue(string $value): string {
     return str_replace("'", "''", $value);
 }
@@ -340,7 +320,6 @@ function getWikipediaArtistImage($pageTitle) {
     $pages = $data['query']['pages'] ?? [];
     $page  = reset($pages);
 
-    // Prefer original image
     if (!empty($page['original']['source'])) {
         return $page['original']['source'];
     }
@@ -355,12 +334,10 @@ function getArtistImageFromWikimedia($artistName) {
     $slug = strtolower(str_replace(' ', '-', $artistName));
     $key  = "artists/{$slug}.webp";
 
-    // 1️⃣ Check if already exists in R2
     if (s3ObjectExists($key)) {
         return getS3PublicUrl($key);
     }
 
-    // 2️⃣ If not, fetch from Wikipedia
     $pageTitle = getWikipediaPageTitle($artistName);
     if (!$pageTitle) return '';
 
@@ -373,7 +350,6 @@ function getArtistImageFromWikimedia($artistName) {
     $webpImage = resizeAndConvertToWebP($imageContent, 800, 80);
     if (!$webpImage) return '';
 
-    // 3️⃣ Upload to R2
     uploadImageToS3($webpImage, $key, 'image/webp');
 
     return getS3PublicUrl($key);
@@ -388,7 +364,6 @@ function resizeAndConvertToWebP($imageContent, $maxWidth = 500, $quality = 80) {
     $width  = imagesx($source);
     $height = imagesy($source);
 
-    // If image smaller than max width, keep original size
     if ($width <= $maxWidth) {
         $newWidth  = $width;
         $newHeight = $height;
@@ -534,20 +509,10 @@ function getConcertEvents($limit = 12) {
     return $data['results'] ?? [];
 }
 
- /*
-    Detect input type:
-    1. ZIP (numeric 5 digit)
-    2. City + State (array with city/state)
-    3. Lat/Long (array with lat/lng)
-*/
 function getLocationFromInput($input, $mysqli = MYSQLI) {
 
     $type = null;
     $zip = $city = $state = $lat = $lng = null;
-
-    // -------------------------
-    // 1️⃣ Detect Input Type
-    // -------------------------
 
     if (is_string($input) && preg_match('/^\d{5}$/', $input)) {
         $type = 'zip';
@@ -566,10 +531,6 @@ function getLocationFromInput($input, $mysqli = MYSQLI) {
     else {
         return [];
     }
-
-    // -------------------------
-    // 2️⃣ Check Database First
-    // -------------------------
 
     if ($type === 'zip') {
 
@@ -604,10 +565,6 @@ function getLocationFromInput($input, $mysqli = MYSQLI) {
         if ($result) return $result;
     }
 
-    // -------------------------
-    // 3️⃣ Call TicketNetwork API
-    // -------------------------
-
     $accessToken = getTnAccessToken();
     $params = ['perPage' => 1];
 
@@ -616,7 +573,7 @@ function getLocationFromInput($input, $mysqli = MYSQLI) {
     }
 
     if ($type === 'city') {
-        $params['filter'] = "city/text/name eq '$city' and stateProvince/text/abbr eq '$state'";
+       $params['filter'] = "startswith(city/text/name,'$city')";
     }
 
     if ($type === 'latlng') {
@@ -659,10 +616,6 @@ function getLocationFromInput($input, $mysqli = MYSQLI) {
     $latitude  = $loc['geoCenter']['latitude'] ?? '';
     $longitude = $loc['geoCenter']['longitude'] ?? '';
 
-    // -------------------------
-    // 4️⃣ Insert Into DB
-    // -------------------------
-
     $stmt = $mysqli->prepare("
         INSERT IGNORE INTO locations (city, state, country, zip, latitude, longitude)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -671,10 +624,6 @@ function getLocationFromInput($input, $mysqli = MYSQLI) {
     $stmt->bind_param("ssssss", $city, $state, $country, $zip, $latitude, $longitude);
     $stmt->execute();
     $stmt->close();
-
-    // -------------------------
-    // 5️⃣ Fetch Inserted Record
-    // -------------------------
 
     $stmt = $mysqli->prepare("SELECT * FROM locations WHERE zip = ? LIMIT 1");
     $stmt->bind_param("s", $zip);
@@ -687,7 +636,7 @@ function getLocationFromInput($input, $mysqli = MYSQLI) {
 
 function getWikipediaVenueImage($venueName) {
 
-    $venueName = trim($venueName) . ' venue';
+    $venueName = trim($venueName);
 
     $params = [
         'action'      => 'query',
@@ -728,16 +677,15 @@ function getWikipediaVenueImage($venueName) {
             return $page['imageinfo'][0]['url'];
         }
     }
-
-    return '';
+    return [];
+    
 }
 
 function getVenueImageFromWikimedia($venueName) {
-
+    
     $slug = strtolower(str_replace(' ', '-', $venueName));
     $key  = "venues/{$slug}.webp";
 
-    // 1️⃣ Check if already exists in R2
     if (s3ObjectExists($key)) {
         return getS3PublicUrl($key);
     }
@@ -751,32 +699,45 @@ function getVenueImageFromWikimedia($venueName) {
     $webpImage = resizeAndConvertToWebP($imageContent, 800, 80);
     if (!$webpImage) return '';
 
-    // 3️⃣ Upload to R2
     uploadImageToS3($webpImage, $key, 'image/webp');
 
     return getS3PublicUrl($key);
 }
 
-function getNearbyVenues($latitude = '', $longitude = '') {
+function getNearbyVenues($limit = 20) {
 
     $accessToken = getTnAccessToken();
-    $location = getUserLocationFromCookie();
-    if(!empty($latitude)) { 
-        $lat = $latitude;
-    }else{
-        $lat = $location['latitude'];
-    }
-    if(!empty($longitude)) {
-        $lng = $longitude;
-    }else{
-        $lng = $location['longitude'];
-    }
     $radius = '50mi';
-    
-    $params = [
-        'geoFilter' => "nearby($lat, $lng, $radius)",
-        'perPage'   => 10
-    ];
+    $city = $_COOKIE['so_city'];
+    $state = $_COOKIE['so_state'];
+    $lt = $_COOKIE['so_lat'];
+    $lg = $_COOKIE['so_lng'];
+    if(!empty($city) && !empty($state)) {
+        $cacheKey = "venues_{$city}_{$state}";
+        $params = [
+            'filter' => "city/text/name eq '$city' and stateProvince/text/abbr eq '$state'",
+            'perPage'   => $limit
+        ];
+    }elseif(!empty($lt) && !empty($lg)) {
+        $cacheKey = "venues_{$lt}_{$lg}";
+        $params = [
+            'geoFilter' => "nearby($lt, $lg, $radius)",
+            'perPage'   => $limit
+        ];
+    }else{
+        $cacheKey = "top_venues";
+        $params = [
+            'filter' => "country/alphaCode eq 'US'",
+            'sort' => 'salesRank',
+            'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
+            'perPage'   => $limit
+        ];
+    }
+
+    $cached = cache_get($cacheKey, 86400);
+    if ($cached !== false) {
+        return $cached;
+    }
 
     $url = BASE_URL . '/catalog/v2/venues/?' . http_build_query($params);
 
@@ -796,8 +757,53 @@ function getNearbyVenues($latitude = '', $longitude = '') {
     curl_close($ch);
 
     $data = json_decode($response, true);
+    $results = $data['results'] ?? [];
 
-    return $data['results'] ?? [];
+    cache_set($cacheKey, $results);
+
+    return $results ?? [];
+}
+
+function getNearbyVenuesFallback($limit = 20) {
+
+    $accessToken = getTnAccessToken();
+    
+    $cacheKey = "top_venues";
+    $params = [
+        'filter' => "country/alphaCode eq 'US'",
+        'sort' => 'salesRank',
+        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
+        'perPage'   => $limit
+    ];
+    
+    $cached = cache_get($cacheKey, 86400);
+    if ($cached !== false) {
+        return $cached;
+    }
+
+    $url = BASE_URL . '/catalog/v2/venues/?' . http_build_query($params);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 30
+    ]);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+    $results = $data['results'] ?? [];
+
+    cache_set($cacheKey, $results);
+
+    return $results ?? [];
 }
 
 function getNearbyCities($lat, $lng) {
@@ -868,7 +874,7 @@ function getAllConcertsNestedCategories($limit = 8) {
 
     $params = [
         'filter'  => "contains(path,'.1859.1986.') and depth eq 2 and _metadata/hasEvents eq true",
-        'sort'    => '_metadata/eventCount',
+        'sort'    => '-_metadata/eventCount',
         'perPage' => $limit
     ];
 
@@ -899,11 +905,6 @@ function getAllConcertsNestedCategories($limit = 8) {
             $name = $category['text']['name'];
             $names[] = [$evtCount, ucwords(strtolower($name)), $category['uriComponent']];
         }
-
-        usort($names, function ($a, $b) {
-            return $b[0] <=> $a[0]; // DESC
-        });
-
     }
 
     return $names;
@@ -915,7 +916,7 @@ function getAllSportsNestedCategories($limit = 8) {
 
     $params = [
         'filter'  => "contains(path,'.1859.1988.') and depth eq 2 and _metadata/hasEvents eq true",
-        'sort'    => '_metadata/eventCount',
+        'sort'    => '-_metadata/eventCount',
         'perPage' => $limit
     ];
 
@@ -946,11 +947,6 @@ function getAllSportsNestedCategories($limit = 8) {
             $name = $category['text']['name'];
             $names[] = [$evtCount, ucwords(strtolower($name)), $category['uriComponent']];
         }
-
-        usort($names, function ($a, $b) {
-            return $b[0] <=> $a[0]; // DESC
-        });
-
     }
 
     return $names;
@@ -962,7 +958,7 @@ function getAllTheaterNestedCategories($limit = 8) {
 
     $params = [
         'filter'  => "contains(path,'.1859.1987.') and depth eq 2 and _metadata/hasEvents eq true",
-        'sort'    => '_metadata/eventCount',
+        'sort'    => '-_metadata/eventCount',
         'perPage' => $limit
     ];
 
@@ -993,11 +989,6 @@ function getAllTheaterNestedCategories($limit = 8) {
             $name = $category['text']['name'];
             $names[] = [$evtCount, ucwords(strtolower($name)), $category['uriComponent']];
         }
-
-        usort($names, function ($a, $b) {
-            return $b[0] <=> $a[0]; // DESC
-        });
-
     }
 
     return $names;
@@ -1009,7 +1000,7 @@ function getAllFestivalsNestedCategories($limit = 8) {
 
     $params = [
         'filter'  => "contains(path,'.1859.1989.') and depth eq 2 and _metadata/hasEvents eq true",
-        'sort'    => '_metadata/eventCount',
+        'sort'    => '-_metadata/eventCount',
         'perPage' => $limit
     ];
 
@@ -1040,11 +1031,6 @@ function getAllFestivalsNestedCategories($limit = 8) {
             $name = $category['text']['name'];
             $names[] = [$evtCount, ucwords(strtolower($name)), $category['uriComponent']];
         }
-
-        usort($names, function ($a, $b) {
-            return $b[0] <=> $a[0]; // DESC
-        });
-
     }
 
     return $names;
@@ -1085,8 +1071,8 @@ function getKeywordSearchSuggestions($q) {
     */
    
     $artistParams = [
-        'filter' => "contains(text/name,'$q')",
-        'sort' => '-salesRank',
+        'filter' => "startswith(text/name,'$q')",
+        'sort' => 'salesRank',
         'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'perPage' => 10
     ];
@@ -1111,8 +1097,8 @@ function getKeywordSearchSuggestions($q) {
     ==========================
     */
     $cityParams = [
-        'filter' => "contains(text/name,'$q')",
-        'sort' => '-salesRank',
+        'filter' => "startswith(text/name,'$q')",
+        'sort' => 'salesRank',
         'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'perPage' => 10
     ];
@@ -1138,8 +1124,8 @@ function getKeywordSearchSuggestions($q) {
     ==========================
     */
     $venueParams = [
-        'filter' => "contains(text/name,'$q')",
-        'sort' => '-salesRank',
+        'filter' => "startswith(text/name,'$q')",
+        'sort' => 'salesRank',
         'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'perPage' => 10
     ];
@@ -1216,7 +1202,7 @@ function getMostPopularEvents($catPath = '', $lat = '', $lng = '') {
         $params = [
             'perPage' => 20,
             'page'    => 1,
-            'filter'  => "date/date ge " . $today . " and contains(defaultCategory/path,'$catPath')",
+            'filter'  => "date/date ge '$today' and contains(defaultCategory/path,'$catPath')",
             'geoFilter' => "nearby($lat, $lng, '50mi')",
             'sort'    => 'salesRank'
         ];
@@ -1298,12 +1284,13 @@ function tnGetCategoryNearby($rootPath, $lat, $lng, $limit = 12) {
 
 function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, $limit = 12) {
     $accessToken = getTnAccessToken();
+    $today = date('Y-m-d');
     $rootPath = tnEscapeFilterValue($rootPath);
     if($type === 'll') {
         $lat = floatval($loc1);
         $lng = floatval($loc2);
         $params = [
-            'filter' => "contains(defaultCategory/path,'$rootPath')",
+            'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
             'geoFilter' => sprintf('nearby(%F,%F,50mi)', $lat, $lng),
             'perPage' => $limit
         ];
@@ -1311,12 +1298,12 @@ function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, $limit = 12
         $city  = ucfirst(strtolower($loc1));
         $state = strtoupper($loc2);
         $params = [
-            'filter' => "contains(defaultCategory/path,'$rootPath') and city/text/name eq '$city' and stateProvince/text/abbr eq '$state'",
+            'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath') and city/text/name eq '$city' and stateProvince/text/abbr eq '$state'",
             'perPage' => $limit
         ];
     }else{
         $params = [
-            'filter' => "contains(defaultCategory/path,'$rootPath')",
+            'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
             'perPage' => $limit
         ];
     }
@@ -1349,27 +1336,16 @@ function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, $limit = 12
     return $data['results'] ?? [];
 }
 
-function getTeamsByCategory($categorySlug) {
+function getTeamsByCategory($categorySlug, $limit = 20) {
 
     $categorySlug = strtoupper(trim((string)$categorySlug));
     if ($categorySlug === '') return [];
 
-    $location = getUserLocationFromCookie(); // whatever you return here
-    $locKey = 'default';
-
-    if (!empty($location)) {
-        $locKey = strtolower(str_replace([' ', '.', ','], ['_', '', ''], (string)$location));
-    }
-
-    $cacheKey = "teams_{$categorySlug}";
-
-    // 1) cache first
-    $cached = cache_get($cacheKey, 86400); // 24h
-    if ($cached !== false) {
-        return $cached;
-    }
-
-    // Map category slug to TN category path
+    $city = $_COOKIE['so_city'];
+    $state = $_COOKIE['so_state'];
+    $lt = $_COOKIE['so_lat'];
+    $lg = $_COOKIE['so_lng'];
+    
     $categoryPaths = [
         'NFL' => '.1859.1988.1879.1959.',
         'NBA' => '.1859.1988.1865.1971.',
@@ -1384,16 +1360,35 @@ function getTeamsByCategory($categorySlug) {
 
     $accessToken = getTnAccessToken();
 
-    $params = [
-        'filter'  => "contains(defaultCategory/path,'{$categoryPaths[$categorySlug]}') and _metadata/hasEvents eq true",
-        'sort'    => 'salesRank',
-        'perPage' => 10,
-        'page'    => 1
-    ];
+    if(!empty($city) && !empty($state)) {
+        $cacheKey = "teams_{$categorySlug}_{$city}_{$state}";
+        $params = [
+            'categoryFilter' => "path eq '{$categoryPaths[$categorySlug]}'",
+            'eventFilter' => "city/text/name eq '$city' and stateProvince/text/abbr eq '$state'",
+            'perPage'   => $limit
+        ];
+    }elseif(!empty($lt) && !empty($lg)) {
+        $cacheKey = "teams_{$categorySlug}_{$lt}_{$lg}";
+        $params = [
+            'categoryFilter' => "path eq '{$categoryPaths[$categorySlug]}'",
+            //'eventFilter' => "country/alphaCode eq 'US'",
+            'geoFilter' => "nearby($lt, $lg, $radius)",
+            'perPage'   => $limit
+        ];
+    }else{
+        $cacheKey = "teams_{$categorySlug}";
+        $params = [
+            'categoryFilter' => "path eq '{$categoryPaths[$categorySlug]}'",
+            'eventFilter' => "country/alphaCode eq 'US'",
+            'sort' => 'salesRank',
+            'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
+            'perPage'   => $limit
+        ];       
+    }
 
-    // If you meant: if location exists then country filter, keep as-is
-    if (!empty($location)) {
-        $params['eventFilter'] = "country/alphaCode eq 'US'";
+    $cached = cache_get($cacheKey, 86400);
+    if ($cached !== false) {
+        return $cached;
     }
 
     $url = BASE_URL . '/catalog/v2/performers?' . http_build_query($params);
@@ -1414,41 +1409,65 @@ function getTeamsByCategory($categorySlug) {
     $data = json_decode((string)$response, true);
     $results = $data['results'] ?? [];
 
-    // 2) save cache (even if empty is okay, but your choice)
     cache_set($cacheKey, $results);
 
     return $results;
 }
 
-function getEventImage($artist, $venue) {
-    $artistImageUrl = getArtistImageFromWikimedia($artist);
-    $venueImageUrl = getVenueImageFromWikimedia($venue);
-    if(!empty($artistImageUrl)) {
-        $imageUrl = $artistImageUrl;
-    }elseif(!empty($venueImageUrl)) {
-        $imageUrl = $venueImageUrl;
-    }else{
-        $imageUrl = HOME_URL . '/assets/placeholder.webp';
-    }    
-    $ext = pathinfo($imageUrl, PATHINFO_EXTENSION);
-    if(in_array(strtolower($ext), ['pdf', 'tif'])) {
-        $imageUrl = HOME_URL . '/assets/placeholder.webp';
-    }
-    return $imageUrl;
-}
+function getTeamsByCategoryFallback($categorySlug, $limit = 20) {
 
-function getVenueImage($venue) {
-    $venueImageUrl = getVenueImageFromWikimedia($venue);
-    if(!empty($venueImageUrl)) {
-        $imageUrl = $venueImageUrl;
-    }else{
-        $imageUrl = HOME_URL . '/assets/placeholder.webp';
+    $categorySlug = strtoupper(trim((string)$categorySlug));
+    if ($categorySlug === '') return [];
+
+    $categoryPaths = [
+        'NFL' => '.1859.1988.1879.1959.',
+        'NBA' => '.1859.1988.1865.1971.',
+        'MLB' => '.1859.1988.1864.1969.',
+        'NHL' => '.1859.1988.1883.1972.',
+        'MLS' => '.1859.1988.1913.1970.',
+    ];
+
+    if (!isset($categoryPaths[$categorySlug])) {
+        return [];
     }
-    $ext = pathinfo($imageUrl, PATHINFO_EXTENSION);
-    if(in_array(strtolower($ext), ['pdf', 'tif'])) {
-        $imageUrl = HOME_URL . '/assets/placeholder.webp';
+
+    $accessToken = getTnAccessToken();
+
+    $cacheKey = "teams_{$categorySlug}";
+    $params = [
+        'categoryFilter' => "path eq '{$categoryPaths[$categorySlug]}'",
+        'eventFilter' => "country/alphaCode eq 'US'",
+        'sort' => 'salesRank',
+        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
+        'perPage'   => $limit
+    ];       
+   
+    $cached = cache_get($cacheKey, 86400);
+    if ($cached !== false) {
+        return $cached;
     }
-    return $imageUrl;
+
+    $url = BASE_URL . '/catalog/v2/performers?' . http_build_query($params);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ]
+    ]);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode((string)$response, true);
+    $results = $data['results'] ?? [];
+
+    cache_set($cacheKey, $results);
+
+    return $results;
 }
 
 function cache_dir() {
@@ -1565,4 +1584,419 @@ function buildVenueSkeleton($count = 8) {
     }
 
     return $html . '</div>';
+}
+
+function getAllCatsEventsCount() {
+
+    $concertPath = ".1859.1986.";
+	$sportsPath = ".1859.1988.";
+	$theaterPath = ".1859.1987.";
+    $today = date('Y-m-d');
+    $params = [
+        'filter' => "date/date ge $today and (startswith(defaultCategory/path, '$sportsPath') or startswith(defaultCategory/path, '$concertPath') or startswith(defaultCategory/path, '$theaterPath'))",
+        'perPage' => 500,
+        'page' => 1
+    ];
+
+    $json = tnRequest('/catalog/v2/events/', $params);
+
+    $count = (int) ($json['count'] ?? 0);
+
+    return $count;
+}
+
+function getAllCatsEvents() {
+
+    $accessToken = getTnAccessToken();
+
+    $concertPath = ".1859.1986.";
+	$sportsPath = ".1859.1988.";
+	$theaterPath = ".1859.1987.";
+
+	$today = date('Y-m-d');
+
+    $params = [
+        'filter' => "date/date ge $today and (startswith(defaultCategory/path, '$sportsPath') or startswith(defaultCategory/path, '$concertPath') or startswith(defaultCategory/path, '$theaterPath'))",
+        'perPage' => 20,
+        'page' => 1
+    ];
+
+    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data;
+}
+
+function getSportsCatEventsCount() {
+
+	$sportsPath = ".1859.1988.";	
+    $today = date('Y-m-d');
+
+    $params = [
+        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$sportsPath')",
+        'perPage' => 500,
+        'page' => 1
+    ];
+
+    $json = tnRequest('/catalog/v2/events/', $params);
+
+    $count = (int) ($json['count'] ?? 0);
+
+    return $count;
+}
+
+function getSportsCatEvents() {
+
+    $accessToken = getTnAccessToken();
+
+    $sportsPath = ".1859.1988.";
+	$today = date('Y-m-d');
+
+    $params = [
+        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$sportsPath')",
+        'perPage' => 20,
+        'page' => 1
+    ];
+
+    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data;
+}
+
+function getConcertsCatEventsCount() {
+
+	$concertPath = ".1859.1986.";	
+    $today = date('Y-m-d');
+
+    $params = [
+        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$concertPath')",
+        'perPage' => 500,
+        'page' => 1
+    ];
+
+    $json = tnRequest('/catalog/v2/events/', $params);
+
+    $count = (int) ($json['count'] ?? 0);
+
+    return $count;
+}
+
+function getConcertsCatEvents() {
+
+    $accessToken = getTnAccessToken();
+
+    $concertPath = ".1859.1986.";
+	$today = date('Y-m-d');
+
+    $params = [
+        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$concertPath')",
+        'perPage' => 20,
+        'page' => 1
+    ];
+
+    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data;
+}
+
+function getTheaterCatEventsCount() {
+
+	$theaterPath = ".1859.1987.";
+    $today = date('Y-m-d');
+
+    $params = [
+        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$theaterPath')",
+        'perPage' => 500,
+        'page' => 1
+    ];
+
+    $json = tnRequest('/catalog/v2/events/', $params);
+
+    $count = (int) ($json['count'] ?? 0);
+
+    return $count;
+}
+
+function getTheaterCatEvents() {
+
+    $accessToken = getTnAccessToken();
+
+    $theaterPath = ".1859.1987.";
+	$today = date('Y-m-d');
+
+    $params = [
+        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$theaterPath')",
+        'perPage' => 20,
+        'page' => 1
+    ];
+
+    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data;
+}
+
+function getFestivalCatEventsCount() {
+
+	$festivalPath = ".1859.1989.";
+    $today = date('Y-m-d');
+
+    $params = [
+        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$festivalPath')",
+        'perPage' => 500,
+        'page' => 1
+    ];
+
+    $json = tnRequest('/catalog/v2/events/', $params);
+
+    $count = (int) ($json['count'] ?? 0);
+
+    return $count;
+}
+
+function getFestivalCatEvents() {
+
+    $accessToken = getTnAccessToken();
+
+    $festivalPath = ".1859.1989.";
+	$today = date('Y-m-d');
+
+    $params = [
+        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$festivalPath')",
+        'perPage' => 20,
+        'page' => 1
+    ];
+
+    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data;
+}
+
+function searchPostalCodes($text, $country = 'US', $limit = 20) {
+
+    $accessToken = getTnAccessToken();
+
+    if (!$text) {
+        return [];
+    }
+
+    $text = trim($text);
+
+    // Detect if search text is zipcode (numbers only)
+    if (preg_match('/^[0-9]+$/', $text)) {
+        $filter = "code eq '{$text}' and country/alphaCode eq '{$country}'";
+    } else {
+        $filter = "startswith(city/text/name,'{$text}') and country/alphaCode eq '{$country}'";
+    }
+
+    $params = [
+        'filter'  => $filter,
+        'perPage' => $limit,
+        'sort'    => 'city'
+    ];
+
+    $url = BASE_URL . '/catalog/v2/postalCodes/?' . http_build_query($params);
+    
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data;
+}
+
+function getWikimediaImage($title = "") {
+    $url = "https://en.wikipedia.org/w/api.php?" . http_build_query([
+        "action" => "query",
+        "titles" => $title,
+        "prop" => "pageimages",
+        "piprop" => "original",
+        "format" => "json"
+    ]);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_USERAGENT => "SeatOutletBot/1.0"
+    ]);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    $pages = $data['query']['pages'] ?? [];
+    $page  = reset($pages);
+    $image = $page['original']['source'] ?? '';
+
+    return $image;
+}
+
+function getEventImage($artist, $venue, $event) {
+    $eventImageUrl = getWikimediaImage($event);
+    $artistImageUrl = getWikimediaImage($artist);
+    $venueImageUrl = getWikimediaImage($venue);
+    if(!empty($eventImageUrl)) {
+        $imageUrl = $eventImageUrl;
+    }elseif(!empty($artistImageUrl)) {
+        $imageUrl = $artistImageUrl;
+    }elseif(!empty($venueImageUrl)) {
+        $imageUrl = $venueImageUrl;
+    }else{
+        $imageUrl = '';
+    }    
+    
+    
+    if(!empty($imageUrl)) {
+        $name = pathinfo(urldecode($imageUrl), PATHINFO_FILENAME);
+        $slug = strtolower(str_replace(' ', '-', $name));
+        $key  = trim($slug, '-') . ".webp";
+
+        if (s3ObjectExists($key)) {
+            return getS3PublicUrl($key);
+        }
+
+        $imageContent = downloadImage($imageUrl);
+        if (!$imageContent) return '';
+
+        $webpImage = resizeAndConvertToWebP($imageContent, 800, 80);
+        if (!$webpImage) return '';
+
+        uploadImageToS3($webpImage, $key, 'image/webp');
+        return getS3PublicUrl($key);
+    }
+    
+    return '';
 }

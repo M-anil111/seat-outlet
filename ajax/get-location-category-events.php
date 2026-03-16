@@ -56,7 +56,7 @@ if ($cached) {
    FETCH EVENTS FROM TN
 ============================== */
 
-$events = fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, 8);
+$events = fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, 25);
 
 /* ==============================
    FORMAT RESPONSE
@@ -67,23 +67,28 @@ $output = [];
 if (!empty($events)) {
 
     foreach ($events as $event) {
-
+        $eventName = $event['text']['name'] ?? '';
         $venueName = $event['venue']['text']['name'] ?? '';
         $evtPerformer = $event['performers'][0]['name'] ?? '';
-        $imageUrl = getEventImage($evtPerformer, $venueName);
+        $imageUrl = getEventImage($evtPerformer, $venueName, $eventName);
 
+        $eventDateRaw = $event['date']['date'];
+		$timestamp    = strtotime($eventDateRaw);
+        $time = $event['date']['text']['time'];
         $city  = $event['city']['text']['name'] ?? '';
         $state = $event['stateProvince']['text']['abbr'] ?? '';
 
-        $output[] = [
-            'id'    => (int)($event['id'] ?? 0),
-            'name'  => $event['text']['name'] ?? '',
-            'date'  => $event['date']['date'] ?? '',
-            'venue' => $venueName,
-            'price' => $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '',
-            'image' => $imageUrl,
-            'loc'   => trim($city . ', ' . $state, ', ')
-        ];
+        if($imageUrl) {
+            $output[] = [
+                'id'    => (int)($event['id'] ?? 0),
+                'name'  => $eventName,
+                'date'  => date('D, d M y', $timestamp) . ', ' . $time,
+                'venue' => $venueName,
+                'price' => $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '',
+                'image' => $imageUrl,
+                'loc'   => trim($city . ', ' . $state)
+            ];
+        }
     }
 }
 

@@ -5,9 +5,10 @@ include 'header.php';
 
 <!-- Top Picks Section -->
 <section class="container pt-5">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <div class="location-selector-wrapper d-flex flex-wrap align-items-center ">
-      <h2 class="fw-bold fs-4 mb-0">Our top picks near </h2>
+  <div class="mb-3">
+    <div class="location-selector-wrapper d-flex flex-wrap align-items-center justify-content-between">
+      <h2 class="fw-bold fs-4 mb-0">Our Top Picks Near </h2>
+      <div class="so-right-searchbar">
       <button type="button" class="location-selector" id="locationToggleBtn">
         <!-- <span class="location-selector-label"></span> -->
         <span class="location-selector-link" id="locationSelectorText">Select your location <i class="bi bi-chevron-down"></i></span>
@@ -42,6 +43,7 @@ include 'header.php';
           </svg>
           <span>Current location</span>
         </button>
+      </div>
       </div>
     </div>
   </div>
@@ -98,7 +100,7 @@ include 'header.php';
 
         <!-- Left Heading -->
         <div class="col-lg-3">
-          <h3 class="fw-bold mb-0">Experience<br>it live.</h3>
+          <h3 class="fw-bold mb-0 so-experieance">Experience<br class="so-nobrake"> it live.</h3>
         </div>
 
         <!-- Feature 1 -->
@@ -140,11 +142,11 @@ include 'header.php';
 </section>
 
 
-<section class="teams-nearby bg-white py-3">
+<section class="teams-nearby bg-white py-3 teams-section">
   <div class="container py-5 slider-bg text-white">
     <div class="d-flex justify-content-between align-items-center">
       <h2 class="section__title section__title--center fw-bold fs-4 mb-4 text-black">
-        Teams Nearby
+        Top Teams
       </h2>
       <div class="slider-arrows"></div>
     </div>
@@ -385,8 +387,8 @@ include 'header.php';
   </div>
 </section>
 
-<section class="container new-slider left-right-btn py-5">
-  <h2 class="fw-bold fs-4 mb-4">Top Venues Near You</h2>
+<section class="container new-slider venue-section left-right-btn py-5">
+  <h2 class="fw-bold fs-4 mb-4">Top Venues</h2>
   <div class="venue-slider px-4">
     <div class="text-center py-5 w-100">
       <?php echo buildVenueSkeleton(4); ?>    
@@ -546,49 +548,49 @@ include 'header.php';
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="assets/team-event.webp" class="img-fluid" alt="Partner">
+          <img src="<?php echo HOME_URL; ?>/assets/hunt-tickets.webp" class="img-fluid" alt="Hunt Tickets" width="115" height="115">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="assets/lite.webp" class="img-fluid" alt="Partner">
+          <img src="<?php echo HOME_URL; ?>/assets/lite.webp" class="img-fluid" alt="Lite" width="115" height="115">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="assets/bmi.webp" class="img-fluid" alt="Partner">
+          <img src="<?php echo HOME_URL; ?>/assets/seat-geek.webp" class="img-fluid" alt="Seat Geek" width="115" height="115">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="assets/electolit.webp" class="img-fluid" alt="Partner">
+          <img src="<?php echo HOME_URL; ?>/assets/viralpep.webp" class="img-fluid" alt="Electolit" width="115" height="115">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="assets/jimbeam.png" class="img-fluid" alt="Partner">
+          <img src="<?php echo AWS_CDN_URL; ?>images/jimbeam.webp" class="img-fluid" alt="Jimbeam" width="115" height="115">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="assets/rambler.webp" class="img-fluid" alt="Partner">
+          <img src="<?php echo HOME_URL; ?>/assets/gtn.webp" class="img-fluid" alt="Grab Tickets Now" width="115" height="115">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="assets/patron.png" class="img-fluid" alt="Partner">
+          <img src="<?php echo HOME_URL; ?>/assets/ticket-scanner.webp" class="img-fluid partner-img" alt="Ticket Scanner" width="150" height="150">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="assets/lyft.png" class="img-fluid" alt="Partner">
+          <img src="<?php echo AWS_CDN_URL; ?>images/lyft.webp" class="img-fluid" alt="Lyft" width="115" height="115">
         </div>
       </div>
 
@@ -598,3 +600,4 @@ include 'header.php';
 
 
 <?php include 'footer.php'; ?>
+

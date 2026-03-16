@@ -4,7 +4,7 @@
     <div class="container"> 
 		<div class="row g-3 align-items-center justify-content-between">
 			<div class="col-lg-4">
-				<div class="col-12 d-flex align-items-center gap-3">
+				<div class="col-12 d-flex align-items-center gap-3 justify-content-md-center">
 					<div class="newsletter-icon">
 						<i class="bi bi-send-fill fs-5"></i>
 					</div>
