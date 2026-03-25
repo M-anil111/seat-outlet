@@ -43,8 +43,8 @@ $relatedPerformers = $relatedPerformersResponse;
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
 $artistName = $performer['text']['name'];
-$performer_bio = getArtistBioFromWikipedia($artistName);
-$performer_image = getArtistImageFromWikimedia($artistName);
+$performer_bio = getArtistBio($artistName);
+$performer_image = getArtistImage($artistName);
 
 $faqs = getFaqs($mysqli, 'performer');
 
@@ -131,7 +131,7 @@ $faqs = getFaqs($mysqli, 'performer');
 				<button class="nav-link" type="button" data-target="state" onclick="scrollToElement('state')">More</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-link" type="button" data-target="map" onclick="scrollToElement('map')">Map</button>
+				<button class="nav-link" type="button" data-target="lovers" onclick="scrollToElement('lovers')">Fans Also Love</button>
 			</li>
 			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="fans" onclick="scrollToElement('fans')">
@@ -562,62 +562,38 @@ $faqs = getFaqs($mysqli, 'performer');
 		</div>
 	</div>
 </section>
-<section class="tab-section lake-links-section py-5" id="map">
-    <div class="container">
-      <div class="row align-items-center g-4">
-  
-       
-        <div class="col-12 col-lg-6">
-          <div class="map-wrapper">
-		  <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d52785617.24043092!2d-161.38467883760003!3d36.14760863029002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x54eab584e432360b%3A0x1c3bb99243deb742!2sUnited%20States!5e0!3m2!1sen!2sin!4v1773400386890!5m2!1sen!2sin" width="100%" height="auto" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-		 
-          </div>
-        </div>
-  
-       
-        <div class="col-12 col-lg-6">
-          <div class="links-wrapper text-center text-lg-start">
-  
-            <h2 class="mb-4 fw-bold text-white fs-4">
-			Ultimate Guide to Seeing {Performer} in {Country}
-            </h2>
-  
-            <div class="row g-3">
-            
-  
-              <div class="col-12">
-                <a href="#" class="lake-link-box">About {city}, {state}</a>
-              </div>
-  
-              <div class="col-12">
-                <a href="#" class="lake-link-box">Wikipedia in {city}, {state}</a>
-              </div>
-  
-              <div class="col-12">
-                <a href="#" class="lake-link-box">Official City Government Website in {city}, {state}</a>
-              </div>
-  
-              <div class="col-12">
-                <a href="#" class="lake-link-box">Official Tourism Website in {city}, {state}</a>
-              </div>
-  
-              <div class="col-12">
-                <a href="#" class="lake-link-box">Weather in {city}, {state}</a>
-              </div>
-  
-              <div class="col-12">
-                <a href="#" class="lake-link-box">Latest News in {city}, {state}</a>
-              </div>
-            </div>
-  
-          </div>
-        </div>
-  
-      </div>
-    </div>
-  </section>
-  <div class="container similar-events">
-   <div class="tab-section content-section-detail" id="fans">
+<?php if (!empty($relatedPerformers)) { $i = 0; ?>
+			<div class="tab-section container content-section-detail" id="lovers">
+				<div class="row g-4">
+					<h2 class="so-heading fw-bold fs-4 mb-4 text-black">{Performer} Fans Also Love</h2>
+					<?php foreach ($relatedPerformers as $performer) { 
+						$artistName = $performer['text']['name'];
+						$performer_image = getArtistImageFromWikimedia($artistName);
+						if(empty($performer_image))	continue;
+						$i++;
+						if($i > 8) continue;
+					?>
+						<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+							<a href="/<?php echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
+								<div class="position-relative overflow-hidden rounded">
+									<?php if ($performer_image) { ?>
+										<img src="<?php echo $performer_image; ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
+									<?php }else{ ?>
+										<img src="<?php echo HOME_URL; ?>/assets/placeholder.webp" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
+									<?php } ?>							
+									<div class="band-content d-flex justify-content-between align-items-center">
+										<span class="band-name"></span>								
+									</div>
+								</div>
+								<div class="band-name-title text-black mt-2"><?php echo $artistName; ?></div>
+							</a>
+						</div>
+					<?php } ?>
+				</div>
+			</div>
+		<?php } ?>
+  <div class="similar-events">
+   <div class="tab-section container content-section-detail" id="fans">
       <div class="row g-4">
 	  <h2 class="so-heading fw-bold fs-4 mb-4 text-black ">Popular Artists Touring {Country}</h2>
          <div class="col-lg-3 col-md-4 col-sm-6">

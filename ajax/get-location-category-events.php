@@ -19,8 +19,8 @@ $loc2 = $_GET['loc2'] ?? '';
 $categoryMap = [
     'concerts' => '.1859.1986.',
     'sports'   => '.1859.1988.',
-    'theater'  => '.1859.1987.',
-    'festival' => '.1859.1989.'
+    'theatre'  => '.1859.1989.',
+    'festival' => '.1859.1987.'
 ];
 
 if (!isset($categoryMap[$tab])) {
@@ -70,7 +70,7 @@ if (!empty($events)) {
         $eventName = $event['text']['name'] ?? '';
         $venueName = $event['venue']['text']['name'] ?? '';
         $evtPerformer = $event['performers'][0]['name'] ?? '';
-        $imageUrl = getEventImage($evtPerformer, $venueName, $eventName);
+        $imageUrl = getEventImage($evtPerformer, $event['defaultCategory'], $eventName);
 
         $eventDateRaw = $event['date']['date'];
 		$timestamp    = strtotime($eventDateRaw);

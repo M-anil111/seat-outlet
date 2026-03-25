@@ -43,8 +43,8 @@ $relatedPerformers = $relatedPerformersResponse;
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
 $artistName = $performer['text']['name'];
-$performer_bio = getArtistBioFromWikipedia($artistName);
-$performer_image = getArtistImageFromWikimedia($artistName);
+$performer_bio = getArtistBio($artistName);
+$performer_image = getArtistImage($artistName);
 
 $faqs = getFaqs($mysqli, 'performer');
 

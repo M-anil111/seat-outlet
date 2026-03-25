@@ -43,8 +43,8 @@ $relatedPerformers = $relatedPerformersResponse;
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
 $artistName = $performer['text']['name'];
-$performer_bio = getArtistBioFromWikipedia($artistName);
-$performer_image = getArtistImageFromWikimedia($artistName);
+$performer_bio = getArtistBio($artistName);
+$performer_image = getArtistImage($artistName);
 
 $faqs = getFaqs($mysqli, 'performer');
 
@@ -95,7 +95,7 @@ $faqs = getFaqs($mysqli, 'performer');
 									</a>
 								</div>
 								<h1 class="artist-title">
-									<?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>Aaron Lewis in {State}, {country}
+									<?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> {festival Name} tickets in {State}, {country}
 								</h1>
 							</div>
 						</div>
@@ -111,7 +111,7 @@ $faqs = getFaqs($mysqli, 'performer');
 		<ul class="nav nav-tabs artist-tabs-nav" id="artistTabs">
 			<li class="nav-item">
 				<button class="nav-link active" type="button" data-target="default" onclick="scrollToElement('default')">
-					<?php echo htmlspecialchars($breadcrumbs[1]['label'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+					<?php //echo htmlspecialchars($breadcrumbs[1]['label'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Theater
 				</button>
 			</li>
 			<li class="nav-item">
@@ -129,14 +129,17 @@ $faqs = getFaqs($mysqli, 'performer');
 			<li class="nav-item">
 			<button class="nav-link" type="button"  data-target="city" onclick="scrollToElement('city')">More</button>
 			</li>
+			<li class="nav-item">
+				<button class="nav-link" type="button" data-target="lovers" onclick="scrollToElement('lovers')">Fans Also Love</button>
+			</li>
 			<!-- <li class="nav-item">
 				<button class="nav-link" type="button"  data-target="promo" onclick="scrollToElement('promo')">Promo Codes</button>
 			</li> -->
-			<!-- <li class="nav-item">
+			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="fans" onclick="scrollToElement('fans')">
-					Fans Also Viewed
+				Top Festival
 				</button>
-			</li> -->
+			</li>
 		</ul>
 		<span class="active-underline"></span>
 	</div>
@@ -152,7 +155,7 @@ $faqs = getFaqs($mysqli, 'performer');
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h2>
-									<?php echo strtoupper(htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8')); ?> <?php echo htmlspecialchars(strtoupper($breadcrumbs[1]['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> IN {State}, {country} <span class="dot">·</span>
+								Buy {Festival Name}<?php //echo strtoupper(htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8')); ?> <?php //echo htmlspecialchars(strtoupper($breadcrumbs[1]['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN {State} <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $count; ?>
 										<?php echo $count > 1 ? 'RESULTS' : 'RESULT'; ?>
@@ -176,8 +179,11 @@ $faqs = getFaqs($mysqli, 'performer');
 											autocomplete="off"
 											data-cpid="<?php echo (int) $id; ?>"
 											data-dcat="<?php echo htmlspecialchars(strtolower($breadcrumbs[1]['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-											<button type="button" id="locationInputReset" class="d-none">
-												<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M23 3.88H5.66L1 12l4.66 8.12H23zM2.74 12l3.8-6.62h14.95v13.24H6.54zm13.98 4.4-3.38-3.34-3.37 3.34-1.07-1.06L12.27 12 8.9 8.65l1.07-1.06 3.37 3.34 3.38-3.34 1.07 1.06L14.4 12l3.38 3.34z"></path></svg>
+											<button type="button" id="locationInputReset" class="d-none so-close-octagon">
+												<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
+												<path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
+												<path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+												</svg>
 											</button>
 											<div id="locationResults" class="tn-dropdown-menu dropdown"></div>
 									</div>
@@ -328,11 +334,11 @@ $faqs = getFaqs($mysqli, 'performer');
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement"	class="ad-image-left" />
 					</div>
-					<div class="tab-section content-section-detail mb-2" id="promocode">
+					<div class="tab-section content-section-detail mb-0" id="promocode">
 						<div class="row">
 							<div class="" id="promo">
-								<h2><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> concert Promo Codes in {country}</h2>
-								<p>Apply verified {Artist Name} ticket promo codes and save instantly on your concert tickets at checkout.</p>
+								<h2 class="mb-4 fw-bold text-black fs-4"><?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> {Festival Name} Promo Codes for {State} Festival</h2>
+								<p>Apply verified {Festival Name} promo codes and unlock instant savings on your festival tickets at checkout.</p>
 								<div class="row g-3 mt-2">
 
 									<div class="col-md-6">
@@ -419,8 +425,8 @@ $faqs = getFaqs($mysqli, 'performer');
 		<div class="tab-section content-section-detail" id="about">
 			<div class="row">
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
-					<div class="so-about me-3">
-						<h2 class="so-heading mb-3">About <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> </h2>
+					<div class="me-0 me-md-3 me-lg-3 me-xl-3 me-xxl-3">
+						<h2 class="so-heading mb-4 fw-bold text-black fs-4"> <?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> About {Festival Name} </h2>
 						<p><?php echo getArtistBioFromWikipedia($artistName); ?></p>
 						<!-- <p><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
 						<ul>
@@ -443,7 +449,7 @@ $faqs = getFaqs($mysqli, 'performer');
 		
 		<?php if (!empty($faqs)) { ?>
 			<div class="tab-section content-section-detail" id="faqs">
-				<h2 class="so-heading mb-3">FAQs about Aaron Lewis Tickets in {State}, {country}</h2>
+				<h2 class="so-heading mb-4 fw-bold text-black fs-4">FAQs about {Festival Name} Tickets in {State}</h2>
 				<div class="accordion" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;
@@ -479,8 +485,8 @@ $faqs = getFaqs($mysqli, 'performer');
 		<div class="tab-section content-section-detail" id="state">
 			<div class="row">
 				<div class="col-sm-12 col-md-8 col-lg-8 col-xl-8 col-xxl-8">
-					<div class="so-about me-3">
-						<h2 class="so-heading mb-3"> <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Concert Tickets in {State} </h2>
+					<div class="me-0 me-md-3 me-lg-3 me-xl-3 me-xxl-3">
+						<h2 class="so-heading mb-4 fw-bold text-black fs-4">About <?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> {State} </h2>
 						<p><?php //echo getArtistBioFromWikipedia($artistName); ?></p>
 						<!-- <p><?php //echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
 						<ul>
@@ -511,59 +517,206 @@ $faqs = getFaqs($mysqli, 'performer');
     <div class="container">
 	
       <div class="row g-3">
-	  <h2 class="mb-4 fw-bold text-white text-center">
-	  		{Artist} Concert in {city}
+	  <h2 class="mb-4 fw-bold text-white fs-4">
+	  Upcoming {Festival Name} Festivals in {State}
       </h2>
 
       <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
         </div>
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
-        </div>
-  
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
         </div>
   
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="#" class="location-box">{Artist} Concert in {city}, {state}</a>
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
+        </div>
+  
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="#" class="location-box">{Festival Name} Festivals in {city}, {state}</a>
         </div>
         
   
       </div>
     </div>
   </section>
+
+  <?php if (!empty($relatedPerformers)) { $i = 0; ?>
+			<div class="tab-section container content-section-detail" id="lovers">
+				<div class="row g-4">
+					<h2 class="so-heading fw-bold fs-4 mb-4 text-black">{Festival Name} Fans Also Love</h2>
+					<?php foreach ($relatedPerformers as $performer) { 
+						$artistName = $performer['text']['name'];
+						$performer_image = getArtistImageFromWikimedia($artistName);
+						if(empty($performer_image))	continue;
+						$i++;
+						if($i > 8) continue;
+					?>
+						<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+							<a href="/<?php echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
+								<div class="position-relative overflow-hidden rounded">
+									<?php if ($performer_image) { ?>
+										<img src="<?php echo $performer_image; ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
+									<?php }else{ ?>
+										<img src="<?php echo HOME_URL; ?>/assets/placeholder.webp" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
+									<?php } ?>							
+									<div class="band-content d-flex justify-content-between align-items-center">
+										<span class="band-name"></span>								
+									</div>
+								</div>
+								<div class="band-name-title text-black mt-2"><?php echo $artistName; ?></div>
+							</a>
+						</div>
+					<?php } ?>
+				</div>
+			</div>
+		<?php } ?>
+		<div class="similar-events">
+   <div class="tab-section container content-section-detail" id="fans">
+      <div class="row g-4">
+	  <h2 class="so-heading fw-bold fs-4 mb-4 text-black ">More Music Festivals in {Country}</h2>
+         <div class="col-lg-3 col-md-4 col-sm-6">
+            <a href="#">
+		 	<div class="other-event-card">
+               <div class="other-event-img">
+                  <img src="assets/images/festival-1.webp" class="img-fluid">
+               </div>
+               <div class="other-event-body">
+                  <h3 class="other-event-title">
+				  Coachella Valley Music and Arts Festival 
+                  </h3>
+                  <p class="other-event-date">
+                     Apr 10 · Empire Polo Club
+                  </p>
+                  <div class="other-event-price">
+                     From <span>$499</span>
+                  </div>
+               </div>
+            </div>
+			</a>
+         </div>
+         <div class="col-lg-3 col-md-4 col-sm-6">
+			<a href="#">
+            <div class="other-event-card">
+               <div class="other-event-img">
+                  <img src="assets/images/lollapalooza.webp" class="img-fluid">
+               </div>
+               <div class="other-event-body">
+                  <h3 class="other-event-title">
+				  Lollapalooza
+                  </h3>
+                  <p class="other-event-date">
+                     Apr 22· Grant Park
+                  </p>
+                  <div class="other-event-price">
+                     From <span>$350</span>
+                  </div>
+               </div>
+            </div>
+			</a>
+         </div>
+         <div class="col-lg-3 col-md-4 col-sm-6">
+			<a href="#">
+            <div class="other-event-card">
+               <div class="other-event-img">
+                  <img src="assets/images/bonnaroo.webp" class="img-fluid">
+               </div>
+               <div class="other-event-body">
+                  <h3 class="other-event-title">
+				  Bonnaroo Music and Arts Festival
+                  </h3>
+                  <p class="other-event-date">
+                     Apr 25 · Great Stage Park
+                  </p>
+                  <div class="other-event-price">
+                     From <span>$420</span>
+                  </div>
+               </div>
+            </div>
+			</a>
+         </div>
+         <div class="col-lg-3 col-md-4 col-sm-6">
+			<a href="#">
+            <div class="other-event-card">
+               <div class="other-event-img">
+                  <img src="assets/images/austin.webp" class="img-fluid">
+               </div>
+               <div class="other-event-body">
+                  <h3 class="other-event-title">
+				  Austin City Limits Music Festival
+                  </h3>
+                  <p class="other-event-date">
+                     May 3 · Zilker Park
+                  </p>
+                  <div class="other-event-price">
+                     From <span>$380</span>
+                  </div>
+               </div>
+            </div>
+			</a>
+         </div>
+      </div>
+   </div>
+</div>
+  <?php //if (!empty($relatedPerformers)) { ?>
+		<!-- <div class="container">
+			<div class="tab-section content-section-detail" id="fans">
+				<div class="row g-4">
+					<h2 class="so-heading">More Concerts in {State}</h2>
+					<?php //foreach ($relatedPerformers as $performer) { 
+						//$artistName = $performer['text']['name'];
+						//$performer_image = getArtistImageFromWikimedia($artistName);	
+					?>
+						<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+							<a href="/<?php //echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
+								<div class="position-relative overflow-hidden rounded">
+									<?php //if ($performer_image) { ?>
+										<img src="<?php //echo $performer_image; ?>" class="img-fluid w-100 h-100 band-img" alt="<?php //echo $artistName; ?>">
+									<?php //}else{ ?>
+										<img src="<?php //echo HOME_URL; ?>/assets/placeholder.webp" class="img-fluid w-100 h-100 band-img" alt="<?php //echo $artistName; ?>">
+									<?php //} ?>							
+									<div class="band-content d-flex justify-content-between align-items-center">
+										<span class="band-name"></span>								
+									</div>
+								</div>
+								<div class="band-name-title text-black mt-2"><?php //echo $artistName; ?></div>
+							</a>
+						</div>
+					<?php //} ?>
+				</div>
+			</div>
+		</div>
+		<?php //} ?> -->
 
   <script>
 

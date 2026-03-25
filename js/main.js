@@ -1,6 +1,18 @@
 function getMonthCount() {
     return window.innerWidth <= 689 ? 1 : 2;
 }
+function normalizeKey(v) {
+  if (typeof v === 'number') v = v.toFixed(2);
+  return String(v || '').toLowerCase().replace(/\./g, '').replace(/ /g, '_');
+}
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 function getCookie(name) {
   const v = document.cookie.split('; ').find(row => row.startsWith(name + '='));
   return v ? decodeURIComponent(v.split('=')[1]) : '';
@@ -30,7 +42,82 @@ equalHeightSlider('venue-slider', 'venue-card');
 });
 
 
-  
+function initLocationSearch(inputId, type = '') {
+
+  const input = document.getElementById(inputId);
+  if (!input) return; 
+
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    types: ['(regions)'],
+    componentRestrictions: { country: 'us' }
+  });
+
+  autocomplete.addListener('place_changed', function () {
+
+    const place = autocomplete.getPlace();
+
+    if (!place.address_components) return;
+
+      let city = '';
+      //let state = '';
+
+      place.address_components.forEach(component => {
+        const types = component.types;
+
+        if (types.includes('locality')) {
+          city = component.long_name;
+        }
+
+        // if (types.includes('administrative_area_level_1')) {
+        //   state = component.long_name;
+        // }
+
+        setCookie('teamLocation', city);
+      });
+
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+
+    if(type == 'home') {
+
+      const locationText = document.getElementById('locationSelectorText');
+      const locationPanel = document.getElementById('locationPanel');
+
+      if (locationText) locationText.innerHTML = input.value + ' <i class="bi bi-chevron-down"></i>';
+      if (locationPanel) locationPanel.classList.remove('show');
+
+      setCookie('so_label', input.value);
+      setCookie('so_lat', lat);
+      setCookie('so_lng', lng);      
+     
+      reloadActiveTab('ll', {lat, lng});
+      loadNearbyVenues();
+      loadTeams('NFL');
+
+    }else{
+
+        document.getElementById('latHeader').value = lat;
+        document.getElementById('lngHeader').value = lng;
+
+        if(input.value !== '') {
+          input.disabled = true;   
+          const resetLoc = document.getElementById('locationHeaderReset');
+          resetLoc.classList.remove('d-none');
+          resetLoc.addEventListener('click', function () {
+            input.disabled = false;
+            input.value = '';
+            this.classList.add('d-none');       
+            document.getElementById('latHeader').value = '';
+            document.getElementById('lngHeader').value = '';
+          });            
+        } 
+    }
+
+  });
+
+}
+
+ 
   /* =====================================================
      SAVE LOCATION
   ===================================================== */
@@ -42,40 +129,40 @@ equalHeightSlider('venue-slider', 'venue-card');
       navigator.geolocation.getCurrentPosition(
           function(position) {
     
-              fetch('/ajax/save-location.php', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'same-origin',
-                  body: JSON.stringify({
-                      lat: position.coords.latitude,
-                      lng: position.coords.longitude
-                  })
-              })
-              .then(res => res.text())
-              .then(data => console.log('Server response:', data))
-              .catch(err => console.error('Fetch error:', err));
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              
+              setCookie('so_lat', encodeURIComponent(lat));
+              setCookie('so_lng', encodeURIComponent(lng));
+              setCookie('so_label', 'Current Location');
+              
+              setTimeout(() => {
+                const locText = document.getElementById('locationSelectorText');
+                if (locText) locText.innerHTML = 'Current Location <i class="bi bi-chevron-down"></i>';
+                reloadActiveTab('ll', { lat, lng });
+                loadNearbyVenues();
+                loadTeams('NFL');
+              }, 200);
     
           },
           function(error) {
 
             const _solabel = getCookie('so_label');
 
-            if(!_solabel) {
+            if(!_solabel || _solabel == 'Current Location') {
               
               fetch(`/ajax/get_ip_details.php`)
                 .then(res => res.json())
                 .then(data => {
                  
-                  setCookie('so_city', encodeURIComponent(data.city));
-                  setCookie('so_state', encodeURIComponent(data.state));
+                  setCookie('so_lat', encodeURIComponent(data.lat));
+                  setCookie('so_lng', encodeURIComponent(data.lng));
                   setCookie('so_label', encodeURIComponent(data.city + ', ' + data.state));
-                  setCookie('so_lat', '');
-                  setCookie('so_lng', '');
-        
+                  
                   setTimeout(() => {
                     const locText = document.getElementById('locationSelectorText');
                     if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
-                    reloadActiveTab('cs', { city: data.city, state: data.state });
+                    reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
                     loadNearbyVenues();
                     loadTeams('NFL');
                   }, 200);
@@ -107,527 +194,302 @@ equalHeightSlider('venue-slider', 'venue-card');
      EVENTS Section
   ===================================================== */
   
-  (function () {
-    document.addEventListener('DOMContentLoaded', function () {
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    async function fetchWithSessionCache(url, key, ttl = 600000) {
   
-      async function fetchWithSessionCache(url, key, ttl = 600000) {
+        const cached = sessionStorage.getItem(key);
+
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Date.now() - parsed.time < ttl) {
+            return parsed.data;
+          }
+        }
+  
+        const res = await fetch(url);
+        const data = await res.json();
+  
+        sessionStorage.setItem(key, JSON.stringify({
+          time: Date.now(),
+          data: data
+        }));
+
+        return data;
+      }
+        
+    // ---------------------------
+    // Elements
+    // ---------------------------
     
-          const cached = sessionStorage.getItem(key);
-    
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Date.now() - parsed.time < ttl) {
-              return Promise.resolve(parsed.data);
+    const cityInput = document.getElementById('cityLocationInput');
+    const locationText = document.getElementById('locationSelectorText');
+    const useCurrentLocationBtn = document.getElementById('useCurrentLocationCity');
+
+    // Optional: if you add ids as suggested
+    const locationToggleBtn = document.getElementById('locationToggleBtn');
+    const locationPanel = document.getElementById('locationPanel');
+    const locationClearBtn = document.getElementById('locationClearBtn');
+
+    function getActiveTabId() {
+      const activePane = document.querySelector('.tab-pane.show.active');
+      return activePane ? activePane.id : 'concerts';
+    }
+
+    // ---------------------------
+    // Slick / Cards
+    // ---------------------------
+    function buildCards(data) {
+      let html = '';
+
+      data.forEach(event => {
+        html += `
+          <a href="/event.php?id=${event.id}" class="team-link">
+            <article class="event-card">
+              <div class="event-card__img">
+                <img src="${event.image}" alt="${event.name}" class="img-fluid">
+              </div>
+              <div class="event-card__body">
+                <h3 class="event-card__title venu-name-hide">${event.name}</h3>
+                <div class="mb-1">
+                  <span class="venu-date">${event.date}</span>
+                  <span class="venu-name">${event.venue} - ${event.loc}</span>
+                </div>
+                ${event.price ? `<p class="event-card__price mb-0">from <strong>${event.price}</strong></p>` : ''}
+              </div>
+            </article>
+          </a>
+        `;
+      });
+
+      return html;
+    }
+
+    function generateEventSkeleton(count = 6) {
+      let html = '';
+
+      for (let i = 0; i < count; i++) {
+        html += `
+          <a href="javascript:void(0)" class="team-link skeleton-link">
+            <article class="event-card skeleton-card">
+              <div class="event-card__img skeleton-img"></div>
+              <div class="event-card__body">
+                <div class="skeleton-line skeleton-title"></div>
+                <div class="skeleton-meta">
+                  <span class="skeleton-line skeleton-date"></span>
+                  <span class="dot"></span>
+                  <span class="skeleton-line skeleton-venue"></span>
+                </div>
+                <div class="skeleton-line skeleton-price"></div>
+              </div>
+            </article>
+          </a>
+        `;
+      }
+
+      return html;
+    }
+
+    function initSlider(selector, loader = '') {
+      const $slider = $(selector);
+
+      if ($slider.hasClass('slick-initialized')) {
+        $slider.slick('unslick');
+      }
+
+      $slider.slick({
+        slidesToShow: 4,
+        slidesToScroll: 1,
+        infinite: false,
+        arrows: loader === 'skeleton' ? false : true,
+        autoplay: loader === 'skeleton' ? false : true,
+        dots: false,
+        responsive: [
+          { breakpoint: 992, settings: { slidesToShow: 3 } },
+          { breakpoint: 768, settings: { slidesToShow: 2 } },
+          { breakpoint: 576, settings: { slidesToShow: 1 } }
+        ]
+      });
+    }
+
+    window.loadLocationCategory = async function(tabId, type, loc1, loc2) {
+
+      const selector = '#' + tabId + ' .custom-slider';
+      const container = document.querySelector(selector);
+      if (!container) return;
+
+      let cacheKey;
+
+      if (type === '') {
+        cacheKey = `home_events_${tabId}`;
+      } else {
+        cacheKey = `home_loc_events_${tabId}_${type}_${normalizeKey(loc1)}_${normalizeKey(loc2)}`;
+      }
+
+      const jsonUrl = `./cache/${cacheKey}.json`;
+
+      const ajaxUrl =
+        `/ajax/get-location-category-events.php?tab=${encodeURIComponent(tabId)}` +
+        `&type=${encodeURIComponent(type)}&loc1=${encodeURIComponent(loc1)}&loc2=${encodeURIComponent(loc2)}`;
+
+      container.innerHTML = '';
+      container.innerHTML = generateEventSkeleton(4);
+      initSlider(selector, 'skeleton');
+
+      let data = null;
+      try {
+        
+        if (type !== 'll') {
+          const res = await fetch(jsonUrl, { cache: 'force-cache' });
+          if (res.ok) {
+            const jsonData = await res.json();
+            if (jsonData && jsonData.length) {
+              data = jsonData;
             }
           }
-    
-          const res = await fetch(url);
-          const data = await res.json();
-          sessionStorage.setItem(key, JSON.stringify({
-              time: Date.now(),
-              data: data
-          }));
-          return data;
         }
-         
-      // ---------------------------
-      // Elements
-      // ---------------------------
-      const cityInput = document.getElementById('cityLocationInput');
-      const dd = document.getElementById('cityLocationDd');
-      const locationText = document.getElementById('locationSelectorText');
-      const useCurrentLocationBtn = document.getElementById('useCurrentLocationCity');
-  
-      // Optional: if you add ids as suggested
-      const locationToggleBtn = document.getElementById('locationToggleBtn');
-      const locationPanel = document.getElementById('locationPanel');
-      const locationClearBtn = document.getElementById('locationClearBtn');
-  
-      // ---------------------------
-      // Helpers
-      // ---------------------------
-    
-  
-      function escapeHtml(str) {
-        return String(str)
-          .replaceAll('&', '&amp;')
-          .replaceAll('<', '&lt;')
-          .replaceAll('>', '&gt;')
-          .replaceAll('"', '&quot;')
-          .replaceAll("'", '&#039;');
-      }
-  
-      function debounce(fn, wait) {
-        let t;
-        return function (...args) {
-          clearTimeout(t);
-          t = setTimeout(() => fn.apply(this, args), wait);
-        };
-      }
-  
-      function openDd() {
-        if (!dd) return;
-        dd.style.display = 'block';
-        dd.classList.add('show');
-      }
-  
-      function closeDd() {
-        if (!dd) return;
-        dd.style.display = 'none';
-        dd.classList.remove('show');
-        dd.innerHTML = '';
-      }
-  
-      function getActiveTabId() {
-        const activePane = document.querySelector('.tab-pane.show.active');
-        return activePane ? activePane.id : 'concerts';
-      }
-  
-      // ---------------------------
-      // Slick / Cards
-      // ---------------------------
-      function buildCards(data) {
-        let html = '';
-  
-        data.forEach(event => {
-          
-          html += `
-            <a href="/event.php?id=${event.id}" class="team-link">
-              <article class="event-card">
-                <div class="event-card__img">
-                  <img src="${event.image}" alt="${event.name}" class="img-fluid">
-                </div>
-                <div class="event-card__body">
-                  <h3 class="event-card__title venu-name-hide">${event.name}</h3>
-                  <div class="mb-1">
-                    <span class="venu-date">${event.date}</span>
-                    <span class="venu-name">${event.venue} - ${event.loc}</span>
-                  </div>
-                  ${event.price ? `<p class="event-card__price mb-0">from <strong>${event.price}</strong></p>` : ''}
-                </div>
-              </article>
-            </a>
-          `;
-        });
-  
-        return html;
-      }
-  
-      function initSlider(selector) {
+
+        if (!data) {
+          data = await fetchWithSessionCache(ajaxUrl, cacheKey);
+        }
+
+        if (!data || !data.length) {
+          const fallback = await fetch(`./cache/home_events_${tabId}.json`);
+          if (fallback.ok) {
+            data = await fallback.json();
+          }
+        }
+
+        if (!data || !data.length) {
+          container.innerHTML = '<p class="text-center">No events found</p>';
+          return;
+        }
+
         const $slider = $(selector);
-  
         if ($slider.hasClass('slick-initialized')) {
           $slider.slick('unslick');
         }
-  
-        $slider.slick({
-          slidesToShow: 4,
-          slidesToScroll: 1,
-          infinite: false,
-          arrows: true,
-          autoplay: true,
-          dots: false,
-          responsive: [
-            { breakpoint: 992, settings: { slidesToShow: 3 } },
-            { breakpoint: 768, settings: { slidesToShow: 2 } },
-            { breakpoint: 576, settings: { slidesToShow: 1 } }
-          ]
-        });
+
+        container.innerHTML = buildCards(data);
+
+        setTimeout(() => {
+          initSlider(selector);
+        }, 50);
+
+      } catch (e) {
+        container.innerHTML = '<p class="text-center">Error loading events</p>';
       }
-  
-      function generateEventSkeleton(count = 6) {
-  
-        let html = '';
-    
-        for (let i = 0; i < count; i++) {
-    
-            html += `
-            <a href="javascript:void(0)" class="team-link skeleton-link">
-                <article class="event-card skeleton-card">  
-                    <div class="event-card__img skeleton-img"></div>  
-                    <div class="event-card__body">
-                        <div class="skeleton-line skeleton-title"></div>  
-                        <div class="skeleton-meta">
-                            <span class="skeleton-line skeleton-date"></span>
-                            <span class="dot"></span>
-                            <span class="skeleton-line skeleton-venue"></span>
-                        </div>  
-                        <div class="skeleton-line skeleton-price"></div>
-                    </div>  
-                </article>
-            </a>
-            `;
-        }
-    
-        return html;
-      }
-  
-      window.loadLocationCategory = function(tabId, type, loc1, loc2) {
-      
-          return new Promise((resolve) => {
-            const selector = '#' + tabId + ' .custom-slider';
-            const container = document.querySelector(selector);
-            if (!container) return resolve();
-  
-            let cacheKey;
-  
-            if (type === '') {
-  
-              cacheKey = `home_events_${tabId}`;
-  
-            } else {
-  
-              const loc1Key = (loc1 || '')
-                  .toLowerCase()
-                  .replace(/\./g, '')     // remove dots
-                  .replace(/ /g, '_');    // space → underscore
-  
-              const loc2Key = (loc2 || '')
-                  .toLowerCase()
-                  .replace(/\./g, '');    // remove dots only
-  
-              cacheKey = `home_loc_events_${tabId}_${type}_${loc1Key}_${loc2Key}`;
-            }
-  
-            const jsonUrl = `./cache/${cacheKey}.json`;
-        
-            // 2) Fallback to AJAX
-            const ajaxUrl =
-              `/ajax/get-location-category-events.php?tab=${encodeURIComponent(tabId)}` +
-              `&type=${encodeURIComponent(type)}&loc1=${encodeURIComponent(loc1)}&loc2=${encodeURIComponent(loc2)}`;
-        
-              container.innerHTML = '';
-            container.innerHTML = generateEventSkeleton(4);
-            initSlider(selector);
-        
-            const render = (data) => {
-              if (!data || !data.length) {
-                const fallbackUrl = `./cache/home_events_${tabId}.json`;
-                container.innerHTML = '';
-                fetch(fallbackUrl, { cache: 'no-store', credentials: 'same-origin' })
-                  .then(res => res.ok ? res.json() : [])
-                  .then(fallbackData => {
-
-                    if (!fallbackData || !fallbackData.length) {
-                      container.innerHTML = '<p class="text-center">No events found</p>';
-                      return resolve();
-                    }
-
-                    const $slider = $(selector);
-                    if ($slider.hasClass('slick-initialized')) {
-                      $slider.slick('unslick');
-                    }
-
-                    container.innerHTML = buildCards(fallbackData);
-
-                    setTimeout(() => {
-                      initSlider(selector);
-                      resolve();
-                    }, 50);
-
-                  })
-                  .catch(() => {
-                    container.innerHTML = '<p class="text-center">No events found</p>';
-                    resolve();
-                  });
-
-                return;
-              }
-              
-        
-              const $slider = $(selector);
-              if ($slider.hasClass('slick-initialized')) {
-                $slider.slick('unslick');
-              }
-        
-              container.innerHTML = buildCards(data);
-        
-              setTimeout(() => {
-                initSlider(selector);
-                resolve();
-              }, 50);
-
-            };
-        
-            const tryJsonFirst = () => {
-              return fetch(jsonUrl, { cache: 'no-store', credentials: 'same-origin' })
-                .then((res) => {
-                  if (!res.ok) throw new Error('json_not_ok');
-                  return res.json();
-                })
-                .then((data) => {
-                  if (!Array.isArray(data) || data.length === 0) throw new Error('json_empty');
-                  return data;
-                });
-            };
-        
-            const fallbackToAjax = () => {
-              return fetchWithSessionCache(ajaxUrl, cacheKey);
-            };
-        
-            tryJsonFirst()
-              .catch(() => fallbackToAjax())
-              .then((data) => render(data))
-              .catch(() => {
-                container.innerHTML = '<p class="text-center">Error loading events</p>';
-                resolve();
-              });
-          });
-        }
-      
-      window.reloadActiveTab = function(mode = '', loc = {}) {
-        
-        const tabId = getActiveTabId();
-    
-        if (mode === 'll' && loc.lat && loc.lng) {
-            return loadLocationCategory(tabId, 'll', loc.lat, loc.lng);
-        }
-    
-        if (mode === 'cs' && loc.city && loc.state) {
-            return loadLocationCategory(tabId, 'cs', loc.city, loc.state);
-        }
-    
-        return loadLocationCategory(tabId, '', '', '');
     }
-  
-      
-  
-      // ---------------------------
-      // Bootstrap tab switching
-      // ---------------------------
-      function detectLocationMode() {
-  
-        const lat   = getCookie('so_lat');
-        const lng   = getCookie('so_lng');
-        const city  = getCookie('so_city');
-        const state = getCookie('so_state');
-      
-        if (lat && lng) {
-          return { mode: 'll', data: { lat, lng } };
-        }
-      
-        if (city && state) {
-          return { mode: 'cs', data: { city, state } };
-        }
-      
-        return { mode: '', data: {} };
-      }
-  
-      (function init() {
-          const savedLabel = getCookie('so_label');
-          if (savedLabel && locationText) {
-            locationText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
-          }
-          const { mode, data } = detectLocationMode();
-          reloadActiveTab(mode, data).then(() => {
-            setTimeout(() => {
-              $('.slick-slider').slick('setPosition');
-            }, 50);
-          });
-      })();
-                  
-  
-      
-      document.querySelectorAll('button.category-pill').forEach(pill => {
-  
-        pill.addEventListener('shown.bs.tab', function () {
-      
-          const { mode, data } = detectLocationMode();
-      
-          reloadActiveTab(mode, data).then(() => {
-            setTimeout(() => {
-              $('.slick-slider').slick('setPosition');
-            }, 50);
-          });
-      
-        });
-      
-      });
     
+    window.reloadActiveTab = function(mode = '', loc = {}) {
+      const tabId = getActiveTabId();
+
+      if (mode === 'll') return loadLocationCategory(tabId, 'll', loc.lat, loc.lng);
+      
+      return loadLocationCategory(tabId, '', '', '');
+    };
+
+    function detectLocationMode() {
+      const lat = getCookie('so_lat');
+      const lng = getCookie('so_lng');
+      
+      if (lat && lng) return { mode: 'll', data: { lat, lng } };
+     
+      return { mode: '', data: {} };
+    }
+
+    (function init() {
+      const savedLabel = getCookie('so_label');
+      if (savedLabel && locationText) {
+        locationText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
+        document.getElementById('cityLocationInput').value = savedLabel;
+      }
+
+      const { mode, data } = detectLocationMode();  
+      reloadActiveTab(mode, data);
+
+      setTimeout(() => {
+        $('.slick-slider').slick('setPosition');
+      }, 100);
+    })();
+                
+    document.querySelectorAll('button.category-pill').forEach(pill => {
+      pill.addEventListener('shown.bs.tab', function () {
+        const { mode, data } = detectLocationMode();
+        reloadActiveTab(mode, data);
+
+        setTimeout(() => {
+          $('.slick-slider').slick('setPosition');
+        }, 100);
+      });
+    });
   
-      // ---------------------------
-      // City search dropdown
-      // ---------------------------
-      const MIN_CHARS = 3;
-      let controller = null;
-  
-      async function searchCities(q) {
-        if (!dd) return;
-  
-        if (controller) controller.abort();
-        controller = new AbortController();
-  
-        dd.innerHTML = `<div class="dropdown-item text-muted">Searching...</div>`;
-        openDd();
-  
-        try {
-          const res = await fetch(`/ajax/city-suggest.php?q=${encodeURIComponent(q)}`, {
-            signal: controller.signal
-          });
-          
-          const data = await res.json();
-          
-  
-          if (!Array.isArray(data) || data.length === 0) {
-            dd.innerHTML = `<div class="dropdown-item text-muted">No results</div>`;
-            openDd();
-            return;
-          }
-  
-          dd.innerHTML = data.map(item => {
-            const label =
-              item.label ||
-              `${item.city || ''}${item.state ? ', ' + item.state : ''}`;
-  
-            return `
-              <button type="button"
-                class="dropdown-item city-dd-item"
-                data-city="${item.city ?? ''}"
-                data-state="${item.state ?? ''}"
-                data-label="${escapeHtml(label)}">
-                ${escapeHtml(label)}
-              </button>
-            `;
-          }).join('');
-  
-          openDd();
-        } catch (e) {
-          if (e.name === 'AbortError') return;
-          dd.innerHTML = `<div class="dropdown-item text-danger">Error loading results</div>`;
-          openDd();
+
+    if (useCurrentLocationBtn) {
+      useCurrentLocationBtn.addEventListener('click', function () {
+
+        if (!navigator.geolocation) {
+          alert('Geolocation not supported');
+          return;
         }
-      }
-  
-      if (cityInput) {
-        cityInput.addEventListener('keyup', debounce(function () {
-          const q = cityInput.value.trim();
-          if (q.length < MIN_CHARS) {
-            closeDd();
-            return;
+
+        navigator.geolocation.getCurrentPosition((position) => {
+
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          setCookie('so_lat', lat);
+          setCookie('so_lng', lng);
+          setCookie('so_label', 'Current Location');
+
+          if (locationText) {
+            locationText.innerHTML = 'Current Location <i class="bi bi-chevron-down"></i>';
           }
-          searchCities(q);
-        }, 250));
-  
-        cityInput.addEventListener('focus', function () {
-          if (dd && dd.innerHTML.trim() !== '') openDd();
+
+          reloadActiveTab('ll', { lat, lng });
+
         });
-      }
-  
-      // Select city from dropdown
+
+      });
+    }
+
+    // ---------------------------
+    // Optional: panel toggle + clear
+    // ---------------------------
+    if (locationToggleBtn && locationPanel) {
+      locationToggleBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        locationPanel.classList.toggle('show');
+        if (cityInput) cityInput.focus();
+      });
+
       document.addEventListener('click', function (e) {
-        const btn = e.target.closest('.city-dd-item');
-        if (!btn) return;
-        
-        const label = btn.getAttribute('data-label') || '';
-        const city = btn.getAttribute('data-city') || '';
-        const state = btn.getAttribute('data-state') || '';
-        if (!city || !state) return;
-  
-        if (locationText) locationText.innerHTML = label + ' <i class="bi bi-chevron-down"></i>';
-        if (cityInput) cityInput.value = label;
-  
-        closeDd();
-  
-        if (locationPanel) locationPanel.classList.remove('show');
-        setCookie('so_city', city);
-        setCookie('so_state', state);
-        setCookie('so_label', city + ', ' + state);
+        if (!locationPanel.classList.contains('show')) return;
+        if (locationPanel.contains(e.target) || e.target === locationToggleBtn) return;
+        locationPanel.classList.remove('show');
+      });
+    }
+
+    if (locationClearBtn) {
+      locationClearBtn.addEventListener('click', function () {
         setCookie('so_lat', '');
         setCookie('so_lng', '');
+        setCookie('so_label', '');
+        setCookie('teamLocation', '');        
 
-        reloadActiveTab('cs', {city, state});
+        if (locationText) locationText.innerHTML = 'Select your location <i class="bi bi-chevron-down"></i>';
+        if (cityInput) cityInput.value = '';
+        
+        reloadActiveTab('', {});
         loadNearbyVenues();
         loadTeams('NFL');
       });
-  
-      // Close dropdown on outside click
-      document.addEventListener('click', function (e) {
-        if (!dd || !cityInput) return;
-        if (e.target === cityInput || dd.contains(e.target)) return;
-        closeDd();
-      });
-  
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeDd();
-      });
-  
-      // ---------------------------
-      // Current location button
-      // ---------------------------
-      if (useCurrentLocationBtn) {
-        useCurrentLocationBtn.addEventListener('click', function () {
-          if (!navigator.geolocation) {
-            alert('Geolocation not supported');
-            return;
-          }
-  
-          useCurrentLocationBtn.classList.add('loading');
-  
-          navigator.geolocation.getCurrentPosition(
-            function (position) {
-              const lat = String(position.coords.latitude);
-              const lng = String(position.coords.longitude);
-  
-              setCookie('so_lat', lat);
-              setCookie('so_lng', lng);
-              setCookie('so_label', 'You');
-              setCookie('so_city', '');
-              setCookie('so_state', '');
-  
-              if (locationText) locationText.innerHTML = 'Current Location <i class="bi bi-chevron-down"></i>';
-              if (cityInput) cityInput.value = 'Current Location';
-  
-              if (locationPanel) locationPanel.classList.remove('show');
-  
-              useCurrentLocationBtn.classList.remove('loading');
-              reloadActiveTab('ll', {lat, lng});
-            },
-            function () {
-              alert('Unable to get your location');
-              useCurrentLocationBtn.classList.remove('loading');
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-          );
-        });
-      }
-  
-      // ---------------------------
-      // Optional: panel toggle + clear
-      // ---------------------------
-      if (locationToggleBtn && locationPanel) {
-        locationToggleBtn.addEventListener('click', function (e) {
-          e.preventDefault();
-          locationPanel.classList.toggle('show');
-          if (cityInput) cityInput.focus();
-        });
-  
-        document.addEventListener('click', function (e) {
-          if (!locationPanel.classList.contains('show')) return;
-          if (locationPanel.contains(e.target) || e.target === locationToggleBtn) return;
-          locationPanel.classList.remove('show');
-        });
-      }
-  
-      if (locationClearBtn) {
-        locationClearBtn.addEventListener('click', function () {
-          setCookie('so_lat', '');
-          setCookie('so_lng', '');
-          setCookie('so_city', '');
-          setCookie('so_state', '');
-          setCookie('so_label', '');
-  
-          if (locationText) locationText.innerHTML = 'Select your location <i class="bi bi-chevron-down"></i>';
-          if (cityInput) cityInput.value = '';
-          closeDd();
-  
-          reloadActiveTab('', {});
-          loadNearbyVenues();
-          loadTeams('NFL');
-        });
-      }
-    });
-  })();
-  
+    }
+
+    initLocationSearch('cityLocationInput', 'home');
+  });
+   
   
   /* =====================================================
      EVENTS End
@@ -642,15 +504,7 @@ equalHeightSlider('venue-slider', 'venue-card');
     const container = document.getElementById('sportsTabContent');
     if (!container) return;
   
-    function escapeHtml(str) {
-      return String(str ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    }
-  
+     
     function generateTeamSkeleton(count = 6) {
   
       let html = '<div class="team-slider">';
@@ -669,18 +523,7 @@ equalHeightSlider('venue-slider', 'venue-card');
       return html + '</div>';
     }
   
-    function getTeamIconJS(league) {
-      const icons = {
-        NFL: '🏈',
-        NBA: '🏀',
-        MLB: '⚾',
-        NHL: '🏒',
-        MLS: '⚽'
-      };
-      return icons[String(league || '').toUpperCase()] || '🏟️';
-    }
-  
-    function initTeamSlider() {
+    function initTeamSlider(loader = '') {
       const $slider = $('.team-slider');
       if (!$slider.length) return;
   
@@ -691,8 +534,8 @@ equalHeightSlider('venue-slider', 'venue-card');
       $slider.slick({
         slidesToShow: 4,
         slidesToScroll: 1,
-        arrows: true,
-        autoplay: true,
+        arrows: loader === 'skeleton' ? false : true,
+        autoplay: loader === 'skeleton' ? false : true,
         dots: false,
         infinite: false,
         responsive: [
@@ -709,56 +552,73 @@ equalHeightSlider('venue-slider', 'venue-card');
     
       container.innerHTML = '';
       container.innerHTML = generateTeamSkeleton(4);
-    
+      initTeamSlider('skeleton');
+
+      const jsonUrl = `/cache/teams_${league}.json`;
+
+      fetch(jsonUrl, { cache: 'no-store' })
+          .then(res => {
+            if (!res.ok) throw new Error('json_not_found');
+            return res.json();
+          })
+          .then(data => {
+
+            if (!Array.isArray(data) || !data.length) {
+              document.querySelector('.teams-section .container')?.classList.remove('text-white');
+              container.innerHTML = '<p>No teams available.</p>';
+              return;
+            }
+
+              const teamsTitle = document.querySelector('.teams-section h2');  
+              if (teamsTitle) {
+                  const solbl = getCookie('so_label') || '';
+                  teamsTitle.textContent = solbl
+                    ? `Top Teams Near ${solbl}`
+                    : 'Top Teams';
+              }
+
+              const cityName = getCookie('teamLocation');
+              let filteredData = data.filter(team =>
+                team.name.includes(cityName)
+              );
+
+              if (filteredData.length === 0) {
+                filteredData = data;
+              }
+
+              let html = `<div class="tab-pane show active" id="${escapeHtml(league)}" role="tabpanel">
+                      <div class="team-slider new-slider px-4">`;
+
+              filteredData.sort((a, b) => a.name.localeCompare(b.name))
+              .forEach(team => {
+                const teamSlug = escapeHtml(team.slug);
+                const teamName = escapeHtml(team.name);
+                const teamLogo = escapeHtml(team.logo);
       
-      fetch(`/ajax/get-nearby-teams.php?slug=${encodeURIComponent(league)}`)
-        .then(res => res.ok ? res.json() : Promise.reject(res))
-        .then(data => {
+                html += `
+                  <a href="/artist/${teamSlug}" class="team-link">
+                    <div class="team-card">
+                      <div class="team-icon bg-primary"><img src="${teamLogo}" alt="${teamName}" /></div>
+                      <span>${teamName}</span>
+                    </div>
+                  </a>
+                `;
+              });
+      
+              html += `</div></div>`;
+      
+              document.querySelector('.teams-section .container')?.classList.add('text-white');
+              container.innerHTML = html;
+              initTeamSlider();
 
-          const teamsTitle = document.querySelector('.teams-section h2');  
-          if (teamsTitle) {
-              const solbl = getCookie('so_label') || '';
-              teamsTitle.textContent = solbl
-                ? `Top Teams Near ${solbl}`
-                : 'Top Teams';
-          }
-
-          if (!Array.isArray(data) || !data.length) {
-            document.querySelector('.teams-section .container')?.classList.remove('text-white');
-            container.innerHTML = '<p>No teams available.</p>';
-            return;
-          }
-  
-          let html = `<div class="tab-pane show active" id="${escapeHtml(league)}" role="tabpanel">
-                        <div class="team-slider new-slider px-4">`;
-  
-          data.forEach(team => {
-            const teamSlug = escapeHtml(team.slug);
-            const teamName = escapeHtml(team.name);
-  
-            html += `
-              <a href="/artist/${teamSlug}" class="team-link">
-                <div class="team-card">
-                  <div class="team-icon bg-primary">${escapeHtml(getTeamIconJS(league))}</div>
-                  <span>${teamName}</span>
-                </div>
-              </a>
-            `;
+          })
+          .catch(() => {
+            container.innerHTML = '<p>Error loading teams.</p>';            
           });
-  
-          html += `</div></div>`;
-  
-          document.querySelector('.teams-section .container')?.classList.add('text-white');
-          container.innerHTML = html;
-          initTeamSlider();
 
-          
-        })
-        .catch(() => {
-          container.innerHTML = '<p>Error loading teams.</p>';
-        });
+      
+    
     };
-   
   
     // default load
     const activeBtn = document.querySelector('.sport-cat.active');
@@ -777,69 +637,6 @@ equalHeightSlider('venue-slider', 'venue-card');
   
   /* =====================================================
      TEAMS End
-  ===================================================== */
-  
-  /* =====================================================
-     CITIES
-  ===================================================== */
-  
-  function generateCitySkeleton(count = 15) {
-    let html = '<div class="row g-3 city-skeleton-wrapper">';
-  
-    for (let i = 0; i < count; i++) {
-      const randomWidth = 100 + Math.floor(Math.random() * 80);
-  
-      html += `
-        <div class="col-auto">
-          <div class="city-pill-skeleton" style="width:${randomWidth}px"></div>
-        </div>
-      `;
-    }
-  
-    html += '</div>';
-  
-    return html;
-  }
-  
-  function loadBrowseCities() {
-  
-    const wrapper = document.getElementById('browseCitiesWrapper');
-    if (!wrapper) return;
-  
-    wrapper.innerHTML = generateCitySkeleton();
-  
-    fetch('/ajax/get-home-cities.php')
-        .then(res => res.json())
-        .then(data => {
-            wrapper.innerHTML = buildCityHTML(data ?? {});
-        })
-        .catch(() => {
-            wrapper.innerHTML = '<p>Error loading categories</p>';
-        });
-  }
-  
-  function buildCityHTML(data = {}) {
-      return `
-          ${buildCities(data.cities ?? [])}
-      `;
-  }
-  
-  function buildCities(cities) {
-  
-    if (!Array.isArray(cities) || cities.length === 0) return '';
-  
-    let list = ``;
-    cities.forEach(city => {
-        list += `<div class="col-auto"><a href="#" class="city-pill">${city.name}, ${city.state}</a></div>`;
-    });
-  
-    return `<div class="row g-3">${list}</div>`;
-  }
-  
-  loadBrowseCities();
-  
-  /* =====================================================
-     CITIES End
   ===================================================== */
   
   /* =====================================================
@@ -866,28 +663,18 @@ equalHeightSlider('venue-slider', 'venue-card');
     return html + '</div>';
   }
   
-  window.loadNearbyVenues = function() {
+  window.loadNearbyVenues = function() { 
  
-    return new Promise((resolve) => {
-  
       const container = document.querySelector('.venue-slider');
-      if (!container) {
-        resolve();
-        return;
-      }
-  
+      if (!container) return;
+
       container.innerHTML = '';
       container.innerHTML = buildVenueSkeleton(4);
   
       fetch('/ajax/get-nearby-venues.php')
-        .then(res => {
-          if (!res.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return res.json();
-        })
+      .then(res => res.json())
         .then(data => {
-
+          console.log(data);
           const venueTitle = document.querySelector('.venue-section h2');  
           if (venueTitle) {
               const solabel = getCookie('so_label') || '';
@@ -898,7 +685,6 @@ equalHeightSlider('venue-slider', 'venue-card');
           
           if (!data || !data.length) {
             container.innerHTML = '<p>No nearby venues found</p>';
-            resolve();
             return;
           }
   
@@ -927,14 +713,11 @@ equalHeightSlider('venue-slider', 'venue-card');
           
         })
         .catch(err => {
-          console.error(err);
           container.innerHTML = '<p>Error loading venues</p>';
-          resolve();
         });
   
-    });
   }
-  
+
   function initVenueSlider() {
   
       const $slider = $('.venue-slider');
@@ -963,7 +746,7 @@ equalHeightSlider('venue-slider', 'venue-card');
   /* =====================================================
      VENUES End
   ===================================================== */
-  
+
   /* =====================================================
      HEADER LOCATION FIELD
   ===================================================== */
@@ -972,8 +755,8 @@ equalHeightSlider('venue-slider', 'venue-card');
   const resultsHeader = document.getElementById('locationResultsHeader');
   const latHeader = document.getElementById('latHeader');
   const lngHeader = document.getElementById('lngHeader');
-  let typingTimerHeader;
-  const typingDelayHeader = 400;
+  
+  google.maps.event.addDomListener(window, 'load', initLocationSearch('locationInputHeader'));
 
   if(inputHeader) {
     inputHeader.addEventListener('click', function () {
@@ -988,72 +771,14 @@ equalHeightSlider('venue-slider', 'venue-card');
             return;
         }
     });
-  
-    inputHeader.addEventListener('keyup', function () {
-
-        clearTimeout(typingTimerHeader);
-
-        const q = this.value.trim();
-  
-        if (q.length === 0) {
-            resultsHeader.innerHTML = `
-                <div class="current-location">
-                    <i class="bi bi-send ms-1 me-2"></i> <span class="ms-4 ps-2" id="useCurrentLocationHeader"> Current location </span>
-                </div>
-            `;
-            return;
-        }
-        
-        if (q.length < 2) {
-            resultsHeader.innerHTML = '';
-            return;
-        }
-
-          typingTimerHeader = setTimeout(() => {
-  
-            fetch(`/ajax/location-search.php?q=${encodeURIComponent(q)}`)
-                .then(res => res.json())
-                .then(data => {
-                    let html = '<ul>';
-                    data.forEach(item => {
-                        html += `<li class="result-item">
-                            ${item.zip ? item.zip + ', ' : ''}${item.city}, ${item.state}
-                        </li>`;
-                    });
-                    html += '</ul>'
-                    resultsHeader.innerHTML = html;
-                });
-
-          }, typingDelayHeader);
-    });
   }
   
   if(resultsHeader) {
-      resultsHeader.addEventListener('click', function (e) {
-  
+      resultsHeader.addEventListener('click', function (e) {  
           if (e.target.id === 'useCurrentLocationHeader') {
               getCurrentLocationHeader();
               return;
           }
-  
-          const item = e.target.closest('.result-item');
-          if (!item) return;
-
-          inputHeader.value = item.textContent.trim();
-          resultsHeader.innerHTML = '';
-
-          if(inputHeader.value !== '') {
-            inputHeader.disabled = true;   
-            const resetLoc = document.getElementById('locationHeaderReset');
-            resetLoc.classList.remove('d-none');
-            resetLoc.addEventListener('click', function () {
-                inputHeader.disabled = false;
-                inputHeader.value = '';
-                this.classList.add('d-none');       
-                latHeader.value = '';
-                lngHeader.value = '';
-            });            
-          }          
       });
   }
   
@@ -1580,7 +1305,7 @@ if (input) {
   
   window.addEventListener("resize", function () {
       const newMonthCount = getMonthCount();
-  
+      if (!picker || !picker.config) return;
       if (picker.config.showMonths !== newMonthCount) {
           picker.set("showMonths", newMonthCount);
           picker.redraw();

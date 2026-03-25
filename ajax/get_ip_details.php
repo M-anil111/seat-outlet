@@ -53,7 +53,8 @@ if (empty($ipData) || $ipData['status'] !== 'success') {
 echo json_encode([
     'city'  => $ipData['city'] ?? '',
     'state' => $ipData['region'] ?? '',
-    //'ip' => $ip
+    'lat'  => $ipData['lat'] ?? '',
+    'lng' => $ipData['lon'] ?? '',
 ]);
 
 exit;

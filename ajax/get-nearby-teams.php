@@ -16,37 +16,27 @@ $teams = getTeamsByCategory($slug);
 $response = [];
 
 if(!empty($teams)) {
+    $i = 0;
     foreach ($teams as $team) {
+        if($i > 8) continue;
         $name = $team['text']['name'] ?? '';
         $uri  = $team['uriComponent'] ?? '';
         $id   = $team['id'] ?? null;
+        $logo = getTeamImage($name);
 
         if ($name === '' || $uri === '') continue;
-
-        $response[] = [
-            'id'   => $id,
-            'name' => $name,
-            'slug' => strtolower($uri),
-        ];
-    }
-}else{
-    $teamsFallback = getTeamsByCategoryFallback($slug);
-    if(!empty($teamsFallback)) {
-        foreach ($teamsFallback as $fteam) {
-            $name = $fteam['text']['name'] ?? '';
-            $uri  = $fteam['uriComponent'] ?? '';
-            $id   = $fteam['id'] ?? null;
-    
-            if ($name === '' || $uri === '') continue;
-    
+        
+        if(!empty($logo)) {
+            $i++;
             $response[] = [
                 'id'   => $id,
                 'name' => $name,
                 'slug' => strtolower($uri),
+                'logo' => $logo
             ];
         }
     }
 }
 
-echo json_encode($response, JSON_UNESCAPED_SLASHES);
+echo json_encode($response);
 exit;

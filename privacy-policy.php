@@ -3,54 +3,7 @@
 <style>
 /* ===== Privacy Policy Page Styles (Simple, No Boxes) ===== */
 
-.privacy-page {
-    background-color: #ffffff;
-}
 
-.privacy-page .section-padding {
-    padding: 50px 0;
-}
-
-/* Hero / Inner Banner (same style, simple title) */
-.privacy-page .hero-section {
-    position: relative;
-    background-color: #05070b;
-    color: #ffffff;
-    overflow: hidden;
-    padding: 80px 0 90px;
-}
-
-.privacy-page .hero-section::before {
-    content: "";
-    position: absolute;
-    right: -20%;
-    top: -30%;
-    width: 55%;
-    height: 170%;
-    background: linear-gradient(135deg, #0b1120 0%, #0056d6 55%, #0b1120 100%);
-    transform: skewX(-18deg);
-    opacity: 0.9;
-    z-index: 0;
-}
-
-.privacy-page .hero-inner {
-    position: relative;
-    z-index: 1;
-}
-
-.privacy-page .hero-title {
-    font-weight: 800;
-    line-height: 1.1;
-    font-size: 52px;
-    margin-bottom: 8px;
-}
-
-.privacy-page .hero-subtitle {
-    color: #d1d5db;
-    font-size: 16px;
-    max-width: 740px;
-    margin: 0 auto;
-}
 
 /* Content layout: simple, step-by-step */
 
@@ -76,7 +29,12 @@
     font-weight: 700;
     margin-bottom: 14px;
 }
-
+.privacy-page .policy-num {
+    font-size: 22px;
+    font-weight: 600;
+    color: #0056d6;
+    margin-bottom: 8px;
+}
 .privacy-page h3 {
     font-size: 17px;
     font-weight: 600;
@@ -152,7 +110,7 @@
 
                 <!-- 1 -->
                 <div class="policy-section" id="section-1">
-                    <h2>1. Who we are and contact details</h2>
+                    <h2><span class="policy-num">1.</span> Who we are and contact details</h2>
                     <p>
                         Seat Outlet is operated by:
                     </p>
@@ -176,7 +134,7 @@
 
                 <!-- 2 -->
                 <div class="policy-section" id="section-2">
-                    <h2>2. Scope of this Privacy Policy</h2>
+                    <h2><span class="policy-num">2.</span> Scope of this Privacy Policy</h2>
                     <p>
                         This Privacy Policy applies to personal information we process when you:
                     </p>
@@ -202,7 +160,7 @@
 
                 <!-- 3 -->
                 <div class="policy-section" id="section-3">
-                    <h2>3. Types of personal information we collect</h2>
+                    <h2><span class="policy-num">3.</span> Types of personal information we collect</h2>
                     
                     <p>
                         The information we collect depends on how you interact with us and the choices you make. We may collect the following categories of personal information:
@@ -330,7 +288,7 @@
 
                 <!-- 4 -->
                 <div class="policy-section" id="section-4">
-                    <h2>4. How we use your information (purposes and legal bases)</h2>
+                    <h2><span class="policy-num">4.</span> How we use your information (purposes and legal bases)</h2>
                     <p>
                         We use your personal information for the purposes described below and, where required by law (such as GDPR and other applicable data protection laws), on specific legal bases.
                     </p>
@@ -506,7 +464,7 @@
 
                 <!-- 5 -->
                 <div class="policy-section" id="section-5">
-                    <h2>5. How we share your information</h2>
+                    <h2><span class="policy-num">5.</span> How we share your information</h2>
                     <p>
                         We may share your personal information with the following categories of recipients, only as necessary and subject to appropriate safeguards:
                     </p>
@@ -603,7 +561,7 @@
 
                 <!-- 6 -->
                 <div class="policy-section" id="section-6">
-                    <h2>6. International data transfers</h2>
+                    <h2><span class="policy-num">6.</span> International data transfers</h2>
                     <p>
                         Your personal information may be processed and stored in countries other than the one in which you reside, including locations where data protection laws may differ from those in your jurisdiction.
                     </p>
@@ -623,7 +581,7 @@
 
                 <!-- 7 -->
                 <div class="policy-section" id="section-7">
-                    <h2>7. Retention of your information</h2>
+                    <h2><span class="policy-num">7.</span> Retention of your information</h2>
                     <p>
                         We retain personal information only for as long as necessary to fulfill the purposes described in this Privacy Policy, including:
                     </p>
@@ -646,7 +604,7 @@
 
                 <!-- 8 -->
                 <div class="policy-section" id="section-8">
-                    <h2>8. Your rights and choices</h2>
+                    <h2><span class="policy-num">8.</span> Your rights and choices</h2>
                     <p>
                         Depending on where you live, you may have certain rights regarding your personal information under local data protection laws such as GDPR, or UK GDPR and other applicable data protection laws. These may include:
                     </p>
@@ -702,7 +660,7 @@
 
                 <!-- 9 -->
                 <div class="policy-section" id="section-9">
-                    <h2>9. Cookies and similar technologies</h2>
+                    <h2><span class="policy-num">9.</span> Cookies and similar technologies</h2>
                     <p>
                         We use cookies and similar technologies (such as pixels and SDKs) for authentication, security, preferences, analytics, and advertising. These technologies help us:
                     </p>
@@ -725,7 +683,7 @@
 
                 <!-- 10 -->
                 <div class="policy-section" id="section-10">
-                    <h2>10. Children’s privacy</h2>
+                    <h2><span class="policy-num">10.</span> Children’s privacy</h2>
                     <p>
                         Our Platform is not intended for children under the minimum age required by applicable law. We do not knowingly collect personal information from children without appropriate parental or guardian consent where required.
                     </p>
@@ -736,7 +694,7 @@
 
                 <!-- 11 -->
                 <div class="policy-section" id="section-11">
-                    <h2>11. Security of your information</h2>
+                    <h2><span class="policy-num">11.</span> Security of your information</h2>
                     <p>
                         We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, loss, misuse, or alteration. These measures may include:
                     </p>
@@ -762,7 +720,7 @@
 
                 <!-- 12 -->
                 <div class="policy-section" id="section-12">
-                    <h2>12. Third‑party links and services</h2>
+                    <h2><span class="policy-num">12.</span> Third‑party links and services</h2>
                     <p>
                         The Platform may contain links to third‑party websites, apps, or services, including those of event organizers, payment providers, and social networks. We are not responsible for the privacy practices of these third parties.
                     </p>
@@ -773,7 +731,7 @@
 
                 <!-- 13 -->
                 <div class="policy-section" id="section-13">
-                    <h2>13. Changes to this Privacy Policy</h2>
+                    <h2><span class="policy-num">13.</span> Changes to this Privacy Policy</h2>
                     <p>
                         We may update this Privacy Policy from time to time to reflect changes in our practices, technologies, legal requirements, or other factors. When we make material changes, we will notify you by appropriate means, such as:
                     </p>
@@ -796,7 +754,7 @@
 
                 <!-- 14 -->
                 <div class="policy-section" id="section-14">
-                    <h2>14. How to contact us</h2>
+                    <h2><span class="policy-num">14.</span> How to contact us</h2>
                     <p>
                         If you have questions, concerns, or complaints about this Privacy Policy or our data practices, or wish to exercise your rights, you can contact us at:
                     </p>

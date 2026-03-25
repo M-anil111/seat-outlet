@@ -2,7 +2,7 @@
 $perPage = 20;
 $concertPath = ".1859.1986.";
 $sportsPath = ".1859.1988.";
-$theaterPath = ".1859.1987.";
+$theaterPath = ".1859.1989.";
 $today = date('Y-m-d');
 $params = [
 	"filter" => "date/date ge $today and (startswith(defaultCategory/path, '$sportsPath') or startswith(defaultCategory/path, '$concertPath') or startswith(defaultCategory/path, '$theaterPath'))",

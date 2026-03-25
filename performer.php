@@ -43,8 +43,8 @@ $relatedPerformers = $relatedPerformersResponse;
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
 $artistName = $performer['text']['name'];
-$performer_bio = getArtistBioFromWikipedia($artistName);
-$performer_image = getArtistImageFromWikimedia($artistName);
+$performer_bio = getArtistBio($artistName);
+$performer_image = getArtistImage($artistName);
 $faqs = getFaqs($mysqli, 'performer');
 ?>
 
@@ -123,7 +123,7 @@ $faqs = getFaqs($mysqli, 'performer');
 			</li>
 			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="fans" onclick="scrollToElement('fans')">
-					Fans Also Viewed
+				Fans Also Love
 				</button>
 			</li>
 		</ul>
@@ -426,7 +426,7 @@ $faqs = getFaqs($mysqli, 'performer');
 		<?php if (!empty($relatedPerformers)) { $i = 0; ?>
 			<div class="tab-section content-section-detail" id="fans">
 				<div class="row g-4">
-					<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Fans Also Viewed</h2>
+					<h2 class="so-heading fw-bold fs-4 mb-4 text-black">{Performer} Fans Also Love</h2>
 					<?php foreach ($relatedPerformers as $performer) { 
 						$artistName = $performer['text']['name'];
 						$performer_image = getArtistImageFromWikimedia($artistName);

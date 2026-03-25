@@ -14,9 +14,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Seat Outlet</title>
     <meta name="robots" content="noindex nofollow">
-    <!-- <link rel="icon" type="image/webp" href="<?php //echo HOME_URL; ?>/assets/images/favicon.webp">    -->
-    <!-- <link rel="shortcut icon" href="<?php //echo HOME_URL; ?>/assets/images/favicon.ico">
-    <link rel="shortcut icon" href="/assets/images/favicon.ico"> -->
     <link rel="icon" type="image/png" href="<?php echo HOME_URL; ?>/assets/images/favicon-new.png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -27,6 +24,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/skeleton.css?v=<?php echo time(); ?>">
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GAPI_KEY; ?>&libraries=places"></script>
 </head>
 
 <body>
@@ -87,7 +86,6 @@
                     <!-- LEFT -->
                     <div class="d-flex align-items-center gap-4">
                         <!-- Logo -->
-                        <!-- <a href="/" class="tm-logo">SeatOutlet</a> -->
                         <a href="/" class="tm-logo" style="width:256px; height:auto;"><img src="<?php echo HOME_URL; ?>/assets/seatoutlet-logo.svg" alt="Seat Outlet"></a>
                     </div>
                     <!-- RIGHT -->

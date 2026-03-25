@@ -10,9 +10,7 @@ include 'header.php';
       <h2 class="fw-bold fs-4 mb-0">Our Top Picks Near </h2>
       <div class="so-right-searchbar">
       <button type="button" class="location-selector" id="locationToggleBtn">
-        <!-- <span class="location-selector-label"></span> -->
         <span class="location-selector-link" id="locationSelectorText">Select your location <i class="bi bi-chevron-down"></i></span>
-        <!-- <span class="location-selector-caret"></span> -->
       </button>
 
       <!-- Location dropdown panel -->
@@ -61,7 +59,7 @@ include 'header.php';
       </li>
 
       <li class="nav-item">
-        <button class="category-pill" data-bs-toggle="pill" data-bs-target="#theater" type="button">Theater</button>
+        <button class="category-pill" data-bs-toggle="pill" data-bs-target="#theatre" type="button">Theatre</button>
       </li>
 
       <li class="nav-item">
@@ -80,7 +78,7 @@ include 'header.php';
         <div class="custom-slider new-left-right"></div>
       </div>
 
-      <div class="tab-pane" id="theater">
+      <div class="tab-pane" id="theatre">
         <div class="custom-slider new-left-right"></div>
       </div>
 
@@ -347,20 +345,7 @@ include 'header.php';
         </ul>
       </div>
       <div class="categories__col">
-        <h3 class="categories__heading">Theater</h3>
-        <ul class="categories__list">
-          <li><a href="#">Adult</a></li>
-          <li><a href="#">Circus</a></li>
-          <li><a href="#">Lecture</a></li>
-          <li><a href="#">Taped Program (tv / Radio)</a></li>
-          <li><a href="#">Film</a></li>
-          <li><a href="#">Museum / Exhibit</a></li>
-          <li><a href="#">Magic Shows</a></li>
-          <li><a href="#">Fairs / Festivals</a></li>
-        </ul>
-      </div>
-      <div class="categories__col">
-        <h3 class="categories__heading">Festivals</h3>
+        <h3 class="categories__heading">Theatre</h3>
         <ul class="categories__list">
           <li><a href="#">Musical / Play</a></li>
           <li><a href="#">Broadway</a></li>
@@ -372,6 +357,19 @@ include 'header.php';
           <li><a href="#">Dance</a></li>
         </ul>
       </div>
+      <div class="categories__col">
+        <h3 class="categories__heading">Festivals</h3>
+        <ul class="categories__list">
+          <li><a href="#">Adult</a></li>
+          <li><a href="#">Circus</a></li>
+          <li><a href="#">Lecture</a></li>
+          <li><a href="#">Taped Program (tv / Radio)</a></li>
+          <li><a href="#">Film</a></li>
+          <li><a href="#">Museum / Exhibit</a></li>
+          <li><a href="#">Magic Shows</a></li>
+          <li><a href="#">Fairs / Festivals</a></li>
+        </ul>        
+      </div>
     </div>
   </div>
 </section>
@@ -382,7 +380,56 @@ include 'header.php';
       Popular Cities
     </h2>
     <div id="browseCitiesWrapper">
-      <?php generateCitySkeleton(); ?>
+      <div class="row g-3">
+          <div class="col-auto">
+              <a href="#" class="city-pill">New York, NY</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Los Angeles, CA</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Chicago, IL</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Houston, TX</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Phoenix, AZ</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Philadelphia, PA</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">San Antonio, TX</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">San Diego, CA</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Dallas, TX</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Jacksonville, FL</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Fort Worth, TX</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">San Jose, CA</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Austin, TX</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Charlotte, NC</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Columbus, OH</a>
+          </div>
+          <div class="col-auto">
+              <a href="#" class="city-pill">Indianapolis, IN</a>
+          </div>
+      </div>
     </div>
   </div>
 </section>

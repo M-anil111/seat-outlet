@@ -1,13 +1,13 @@
 <?php
 require_once '../functions.php';
 
-$tabs = ['concerts', 'sports', 'theater', 'festival'];
+$tabs = ['concerts', 'sports', 'theatre', 'festival'];
 
 $categoryMap = [
     'concerts' => '.1859.1986.',
     'sports'   => '.1859.1988.',
-    'theater'  => '.1859.1987.',
-    'festival' => '.1859.1989.'
+    'theatre'  => '.1859.1989.',
+    'festival' => '.1859.1987.'
 ];
 
 foreach ($tabs as $tab) {
@@ -16,7 +16,7 @@ foreach ($tabs as $tab) {
     }
 
     $rootPath = $categoryMap[$tab];
-    $events = fetchLocationCategoryEvents($rootPath, '', '', '', 25);
+    $events = fetchLocationCategoryEvents($rootPath, '', '', '', 8);
 
     $output = [];
     if (!empty($events) && is_array($events)) {
@@ -25,7 +25,7 @@ foreach ($tabs as $tab) {
             $eventName = $event['text']['name'] ?? '';
             $venueName = $event['venue']['text']['name'] ?? '';
             $performer = $event['performers'][0]['name'] ?? '';
-            $imageUrl  = getEventImage($performer, $venueName, $eventName);
+            $imageUrl  = getEventImage($performer, $event['defaultCategory'], $eventName, $tab);
             $eventDateRaw = $event['date']['date'];
             $timestamp    = strtotime($eventDateRaw);
             $time = $event['date']['text']['time'];
