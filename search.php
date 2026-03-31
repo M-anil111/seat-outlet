@@ -3,6 +3,9 @@
 
 $params = [];
 $filterParts = [];
+$artistData = [];
+$venueData = [];
+$keywordHeader = '';
 
 /*
 |--------------------------------------------------------------------------
@@ -10,30 +13,14 @@ $filterParts = [];
 |--------------------------------------------------------------------------
 */
 if (
-    isset($_POST['latHeader'], $_POST['lngHeader']) &&
-    $_POST['latHeader'] !== '' &&
-    $_POST['lngHeader'] !== ''
+    isset($_POST['latHeader'], $_POST['lngHeader'], $_POST['locationInputHeader']) &&
+    $_POST['latHeader'] !== '' && $_POST['lngHeader'] !== '' &&
+	$_POST['locationInputHeader'] !== ''
 ) {
 	$lat = floatval($_POST['latHeader']);
     $lng = floatval($_POST['lngHeader']);
 
     $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $lat, $lng);
-}else{
-	if(
-		isset($_POST['locationInputHeader']) && 
-		$_POST['locationInputHeader'] !== ''
-	) {
-		$explode = explode(',', $_POST['locationInputHeader']); 
-		if (count($explode) == 2) { 
-			$city = trim($explode[0]); 
-			$state = trim($explode[1]); 
-			$filterParts[] = "city/text/name eq '$city' and stateProvince/text/abbr eq '$state'"; 
-		}elseif(count($explode) == 3) {
-			$city = trim($explode[1]); 
-			$state = trim($explode[2]); 
-			$filterParts[] = "city/text/name eq '$city' and stateProvince/text/abbr eq '$state'"; 
-		}
-	}	
 }
 
 /*
@@ -56,6 +43,9 @@ if (
 
         $filterParts[] = "date/date ge $startDate and date/date le $endDate";
     }
+}else{
+	$currDate = date('Y-m-d');
+	$filterParts[] = "date/date ge $currDate";
 }
 
 /*
@@ -63,36 +53,16 @@ if (
 | KEYWORD FILTER
 |--------------------------------------------------------------------------
 */
+
 if (
-	isset($_POST['keywordType'], $_POST['keywordId']) &&
-	$_POST['keywordType'] !== '' &&
-    $_POST['keywordId'] !== ''
+	isset($_POST['keywordHeader']) &&
+	$_POST['keywordHeader'] !== ''
 ) {
-	$keywordID = (int) $_POST['keywordId'];
-
-    if ($_POST['keywordType'] === 'artist') {
-
-        $params['performerFilter'] = "id eq " . $keywordID;
-
-    } elseif ($_POST['keywordType'] === 'city') {
-
-        $filterParts[] = "id eq " . $keywordID;
-
-    } elseif ($_POST['keywordType'] === 'venue') {
-
-        $filterParts[] = "venue/id eq " . $keywordID;
-    }
-}else{
-
-	if (
-		isset($_POST['keywordHeader']) &&
-		$_POST['keywordHeader'] !== ''
-	) {
-		$keywordTitle = $_POST['keywordHeader'];
-		$keywordTitle = ucfirst(strtolower($keywordTitle));
-		$params['performerFilter'] = "contains(text/name,'$keywordTitle')";
-	}
+	$keywordHeader = $_POST['keywordHeader'];
+	$keywordTitle = ucfirst(strtolower($keywordHeader));
+	$params['performerFilter'] = "contains(text/name,'$keywordTitle')";
 }
+
 
 /*
 |--------------------------------------------------------------------------
@@ -122,10 +92,76 @@ $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'];
 $count = count($events);
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
+if(!empty($keywordHeader)) {
+	$artistData = searchSuggestions($keywordHeader, 'performers');
+	$venueData = searchSuggestions($keywordHeader, 'venues');
+}
 ?>
 
 <section>
 	<div class="container">
+
+		<?php if(!empty($artistData) || !empty($venueData)) { ?>
+			<div class="section-suggestions">
+				<h2 class="fw-bold fs-4 mb-4">Top Suggestions</h2>			
+				<div class="suggestion-slider px-4">
+					<?php if(!empty($artistData)) { ?>
+						<?php foreach($artistData as $artistItem) { 
+							$artistImage = getArtistImage($artistItem['name']);	
+							if(empty($artistImage)) continue;
+							$defaultCategory = $artistItem['cat'];
+							$subcategory = '';
+							if (!empty($defaultCategory)) {
+								if ($defaultCategory['depth'] == 2) {
+									$subcategory = $defaultCategory['text']['name'];
+								} else {
+									if (!empty($defaultCategory['ancestors'])) {
+										foreach ($defaultCategory['ancestors'] as $ancestor) {
+											if ($ancestor['depth'] == 2) {
+												$subcategory = $ancestor['text']['name'];
+												break;
+											}
+										}
+									}
+								}
+							}
+						?>
+							<a href="/artist/<?php echo strtolower($artistItem['slug']); ?>" class="team-link">
+								<div class="card venue-card">
+									<div class="venue-img">
+										<img src="<?php echo $artistImage; ?>" alt="<?php echo $artistItem['name']; ?>" class="img-fluid">
+									</div>
+									<div class="venue-content text-center">
+										<h5 class="venue-title"><?php echo $artistItem['name']; ?></h5>
+										<p class="venue-location mb-0"><?php echo ucfirst(strtolower($subcategory)); ?></p>
+									</div>
+								</div>
+							</a>
+						<?php } ?>
+					<?php } ?>
+					<?php if(!empty($venueData)) { ?>
+						<?php foreach($venueData as $venueItem) { 
+							$venueImage = getVenueImage($venueItem['name']);
+							if(empty($venueImage)) continue;					
+						?>
+							<a href="/venue/<?php echo strtolower($venueItem['slug']); ?>" class="team-link">
+								<div class="card venue-card">
+									<div class="venue-img">
+										<img src="<?php echo $venueImage; ?>" alt="<?php echo $venueItem['name']; ?>" class="img-fluid">
+									</div>
+									<div class="venue-content text-center">
+										<h5 class="venue-title"><?php echo $venueItem['name']; ?></h5>
+										<p class="venue-location mb-0"><?php echo $venueItem['city'] . ', ' . $venueItem['state']; ?></p>
+									</div>
+								</div>
+							</a>
+						<?php } ?>
+					<?php } ?>							
+				</div>
+			</div>
+		<?php } ?>
+
+
         <div class="tab-section section-performer-content" id="default">
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">

@@ -378,7 +378,7 @@ $faqs = getFaqs($mysqli, 'performer');
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="me-0 me-md-3 me-lg-3 me-xl-3 me-xxl-3">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">About <?php echo $artistName; ?></h2>
-						<p><?php echo getArtistBioFromWikipedia($artistName); ?></p>
+						<p><?php echo getArtistBio($artistName); ?></p>
 					</div>
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
@@ -429,8 +429,7 @@ $faqs = getFaqs($mysqli, 'performer');
 					<h2 class="so-heading fw-bold fs-4 mb-4 text-black">{Performer} Fans Also Love</h2>
 					<?php foreach ($relatedPerformers as $performer) { 
 						$artistName = $performer['text']['name'];
-						$performer_image = getArtistImageFromWikimedia($artistName);
-						if(empty($performer_image))	continue;
+						$performer_image = getArtistImage($artistName);
 						$i++;
 						if($i > 8) continue;
 					?>

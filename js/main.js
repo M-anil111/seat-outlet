@@ -2,8 +2,8 @@ function getMonthCount() {
     return window.innerWidth <= 689 ? 1 : 2;
 }
 function normalizeKey(v) {
-  if (typeof v === 'number') v = v.toFixed(2);
-  return String(v || '').toLowerCase().replace(/\./g, '').replace(/ /g, '_');
+  if (typeof v === 'number') v = v.toFixed(8);
+  return String(v || '').toLowerCase().replace(/\./g, '-').replace(/ /g, '_');
 }
 function escapeHtml(str) {
   return String(str)
@@ -41,6 +41,20 @@ $('.venue-slider').on('setPosition', function(){
 equalHeightSlider('venue-slider', 'venue-card');
 });
 
+const $sugg_slider = $('.suggestion-slider');
+$sugg_slider.slick({
+    slidesToShow: 4,
+    slidesToScroll: 1,
+    arrows: true,
+    autoplay: true,
+    dots: false,
+    infinite: false,
+    responsive: [
+        { breakpoint: 992, settings: { slidesToShow: 3 } },
+        { breakpoint: 768, settings: { slidesToShow: 2 } },
+        { breakpoint: 576, settings: { slidesToShow: 1 } }
+    ]
+});
 
 function initLocationSearch(inputId, type = '') {
 
@@ -78,7 +92,7 @@ function initLocationSearch(inputId, type = '') {
     const lat = place.geometry.location.lat();
     const lng = place.geometry.location.lng();
 
-    if(type == 'home') {
+    if(type == 'home') { 
 
       const locationText = document.getElementById('locationSelectorText');
       const locationPanel = document.getElementById('locationPanel');
@@ -90,9 +104,12 @@ function initLocationSearch(inputId, type = '') {
       setCookie('so_lat', lat);
       setCookie('so_lng', lng);      
      
-      reloadActiveTab('ll', {lat, lng});
-      loadNearbyVenues();
-      loadTeams('NFL');
+      setTimeout(() => {
+        reloadActiveTab('ll', {lat, lng});
+        loadNearbyVenues();
+        loadTeams('NFL');
+      }, 200);
+      
 
     }else{
 
@@ -158,6 +175,7 @@ function initLocationSearch(inputId, type = '') {
                   setCookie('so_lat', encodeURIComponent(data.lat));
                   setCookie('so_lng', encodeURIComponent(data.lng));
                   setCookie('so_label', encodeURIComponent(data.city + ', ' + data.state));
+                  setCookie('teamLocation', data.city);
                   
                   setTimeout(() => {
                     const locText = document.getElementById('locationSelectorText');
@@ -197,37 +215,10 @@ function initLocationSearch(inputId, type = '') {
 
   document.addEventListener('DOMContentLoaded', function () {
 
-    async function fetchWithSessionCache(url, key, ttl = 600000) {
-  
-        const cached = sessionStorage.getItem(key);
-
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.time < ttl) {
-            return parsed.data;
-          }
-        }
-  
-        const res = await fetch(url);
-        const data = await res.json();
-  
-        sessionStorage.setItem(key, JSON.stringify({
-          time: Date.now(),
-          data: data
-        }));
-
-        return data;
-      }
-        
-    // ---------------------------
-    // Elements
-    // ---------------------------
-    
     const cityInput = document.getElementById('cityLocationInput');
     const locationText = document.getElementById('locationSelectorText');
     const useCurrentLocationBtn = document.getElementById('useCurrentLocationCity');
 
-    // Optional: if you add ids as suggested
     const locationToggleBtn = document.getElementById('locationToggleBtn');
     const locationPanel = document.getElementById('locationPanel');
     const locationClearBtn = document.getElementById('locationClearBtn');
@@ -319,67 +310,39 @@ function initLocationSearch(inputId, type = '') {
       const container = document.querySelector(selector);
       if (!container) return;
 
-      let cacheKey;
-
-      if (type === '') {
-        cacheKey = `home_events_${tabId}`;
-      } else {
-        cacheKey = `home_loc_events_${tabId}_${type}_${normalizeKey(loc1)}_${normalizeKey(loc2)}`;
-      }
-
-      const jsonUrl = `./cache/${cacheKey}.json`;
-
       const ajaxUrl =
         `/ajax/get-location-category-events.php?tab=${encodeURIComponent(tabId)}` +
         `&type=${encodeURIComponent(type)}&loc1=${encodeURIComponent(loc1)}&loc2=${encodeURIComponent(loc2)}`;
-
+        
       container.innerHTML = '';
       container.innerHTML = generateEventSkeleton(4);
       initSlider(selector, 'skeleton');
 
-      let data = null;
-      try {
-        
-        if (type !== 'll') {
-          const res = await fetch(jsonUrl, { cache: 'force-cache' });
-          if (res.ok) {
-            const jsonData = await res.json();
-            if (jsonData && jsonData.length) {
-              data = jsonData;
-            }
+      fetch(ajaxUrl)
+      .then(res => res.json())
+        .then(data => {
+          
+          if (!data || !data.length) {
+            container.innerHTML = '<p class="text-center">No events found</p>';
+            return;
           }
-        }
-
-        if (!data) {
-          data = await fetchWithSessionCache(ajaxUrl, cacheKey);
-        }
-
-        if (!data || !data.length) {
-          const fallback = await fetch(`./cache/home_events_${tabId}.json`);
-          if (fallback.ok) {
-            data = await fallback.json();
+          
+          const $slider = $(selector);
+          if ($slider.hasClass('slick-initialized')) {
+            $slider.slick('unslick');
           }
-        }
 
-        if (!data || !data.length) {
-          container.innerHTML = '<p class="text-center">No events found</p>';
-          return;
-        }
+          container.innerHTML = buildCards(data);
 
-        const $slider = $(selector);
-        if ($slider.hasClass('slick-initialized')) {
-          $slider.slick('unslick');
-        }
+          setTimeout(() => {
+            initSlider(selector);
+          }, 50);
+          
+        })
+        .catch(err => {
+          container.innerHTML = '<p>Error loading events</p>';
+        });
 
-        container.innerHTML = buildCards(data);
-
-        setTimeout(() => {
-          initSlider(selector);
-        }, 50);
-
-      } catch (e) {
-        container.innerHTML = '<p class="text-center">Error loading events</p>';
-      }
     }
     
     window.reloadActiveTab = function(mode = '', loc = {}) {
@@ -645,7 +608,7 @@ function initLocationSearch(inputId, type = '') {
   
   function buildVenueSkeleton(count = 8) {
   
-    let html = '<div class="venue-slider">';
+    let html = '';
   
     for (let i = 0; i < count; i++) {
   
@@ -660,7 +623,7 @@ function initLocationSearch(inputId, type = '') {
         `;
     }
   
-    return html + '</div>';
+    return html;
   }
   
   window.loadNearbyVenues = function() { 
@@ -668,13 +631,19 @@ function initLocationSearch(inputId, type = '') {
       const container = document.querySelector('.venue-slider');
       if (!container) return;
 
+      const solt = getCookie('so_lat') || '';
+      const solg = getCookie('so_lng') || '';
+
       container.innerHTML = '';
       container.innerHTML = buildVenueSkeleton(4);
+      initVenueSlider('skeleton');
+      
+      const ajaxUrlVenue =
+        `/ajax/get-nearby-venues.php?solt=${encodeURIComponent(solt)}&solg=${encodeURIComponent(solg)}`;
   
-      fetch('/ajax/get-nearby-venues.php')
+      fetch(ajaxUrlVenue)
       .then(res => res.json())
         .then(data => {
-          console.log(data);
           const venueTitle = document.querySelector('.venue-section h2');  
           if (venueTitle) {
               const solabel = getCookie('so_label') || '';
@@ -687,7 +656,12 @@ function initLocationSearch(inputId, type = '') {
             container.innerHTML = '<p>No nearby venues found</p>';
             return;
           }
-  
+
+          const $vslider = $('.venue-slider');
+          if ($vslider.hasClass('slick-initialized')) {
+            $vslider.slick('unslick');
+          }
+
           let html = '';
   
           data.forEach(venue => {
@@ -708,7 +682,7 @@ function initLocationSearch(inputId, type = '') {
             `;
           });
   
-          container.innerHTML = html;
+          container.innerHTML = html;          
           initVenueSlider();
           
         })
@@ -718,7 +692,7 @@ function initLocationSearch(inputId, type = '') {
   
   }
 
-  function initVenueSlider() {
+  function initVenueSlider(loader = '') {
   
       const $slider = $('.venue-slider');
   
@@ -729,8 +703,8 @@ function initLocationSearch(inputId, type = '') {
       $slider.slick({
           slidesToShow: 4,
           slidesToScroll: 1,
-          arrows: true,
-          autoplay: true,
+          arrows: loader === 'skeleton' ? false : true,
+          autoplay: loader === 'skeleton' ? false : true,
           dots: false,
           infinite: false,
           responsive: [
@@ -925,111 +899,107 @@ function initLocationSearch(inputId, type = '') {
   const keywordResultsHeader = document.getElementById('keywordResultsHeader');
   const keywordType = document.getElementById('keywordType');
   const keywordId = document.getElementById('keywordId');
-  let typingTimerKeyword;
-  const typingDelayKeyword = 400;
+
   if(keywordHeader) {	
-  
+
+      let typingTimerKeyword;
+      let currentRequest = null;
+      const typingDelayKeyword = 500;
+
       keywordHeader.addEventListener('keyup', function () {
 
-            clearTimeout(typingTimerKeyword);
-
-            const q = this.value.trim();
-  
-            if (q.length < 2) {
-              keywordResultsHeader.innerHTML = '';
-                return;
+        const q = this.value.trim();
+    
+        clearTimeout(typingTimerKeyword);
+    
+        if (q.length < 2) {
+            keywordResultsHeader.innerHTML = '';
+            return;
+        }
+    
+        typingTimerKeyword = setTimeout(() => {
+    
+            // Abort previous request (important)
+            if (currentRequest) {
+                currentRequest.abort();
             }
-  
-      typingTimerKeyword = setTimeout(() => {
-            fetch(`/ajax/keyword-search.php?q=${encodeURIComponent(q)}`)
-          .then(res => res.json())
-          .then(data => {
-  
+    
+            currentRequest = new AbortController();
+    
+            fetch(`/ajax/keyword-search.php?q=${encodeURIComponent(q)}`, {
+                signal: currentRequest.signal
+            })
+            .then(res => res.json())
+            .then(data => {
+
               let html = '<ul class="search-suggestions">';
-  
-              // =====================
-              // ARTISTS
-              // =====================
-              if (data.artists && data.artists.length > 0) {
-                  html += '<li class="suggestion-label">Artists</li>';
-                  data.artists.forEach(item => {
-                      html += `
-                      <li class="result-item"
-                          data-type="artist"
-                          data-id="${item.id}"
-                          data-slug="${item.slug}">
-                          ${item.name}
-                      </li>`;
-                  });
+
+              if (data.artists?.length || data.cities?.length || data.venues?.length) {
+    
+                // ARTISTS
+                if (data.artists?.length) {
+                    html += '<li class="suggestion-label">Artists</li>';
+                    data.artists.sort((a, b) => a.name.localeCompare(b.name))
+                    .forEach(item => {
+                        let itemSlug = item.slug.toLowerCase();
+                        html += `
+                            <li class="result-item">
+                              <a href="/artist/${itemSlug}">
+                                ${item.name}
+                              </a>
+                            </li>`;
+                    });
+                }
+    
+                // CITIES
+                if (data.cities?.length) {
+                    html += '<li class="suggestion-label">Cities</li>';
+                    data.cities.sort((a, b) => a.name.localeCompare(b.name))
+                    .forEach(item => {
+                        let itemSlug = item.slug.toLowerCase();
+                        html += `
+                            <li class="result-item">
+                              <a href="/city/${itemSlug}">
+                                ${item.name}${item.state ? ', ' + item.state : ''}
+                              </a>
+                            </li>`;
+                    });
+                }
+    
+                // VENUES
+                if (data.venues?.length) {
+                    html += '<li class="suggestion-label">Venues</li>';
+                    data.venues.sort((a, b) => a.name.localeCompare(b.name))
+                    .forEach(item => {
+                        let itemSlug = item.slug.toLowerCase();
+                        html += `
+                            <li class="result-item">
+                              <a href="/venue/${itemSlug}">
+                                ${item.name}
+                                ${item.city ? `<span class="small text-muted">(${item.city}${item.state ? ', ' + item.state : ''})</span>` : ''}
+                              </a>
+                            </li>`;
+                    });
+                }
+              
+              }else{
+                html += '<li class="result-item">Nothing found</li>';
               }
-  
-              // =====================
-              // CITIES
-              // =====================
-              if (data.cities && data.cities.length > 0) {
-                  html += '<li class="suggestion-label">Cities</li>';
-                  data.cities.forEach(item => {
-                      html += `
-                      <li class="result-item"
-                          data-type="city"
-                          data-id="${item.id}"
-                          data-slug="${item.slug}">
-                          ${item.name}${item.state ? ', ' + item.state : ''}            
-                      </li>`;
-                  });
-              }
-  
-              // =====================
-              // VENUES
-              // =====================
-              if (data.venues && data.venues.length > 0) {
-                  html += '<li class="suggestion-label">Venues</li>';
-  
-                  data.venues.forEach(item => {
-                      html += `
-                      <li class="result-item"
-                          data-type="venue"
-                          data-id="${item.id}"
-                          data-slug="${item.slug}">
-                          ${item.name}
-                          ${item.city ? `<span class="small text-muted">(${item.city}${item.state ? ', ' + item.state : ''})</span>` : ''}
-                      </li>`;
-                  });
-              }
-  
+              
               html += '</ul>';
-  
+
               keywordResultsHeader.innerHTML = html;
-          });
-        });
-
-      }, typingDelayKeyword);
-  }
+                
+            })
+            .catch(err => {
+                if (err.name !== 'AbortError') {
+                    console.error(err);
+                }
+            });
+    
+        }, typingDelayKeyword);
+    });
   
-  if(keywordResultsHeader) {
-      keywordResultsHeader.addEventListener('click', function (e) {
-  
-          const item = e.target.closest('.result-item');
-          if (!item) return;
-  
-          keywordHeader.value = item.textContent.trim();
-          keywordType.value = item.dataset.type;
-          keywordId.value = item.dataset.id;
-          keywordResultsHeader.innerHTML = '';
-
-          if(keywordHeader.value !== '') {
-            keywordHeader.disabled = true;   
-            const resetKey = document.getElementById('keywordHeaderReset');
-            resetKey.classList.remove('d-none');
-            resetKey.addEventListener('click', function () {
-                keywordHeader.disabled = false;
-                keywordHeader.value = '';
-                this.classList.add('d-none');       
-                keywordType.value = '';
-                keywordId.value = '';
-            });            
-          } 
-      });
   }
   
   /* =====================================================
@@ -1061,7 +1031,7 @@ if (input) {
         }
     });
 
-    input.addEventListener('keyup', function () {
+    input.addEventListener('keyup', function () { 
 
         clearTimeout(typingTimer);
 

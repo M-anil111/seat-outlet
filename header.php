@@ -151,8 +151,6 @@
                         <input type="hidden" id="lngHeader" name="lngHeader" value="<?php echo !empty($_POST['latHeader']) ? $_POST['latHeader'] : ''; ?>">
                         <input type="hidden" id="startInputHeader" name="startInputHeader" value="<?php echo !empty($_POST['startInputHeader']) ? $_POST['startInputHeader'] : ''; ?>">
                         <input type="hidden" id="endInputHeader" name="endInputHeader" value="<?php echo !empty($_POST['endInputHeader']) ? $_POST['endInputHeader'] : ''; ?>">
-                        <input type="hidden" id="keywordType" name="keywordType" value="<?php echo !empty($_POST['keywordType']) ? $_POST['keywordType'] : ''; ?>">
-                        <input type="hidden" id="keywordId" name="keywordId" value="<?php echo !empty($_POST['keywordId']) ? $_POST['keywordId'] : ''; ?>">
                         <button class="btn btn-stub-primary px-4 py-2 small fw-semibold rounded-pill">Search</button>
                     </div>
                 </form>
@@ -164,8 +162,7 @@
 
     <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu">
         <div class="offcanvas-header">
-            <!-- <a href="/" class="tm-logo text-primary">SeatOutlet</a> -->
-            <a href="/" class="tm-logo" style="width:200px; height:auto;"><img src="<?php echo HOME_URL; ?>/assets/blue-logo.webp" alt="Seat Outlet"></a>
+            <a href="<?php echo HOME_URL; ?>" class="tm-logo" style="width:200px; height:auto;"><img src="<?php echo HOME_URL; ?>/assets/blue-logo.webp" alt="Seat Outlet"></a>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <hr>

@@ -34,8 +34,8 @@ $rootPath = $categoryMap[$tab];
    CACHE KEY
 ============================== */
 
-$loc1Key = strtolower(str_replace(['.', ' '], ['', '_'], $loc1));
-$loc2Key = strtolower(str_replace('.', '', $loc2));
+$loc1Key = str_replace('.', '-', $loc1);
+$loc2Key = str_replace('.', '-', $loc2);
 
 if($type == '') {
     $cacheKey = "home_events_{$tab}";
@@ -56,7 +56,7 @@ if ($cached) {
    FETCH EVENTS FROM TN
 ============================== */
 
-$events = fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, 25);
+$events = fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, 8);
 
 /* ==============================
    FORMAT RESPONSE
@@ -70,7 +70,7 @@ if (!empty($events)) {
         $eventName = $event['text']['name'] ?? '';
         $venueName = $event['venue']['text']['name'] ?? '';
         $evtPerformer = $event['performers'][0]['name'] ?? '';
-        $imageUrl = getEventImage($evtPerformer, $event['defaultCategory'], $eventName);
+        $imageUrl = getEventImage($evtPerformer, $event['defaultCategory'], $eventName, $tab);
 
         $eventDateRaw = $event['date']['date'];
 		$timestamp    = strtotime($eventDateRaw);
@@ -89,6 +89,19 @@ if (!empty($events)) {
                 'loc'   => trim($city . ', ' . $state)
             ];
         }
+    }
+}
+
+if (empty($output)) {
+
+    $fallbackKey = "home_events_{$tab}";
+    $fallbackCache = cache_get($fallbackKey);
+
+    if ($fallbackCache !== false) {
+        header('Cache-Control: public, max-age=86400');
+        header('X-Cache-Fallback: HIT');
+        echo json_encode($fallbackCache);
+        exit;
     }
 }
 

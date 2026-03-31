@@ -2294,10 +2294,10 @@ h3,
     scrollbar-width: none;
   }
   
-  .team-slider, .venue-slider{margin: 0 -15px;}
+  .team-slider, .venue-slider, .suggestion-slider{margin: 0 -15px;}
   .team-slider .slick-slide, .custom-slider .slick-slide {
     padding: 5px; margin-right:15px; }
-  .venue-slider .slick-slide {
+  .venue-slider .slick-slide, .suggestion-slider .slick-slide{
     padding: 10px; margin-right:15px; }
   
   .team-link{color: #fff; text-decoration: none; margin-top: 10px;}

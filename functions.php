@@ -565,14 +565,12 @@ function getLocationFromInput($input, $mysqli = MYSQLI) {
     return $result;
 }
 
-function getNearbyVenues($limit = 20) {
+function getNearbyVenues($lt, $lg, $limit = 20) {
 
     $accessToken = getTnAccessToken();
-    $radius = '10mi';
-    $lt = $_COOKIE['so_lat'];
-    $lg = $_COOKIE['so_lng'];
-
-    if (empty($lt) || empty($lg)) {
+    $radius = '50mi';
+    
+    if (empty($lt) && empty($lg)) {
         return [];
     }
     
@@ -1122,7 +1120,7 @@ function generateTeamSkeleton($count = 6) {
 
 function buildVenueSkeleton($count = 8) {
 
-    $html = '<div class="venue-slider">';
+    $html = '';
 
     for ($i = 0; $i < $count; $i++) {
 
@@ -1137,7 +1135,7 @@ function buildVenueSkeleton($count = 8) {
         ';
     }
 
-    return $html . '</div>';
+    return $html;
 }
 
 function getAllCatsEventsCount() {
@@ -1673,4 +1671,55 @@ function getArtistImage($artist) {
     }
     
     return '';
+}
+
+function convertToFloat($value) {
+
+    if (substr($value, 0, 1) === '-') {
+        $value = substr($value, 1);
+        $parts = explode('-', $value, 2);
+        return '-' . $parts[0] . '.' . $parts[1];
+    }
+
+    $parts = explode('-', $value, 2);
+    return $parts[0] . '.' . $parts[1];
+}
+
+function searchSuggestions($q, $type) {
+    $params = [
+        'filter' => "startswith(text/name,'$q')",
+       // 'sort' => 'salesRank',
+        //'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
+        'perPage' => 20
+    ];
+
+    $url = BASE_URL . '/catalog/v2/'.$type.'/?' . http_build_query($params);    
+
+    $data = tnCurlRequest($url);
+
+    if($type == 'performers') {
+        if (!empty($data['results'])) {
+            foreach ($data['results'] as $item) {
+                $suggestions[] = [
+                    'id'   => $item['id'] ?? '',
+                    'name' => $item['text']['name'] ?? '',
+                    'slug' => $item['uriComponent'] ?? '',
+                    'cat'  => $item['defaultCategory'],
+                ];
+            }
+        }
+    }elseif($type == 'venues') {
+        if (!empty($data['results'])) {
+            foreach ($data['results'] as $venue) {
+                $suggestions[] = [
+                    'id'    => $venue['id'] ?? '',
+                    'name'  => $venue['text']['name'] ?? '',
+                    'city'  => $venue['city']['text']['name'] ?? '',
+                    'state' => $venue['stateProvince']['text']['abbr'] ?? '',
+                    'slug'  => $venue['uriComponent'] ?? ''
+                ];
+            }
+        }
+    }
+    return $suggestions ?? [];
 }
