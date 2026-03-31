@@ -1524,7 +1524,18 @@ function fixImageOrientation($imageContent) {
     return $fixed;
 }
 
-function getWikimediaImage($title = "") {
+function getWikimediaImage($title = "", $type) {
+
+    if (!$title) return '';
+
+    $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($title));
+    $clean = trim($slug, '-');
+    $key  = $type . "/{$clean}.webp";
+
+    if (s3ObjectExists($key)) {
+        return getS3PublicUrl($key);
+    }
+
     $url = "https://en.wikipedia.org/w/api.php?" . http_build_query([
         "action" => "query",
         "titles" => $title,
@@ -1543,6 +1554,8 @@ function getWikimediaImage($title = "") {
     $response = curl_exec($ch);
     curl_close($ch);
 
+    if (!$response) return '';
+
     $data = json_decode($response, true);
 
     $pages = $data['query']['pages'] ?? [];
@@ -1552,72 +1565,93 @@ function getWikimediaImage($title = "") {
     return $image;
 }
 
-function getEventImage($artist, $defaultCategory, $event, $tab) {
-    $eventImageUrl = getWikimediaImage($event);
-    $artistImageUrl = getWikimediaImage($artist);
-    if(!empty($eventImageUrl)) {
-        $imageUrl = $eventImageUrl;
-    }elseif(!empty($artistImageUrl)) {
-        $imageUrl = $artistImageUrl;
-    }else{
-        $subcategory = '';
-        if (!empty($defaultCategory)) {
-            if ($defaultCategory['depth'] == 2) {
-                $subcategory = $defaultCategory['text']['name'];
-            } else {
-                if (!empty($defaultCategory['ancestors'])) {
-                    foreach ($defaultCategory['ancestors'] as $ancestor) {
-                        if ($ancestor['depth'] == 2) {
-                            $subcategory = $ancestor['text']['name'];
-                            break;
-                        }
-                    }
+function processAndStoreImage($imageUrl, $name, $type) {
+
+    if (!$imageUrl || !$name) return '';
+
+    // 🔑 Generate key
+    $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
+    $clean = trim($slug, '-');
+    $key  = "{$type}/{$clean}.webp";
+
+    // ✅ Double-check (safe fallback)
+    if (s3ObjectExists($key)) {
+        return getS3PublicUrl($key);
+    }
+
+    // ⚠️ Heavy work (still sync, can be async later)
+    $imageContent = downloadImage($imageUrl);
+    if (!$imageContent) return '';
+
+    $imageContent = fixImageOrientation($imageContent);
+
+    $webpImage = resizeAndConvertToWebP($imageContent, 800, 80);
+    if (!$webpImage) return '';
+
+    uploadImageToS3($webpImage, $key, 'image/webp');
+
+    return getS3PublicUrl($key);
+}
+
+function getCategoryFallbackImage($defaultCategory, $tab) {
+
+    $subcategory = '';
+
+    if (!empty($defaultCategory)) {
+        if ($defaultCategory['depth'] == 2) {
+            $subcategory = $defaultCategory['text']['name'];
+        } else {
+            foreach ($defaultCategory['ancestors'] ?? [] as $ancestor) {
+                if ($ancestor['depth'] == 2) {
+                    $subcategory = $ancestor['text']['name'];
+                    break;
                 }
             }
         }
-        $subCategorySlug = str_replace([' ', '/', '(', ')', '-', '&'], '', $subcategory);
-        if($subCategorySlug == 'OTHER') {
-            $subCategorySlug = $tab;
-        }
-        return AWS_CDN_URL . 'categories/' . strtolower($subCategorySlug) . '.jpg';
-    }    
-        
-    if(!empty($imageUrl)) {
-        $name = pathinfo(urldecode($imageUrl), PATHINFO_FILENAME);
-        $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
-        $clean = trim($slug, '-');
-        $key  = "events/{$clean}.webp";
-       
-        if (s3ObjectExists($key)) {
-            return getS3PublicUrl($key);
-        }
-
-        $imageContent = downloadImage($imageUrl);
-        if (!$imageContent) return '';
-
-        $imageContent = fixImageOrientation($imageContent);
-
-        $webpImage = resizeAndConvertToWebP($imageContent, 800, 80);
-        if (!$webpImage) return '';
-
-        uploadImageToS3($webpImage, $key, 'image/webp');
-        return getS3PublicUrl($key);
     }
-    
-    return '';
+
+    $slug = str_replace([' ', '/', '(', ')', '-', '&'], '', $subcategory);
+
+    if ($slug == 'OTHER' || empty($slug)) {
+        $slug = $tab;
+    }
+
+    return AWS_CDN_URL . 'categories/' . strtolower($slug) . '.jpg';
+}
+
+function getEventImage($artist, $defaultCategory, $event, $tab) {
+
+    // ✅ 1. Try EVENT image first
+    $eventImage = getWikimediaImage($event, 'events');
+
+    if (!empty($eventImage)) {
+        return processAndStoreImage($eventImage, $event, 'events');
+    }
+
+    // ✅ 2. Fallback to ARTIST image
+    if (!empty($artist)) {
+        $artistImage = getWikimediaImage($artist, 'artists');
+
+        if (!empty($artistImage)) {
+            return processAndStoreImage($artistImage, $artist, 'artists');
+        }
+    }
+
+    // ✅ 3. Category fallback
+    return getCategoryFallbackImage($defaultCategory, $tab);
 }
 
 function getVenueImage($venue) {
-    $venueImageUrl = getWikimediaImage($venue);
+    $venueImageUrl = getWikimediaImage($venue, 'venues');
     if(!empty($venueImageUrl)) {
+        $imageName = $venue;
         $imageUrl = $venueImageUrl;
     }else{
         $imageUrl = '';
     }    
         
     if(!empty($imageUrl)) {
-        $name = pathinfo(urldecode($imageUrl), PATHINFO_FILENAME);
-        $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
+        $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($imageName));
         $clean = trim($slug, '-');
         $key  = "venues/{$clean}.webp";
        
@@ -1641,16 +1675,16 @@ function getVenueImage($venue) {
 }
 
 function getArtistImage($artist) {
-    $artistImageUrl = getWikimediaImage($artist);
+    $artistImageUrl = getWikimediaImage($artist, 'artists');
     if(!empty($artistImageUrl)) {
+        $imageName = $artist;
         $imageUrl = $artistImageUrl;
     }else{
         $imageUrl = '';
     }    
         
     if(!empty($imageUrl)) {
-        $name = pathinfo(urldecode($imageUrl), PATHINFO_FILENAME);
-        $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
+        $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($imageName));
         $clean = trim($slug, '-');
         $key  = "artists/{$clean}.webp";
        
@@ -1688,8 +1722,6 @@ function convertToFloat($value) {
 function searchSuggestions($q, $type) {
     $params = [
         'filter' => "startswith(text/name,'$q')",
-       // 'sort' => 'salesRank',
-        //'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'perPage' => 20
     ];
 

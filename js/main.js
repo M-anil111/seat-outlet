@@ -362,21 +362,6 @@ function initLocationSearch(inputId, type = '') {
       return { mode: '', data: {} };
     }
 
-    (function init() {
-      const savedLabel = getCookie('so_label');
-      if (savedLabel && locationText) {
-        locationText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
-        document.getElementById('cityLocationInput').value = savedLabel;
-      }
-
-      const { mode, data } = detectLocationMode();  
-      reloadActiveTab(mode, data);
-
-      setTimeout(() => {
-        $('.slick-slider').slick('setPosition');
-      }, 100);
-    })();
-                
     document.querySelectorAll('button.category-pill').forEach(pill => {
       pill.addEventListener('shown.bs.tab', function () {
         const { mode, data } = detectLocationMode();
