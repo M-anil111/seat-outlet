@@ -11,7 +11,7 @@
     }
 
     $event = getTnEventById($id);
-  
+ 
     if (empty($event) || empty($event['text']['name'])) {
         echo '<div class="container"><p>Event not found.</p></div>';
         include 'footer.php';

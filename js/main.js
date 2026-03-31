@@ -13,6 +13,7 @@ function escapeHtml(str) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 }
+
 function getCookie(name) {
   const v = document.cookie.split('; ').find(row => row.startsWith(name + '='));
   return v ? decodeURIComponent(v.split('=')[1]) : '';
@@ -223,43 +224,51 @@ function initLocationSearch(inputId, type = '') {
     const locationPanel = document.getElementById('locationPanel');
     const locationClearBtn = document.getElementById('locationClearBtn');
 
+    let currentLoadToken = 0;
+
     function getActiveTabId() {
       const activePane = document.querySelector('.tab-pane.show.active');
       return activePane ? activePane.id : 'concerts';
     }
 
-    // ---------------------------
-    // Slick / Cards
-    // ---------------------------
     function buildCards(data) {
       let html = '';
-
-      data.forEach(event => {
+  
+      data.forEach((event, index) => {
         html += `
-          <a href="/event.php?id=${event.id}" class="team-link">
-            <article class="event-card">
+          <a href="/event.php?id=${encodeURIComponent(event.id)}" class="team-link">
+            <article class="event-card" data-event-index="${index}">
               <div class="event-card__img">
-                <img src="${event.image}" alt="${event.name}" class="img-fluid">
+                <img
+                  src="${escapeHtml(event.placeholder)}"
+                  alt="${escapeHtml(event.name)}"
+                  class="img-fluid event-dynamic-image blur-image"
+                  data-event="${encodeURIComponent(event.name)}"
+                  data-artist="${encodeURIComponent(event.performer || '')}"
+                  data-tab="${encodeURIComponent(event.tab)}"
+                  data-category='${escapeHtml(JSON.stringify(event.defaultCategory || {}))}'
+                  loading="lazy"
+                >
               </div>
               <div class="event-card__body">
-                <h3 class="event-card__title venu-name-hide">${event.name}</h3>
+                <h3 class="event-card__title venu-name-hide">${escapeHtml(event.name)}</h3>
                 <div class="mb-1">
-                  <span class="venu-date">${event.date}</span>
-                  <span class="venu-name">${event.venue} - ${event.loc}</span>
+                  <span class="venu-date">${escapeHtml(event.date)}</span>
+                  <span class="venu-name">${escapeHtml(event.venue)} - ${escapeHtml(event.loc)}</span>
                 </div>
-                ${event.price ? `<p class="event-card__price mb-0">from <strong>${event.price}</strong></p>` : ''}
+                ${event.price ? `<p class="event-card__price mb-0">from <strong>${escapeHtml(event.price)}</strong></p>` : ''}
               </div>
             </article>
           </a>
         `;
       });
-
+  
       return html;
     }
 
-    function generateEventSkeleton(count = 6) {
+    function generateEventSkeleton(count = 4) {
       let html = '';
-
+  
       for (let i = 0; i < count; i++) {
         html += `
           <a href="javascript:void(0)" class="team-link skeleton-link">
@@ -278,23 +287,23 @@ function initLocationSearch(inputId, type = '') {
           </a>
         `;
       }
-
+  
       return html;
     }
 
     function initSlider(selector, loader = '') {
       const $slider = $(selector);
-
+  
       if ($slider.hasClass('slick-initialized')) {
         $slider.slick('unslick');
       }
-
+  
       $slider.slick({
         slidesToShow: 4,
         slidesToScroll: 1,
         infinite: false,
         arrows: loader === 'skeleton' ? false : true,
-        autoplay: loader === 'skeleton' ? false : true,
+        autoplay: false,
         dots: false,
         responsive: [
           { breakpoint: 992, settings: { slidesToShow: 3 } },
@@ -303,6 +312,54 @@ function initLocationSearch(inputId, type = '') {
         ]
       });
     }
+    
+    async function fetchImageSequentially(img, loadToken) {
+      if (!img || loadToken !== currentLoadToken) return;
+  
+      const eventName = img.dataset.event ? decodeURIComponent(img.dataset.event) : '';
+      const artist = img.dataset.artist ? decodeURIComponent(img.dataset.artist) : '';
+      const tab = img.dataset.tab ? decodeURIComponent(img.dataset.tab) : '';
+      const category = img.dataset.category || '{}';
+  
+      const url =
+        `/ajax/get-image.php?event=${encodeURIComponent(eventName)}` +
+        `&artist=${encodeURIComponent(artist)}` +
+        `&tab=${encodeURIComponent(tab)}` +
+        `&category=${encodeURIComponent(category)}`;
+  
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+  
+        if (loadToken !== currentLoadToken) return;
+  
+        if (data && data.image) {
+          const tempImg = new Image();
+
+          tempImg.onload = function () {
+            img.src = data.image;
+
+            // remove blur AFTER real image is rendered
+            setTimeout(() => {
+              img.classList.add('loaded');
+            }, 50);
+          };
+
+          tempImg.src = data.image;
+        }
+      } catch (err) {
+        console.error('Image load failed:', eventName, err);
+      }
+    }
+
+    async function loadImagesOneByOne(container, loadToken) {
+      const images = container.querySelectorAll('.event-dynamic-image');
+  
+      for (const img of images) {
+        if (loadToken !== currentLoadToken) break;
+        await fetchImageSequentially(img, loadToken);
+      }
+    }
 
     window.loadLocationCategory = async function(tabId, type, loc1, loc2) {
 
@@ -310,55 +367,82 @@ function initLocationSearch(inputId, type = '') {
       const container = document.querySelector(selector);
       if (!container) return;
 
+      const loadToken = ++currentLoadToken;
+
       const ajaxUrl =
-        `/ajax/get-location-category-events.php?tab=${encodeURIComponent(tabId)}` +
-        `&type=${encodeURIComponent(type)}&loc1=${encodeURIComponent(loc1)}&loc2=${encodeURIComponent(loc2)}`;
+      `/ajax/get-location-category-events.php?tab=${encodeURIComponent(tabId)}` +
+      `&type=${encodeURIComponent(type)}` +
+      `&loc1=${encodeURIComponent(loc1)}` +
+      `&loc2=${encodeURIComponent(loc2)}`;
         
-      container.innerHTML = '';
       container.innerHTML = generateEventSkeleton(4);
       initSlider(selector, 'skeleton');
 
-      fetch(ajaxUrl)
-      .then(res => res.json())
-        .then(data => {
-          
-          if (!data || !data.length) {
-            container.innerHTML = '<p class="text-center">No events found</p>';
-            return;
-          }
-          
+      try {
+        const res = await fetch(ajaxUrl);
+        const data = await res.json();
+  
+        if (loadToken !== currentLoadToken) return;
+  
+        if (!data || !data.length) {
           const $slider = $(selector);
           if ($slider.hasClass('slick-initialized')) {
             $slider.slick('unslick');
           }
-
-          container.innerHTML = buildCards(data);
-
-          setTimeout(() => {
-            initSlider(selector);
-          }, 50);
-          
-        })
-        .catch(err => {
-          container.innerHTML = '<p>Error loading events</p>';
-        });
+          container.innerHTML = '<p class="text-center">No events found</p>';
+          return;
+        }
+  
+        const $slider = $(selector);
+        if ($slider.hasClass('slick-initialized')) {
+          $slider.slick('unslick');
+        }
+  
+        container.innerHTML = buildCards(data);
+  
+        setTimeout(() => {
+          initSlider(selector);
+        }, 50);
+  
+        loadImagesOneByOne(container, loadToken);
+      } catch (err) {
+        console.error(err);
+        container.innerHTML = '<p>Error loading events</p>';
+      }
 
     }
     
-    window.reloadActiveTab = function(mode = '', loc = {}) {
+    window.reloadActiveTab = function (mode = '', loc = {}) {
       const tabId = getActiveTabId();
-
-      if (mode === 'll') return loadLocationCategory(tabId, 'll', loc.lat, loc.lng);
-      
+  
+      if (mode === 'll') {
+        return loadLocationCategory(tabId, 'll', loc.lat, loc.lng);
+      }
+  
       return loadLocationCategory(tabId, '', '', '');
     };
+
+    (function init() {
+      const savedLabel = getCookie('so_label');
+      if (savedLabel && locationText) {
+        locationText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
+        document.getElementById('cityLocationInput').value = savedLabel;
+      }
+
+      const { mode, data } = detectLocationMode();  
+      reloadActiveTab(mode, data);
+
+      setTimeout(() => {
+        $('.slick-slider').slick('setPosition');
+      }, 100);
+    })();
 
     function detectLocationMode() {
       const lat = getCookie('so_lat');
       const lng = getCookie('so_lng');
-      
+  
       if (lat && lng) return { mode: 'll', data: { lat, lng } };
-     
+  
       return { mode: '', data: {} };
     }
 
@@ -366,52 +450,44 @@ function initLocationSearch(inputId, type = '') {
       pill.addEventListener('shown.bs.tab', function () {
         const { mode, data } = detectLocationMode();
         reloadActiveTab(mode, data);
-
+  
         setTimeout(() => {
           $('.slick-slider').slick('setPosition');
         }, 100);
       });
     });
   
-
     if (useCurrentLocationBtn) {
       useCurrentLocationBtn.addEventListener('click', function () {
-
         if (!navigator.geolocation) {
           alert('Geolocation not supported');
           return;
         }
-
+  
         navigator.geolocation.getCurrentPosition((position) => {
-
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-
+  
           setCookie('so_lat', lat);
           setCookie('so_lng', lng);
           setCookie('so_label', 'Current Location');
-
+  
           if (locationText) {
             locationText.innerHTML = 'Current Location <i class="bi bi-chevron-down"></i>';
           }
-
+  
           reloadActiveTab('ll', { lat, lng });
-
         });
-
       });
     }
 
-    // ---------------------------
-    // Optional: panel toggle + clear
-    // ---------------------------
     if (locationToggleBtn && locationPanel) {
       locationToggleBtn.addEventListener('click', function (e) {
         e.preventDefault();
         locationPanel.classList.toggle('show');
         if (cityInput) cityInput.focus();
       });
-
+  
       document.addEventListener('click', function (e) {
         if (!locationPanel.classList.contains('show')) return;
         if (locationPanel.contains(e.target) || e.target === locationToggleBtn) return;
@@ -421,17 +497,30 @@ function initLocationSearch(inputId, type = '') {
 
     if (locationClearBtn) {
       locationClearBtn.addEventListener('click', function () {
-        setCookie('so_lat', '');
-        setCookie('so_lng', '');
-        setCookie('so_label', '');
-        setCookie('teamLocation', '');        
 
-        if (locationText) locationText.innerHTML = 'Select your location <i class="bi bi-chevron-down"></i>';
-        if (cityInput) cityInput.value = '';
+        fetch(`/ajax/get_ip_details.php`)
+          .then(res => res.json())
+          .then(data => {
+            
+            setCookie('so_lat', encodeURIComponent(data.lat));
+            setCookie('so_lng', encodeURIComponent(data.lng));
+            setCookie('so_label', encodeURIComponent(data.city + ', ' + data.state));
+            setCookie('teamLocation', data.city);
+            if (cityInput) cityInput.value = '';
+            
+            setTimeout(() => {
+              const locText = document.getElementById('locationSelectorText');
+              if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
+              reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
+              loadNearbyVenues();
+              loadTeams('NFL');
+            }, 200);
+            
+          })
+        .catch(() => {
+          
+        });
         
-        reloadActiveTab('', {});
-        loadNearbyVenues();
-        loadTeams('NFL');
       });
     }
 

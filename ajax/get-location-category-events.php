@@ -31,28 +31,6 @@ if (!isset($categoryMap[$tab])) {
 $rootPath = $categoryMap[$tab];
 
 /* ==============================
-   CACHE KEY
-============================== */
-
-$loc1Key = str_replace('.', '-', $loc1);
-$loc2Key = str_replace('.', '-', $loc2);
-
-if($type == '') {
-    $cacheKey = "home_events_{$tab}";
-}else{
-    $cacheKey = "home_loc_events_{$tab}_{$type}_{$loc1Key}_{$loc2Key}";
-}
-
-$cached = cache_get($cacheKey);
-
-if ($cached) {
-    header('Cache-Control: public, max-age=86400');
-    header('X-Cache: HIT');
-    echo json_encode($cached);
-    exit;
-}
-
-/* ==============================
    FETCH EVENTS FROM TN
 ============================== */
 
@@ -70,30 +48,28 @@ if (!empty($events)) {
         $eventName = $event['text']['name'] ?? '';
         $venueName = $event['venue']['text']['name'] ?? '';
         $evtPerformer = $event['performers'][0]['name'] ?? '';
-        $imageUrl = getEventImage($evtPerformer, $event['defaultCategory'], $eventName, $tab);
-
         $eventDateRaw = $event['date']['date'];
 		$timestamp    = strtotime($eventDateRaw);
         $time = $event['date']['text']['time'];
         $city  = $event['city']['text']['name'] ?? '';
         $state = $event['stateProvince']['text']['abbr'] ?? '';
 
-        if($imageUrl) {
-            $output[] = [
-                'id'    => (int)($event['id'] ?? 0),
-                'name'  => $eventName,
-                'date'  => date('D, d M y', $timestamp) . ', ' . $time,
-                'venue' => $venueName,
-                'price' => $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '',
-                'image' => $imageUrl,
-                'loc'   => trim($city . ', ' . $state)
-            ];
-        }
+        $output[] = [
+            'id'              => (int)($event['id'] ?? 0),
+            'name'            => $eventName,
+            'date'            => $timestamp ? date('D, d M y', $timestamp) . ', ' . $time : '',
+            'venue'           => $venueName,
+            'price'           => $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '',
+            'loc'             => trim($city . ', ' . $state),
+            'performer'       => $evtPerformer,
+            'tab'             => $tab,
+            'defaultCategory' => $event['defaultCategory'] ?? [],
+            'placeholder'     => getCategoryFallbackImage($event['defaultCategory'] ?? [], $tab)
+        ];
     }
 }
 
-if (empty($output)) {
-
+if (empty($output) && $type !== '') {
     $fallbackKey = "home_events_{$tab}";
     $fallbackCache = cache_get($fallbackKey);
 
@@ -105,13 +81,7 @@ if (empty($output)) {
     }
 }
 
-/* ==============================
-   SAVE CACHE
-============================== */
-
-cache_set($cacheKey, $output);
-
 header('Cache-Control: public, max-age=86400');
-header('X-Cache-Status: ' . (isset($cached) && $cached !== false ? 'HIT' : 'MISS'));
+header('X-Cache: MISS');
 echo json_encode($output);
 exit;

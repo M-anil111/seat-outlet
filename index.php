@@ -436,10 +436,8 @@ include 'header.php';
 
 <section class="container new-slider venue-section left-right-btn py-5">
   <h2 class="fw-bold fs-4 mb-4">Top Venues</h2>
-  <div class="venue-slider px-4">
-    <div class="text-center py-5 w-100">
-      <?php echo buildVenueSkeleton(4); ?>    
-    </div>
+  <div class="venue-slider px-4">    
+    <?php echo buildVenueSkeleton(4); ?>
   </div>
 </section>
 

@@ -1524,17 +1524,50 @@ function fixImageOrientation($imageContent) {
     return $fixed;
 }
 
-function getWikimediaImage($title = "", $type) {
+// function getWikimediaImage($title = "", $type) {
+
+//     if (!$title) return '';
+
+//     $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($title));
+//     $clean = trim($slug, '-');
+//     $key  = $type . "/{$clean}.webp";
+
+//     if (s3ObjectExists($key)) {
+//         return getS3PublicUrl($key);
+//     }
+
+//     $url = "https://en.wikipedia.org/w/api.php?" . http_build_query([
+//         "action" => "query",
+//         "titles" => $title,
+//         "prop" => "pageimages",
+//         "piprop" => "original",
+//         "format" => "json"
+//     ]);
+
+//     $ch = curl_init($url);
+
+//     curl_setopt_array($ch, [
+//         CURLOPT_RETURNTRANSFER => true,
+//         CURLOPT_USERAGENT => "SeatOutletBot/1.0"
+//     ]);
+
+//     $response = curl_exec($ch);
+//     curl_close($ch);
+
+//     if (!$response) return '';
+
+//     $data = json_decode($response, true);
+
+//     $pages = $data['query']['pages'] ?? [];
+//     $page  = reset($pages);
+//     $image = $page['original']['source'] ?? '';
+
+//     return $image;
+// }
+
+function getWikimediaImage($title = "") {
 
     if (!$title) return '';
-
-    $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($title));
-    $clean = trim($slug, '-');
-    $key  = $type . "/{$clean}.webp";
-
-    if (s3ObjectExists($key)) {
-        return getS3PublicUrl($key);
-    }
 
     $url = "https://en.wikipedia.org/w/api.php?" . http_build_query([
         "action" => "query",
@@ -1560,9 +1593,23 @@ function getWikimediaImage($title = "", $type) {
 
     $pages = $data['query']['pages'] ?? [];
     $page  = reset($pages);
-    $image = $page['original']['source'] ?? '';
 
-    return $image;
+    return $page['original']['source'] ?? '';
+}
+
+function getStoredImageUrl($name, $type) {
+
+    if (!$name) return '';
+
+    $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
+    $clean = trim($slug, '-');
+    $key  = "{$type}/{$clean}.webp";
+
+    if (s3ObjectExists($key)) {
+        return getS3PublicUrl($key);
+    }
+
+    return '';
 }
 
 function processAndStoreImage($imageUrl, $name, $type) {
@@ -1621,23 +1668,29 @@ function getCategoryFallbackImage($defaultCategory, $tab) {
 
 function getEventImage($artist, $defaultCategory, $event, $tab) {
 
-    // ✅ 1. Try EVENT image first
-    $eventImage = getWikimediaImage($event, 'events');
+    // ✅ 1. Check stored EVENT image
+    $storedEvent = getStoredImageUrl($event, 'events');
+    if ($storedEvent) return $storedEvent;
 
-    if (!empty($eventImage)) {
+    // ✅ 2. Fetch + store EVENT image
+    $eventImage = getWikimediaImage($event);
+    if ($eventImage) {
         return processAndStoreImage($eventImage, $event, 'events');
     }
 
-    // ✅ 2. Fallback to ARTIST image
-    if (!empty($artist)) {
-        $artistImage = getWikimediaImage($artist, 'artists');
+    // ✅ 3. Check stored ARTIST image
+    if ($artist) {
+        $storedArtist = getStoredImageUrl($artist, 'artists');
+        if ($storedArtist) return $storedArtist;
 
-        if (!empty($artistImage)) {
+        // fetch + store
+        $artistImage = getWikimediaImage($artist);
+        if ($artistImage) {
             return processAndStoreImage($artistImage, $artist, 'artists');
         }
     }
 
-    // ✅ 3. Category fallback
+    // ✅ 4. Category fallback
     return getCategoryFallbackImage($defaultCategory, $tab);
 }
 
