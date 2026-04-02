@@ -20,7 +20,7 @@ $categoryMap = [
     'concerts' => '.1859.1986.',
     'sports'   => '.1859.1988.',
     'theatre'  => '.1859.1989.',
-    'festival' => '.1859.1987.'
+    'festival' => '.1859.1986.1877.'
 ];
 
 if (!isset($categoryMap[$tab])) {
@@ -82,6 +82,6 @@ if (empty($output) && $type !== '') {
 }
 
 header('Cache-Control: public, max-age=86400');
-header('X-Cache: MISS');
+header('X-Cache: HIT');
 echo json_encode($output);
 exit;

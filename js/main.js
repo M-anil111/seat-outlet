@@ -42,6 +42,10 @@ $('.venue-slider').on('setPosition', function(){
 equalHeightSlider('venue-slider', 'venue-card');
 });
 
+$('.suggestion-slider').on('setPosition', function(){
+  equalHeightSlider('suggestion-slider', 'venue-card');
+});
+
 const $sugg_slider = $('.suggestion-slider');
 $sugg_slider.slick({
     slidesToShow: 4,
@@ -339,7 +343,6 @@ function initLocationSearch(inputId, type = '') {
           tempImg.onload = function () {
             img.src = data.image;
 
-            // remove blur AFTER real image is rendered
             setTimeout(() => {
               img.classList.add('loaded');
             }, 50);
@@ -657,13 +660,11 @@ function initLocationSearch(inputId, type = '') {
     
     };
   
-    // default load
     const activeBtn = document.querySelector('.sport-cat.active');
     if (activeBtn && activeBtn.dataset.slug) {
       loadTeams(activeBtn.dataset.slug);
     }
   
-    // on tab switch
     document.querySelectorAll('button.sport-cat').forEach(btn => {
       btn.addEventListener('shown.bs.tab', function () {
         loadTeams(this.dataset.slug);
@@ -699,25 +700,76 @@ function initLocationSearch(inputId, type = '') {
   
     return html;
   }
+
+  let venueLoadToken = 0;
+
+  async function fetchVenueImageSequentially(img, loadToken) {
+    if (!img || loadToken !== venueLoadToken) return;
+  
+    const venueName = img.dataset.venue
+      ? decodeURIComponent(img.dataset.venue)
+      : '';
+  
+    if (!venueName) return;
+  
+    const url = `/ajax/get-image.php?venue=${encodeURIComponent(venueName)}`;
+  
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+  
+      if (loadToken !== venueLoadToken) return;
+  
+      if (data && data.image) {
+        const tempImg = new Image();
+  
+        tempImg.onload = function () {
+          img.src = data.image;
+  
+          setTimeout(() => {
+            img.classList.add('loaded');
+          }, 50);
+        };
+  
+        tempImg.src = data.image;
+      }
+  
+    } catch (err) {
+      console.error('Venue image load failed:', venueName, err);
+    }
+  }
+
+  async function loadVenueImagesOneByOne(container, loadToken) {
+    const images = container.querySelectorAll('.venue-dynamic-image');
+  
+    for (const img of images) {
+      if (loadToken !== venueLoadToken) break;
+      await fetchVenueImageSequentially(img, loadToken);
+    }
+  }
   
   window.loadNearbyVenues = function() { 
  
       const container = document.querySelector('.venue-slider');
       if (!container) return;
 
+      const loadToken = ++venueLoadToken;
+
       const solt = getCookie('so_lat') || '';
       const solg = getCookie('so_lng') || '';
 
-      container.innerHTML = '';
-      container.innerHTML = buildVenueSkeleton(4);
-      initVenueSlider('skeleton');
-      
       const ajaxUrlVenue =
-        `/ajax/get-nearby-venues.php?solt=${encodeURIComponent(solt)}&solg=${encodeURIComponent(solg)}`;
+    `/ajax/get-nearby-venues.php?solt=${encodeURIComponent(solt)}&solg=${encodeURIComponent(solg)}`;
+
+    container.innerHTML = buildVenueSkeleton(4);
+    initVenueSlider('skeleton');
   
       fetch(ajaxUrlVenue)
       .then(res => res.json())
         .then(data => {
+
+          if (loadToken !== venueLoadToken) return;
+
           const venueTitle = document.querySelector('.venue-section h2');  
           if (venueTitle) {
               const solabel = getCookie('so_label') || '';
@@ -743,7 +795,13 @@ function initLocationSearch(inputId, type = '') {
               <a href="/venue/${venue.slug}" class="team-link">
                 <div class="card venue-card">
                   <div class="venue-img">
-                    <img src="${venue.image}" alt="${venue.name}" class="img-fluid">
+                    <img
+                      src="${venue.image}"
+                      alt="${venue.name}"
+                      class="img-fluid venue-dynamic-image blur-image"
+                      data-venue="${encodeURIComponent(venue.name)}"
+                      loading="lazy"
+                    >
                   </div>
                   <div class="venue-content text-center">
                     <h5 class="venue-title">${venue.name}</h5>
@@ -757,8 +815,12 @@ function initLocationSearch(inputId, type = '') {
           });
   
           container.innerHTML = html;          
-          initVenueSlider();
+          setTimeout(() => {
+            initVenueSlider();
+          }, 50);
           
+          loadVenueImagesOneByOne(container, loadToken);
+
         })
         .catch(err => {
           container.innerHTML = '<p>Error loading venues</p>';
@@ -971,9 +1033,7 @@ function initLocationSearch(inputId, type = '') {
   
   const keywordHeader = document.getElementById('keywordHeader');
   const keywordResultsHeader = document.getElementById('keywordResultsHeader');
-  const keywordType = document.getElementById('keywordType');
-  const keywordId = document.getElementById('keywordId');
-
+ 
   if(keywordHeader) {	
 
       let typingTimerKeyword;
@@ -990,10 +1050,15 @@ function initLocationSearch(inputId, type = '') {
             keywordResultsHeader.innerHTML = '';
             return;
         }
+
+        keywordResultsHeader.innerHTML = `
+          <ul class="search-suggestions">
+            <li class="result-item">Searching for "${q}"...</li>
+          </ul>
+      `;
     
         typingTimerKeyword = setTimeout(() => {
     
-            // Abort previous request (important)
             if (currentRequest) {
                 currentRequest.abort();
             }
@@ -1072,6 +1137,16 @@ function initLocationSearch(inputId, type = '') {
             });
     
         }, typingDelayKeyword);
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!keywordHeader.contains(e.target) && !keywordResultsHeader.contains(e.target)) {
+        keywordResultsHeader.innerHTML = '';
+      }
+    });
+
+    keywordResultsHeader.addEventListener('click', function (e) {
+      e.stopPropagation();
     });
   
   }
@@ -1369,7 +1444,7 @@ if (input) {
     if (!target) return;
   
     const isMobile = window.innerWidth < 992;
-    const offset   = isMobile ? 0 : 92; // sticky tabs height
+    const offset   = isMobile ? 0 : 92; 
   
     const elementPosition = target.getBoundingClientRect().top + window.pageYOffset;
     const offsetPosition  = elementPosition - offset;
@@ -1379,7 +1454,6 @@ if (input) {
         behavior: 'smooth'
     });
   
-    // update active tab
     document.querySelectorAll('#artistTabs .nav-link')
         .forEach(btn => btn.classList.remove('active'));
   

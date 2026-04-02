@@ -61,7 +61,6 @@ function getTnAccessToken() {
         ],
         CURLOPT_POSTFIELDS     => http_build_query([
             'grant_type' => 'client_credentials',
-            // scope is OPTIONAL here since Catalog is already subscribed
         ]),
         CURLOPT_TIMEOUT        => 15,
     ]);
@@ -959,9 +958,6 @@ function getTeamsByCategory($categorySlug, $limit = 50) {
 
     $params = [
         'categoryFilter' => "path eq '$categoryPath'",
-        //'eventFilter' => "country/alphaCode eq 'US'",
-        //'sort' => 'salesRank',
-        //'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'perPage' => $limit
     ];
 
@@ -1380,7 +1376,7 @@ function getTheaterCatEvents() {
 
 function getFestivalCatEventsCount() {
 
-	$festivalPath = ".1859.1989.";
+	$festivalPath = ".1859.1986.1877.";
     $today = date('Y-m-d');
 
     $params = [
@@ -1400,7 +1396,7 @@ function getFestivalCatEvents() {
 
     $accessToken = getTnAccessToken();
 
-    $festivalPath = ".1859.1989.";
+    $festivalPath = ".1859.1986.1877.";
 	$today = date('Y-m-d');
 
     $params = [
@@ -1447,7 +1443,6 @@ function searchPostalCodes($text, $country = 'US', $limit = 20) {
 
     $text = trim($text);
 
-    // Detect if search text is zipcode (numbers only)
     if (preg_match('/^[0-9]+$/', $text)) {
         $filter = "code eq '{$text}' and country/alphaCode eq '{$country}'";
     } else {
@@ -1524,47 +1519,6 @@ function fixImageOrientation($imageContent) {
     return $fixed;
 }
 
-// function getWikimediaImage($title = "", $type) {
-
-//     if (!$title) return '';
-
-//     $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($title));
-//     $clean = trim($slug, '-');
-//     $key  = $type . "/{$clean}.webp";
-
-//     if (s3ObjectExists($key)) {
-//         return getS3PublicUrl($key);
-//     }
-
-//     $url = "https://en.wikipedia.org/w/api.php?" . http_build_query([
-//         "action" => "query",
-//         "titles" => $title,
-//         "prop" => "pageimages",
-//         "piprop" => "original",
-//         "format" => "json"
-//     ]);
-
-//     $ch = curl_init($url);
-
-//     curl_setopt_array($ch, [
-//         CURLOPT_RETURNTRANSFER => true,
-//         CURLOPT_USERAGENT => "SeatOutletBot/1.0"
-//     ]);
-
-//     $response = curl_exec($ch);
-//     curl_close($ch);
-
-//     if (!$response) return '';
-
-//     $data = json_decode($response, true);
-
-//     $pages = $data['query']['pages'] ?? [];
-//     $page  = reset($pages);
-//     $image = $page['original']['source'] ?? '';
-
-//     return $image;
-// }
-
 function getWikimediaImage($title = "") {
 
     if (!$title) return '';
@@ -1616,17 +1570,14 @@ function processAndStoreImage($imageUrl, $name, $type) {
 
     if (!$imageUrl || !$name) return '';
 
-    // 🔑 Generate key
     $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
     $clean = trim($slug, '-');
     $key  = "{$type}/{$clean}.webp";
 
-    // ✅ Double-check (safe fallback)
     if (s3ObjectExists($key)) {
         return getS3PublicUrl($key);
     }
 
-    // ⚠️ Heavy work (still sync, can be async later)
     $imageContent = downloadImage($imageUrl);
     if (!$imageContent) return '';
 
@@ -1640,7 +1591,7 @@ function processAndStoreImage($imageUrl, $name, $type) {
     return getS3PublicUrl($key);
 }
 
-function getCategoryFallbackImage($defaultCategory, $tab) {
+function getCategoryFallbackImage($defaultCategory, $tab = '') {
 
     $subcategory = '';
 
@@ -1659,7 +1610,7 @@ function getCategoryFallbackImage($defaultCategory, $tab) {
 
     $slug = str_replace([' ', '/', '(', ')', '-', '&'], '', $subcategory);
 
-    if ($slug == 'OTHER' || empty($slug)) {
+    if(($slug == 'OTHER' || empty($slug)) && !empty($tab)) {
         $slug = $tab;
     }
 
@@ -1668,95 +1619,61 @@ function getCategoryFallbackImage($defaultCategory, $tab) {
 
 function getEventImage($artist, $defaultCategory, $event, $tab) {
 
-    // ✅ 1. Check stored EVENT image
     $storedEvent = getStoredImageUrl($event, 'events');
     if ($storedEvent) return $storedEvent;
 
-    // ✅ 2. Fetch + store EVENT image
     $eventImage = getWikimediaImage($event);
     if ($eventImage) {
         return processAndStoreImage($eventImage, $event, 'events');
     }
 
-    // ✅ 3. Check stored ARTIST image
     if ($artist) {
         $storedArtist = getStoredImageUrl($artist, 'artists');
         if ($storedArtist) return $storedArtist;
 
-        // fetch + store
         $artistImage = getWikimediaImage($artist);
         if ($artistImage) {
             return processAndStoreImage($artistImage, $artist, 'artists');
         }
     }
 
-    // ✅ 4. Category fallback
+    return getCategoryFallbackImage($defaultCategory, $tab);
+}
+
+function getArtistImage($artist, $defaultCategory) {
+
+    if (!$artist) return '';
+
+    $storedArtist = getStoredImageUrl($artist, 'artists');
+    if ($storedArtist) return $storedArtist;
+
+    $artistImage = getWikimediaImage($artist);
+    if ($artistImage) {
+        return processAndStoreImage($artistImage, $artist, 'artists');
+    }
+    $ancestors = $defaultCategory['ancestors'];
+    foreach ($ancestors as $ancestor) {
+        if ($ancestor['depth'] == 1) {
+            $tab = $ancestor['text']['name'];
+            break;
+        }
+    }
+    
     return getCategoryFallbackImage($defaultCategory, $tab);
 }
 
 function getVenueImage($venue) {
-    $venueImageUrl = getWikimediaImage($venue, 'venues');
-    if(!empty($venueImageUrl)) {
-        $imageName = $venue;
-        $imageUrl = $venueImageUrl;
-    }else{
-        $imageUrl = '';
-    }    
-        
-    if(!empty($imageUrl)) {
-        $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($imageName));
-        $clean = trim($slug, '-');
-        $key  = "venues/{$clean}.webp";
-       
-        if (s3ObjectExists($key)) {
-            return getS3PublicUrl($key);
-        }
 
-        $imageContent = downloadImage($imageUrl);
-        if (!$imageContent) return '';
+    if (!$venue) return '';
 
-        $imageContent = fixImageOrientation($imageContent);
+    $storedVenue = getStoredImageUrl($venue, 'venues');
+    if ($storedVenue) return $storedVenue;
 
-        $webpImage = resizeAndConvertToWebP($imageContent, 800, 80);
-        if (!$webpImage) return '';
-
-        uploadImageToS3($webpImage, $key, 'image/webp');
-        return getS3PublicUrl($key);
+    $venueImage = getWikimediaImage($venue);
+    if ($venueImage) {
+        return processAndStoreImage($venueImage, $venue, 'venues');
     }
-    
-    return '';
-}
 
-function getArtistImage($artist) {
-    $artistImageUrl = getWikimediaImage($artist, 'artists');
-    if(!empty($artistImageUrl)) {
-        $imageName = $artist;
-        $imageUrl = $artistImageUrl;
-    }else{
-        $imageUrl = '';
-    }    
-        
-    if(!empty($imageUrl)) {
-        $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($imageName));
-        $clean = trim($slug, '-');
-        $key  = "artists/{$clean}.webp";
-       
-        if (s3ObjectExists($key)) {
-            return getS3PublicUrl($key);
-        }
-
-        $imageContent = downloadImage($imageUrl);
-        if (!$imageContent) return '';
-
-        $imageContent = fixImageOrientation($imageContent);
-
-        $webpImage = resizeAndConvertToWebP($imageContent, 800, 80);
-        if (!$webpImage) return '';
-
-        uploadImageToS3($webpImage, $key, 'image/webp');
-        return getS3PublicUrl($key);
-    }
-    
     return '';
 }
 
@@ -1775,7 +1692,7 @@ function convertToFloat($value) {
 function searchSuggestions($q, $type) {
     $params = [
         'filter' => "startswith(text/name,'$q')",
-        'perPage' => 20
+        'perPage' => 10
     ];
 
     $url = BASE_URL . '/catalog/v2/'.$type.'/?' . http_build_query($params);    

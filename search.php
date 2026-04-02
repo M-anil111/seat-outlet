@@ -102,14 +102,14 @@ if(!empty($keywordHeader)) {
 	<div class="container">
 
 		<?php if(!empty($artistData) || !empty($venueData)) { ?>
-			<div class="section-suggestions">
+			<div class="section-suggestions new-slider py-5">
 				<h2 class="fw-bold fs-4 mb-4">Top Suggestions</h2>			
 				<div class="suggestion-slider px-4">
 					<?php if(!empty($artistData)) { ?>
 						<?php foreach($artistData as $artistItem) { 
-							$artistImage = getArtistImage($artistItem['name']);	
-							if(empty($artistImage)) continue;
 							$defaultCategory = $artistItem['cat'];
+							$artistImage = getArtistImage($artistItem['name'], $defaultCategory);	
+							if(empty($artistImage)) continue;
 							$subcategory = '';
 							if (!empty($defaultCategory)) {
 								if ($defaultCategory['depth'] == 2) {
@@ -121,9 +121,17 @@ if(!empty($keywordHeader)) {
 												$subcategory = $ancestor['text']['name'];
 												break;
 											}
+										}										
+									}
+								}	
+								if(empty($subcategory) || $subcategory == 'OTHER') {
+									foreach ($defaultCategory['ancestors'] as $ancestor) {
+										if ($ancestor['depth'] == 1) {
+											$subcategory = $ancestor['text']['name'];
+											break;
 										}
 									}
-								}
+								}							
 							}
 						?>
 							<a href="/artist/<?php echo strtolower($artistItem['slug']); ?>" class="team-link">

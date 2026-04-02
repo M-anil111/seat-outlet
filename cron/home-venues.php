@@ -1,25 +1,19 @@
 <?php
 require_once '../functions.php';
 
-$topVenues = getTopVenues();
+$topVenues = getTopVenues(8);
 
 $output = [];    
 
 if (!empty($topVenues)) {
-    foreach ($topVenues as $venue) {
-        
-        $venuename = $venue['text']['name'] ?? '';
-        $imageUrl = getVenueImage($venuename);
-
-        if ($imageUrl) {
-            $output[] = [
-                'slug'  => strtolower($venue['uriComponent'] ?? ''),
-                'name'  => $venuename,
-                'city'  => $venue['city']['text']['name'] ?? '',
-                'state' => $venue['stateProvince']['text']['abbr'] ?? '',
-                'image' => $imageUrl
-            ];
-        }
+    foreach ($topVenues as $venue) {        
+        $output[] = [
+            'slug'  => strtolower($venue['uriComponent'] ?? ''),
+            'name'  => $venue['text']['name'] ?? '',
+            'city'  => $venue['city']['text']['name'] ?? '',
+            'state' => $venue['stateProvince']['text']['abbr'] ?? '',
+            'image' => "/assets/soplaceholder.png"
+        ];       
     }
 }
 

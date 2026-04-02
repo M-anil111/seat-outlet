@@ -7,7 +7,7 @@ $categoryMap = [
     'concerts' => '.1859.1986.',
     'sports'   => '.1859.1988.',
     'theatre'  => '.1859.1989.',
-    'festival' => '.1859.1987.'
+    'festival' => '.1859.1986.1877.'
 ];
 
 foreach ($tabs as $tab) {
