@@ -44,7 +44,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
 $artistName = $performer['text']['name'];
 $performer_bio = getArtistBio($artistName);
-$performer_image = getArtistImage($artistName);
+$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
 $faqs = getFaqs($mysqli, 'performer');
 ?>
 
@@ -426,10 +426,10 @@ $faqs = getFaqs($mysqli, 'performer');
 		<?php if (!empty($relatedPerformers)) { $i = 0; ?>
 			<div class="tab-section content-section-detail" id="fans">
 				<div class="row g-4">
-					<h2 class="so-heading fw-bold fs-4 mb-4 text-black">{Performer} Fans Also Love</h2>
+					<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo $artistName; ?> Fans Also Love</h2>
 					<?php foreach ($relatedPerformers as $performer) { 
 						$artistName = $performer['text']['name'];
-						$performer_image = getArtistImage($artistName);
+						$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
 						$i++;
 						if($i > 8) continue;
 					?>

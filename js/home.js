@@ -61,6 +61,38 @@ $sugg_slider.slick({
     ]
 });
 
+function getCityState(lat, lng, callback) {
+
+  const geocoder = new google.maps.Geocoder();
+
+  geocoder.geocode({ location: { lat, lng } }, function(results, status) {
+
+    if (status !== "OK" || !results[0]) return;
+
+    let city = '';
+    let state = '';
+
+    results[0].address_components.forEach(c => {
+      if (c.types.includes('locality')) city = c.long_name;
+      if (c.types.includes('administrative_area_level_1')) state = c.short_name;
+    });
+
+    if (!city) {
+      results[0].address_components.forEach(c => {
+        if (c.types.includes('administrative_area_level_2')) {
+          city = c.long_name;
+        }
+      });
+    }
+
+    const label = city + ', ' + state;
+
+    setCookie('so_cs', label);
+
+    if (callback) callback(label);
+  });
+}
+
 function initLocationSearch(inputId, type = '') {
 
   const input = document.getElementById(inputId);
@@ -74,25 +106,21 @@ function initLocationSearch(inputId, type = '') {
   autocomplete.addListener('place_changed', function () {
 
     const place = autocomplete.getPlace();
-
     if (!place.address_components) return;
+    let city = '';
+    let state = '';
+    place.address_components.forEach(component => {
+      const types = component.types;
 
-      let city = '';
-      //let state = '';
+      if (types.includes('locality')) {
+        city = component.long_name;
+      }
 
-      place.address_components.forEach(component => {
-        const types = component.types;
+      if (types.includes('administrative_area_level_1')) {
+        state = component.long_name;
+      }        
+    });
 
-        if (types.includes('locality')) {
-          city = component.long_name;
-        }
-
-        // if (types.includes('administrative_area_level_1')) {
-        //   state = component.long_name;
-        // }
-
-        setCookie('teamLocation', city);
-      });
 
     const lat = place.geometry.location.lat();
     const lng = place.geometry.location.lng();
@@ -101,18 +129,26 @@ function initLocationSearch(inputId, type = '') {
 
       const locationText = document.getElementById('locationSelectorText');
       const locationPanel = document.getElementById('locationPanel');
+      const nearLocationText = document.getElementById('nearLocationText');
 
       if (locationText) locationText.innerHTML = input.value + ' <i class="bi bi-chevron-down"></i>';
       if (locationPanel) locationPanel.classList.remove('show');
+      if (nearLocationText) nearLocationText.innerHTML = input.value;
 
       setCookie('so_label', input.value);
       setCookie('so_lat', lat);
       setCookie('so_lng', lng);      
      
       setTimeout(() => {
-        reloadActiveTab('ll', {lat, lng});
-        loadNearbyVenues();
-        loadTeams('NFL');
+        if (typeof reloadActiveTab === 'function') {
+          reloadActiveTab('ll', {lat, lng});
+        }
+        if (typeof loadNearbyVenues === 'function') {
+          loadNearbyVenues();
+        }
+        if (typeof loadTeams === 'function') {
+          loadTeams('NFL');
+        }
       }, 200);
       
 
@@ -122,11 +158,13 @@ function initLocationSearch(inputId, type = '') {
         document.getElementById('lngHeader').value = lng;
 
         if(input.value !== '') {
-          input.disabled = true;   
+          const nearLocationText = document.getElementById('nearLocationText');
+          if (nearLocationText) nearLocationText.innerHTML = input.value;
+          //input.readOnly = true;   
           const resetLoc = document.getElementById('locationHeaderReset');
           resetLoc.classList.remove('d-none');
           resetLoc.addEventListener('click', function () {
-            input.disabled = false;
+            //input.readOnly = false;
             input.value = '';
             this.classList.add('d-none');       
             document.getElementById('latHeader').value = '';
@@ -153,25 +191,41 @@ function initLocationSearch(inputId, type = '') {
     
               const lat = position.coords.latitude;
               const lng = position.coords.longitude;
-              
+
               setCookie('so_lat', encodeURIComponent(lat));
               setCookie('so_lng', encodeURIComponent(lng));
-              setCookie('so_label', 'Current Location');
-              
-              setTimeout(() => {
+
+              getCityState(lat, lng, function(so_cs) {
+
+                setCookie('so_label', so_cs);
+            
+                // ✅ Now update UI safely
                 const locText = document.getElementById('locationSelectorText');
-                if (locText) locText.innerHTML = 'Current Location <i class="bi bi-chevron-down"></i>';
-                reloadActiveTab('ll', { lat, lng });
-                loadNearbyVenues();
-                loadTeams('NFL');
-              }, 200);
+                if (locText) locText.innerHTML = so_cs + ' <i class="bi bi-chevron-down"></i>';
+            
+                const nearLocationText = document.getElementById('nearLocationText');
+                if (nearLocationText) nearLocationText.innerHTML = so_cs;
+            
+                if (typeof reloadActiveTab === 'function') {
+                  reloadActiveTab('ll', { lat, lng });
+                }
+            
+                if (typeof loadNearbyVenues === 'function') {
+                  loadNearbyVenues();
+                }
+            
+                if (typeof loadTeams === 'function') {
+                  loadTeams('NFL');
+                }
+            
+              });              
     
           },
           function(error) {
 
             const _solabel = getCookie('so_label');
 
-            if(!_solabel || _solabel == 'Current Location') {
+            if(!_solabel) {
               
               fetch(`/ajax/get_ip_details.php`)
                 .then(res => res.json())
@@ -180,14 +234,21 @@ function initLocationSearch(inputId, type = '') {
                   setCookie('so_lat', encodeURIComponent(data.lat));
                   setCookie('so_lng', encodeURIComponent(data.lng));
                   setCookie('so_label', encodeURIComponent(data.city + ', ' + data.state));
-                  setCookie('teamLocation', data.city);
                   
                   setTimeout(() => {
                     const locText = document.getElementById('locationSelectorText');
                     if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
-                    reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
-                    loadNearbyVenues();
-                    loadTeams('NFL');
+                    const nearLocationText = document.getElementById('nearLocationText');
+                    if (nearLocationText) nearLocationText.innerHTML = data.city + ', ' + data.state;
+                    if (typeof reloadActiveTab === 'function') {
+                      reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
+                    }
+                    if (typeof loadNearbyVenues === 'function') {
+                      loadNearbyVenues();
+                    }
+                    if (typeof loadTeams === 'function') {
+                      loadTeams('NFL');
+                    }
                   }, 200);
                   
                 })
@@ -409,7 +470,6 @@ function initLocationSearch(inputId, type = '') {
   
         loadImagesOneByOne(container, loadToken);
       } catch (err) {
-        console.error(err);
         container.innerHTML = '<p>Error loading events</p>';
       }
 
@@ -470,16 +530,26 @@ function initLocationSearch(inputId, type = '') {
         navigator.geolocation.getCurrentPosition((position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-  
-          setCookie('so_lat', lat);
-          setCookie('so_lng', lng);
-          setCookie('so_label', 'Current Location');
-  
-          if (locationText) {
-            locationText.innerHTML = 'Current Location <i class="bi bi-chevron-down"></i>';
-          }
-  
-          reloadActiveTab('ll', { lat, lng });
+          
+          setCookie('so_lat', encodeURIComponent(lat));
+          setCookie('so_lng', encodeURIComponent(lng));
+
+          getCityState(lat, lng, function(so_cs) {
+
+            setCookie('so_label', so_cs);
+        
+            if (locationText) {
+              locationText.innerHTML = so_cs + ' <i class="bi bi-chevron-down"></i>';
+            }
+
+            const nearLocationText = document.getElementById('nearLocationText');
+            if (nearLocationText) nearLocationText.innerHTML = so_cs;
+    
+            reloadActiveTab('ll', { lat, lng });
+        
+          });  
+          
+      
         });
       });
     }
@@ -508,15 +578,22 @@ function initLocationSearch(inputId, type = '') {
             setCookie('so_lat', encodeURIComponent(data.lat));
             setCookie('so_lng', encodeURIComponent(data.lng));
             setCookie('so_label', encodeURIComponent(data.city + ', ' + data.state));
-            setCookie('teamLocation', data.city);
             if (cityInput) cityInput.value = '';
             
             setTimeout(() => {
               const locText = document.getElementById('locationSelectorText');
               if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
-              reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
-              loadNearbyVenues();
-              loadTeams('NFL');
+              const nearLocationText = document.getElementById('nearLocationText');
+              if (nearLocationText) nearLocationText.innerHTML = data.city + ', ' + data.state;
+              if (typeof reloadActiveTab === 'function') {
+                reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
+              }
+              if (typeof loadNearbyVenues === 'function') {
+                loadNearbyVenues();
+              }
+              if (typeof loadTeams === 'function') {
+                loadTeams('NFL');
+              }              
             }, 200);
             
           })
@@ -611,25 +688,13 @@ function initLocationSearch(inputId, type = '') {
 
               const teamsTitle = document.querySelector('.teams-section h2');  
               if (teamsTitle) {
-                  const solbl = getCookie('so_label') || '';
-                  teamsTitle.textContent = solbl
-                    ? `Top Teams Near ${solbl}`
-                    : 'Top Teams';
-              }
-
-              const cityName = getCookie('teamLocation');
-              let filteredData = data.filter(team =>
-                team.name.includes(cityName)
-              );
-
-              if (filteredData.length === 0) {
-                filteredData = data;
+                  teamsTitle.textContent = 'Top Teams';
               }
 
               let html = `<div class="tab-pane show active" id="${escapeHtml(league)}" role="tabpanel">
                       <div class="team-slider new-slider px-4">`;
 
-              filteredData.sort((a, b) => a.name.localeCompare(b.name))
+              data.sort((a, b) => a.name.localeCompare(b.name))
               .forEach(team => {
                 const teamSlug = escapeHtml(team.slug);
                 const teamName = escapeHtml(team.name);
@@ -749,7 +814,7 @@ function initLocationSearch(inputId, type = '') {
   }
   
   window.loadNearbyVenues = function() { 
- 
+      
       const container = document.querySelector('.venue-slider');
       if (!container) return;
 
@@ -850,10 +915,12 @@ function initLocationSearch(inputId, type = '') {
           ]
       });
   }
-  
-  loadNearbyVenues();
-  
-  /* =====================================================
+ 
+  if (typeof loadNearbyVenues === 'function') {
+    loadNearbyVenues();
+  }
+ 
+ /* =====================================================
      VENUES End
   ===================================================== */
 
@@ -865,6 +932,18 @@ function initLocationSearch(inputId, type = '') {
   const resultsHeader = document.getElementById('locationResultsHeader');
   const latHeader = document.getElementById('latHeader');
   const lngHeader = document.getElementById('lngHeader');
+  const resetLocHeader = document.getElementById('locationHeaderReset');
+
+  if(resetLocHeader && inputHeader.value) {
+    resetLocHeader.classList.remove('d-none');
+    resetLocHeader.addEventListener('click', function () {
+      //input.readOnly = false;
+      inputHeader.value = '';
+      resetLocHeader.classList.add('d-none');       
+      document.getElementById('latHeader').value = '';
+      document.getElementById('lngHeader').value = '';
+    });  
+  }
   
   google.maps.event.addDomListener(window, 'load', initLocationSearch('locationInputHeader'));
 
@@ -909,15 +988,19 @@ function initLocationSearch(inputId, type = '') {
   
               latHeader.value = lat;
               lngHeader.value = lng;
-  
-              inputHeader.value = 'Current location';
 
+              getCityState(lat, lng, function(so_cs) {
+
+                inputHeader.value = so_cs;
+            
+              }); 
+  
               if(inputHeader.value !== '') {
-                inputHeader.disabled = true;   
+                //inputHeader.readOnly = true;   
                 const resetLoc = document.getElementById('locationHeaderReset');
                 resetLoc.classList.remove('d-none');
                 resetLoc.addEventListener('click', function () {
-                    inputHeader.disabled = false;
+                    //inputHeader.readOnly = false;
                     inputHeader.value = '';
                     this.classList.add('d-none');       
                     latHeader.value = '';
@@ -963,12 +1046,11 @@ function initLocationSearch(inputId, type = '') {
     let selectedStart = null;
     let selectedEnd = null;
   
-   
-  
     let fp = flatpickr("#customDatePicker", {
       mode: "range",
       minDate: "today",
-      dateFormat: "M j, Y",
+      dateFormat: "Y-m-d",
+      altFormat: "M j, Y",
       showMonths: getMonthCount(),
       disableMobile: true,
       clickOpens: true,
@@ -1031,462 +1113,276 @@ function initLocationSearch(inputId, type = '') {
      HEADER KEYWORD FIELD
   ===================================================== */
   
-  const keywordHeader = document.getElementById('keywordHeader');
-  const keywordResultsHeader = document.getElementById('keywordResultsHeader');
- 
-  if(keywordHeader) {	
+const keywordHeader = document.getElementById('keywordHeader');
+const keywordResultsHeader = document.getElementById('keywordResultsHeader');
+const searchLoader = document.getElementById('search-loader');
 
-      let typingTimerKeyword;
-      let currentRequest = null;
-      const typingDelayKeyword = 500;
+if (keywordHeader && keywordResultsHeader) {
 
-      keywordHeader.addEventListener('keyup', function () {
+  let typingTimer = null;
+  let currentController = null;
+  let activeIndex = -1;
 
-        const q = this.value.trim();
-    
-        clearTimeout(typingTimerKeyword);
-    
-        if (q.length < 2) {
-            keywordResultsHeader.innerHTML = '';
-            return;
-        }
+  const typingDelay = 120;
+  const minChars = 2;
 
-        keywordResultsHeader.innerHTML = `
-          <ul class="search-suggestions">
-            <li class="result-item">Searching for "${q}"...</li>
-          </ul>
-      `;
-    
-        typingTimerKeyword = setTimeout(() => {
-    
-            if (currentRequest) {
-                currentRequest.abort();
-            }
-    
-            currentRequest = new AbortController();
-    
-            fetch(`/ajax/keyword-search.php?q=${encodeURIComponent(q)}`, {
-                signal: currentRequest.signal
-            })
-            .then(res => res.json())
-            .then(data => {
+  let lastQuery = '';
+  let lastResponse = null; // 🔥 previous file cache
 
-              let html = '<ul class="search-suggestions">';
+  const searchCache = {}; // exact cache only
 
-              if (data.artists?.length || data.cities?.length || data.venues?.length) {
-    
-                // ARTISTS
-                if (data.artists?.length) {
-                    html += '<li class="suggestion-label">Artists</li>';
-                    data.artists.sort((a, b) => a.name.localeCompare(b.name))
-                    .forEach(item => {
-                        let itemSlug = item.slug.toLowerCase();
-                        html += `
-                            <li class="result-item">
-                              <a href="/artist/${itemSlug}">
-                                ${item.name}
-                              </a>
-                            </li>`;
-                    });
-                }
-    
-                // CITIES
-                if (data.cities?.length) {
-                    html += '<li class="suggestion-label">Cities</li>';
-                    data.cities.sort((a, b) => a.name.localeCompare(b.name))
-                    .forEach(item => {
-                        let itemSlug = item.slug.toLowerCase();
-                        html += `
-                            <li class="result-item">
-                              <a href="/city/${itemSlug}">
-                                ${item.name}${item.state ? ', ' + item.state : ''}
-                              </a>
-                            </li>`;
-                    });
-                }
-    
-                // VENUES
-                if (data.venues?.length) {
-                    html += '<li class="suggestion-label">Venues</li>';
-                    data.venues.sort((a, b) => a.name.localeCompare(b.name))
-                    .forEach(item => {
-                        let itemSlug = item.slug.toLowerCase();
-                        html += `
-                            <li class="result-item">
-                              <a href="/venue/${itemSlug}">
-                                ${item.name}
-                                ${item.city ? `<span class="small text-muted">(${item.city}${item.state ? ', ' + item.state : ''})</span>` : ''}
-                              </a>
-                            </li>`;
-                    });
-                }
-              
-              }else{
-                html += '<li class="result-item">Nothing found</li>';
-              }
-              
-              html += '</ul>';
+  function normalize(q) {
+    return q.trim().replace(/\s+/g, ' ');
+  }
 
-              keywordResultsHeader.innerHTML = html;
-                
-            })
-            .catch(err => {
-                if (err.name !== 'AbortError') {
-                    console.error(err);
-                }
-            });
-    
-        }, typingDelayKeyword);
-    });
+  function showLoader() {
+    if (searchLoader) {
+      searchLoader.style.display = 'block';
+    }
+  }
+  
+  function hideLoader() {
+    if (searchLoader) {
+      searchLoader.style.display = 'none';
+    }
+  }
 
-    document.addEventListener('click', function (e) {
-      if (!keywordHeader.contains(e.target) && !keywordResultsHeader.contains(e.target)) {
-        keywordResultsHeader.innerHTML = '';
+  function closeSuggestions() {
+    activeIndex = -1;
+    keywordResultsHeader.innerHTML = '';
+    keywordResultsHeader.style.display = 'none';
+    keywordHeader.setAttribute('aria-expanded', 'false');
+    keywordHeader.removeAttribute('aria-activedescendant');
+    hideLoader();
+  }
+
+  function showSuggestions() {
+    keywordHeader.setAttribute('aria-expanded', 'true');
+    keywordResultsHeader.style.display = 'block';
+  }
+
+  function createSlug(name, id) {
+    return `${name}-${id}`
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-');
+  }
+
+  function renderResults(data, q) {
+    let html = '<ul class="search-suggestions" role="listbox">';
+
+    if (
+      data.performers.totalResultCount ||
+      data.cities.totalResultCount ||
+      data.venues.totalResultCount
+    ) {
+      var s = 0;
+      if (data.performers.totalResultCount) {
+        html += '<li class="suggestion-label">Performers</li>';
+        data.performers.results.forEach(item => {
+          html += `
+            <li class="result-item" id="suggestion-${s}" role="option" aria-selected="false">
+              <a href="/artist/${createSlug(item.name, item.id)}">
+                ${escapeHtml(item.name)}
+              </a>
+            </li>`;
+            s++;
+        });
       }
-    });
 
-    keywordResultsHeader.addEventListener('click', function (e) {
-      e.stopPropagation();
+      if (data.cities.totalResultCount) {
+        html += '<li class="suggestion-label">Cities</li>';
+        data.cities.results.forEach(item => {
+          html += `
+            <li class="result-item" id="suggestion-${s}" role="option" aria-selected="false">
+              <a href="/city/${createSlug(item.name, item.id)}">
+                ${escapeHtml(item.name)}, ${escapeHtml(item.state || '')}
+              </a>
+            </li>`;
+            s++;
+        });
+      }
+
+      if (data.venues.totalResultCount) {
+        html += '<li class="suggestion-label">Venues</li>';
+        data.venues.results.forEach(item => {
+          html += `
+            <li class="result-item" id="suggestion-${s}" role="option" aria-selected="false">
+              <a href="/venue/${createSlug(item.name, item.id)}">
+                ${escapeHtml(item.name)}
+              </a>
+            </li>`;
+            s++;
+        });
+      }
+
+    } else {
+      html += `<li class="result-item">No results for "${escapeHtml(q)}"</li>`;
+    }
+
+    html += '</ul>';
+
+    keywordResultsHeader.innerHTML = html;
+    showSuggestions();
+    activeIndex = -1;
+  }
+
+  function fetchSuggestions(q) {
+
+    if (q.length < minChars) {
+      closeSuggestions();
+      return;
+    }
+
+    // ✅ exact cache
+    if (searchCache[q]) {
+      hideLoader();
+      renderResults(searchCache[q], q);
+      return;
+    }
+
+    // 🔥 previous response reuse (same as last query)
+    if (q === lastQuery && lastResponse) {
+      hideLoader();
+      renderResults(lastResponse, q);
+      return;
+    }
+
+    // ❌ prevent duplicate calls
+    if (q === lastQuery) return;
+
+    lastQuery = q;
+
+    if (currentController) currentController.abort();
+
+    currentController = new AbortController();
+    showLoader();
+
+    fetch(`/ajax/keyword-search.php?q=${encodeURIComponent(q)}`, {
+      signal: currentController.signal
+    })
+    .then(res => res.json())
+    .then(data => {
+      hideLoader();
+      searchCache[q] = data;   // exact cache
+      lastResponse = data;     // previous file cache
+
+      // ❌ stale response protection
+      if (normalize(keywordHeader.value) !== q) return;
+
+      renderResults(data, q);
+    })
+    .catch(err => {
+      hideLoader();
+      if (err.name !== 'AbortError') console.error(err);
+    });
+  }
+
+  keywordHeader.addEventListener('input', function () {
+
+    const q = normalize(this.value);
+
+    sessionStorage.setItem('last_search', q);
+
+    clearTimeout(typingTimer);
+
+    if (q.length < minChars) {
+      closeSuggestions();
+      return;
+    }
+
+    typingTimer = setTimeout(() => {
+      fetchSuggestions(q);
+    }, typingDelay);
+  });
+
+  keywordHeader.addEventListener('keydown', function (e) {
+
+    const items = keywordResultsHeader.querySelectorAll('.result-item a');
+  
+    if (e.key === 'Escape') {
+      closeSuggestions();
+      return;
+    }
+  
+    if (!items.length) return;
+  
+    if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+      e.preventDefault();
+      activeIndex++;
+      if (activeIndex >= items.length) activeIndex = 0;
+      updateActive(items);
+    }
+  
+    if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+      e.preventDefault();
+      activeIndex--;
+      if (activeIndex < 0) activeIndex = items.length - 1;
+      updateActive(items);
+    }
+  
+    if (e.key === 'Enter') {
+      if (activeIndex >= 0 && items[activeIndex]) {
+        e.preventDefault();
+        window.location.href = items[activeIndex].href;
+      }
+    }
+  
+  });
+
+  function updateActive(items) {
+    items.forEach(el => {
+      el.parentElement.classList.remove('active');
+      el.setAttribute('aria-selected', 'false');
     });
   
+    if (items[activeIndex]) {
+      const activeItem = items[activeIndex];
+  
+      activeItem.parentElement.classList.add('active');
+      activeItem.setAttribute('aria-selected', 'true');
+  
+      keywordHeader.setAttribute(
+        'aria-activedescendant',
+        activeItem.parentElement.id
+      );
+    }
   }
+
+  document.addEventListener('click', function (e) {
+    if (!keywordHeader.contains(e.target) && !keywordResultsHeader.contains(e.target)) {
+      closeSuggestions();
+    }
+  });
+
+  keywordHeader.addEventListener('focus', function () {
+
+    const q = normalize(this.value);
+  
+    if (q.length < minChars) return;
+  
+    // ✅ exact cache
+    if (searchCache[q]) {
+      renderResults(searchCache[q], q);
+      return;
+    }
+  
+    // ✅ previous response reuse
+    if (q === lastQuery && lastResponse) {
+      renderResults(lastResponse, q);
+      return;
+    }
+  
+    // 🔥 fallback: refetch if needed
+    fetchSuggestions(q);
+  });
+
+}
   
   /* =====================================================
      HEADER KEYWORD FIELD End
   ===================================================== */
   
-  /* =====================================================
-     ARTIST FILTER
-  ===================================================== */
-  
-const input = document.getElementById('locationInput');
-const results = document.getElementById('locationResults');
-
-let typingTimer;
-const typingDelay = 400;
-
-if (input) {
-
-    input.addEventListener('click', function () {
-        const q = this.value.trim();
-
-        if (q.length === 0) {
-            results.innerHTML = `
-                <div class="current-location" id="useCurrentLocation">
-                    <i class="bi bi-send ms-1 me-2"></i>
-                    <span class="ms-4 ps-2">Current location</span>
-                </div>
-            `;
-        }
-    });
-
-    input.addEventListener('keyup', function () { 
-
-        clearTimeout(typingTimer);
-
-        const q = this.value.trim();
-
-        if (q.length === 0) {
-            results.innerHTML = `
-                <div class="current-location" id="useCurrentLocation">
-                    <i class="bi bi-send ms-1 me-2"></i>
-                    <span class="ms-4 ps-2">Current location</span>
-                </div>
-            `;
-            return;
-        }
-
-        if (q.length < 2) {
-            results.innerHTML = '';
-            return;
-        }
-
-        typingTimer = setTimeout(() => {
-
-            fetch(`/ajax/location-search.php?q=${encodeURIComponent(q)}`)
-                .then(res => res.json())
-                .then(data => {
-
-                    let html = '<ul>';
-
-                    data.forEach(item => {
-                        html += `<li class="result-item"
-                            data-city="${item.city}"
-                            data-state="${item.state}"
-                            data-zip="${item.zip ?? ''}">
-                            ${item.zip ? item.zip + ', ' : ''}${item.city}, ${item.state}
-                        </li>`;
-                    });
-
-                    html += '</ul>';
-
-                    results.innerHTML = html;
-
-                });
-
-        }, typingDelay);
-    });
-}
-  
-  if(results) {
-      results.addEventListener('click', function (e) {
-  
-          if (e.target.id === 'useCurrentLocation') {
-              getCurrentLocation();
-              return;
-          }
-  
-          const item = e.target.closest('.result-item');
-          if (!item) return;
-  
-          const city  = item.dataset.city;
-          const state = item.dataset.state;
-          const zip   = item.dataset.zip;
-          const cpid  = input.dataset.cpid;
-          const dcat  = input.dataset.dcat;
-  
-          input.value = zip
-              ? `${zip}, ${city}, ${state}`
-              : `${city}, ${state}`;
-  
-          results.innerHTML = '';
-  
-          updateHeading(city, state, zip, dcat);
-  
-          updateEventsSection({ city, state, zip, cpid, dcat });   
-      });
-  }
-  
-  function updateEventsSection(location) {
-      
-      const params = new URLSearchParams();
-  
-      if (location.city)  params.append('city', location.city);
-      if (location.state) params.append('state', location.state);
-      if (location.zip)   params.append('zip', location.zip);
-      if (location.cpid)  params.append('cpid', location.cpid);
-      if (location.lat)   params.append('lat', location.lat);
-      if (location.lng)   params.append('lng', location.lng);
-      if (location.startDate)   params.append('startDate', location.startDate);
-      if (location.endDate)   params.append('endDate', location.endDate);
-  
-      fetch(`/ajax/load-events.php?${params}`)
-          .then(res => res.text())
-          .then(html => {
-              const list = html.split("|");
-              if(list[0] == 'no') {   
-                  input.value = list[1] + ', ' + list[2];             
-                  document.getElementById('location-no-results').innerHTML = '<strong>No ' + location.dcat + ' available in your selected area</strong><p>Try changing locations or browse through the available ' + location.dcat + ' below</p>';
-              }else{
-                  document.getElementById('location-no-results').innerHTML = '';
-                  const temp = document.createElement('div');
-                  temp.innerHTML = html;
-                  const count = temp.querySelectorAll('.performer-event-item').length;
-                  const countmsg = count > 1 ? ' RESULTS' : ' RESULT';
-                  document.getElementById('results_count').innerHTML = count + countmsg;
-                  document.getElementById('eventsSection').innerHTML = html;
-              }
-              if(location.flag !== 'reset' && input.value !== '') {
-                  input.disabled = true;   
-                  const resetBtn = document.getElementById('locationInputReset');
-                  resetBtn.classList.remove('d-none');
-                  resetBtn.addEventListener('click', function () {
-                      input.disabled = false;
-                      input.value = '';
-                      this.classList.add('d-none');       
-                      document.getElementById('location-no-results').innerHTML = '';
-                      document.getElementById('locationHeading').innerHTML = '';
-                      updateEventsSection({ cpid: input.dataset.cpid, flag: 'reset' });
-                  }); 
-              }     
-          })
-      .catch(err => {
-          console.error('Failed to load events', err);
-      }); 
-      
-  }
-  
-  function updateHeading(city, state, zip, dcat) {
-      const heading = document.getElementById('locationHeading');
-      if (!heading) return;
-      if(dcat && (city || state || zip)) {
-          const capitalized = dcat.charAt(0).toUpperCase() + dcat.slice(1);
-          
-          if (zip) {        
-              heading.textContent = `${capitalized} near ${zip}, ${city}, ${state}`;
-          } else if (city && state) {
-              heading.textContent = `${capitalized} near ${city}, ${state}`;
-          } else {
-              heading.textContent = '';
-          }
-      }
-  }
-  
-  document.addEventListener('DOMContentLoaded', () => {
-      updateHeading();
-  });
-  
-  function getCurrentLocation() {
-  
-      if (!navigator.geolocation) {
-          alert('Geocoding is not supported by your browser');
-          return;
-      }
-  
-      results.innerHTML = '';
-      input.value = 'Detecting location...';
-  
-      navigator.geolocation.getCurrentPosition(
-          position => {
-              const lat = position.coords.latitude;
-              const lng = position.coords.longitude;
-  
-              input.value = '';
-  
-              updateHeading(null, null, null, null);
-              updateEventsSection({
-                  lat,
-                  lng,
-                  cpid: input.dataset.cpid,
-                  dcat: input.dataset.dcat
-              });
-          },
-          error => {
-              input.value = '';
-              alert('Unable to access your location');
-          },
-          {
-              enableHighAccuracy: true,
-              timeout: 10000
-          }
-      );
-  }
-  
-  /* Date Range */
-  
-  const startInput = document.getElementById('startInput');
-  const endInput = document.getElementById('endInput');
-  let performerSelectedDatesTemp = [];
-  let selectStart = null;
-  let selectEnd = null;
-  
-  let picker = flatpickr("#performerDatePicker", {
-      mode: "range",
-    minDate: "today",
-      dateFormat: "M j, Y",
-      showMonths: getMonthCount(),
-      disableMobile: true,
-      clickOpens: true,
-  
-      onChange: function(selectedDates) {
-          
-        selectStart = selectedDates[0] || null;
-        selectEnd   = selectedDates[1] || null;
-  
-        const cpid = input.dataset.cpid;
-        const dcat = input.dataset.dcat;
-  
-        if (selectedDates.length === 2) {
-            performerSelectedDatesTemp = selectedDates;
-            const startDate = toApiDate(selectStart);
-            const endDate   = toApiDate(selectEnd);
-  
-            updateHeading(null, null, null, null);
-            updateEventsSection({
-                startDate,
-                endDate,
-                cpid,
-                dcat
-            });
-        }
-      },
-  
-      onReady: function(selectedDates, dateStr, instance) {
-  
-          instance.calendarContainer.classList.add("so-date-picker");
-  
-          const footer = document.createElement("div");
-          footer.className = "fp-footer";
-  
-          footer.innerHTML = `
-              <div class="fp-footer-left">
-                  <button class="fp-reset" id="fp-reset">Reset</button>
-              </div>
-          `;
-  
-          instance.calendarContainer.appendChild(footer);
-  
-          footer.querySelector("#fp-reset").addEventListener("click", () => {
-              instance.clear();
-          });
-      }
-  });
-  
-  window.addEventListener("resize", function () {
-      const newMonthCount = getMonthCount();
-      if (!picker || !picker.config) return;
-      if (picker.config.showMonths !== newMonthCount) {
-          picker.set("showMonths", newMonthCount);
-          picker.redraw();
-      }
-  });
-  
-  /* =====================================================
-     ARTIST FILTER End
-  ===================================================== */
-  
-  /* =====================================================
-     ARTIST SUBMENU SCROLL
-  ===================================================== */
-  
-  function scrollToElement(id) {
-    const target = document.getElementById(id);
-    if (!target) return;
-  
-    const isMobile = window.innerWidth < 992;
-    const offset   = isMobile ? 0 : 92; 
-  
-    const elementPosition = target.getBoundingClientRect().top + window.pageYOffset;
-    const offsetPosition  = elementPosition - offset;
-  
-    window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-    });
-  
-    document.querySelectorAll('#artistTabs .nav-link')
-        .forEach(btn => btn.classList.remove('active'));
-  
-    const activeBtn = document.querySelector(`#artistTabs button[onclick*="${id}"]`);
-    if (activeBtn) activeBtn.classList.add('active');
-  }
-  
-  /* =====================================================
-   ARTIST SUBMENU SCROLL End
-  ===================================================== */
-  
-  /* =====================================================
-   ARTIST PROMOCODES COPY
-  ===================================================== */
-  
-  document.querySelectorAll(".offer-copy-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const code = btn.dataset.code || btn.previousElementSibling.textContent.trim();
-      navigator.clipboard
-        .writeText(code)
-        .then(() => {
-          btn.textContent = "Copied";
-          setTimeout(() => (btn.textContent = "Copy"), 1500);
-        })
-        .catch(() => {
-          alert("Unable to copy code. Please copy manually.");
-        });
-    });
-  });
-  
-  /* =====================================================
-   ARTIST PROMOCODES COPY End
-  ===================================================== */
   
   /* =====================================================
   BACK TO TOP
@@ -1509,192 +1405,3 @@ if (input) {
   /* =====================================================
   BACK TO TOP End
   ===================================================== */
-  
-  /* =====================================================
-     ARTIST EVENTS LOADMORE
-  ===================================================== */
-  
-  const loadMoreBtn = document.getElementById('loadMoreBtn');
-  const backToTopBtn = document.getElementById('backToTopJs');
-  const eventsSection = document.getElementById('eventsSection');
-  const progressBar = document.getElementById('progressBar');
-  const loadedCount = document.getElementById('loadedCount');
-  
-  if (loadMoreBtn) {
-      loadMoreBtn.addEventListener('click', function () {
-          const page        = this.dataset.page;
-          const performerId = this.dataset.performer;
-          const perPage     = this.dataset.perpage;
-          const total     = this.dataset.total;
-          let params = this.dataset.params;
-          
-          this.disabled = true;
-          loadMoreBtn.querySelector('#btnSpinner').classList.remove('d-none');
-            if(performerId) {
-                fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&performerId=${performerId}`;
-            }else{
-                fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&params=${encodeURIComponent(params)}`;
-            }
-            
-          fetch(fetchUrl)
-              .then(res => res.json())
-              .then(data => {
-                    
-                  data.events.forEach(event => {
-                      eventsSection.insertAdjacentHTML('beforeend', renderEvent(event));
-                  });
-  
-                  let loaded = eventsSection.querySelectorAll('.performer-event-item').length;
-                  const countmsg = loaded === 1 ? ' RESULT' : ' RESULTS';
-                  document.getElementById('results_count').innerHTML = loaded + countmsg;
-  
-                  if (data.hasMore) { 
-                      loadMoreBtn.dataset.page = data.nextPage;   
-                      loadMoreBtn.disabled = false;                 
-                      loadMoreBtn.querySelector('#btnSpinner').classList.add('d-none');
-                  } else {
-                      loadMoreBtn.classList.add('d-none');
-                      backToTopBtn.classList.remove('d-none');
-                  }
-                  loaded = Math.min(loaded, total);
-                  const percent = (loaded / total) * 100;
-                  progressBar.style.width = percent + '%';
-                  loadedCount.textContent = loaded;
-              });
-      });
-  }
-  
-  if (backToTopBtn) { 
-      backToTopBtn.addEventListener('click', () => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-  }
-  
-  function renderEvent(event) {
-      const evtdate = new Date(event.date.date);
-      const emonth = evtdate.toLocaleString('en-US', { month: 'short' });
-      const edate = evtdate.getDate();
-      const eday = evtdate.toLocaleString('en-US', { weekday: 'short' });
-      const year = evtdate.getFullYear();
-      let y = '';
-      if(year > new Date().getFullYear()) { 
-          y = '<div class="month">'+year+'</div>';
-      }
-      const formattedDate = evtdate.toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: '2-digit'
-      });
-      const eperformers = event.performers;
-      let dataPerformers = [];
-      if(eperformers) {
-        let names = eperformers.map(performer => performer.name ?? null).filter(Boolean);
-        dataPerformers = names.join('|');
-      }
-      return `
-          <div class="d-flex align-items-center justify-content-between performer-event-item">
-              <div class="date-box text-center me-3">
-                  <div class="month">${emonth.toUpperCase()}</div>
-                  <div class="day">${edate}</div>
-                  ${y}
-              </div>
-              <div class="flex-grow-1 w-50">
-                  <div class="d-flex align-items-center gap-2">
-                      <span class="fw-semibold day-weeks">${eday}</span>
-                      <span class="dot">·</span>
-                      <span class="time-clock">${event.date.text.time}</span>
-                      <i class="bi bi-info-circle text-muted icon-i" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight" 
-                      data-id="${event.id}" data-date="${formattedDate}" data-venue="${event.venue.text.name}" 
-                      data-location="${event.city.text.name}, ${event.stateProvince.text.abbr}" data-title="${event.text.name}" data-performers="${dataPerformers}"></i>
-                  </div>
-                  <div class="fw-semibold location-venue-name">
-                      <a href="#">${event.city.text.name}, ${event.stateProvince.text.abbr}</a> · <a href="#">${event.venue.text.name}</a>
-                  </div>
-                  <div class="text-muted small">
-                      <a href="/event.php?id=${event.id}">${event.text.name}</a>
-                  </div>
-              </div>
-              <div class="ms-3">
-                  <a href="/event.php?id=${event.id}" class="btn btn-primary d-flex align-items-center gap-2">
-                      <span class="d-none d-md-inline">
-                          Find Tickets
-                      </span>
-                      <i class="bi bi-chevron-right"></i>
-                  </a>
-              </div>
-          </div>
-      `;
-  }
-  
-  /* =====================================================
-     ARTIST EVENTS LOADMORE End
-  ===================================================== */
-  
-  /* =====================================================
-     ARTIST EVENTS POPUP
-  ===================================================== */
-  
-  document.addEventListener('click', function (e) {
-    const icon = e.target.closest('[data-bs-toggle="offcanvas"]');
-    if (!icon) return;
-  
-    const eid = icon.getAttribute('data-id');
-    const edate = icon.getAttribute('data-date');
-    const evenue = icon.getAttribute('data-venue');
-    const elocation = icon.getAttribute('data-location');
-    const etitle = icon.getAttribute('data-title');
-    const eperformers = icon.getAttribute('data-performers');
-  
-    document.getElementById('offcanvasDate').textContent = edate;
-    document.getElementById('offcanvasVenue').innerHTML = evenue;
-    document.getElementById('offcanvasLocation').innerHTML = elocation;
-    document.getElementById('offcanvasTitle').innerHTML = etitle;
-    document.getElementById('offcanvasId').href = '/event.php?id=' + eid;
-    const eplist = document.getElementById('offcanvasPerformers');
-    eplist.innerHTML = '';
-    eperformers.split('|').forEach(name => {
-        const li = document.createElement('li');
-        li.innerHTML = `<a href="#">${name.trim()}</a>`;
-        eplist.appendChild(li);
-    });
-    document.getElementById('venue-link').innerHTML = evenue;
-  });
-  
-  /* =====================================================
-   ARTIST EVENTS POPUP End
-  ===================================================== */
-  
-  /* =====================================================
-     ARTIST SUBMENU CHANGE ON SCROLL
-  ===================================================== */
-  
-  const tabs = document.querySelectorAll('#artistTabs .nav-link');
-  const sections = document.querySelectorAll('.tab-section');
-  const offset = 120;
-  
-  window.addEventListener('scroll', () => {
-      let currentId = null;
-  
-      sections.forEach(section => {
-          const rect = section.getBoundingClientRect();
-          if (rect.top <= offset && rect.bottom > offset) {
-              currentId = section.id;
-          }
-      });
-  
-      if (currentId) {
-          tabs.forEach(tab => {
-              tab.classList.toggle(
-                  'active',
-                  tab.dataset.target === currentId
-              );
-          });
-      }
-  });
-  
-  /* =====================================================
-     ARTIST SUBMENU CHANGE ON SCROLL End
-  ===================================================== */
-  
-  
-  

@@ -641,101 +641,64 @@ function getPerformerUriComponent($performerId, $key = 'uriComponent') {
 }
 
 function getKeywordSearchSuggestions($q) {
+
     $q = trim($q);
 
-    if (strlen($q) < 2) {
-        return [];
-    }
-
-    $results = [
-        'artists' => [],
-        'cities'  => [],
-        'venues'  => []
+    $params = [
+        'q' => $q,
+        'performersRequested' => 5,
+        'venuesRequested' => 5,
+        'citiesRequested' => 5
     ];
 
-    /*
-    ==========================
-    ARTISTS
-    ==========================
-    */
-   
-    $artistParams = [
-        'filter' => "startswith(text/name,'$q')",
-        'sort' => 'salesRank',
-        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
-        'perPage' => 10
-    ];
+    $url = BASE_URL . '/catalog/v2/suggest?' . http_build_query($params);
 
-    $artistUrl = BASE_URL . '/catalog/v2/performers/?' . http_build_query($artistParams);    
+    $accessToken = getTnAccessToken();
 
-    $artistData = tnCurlRequest($artistUrl);
+    $ch = curl_init($url);
 
-    if (!empty($artistData['results'])) {
-        foreach ($artistData['results'] as $artist) {
-            $results['artists'][] = [
-                'id'   => $artist['id'] ?? '',
-                'name' => $artist['text']['name'] ?? '',
-                'slug' => $artist['uriComponent'] ?? ''
-            ];
-        }
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_CONNECTTIMEOUT => 5
+    ]);
+
+    $response = curl_exec($ch);
+
+    // 🔴 CURL error (timeout, DNS, etc.)
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return getEmptySuggestionResponse();
     }
 
-    /*
-    ==========================
-    CITIES
-    ==========================
-    */
-    $cityParams = [
-        'filter' => "startswith(text/name,'$q')",
-        'sort' => 'salesRank',
-        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
-        'perPage' => 10
-    ];
-    
-    $cityUrl = BASE_URL . '/catalog/v2/cities/?' . http_build_query($cityParams);
+    // 🔥 HTTP status check
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-    $cityData = tnCurlRequest($cityUrl);
+    curl_close($ch);
 
-    if (!empty($cityData['results'])) {
-        foreach ($cityData['results'] as $city) {
-            $results['cities'][] = [
-                'id'   => $city['id'] ?? '',
-                'name' => $city['text']['name'] ?? '',
-                'state' => $city['stateProvince']['text']['abbr'] ?? '',
-                'slug' => $city['uriComponent'] ?? ''
-            ];
-        }
+    // 🔴 Handle TicketNetwork API errors (500, 502, 503, etc.)
+    if ($httpCode >= 500 || $httpCode >= 400) {
+        return getEmptySuggestionResponse();
     }
 
-    /*
-    ==========================
-    VENUES
-    ==========================
-    */
-    $venueParams = [
-        'filter' => "startswith(text/name,'$q')",
-        'sort' => 'salesRank',
-        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
-        'perPage' => 10
-    ];
-
-    $venueUrl = BASE_URL . '/catalog/v2/venues/?' . http_build_query($venueParams);
-
-    $venueData = tnCurlRequest($venueUrl);
-
-    if (!empty($venueData['results'])) {
-        foreach ($venueData['results'] as $venue) {
-            $results['venues'][] = [
-                'id'    => $venue['id'] ?? '',
-                'name'  => $venue['text']['name'] ?? '',
-                'city'  => $venue['city']['text']['name'] ?? '',
-                'state' => $venue['stateProvince']['text']['abbr'] ?? '',
-                'slug'  => $venue['uriComponent'] ?? ''
-            ];
-        }
+    // 🔴 Empty response
+    if (!$response) {
+        return getEmptySuggestionResponse();
     }
 
-    return $results;
+    $data = json_decode($response, true);
+
+    // 🔴 Invalid JSON
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return getEmptySuggestionResponse();
+    }
+
+    return $data;
 }
 
 function tnCurlRequest($url) {
@@ -760,11 +723,58 @@ function tnCurlRequest($url) {
     return json_decode($response, true);
 }
 
+function getEmptySuggestionResponse() {
+    return [
+        'performers' => [
+            'totalResultCount' => 0,
+            'results' => []
+        ],
+        'venues' => [
+            'totalResultCount' => 0,
+            'results' => []
+        ],
+        'cities' => [
+            'totalResultCount' => 0,
+            'results' => []
+        ]
+    ];
+}
+
 function getHeaderSearchEvents($params = []) {
 
     $accessToken = getTnAccessToken();
 
     $url = BASE_URL . '/catalog/v2/events/search';
+
+    if (!empty($params)) {
+        $url .= '?' . http_build_query($params);
+    }
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20
+    ]);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    return $data ?? [];
+}
+
+function getLoadMoreEvents($params = []) {
+
+    $accessToken = getTnAccessToken();
+
+    $url = BASE_URL . '/catalog/v2/events';
 
     if (!empty($params)) {
         $url .= '?' . http_build_query($params);
@@ -887,7 +897,7 @@ function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, $limit = 12
         $lng = floatval($loc2);
         $params = [
             'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
-            'geoFilter' => sprintf('nearby(%F,%F,10mi)', $lat, $lng),
+            'geoFilter' => sprintf('nearby(%F,%F,50mi)', $lat, $lng),
             'perPage' => $limit
         ];
     }else{
@@ -1634,6 +1644,12 @@ function getEventImage($artist, $defaultCategory, $event, $tab) {
         $artistImage = getWikimediaImage($artist);
         if ($artistImage) {
             return processAndStoreImage($artistImage, $artist, 'artists');
+        /*}else{
+            $results = openverse_search($artist);
+            $image = pickBestImage($results, $artist);
+            if($image) {
+                return processAndStoreImage($image, $artist, 'artists');
+            }*/
         }
     }
 
@@ -1650,6 +1666,12 @@ function getArtistImage($artist, $defaultCategory) {
     $artistImage = getWikimediaImage($artist);
     if ($artistImage) {
         return processAndStoreImage($artistImage, $artist, 'artists');
+    /*}else{
+        $results = openverse_search($artist);
+        $image = pickBestImage($results, $artist);
+        if($image) {
+            return processAndStoreImage($image, $artist, 'artists');
+        }*/
     }
     $ancestors = $defaultCategory['ancestors'];
     foreach ($ancestors as $ancestor) {
@@ -1672,6 +1694,12 @@ function getVenueImage($venue) {
     $venueImage = getWikimediaImage($venue);
     if ($venueImage) {
         return processAndStoreImage($venueImage, $venue, 'venues');
+    }else{
+        $results = openverse_search($venue);
+        $image = pickBestImage($results, $venue);
+        if($image) {
+            return processAndStoreImage($image, $venue, 'venues');
+        }
     }
 
     return '';
@@ -1690,8 +1718,9 @@ function convertToFloat($value) {
 }
 
 function searchSuggestions($q, $type) {
+    
     $params = [
-        'filter' => "startswith(text/name,'$q')",
+        'filter' => "contains(text/name,'$q')",
         'perPage' => 10
     ];
 
@@ -1724,4 +1753,94 @@ function searchSuggestions($q, $type) {
         }
     }
     return $suggestions ?? [];
+}
+
+function displayPHPErrors() {
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+    error_reporting(E_ALL);
+}
+
+function openverse_search($q) {
+
+    $url = "https://api.openverse.engineering/v1/images?q=". urlencode($q) . "&page_size=10";
+
+    $response = file_get_contents($url);
+
+    if (!$response) return [];
+
+    $data = json_decode($response, true);
+
+    return $data['results'] ?? [];
+}
+
+function pickBestImage($results, $name) {
+
+    $name = strtolower(str_replace(' ', '', $name));
+
+    foreach ($results as $img) {
+        $tags  = array_map(function($t) {
+            return strtolower($t['name']);
+        }, $img['tags'] ?? []);
+
+        if(!empty($tags) && in_array($name, $tags)) {
+            return $img['thumbnail'];
+        }
+    }
+
+    return $results[0]['thumbnail'] ?? '';
+}
+
+function getTnCityEvents($cityId = 0, $params = []) {
+
+    $today = date('Y-m-d');
+    if ($cityId > 0) {
+        $params['filter'] = "city/id eq $cityId and date/date ge $today";
+    }
+
+    return tnRequest('/catalog/v2/events/', $params);
+}
+
+function getTnCityEventsCount($cityId = 0, $params = []) {
+    
+    $today = date('Y-m-d');
+    if ($cityId > 0) {
+        $params['filter'] = "city/id eq $cityId and date/date ge $today";
+    }
+
+    $params['page']    = 1;
+    $params['perPage'] = 500;
+
+    $json = tnRequest('/catalog/v2/events/', $params);
+
+    $count = (int) ($json['count'] ?? 0);
+
+    return $count;
+}
+
+function getTnVenueEvents($venueId = 0, $params = []) {
+
+    $today = date('Y-m-d');
+    if ($venueId > 0) {
+        $params['filter'] = "venue/id eq $venueId and date/date ge $today";
+    }
+
+    return tnRequest('/catalog/v2/events/', $params);
+}
+
+function getTnVenueEventsCount($venueId = 0, $params = []) {
+    
+    $today = date('Y-m-d');
+    if ($venueId > 0) {
+        $params['filter'] = "venue/id eq $venueId and date/date ge $today";
+    }
+
+    $params['page']    = 1;
+    $params['perPage'] = 500;
+
+    $json = tnRequest('/catalog/v2/events/', $params);
+
+    $count = (int) ($json['count'] ?? 0);
+
+    return $count;
 }

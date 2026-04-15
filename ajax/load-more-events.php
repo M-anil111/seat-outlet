@@ -7,6 +7,7 @@ header('Content-Type: application/json; charset=UTF-8');
 $page       = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage    = isset($_GET['perPage']) ? max(1, min(100, (int) $_GET['perPage'])) : 2;
 $performerId= isset($_GET['performerId']) ? max(0, (int) $_GET['performerId']) : 0;
+$type       = isset($_GET['type']) ? $_GET['type'] : '';
 
 try {
     if($performerId) {
@@ -27,8 +28,11 @@ try {
         $params['perPage'] = $perPage;
 
         //echo json_encode($params);
-
-        $response = getHeaderSearchEvents($params);
+        if($type == 'search') {
+            $response = getHeaderSearchEvents($params);
+        }else{
+            $response = getLoadMoreEvents($params);
+        }        
         $total_count = $response['totalCount'];
         $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
     }

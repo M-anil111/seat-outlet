@@ -5,9 +5,9 @@ include 'header.php';
 
 <!-- Top Picks Section -->
 <section class="container pt-5">
-  <div class="mb-3">
+  <div class="mb-lg-4 mb-3 pb-2">
     <div class="location-selector-wrapper d-flex flex-wrap align-items-center justify-content-between">
-      <h2 class="fw-bold fs-4 mb-0">Our Top Picks Near </h2>
+      <h2 class="fw-bold fs-4 mb-0">Our Top Picks Near <span id="nearLocationText"></span></h2>
       <div class="so-right-searchbar">
       <button type="button" class="location-selector" id="locationToggleBtn">
         <span class="location-selector-link" id="locationSelectorText">Select your location <i class="bi bi-chevron-down"></i></span>
@@ -46,10 +46,10 @@ include 'header.php';
     </div>
   </div>
 
-  <div class="category-scroll-wrapper">
+  <div class="category-scroll-wrapper mb-2">
 
     <!-- Nav Pills -->
-    <ul class="nav category-scroll nav-pills mb-3" id="pills-tab" role="tablist">
+    <ul class="nav category-scroll nav-pills" id="pills-tab" role="tablist">
 
       <li class="nav-item">
         <button class="category-pill active" data-bs-toggle="pill" data-bs-target="#concerts" type="button">Concerts</button>
@@ -69,21 +69,21 @@ include 'header.php';
     </ul>
     </div>
 
-    <div class="tab-content">
+    <div class="tab-content top-picks">
       <div class="tab-pane show active" id="concerts">
-        <div class="custom-slider new-left-right"><?php renderSkeletonCardsEvents(4); ?></div>
+        <div class="custom-slider new-left-right new-slider "><?php renderSkeletonCardsEvents(4); ?></div>
       </div>
 
       <div class="tab-pane" id="sports">
-        <div class="custom-slider new-left-right"></div>
+        <div class="custom-slider new-left-right new-slider"></div>
       </div>
 
       <div class="tab-pane" id="theatre">
-        <div class="custom-slider new-left-right"></div>
+        <div class="custom-slider new-left-right new-slider"></div>
       </div>
 
       <div class="tab-pane" id="festival">
-        <div class="custom-slider new-left-right"></div>
+        <div class="custom-slider new-left-right new-slider"></div>
       </div>
     </div>
 
@@ -94,16 +94,16 @@ include 'header.php';
 <section class="py-3">
   <div class="container my-5">
     <div class="experience-section">
-      <div class="row align-items-center g-4">
+      <div class="row align-items-center g-xxl-4 g-xl-3 g-lg-2 g-3">
 
         <!-- Left Heading -->
         <div class="col-lg-3">
-          <h3 class="fw-bold mb-0 so-experieance">Experience<br class="so-nobrake"> it live.</h3>
+          <h3 class="fw-bold mb-lg-0 mb-3 so-experieance">Experience<br class="so-nobrake"> it live.</h3>
         </div>
 
         <!-- Feature 1 -->
-        <div class="col-lg-3 col-md-6">
-          <div class="feature-box d-flex align-items-center">
+        <div class="col-lg-3 col-md-4 col-sm-6">
+          <div class="feature-box d-flex">
             <i class="bi bi-star-fill text-white feature-icon"></i>
             <div>
               <div class="fw-bold">Rated Great</div>
@@ -113,8 +113,8 @@ include 'header.php';
         </div>
 
         <!-- Feature 2 -->
-        <div class="col-lg-3 col-md-6">
-          <div class="feature-box d-flex align-items-center">
+        <div class="col-lg-3 col-md-4 col-sm-6">
+          <div class="feature-box d-flex">
             <i class="bi bi-shield-check text-white feature-icon"></i>
             <div>
               <div class="fw-bold">Over 140 million tickets</div>
@@ -124,8 +124,8 @@ include 'header.php';
         </div>
 
         <!-- Feature 3 -->
-        <div class="col-lg-3 col-md-6">
-          <div class="feature-box d-flex align-items-center">
+        <div class="col-lg-3 col-md-4 col-sm-6">
+          <div class="feature-box d-flex">
             <i class="bi bi-gift-fill text-white feature-icon"></i>
             <div>
               <div class="fw-bold">Rewarding your loyalty</div>
@@ -315,7 +315,7 @@ include 'header.php';
 <section class="section categories teams-nearby py-5">
   <div class="container">
     <h2 class="section__title section__title--center fw-bold fs-4 mb-4">
-      Browse by Category
+      Browse by Categories
     </h2>
     <div class="categories__grid">
       <div class="categories__col">
@@ -382,52 +382,52 @@ include 'header.php';
     <div id="browseCitiesWrapper">
       <div class="row g-3">
           <div class="col-auto">
-              <a href="#" class="city-pill">New York, NY</a>
+              <a href="/city/new-york-3027" class="city-pill">New York, NY</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Los Angeles, CA</a>
+              <a href="/city/los-angeles-2551" class="city-pill">Los Angeles, CA</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Chicago, IL</a>
+              <a href="/city/chicago-915" class="city-pill">Chicago, IL</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Houston, TX</a>
+              <a href="/city/houston-2013" class="city-pill">Houston, TX</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Phoenix, AZ</a>
+              <a href="/city/phoenix-3396" class="city-pill">Phoenix, AZ</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Philadelphia, PA</a>
+              <a href="/city/philadelphia-3394" class="city-pill">Philadelphia, PA</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">San Antonio, TX</a>
+              <a href="/city/san-antonio-3846" class="city-pill">San Antonio, TX</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">San Diego, CA</a>
+              <a href="/city/san-diego-3854" class="city-pill">San Diego, CA</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Dallas, TX</a>
+              <a href="/city/dallas-1121" class="city-pill">Dallas, TX</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Jacksonville, FL</a>
+              <a href="/city/jacksonville-2108" class="city-pill">Jacksonville, FL</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Fort Worth, TX</a>
+              <a href="/city/fort-worth-1558" class="city-pill">Fort Worth, TX</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">San Jose, CA</a>
+              <a href="/city/san-jose-3862" class="city-pill">San Jose, CA</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Austin, TX</a>
+              <a href="/city/austin-247" class="city-pill">Austin, TX</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Charlotte, NC</a>
+              <a href="/city/charlotte-880" class="city-pill">Charlotte, NC</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Columbus, OH</a>
+              <a href="/city/columbus-1025" class="city-pill">Columbus, OH</a>
           </div>
           <div class="col-auto">
-              <a href="#" class="city-pill">Indianapolis, IN</a>
+              <a href="/city/indianapolis-2061" class="city-pill">Indianapolis, IN</a>
           </div>
       </div>
     </div>

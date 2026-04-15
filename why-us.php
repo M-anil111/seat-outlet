@@ -5,7 +5,7 @@
     <div class="container">
         <div class="row">
   <div class="hero-left col-lg-6 col-xl-6 col-xxl-6">
-    <h1>Why<br>Ticketmaster</h1>
+    <h1>Why<br>SeatOutlet</h1>
     <p>You know every beat of your business: never stopping, powering through late nights and record-breaking weekends. So you deserve a partner that can support you — through every event, every game and every show.</p>
     <a href="#" class="btn-work">Work With Us</a>
   </div>
@@ -53,7 +53,7 @@
   <div class="card-stat white-bg">
     <div>
       <div class="stat-big">1976</div>
-      <div class="stat-sublabel">Year Ticketmaster Was Founded</div>
+      <div class="stat-sublabel">Year SeatOutlet Was Founded</div>
     </div>
   </div>
   <div class="card-text dark">
@@ -113,8 +113,8 @@
       </div>
       <div class="article-card-content">
         <div class="article-type">Article</div>
-        <div class="article-title">Kicking Off STEM Learning: LAFC, Learn Fresh And Ticketmaster</div>
-        <div class="article-excerpt">At Ticketmaster, our commitment to live events extends beyond the venue to creating meaningful community impact. This season, we partnered wi…</div>
+        <div class="article-title">Kicking Off STEM Learning: LAFC, Learn Fresh And SeatOutlet</div>
+        <div class="article-excerpt">At SeatOutlet, our commitment to live events extends beyond the venue to creating meaningful community impact. This season, we partnered wi…</div>
         <a href="#" class="article-link">View Insight <span class="arrow">→</span></a>
       </div>
     </div>
@@ -126,8 +126,8 @@
       </div>
       <div class="article-card-content">
         <div class="article-type" style="color:rgba(255,255,255,0.7);">Article</div>
-        <div class="article-title">Ticketmaster And New York Jets Team Up With Soldiers To Sidelines</div>
-        <div class="article-excerpt">As part of the NFL's Salute to Service initiative, Ticketmaster and the New York Jets supported over 100 veterans and service members as they…</div>
+        <div class="article-title">SeatOutlet And New York Jets Team Up With Soldiers To Sidelines</div>
+        <div class="article-excerpt">As part of the NFL's Salute to Service initiative, SeatOutlet and the New York Jets supported over 100 veterans and service members as they…</div>
         <a href="#" class="article-link">View Insight <span class="arrow">→</span></a>
       </div>
     </div>

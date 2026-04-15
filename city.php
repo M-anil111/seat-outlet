@@ -1,170 +1,40 @@
 <?php 
-
-
-$params = [];
-$filterParts = [];
-$artistData = [];
-$venueData = [];
-$keywordHeader = '';
-
-/*
-|--------------------------------------------------------------------------
-| GEO FILTER
-|--------------------------------------------------------------------------
-*/
-if (
-    isset($_POST['latHeader'], $_POST['lngHeader'], $_POST['locationInputHeader']) &&
-    $_POST['latHeader'] !== '' && $_POST['lngHeader'] !== '' &&
-	$_POST['locationInputHeader'] !== ''
-) {
-	$lat = floatval($_POST['latHeader']);
-    $lng = floatval($_POST['lngHeader']);
-    $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $lat, $lng);
-}
-
-/*
-|--------------------------------------------------------------------------
-| KEYWORD FILTER
-|--------------------------------------------------------------------------
-*/
-
-if (
-	isset($_POST['keywordHeader']) &&
-	$_POST['keywordHeader'] !== ''
-) {
-	$keywordHeader = $_POST['keywordHeader'];
-	$keywordTitle = ucfirst(strtolower($keywordHeader));
-	$params['q'] = $keywordHeader;
-}else{
-	$params['q'] = "*";
-}
-
-/*
-|--------------------------------------------------------------------------
-| DATE FILTER
-|--------------------------------------------------------------------------
-*/
-if (
-	isset($_POST['startInputHeader'], $_POST['endInputHeader']) &&
-	$_POST['startInputHeader'] !== '' &&
-    $_POST['endInputHeader'] !== ''
-) {
-	$startTimestamp = strtotime($_POST['startInputHeader']);
-    $endTimestamp   = strtotime($_POST['endInputHeader']);
-
-    if ($startTimestamp && $endTimestamp) {
-        $startDate = date('Y-m-d', $startTimestamp);
-        $endDate   = date('Y-m-d', $endTimestamp);
-        $filterParts[] = "date/date ge $startDate and date/date le $endDate";
-    }
-}else{
-	$currDate = date('Y-m-d');
-	$filterParts[] = "date/date ge $currDate";
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| COMBINE FILTERS
-|--------------------------------------------------------------------------
-*/
-if (!empty($filterParts)) {
-    $params['filter'] = implode(' and ', $filterParts);
-}
-$perPage = 20;
-$params['page'] = 1;
-$params['perPage'] = $perPage;
-$params['sort'] = 'date/date';
-
 include 'header.php'; 
 
-$year = date('Y');
-$results = getHeaderSearchEvents($params);
-$total_count = $results['totalCount'];
-$total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-$events = $results['results'];
-$count = count($events);
-$percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
-if(!empty($keywordHeader)) {
-	$artistData = searchSuggestions($keywordHeader, 'performers');
-	$venueData = searchSuggestions($keywordHeader, 'venues');
+// Sanitize and normalize pagination.
+$page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+$perPage = 20;
+
+// Extract performer ID from slug; expect a trailing numeric ID.
+$slug  = $_GET['slug'] ?? '';
+$parts = explode('-', (string) $slug);
+$id    = (int) end($parts);
+
+if ($id <= 0) {
+	echo '<div class="container"><p>Invalid city.</p></div>';
+	include 'footer.php';
+	exit;
 }
-$faqs = getFaqs($mysqli, 'search');
+
+$today = date('Y-m-d');
+$params = [
+    'filter' => "city/id eq $id and date/date ge $today",
+];
+$eventsResponse = getTnCityEvents($id, ['perPage' => $perPage, 'page' => 1]);
+
+$total_count = getTnCityEventsCount($id);
+$total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
+
+$events = $eventsResponse['results'] ?? [];
+$count  = $eventsResponse['count'] ?? count($events);
+
+$percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
+$year = date('Y');
 ?>
 
 <section>
 	<div class="container">
-
-		<?php if(!empty($artistData) || !empty($venueData)) { ?>
-			<div class="section-suggestions new-slider py-5">
-				<h2 class="fw-bold fs-4 mb-4">Top Suggestions</h2>			
-				<div class="suggestion-slider px-4">
-					<?php if(!empty($artistData)) { ?>
-						<?php foreach($artistData as $artistItem) { 
-							$defaultCategory = $artistItem['cat'];
-							$artistImage = getArtistImage($artistItem['name'], $defaultCategory);	
-							if(empty($artistImage)) continue;
-							$subcategory = '';
-							if (!empty($defaultCategory)) {
-								if ($defaultCategory['depth'] == 2) {
-									$subcategory = $defaultCategory['text']['name'];
-								} else {
-									if (!empty($defaultCategory['ancestors'])) {
-										foreach ($defaultCategory['ancestors'] as $ancestor) {
-											if ($ancestor['depth'] == 2) {
-												$subcategory = $ancestor['text']['name'];
-												break;
-											}
-										}										
-									}
-								}	
-								if(empty($subcategory) || $subcategory == 'OTHER') {
-									foreach ($defaultCategory['ancestors'] as $ancestor) {
-										if ($ancestor['depth'] == 1) {
-											$subcategory = $ancestor['text']['name'];
-											break;
-										}
-									}
-								}							
-							}
-						?>
-							<a href="/artist/<?php echo strtolower($artistItem['slug']); ?>" class="team-link">
-								<div class="card venue-card">
-									<div class="venue-img">
-										<img src="<?php echo $artistImage; ?>" alt="<?php echo $artistItem['name']; ?>" class="img-fluid">
-									</div>
-									<div class="venue-content text-center">
-										<h5 class="venue-title"><?php echo $artistItem['name']; ?></h5>
-										<p class="venue-location mb-0"><?php echo ucfirst(strtolower($subcategory)); ?></p>
-									</div>
-								</div>
-							</a>
-						<?php } ?>
-					<?php } ?>
-					<?php if(!empty($venueData)) { ?>
-						<?php foreach($venueData as $venueItem) { 
-							$venueImage = getVenueImage($venueItem['name']);
-							if(empty($venueImage)) continue;					
-						?>
-							<a href="/venue/<?php echo strtolower($venueItem['slug']); ?>" class="team-link">
-								<div class="card venue-card">
-									<div class="venue-img">
-										<img src="<?php echo $venueImage; ?>" alt="<?php echo $venueItem['name']; ?>" class="img-fluid">
-									</div>
-									<div class="venue-content text-center">
-										<h5 class="venue-title"><?php echo $venueItem['name']; ?></h5>
-										<p class="venue-location mb-0"><?php echo $venueItem['city'] . ', ' . $venueItem['state']; ?></p>
-									</div>
-								</div>
-							</a>
-						<?php } ?>
-					<?php } ?>							
-				</div>
-			</div>
-		<?php } ?>
-
-
-        <div class="tab-section section-performer-content" id="default">
+		<div class="tab-section section-performer-content" id="default">
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">
 					<div class="mb-3 mb-md-4 mb-lg-4">
@@ -266,7 +136,6 @@ $faqs = getFaqs($mysqli, 'search');
 										class="btn more-events-btn d-inline-flex align-items-center gap-2"
 										id="loadMoreBtn"
 										data-total="<?php echo (int) $total_count; ?>"
-										data-type="search"
 										data-page="2"
 										data-params="<?php echo htmlspecialchars(json_encode($params), ENT_QUOTES, 'UTF-8'); ?>"
 										data-perpage="<?php echo (int) $perPage; ?>">
@@ -365,41 +234,6 @@ $faqs = getFaqs($mysqli, 'search');
 				</div>
 			</div>
 		</div>
-		<?php if (!empty($faqs)) { ?>
-			<div class="tab-section content-section-detail" id="faqs">
-				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo $artistName; ?> Events</h2>
-				<div class="accordion" id="faqAccordion">
-					<?php foreach ($faqs as $index => $faq) {
-						$collapseId = 'collapse' . $index;
-						$headingId  = 'heading' . $index;
-						$question = str_replace('[artist_name]', $artistName, $faq['question']);
-						$answer   = str_replace('[artist_name]', $artistName, $faq['answer']);
-						$isFirst = ($index === 0);
-					?>
-						<div class="accordion-item">
-							<h2 class="accordion-header" id="<?php echo $headingId; ?>">
-								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>" 
-										type="button"
-										data-bs-toggle="collapse"
-										data-bs-target="#<?php echo $collapseId; ?>"
-										aria-expanded="<?php echo $isFirst ? 'true' : 'false'; ?>"
-										aria-controls="<?php echo $collapseId; ?>">
-									<?php echo $question; ?>
-								</button>
-							</h2>
-							<div id="<?php echo $collapseId; ?>" 
-								class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>" 
-								aria-labelledby="<?php echo $headingId; ?>" 
-								data-bs-parent="#faqAccordion">
-								<div class="accordion-body">
-									<?php echo nl2br($answer); ?>
-								</div>
-							</div>
-						</div>
-					<?php } ?>
-				</div>
-			</div>
-		<?php } ?>
 	</div>
 </section>
 
