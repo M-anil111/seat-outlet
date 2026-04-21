@@ -4,7 +4,7 @@
 
     <!-- Column 1 -->
     <div class="tm-footer-col brand">
-      <div class="logo fs-2" style="width:256px; height:auto;"> <a href="/" class="tm-logo"><img src="../assets/seatoutlet-logo.svg"></a></div>
+      <div class="logo fs-2" style="width:256px; height:auto;"> <a href="/" class="tm-logo"><img src="../assets/seatoutlet-logo.svg" alt="Seat Outlet" width="256" height="38"></a></div>
 
       <p class="section-title">Let’s connect</p>
       <div class="social-icons">
@@ -114,7 +114,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/flatpickr/dist/esm/index.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
 <script src="<?php echo HOME_URL; ?>/js/home.js?v=<?php echo time(); ?>"></script>

@@ -16,6 +16,8 @@ if ($id <= 0) {
 	exit;
 }
 
+$venue = getTnVenueById($id);
+
 $today = date('Y-m-d');
 $params = [
     'filter' => "venue/id eq $id and date/date ge $today",
@@ -42,7 +44,7 @@ $year = date('Y');
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h2>
-									EVENTS <span class="dot">·</span>
+									EVENTS at <?php echo $venue['text']['name'] . ' - ' . $venue['city']['text']['name'] . ', ' . $venue['stateProvince']['text']['abbr']; ?> <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $total_count; ?>
 										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>

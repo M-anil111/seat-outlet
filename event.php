@@ -41,7 +41,7 @@
  <div class="hero">
     <div class="hero-content">
         <h1><?php echo $eventNameSafe; ?></h1>
-        <h2><?php echo 'Performer: ' . $event['performers'][0]['name']; ?></h2>
+        <h2 id="artist-<?php echo $event['performers'][0]['id']; ?>"><?php echo 'Performer: ' . $event['performers'][0]['name']; ?></h2>
         <h4><?php echo 'Category: ' . $subcategory; ?></h4>
     </div>
 </div>

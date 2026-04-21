@@ -39,9 +39,9 @@ if (!empty($event) && !empty($tab)) {
 
 $imageCacheKey = 'so_img_' . md5($cacheKeyBase);
 
-$cachedImage = cache_get($imageCacheKey);
+$cachedImage = get_image($imageCacheKey);
 
-if ($cachedImage !== false) {
+if (!empty($cachedImage)) {
     echo json_encode([
         'success' => true,
         'image'   => $cachedImage
@@ -68,7 +68,7 @@ switch ($type) {
         break;
 }
 
-cache_set($imageCacheKey, $imageUrl);
+set_image($imageCacheKey, $imageUrl);
 
 echo json_encode([
     'success' => true,

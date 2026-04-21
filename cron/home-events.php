@@ -16,7 +16,7 @@ foreach ($tabs as $tab) {
     }
 
     $rootPath = $categoryMap[$tab];
-    $events = fetchLocationCategoryEvents($rootPath, '', '', '', 8);
+    $events = fetchLocationCategoryEvents($rootPath, '', '', '', 12);
 
     $output = [];
     if (!empty($events) && is_array($events)) {

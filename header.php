@@ -18,14 +18,16 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/skeleton.css?v=<?php echo time(); ?>">
 
     <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GAPI_KEY; ?>&libraries=places"></script>
+
+    <?php include 'seo.php'; ?>    
 </head>
 
 <body>
@@ -86,7 +88,7 @@
                     <!-- LEFT -->
                     <div class="d-flex align-items-center gap-4">
                         <!-- Logo -->
-                        <a href="/" class="tm-logo" style="width:256px; height:auto;"><img src="<?php echo HOME_URL; ?>/assets/seatoutlet-logo.svg" alt="Seat Outlet"></a>
+                        <a href="/" class="tm-logo" style="width:256px; height:auto;"><img src="<?php echo HOME_URL; ?>/assets/seatoutlet-logo.svg" alt="Seat Outlet" width="256" height="38"></a>
                     </div>
                     <!-- RIGHT -->
                     <div class="d-flex align-items-center gap-3">
@@ -94,7 +96,7 @@
                             <ul class="tm-nav" id="mainMenu">
                                 <li class="menu-item"><a href="#">Concerts</a></li>
                                 <li class="menu-item"><a href="#">Sports</a></li>
-                                <li class="menu-item"><a href="#">Theatre</a></li>
+                                <li class="menu-item"><a href="#">Theater</a></li>
                                 <li class="menu-item"><a href="#">Festivals</a></li>
                                 <li class="menu-item"><a href="#">Cities</a></li>
                             </ul>
@@ -112,12 +114,12 @@
                 </div>
                 <form method="post" action="<?php echo HOME_URL; ?>/search.php">
                     <div class="search-bar-container d-flex flex-column flex-sm-row p-1">
-                        <div class="d-flex align-items-center gap-2 px-3 py-2 flex-fill header-location-close">
+                        <div class="d-flex align-items-center gap-2 px-3 py-2 flex-fill header-location-close locationInputFieldWrapper">
                             <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
-                            <input type="text" placeholder="City or Zip Code" class="w-100" autocomplete="off" id="locationInputHeader" name="locationInputHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="location-suggestions" aria-activedescendant="" aria-label="Search by city or zip code" value="<?php echo !empty($_POST['locationInputHeader']) ? htmlspecialchars($_POST['locationInputHeader']) : ''; ?>" />
+                            <input type="text" placeholder="City or Zip Code" class="w-100" autocomplete="off" class="locationInputField" id="locationInputHeader" name="locationInputHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="location-suggestions" aria-activedescendant="" aria-label="Search by city or zip code" value="<?php echo !empty($_POST['locationInputHeader']) ? htmlspecialchars($_POST['locationInputHeader']) : ''; ?>" />
                             <button type="button" id="locationHeaderReset" class="location-close<?php echo !empty($_POST['locationInputHeader']) ? '' : ' d-none'; ?>">												
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
                                     <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
@@ -181,7 +183,7 @@
 
     <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu">
         <div class="offcanvas-header">
-            <a href="<?php echo HOME_URL; ?>" class="tm-logo" style="width:200px; height:auto;"><img src="<?php echo HOME_URL; ?>/assets/blue-logo.webp" alt="Seat Outlet"></a>
+            <a href="<?php echo HOME_URL; ?>" class="tm-logo" style="width:200px; height:auto;"><img src="<?php echo HOME_URL; ?>/assets/blue-logo.webp" alt="Seat Outlet" width="200" height="40"></a>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <hr>

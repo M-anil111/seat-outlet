@@ -174,27 +174,50 @@ function getTnEventById($eventId) {
 }
 
 function buildCategoryBreadcrumb($defaultCategory) {
-
+ 
     $breadcrumb = [];
 
     $breadcrumb[] = [
         'label' => 'Home',
-        'url'   => '/'
+        'url'   => HOME_URL
     ];
 
+    if($defaultCategory['depth'] == 1) {
+        $breadcrumb[] = [
+            'label' => ucwords(strtolower($defaultCategory['text']['name'])),
+           'url'   => '/' . sanitize_title($defaultCategory['text']['name'])
+        ];
+    }
     if (!empty($defaultCategory['ancestors'])) {
         foreach ($defaultCategory['ancestors'] as $ancestor) {
-            $breadcrumb[] = [
-                'label' => ucwords(strtolower($ancestor['text']['name'])),
-                'url'   => '/category' . $ancestor['path']
-            ];
+            if($ancestor['depth'] == 1) {
+                $breadcrumb[] = [
+                    'label' => ucwords(strtolower($ancestor['text']['name'])),
+                    'url'   => '/' . sanitize_title($ancestor['text']['name'])
+                ];
+            }
+        }
+        foreach ($defaultCategory['ancestors'] as $ancestor) {
+            if($ancestor['depth'] == 2) {
+                $path = $ancestor['path'];
+                $path = str_replace(['.1859.1986.', '.1859.1988.', '.1859.1989.'], '', $path); 
+                $path = str_replace('.', '', $path);
+                $breadcrumb[] = [
+                    'label' => ucwords(strtolower($ancestor['text']['name'])),
+                    'url'   => '/category/' . sanitize_title($ancestor['text']['name']) . '-' . $path
+                ];
+            }
         }
     }
-
-    $breadcrumb[] = [
-        'label' => ucwords(strtolower($defaultCategory['text']['name'])),
-        'url'   => '/category' . $defaultCategory['path']
-    ];
+    if(count($breadcrumb) < 3) {
+        $path = $defaultCategory['path'];
+        $path = str_replace(['.1859.1986.', '.1859.1988.', '.1859.1989.'], '', $path); 
+        $path = str_replace('.', '', $path);
+        $breadcrumb[] = [
+            'label' => ucwords(strtolower($defaultCategory['text']['name'])),
+            'url'   => '/category/' . sanitize_title($defaultCategory['text']['name']) . '-' . $path
+        ];
+    }
 
     return $breadcrumb;
 }
@@ -356,7 +379,13 @@ function getS3PublicUrl($key) {
     return AWS_CDN_URL . $key;
 }
 
-function getArtistBio($artistName) {
+function getArtistBio($artistName, $performerId) {
+
+    $bio = get_bio($performerId);
+
+    if(!empty($bio)) {
+        return $bio['bio'];
+    }
 
     $artistName = trim(preg_replace('/\s*\(.*?\)|\s*feat\.?.*/i', '', $artistName));
 
@@ -376,7 +405,44 @@ function getArtistBio($artistName) {
     if (empty($data['query']['pages'])) return '';
 
     $page = reset($data['query']['pages']);
+    set_bio($performerId, $page['extract']);
     return trim($page['extract'] ?? '');
+}
+
+function set_bio($performerId, $bio, $mysqli = MYSQLI) {
+
+    $stmt = $mysqli->prepare("
+        INSERT INTO bios (performerId, bio)
+        VALUES (?, ?)
+    ");
+
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param("ds", $performerId, $bio);
+
+    $success = $stmt->execute();
+
+    $stmt->close();
+
+    return $success;
+}
+
+function get_bio($performerId, $mysqli = MYSQLI) {
+
+    $stmt = $mysqli->prepare("
+        SELECT bio FROM bios WHERE performerId = ? LIMIT 1
+    ");
+
+    $stmt->bind_param("d", $performerId);
+    $stmt->execute();
+
+    $result = $stmt->get_result()->fetch_assoc();
+
+    $stmt->close();
+
+    return $result ?? null;
 }
 
 function getFaqs($mysqli, $type = null) {
@@ -575,7 +641,9 @@ function getNearbyVenues($lt, $lg, $limit = 20) {
     
     $params = [
         'geoFilter' => "nearby($lt, $lg, $radius)",
-        'perPage'   => $limit
+        'perPage'   => $limit,
+        'sort' => '-salesRank',
+        'salesRankOptions' => '{"interval":"week","metric":"ticketVolume"}'
     ];    
 
     $url = BASE_URL . '/catalog/v2/venues/?' . http_build_query($params);
@@ -606,8 +674,8 @@ function getTopVenues($limit = 20) {
     
     $params = [ 
         'filter' => "country/alphaCode eq 'US'", 
-        'sort' => 'salesRank', 
-        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}', 
+        'sort' => '-salesRank', 
+        'salesRankOptions' => '{"interval":"day","metric":"ticketVolume"}', 
         'perPage' => $limit 
     ];
 
@@ -669,34 +737,9 @@ function getKeywordSearchSuggestions($q) {
     ]);
 
     $response = curl_exec($ch);
-
-    // 🔴 CURL error (timeout, DNS, etc.)
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return getEmptySuggestionResponse();
-    }
-
-    // 🔥 HTTP status check
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
     curl_close($ch);
-
-    // 🔴 Handle TicketNetwork API errors (500, 502, 503, etc.)
-    if ($httpCode >= 500 || $httpCode >= 400) {
-        return getEmptySuggestionResponse();
-    }
-
-    // 🔴 Empty response
-    if (!$response) {
-        return getEmptySuggestionResponse();
-    }
-
+    
     $data = json_decode($response, true);
-
-    // 🔴 Invalid JSON
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        return getEmptySuggestionResponse();
-    }
 
     return $data;
 }
@@ -892,19 +935,16 @@ function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, $limit = 12
     $accessToken = getTnAccessToken();
     $today = date('Y-m-d');
     $rootPath = tnEscapeFilterValue($rootPath);
-    if($type === 'll') {
+
+    $params = [
+        'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
+        'perPage' => $limit
+    ];
+
+    if ($type === 'll') {
         $lat = floatval($loc1);
         $lng = floatval($loc2);
-        $params = [
-            'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
-            'geoFilter' => sprintf('nearby(%F,%F,50mi)', $lat, $lng),
-            'perPage' => $limit
-        ];
-    }else{
-        $params = [
-            'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
-            'perPage' => $limit
-        ];
+        $params['geoFilter'] = sprintf('nearby(%F,%F,50mi)', $lat, $lng);
     }
 
     $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
@@ -1638,27 +1678,79 @@ function getEventImage($artist, $defaultCategory, $event, $tab) {
     }
 
     if ($artist) {
+        $cat = '';
+        $subcat = '';
+        if($defaultCategory['depth'] == 1) {
+            $cat = strtolower($defaultCategory['text']['name']);
+        }
+        if($defaultCategory['depth'] == 2) {
+            $subcat = $defaultCategory['text']['name'];
+        }
+        if(empty($cat) || empty($subcat)) {
+            if (!empty($defaultCategory['ancestors'])) {
+                if(empty($cat)) {
+                    foreach ($defaultCategory['ancestors'] as $ancestor) {
+                        if($ancestor['depth'] == 1) {
+                            $cat = strtolower($ancestor['text']['name']);
+                        }
+                    }
+                }
+                if(empty($subcat)) {
+                    foreach ($defaultCategory['ancestors'] as $ancestor) {
+                        if($ancestor['depth'] == 2) {
+                            $cat = $ancestor['text']['name'];
+                        }
+                    }
+                }
+            }
+        }
         $storedArtist = getStoredImageUrl($artist, 'artists');
         if ($storedArtist) return $storedArtist;
 
         $artistImage = getWikimediaImage($artist);
         if ($artistImage) {
             return processAndStoreImage($artistImage, $artist, 'artists');
-        /*}else{
-            $results = openverse_search($artist);
-            $image = pickBestImage($results, $artist);
+        }else{
+            $image = getCorrectKGEntity($artist, $cat, $subcat);
             if($image) {
                 return processAndStoreImage($image, $artist, 'artists');
-            }*/
+            }
         }
     }
 
-    return getCategoryFallbackImage($defaultCategory, $tab);
+    return getCategoryFallbackImage($defaultCategory, $cat);
 }
 
 function getArtistImage($artist, $defaultCategory) {
 
     if (!$artist) return '';
+
+    $cat = '';
+    $subcat = '';
+    if($defaultCategory['depth'] == 1) {
+        $cat = strtolower($defaultCategory['text']['name']);
+    }
+    if($defaultCategory['depth'] == 2) {
+        $subcat = $defaultCategory['text']['name'];
+    }
+    if(empty($cat) || empty($subcat)) {
+        if (!empty($defaultCategory['ancestors'])) {
+            if(empty($cat)) {
+                foreach ($defaultCategory['ancestors'] as $ancestor) {
+                    if($ancestor['depth'] == 1) {
+                        $cat = strtolower($ancestor['text']['name']);
+                    }
+                }
+            }
+            if(empty($subcat)) {
+                foreach ($defaultCategory['ancestors'] as $ancestor) {
+                    if($ancestor['depth'] == 2) {
+                        $cat = $ancestor['text']['name'];
+                    }
+                }
+            }
+        }
+    }
 
     $storedArtist = getStoredImageUrl($artist, 'artists');
     if ($storedArtist) return $storedArtist;
@@ -1666,22 +1758,14 @@ function getArtistImage($artist, $defaultCategory) {
     $artistImage = getWikimediaImage($artist);
     if ($artistImage) {
         return processAndStoreImage($artistImage, $artist, 'artists');
-    /*}else{
-        $results = openverse_search($artist);
-        $image = pickBestImage($results, $artist);
+    }else{        
+        $image = getCorrectKGEntity($artist, $cat, $subcat);
         if($image) {
             return processAndStoreImage($image, $artist, 'artists');
-        }*/
-    }
-    $ancestors = $defaultCategory['ancestors'];
-    foreach ($ancestors as $ancestor) {
-        if ($ancestor['depth'] == 1) {
-            $tab = $ancestor['text']['name'];
-            break;
         }
     }
-    
-    return getCategoryFallbackImage($defaultCategory, $tab);
+
+    return getCategoryFallbackImage($defaultCategory, $cat);
 }
 
 function getVenueImage($venue) {
@@ -1761,36 +1845,6 @@ function displayPHPErrors() {
     error_reporting(E_ALL);
 }
 
-function openverse_search($q) {
-
-    $url = "https://api.openverse.engineering/v1/images?q=". urlencode($q) . "&page_size=10";
-
-    $response = file_get_contents($url);
-
-    if (!$response) return [];
-
-    $data = json_decode($response, true);
-
-    return $data['results'] ?? [];
-}
-
-function pickBestImage($results, $name) {
-
-    $name = strtolower(str_replace(' ', '', $name));
-
-    foreach ($results as $img) {
-        $tags  = array_map(function($t) {
-            return strtolower($t['name']);
-        }, $img['tags'] ?? []);
-
-        if(!empty($tags) && in_array($name, $tags)) {
-            return $img['thumbnail'];
-        }
-    }
-
-    return $results[0]['thumbnail'] ?? '';
-}
-
 function getTnCityEvents($cityId = 0, $params = []) {
 
     $today = date('Y-m-d');
@@ -1843,4 +1897,372 @@ function getTnVenueEventsCount($venueId = 0, $params = []) {
     $count = (int) ($json['count'] ?? 0);
 
     return $count;
+}
+
+function getTopFestivalPerformers() {
+
+    $params = [
+        'q' => 'festival',
+        'performersRequested' => 8,
+        'venuesRequested' => 0,
+        'citiesRequested' => 0
+    ];
+
+    $url = BASE_URL . '/catalog/v2/suggest?' . http_build_query($params);
+
+    $data = tnCurlRequest($url);
+
+    return $data['performers']['results'];
+}
+
+function createSlug($name, $id) {
+    $slug = strtolower($name . '-' . $id);
+    $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug);
+    $slug = preg_replace('/\s+/', '-', $slug);
+    return $slug;
+}
+
+function getTnCityById($cityId) {
+    $endpoint = "/catalog/v2/cities/" . (int) $cityId;
+    return tnRequest($endpoint);
+}
+
+function getTnVenueById($venueId) {
+    $endpoint = "/catalog/v2/venues/" . (int) $venueId;
+    return tnRequest($endpoint);
+}
+
+function getTnCatEvents($catId = 0, $params = []) {
+
+    $today = date('Y-m-d');
+    if ($catId > 0) {
+        $params['filter'] = "contains(defaultCategory/path, '$catId') and date/date ge $today";
+    }
+
+    return tnRequest('/catalog/v2/events/', $params);
+}
+
+function getTnCatEventsCount($catId = 0, $params = []) {
+    
+    $today = date('Y-m-d');
+    if ($catId > 0) {
+        $params['filter'] = "contains(defaultCategory/path, '$catId') and date/date ge $today";
+    }
+
+    $params['page']    = 1;
+    $params['perPage'] = 500;
+
+    $json = tnRequest('/catalog/v2/events/', $params);
+
+    $count = (int) ($json['count'] ?? 0);
+
+    return $count;
+}
+
+function getTnCatById($catId) {
+    $params['filter'] = "contains(path, '$catId') and depth eq 2";
+    $params['perPage'] = 1;
+    return tnRequest("/catalog/v2/categories/", $params);
+}
+
+function openverse_search($q) {
+
+    $url = "https://api.openverse.engineering/v1/images?q=". urlencode($q) . "&page_size=10";
+
+    $response = file_get_contents($url);
+
+    if (!$response) return [];
+
+    $data = json_decode($response, true);
+
+    return $data['results'] ?? [];
+}
+
+function pickBestImage($results, $name) {
+
+    $name = strtolower(str_replace(' ', '', $name));
+
+    foreach ($results as $img) {
+        $tags  = array_map(function($t) {
+            return strtolower($t['name']);
+        }, $img['tags'] ?? []);
+
+        if(!empty($tags) && in_array($name, $tags)) {
+            return $img['thumbnail'];
+        }
+    }
+
+    return $results[0]['thumbnail'] ?? '';
+}
+
+function getTeamImage($team, $cat, $subcat) {
+    $cacheKeyBase = 'team|' . $team;
+    $imageCacheKey = 'so_img_' . md5($cacheKeyBase);
+    $img = get_image($imageCacheKey);
+    
+    if($img) {
+        return $img; 
+    }
+
+    $image = '';
+    $results = openverse_search($team);
+    if(!empty($results)) {
+        foreach($results as $res) {
+            if(!empty($res['tags'])) {
+                foreach($res['tags'] as $tag) {
+                    if($tag['name'] == $cat || $tag['name'] == $subcat) {
+                        $image = $res['thumbnail'];
+                    }
+                }
+            }
+        }
+    }
+    if($image) {
+        $imageUrl = processAndStoreImage($image, $team, 'artistteams');
+        set_image($imageCacheKey, $imageUrl);
+        return $imageUrl;
+    }
+    return AWS_CDN_URL . 'categories/'.$subcat.'.jpg';
+}
+
+function set_image($imageCacheKey, $imageUrl, $mysqli = MYSQLI) {
+
+    if (empty($imageCacheKey) || empty($imageUrl)) {
+        return false;
+    }
+
+    $stmt = $mysqli->prepare("
+        INSERT INTO images (imgkey, url)
+        VALUES (?, ?)
+        ON DUPLICATE KEY UPDATE url = VALUES(url)
+    ");
+
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param("ss", $imageCacheKey, $imageUrl);
+
+    $success = $stmt->execute();
+
+    $stmt->close();
+
+    return $success;
+}
+
+function get_image($imageCacheKey, $mysqli = MYSQLI) {
+
+    $stmt = $mysqli->prepare("
+        SELECT url FROM images WHERE imgkey = ? LIMIT 1
+    ");
+
+    $stmt->bind_param("s", $imageCacheKey);
+    $stmt->execute();
+
+    $result = $stmt->get_result()->fetch_assoc();
+
+    $stmt->close();
+
+    return $result['url'] ?? null;
+}
+
+function set_keyword($keyword, $results, $mysqli = MYSQLI) {
+
+    if (empty($keyword) || empty($results)) {
+        return false;
+    }
+
+    $stmt = $mysqli->prepare("
+        INSERT INTO keywords (keyword, results)
+        VALUES (?, ?)
+        ON DUPLICATE KEY UPDATE results = VALUES(results)
+    ");
+
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param("ss", $keyword, $results);
+
+    $success = $stmt->execute();
+
+    $stmt->close();
+
+    return $success;
+}
+
+function get_keyword($keyword, $mysqli = MYSQLI) {
+
+    $stmt = $mysqli->prepare("
+        SELECT results FROM keywords WHERE keyword = ? LIMIT 1
+    ");
+
+    $stmt->bind_param("s", $keyword);
+    $stmt->execute();
+
+    $result = $stmt->get_result()->fetch_assoc();
+
+    $stmt->close();
+
+    return $result['results'] ?? null;
+}
+
+$concertsKeywords = [
+    "50s-60s-era" => ['classic','oldies','retro','vintage music'],
+    "alternative" => ['alternative','indie','rock band'],
+    "bluegrass" => ['bluegrass','acoustic','folk band'],
+    "classical" => ['classical','orchestra','composer','symphony'],
+    "comedy" => ['comedian','stand-up','comedy'],
+    "country-folk" => ['country','folk','singer'],
+    "festival-tour" => ['festival','music festival','tour'],
+    "hard-rock-metal" => ['rock','metal','heavy metal','band'],
+    "holiday" => ['holiday show','christmas music'],
+    "jazz-blues" => ['jazz','blues','musician'],
+    "las-vegas-shows" => ['las vegas show','residency','live show'],
+    "latin" => ['latin music','reggaeton','latin artist'],
+    "new-age" => ['new age','instrumental','ambient'],
+    "other" => ['music','artist'],
+    "pop-rock" => ['pop','rock','band','artist'],
+    "rnb-soul" => ['rnb','soul','singer'],
+    "rap-hip-hop" => ['rap','hip hop','rapper'],
+    "reggae-reggaeton" => ['reggae','reggaeton'],
+    "religious" => ['gospel','christian','worship'],
+    "techno-electronic" => ['dj','edm','electronic'],
+    "world" => ['world music','international artist'],
+    "performance-series" => ['live performance','series'],
+    "children-family" => ['kids show','family show']
+];
+
+$sportsKeywords = [
+    "baseball" => ['baseball','mlb','pitcher','batter','team'],
+    "basketball" => ['basketball','nba','player','dunk'],
+    "boxing" => ['boxing','boxer','fight','ring'],
+    "cricket" => ['cricket','batsman','bowler','innings'],
+    "football" => ['football','nfl','quarterback','touchdown'],
+    "golf" => ['golf','golfer','pga','tournament'],
+    "gymnastics" => ['gymnastics','gymnast','olympic'],
+    "hockey" => ['hockey','nhl','ice hockey','goalie'],
+    "lacrosse" => ['lacrosse','team','match'],
+    "olympics" => ['olympics','olympic athlete'],
+    "other" => ['sports','athlete'],
+    "racing" => ['racing','nascar','formula','driver'],
+    "rodeo" => ['rodeo','bull riding','cowboy'],
+    "rugby" => ['rugby','team','match'],
+    "skating" => ['skating','figure skating','ice skating'],
+    "soccer" => ['soccer','football','fifa','goal'],
+    "tennis" => ['tennis','player','grand slam'],
+    "volleyball" => ['volleyball','team','match'],
+    "wrestling" => ['wrestling','wwe','wrestler'],
+    "mixed-martial-arts" => ['mma','ufc','fighter','fight'],
+    "softball" => ['softball','team','pitcher']
+];
+
+$theaterKeywords = [
+    "ballet" => ['ballet','dance','performance','company'],
+    "broadway" => ['broadway','theatre','musical','stage'],
+    "children-family" => ['kids show','family show','children theatre'],
+    "dance" => ['dance','dance performance','choreography'],
+    "las-vegas" => ['las vegas show','residency','live show'],
+    "musical-play" => ['musical','play','theatre','stage show'],
+    "off-broadway" => ['off broadway','theatre','play'],
+    "opera" => ['opera','opera singer','classical performance'],
+    "other" => ['theatre','performance'],
+    "cirque-du-soleil" => ['cirque','acrobatics','circus','performance'],
+    "west-end" => ['west end','london theatre','stage'],
+    "festival" => ['theatre festival','performance festival']
+];
+
+$festivalKeywords = [
+    "festival-tour" => ['festival','music festival','tour'],
+];
+
+function kgSlugify(string $value) {
+    $value = strtolower(trim($value));
+    $value = preg_replace('/&/', 'and', $value);
+    $value = preg_replace('/[^a-z0-9]+/', '-', $value);
+    return trim($value, '-');
+}
+
+function getKgKeywordsByCategory($category, $subcategory) {
+
+    global $concertsKeywords, $sportsKeywords, $theaterKeywords, $festivalKeywords;
+
+    $category = strtolower(trim($category));
+    $slug = kgSlugify($subcategory);
+
+    if ($category === 'concerts') {
+        return $concertsKeywords[$slug] ?? [];
+    }
+
+    if ($category === 'sports') {
+        return $sportsKeywords[$slug] ?? [];
+    }
+
+    if ($category === 'theater') {
+        return $theaterKeywords[$slug] ?? [];
+    }
+
+    if ($category === 'festival') {
+        return $theaterKeywords[$slug] ?? [];
+    }
+
+    return [];
+}
+
+function getWikiTitle($wikiUrl) {
+    if (!$wikiUrl) return null;
+
+    $path = parse_url($wikiUrl, PHP_URL_PATH);
+    $title = basename($path);
+
+    if (!$title) return null;
+
+    $title = urldecode($title);
+    $title = str_replace('_', ' ', $title);
+
+    return $title;
+}
+
+function getCorrectKGEntity($performerName, $category, $subcategory, $apiKey = GKGSAPI_KEY) {
+    $keywords = getKgKeywordsByCategory($category, $subcategory);
+
+    $url = 'https://kgsearch.googleapis.com/v1/entities:search?' . http_build_query([
+        'query' => $performerName,
+        'limit' => 10,
+        'key'   => $apiKey
+    ]);
+
+    $response = @file_get_contents($url);
+    if ($response === false) {
+        return null;
+    }
+
+    $data = json_decode($response, true);
+    if (empty($data['itemListElement']) || !is_array($data['itemListElement'])) {
+        return null;
+    }
+
+    foreach ($data['itemListElement'] as $item) {
+        if (empty($item['result']) || !is_array($item['result'])) {
+            continue;
+        }
+
+        $entity = $item['result']; 
+        $description = strtolower($entity['description'] ?? '');
+        $types = array_map('strtolower', $entity['@type'] ?? []);
+        
+        foreach($keywords as $word) {
+            $word = strtolower($word);
+            if ($word !== '' && strpos($description, $word) !== false && $entity['name'] == $performerName) {                                
+                if(!empty($entity['image']['contentUrl'])) {
+                    $image = $entity['image']['contentUrl'];
+                }else{
+                    $wikiUrl = $entity['detailedDescription']['url'];
+                    $title = getWikiTitle($wikiUrl);
+                    $image = getWikimediaImage($title);
+                }
+                return $image;             
+            }
+        }  
+    }
 }

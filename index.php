@@ -1,5 +1,6 @@
 <?php
 include 'header.php';
+$festivalNames = getTopFestivalPerformers();
 ?>
 
 
@@ -21,14 +22,14 @@ include 'header.php';
           <div class="location-input-shell">
             <input
               type="text"
-              class="location-input"
+              class="location-input locationInputField"
               id="cityLocationInput"
               autocomplete="off"
               placeholder="Austin, TX" />
             <button type="button" class="location-input-clear" id="locationClearBtn" aria-label="Clear location">
               ✕
             </button>
-            <div id="cityLocationDd" class="cityLocationDd w-100" style="display:none;"></div>
+            <div id="cityLocationDd" class="cityLocationDd w-100 locationInputFieldWrapper" style="display:none;"></div>
           </div>
         </div>
 
@@ -59,7 +60,7 @@ include 'header.php';
       </li>
 
       <li class="nav-item">
-        <button class="category-pill" data-bs-toggle="pill" data-bs-target="#theatre" type="button">Theatre</button>
+        <button class="category-pill" data-bs-toggle="pill" data-bs-target="#theatre" type="button">Theater</button>
       </li>
 
       <li class="nav-item">
@@ -174,143 +175,7 @@ include 'header.php';
   </div>
 </section>
 
-<!-- Personalized Picks -->
-<?php /*<section class="container py-5">
-    <h2 class="fw-bold fs-4 mb-4">Personalized Picks</h2>
-    
-    <div class="event-slider new-left-right" aria-label="Top picks carousel">
-      <a href="#" class="team-link px-3">
-        <article class="event-card">
-          <div class="event-card__img" style="background-image:url('assets/event-basketball.jpg')">
-            
-          </div>
-          <div class="event-card__body">
-            <h3 class="event-card__title venu-name-hide">Rockets at Lakers</h3>
-            <div class="mb-1">
-             <span class="mb-1 venu-date">Jan 14</span>
-             
-             <span class="mb-1 venu-name">OVO Hydro</span>
-            </div>
-            <p class="event-card__price mb-0">from <strong>$124</strong></p>
-          </div>
-        </article>
-      
-    </a>
-    <a href="#" class="team-link px-3">
-      <article class="event-card">
-        <div class="event-card__img" style="background-image:url('assets/event-football.jpg')">
-          
-        </div>
-        <div class="event-card__body">
-          <h3 class="event-card__title">Thunder at Cavaliers</h3>
-          <div class="mb-1">
-            <span class="mb-1 venu-date">Jan 14</span>
-            
-            <span class="mb-1 venu-name">OVO Hydro</span>
-           </div>
-          <p class="event-card__price mb-0">from <strong>$124</strong></p>
-        </div>
-      </article>
-    </a>
-    <a href="#" class="team-link px-3">
-      <article class="event-card">
-        <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-        
-        </div>
-        <div class="event-card__body">
-          <h3 class="event-card__title">Thunder at Cavaliers</h3>
-          <div class="mb-1">
-            <span class="mb-1 venu-date">Jan 14</span>
-      
-            <span class="mb-1 venu-name">OVO Hydro</span>
-           </div>
-          <p class="event-card__price mb-0">from <strong>$124</strong></p>
-        </div>
-      </article>
-      
-    </a>
-    <a href="#" class="team-link px-3">
-      <article class="event-card">
-        <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-          
-        </div>
-        <div class="event-card__body">
-          <h3 class="event-card__title">Thunder at Cavaliers</h3>
-          <div class="mb-1">
-            <span class="mb-1 venu-date">Jan 14</span>
-           
-            <span class="mb-1 venu-name">OVO Hydro</span>
-           </div>
-          <p class="event-card__price mb-0">from <strong>$124</strong></p>
-        </div>
-      </article>
-    </a>
-    <a href="#" class="team-link px-3">
-      <article class="event-card">
-        <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-        
-        </div>
-        <div class="event-card__body">
-          <h3 class="event-card__title">Thunder at Cavaliers</h3>
-          <div class="mb-1">
-            <span class="mb-1 venu-date">Jan 14</span>
-            
-            <span class="mb-1 venu-name">OVO Hydro</span>
-           </div>
-          <p class="event-card__price mb-0">from <strong>$124</strong></p>
-        </div>
-      </article>
-      </a>
-      <a href="#" class="team-link px-3">
-        <article class="event-card">
-          <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-       
-          </div>
-          <div class="event-card__body">
-            <h3 class="event-card__title">Thunder at Cavaliers</h3>
-            <div class="mb-1">
-              <span class="mb-1 venu-date">Jan 14</span>
-              
-              <span class="mb-1 venu-name">OVO Hydro</span>
-             </div>
-            <p class="event-card__price mb-0">from <strong>$124</strong></p>
-          </div>
-        </article>
-      </a>
-      <a href="#" class="team-link px-3">
-        <article class="event-card">
-          <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-            
-          </div>
-          <div class="event-card__body">
-            <h3 class="event-card__title">Thunder at Cavaliers</h3>
-            <div class="mb-1">
-              <span class="mb-1 venu-date">Jan 14</span>
-            
-              <span class="mb-1 venu-name">OVO Hydro</span>
-             </div>
-            <p class="event-card__price mb-0">from <strong>$124</strong></p>
-          </div>
-        </article>
-      </a>
-      <a href="#" class="team-link px-3">
-        <article class="event-card">
-          <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-          
-          </div>
-          <div class="event-card__body">
-            <h3 class="event-card__title">Thunder at Cavaliers</h3>
-            <div class="mb-1">
-              <span class="mb-1 venu-date">Jan 14</span>
-             
-              <span class="mb-1 venu-name">OVO Hydro</span>
-             </div>
-            <p class="event-card__price mb-0">from <strong>$124</strong></p>
-          </div>
-        </article>
-      </a>
-    </div>
-  </section>*/ ?>
+<?php include "home-personalized-picks.php"; ?>
 
 <section class="section categories teams-nearby py-5">
   <div class="container">
@@ -321,54 +186,51 @@ include 'header.php';
       <div class="categories__col">
         <h3 class="categories__heading">Concerts</h3>
         <ul class="categories__list">
-          <li><a href="#">Reggae / Reggaeton</a></li>
-          <li><a href="#">Religious</a></li>
-          <li><a href="#">50s / 60s Era</a></li>
-          <li><a href="#">Children / Family</a></li>
-          <li><a href="#">New Age</a></li>
-          <li><a href="#">Bluegrass</a></li>
-          <li><a href="#">Performance Series</a></li>
-          <li><a href="#">Holiday</a></li>
+          <li><a href="/category/reggae-reggaeton-1907">Reggae / Reggaeton</a></li>
+          <li><a href="/category/religious-1908">Religious</a></li>
+          <li><a href="/category/50s-60s-era-1860">50s / 60s Era</a></li>
+          <li><a href="/category/children-family-2094">Children / Family</a></li>
+          <li><a href="/category/new-age-1895">New Age</a></li>
+          <li><a href="/category/bluegrass-1866">Bluegrass</a></li>
+          <li><a href="/category/performance-series-2062">Performance Series</a></li>
+          <li><a href="/category/holiday-1884">Holiday</a></li>
         </ul>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Sports</h3>
         <ul class="categories__list">
-          <li><a href="#">Golf</a></li>
-          <li><a href="#">Baseball</a></li>
-          <li><a href="#">Olympics</a></li>
-          <li><a href="#">Cricket</a></li>
-          <li><a href="#">Gymnastics</a></li>
-          <li><a href="#">Rugby</a></li>
-          <li><a href="#">Tennis</a></li>
-          <li><a href="#">Mixed Martial Arts</a></li>
+          <li><a href="/category/golf-1880">Golf</a></li>
+          <li><a href="/category/baseball-1864">Baseball</a></li>
+          <li><a href="/category/olympics-1897">Olympics</a></li>
+          <li><a href="/category/cricket-1874">Cricket</a></li>
+          <li><a href="/category/gymnastics-1881">Gymnastics</a></li>
+          <li><a href="/category/rugby-1911">Rugby</a></li>
+          <li><a href="/category/tennis-1916">Tennis</a></li>
+          <li><a href="/category/mixed-martial-arts-2027">Mixed Martial Arts</a></li>
         </ul>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Theatre</h3>
         <ul class="categories__list">
-          <li><a href="#">Musical / Play</a></li>
-          <li><a href="#">Broadway</a></li>
-          <li><a href="#">Children / Family</a></li>
-          <li><a href="#">Off-broadway</a></li>
-          <li><a href="#">Ballet</a></li>
-          <li><a href="#">Opera</a></li>
-          <li><a href="#">Cirque Du Soleil</a></li>
-          <li><a href="#">Dance</a></li>
+          <li><a href="/category/musical-play-1894">Musical / Play</a></li>
+          <li><a href="/category/broadway-1868">Broadway</a></li>
+          <li><a href="/category/children-family-1869">Children / Family</a></li>
+          <li><a href="/category/off-broadway-1896">Off-broadway</a></li>
+          <li><a href="/category/ballet-1863">Ballet</a></li>
+          <li><a href="/category/opera-1898">Opera</a></li>
+          <li><a href="/category/cirque-du-soleil-2031">Cirque Du Soleil</a></li>
+          <li><a href="/category/dance-1875">Dance</a></li>
         </ul>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Festivals</h3>
-        <ul class="categories__list">
-          <li><a href="#">Adult</a></li>
-          <li><a href="#">Circus</a></li>
-          <li><a href="#">Lecture</a></li>
-          <li><a href="#">Taped Program (tv / Radio)</a></li>
-          <li><a href="#">Film</a></li>
-          <li><a href="#">Museum / Exhibit</a></li>
-          <li><a href="#">Magic Shows</a></li>
-          <li><a href="#">Fairs / Festivals</a></li>
-        </ul>        
+        <?php if(!empty($festivalNames)) { ?>
+          <ul class="categories__list">
+            <?php foreach($festivalNames as $festivalName) { ?>
+              <li><a href="/artist/<?php echo createSlug($festivalName['name'],$festivalName['id']); ?>"><?php echo $festivalName['name']; ?></a></li>
+            <?php } ?>
+          </ul>   
+        <?php } ?>     
       </div>
     </div>
   </div>
@@ -486,7 +348,7 @@ include 'header.php';
 
 
           <p class="testimonial-text">
-            I've been using SeatOutlet for concert tickets for over a year now, and I'm always impressed! The <span class="highlight">easy booking process</span> and <span class="highlight">instant ticket delivery</span> make it so convenient. I got front-row tickets to my favorite artist's show last month - the experience was unforgettable!
+            <strong>Super easy and reliable experience</strong> I’ve used Seat Outlet multiple times for concert tickets, and the process is always smooth. I was able to compare prices and find the best deal quickly. <span class="highlight">Highly recommend!</span>
           </p>
           <div class="rating">★★★★★</div>
           <div class="testimonial-author">
@@ -502,7 +364,7 @@ include 'header.php';
 
 
           <p class="testimonial-text">
-            SeatOutlet saved our corporate event planning! We needed <span class="highlight">50 tickets</span> for a team-building conference, and their bulk booking feature was seamless. The customer support team was incredibly helpful, and we received all tickets instantly via email. Highly recommend for business events!
+            <strong>Best place to compare ticket prices</strong> What I love most is being able to see different ticket options in one place. It saved me both time and money. Definitely my go-to ticket marketplace now.
           </p>
           <div class="rating">★★★★★</div>
           <div class="testimonial-author">
@@ -518,7 +380,7 @@ include 'header.php';
 
 
           <p class="testimonial-text">
-            As someone who attends multiple sports events throughout the season, SeatOutlet has become my go-to platform. The <span class="highlight">seat selection feature</span> is fantastic - I can see exactly where I'll be sitting before purchasing. The prices are competitive, and I've never had any issues with ticket validity!
+            <strong>Got great seats at a great price</strong>  I was looking for last-minute tickets and Seat Outlet helped me find amazing seats without overpaying. The checkout process was simple and secure.
           </p>
           <div class="rating">★★★★★</div>
           <div class="testimonial-author">
@@ -534,7 +396,7 @@ include 'header.php';
 
 
           <p class="testimonial-text">
-            The mobile app is absolutely brilliant! I booked last-minute tickets to a comedy show while on the train, and the <span class="highlight">QR code entry</span> made everything so smooth. No printing, no hassle - just scan and enjoy. SeatOutlet has revolutionized how I experience live events!
+            <strong>Perfect for sports fans like me</strong> I regularly attend games, and this platform makes it easy to find tickets across different sellers. The price comparison feature is a big plus.
           </p>
           <div class="rating">★★★★★</div>
           <div class="testimonial-author">
@@ -550,7 +412,7 @@ include 'header.php';
 
 
           <p class="testimonial-text">
-            We organized a charity fundraiser and needed to sell tickets online. SeatOutlet's <span class="highlight">event management tools</span> made it incredibly easy. The platform handled everything from ticket sales to attendee check-ins. Our event was a huge success, and we'll definitely use SeatOutlet again!
+            <strong>Trusted and convenient ticket platform</strong> Everything from browsing to booking felt safe and straightforward. I like that it connects to trusted ticket providers instead of just one source.
           </p>
           <div class="rating">★★★★★</div>
           <div class="testimonial-author">
@@ -566,7 +428,7 @@ include 'header.php';
 
 
           <p class="testimonial-text">
-            I was skeptical about buying tickets online, but SeatOutlet proved me wrong! When a show I wanted to see was sold out elsewhere, I found tickets here at a <span class="highlight">fair price</span>. The <span class="highlight">secure payment system</span> and instant confirmation gave me peace of mind. I'm now a loyal customer!
+            <strong>Great experience for sports events</strong> As a regular sports fan, I use this platform often. It’s easy to find tickets across different sellers, and the pricing is very competitive.
           </p>
           <div class="rating">★★★★★</div>
           <div class="testimonial-author">

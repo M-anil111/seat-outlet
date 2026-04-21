@@ -1,42 +1,25 @@
-<?php 
-include 'header.php'; 
-
-// Sanitize and normalize pagination.
-$page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+<?php include 'header.php';
 $perPage = 20;
-
-// Extract performer ID from slug; expect a trailing numeric ID.
-$slug  = $_GET['slug'] ?? '';
-$parts = explode('-', (string) $slug);
-$id    = (int) end($parts);
-
-if ($id <= 0) {
-	echo '<div class="container"><p>Invalid city.</p></div>';
-	include 'footer.php';
-	exit;
-}
-
-$city = getTnCityById($id);
-
+$theaterPath = ".1859.1989.";
 $today = date('Y-m-d');
 $params = [
-    'filter' => "city/id eq $id and date/date ge $today",
+	"filter" => "date/date ge $today and startswith(defaultCategory/path, '$theaterPath')",
+	"perPage" => $perPage,
+	"page" => 1, 
+	"q" => "*"
 ];
-$eventsResponse = getTnCityEvents($id, ['perPage' => $perPage, 'page' => 1]);
-
-$total_count = getTnCityEventsCount($id);
-$total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-
-$events = $eventsResponse['results'] ?? [];
-$count  = $eventsResponse['count'] ?? count($events);
-
-$percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
+$results = getTheaterCatEvents();
+$total_count = getTheaterCatEventsCount();
+$total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
+$events = $results['results'];
+$count = count($events);
+$percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 ?>
 
 <section>
 	<div class="container">
-		<div class="tab-section section-performer-content" id="default">
+        <div class="tab-section section-performer-content" id="default">
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">
 					<div class="mb-3 mb-md-4 mb-lg-4">
@@ -44,7 +27,7 @@ $year = date('Y');
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h2>
-									EVENTS in <?php echo $city['text']['name'] . ', ' . $city['stateProvince']['text']['abbr']; ?> <span class="dot">·</span>
+									EVENTS <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $total_count; ?>
 										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
@@ -110,7 +93,7 @@ $year = date('Y');
 												<a href="#"><?php echo $event['venue']['text']['name']; ?></a>
 											</div>
 											<div class="text-muted small">
-												<a href="/event.php?id=<?php echo (int) ($event['id'] ?? 0); ?>"><?php echo $event['text']['name']; ?></a>
+												<?php echo $event['text']['name']; ?>
 											</div>
 										</div>
 										<div class="ms-3">
@@ -160,61 +143,7 @@ $year = date('Y');
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
-					</div>	
-					<div class="tab-section content-section-detail mb-0" id="promocode">
-						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Exclusive Discounts on Event Tickets</h2>
-						<p>Save on your tickets with these SeatOutlet promo codes:</p>
-						<div class="row g-3 mt-2">
-							<div class="col-md-6">
-								<div class="offer-pill d-flex align-items-center justify-content-between">
-									<div class="d-flex align-items-center">
-										<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-											<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-												<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
-													stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-												<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-											</svg>
-										</div>
-										<div class="offer-text">
-											<div class="offer-title">5% OFF</div>
-											<div class="offer-subtitle">TAKE5</div>
-										</div>
-									</div>
-									<div class="offer-copy text-end">
-										<button type="button"
-											class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
-											data-code="TAKE5">
-											Copy
-										</button>
-									</div>
-								</div>
-							</div>
-							<div class="col-md-6">
-								<div class="offer-pill d-flex align-items-center justify-content-between">
-									<div class="d-flex align-items-center">
-										<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-											<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-												<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
-													stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-												<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-											</svg>
-										</div>
-										<div class="offer-text">
-											<div class="offer-title">10% OFF</div>
-											<div class="offer-subtitle">TAKE10</div>
-										</div>
-									</div>
-									<div class="offer-copy text-end">
-										<button type="button"
-											class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
-											data-code="TAKE10">
-											Copy
-										</button>
-									</div>
-								</div>
-							</div>
-						</div>				
-					</div>			
+					</div>				
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">

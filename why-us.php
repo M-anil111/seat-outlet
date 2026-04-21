@@ -1,27 +1,29 @@
 <?php include 'header.php'; ?>
 
-
-<section class="hero">
+<div class="why-us-page">
+<section class="hero-so-why">
     <div class="container">
-        <div class="row">
+        <div class="row align-items-center">
   <div class="hero-left col-lg-6 col-xl-6 col-xxl-6">
-    <h1>Why<br>SeatOutlet</h1>
-    <p>You know every beat of your business: never stopping, powering through late nights and record-breaking weekends. So you deserve a partner that can support you — through every event, every game and every show.</p>
-    <a href="#" class="btn-work">Work With Us</a>
+    <h1 class="main-title mb-lg-4 mb-3 text-white">Why SeatOutlet</h1>
+    <p class="text-white mb-4">You know every beat of your business: never stopping, powering through late nights and record-breaking weekends. So you deserve a partner that can support you through every event, every game and every show.</p>
+    <a href="#" class="btn btn-primary h-auto px-3 py-2">Work With Us</a>
   </div>
   
   <div class="hero-right col-lg-6 col-xl-6 col-xxl-6">
-    <div class="hero-square"></div>
-    <div class="hero-circle"></div>
+    <div class="hero-visual position-relative mx-auto">
+              <div class="hero-circle hero-circle-lg"></div>
+              <div class="hero-circle hero-circle-sm"></div>
+            </div>
   </div>
   </div>
     </div>
 </section>
  
 <!-- ── PARTNERSHIP ── -->
-<section class="partnership container">
+<section class="partnership container mt-5">
   <div class="partnership-left">
-    <h2>Success Built On<br>Partnership &amp;<br>Innovation</h2>
+    <h2>Success Built On <br class="so-nobrake">Partnership &amp; <br class="so-nobrake">Innovation</h2>
   </div>
   <div class="partnership-right">
     <p>We're honored to partner with you and set your business up for success with industry-leading insights, unrivaled reach and easy-to-use, streamlined tools.</p>
@@ -31,19 +33,19 @@
 <!-- ── TEAM CARD ── -->
 <div class="grid-section container">
   <div class="card-text">
-    <div>
-      <span class="section-tag">Our Team</span>
-      <h3>Our people—and the support they provide—are one of our biggest strengths and your greatest benefits.</h3>
-    </div>
-    <div>
-      <p></p>
+    
+      <div class="section-tag text-white fw-bolder">Our Team</div>
+      <h3>Our people and the support they provide are one of our biggest strengths and your greatest benefits.</h3>
+    
+   
+      
       <a href="#">Get To Know Us <span class="arrow">→</span></a>
-    </div>
+   
   </div>
   <div class="card-stat">
     <div class="stat-circle">
-      <span class="stat-number">4.1</span>
-      <span class="stat-label">Trust Score<br>The most trusted brand in ticketing</span>
+      <span class="stat-number text-primary">4.1</span>
+      <span class="stat-label fw-bolder text-black">Trust Score<br>The most trusted brand in ticketing</span>
     </div>
   </div>
 </div>
@@ -51,39 +53,40 @@
 <!-- ── STORY CARD ── -->
 <div class="grid-section container">
   <div class="card-stat white-bg">
-    <div>
+    
       <div class="stat-big">1976</div>
-      <div class="stat-sublabel">Year SeatOutlet Was Founded</div>
-    </div>
+      <div class="stat-sublabel fw-bolder text-black">Year SeatOutlet Was Founded</div>
+    
   </div>
   <div class="card-text dark">
-    <div>
-      <span class="section-tag">Our Story</span>
-      <h3>We're the partner that's investing in you and your fans, to keep you on the pulse of what's next.</h3>
+    
+      <div class="section-tag text-white fw-bolder mb-4">Our Story</div>
+      <h3 class="mb-4">We're the partner that's investing in you and your fans, to keep you on the pulse of what's next.</h3>
+      <a href="#">See Our Journey <span class="arrow">→</span></a>
     </div>
-    <a href="#">See Our Journey <span class="arrow">→</span></a>
-  </div>
+    
+  
 </div>
  
 <!-- ── CLIENTS CARD ── -->
-<div class="grid-section container">
+<div class="grid-section container mb-5">
   <div class="card-text">
-    <div>
-      <span class="section-tag">Our Clients</span>
+    
+      <div class="section-tag text-white fw-bolder">Our Clients</div>
       <h3>Trusted by the most recognized clients in sports, festivals, venues and brands around the world.</h3>
-    </div>
+    
     <a href="#">Learn More <span class="arrow">→</span></a>
   </div>
   <div class="card-stat">
-    <div class="stat-circle purple">
-      <span class="stat-number">&gt;9K</span>
-      <span class="stat-label">Global Clients</span>
+    <div class="stat-circle">
+      <span class="stat-number text-primary">&gt;9K</span>
+      <span class="stat-label fw-bolder text-black">Global Clients</span>
     </div>
   </div>
 </div>
  
 <!-- ── INSIGHTS ── -->
-<section class="insights-section container">
+<section class="insights-section container d-none">
   <div class="insights-header">
     <h2>Make The Most Of<br>Your Solutions</h2>
     <p>Dive into some practical resources, like guides from our collection of insights, to help you learn how to maximize results using our tools and services.</p>
@@ -135,17 +138,15 @@
 </section>
  
 <!-- ── CTA ── -->
-<section class="cta-section container">
-  <div class="cta-left">
-    <div class="cta-left-overlay"></div>
-    <h2>Want To Learn<br>More About Our<br>Services?</h2>
-  </div>
-  <div class="cta-right">
-    <div class="cta-dark-circle"></div>
-    <a href="#" class="cta-work-link">Work With Us <span class="arrow">→</span></a>
-  </div>
+<section class="hero-so-why-bottom">
+<div class="container">
+ <div class="text-center">
+    <h2 class="text-white">Want To Learn More About Our Services?</h2>
+  <a href="#" class="btn btn-primary h-auto px-3 py-2 mt-4">Work With Us</a>
+</div>
+</div>
 </section>
 
-
+</div>
 
 <?php include 'footer.php'; ?>

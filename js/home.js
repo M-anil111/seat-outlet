@@ -1,3 +1,25 @@
+  /* =====================================================
+  BACK TO TOP
+  ===================================================== */
+  
+  const backToTop = document.getElementById('backToTop');
+  
+  window.addEventListener('scroll', () => {
+      if (window.scrollY > 400) {
+          backToTop.style.display = 'block';
+      } else {
+          backToTop.style.display = 'none';
+      }
+  });
+  
+  backToTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  
+  /* =====================================================
+  BACK TO TOP End
+  ===================================================== */
+
 function getMonthCount() {
     return window.innerWidth <= 689 ? 1 : 2;
 }
@@ -105,6 +127,8 @@ function initLocationSearch(inputId, type = '') {
 
   autocomplete.addListener('place_changed', function () {
 
+    input.closest('.locationInputFieldWrapper')?.classList.remove('pac-active');
+
     const place = autocomplete.getPlace();
     if (!place.address_components) return;
     let city = '';
@@ -206,6 +230,8 @@ function initLocationSearch(inputId, type = '') {
                 const nearLocationText = document.getElementById('nearLocationText');
                 if (nearLocationText) nearLocationText.innerHTML = so_cs;
             
+                window.locationReady = true;
+
                 if (typeof reloadActiveTab === 'function') {
                   reloadActiveTab('ll', { lat, lng });
                 }
@@ -240,6 +266,9 @@ function initLocationSearch(inputId, type = '') {
                     if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
                     const nearLocationText = document.getElementById('nearLocationText');
                     if (nearLocationText) nearLocationText.innerHTML = data.city + ', ' + data.state;
+                    
+                    window.locationReady = true;
+
                     if (typeof reloadActiveTab === 'function') {
                       reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
                     }
@@ -284,7 +313,7 @@ function initLocationSearch(inputId, type = '') {
     const cityInput = document.getElementById('cityLocationInput');
     const locationText = document.getElementById('locationSelectorText');
     const useCurrentLocationBtn = document.getElementById('useCurrentLocationCity');
-
+    const nearLocationText = document.getElementById('nearLocationText');
     const locationToggleBtn = document.getElementById('locationToggleBtn');
     const locationPanel = document.getElementById('locationPanel');
     const locationClearBtn = document.getElementById('locationClearBtn');
@@ -312,7 +341,7 @@ function initLocationSearch(inputId, type = '') {
                   data-artist="${encodeURIComponent(event.performer || '')}"
                   data-tab="${encodeURIComponent(event.tab)}"
                   data-category='${escapeHtml(JSON.stringify(event.defaultCategory || {}))}'
-                  loading="lazy"
+                  loading="eager"
                 >
               </div>
               <div class="event-card__body">
@@ -393,9 +422,11 @@ function initLocationSearch(inputId, type = '') {
         `&category=${encodeURIComponent(category)}`;
   
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          cache: "no-store"
+        });
         const data = await res.json();
-  
+        
         if (loadToken !== currentLoadToken) return;
   
         if (data && data.image) {
@@ -434,16 +465,18 @@ function initLocationSearch(inputId, type = '') {
       const loadToken = ++currentLoadToken;
 
       const ajaxUrl =
-      `/ajax/get-location-category-events.php?tab=${encodeURIComponent(tabId)}` +
-      `&type=${encodeURIComponent(type)}` +
-      `&loc1=${encodeURIComponent(loc1)}` +
-      `&loc2=${encodeURIComponent(loc2)}`;
+        `/ajax/get-location-category-events.php?tab=${encodeURIComponent(tabId)}` +
+        `&type=${encodeURIComponent(type)}` +
+        `&loc1=${encodeURIComponent(loc1)}` +
+        `&loc2=${encodeURIComponent(loc2)}`;
         
       container.innerHTML = generateEventSkeleton(4);
       initSlider(selector, 'skeleton');
 
       try {
-        const res = await fetch(ajaxUrl);
+        const res = await fetch(ajaxUrl, {
+          cache: "no-store"
+        });
         const data = await res.json();
   
         if (loadToken !== currentLoadToken) return;
@@ -490,8 +523,10 @@ function initLocationSearch(inputId, type = '') {
       if (savedLabel && locationText) {
         locationText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
         document.getElementById('cityLocationInput').value = savedLabel;
+        if (nearLocationText) nearLocationText.innerHTML = savedLabel;
       }
 
+      window.locationReady = true;
       const { mode, data } = detectLocationMode();  
       reloadActiveTab(mode, data);
 
@@ -585,6 +620,7 @@ function initLocationSearch(inputId, type = '') {
               if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
               const nearLocationText = document.getElementById('nearLocationText');
               if (nearLocationText) nearLocationText.innerHTML = data.city + ', ' + data.state;
+              
               if (typeof reloadActiveTab === 'function') {
                 reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
               }
@@ -933,7 +969,7 @@ function initLocationSearch(inputId, type = '') {
   const latHeader = document.getElementById('latHeader');
   const lngHeader = document.getElementById('lngHeader');
   const resetLocHeader = document.getElementById('locationHeaderReset');
-
+  
   if(resetLocHeader && inputHeader.value) {
     resetLocHeader.classList.remove('d-none');
     resetLocHeader.addEventListener('click', function () {
@@ -1113,295 +1149,275 @@ function initLocationSearch(inputId, type = '') {
      HEADER KEYWORD FIELD
   ===================================================== */
   
-const keywordHeader = document.getElementById('keywordHeader');
-const keywordResultsHeader = document.getElementById('keywordResultsHeader');
-const searchLoader = document.getElementById('search-loader');
 
-if (keywordHeader && keywordResultsHeader) {
-
-  let typingTimer = null;
-  let currentController = null;
-  let activeIndex = -1;
-
-  const typingDelay = 120;
-  const minChars = 2;
-
-  let lastQuery = '';
-  let lastResponse = null; // 🔥 previous file cache
-
-  const searchCache = {}; // exact cache only
-
-  function normalize(q) {
-    return q.trim().replace(/\s+/g, ' ');
-  }
-
-  function showLoader() {
-    if (searchLoader) {
-      searchLoader.style.display = 'block';
-    }
-  }
+  const keywordHeader = document.getElementById('keywordHeader');
+  const keywordResultsHeader = document.getElementById('keywordResultsHeader');
+  const searchLoader = document.getElementById('search-loader');
   
-  function hideLoader() {
-    if (searchLoader) {
-      searchLoader.style.display = 'none';
+  if (keywordHeader && keywordResultsHeader) {
+  
+    let typingTimer = null;
+    let currentController = null;
+    let activeIndex = -1;
+  
+    const typingDelay = 150;
+    const minChars = 2;
+  
+    let lastQuery = '';
+    let lastResponse = null;
+  
+    const searchCache = {};
+  
+    // 🔥 better normalize (important)
+    function normalize(q) {
+      return q
+        .toLowerCase()
+        .replace(/,/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
-  }
-
-  function closeSuggestions() {
-    activeIndex = -1;
-    keywordResultsHeader.innerHTML = '';
-    keywordResultsHeader.style.display = 'none';
-    keywordHeader.setAttribute('aria-expanded', 'false');
-    keywordHeader.removeAttribute('aria-activedescendant');
-    hideLoader();
-  }
-
-  function showSuggestions() {
-    keywordHeader.setAttribute('aria-expanded', 'true');
-    keywordResultsHeader.style.display = 'block';
-  }
-
-  function createSlug(name, id) {
-    return `${name}-${id}`
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-');
-  }
-
-  function renderResults(data, q) {
-    let html = '<ul class="search-suggestions" role="listbox">';
-
-    if (
-      data.performers.totalResultCount ||
-      data.cities.totalResultCount ||
-      data.venues.totalResultCount
-    ) {
-      var s = 0;
-      if (data.performers.totalResultCount) {
-        html += '<li class="suggestion-label">Performers</li>';
-        data.performers.results.forEach(item => {
-          html += `
-            <li class="result-item" id="suggestion-${s}" role="option" aria-selected="false">
-              <a href="/artist/${createSlug(item.name, item.id)}">
-                ${escapeHtml(item.name)}
-              </a>
-            </li>`;
+  
+    function showLoader() {
+      if (searchLoader) searchLoader.style.display = 'block';
+    }
+  
+    function hideLoader() {
+      if (searchLoader) searchLoader.style.display = 'none';
+    }
+  
+    function closeSuggestions() {
+      activeIndex = -1;
+      keywordResultsHeader.innerHTML = '';
+      keywordResultsHeader.style.display = 'none';
+      keywordHeader.setAttribute('aria-expanded', 'false');
+      keywordHeader.removeAttribute('aria-activedescendant');
+      hideLoader();
+    }
+  
+    function showSuggestions() {
+      keywordHeader.setAttribute('aria-expanded', 'true');
+      keywordResultsHeader.style.display = 'block';
+    }
+  
+    function createSlug(name, id) {
+      return `${name}-${id}`
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-');
+    }
+  
+    // 🔥 PREFIX CACHE (instant results)
+    function getCachedPrefix(q) {
+      let bestMatch = '';
+  
+      Object.keys(searchCache).forEach(key => {
+        if (q.startsWith(key) && key.length > bestMatch.length) {
+          bestMatch = key;
+        }
+      });
+  
+      return bestMatch ? searchCache[bestMatch] : null;
+    }
+  
+    function renderResults(data, q) {
+      let html = '<ul class="search-suggestions" role="listbox">';
+  
+      if (
+        data.performers.totalResultCount ||
+        data.cities.totalResultCount ||
+        data.venues.totalResultCount
+      ) {
+        let s = 0;
+  
+        if (data.performers.totalResultCount) {
+          html += '<li class="suggestion-label">Performers</li>';
+          data.performers.results.forEach(item => {
+            html += `
+              <li class="result-item" id="suggestion-${s}" role="option">
+                <a href="/artist/${createSlug(item.name, item.id)}">
+                  ${escapeHtml(item.name)}
+                </a>
+              </li>`;
             s++;
-        });
-      }
-
-      if (data.cities.totalResultCount) {
-        html += '<li class="suggestion-label">Cities</li>';
-        data.cities.results.forEach(item => {
-          html += `
-            <li class="result-item" id="suggestion-${s}" role="option" aria-selected="false">
-              <a href="/city/${createSlug(item.name, item.id)}">
-                ${escapeHtml(item.name)}, ${escapeHtml(item.state || '')}
-              </a>
-            </li>`;
+          });
+        }
+  
+        if (data.cities.totalResultCount) {
+          html += '<li class="suggestion-label">Cities</li>';
+          data.cities.results.forEach(item => {
+            html += `
+              <li class="result-item" id="suggestion-${s}" role="option">
+                <a href="/city/${createSlug(item.name, item.id)}">
+                  ${escapeHtml(item.name)}, ${escapeHtml(item.state || '')}
+                </a>
+              </li>`;
             s++;
-        });
-      }
-
-      if (data.venues.totalResultCount) {
-        html += '<li class="suggestion-label">Venues</li>';
-        data.venues.results.forEach(item => {
-          html += `
-            <li class="result-item" id="suggestion-${s}" role="option" aria-selected="false">
-              <a href="/venue/${createSlug(item.name, item.id)}">
-                ${escapeHtml(item.name)}
-              </a>
-            </li>`;
+          });
+        }
+  
+        if (data.venues.totalResultCount) {
+          html += '<li class="suggestion-label">Venues</li>';
+          data.venues.results.forEach(item => {
+            html += `
+              <li class="result-item" id="suggestion-${s}" role="option">
+                <a href="/venue/${createSlug(item.name, item.id)}">
+                  ${escapeHtml(item.name)}
+                </a>
+              </li>`;
             s++;
-        });
-      }
-
-    } else {
-      html += `<li class="result-item">No results for "${escapeHtml(q)}"</li>`;
-    }
-
-    html += '</ul>';
-
-    keywordResultsHeader.innerHTML = html;
-    showSuggestions();
-    activeIndex = -1;
-  }
-
-  function fetchSuggestions(q) {
-
-    if (q.length < minChars) {
-      closeSuggestions();
-      return;
-    }
-
-    // ✅ exact cache
-    if (searchCache[q]) {
-      hideLoader();
-      renderResults(searchCache[q], q);
-      return;
-    }
-
-    // 🔥 previous response reuse (same as last query)
-    if (q === lastQuery && lastResponse) {
-      hideLoader();
-      renderResults(lastResponse, q);
-      return;
-    }
-
-    // ❌ prevent duplicate calls
-    if (q === lastQuery) return;
-
-    lastQuery = q;
-
-    if (currentController) currentController.abort();
-
-    currentController = new AbortController();
-    showLoader();
-
-    fetch(`/ajax/keyword-search.php?q=${encodeURIComponent(q)}`, {
-      signal: currentController.signal
-    })
-    .then(res => res.json())
-    .then(data => {
-      hideLoader();
-      searchCache[q] = data;   // exact cache
-      lastResponse = data;     // previous file cache
-
-      // ❌ stale response protection
-      if (normalize(keywordHeader.value) !== q) return;
-
-      renderResults(data, q);
-    })
-    .catch(err => {
-      hideLoader();
-      if (err.name !== 'AbortError') console.error(err);
-    });
-  }
-
-  keywordHeader.addEventListener('input', function () {
-
-    const q = normalize(this.value);
-
-    sessionStorage.setItem('last_search', q);
-
-    clearTimeout(typingTimer);
-
-    if (q.length < minChars) {
-      closeSuggestions();
-      return;
-    }
-
-    typingTimer = setTimeout(() => {
-      fetchSuggestions(q);
-    }, typingDelay);
-  });
-
-  keywordHeader.addEventListener('keydown', function (e) {
-
-    const items = keywordResultsHeader.querySelectorAll('.result-item a');
+          });
+        }
   
-    if (e.key === 'Escape') {
-      closeSuggestions();
-      return;
-    }
-  
-    if (!items.length) return;
-  
-    if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
-      e.preventDefault();
-      activeIndex++;
-      if (activeIndex >= items.length) activeIndex = 0;
-      updateActive(items);
-    }
-  
-    if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
-      e.preventDefault();
-      activeIndex--;
-      if (activeIndex < 0) activeIndex = items.length - 1;
-      updateActive(items);
-    }
-  
-    if (e.key === 'Enter') {
-      if (activeIndex >= 0 && items[activeIndex]) {
-        e.preventDefault();
-        window.location.href = items[activeIndex].href;
-      }
-    }
-  
-  });
-
-  function updateActive(items) {
-    items.forEach(el => {
-      el.parentElement.classList.remove('active');
-      el.setAttribute('aria-selected', 'false');
-    });
-  
-    if (items[activeIndex]) {
-      const activeItem = items[activeIndex];
-  
-      activeItem.parentElement.classList.add('active');
-      activeItem.setAttribute('aria-selected', 'true');
-  
-      keywordHeader.setAttribute(
-        'aria-activedescendant',
-        activeItem.parentElement.id
-      );
-    }
-  }
-
-  document.addEventListener('click', function (e) {
-    if (!keywordHeader.contains(e.target) && !keywordResultsHeader.contains(e.target)) {
-      closeSuggestions();
-    }
-  });
-
-  keywordHeader.addEventListener('focus', function () {
-
-    const q = normalize(this.value);
-  
-    if (q.length < minChars) return;
-  
-    // ✅ exact cache
-    if (searchCache[q]) {
-      renderResults(searchCache[q], q);
-      return;
-    }
-  
-    // ✅ previous response reuse
-    if (q === lastQuery && lastResponse) {
-      renderResults(lastResponse, q);
-      return;
-    }
-  
-    // 🔥 fallback: refetch if needed
-    fetchSuggestions(q);
-  });
-
-}
-  
-  /* =====================================================
-     HEADER KEYWORD FIELD End
-  ===================================================== */
-  
-  
-  /* =====================================================
-  BACK TO TOP
-  ===================================================== */
-  
-  const backToTop = document.getElementById('backToTop');
-  
-  window.addEventListener('scroll', () => {
-      if (window.scrollY > 400) {
-          backToTop.style.display = 'block';
       } else {
-          backToTop.style.display = 'none';
+        html += `<li class="result-item">No results for "${escapeHtml(q)}"</li>`;
       }
-  });
   
-  backToTop.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+      html += '</ul>';
   
-  /* =====================================================
-  BACK TO TOP End
+      keywordResultsHeader.innerHTML = html;
+      showSuggestions();
+      activeIndex = -1;
+    }
+  
+    function fetchSuggestions(q) {
+  
+      if (q.length < minChars) {
+        closeSuggestions();
+        return;
+      }
+  
+      // ✅ exact cache
+      if (searchCache[q]) {
+        hideLoader();
+        renderResults(searchCache[q], q);
+        return;
+      }
+  
+      // 🔥 prefix cache (instant feel)
+      const prefixData = getCachedPrefix(q);
+      if (prefixData) {
+        renderResults(prefixData, q);
+      }
+  
+      if (q === lastQuery) return;
+      lastQuery = q;
+  
+      if (currentController) currentController.abort();
+  
+      currentController = new AbortController();
+  
+      if (!prefixData) showLoader();
+  
+      fetch(`/ajax/keyword-search.php?q=${encodeURIComponent(q)}`, {
+        signal: currentController.signal
+      })
+      .then(res => res.text())
+      .then(text => {
+        const data = JSON.parse(text);
+        hideLoader();  
+        searchCache[q] = data;
+        lastResponse = data;
+  
+        if (normalize(keywordHeader.value) !== q) return;
+  
+        renderResults(data, q);
+      })
+      .catch(err => {
+        hideLoader();
+        if (err.name !== 'AbortError') console.error(err);
+      });
+    }
+  
+    // 🔥 INPUT (instant + debounce hybrid)
+    keywordHeader.addEventListener('input', function () {
+  
+      const q = normalize(this.value);
+  
+      sessionStorage.setItem('last_search', q);
+  
+      clearTimeout(typingTimer);
+  
+      if (q.length < minChars) {
+        closeSuggestions();
+        return;
+      }
+  
+      // instant feel
+      fetchSuggestions(q);
+  
+      // debounce API
+      typingTimer = setTimeout(() => {
+        fetchSuggestions(q);
+      }, typingDelay);
+    });
+  
+    // keyboard navigation (same as yours, kept intact)
+    keywordHeader.addEventListener('keydown', function (e) {
+  
+      const items = keywordResultsHeader.querySelectorAll('.result-item a');
+  
+      if (e.key === 'Escape') {
+        closeSuggestions();
+        return;
+      }
+  
+      if (!items.length) return;
+  
+      if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+        e.preventDefault();
+        activeIndex = (activeIndex + 1) % items.length;
+        updateActive(items);
+      }
+  
+      if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+        e.preventDefault();
+        activeIndex = (activeIndex - 1 + items.length) % items.length;
+        updateActive(items);
+      }
+  
+      if (e.key === 'Enter') {
+        if (activeIndex >= 0 && items[activeIndex]) {
+          e.preventDefault();
+          window.location.href = items[activeIndex].href;
+        }
+      }
+    });
+  
+    function updateActive(items) {
+      items.forEach(el => el.parentElement.classList.remove('active'));
+  
+      if (items[activeIndex]) {
+        const activeItem = items[activeIndex];
+        activeItem.parentElement.classList.add('active');
+  
+        keywordHeader.setAttribute(
+          'aria-activedescendant',
+          activeItem.parentElement.id
+        );
+      }
+    }
+  
+    document.addEventListener('click', function (e) {
+      if (!keywordHeader.contains(e.target) && !keywordResultsHeader.contains(e.target)) {
+        closeSuggestions();
+      }
+    });
+  
+    keywordHeader.addEventListener('focus', function () {
+      const q = normalize(this.value);
+  
+      if (q.length < minChars) return;
+  
+      if (searchCache[q]) {
+        renderResults(searchCache[q], q);
+        return;
+      }
+  
+      fetchSuggestions(q);
+    });
+  
+  }
+
+    /* =====================================================
+     HEADER KEYWORD FIELD End
   ===================================================== */

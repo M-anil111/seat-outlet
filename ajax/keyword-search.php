@@ -10,10 +10,9 @@ if ($q === '' || strlen($q) < 2) {
     exit;
 }
 
-$cacheKey  = 'kw_' . $q;
+$cachedData = get_keyword($q);
 
-$cachedData = cache_get($cacheKey);
-if ($cachedData !== false) {
+if (!empty($cachedData)) {
 
     $data = json_decode($cachedData, true);
 
@@ -32,10 +31,11 @@ try {
     exit;
 }
 
-cache_set($cacheKey, json_encode($response), 86400);
+set_keyword($q, json_encode($response));
 
 header('Content-Type: application/json');
 header('Cache-Control: public, max-age=86400');
 header('X-Cache: MISS');
 echo json_encode($response);
 exit;
+

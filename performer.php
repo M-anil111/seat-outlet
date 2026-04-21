@@ -43,9 +43,22 @@ $relatedPerformers = $relatedPerformersResponse;
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
 $artistName = $performer['text']['name'];
-$performer_bio = getArtistBio($artistName);
-$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
+$performer_bio = getArtistBio($artistName, $id);
 $faqs = getFaqs($mysqli, 'performer');
+if(strtolower($breadcrumbs[1]['label']) == 'sports') {
+	$topcats = [
+		'.1859.1988.1879.1959.' => 'nfl',
+		'.1859.1988.1865.1971.' => 'nba',
+		'.1859.1988.1864.1969.' => 'mlb',
+		'.1859.1988.1883.1972.' => 'nhl',
+		'.1859.1988.1913.1970.' => 'mls'
+	];
+	$imageType = 'team';
+	$performer_image = getTeamImage($artistName, $topcats[$performer['defaultCategory']['path']], strtolower($performer['defaultCategory']['ancestors'][0]['text']['name']));
+}else{
+	$imageType = 'artist';
+	$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
+}
 ?>
 
 <section class="section-featured-header text-sm-center text-md-start">
@@ -61,7 +74,7 @@ $faqs = getFaqs($mysqli, 'performer');
 									<?php echo $sep; ?>
 								<?php } ?>
 								<?php if ($index < count($breadcrumbs)) { ?>
-									<a href="#">
+									<a href="<?php echo $item['url']; ?>">
 										<?php echo $item['label']; ?>
 									</a>
 								<?php } ?>
@@ -85,10 +98,9 @@ $faqs = getFaqs($mysqli, 'performer');
 								<?php 
 									$lastBreadcrumb = end($breadcrumbs);
 									$categoryLabel  = $lastBreadcrumb['label'] ?? '';
-									$categorySlug   = sanitize_title($categoryLabel);
 								?>
 								<div class="artist-category">
-									<a href="<?php echo $categorySlug; ?>">
+									<a href="<?php echo $lastBreadcrumb['url']; ?>">
 										<?php echo $categoryLabel; ?>
 									</a>
 								</div>
@@ -378,7 +390,7 @@ $faqs = getFaqs($mysqli, 'performer');
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="me-0 me-md-3 me-lg-3 me-xl-3 me-xxl-3">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">About <?php echo $artistName; ?></h2>
-						<p><?php echo getArtistBio($artistName); ?></p>
+						<p><?php echo $performer_bio; ?></p>
 					</div>
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
@@ -429,18 +441,18 @@ $faqs = getFaqs($mysqli, 'performer');
 					<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo $artistName; ?> Fans Also Love</h2>
 					<?php foreach ($relatedPerformers as $performer) { 
 						$artistName = $performer['text']['name'];
-						$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
+						if($imageType == 'team') {
+							$performer_image = getTeamImage($artistName, $topcats[$performer['defaultCategory']['path']], strtolower($performer['defaultCategory']['ancestors'][0]['text']['name']));
+						}else{
+							$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
+						}						
 						$i++;
 						if($i > 8) continue;
 					?>
 						<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-							<a href="/<?php echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
+							<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
 								<div class="position-relative overflow-hidden rounded">
-									<?php if ($performer_image) { ?>
-										<img src="<?php echo $performer_image; ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
-									<?php }else{ ?>
-										<img src="<?php echo HOME_URL; ?>/assets/placeholder.webp" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
-									<?php } ?>							
+									<img src="<?php echo $performer_image; ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
 									<div class="band-content d-flex justify-content-between align-items-center">
 										<span class="band-name"></span>								
 									</div>
