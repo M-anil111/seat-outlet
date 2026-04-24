@@ -16,16 +16,69 @@
     <meta name="robots" content="noindex nofollow">
     <link rel="icon" type="image/png" href="<?php echo HOME_URL; ?>/assets/images/favicon-new.png">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
-    <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/skeleton.css?v=<?php echo filemtime(__DIR__ . '/css/skeleton.css'); ?>">
+    <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/skeleton.css?v=<?php echo filemtime(__DIR__ . '/css/skeleton.css'); ?>"> -->
 
-    
+    <!-- Google Font (keep normal or preload) -->
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</noscript>
+
+<!-- CRITICAL CSS (keep blocking) -->
+<link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/style-mehul.css?v=<?php echo filemtime(__DIR__ . '/css/style-mehul.css'); ?>">
+
+<!-- NON-CRITICAL CSS (async load) -->
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+<!-- YOUR SECONDARY CSS -->
+<link rel="preload" href="<?php echo HOME_URL; ?>/css/skeleton.css?v=<?php echo filemtime(__DIR__ . '/css/skeleton.css'); ?>" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+<!-- NOSCRIPT FALLBACK -->
+<noscript>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
+</noscript>
+
+    <script>
+        let mapsPromise = null;
+        function loadGoogleMapsApi() {
+            if (mapsPromise) return mapsPromise;
+
+            mapsPromise = new Promise((resolve, reject) => {
+                if (window.google && window.google.maps) {
+                resolve(window.google);
+                return;
+                }
+
+                window.__seatOutletMapsInit = function () {
+                    resolve(window.google);
+                };
+
+                const script = document.createElement('script');
+                script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo GAPI_KEY; ?>&libraries=places&loading=async&callback=__seatOutletMapsInit';
+                script.async = true;
+                script.defer = true;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+
+            return mapsPromise;
+        }
+    </script>
     <?php include 'seo.php'; ?>    
 </head>
 
@@ -101,6 +154,10 @@
                             </ul>
                         </nav>
                         <div class="tm-top-links d-flex d-sm-flex d-md-flex align-items-center">
+                            <a href="#" class="tm-account">
+                                <i class="bi bi-person fs-3"></i>
+                                <span class="d-none d-sm-none d-md-none d-lg-block d-xl-block d-xxl-block so-signin">Sign In/Register</span>
+                            </a>
                             <button class="btn mobile-menu-btn d-sm-block d-md-block d-lg-none d-xl-none d-xxl-none p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
                                 <i class="bi bi-list fs-3 text-white"></i>
                             </button>
@@ -212,150 +269,51 @@
                                 <li>
                                     <h3 class="sub-menu-heading">Popular</h3>
                                 </li>
-                                <li><a href="/category/rap-hip-hop-1906">Rap / Hip Hop</a></li>
-                                <li><a href="/category/country-folk-1873">Country / Folk</a></li>
-                                <li><a href="/category/latin-1890">Latin</a></li>
-                                <li><a href="/category/alternative-1862">Alternative</a></li>
+                                <li><a href="#">Hip-Hop/Rap</a></li>
+                                <li><a href="#">Country</a></li>
+                                <li><a href="#">Latin</a></li>
+                                <li><a href="#">Alternative</a></li>
                                 <!-- second -->
                                 <li>
                                     <h3 class="sub-menu-heading">Discover More</h3>
                                 </li>
-                                <li><a href="/category/50s-60s-era-1860">50s / 60s Era</a></li>
-                                <li><a href="/category/alternative-1862">Alternative</a></li>
-                                <li><a href="/category/bluegrass-1866">Bluegrass</a></li>
-                                <li><a href="/category/children-family-2094">Children / Family</a></li>
-                                <li><a href="/category/classical-1871">Classical</a></li>
-                                <li><a href="/category/comedy-1872">Comedy</a></li>
-                                <li><a href="/category/country-folk-1873">Country / Folk</a></li>                                
-                                <li><a href="/category/festival-tour-1877">Festival / Tour</a></li>
-                                <li><a href="/category/hard-rock-metal-1882">Hard Rock / Metal</a></li>
-                                <li><a href="/category/holiday-1884">Holiday</a></li>
-                                <li><a href="/category/jazz-blues-1885">Jazz / Blues</a></li>
-                                <li><a href="/category/las-vegas-shows-1888">Las Vegas Shows</a></li>
-                                <li><a href="/category/latin-1890">Latin</a></li>
-                                <li><a href="/category/new-age-1895">New Age</a></li>
-                                <li><a href="/category/other-1900">Other</a></li>
-                                <li><a href="/category/performance-series-2062">Performance Series</a></li>
-                                <li><a href="/category/pop-rock-1903">Pop / Rock</a></li>
-                                <li><a href="/category/rb-soul-1904">R&b / Soul</a></li>
-                                <li><a href="/category/rap-hip-hop-1906">Rap / Hip Hop</a></li>
-                                <li><a href="/category/reggae-reggaeton-1907">Reggae / Reggaeton</a></li>
-                                <li><a href="/category/religious-1908">Religious</a></li>
-                                <li><a href="/category/techno-electronic-1915">Techno / Electronic</a></li>
-                                <li><a href="/category/world-1918">World</a></li>
-                            </ul>
-                        </div>
-
-                    </li>
-                    <li class="has-submenu">
-
-                        <!-- ✅ ADD class + data-target -->
-                        <a href="#" class="open-submenu" data-target="submenu-sports">
-                        Sports <span class="arrow">
-                                <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
-                            </span>
-                        </a>
-                        
-                        <!-- Submenu Panel -->
-                        <div class="submenu-panel" id="submenu-sports">
-                            <div class="submenu-header">
-                                <span class="back-btn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g transform="matrix(-1,1.2246467991473532e-16,-1.2246467991473532e-16,-1,497.00405883789074,492.0039672851562)"><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#ffffff" opacity="1" data-original="#000000" class=""></path></g></svg>
-                                </span>
-                                <span>Sports</span>
-                                <span class="close-btn" data-bs-dismiss="offcanvas">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 365.717 365" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><g fill="#f44336"><path d="M356.34 296.348 69.727 9.734c-12.5-12.5-32.766-12.5-45.247 0L9.375 24.816c-12.5 12.504-12.5 32.77 0 45.25L295.988 356.68c12.504 12.5 32.77 12.5 45.25 0l15.082-15.082c12.524-12.48 12.524-32.75.02-45.25zm0 0" fill="#ffffff" opacity="1" data-original="#f44336" class=""></path><path d="M295.988 9.734 9.375 296.348c-12.5 12.5-12.5 32.77 0 45.25l15.082 15.082c12.504 12.5 32.77 12.5 45.25 0L356.34 70.086c12.504-12.5 12.504-32.766 0-45.246L341.258 9.758c-12.5-12.524-32.766-12.524-45.27-.024zm0 0" fill="#ffffff" opacity="1" data-original="#f44336" class=""></path></g></g></svg>
-                                </span>
-                            </div>
-
-                            <ul>
-                                <li>
-                                    <h3 class="sub-menu-heading">Popular</h3>
-                                </li>
-                                <li><a href="/category/mlb-1969">MLB</a></li>
-                                <li><a href="/category/nba-1971">NBA</a></li>
-                                <li><a href="/category/nhl-1972">NHL</a></li>
-                                <li><a href="/category/mls-1970">MLS</a></li>
-                                <!-- second -->
-                                <li>
-                                    <h3 class="sub-menu-heading">Discover More</h3>
-                                </li>
-                                <li><a href="/category/baseball-1864">Baseball</a></li>
-                                <li><a href="/category/basketball-1865">Basketball</a></li>
-                                <li><a href="/category/boxing-1867">Boxing</a></li>
-                                <li><a href="/category/cricket-1874">Cricket</a></li>
-                                <li><a href="/category/football-1879">Football</a></li>
-                                <li><a href="/category/golf-1880">Golf</a></li>
-                                <li><a href="/category/gymnastics-1881">Gymnastics</a></li>
-                                <li><a href="/category/hockey-1883">Hockey</a></li>
-                                <li><a href="/category/lacrosse-1886">Lacrosse</a></li>
-                                <li><a href="/category/mixed-martial-arts-2027">Mixed Martial Arts</a></li>
-                                <li><a href="/category/olympics-1897">Olympics</a></li>
-                                <li><a href="/category/other-1901">Other</a></li>
-                                <li><a href="/category/racing-1905">Racing</a></li>
-                                <li><a href="/category/rodeo-1910">Rodeo</a></li>
-                                <li><a href="/category/rugby-1911">Rugby</a></li>
-                                <li><a href="/category/skating-1912">Skating</a></li>
-                                <li><a href="/category/soccer-1913">Soccer</a></li>
-                                <li><a href="/category/softball-2059">Softball</a></li>
-                                <li><a href="/category/tennis-1916">Tennis</a></li>
-                                <li><a href="/category/volleyball-1917">Volleyball</a></li>
-                                <li><a href="/category/wrestling-1919">Wrestling</a></li>
-                            </ul>
-                        </div>
-
-                    </li>
-                    <li class="has-submenu">
-
-                        <!-- ✅ ADD class + data-target -->
-                        <a href="#" class="open-submenu" data-target="submenu-theater">
-                            Theater <span class="arrow">
-                                <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
-                            </span>
-                        </a>
-                        
-                        <!-- Submenu Panel -->
-                        <div class="submenu-panel" id="submenu-theater">
-                            <div class="submenu-header">
-                                <span class="back-btn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g transform="matrix(-1,1.2246467991473532e-16,-1.2246467991473532e-16,-1,497.00405883789074,492.0039672851562)"><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#ffffff" opacity="1" data-original="#000000" class=""></path></g></svg>
-                                </span>
-                                <span>Theater</span>
-                                <span class="close-btn" data-bs-dismiss="offcanvas">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 365.717 365" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><g fill="#f44336"><path d="M356.34 296.348 69.727 9.734c-12.5-12.5-32.766-12.5-45.247 0L9.375 24.816c-12.5 12.504-12.5 32.77 0 45.25L295.988 356.68c12.504 12.5 32.77 12.5 45.25 0l15.082-15.082c12.524-12.48 12.524-32.75.02-45.25zm0 0" fill="#ffffff" opacity="1" data-original="#f44336" class=""></path><path d="M295.988 9.734 9.375 296.348c-12.5 12.5-12.5 32.77 0 45.25l15.082 15.082c12.504 12.5 32.77 12.5 45.25 0L356.34 70.086c12.504-12.5 12.504-32.766 0-45.246L341.258 9.758c-12.5-12.524-32.766-12.524-45.27-.024zm0 0" fill="#ffffff" opacity="1" data-original="#f44336" class=""></path></g></g></svg>
-                                </span>
-                            </div>
-
-                            <ul>
-                                <li>
-                                    <h3 class="sub-menu-heading">Popular</h3>
-                                </li>
-                                <li><a href="/category/broadway-1868">Broadway</a></li>
-                                <!-- second -->
-                                <li>
-                                    <h3 class="sub-menu-heading">Discover More</h3>
-                                </li>
-                                <li><a href="/category/ballet-1863">Ballet</a></li>
-                                <li><a href="/category/broadway-1868">Broadway</a></li>
-                                <li><a href="/category/children-family-1869">Children / Family</a></li>
-                                <li><a href="/category/cirque-du-soleil-2031">Cirque Du Soleil</a></li>
-                                <li><a href="/category/dance-1875">Dance</a></li>
-                                <li><a href="/category/festival-2065">Festival</a></li>
-                                <li><a href="/category/las-vegas-1887">Las Vegas</a></li>
-                                <li><a href="/category/musical-play-1894">Musical / Play</a></li>
-                                <li><a href="/category/off-broadway-1896">Off-broadway</a></li>
-                                <li><a href="/category/opera-1898">Opera</a></li>
-                                <li><a href="/category/other-1902">Other</a></li>
-                                <li><a href="/category/west-end-2060">West End</a></li>
+                                <li><a href="#">Alternative</a></li>
+                                <li><a href="#">Ballads/Romantic</a></li>
+                                <li><a href="#">Blues</a></li>
+                                <li><a href="#">Children's Music</a></li>
+                                <li><a href="#">Classical</a></li>
+                                <li><a href="#">Country</a></li>
+                                <li><a href="#">Dance/Electronic</a></li>
+                                <li><a href="#">Folk</a></li>
+                                <li><a href="#">Hip-Hop/Rap</a></li>
+                                <li><a href="#">Holiday</a></li>
+                                <li><a href="#">Jazz</a></li>
+                                <li><a href="#">Latin</a></li>
+                                <li><a href="#">Medieval/Renaissance</a></li>
+                                <li><a href="#">Metal</a></li>
+                                <li><a href="#">New Age</a></li>
+                                <li><a href="#">Other</a></li>
+                                <li><a href="#">Pop</a></li>
+                                <li><a href="#">R&amp;B</a></li>
+                                <li><a href="#">Reggae</a></li>
+                                <li><a href="#">Religious</a></li>
+                                <li><a href="#">Rock</a></li>
+                                <li><a href="#">World</a></li>
                             </ul>
                         </div>
 
                     </li>
                     <li>
-                        <a href="#" title="Festivals" class="mobile-menu">Festivals</a>
+                        <a href="#" title="Sports" class="mobile-menu">Sports</a>
                     </li>
                     <li>
-                        <a href="#" title="Cities" class="mobile-menu">Cities</a>
+                        <a href="#" title="Theater" class="mobile-menu">Theater</a>
+                    </li>
+                    <li>
+                        <a href="#" title="Sell Tickets" class="mobile-menu">Sell Tickets</a>
+                    </li>
+                    <li>
+                    <a href="#" title="Sign In" class="mobile-menu">Sign In</a>
                     </li>
                     <li>
                         <a href="/about-us.php" title="About Us" class="mobile-menu">About Us</a>

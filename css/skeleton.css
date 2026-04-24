@@ -312,3 +312,12 @@
     width: 100%;
   }
 }
+
+.event-card {
+  min-height: 260px;
+}
+
+.event-card__img {
+  height: 180px;
+  background: #eee;
+}

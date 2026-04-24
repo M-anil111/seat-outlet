@@ -33,8 +33,11 @@ $rootPath = $categoryMap[$tab];
 /* ==============================
    FETCH EVENTS FROM TN
 ============================== */
-
-$events = fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, 8);
+if($tab == 'festival') {
+    $events = fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2);
+}else{
+    $events = fetchGroupedEvents($rootPath, $type, $loc1, $loc2);
+}
 
 /* ==============================
    FORMAT RESPONSE

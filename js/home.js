@@ -79,7 +79,7 @@ $sugg_slider.slick({
     responsive: [
         { breakpoint: 992, settings: { slidesToShow: 3 } },
         { breakpoint: 768, settings: { slidesToShow: 2 } },
-        { breakpoint: 576, settings: { slidesToShow: 1 } }
+        { breakpoint: 576, settings: { slidesToShow: 1.5 } }
     ]
 });
 
@@ -207,95 +207,59 @@ function initLocationSearch(inputId, type = '') {
   ===================================================== */
  
   document.addEventListener('DOMContentLoaded', function () {
-
-    if (navigator.geolocation) {
-    
-      navigator.geolocation.getCurrentPosition(
-          function(position) {
-    
-              const lat = position.coords.latitude;
-              const lng = position.coords.longitude;
-
-              setCookie('so_lat', encodeURIComponent(lat));
-              setCookie('so_lng', encodeURIComponent(lng));
-
-              getCityState(lat, lng, function(so_cs) {
-
-                setCookie('so_label', so_cs);
-            
-                // ✅ Now update UI safely
-                const locText = document.getElementById('locationSelectorText');
-                if (locText) locText.innerHTML = so_cs + ' <i class="bi bi-chevron-down"></i>';
-            
-                const nearLocationText = document.getElementById('nearLocationText');
-                if (nearLocationText) nearLocationText.innerHTML = so_cs;
-            
-                window.locationReady = true;
-
-                if (typeof reloadActiveTab === 'function') {
-                  reloadActiveTab('ll', { lat, lng });
-                }
-            
-                if (typeof loadNearbyVenues === 'function') {
-                  loadNearbyVenues();
-                }
-            
-                if (typeof loadTeams === 'function') {
-                  loadTeams('NFL');
-                }
-            
-              });              
-    
-          },
-          function(error) {
-
-            const _solabel = getCookie('so_label');
-
-            if(!_solabel) {
-              
-              fetch(`/ajax/get_ip_details.php`)
-                .then(res => res.json())
-                .then(data => {
-                 
-                  setCookie('so_lat', encodeURIComponent(data.lat));
-                  setCookie('so_lng', encodeURIComponent(data.lng));
-                  setCookie('so_label', encodeURIComponent(data.city + ', ' + data.state));
-                  
-                  setTimeout(() => {
-                    const locText = document.getElementById('locationSelectorText');
-                    if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
-                    const nearLocationText = document.getElementById('nearLocationText');
-                    if (nearLocationText) nearLocationText.innerHTML = data.city + ', ' + data.state;
-                    
-                    window.locationReady = true;
-
-                    if (typeof reloadActiveTab === 'function') {
-                      reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
-                    }
-                    if (typeof loadNearbyVenues === 'function') {
-                      loadNearbyVenues();
-                    }
-                    if (typeof loadTeams === 'function') {
-                      loadTeams('NFL');
-                    }
-                  }, 200);
-                  
-                })
-              .catch(() => {
-                
-              });
-            }
-
-          },
-          {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 0
-          }
-      );
-
+    const savedLat = getCookie('so_lat');
+    const savedLng = getCookie('so_lng');
+    const savedLabel = getCookie('so_label');
+  
+    if (savedLabel) {
+      const locText = document.getElementById('locationSelectorText');
+      if (locText) locText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
+  
+      const nearLocationText = document.getElementById('nearLocationText');
+      if (nearLocationText) nearLocationText.innerHTML = savedLabel;
     }
-
+  
+    if (savedLat && savedLng) {
+      window.locationReady = true;
+  
+      if (typeof reloadActiveTab === 'function') {
+        reloadActiveTab('ll', { lat: savedLat, lng: savedLng });
+      }
+      if (typeof loadNearbyVenues === 'function') {
+        loadNearbyVenues();
+      }
+      if (typeof loadTeams === 'function') {
+        loadTeams('NFL');
+      }
+      return;
+    }
+  
+    fetch('/ajax/get_ip_details.php')
+      .then(res => res.json())
+      .then(data => {
+        setCookie('so_lat', encodeURIComponent(data.lat));
+        setCookie('so_lng', encodeURIComponent(data.lng));
+        setCookie('so_label', data.city + ', ' + data.state);
+  
+        const locText = document.getElementById('locationSelectorText');
+        if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
+  
+        const nearLocationText = document.getElementById('nearLocationText');
+        if (nearLocationText) nearLocationText.innerHTML = data.city + ', ' + data.state;
+  
+        window.locationReady = true;
+  
+        if (typeof reloadActiveTab === 'function') {
+          reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
+        }
+        if (typeof loadNearbyVenues === 'function') {
+          loadNearbyVenues();
+        }
+        if (typeof loadTeams === 'function') {
+          loadTeams('NFL');
+        }
+      })
+      .catch(() => {});
   });
   
   /* =====================================================
@@ -327,8 +291,11 @@ function initLocationSearch(inputId, type = '') {
 
     function buildCards(data) {
       let html = '';
-  
+    
       data.forEach((event, index) => {
+        const loadingType = index < 2 ? 'eager' : 'lazy';
+        const fetchPriority = index < 2 ? 'high' : 'low';
+    
         html += `
           <a href="/event.php?id=${encodeURIComponent(event.id)}" class="team-link">
             <article class="event-card" data-event-index="${index}">
@@ -341,7 +308,10 @@ function initLocationSearch(inputId, type = '') {
                   data-artist="${encodeURIComponent(event.performer || '')}"
                   data-tab="${encodeURIComponent(event.tab)}"
                   data-category='${escapeHtml(JSON.stringify(event.defaultCategory || {}))}'
-                  loading="eager"
+                  loading="${loadingType}"
+                  fetchpriority="${fetchPriority}"
+                  width="278"
+                  height="200"
                 >
               </div>
               <div class="event-card__body">
@@ -356,7 +326,7 @@ function initLocationSearch(inputId, type = '') {
           </a>
         `;
       });
-  
+    
       return html;
     }
 
@@ -402,7 +372,7 @@ function initLocationSearch(inputId, type = '') {
         responsive: [
           { breakpoint: 992, settings: { slidesToShow: 3 } },
           { breakpoint: 768, settings: { slidesToShow: 2 } },
-          { breakpoint: 576, settings: { slidesToShow: 1 } }
+          { breakpoint: 576, settings: { slidesToShow: 1.5 } }
         ]
       });
     }
@@ -422,9 +392,7 @@ function initLocationSearch(inputId, type = '') {
         `&category=${encodeURIComponent(category)}`;
   
       try {
-        const res = await fetch(url, {
-          cache: "no-store"
-        });
+        const res = await fetch(url);
         const data = await res.json();
         
         if (loadToken !== currentLoadToken) return;
@@ -474,9 +442,7 @@ function initLocationSearch(inputId, type = '') {
       initSlider(selector, 'skeleton');
 
       try {
-        const res = await fetch(ajaxUrl, {
-          cache: "no-store"
-        });
+        const res = await fetch(ajaxUrl);
         const data = await res.json();
   
         if (loadToken !== currentLoadToken) return;
@@ -640,7 +606,14 @@ function initLocationSearch(inputId, type = '') {
       });
     }
 
-    initLocationSearch('cityLocationInput', 'home');
+    const cityLocationInput = document.getElementById('cityLocationInput');
+    if (cityLocationInput) {
+      cityLocationInput.addEventListener('focus', async function once() {
+        await loadGoogleMapsApi();
+        initLocationSearch('cityLocationInput', 'home');
+        cityLocationInput.removeEventListener('focus', once);
+      }, { once: true });
+    }
   });
    
   
@@ -694,7 +667,7 @@ function initLocationSearch(inputId, type = '') {
         responsive: [
           { breakpoint: 992, settings: { slidesToShow: 2 } },
           { breakpoint: 768, settings: { slidesToShow: 2 } },
-          { breakpoint: 576, settings: { slidesToShow: 1 } }
+          { breakpoint: 576, settings: { slidesToShow: 1.5 } }
         ]
       });
     }
@@ -705,11 +678,10 @@ function initLocationSearch(inputId, type = '') {
     
       container.innerHTML = '';
       container.innerHTML = generateTeamSkeleton(4);
-      initTeamSlider('skeleton');
 
       const jsonUrl = `/cache/teams_${league}.json`;
 
-      fetch(jsonUrl, { cache: 'no-store' })
+      fetch(jsonUrl)
           .then(res => {
             if (!res.ok) throw new Error('json_not_found');
             return res.json();
@@ -728,7 +700,7 @@ function initLocationSearch(inputId, type = '') {
               }
 
               let html = `<div class="tab-pane show active" id="${escapeHtml(league)}" role="tabpanel">
-                      <div class="team-slider new-slider px-4">`;
+                      <div class="team-slider new-slider">`;
 
               data.sort((a, b) => a.name.localeCompare(b.name))
               .forEach(team => {
@@ -760,11 +732,6 @@ function initLocationSearch(inputId, type = '') {
       
     
     };
-  
-    const activeBtn = document.querySelector('.sport-cat.active');
-    if (activeBtn && activeBtn.dataset.slug) {
-      loadTeams(activeBtn.dataset.slug);
-    }
   
     document.querySelectorAll('button.sport-cat').forEach(btn => {
       btn.addEventListener('shown.bs.tab', function () {
@@ -891,7 +858,10 @@ function initLocationSearch(inputId, type = '') {
 
           let html = '';
   
-          data.forEach(venue => {
+          data.forEach((venue, index) => {
+            const loadingType = index === 0 ? 'eager' : 'lazy';
+            const fetchPriority = index === 0 ? 'high' : 'low';
+        
             html += `
               <a href="/venue/${venue.slug}" class="team-link">
                 <div class="card venue-card">
@@ -901,7 +871,8 @@ function initLocationSearch(inputId, type = '') {
                       alt="${venue.name}"
                       class="img-fluid venue-dynamic-image blur-image"
                       data-venue="${encodeURIComponent(venue.name)}"
-                      loading="lazy"
+                      loading="${loadingType}"
+                      fetchpriority="${fetchPriority}"
                     >
                   </div>
                   <div class="venue-content text-center">
@@ -913,7 +884,7 @@ function initLocationSearch(inputId, type = '') {
                 </div>
               </a>
             `;
-          });
+        });
   
           container.innerHTML = html;          
           setTimeout(() => {
@@ -924,6 +895,7 @@ function initLocationSearch(inputId, type = '') {
 
         })
         .catch(err => {
+          console.error('VENUE ERROR:', err);
           container.innerHTML = '<p>Error loading venues</p>';
         });
   
@@ -947,14 +919,58 @@ function initLocationSearch(inputId, type = '') {
           responsive: [
               { breakpoint: 992, settings: { slidesToShow: 3 } },
               { breakpoint: 768, settings: { slidesToShow: 2 } },
-              { breakpoint: 576, settings: { slidesToShow: 1 } }
+              { breakpoint: 576, settings: { slidesToShow: 1.5 } }
           ]
       });
   }
  
-  if (typeof loadNearbyVenues === 'function') {
-    loadNearbyVenues();
-  }
+  document.addEventListener('DOMContentLoaded', function () {
+
+    const venueSection = document.querySelector('.venue-section');
+    const teamsSection = document.querySelector('.teams-section');
+  
+    // 🔥 VENUES
+    if (typeof loadNearbyVenues === 'function') {
+  
+      if (!venueSection) {
+        loadNearbyVenues(); // fallback
+      } else if (venueSection.getBoundingClientRect().top < window.innerHeight) {
+        loadNearbyVenues(); // already visible
+      } else {
+        const venueObserver = new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              loadNearbyVenues();
+              observer.disconnect();
+            }
+          });
+        }, { rootMargin: '200px' });
+  
+        venueObserver.observe(venueSection);
+      }
+    }
+  
+    // 🔥 TEAMS
+    if (typeof loadTeams === 'function') {
+  
+      if (!teamsSection) return;
+  
+      const teamsObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const activeBtn = document.querySelector('.sport-cat.active');
+            if (activeBtn && activeBtn.dataset.slug) {
+              loadTeams(activeBtn.dataset.slug);
+            }
+            observer.disconnect();
+          }
+        });
+      }, { rootMargin: '200px' });
+  
+      teamsObserver.observe(teamsSection);
+    }
+  
+  });
  
  /* =====================================================
      VENUES End
@@ -976,12 +992,18 @@ function initLocationSearch(inputId, type = '') {
       //input.readOnly = false;
       inputHeader.value = '';
       resetLocHeader.classList.add('d-none');       
-      document.getElementById('latHeader').value = '';
-      document.getElementById('lngHeader').value = '';
+      latHeader.value = '';
+      lngHeader.value = '';
     });  
   }
   
-  google.maps.event.addDomListener(window, 'load', initLocationSearch('locationInputHeader'));
+  if (inputHeader) {
+    inputHeader.addEventListener('focus', async function once() {
+      await loadGoogleMapsApi();
+      initLocationSearch('locationInputHeader');
+      inputHeader.removeEventListener('focus', once);
+    }, { once: true });
+  }
 
   if(inputHeader) {
     inputHeader.addEventListener('click', function () {
@@ -1003,6 +1025,18 @@ function initLocationSearch(inputId, type = '') {
           if (e.target.id === 'useCurrentLocationHeader') {
               getCurrentLocationHeader();
               return;
+          }
+      });
+
+      document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') {
+              resultsHeader.innerHTML = '';
+          }
+      });
+
+      document.addEventListener('click', function (e) {
+          if (!inputHeader.contains(e.target) && !resultsHeader.contains(e.target)) {
+              resultsHeader.innerHTML = '';
           }
       });
   }
@@ -1033,9 +1067,8 @@ function initLocationSearch(inputId, type = '') {
   
               if(inputHeader.value !== '') {
                 //inputHeader.readOnly = true;   
-                const resetLoc = document.getElementById('locationHeaderReset');
-                resetLoc.classList.remove('d-none');
-                resetLoc.addEventListener('click', function () {
+                resetLocHeader.classList.remove('d-none');
+                resetLocHeader.addEventListener('click', function () {
                     //inputHeader.readOnly = false;
                     inputHeader.value = '';
                     this.classList.add('d-none');       
@@ -1045,7 +1078,7 @@ function initLocationSearch(inputId, type = '') {
               } 
              
           },
-          error => {
+          () => {
               inputHeader.value = '';
               alert('Unable to access your location');
           },
@@ -1220,18 +1253,23 @@ function initLocationSearch(inputId, type = '') {
     }
   
     function renderResults(data, q) {
+
+      const performers = data?.performers || {};
+      const cities = data?.cities || {};
+      const venues = data?.venues || {};
+
       let html = '<ul class="search-suggestions" role="listbox">';
   
       if (
-        data.performers.totalResultCount ||
-        data.cities.totalResultCount ||
-        data.venues.totalResultCount
+        (performers.totalResultCount || 0) ||
+        (cities.totalResultCount || 0) ||
+        (venues.totalResultCount || 0)
       ) {
         let s = 0;
   
-        if (data.performers.totalResultCount) {
+        if (performers.totalResultCount > 0 && Array.isArray(performers.results)) {
           html += '<li class="suggestion-label">Performers</li>';
-          data.performers.results.forEach(item => {
+          performers.results.forEach(item => {
             html += `
               <li class="result-item" id="suggestion-${s}" role="option">
                 <a href="/artist/${createSlug(item.name, item.id)}">
@@ -1242,9 +1280,9 @@ function initLocationSearch(inputId, type = '') {
           });
         }
   
-        if (data.cities.totalResultCount) {
+        if (cities.totalResultCount > 0 && Array.isArray(cities.results)) {
           html += '<li class="suggestion-label">Cities</li>';
-          data.cities.results.forEach(item => {
+          cities.results.forEach(item => {
             html += `
               <li class="result-item" id="suggestion-${s}" role="option">
                 <a href="/city/${createSlug(item.name, item.id)}">
@@ -1255,9 +1293,9 @@ function initLocationSearch(inputId, type = '') {
           });
         }
   
-        if (data.venues.totalResultCount) {
+        if (venues.totalResultCount > 0 && Array.isArray(venues.results)) {
           html += '<li class="suggestion-label">Venues</li>';
-          data.venues.results.forEach(item => {
+          venues.results.forEach(item => {
             html += `
               <li class="result-item" id="suggestion-${s}" role="option">
                 <a href="/venue/${createSlug(item.name, item.id)}">
@@ -1417,7 +1455,24 @@ function initLocationSearch(inputId, type = '') {
     });
   
   }
+  $(document).ready(function(){
+
+    // open submenu
+    $('.open-submenu').click(function(e){
+        e.preventDefault();
+
+        let target = $(this).data('target');
+        $('#' + target).addClass('active');
+    });
+
+    // back
+    $('.back-btn').click(function(){
+        $(this).closest('.submenu-panel').removeClass('active');
+    });
+
+});
 
     /* =====================================================
      HEADER KEYWORD FIELD End
   ===================================================== */
+

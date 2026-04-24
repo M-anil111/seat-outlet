@@ -16,8 +16,12 @@ foreach ($tabs as $tab) {
     }
 
     $rootPath = $categoryMap[$tab];
-    $events = fetchLocationCategoryEvents($rootPath, '', '', '', 12);
-
+    if($tab == 'festival') {
+        $events = fetchLocationCategoryEvents($rootPath);
+    }else{
+        $events = fetchGroupedEvents($rootPath);
+    }
+    
     $output = [];
     if (!empty($events) && is_array($events)) {
         foreach ($events as $event) {

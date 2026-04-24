@@ -5,11 +5,11 @@ $festivalNames = getTopFestivalPerformers();
 
 
 <!-- Top Picks Section -->
-<section class="container pt-5">
+<section class="container pt-md-5 pt-4">
   <div class="mb-lg-4 mb-3 pb-2">
-    <div class="location-selector-wrapper d-flex flex-wrap align-items-center justify-content-between">
+    <div class="location-selector-wrapper d-flex flex-wrap align-items-center justify-content-md-between">
       <h2 class="fw-bold fs-4 mb-0">Our Top Picks Near <span id="nearLocationText"></span></h2>
-      <div class="so-right-searchbar">
+      <div class="so-right-searchbar ps-md-0 ps-2">
       <button type="button" class="location-selector" id="locationToggleBtn">
         <span class="location-selector-link" id="locationSelectorText">Select your location <i class="bi bi-chevron-down"></i></span>
       </button>
@@ -93,13 +93,13 @@ $festivalNames = getTopFestivalPerformers();
 </section>
 
 <section class="py-3">
-  <div class="container my-5">
+  <div class="container my-lg-5 my-4">
     <div class="experience-section">
       <div class="row align-items-center g-xxl-4 g-xl-3 g-lg-2 g-3">
 
         <!-- Left Heading -->
         <div class="col-lg-3">
-          <h3 class="fw-bold mb-lg-0 mb-3 so-experieance">Experience<br class="so-nobrake"> it live.</h3>
+          <h3 class="fw-bold mb-lg-0 mb-3 so-experieance">Experience Live Events<br class="so-nobrake"> with Confidence</h3>
         </div>
 
         <!-- Feature 1 -->
@@ -107,8 +107,8 @@ $festivalNames = getTopFestivalPerformers();
           <div class="feature-box d-flex">
             <i class="bi bi-star-fill text-white feature-icon"></i>
             <div>
-              <div class="fw-bold">Rated Great</div>
-              <small>24K+ Trustpilot reviews</small>
+              <div class="fw-bold">Rated Excellent by Fans</div>
+              <small>24K+ verified reviews from real ticket buyers</small>
             </div>
           </div>
         </div>
@@ -118,8 +118,8 @@ $festivalNames = getTopFestivalPerformers();
           <div class="feature-box d-flex">
             <i class="bi bi-shield-check text-white feature-icon"></i>
             <div>
-              <div class="fw-bold">Over 140 million tickets</div>
-              <small>sold since 2001</small>
+              <div class="fw-bold">Millions of Tickets Sold</div>
+              <small>Trusted marketplace connecting fans since day one</small>
             </div>
           </div>
         </div>
@@ -129,8 +129,8 @@ $festivalNames = getTopFestivalPerformers();
           <div class="feature-box d-flex">
             <i class="bi bi-gift-fill text-white feature-icon"></i>
             <div>
-              <div class="fw-bold">Rewarding your loyalty</div>
-              <small>with free tickets</small>
+              <div class="fw-bold">Exclusive Deals & Rewards</div>
+              <small>Save more with special offers on event tickets</small>
             </div>
           </div>
         </div>
@@ -142,7 +142,7 @@ $festivalNames = getTopFestivalPerformers();
 
 
 <section class="teams-nearby bg-white py-3 teams-section">
-  <div class="container py-5 slider-bg text-white">
+  <div class="container py-md-5 py-3 slider-bg text-white">
     <div class="d-flex justify-content-between align-items-center">
       <h2 class="section__title section__title--center fw-bold fs-4 mb-4 text-black">
         Top Teams
@@ -175,7 +175,7 @@ $festivalNames = getTopFestivalPerformers();
   </div>
 </section>
 
-<?php include "home-personalized-picks.php"; ?>
+<?php //include "home-personalized-picks.php"; ?>
 
 <section class="section categories teams-nearby py-5">
   <div class="container">
@@ -195,6 +195,8 @@ $festivalNames = getTopFestivalPerformers();
           <li><a href="/category/performance-series-2062">Performance Series</a></li>
           <li><a href="/category/holiday-1884">Holiday</a></li>
         </ul>
+        <a href="#" class="common-btn">View All Concerts</a>
+        
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Sports</h3>
@@ -208,6 +210,7 @@ $festivalNames = getTopFestivalPerformers();
           <li><a href="/category/tennis-1916">Tennis</a></li>
           <li><a href="/category/mixed-martial-arts-2027">Mixed Martial Arts</a></li>
         </ul>
+        <a href="#" class="common-btn">View All Sports</a>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Theatre</h3>
@@ -221,6 +224,7 @@ $festivalNames = getTopFestivalPerformers();
           <li><a href="/category/cirque-du-soleil-2031">Cirque Du Soleil</a></li>
           <li><a href="/category/dance-1875">Dance</a></li>
         </ul>
+        <a href="#" class="common-btn">View All Theatre</a>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Festivals</h3>
@@ -230,19 +234,20 @@ $festivalNames = getTopFestivalPerformers();
               <li><a href="/artist/<?php echo createSlug($festivalName['name'],$festivalName['id']); ?>"><?php echo $festivalName['name']; ?></a></li>
             <?php } ?>
           </ul>   
-        <?php } ?>     
+        <?php } ?>  
+        <a href="#" class="common-btn">View All Festivals</a>   
       </div>
     </div>
   </div>
 </section>
 
-<section class="section categories bg-white teams-nearby py-5" aria-labelledby="cities-heading">
+<section class="section categories bg-white teams-nearby py-md-5 py-4" aria-labelledby="cities-heading">
   <div class="container">
     <h2 id="cities-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
       Popular Cities
     </h2>
     <div id="browseCitiesWrapper">
-      <div class="row g-3">
+      <div class="row g-3 cities-row">
           <div class="col-auto">
               <a href="/city/new-york-3027" class="city-pill">New York, NY</a>
           </div>
@@ -296,16 +301,16 @@ $festivalNames = getTopFestivalPerformers();
   </div>
 </section>
 
-<section class="container new-slider venue-section left-right-btn py-5">
+<section class="container new-slider venue-section left-right-btn py-md-5 py-4">
   <h2 class="fw-bold fs-4 mb-4">Top Venues</h2>
-  <div class="venue-slider px-4">    
+  <div class="venue-slider">    
     <?php echo buildVenueSkeleton(4); ?>
   </div>
 </section>
 
-<section class="section reasons teams-nearby py-5 mt-3" aria-labelledby="reasons-heading">
+<section class="section reasons teams-nearby py-md-5 py-4 mt-3" aria-labelledby="reasons-heading">
   <div class="container">
-    <h2 id="reasons-heading" class="section__title section__title--center fw-bold fs-4 mb-5">The Seat Outlet Advantage</h2>
+    <h2 id="reasons-heading" class="section__title section__title--center fw-bold fs-4 mb-lg-5 mb-4">The Seat Outlet Advantage</h2>
     <!-- <p class="section__subtitle text-center">Great seats, amazing prices.</p> -->
     <div class="reasons__grid">
       <article class="reason-card">
@@ -342,7 +347,7 @@ $festivalNames = getTopFestivalPerformers();
 <div class="testimonial-page">
   <section class="section-padding">
     <div class="container">
-      <h2 id="testimonials-heading" class="section__title section__title--center fw-bold fs-4 mb-5">Trusted by Thousands of Fans</h2>
+      <h2 id="testimonials-heading" class="section__title section__title--center fw-bold fs-4 mb-lg-5 mb-4">Trusted by Thousands of Fans</h2>
       <div class="testimonials-grid">
         <div class="testimonial-card">
 
@@ -445,59 +450,59 @@ $festivalNames = getTopFestivalPerformers();
   </section>
 </div>
 
-<?php include "newsletter.php"; ?>
+<?php include "ajax/load-newsletter.php"; ?>
 
 <section class="partners-section teams-nearby py-5">
   <div class="container">
-    <h2 class="mb-4 fw-bold fs-4 mb-5">Partners</h2>
+    <h2 class="mb-4 fw-bold fs-4 mb-md-5 mb-4">Partners</h2>
 
-    <div class="row g-3 g-md-4 justify-content-center">
+    <div class="row g-3 g-md-4 justify-content-center partners-grid">
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/hunt-tickets.webp" class="img-fluid" alt="Hunt Tickets" width="115" height="115">
+          <img src="<?php echo HOME_URL; ?>/assets/hunt-tickets.webp" class="img-fluid" alt="Hunt Tickets" width="115" height="115" loading="lazy">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/lite.webp" class="img-fluid" alt="Lite" width="115" height="115">
+          <img src="<?php echo HOME_URL; ?>/assets/lite.webp" class="img-fluid" alt="Lite" width="115" height="115" loading="lazy">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/seat-geek.webp" class="img-fluid" alt="Seat Geek" width="115" height="115">
+          <img src="<?php echo HOME_URL; ?>/assets/seat-geek.webp" class="img-fluid" alt="Seat Geek" width="115" height="115" loading="lazy">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/viralpep.webp" class="img-fluid" alt="Electolit" width="115" height="115">
+          <img src="<?php echo HOME_URL; ?>/assets/viralpep.webp" class="img-fluid" alt="Electolit" width="115" height="115" loading="lazy">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="<?php echo AWS_CDN_URL; ?>images/jimbeam.webp" class="img-fluid" alt="Jimbeam" width="115" height="115">
+          <img src="<?php echo AWS_CDN_URL; ?>images/jimbeam.webp" class="img-fluid" alt="Jimbeam" width="115" height="115" loading="lazy">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/gtn.webp" class="img-fluid" alt="Grab Tickets Now" width="115" height="115">
+          <img src="<?php echo HOME_URL; ?>/assets/gtn.webp" class="img-fluid" alt="Grab Tickets Now" width="115" height="115" loading="lazy">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/ticket-scanner.webp" class="img-fluid partner-img" alt="Ticket Scanner" width="150" height="150">
+          <img src="<?php echo HOME_URL; ?>/assets/ticket-scanner.webp" class="img-fluid partner-img" alt="Ticket Scanner" width="150" height="150" loading="lazy">
         </div>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="partner-card text-center">
-          <img src="<?php echo AWS_CDN_URL; ?>images/lyft.webp" class="img-fluid" alt="Lyft" width="115" height="115">
+          <img src="<?php echo AWS_CDN_URL; ?>images/lyft.webp" class="img-fluid" alt="Lyft" width="115" height="115" loading="lazy">
         </div>
       </div>
 

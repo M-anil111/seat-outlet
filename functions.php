@@ -712,6 +712,20 @@ function getKeywordSearchSuggestions($q) {
 
     $q = trim($q);
 
+    if (!$q) return [];
+
+    // ============================
+    // 1. CHECK CACHE (DB)
+    // ============================
+    $cached = get_keyword($q);
+
+    if ($cached) {
+        return json_decode($cached, true);
+    }
+
+    // ============================
+    // 2. API CALL (ONLY IF NOT CACHED)
+    // ============================
     $params = [
         'q' => $q,
         'performersRequested' => 5,
@@ -737,10 +751,28 @@ function getKeywordSearchSuggestions($q) {
     ]);
 
     $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
     curl_close($ch);
-    
+
+    if (!$response) return [];
+
     $data = json_decode($response, true);
 
+    if (!$data) return [];
+
+    // ============================
+    // 3. STORE IN CACHE (DB)
+    // ============================
+    set_keyword($q, json_encode($data));
+
+    // ============================
+    // 4. RETURN DATA
+    // ============================
     return $data;
 }
 
@@ -931,14 +963,16 @@ function tnGetCategoryNearby($rootPath, $lat, $lng, $limit = 12) {
     return $data['results'] ?? [];
 }
 
-function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, $limit = 12) {
+function fetchLocationCategoryEvents($rootPath, $type = '', $loc1 = '', $loc2 = '') {
     $accessToken = getTnAccessToken();
     $today = date('Y-m-d');
     $rootPath = tnEscapeFilterValue($rootPath);
 
     $params = [
         'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
-        'perPage' => $limit
+        'perPage' => 8,
+        'sort' => '-salesRank', 
+        'salesRankOptions' => '{"interval":"day","metric":"ticketVolume"}', 
     ];
 
     if ($type === 'll') {
@@ -973,6 +1007,66 @@ function fetchLocationCategoryEvents($rootPath, $type, $loc1, $loc2, $limit = 12
     $data = json_decode($response, true);
 
     return $data['results'] ?? [];
+}
+
+$paths = [
+    '.1859.1986.' => [".1859.1986.1903.",".1859.1986.1862.",".1859.1986.1872.",".1859.1986.1873.",".1859.1986.1906.",".1859.1986.1885.",".1859.1986.1871.",".1859.1986.1882."],
+    '.1859.1988.' => [".1859.1988.1910.",".1859.1988.1883.",".1859.1988.1867.",".1859.1988.1880.",".1859.1988.1864.",".1859.1988.1897.",".1859.1988.1874.",".1859.1988.1881."],
+    '.1859.1989.' => [".1859.1989.1894.",".1859.1989.2060.",".1859.1989.1887.",".1859.1989.1868.",".1859.1989.1869.",".1859.1989.1896.",".1859.1989.1863.",".1859.1989.1898."],
+];
+
+function fetchGroupedEvents($rootPath, $type = '', $loc1 = '', $loc2 = '') {
+    global $paths;
+
+    if (empty($paths[$rootPath])) {
+        return [];
+    }
+
+    $subcategories = $paths[$rootPath];    
+    $today = date('Y-m-d');
+
+    $params = [
+        'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
+        'sort' => '-salesRank', 
+        'salesRankOptions' => '{"interval":"day","metric":"ticketVolume"}', 
+        'perPage' => 150
+    ];
+
+    if ($type === 'll') {
+        $params['geoFilter'] = sprintf('nearby(%F,%F,50mi)', $loc1, $loc2);
+    }
+
+    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
+
+    $data = tnCurlRequest($url);    
+    $events = $data['results'] ?? [];
+
+    $grouped = [];
+    $usedEventIds = [];
+    foreach ($events as $event) {
+        $eventPath = $event['defaultCategory']['path'] ?? '';
+        if (!$eventPath) continue;
+        foreach ($subcategories as $subPath) {
+            if (isset($grouped[$subPath])) continue;
+            if (strpos($eventPath, $subPath) !== false) {
+                $grouped[$subPath] = $event;
+                $usedEventIds[$event['id']] = true;
+                break;
+            }
+        }
+        if (count($grouped) === count($subcategories)) break;
+    }
+    
+    if (count($grouped) < 8) {
+        foreach ($events as $event) {
+            if (isset($usedEventIds[$event['id']])) continue;
+            $grouped[] = $event;
+            $usedEventIds[$event['id']] = true;
+            if (count($grouped) >= 8) break;
+        }
+    }
+
+    return array_slice(array_values($grouped), 0, 8);
 }
 
 function normalizeKey($v) {
@@ -1601,6 +1695,71 @@ function getWikimediaImage($title = "") {
     return $page['original']['source'] ?? '';
 }
 
+function getWikimediaImageAccurate($title, $cat, $subcat) {
+    if (!$title) return '';
+
+    $keywords = getKgKeywordsByCategory($cat, $subcat);
+
+    // STEP 1: GET PAGE + IMAGE + CATEGORIES
+    $url = "https://en.wikipedia.org/w/api.php?" . http_build_query([
+        "action" => "query",
+        "titles" => $title,
+        "prop" => "pageimages|categories",
+        "piprop" => "original",
+        "cllimit" => "20",
+        "format" => "json"
+    ]);
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_USERAGENT => "SeatOutletBot/1.0"
+    ]);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if (!$response) return '';
+
+    $data = json_decode($response, true);
+
+    $pages = $data['query']['pages'] ?? [];
+    $page  = reset($pages);
+
+    if (!$page) return '';
+
+    // STEP 2: EXTRACT IMAGE
+    $image = $page['original']['source'] ?? '';
+
+    if (!$image) return '';
+
+    // STEP 3: EXTRACT CATEGORIES
+    $categories = $page['categories'] ?? [];
+
+    $categoryText = '';
+
+    foreach ($categories as $cat) {
+        $categoryText .= ' ' . strtolower(str_replace('Category:', '', $cat['title']));
+    }
+
+    // STEP 4: MATCH WITH KEYWORDS
+    $matchScore = 0;
+
+    foreach ($keywords as $word) {
+        if (strpos($categoryText, strtolower($word)) !== false) {
+            $matchScore++;
+        }
+    }
+
+    // STEP 5: VALIDATE MATCH
+    if ($matchScore > 0) {
+        return $image; // ✅ correct entity
+    }
+
+    return ''; // ❌ reject wrong entity
+}
+
 function getStoredImageUrl($name, $type) {
 
     if (!$name) return '';
@@ -1641,6 +1800,13 @@ function processAndStoreImage($imageUrl, $name, $type) {
     return getS3PublicUrl($key);
 }
 
+$venueKeywords = [
+    'venue','stadium','arena','theater','theatre','hall',
+    'center','centre','field','park','grounds','dome','club',
+    'lounge','bar','auditorium','amphitheater','amphitheatre',
+    'pavilion','coliseum','colosseum','ballpark'
+];
+
 function getCategoryFallbackImage($defaultCategory, $tab = '') {
 
     $subcategory = '';
@@ -1668,46 +1834,46 @@ function getCategoryFallbackImage($defaultCategory, $tab = '') {
 }
 
 function getEventImage($artist, $defaultCategory, $event, $tab) {
-
+    $cat = '';
+    $subcat = '';
+    if($defaultCategory['depth'] == 1) {
+        $cat = strtolower($defaultCategory['text']['name']);
+    }
+    if($defaultCategory['depth'] == 2) {
+        $subcat = $defaultCategory['text']['name'];
+    }
+    if(empty($cat) || empty($subcat)) {
+        if (!empty($defaultCategory['ancestors'])) {
+            if(empty($cat)) {
+                foreach ($defaultCategory['ancestors'] as $ancestor) {
+                    if($ancestor['depth'] == 1) {
+                        $cat = strtolower($ancestor['text']['name']);
+                    }
+                }
+            }
+            if(empty($subcat)) {
+                foreach ($defaultCategory['ancestors'] as $ancestor) {
+                    if($ancestor['depth'] == 2) {
+                        $cat = $ancestor['text']['name'];
+                    }
+                }
+            }
+        }
+    }
     $storedEvent = getStoredImageUrl($event, 'events');
     if ($storedEvent) return $storedEvent;
 
-    $eventImage = getWikimediaImage($event);
+    $eventImage = getWikimediaImageAccurate($event, $cat, $subcat);
     if ($eventImage) {
         return processAndStoreImage($eventImage, $event, 'events');
     }
 
     if ($artist) {
-        $cat = '';
-        $subcat = '';
-        if($defaultCategory['depth'] == 1) {
-            $cat = strtolower($defaultCategory['text']['name']);
-        }
-        if($defaultCategory['depth'] == 2) {
-            $subcat = $defaultCategory['text']['name'];
-        }
-        if(empty($cat) || empty($subcat)) {
-            if (!empty($defaultCategory['ancestors'])) {
-                if(empty($cat)) {
-                    foreach ($defaultCategory['ancestors'] as $ancestor) {
-                        if($ancestor['depth'] == 1) {
-                            $cat = strtolower($ancestor['text']['name']);
-                        }
-                    }
-                }
-                if(empty($subcat)) {
-                    foreach ($defaultCategory['ancestors'] as $ancestor) {
-                        if($ancestor['depth'] == 2) {
-                            $cat = $ancestor['text']['name'];
-                        }
-                    }
-                }
-            }
-        }
+        
         $storedArtist = getStoredImageUrl($artist, 'artists');
         if ($storedArtist) return $storedArtist;
 
-        $artistImage = getWikimediaImage($artist);
+        $artistImage = getWikimediaImageAccurate($artist, $cat, $subcat);
         if ($artistImage) {
             return processAndStoreImage($artistImage, $artist, 'artists');
         }else{
@@ -1755,7 +1921,7 @@ function getArtistImage($artist, $defaultCategory) {
     $storedArtist = getStoredImageUrl($artist, 'artists');
     if ($storedArtist) return $storedArtist;
 
-    $artistImage = getWikimediaImage($artist);
+    $artistImage = getWikimediaImageAccurate($artist, $cat, $subcat);
     if ($artistImage) {
         return processAndStoreImage($artistImage, $artist, 'artists');
     }else{        
@@ -1769,7 +1935,6 @@ function getArtistImage($artist, $defaultCategory) {
 }
 
 function getVenueImage($venue) {
-
     if (!$venue) return '';
 
     $storedVenue = getStoredImageUrl($venue, 'venues');
@@ -1779,8 +1944,7 @@ function getVenueImage($venue) {
     if ($venueImage) {
         return processAndStoreImage($venueImage, $venue, 'venues');
     }else{
-        $results = openverse_search($venue);
-        $image = pickBestImage($results, $venue);
+        $image = getCorrectKGEntityVenue($venue);
         if($image) {
             return processAndStoreImage($image, $venue, 'venues');
         }
@@ -2249,11 +2413,53 @@ function getCorrectKGEntity($performerName, $category, $subcategory, $apiKey = G
 
         $entity = $item['result']; 
         $description = strtolower($entity['description'] ?? '');
-        $types = array_map('strtolower', $entity['@type'] ?? []);
         
         foreach($keywords as $word) {
             $word = strtolower($word);
             if ($word !== '' && strpos($description, $word) !== false && $entity['name'] == $performerName) {                                
+                if(!empty($entity['image']['contentUrl'])) {
+                    $image = $entity['image']['contentUrl'];
+                }else{
+                    $wikiUrl = $entity['detailedDescription']['url'];
+                    $title = getWikiTitle($wikiUrl);
+                    $image = getWikimediaImage($title);
+                }
+                return $image;             
+            }
+        }  
+    }
+}
+
+function getCorrectKGEntityVenue($venueName, $apiKey = GKGSAPI_KEY) {
+    global $venueKeywords;
+
+    $url = 'https://kgsearch.googleapis.com/v1/entities:search?' . http_build_query([
+        'query' => $venueName,
+        'limit' => 10,
+        'key'   => $apiKey
+    ]);
+
+    $response = @file_get_contents($url);
+    if ($response === false) {
+        return null;
+    }
+
+    $data = json_decode($response, true);
+    if (empty($data['itemListElement']) || !is_array($data['itemListElement'])) {
+        return null;
+    }
+
+    foreach ($data['itemListElement'] as $item) {
+        if (empty($item['result']) || !is_array($item['result'])) {
+            continue;
+        }
+
+        $entity = $item['result']; 
+        $description = strtolower($entity['description'] ?? '');
+        
+        foreach($venueKeywords as $word) {
+            $word = strtolower($word);
+            if ($word !== '' && strpos($description, $word) !== false) {                                
                 if(!empty($entity['image']['contentUrl'])) {
                     $image = $entity['image']['contentUrl'];
                 }else{

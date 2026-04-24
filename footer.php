@@ -68,40 +68,52 @@
     </div>
 
   </div>
-
+  <div class="policies">
+    <a href="<?php echo HOME_URL; ?>/privacy-policy">Privacy Policy</a>
+    <a href="<?php echo HOME_URL; ?>/terms-and-conditions">Terms of Use</a>
+    <a href="<?php echo HOME_URL; ?>/cookie-policy">Cookie Policy</a>
+    <a href="#">Sitemap</a>
+  </div>
   <!-- Divider -->
   <div class="tm-footer-divider"></div>
-
   <!-- Bottom bar -->
   <div class="tm-footer-bottom d-flex align-items-center">
-    <div class="policies">
-      <a href="<?php echo HOME_URL; ?>/privacy-policy">Privacy Policy</a>
-      <a href="<?php echo HOME_URL; ?>/terms-and-conditions">Terms of Use</a>
-      <a href="<?php echo HOME_URL; ?>/cookie-policy">Cookie Policy</a>
-      <a href="#">Sitemap</a>
-    </div>
-    <div class="keyword-bottombar">
-            <div class="text-white text-center">
-                <p>Buy Concert Tickets</p>
-            </div>
-         </div>
-<div class="d-flex align-items-center">
-<div class="copyright me-2">
-     <span class="link-tag"><a href="https://mindshare.consulting/" target="_blank" rel="nofollow" title="Mindshare Consulting Inc">Mindshare Consulting Inc</a> © <?php echo date('Y'); ?> SeatOutlet. All rights reserved.</span>
-    </div>
-  
-<div class="tm-country">
-                    <button type="button" class="btn btn-link">
-                        <svg fill="none" viewBox="0 0 512 512" width="1.5em" height="1.5em" aria-hidden="true" class="sc-fc75cc60-5 lbOkgz me-1">
-                            <path fill="#FFF" d="M503.2 322.8c5.7-21.3 8.8-43.7 8.8-66.8l-8.8-66.8a254.6 254.6 0 0 0-28.8-66.8l-59-66.7A255 255 0 0 0 256 0h-.2A255 255 0 0 0 96.6 55.7l-59 66.7a254.6 254.6 0 0 0-28.8 66.8L0 256v.1c0 23 3 45.4 8.8 66.7l28.8 66.8a257.3 257.3 0 0 0 59 66.7L256 512l159.4-55.7a257.3 257.3 0 0 0 59-66.7z"></path>
-                            <path fill="#D80027" d="M503.2 189.2c5.7 21.3 8.8 43.7 8.8 66.8H0c0-23.1 3-45.5 8.8-66.8zM415.4 55.7a257.3 257.3 0 0 1 59 66.7H37.6a257.3 257.3 0 0 1 59-66.7zm59 333.9c12.6-20.6 22.4-43 28.8-66.8H8.8a254.6 254.6 0 0 0 28.8 66.8zm-59 66.7H96.6A255 255 0 0 0 255.8 512h.4a255 255 0 0 0 159.2-55.7"></path>
-                            <path fill="#0052B4" d="M0 245.6A256 256 0 0 1 256 0v256H0z"></path>
-                            <path fill="#FFF" fill-rule="evenodd" d="M109.5 46a256 256 0 0 1 26.2-16l1 3h27.8L142 49.2l8.7 26.6L128 59.5l-22.6 16.4 8.6-26.6zm-80 90.4c6-11.1 12.7-21.8 20.1-32l3.8 11.7h28l-22.7 16.4 8.7 26.6-22.6-16.4L22.2 159l7.4-22.7Zm181.7-130 8.6 26.5h28L225 49.3l8.7 26.6-22.6-16.4-22.6 16.4 8.7-26.6L174.7 33h27.9l8.6-26.5ZM128 89.6l8.6 26.5h28l-22.7 16.4 8.7 26.6-22.6-16.4-22.6 16.4 8.6-26.6-22.5-16.4h27.9zm91.8 26.5-8.6-26.5-8.6 26.5h-28l22.7 16.4-8.7 26.6 22.6-16.4 22.6 16.4-8.7-26.6 22.6-16.4zm-175 56.7 8.6 26.5h28l-22.7 16.4 8.7 26.6-22.6-16.4-22.6 16.4 8.7-26.6-22.6-16.4h27.9zm91.8 26.5-8.6-26.5-8.6 26.5h-28l22.6 16.4-8.6 26.6 22.6-16.4 22.6 16.4-8.7-26.6 22.6-16.4zm74.6-26.5 8.6 26.5h28L225 215.7l8.7 26.6-22.6-16.4-22.6 16.4 8.7-26.6-22.6-16.4h27.9l8.6-26.5Z" clip-rule="evenodd"></path>
-                        </svg> US
-                    </button>
-                </div>
+      <div class="d-flex align-items-center">
+        <div class="copyright me-2">
+            <span class="link-tag"> © <?php echo date('Y'); ?> SeatOutlet. All rights reserved.</span>
         </div>
-</div>
+        <div class="tm-country">
+            <button type="button" class="btn btn-link">
+              <svg fill="none" viewBox="0 0 512 512" width="1.5em" height="1.5em" aria-hidden="true" class="sc-fc75cc60-5 lbOkgz me-1">
+                  <path fill="#FFF" d="M503.2 322.8c5.7-21.3 8.8-43.7 8.8-66.8l-8.8-66.8a254.6 254.6 0 0 0-28.8-66.8l-59-66.7A255 255 0 0 0 256 0h-.2A255 255 0 0 0 96.6 55.7l-59 66.7a254.6 254.6 0 0 0-28.8 66.8L0 256v.1c0 23 3 45.4 8.8 66.7l28.8 66.8a257.3 257.3 0 0 0 59 66.7L256 512l159.4-55.7a257.3 257.3 0 0 0 59-66.7z"></path>
+                  <path fill="#D80027" d="M503.2 189.2c5.7 21.3 8.8 43.7 8.8 66.8H0c0-23.1 3-45.5 8.8-66.8zM415.4 55.7a257.3 257.3 0 0 1 59 66.7H37.6a257.3 257.3 0 0 1 59-66.7zm59 333.9c12.6-20.6 22.4-43 28.8-66.8H8.8a254.6 254.6 0 0 0 28.8 66.8zm-59 66.7H96.6A255 255 0 0 0 255.8 512h.4a255 255 0 0 0 159.2-55.7"></path>
+                  <path fill="#0052B4" d="M0 245.6A256 256 0 0 1 256 0v256H0z"></path>
+                  <path fill="#FFF" fill-rule="evenodd" d="M109.5 46a256 256 0 0 1 26.2-16l1 3h27.8L142 49.2l8.7 26.6L128 59.5l-22.6 16.4 8.6-26.6zm-80 90.4c6-11.1 12.7-21.8 20.1-32l3.8 11.7h28l-22.7 16.4 8.7 26.6-22.6-16.4L22.2 159l7.4-22.7Zm181.7-130 8.6 26.5h28L225 49.3l8.7 26.6-22.6-16.4-22.6 16.4 8.7-26.6L174.7 33h27.9l8.6-26.5ZM128 89.6l8.6 26.5h28l-22.7 16.4 8.7 26.6-22.6-16.4-22.6 16.4 8.6-26.6-22.5-16.4h27.9zm91.8 26.5-8.6-26.5-8.6 26.5h-28l22.7 16.4-8.7 26.6 22.6-16.4 22.6 16.4-8.7-26.6 22.6-16.4zm-175 56.7 8.6 26.5h28l-22.7 16.4 8.7 26.6-22.6-16.4-22.6 16.4 8.7-26.6-22.6-16.4h27.9zm91.8 26.5-8.6-26.5-8.6 26.5h-28l22.6 16.4-8.6 26.6 22.6-16.4 22.6 16.4-8.7-26.6 22.6-16.4zm74.6-26.5 8.6 26.5h28L225 215.7l8.7 26.6-22.6-16.4-22.6 16.4 8.7-26.6-22.6-16.4h27.9l8.6-26.5Z" clip-rule="evenodd"></path>
+              </svg>
+              US
+            </button>
+        </div>
+      </div>
+      <div class="keyword-bottombar">
+        <div class="text-white text-center">
+            <p>Buy Concert Tickets</p>
+        </div>
+      </div>
+      <div class="d-flex align-items-center flex-wrap creater">
+        <div class="space-between d-flex pe-2">
+          Website Designed by 
+          <a class="px-2 footer-bottom-logo" style="color: #e1c24e;" href="https://www.jaymehta.co/" target="_blank" title="Jay Mehta Digital">
+            <img src="/assets/images/jm.png" alt="Website Design Service by Jay Mehta Digital" style="max-width:100px;" width="100" height="19">
+          </a> | 
+        </div> 
+        <div class="space-between d-flex">
+          Developed & Maintained by 
+          <a class="px-2 footer-bottom-logo" title="Mindshare Consulting" href="https://www.mindshare.consulting/" target="_blank" > 
+            <img src="/assets/images/mindshare-logo.webp" alt="Mindshare Consulting" style="max-width:100px;" width="100" height="22">
+          </a>
+        </div>
+      </div>
+  </div>
 
     
 
@@ -113,13 +125,42 @@
 	</button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script type="module" src="https://cdn.jsdelivr.net/npm/flatpickr/dist/esm/index.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
-<script src="<?php echo HOME_URL; ?>/js/home.js?v=<?php echo time(); ?>"></script>
-<script src="<?php echo HOME_URL; ?>/js/performer.js?v=<?php echo time(); ?>"></script>
-<?php include 'modals.php'; ?>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js" defer></script>
+<script src="<?php echo HOME_URL; ?>/js/home.js?v=<?php echo filemtime(__DIR__ . '/js/home.js'); ?>" defer></script>
+<?php if ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>  
+<?php }else{ ?>
+  <script src="<?php echo HOME_URL; ?>/js/performer.js?v=<?php echo filemtime(__DIR__ . '/js/performer.js'); ?>" defer></script>
+<?php } ?>
 
+<?php include 'modals.php'; ?>
+<script>
+        let mapsPromise = null;
+        function loadGoogleMapsApi() {
+            if (mapsPromise) return mapsPromise;
+
+            mapsPromise = new Promise((resolve, reject) => {
+                if (window.google && window.google.maps) {
+                resolve(window.google);
+                return;
+                }
+
+                window.__seatOutletMapsInit = function () {
+                    resolve(window.google);
+                };
+
+                const script = document.createElement('script');
+                script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo GAPI_KEY; ?>&libraries=places&loading=async&callback=__seatOutletMapsInit';
+                script.async = true;
+                script.defer = true;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+
+            return mapsPromise;
+        }
+    </script>
   </body>
 </html>

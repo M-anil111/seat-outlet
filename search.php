@@ -96,9 +96,9 @@ $faqs = getFaqs($mysqli, 'search');
 	<div class="container">
 
 		<?php if(!empty($artistData) || !empty($venueData)) { ?>
-			<div class="section-suggestions new-slider py-5">
+			<div class="section-suggestions new-slider py-md-5 py-4">
 				<h2 class="fw-bold fs-4 mb-4">Top Suggestions</h2>			
-				<div class="suggestion-slider px-4">
+				<div class="suggestion-slider ">
 					<?php if(!empty($artistData)) { ?>
 						<?php foreach($artistData as $artistItem) { 
 							$defaultCategory = $artistItem['cat'];

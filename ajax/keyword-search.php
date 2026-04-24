@@ -10,20 +10,6 @@ if ($q === '' || strlen($q) < 2) {
     exit;
 }
 
-$cachedData = get_keyword($q);
-
-if (!empty($cachedData)) {
-
-    $data = json_decode($cachedData, true);
-
-    header('Content-Type: application/json');
-    header('Cache-Control: public, max-age=86400');
-    header('X-Cache: HIT');
-
-    echo json_encode($data);
-    exit;
-}
-
 try {
     $response = getKeywordSearchSuggestions($q);
 } catch (Throwable $e) {
@@ -31,11 +17,6 @@ try {
     exit;
 }
 
-set_keyword($q, json_encode($response));
-
-header('Content-Type: application/json');
-header('Cache-Control: public, max-age=86400');
-header('X-Cache: MISS');
 echo json_encode($response);
 exit;
 

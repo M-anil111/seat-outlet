@@ -39,20 +39,7 @@ STRUCTURED DATA (JSON-LD)
       "description": "Verified ticket marketplace network to buy concert, sports, and event tickets online."
     },
 
-    {
-      "@type": "WebSite",
-      "@id": "https://beta.seatoutlet.com/#website",
-      "url": "https://beta.seatoutlet.com/",
-      "name": "Seat Outlet",
-      "publisher": {
-        "@id": "https://beta.seatoutlet.com/#organization"
-      },
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://beta.seatoutlet.com/search?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    },
+  
 
     {
       "@type": "WebPage",
