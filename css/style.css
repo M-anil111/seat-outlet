@@ -35,7 +35,6 @@ body {
                  'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 img {
-    max-width: 100%;
     width: 100%;
   height: auto;
 }
@@ -4506,9 +4505,7 @@ a.common-btn:hover{
   .search-bar-container .performer-city-venue .btn-stub-primary svg{
     fill: #0056d6;
   }
-  #nearLocationText{
-    display: none;
-  }
+
   .location-selector-link{
     margin-left: 0;
     font-size: 20px;
@@ -4791,3 +4788,92 @@ a.common-btn:hover{
   margin: 0;
 }
 
+/* Performance Improvement Start */
+
+
+/* Event Section */
+.custom-slider,
+.venue-slider,
+.venue-section,
+.suggestion-slider {
+  min-height: 320px; 
+}
+
+.event-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.event-card__img {
+  aspect-ratio: 278 / 200;
+  overflow: hidden;
+}
+
+.event-card__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.custom-slider:not(.slick-initialized) {
+  display: flex;
+  overflow: hidden;
+}
+
+.custom-slider:not(.slick-initialized) > * {
+  flex: 0 0 25%;
+}
+
+.skeleton-card {
+  height: 320px; 
+}
+
+.blur-image {
+  filter: blur(10px);
+  transform: scale(1.05);
+}
+
+.blur-image.loaded {
+  filter: blur(0);
+  transform: scale(1);
+  transition: all 0.4s ease;
+}
+
+
+/* Teams Section */
+.team-slider {
+  min-height: 140px;
+}
+
+.team-card-skeleton {
+  height: 120px;
+}
+
+.skeleton-loading .slick-arrow {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.slick-prev,
+.slick-next {
+  z-index: 10;
+}
+
+.team-icon {
+  width: 50px;
+  height: 50px;
+}
+
+.team-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.teams-section {
+  min-height: 180px;
+}
+
+
+/* Performance Improvement End */

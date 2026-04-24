@@ -153,11 +153,9 @@ function initLocationSearch(inputId, type = '') {
 
       const locationText = document.getElementById('locationSelectorText');
       const locationPanel = document.getElementById('locationPanel');
-      const nearLocationText = document.getElementById('nearLocationText');
 
       if (locationText) locationText.innerHTML = input.value + ' <i class="bi bi-chevron-down"></i>';
       if (locationPanel) locationPanel.classList.remove('show');
-      if (nearLocationText) nearLocationText.innerHTML = input.value;
 
       setCookie('so_label', input.value);
       setCookie('so_lat', lat);
@@ -182,8 +180,6 @@ function initLocationSearch(inputId, type = '') {
         document.getElementById('lngHeader').value = lng;
 
         if(input.value !== '') {
-          const nearLocationText = document.getElementById('nearLocationText');
-          if (nearLocationText) nearLocationText.innerHTML = input.value;
           //input.readOnly = true;   
           const resetLoc = document.getElementById('locationHeaderReset');
           resetLoc.classList.remove('d-none');
@@ -214,9 +210,6 @@ function initLocationSearch(inputId, type = '') {
     if (savedLabel) {
       const locText = document.getElementById('locationSelectorText');
       if (locText) locText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
-  
-      const nearLocationText = document.getElementById('nearLocationText');
-      if (nearLocationText) nearLocationText.innerHTML = savedLabel;
     }
   
     if (savedLat && savedLng) {
@@ -243,9 +236,6 @@ function initLocationSearch(inputId, type = '') {
   
         const locText = document.getElementById('locationSelectorText');
         if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
-  
-        const nearLocationText = document.getElementById('nearLocationText');
-        if (nearLocationText) nearLocationText.innerHTML = data.city + ', ' + data.state;
   
         window.locationReady = true;
   
@@ -276,8 +266,7 @@ function initLocationSearch(inputId, type = '') {
 
     const cityInput = document.getElementById('cityLocationInput');
     const locationText = document.getElementById('locationSelectorText');
-    const useCurrentLocationBtn = document.getElementById('useCurrentLocationCity');
-    const nearLocationText = document.getElementById('nearLocationText');
+    const useCurrentLocationBtn = document.getElementById('useCurrentLocationCity');    
     const locationToggleBtn = document.getElementById('locationToggleBtn');
     const locationPanel = document.getElementById('locationPanel');
     const locationClearBtn = document.getElementById('locationClearBtn');
@@ -355,7 +344,7 @@ function initLocationSearch(inputId, type = '') {
       return html;
     }
 
-    function initSlider(selector, loader = '') {
+    function initSlider(selector) {
       const $slider = $(selector);
   
       if ($slider.hasClass('slick-initialized')) {
@@ -366,7 +355,7 @@ function initLocationSearch(inputId, type = '') {
         slidesToShow: 4,
         slidesToScroll: 1,
         infinite: false,
-        arrows: loader === 'skeleton' ? false : true,
+        arrows: true,
         autoplay: false,
         dots: false,
         responsive: [
@@ -391,28 +380,35 @@ function initLocationSearch(inputId, type = '') {
         `&tab=${encodeURIComponent(tab)}` +
         `&category=${encodeURIComponent(category)}`;
   
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
+        try {
+          const res = await fetch(url);
+          const data = await res.json();
         
-        if (loadToken !== currentLoadToken) return;
-  
-        if (data && data.image) {
-          const tempImg = new Image();
-
-          tempImg.onload = function () {
-            img.src = data.image;
-
-            setTimeout(() => {
-              img.classList.add('loaded');
-            }, 50);
-          };
-
-          tempImg.src = data.image;
+          if (loadToken !== currentLoadToken) return;
+        
+          if (data && data.image) {
+            const tempImg = new Image();
+        
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.3s ease';
+        
+            tempImg.onload = function () {
+        
+              img.src = data.image;
+        
+              requestAnimationFrame(() => {
+                img.style.opacity = '1';
+                img.classList.add('loaded');
+              });
+        
+            };
+        
+            tempImg.src = data.image;
+          }
+        
+        } catch (err) {
+          console.error('Image load failed:', eventName, err);
         }
-      } catch (err) {
-        console.error('Image load failed:', eventName, err);
-      }
     }
 
     async function loadImagesOneByOne(container, loadToken) {
@@ -438,8 +434,9 @@ function initLocationSearch(inputId, type = '') {
         `&loc1=${encodeURIComponent(loc1)}` +
         `&loc2=${encodeURIComponent(loc2)}`;
         
+      container.classList.add('skeleton-loading');
       container.innerHTML = generateEventSkeleton(4);
-      initSlider(selector, 'skeleton');
+      initSlider(selector);
 
       try {
         const res = await fetch(ajaxUrl);
@@ -457,15 +454,15 @@ function initLocationSearch(inputId, type = '') {
         }
   
         const $slider = $(selector);
-        if ($slider.hasClass('slick-initialized')) {
-          $slider.slick('unslick');
+        if (!$slider.hasClass('slick-initialized')) {
+          initSlider(selector);
         }
   
-        container.innerHTML = buildCards(data);
-  
-        setTimeout(() => {
-          initSlider(selector);
-        }, 50);
+        const newHtml = buildCards(data);
+        $slider.slick('slickRemove', null, null, true);  
+        $slider.slick('slickAdd', newHtml);
+        container.classList.remove('skeleton-loading');
+        $slider.slick('setPosition');
   
         loadImagesOneByOne(container, loadToken);
       } catch (err) {
@@ -489,7 +486,6 @@ function initLocationSearch(inputId, type = '') {
       if (savedLabel && locationText) {
         locationText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
         document.getElementById('cityLocationInput').value = savedLabel;
-        if (nearLocationText) nearLocationText.innerHTML = savedLabel;
       }
 
       window.locationReady = true;
@@ -542,9 +538,6 @@ function initLocationSearch(inputId, type = '') {
             if (locationText) {
               locationText.innerHTML = so_cs + ' <i class="bi bi-chevron-down"></i>';
             }
-
-            const nearLocationText = document.getElementById('nearLocationText');
-            if (nearLocationText) nearLocationText.innerHTML = so_cs;
     
             reloadActiveTab('ll', { lat, lng });
         
@@ -584,9 +577,7 @@ function initLocationSearch(inputId, type = '') {
             setTimeout(() => {
               const locText = document.getElementById('locationSelectorText');
               if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
-              const nearLocationText = document.getElementById('nearLocationText');
-              if (nearLocationText) nearLocationText.innerHTML = data.city + ', ' + data.state;
-              
+                          
               if (typeof reloadActiveTab === 'function') {
                 reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
               }
@@ -649,34 +640,35 @@ function initLocationSearch(inputId, type = '') {
       return html + '</div>';
     }
   
-    function initTeamSlider(loader = '') {
+    function initTeamSlider() {
       const $slider = $('.team-slider');
       if (!$slider.length) return;
   
-      if ($slider.hasClass('slick-initialized')) {
-        $slider.slick('unslick');
-      }
-  
-      $slider.slick({
-        slidesToShow: 4,
-        slidesToScroll: 1,
-        arrows: loader === 'skeleton' ? false : true,
-        autoplay: loader === 'skeleton' ? false : true,
-        dots: false,
-        infinite: false,
-        responsive: [
-          { breakpoint: 992, settings: { slidesToShow: 2 } },
-          { breakpoint: 768, settings: { slidesToShow: 2 } },
-          { breakpoint: 576, settings: { slidesToShow: 1.5 } }
-        ]
-      });
+      if (!$slider.hasClass('slick-initialized')) {
+        $slider.slick({
+          slidesToShow: 4,
+          slidesToScroll: 1,
+          arrows: true,
+          autoplay: false,
+          dots: false,
+          infinite: false,
+          responsive: [
+            { breakpoint: 992, settings: { slidesToShow: 2 } },
+            { breakpoint: 768, settings: { slidesToShow: 2 } },
+            { breakpoint: 576, settings: { slidesToShow: 1.5 } }
+          ]
+        });
+      } else {
+        $slider.slick('setPosition');
+      } 
+      
     }
   
     window.loadTeams = function(slug) {
       const league = String(slug || '').toUpperCase().trim();
       if (!league) return;
     
-      container.innerHTML = '';
+      container.classList.add('skeleton-loading');
       container.innerHTML = generateTeamSkeleton(4);
 
       const jsonUrl = `/cache/teams_${league}.json`;
@@ -722,6 +714,7 @@ function initLocationSearch(inputId, type = '') {
       
               document.querySelector('.teams-section .container')?.classList.add('text-white');
               container.innerHTML = html;
+              container.classList.remove('skeleton-loading');
               initTeamSlider();
 
           })
@@ -928,7 +921,7 @@ function initLocationSearch(inputId, type = '') {
 
     const venueSection = document.querySelector('.venue-section');
     const teamsSection = document.querySelector('.teams-section');
-  
+    
     // 🔥 VENUES
     if (typeof loadNearbyVenues === 'function') {
   
@@ -944,7 +937,7 @@ function initLocationSearch(inputId, type = '') {
               observer.disconnect();
             }
           });
-        }, { rootMargin: '200px' });
+        }, { rootMargin: '600px' });
   
         venueObserver.observe(venueSection);
       }
@@ -965,7 +958,7 @@ function initLocationSearch(inputId, type = '') {
             observer.disconnect();
           }
         });
-      }, { rootMargin: '200px' });
+      }, { rootMargin: '600px' });
   
       teamsObserver.observe(teamsSection);
     }
