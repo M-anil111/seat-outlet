@@ -79,7 +79,7 @@
   </div>
   <div class="card-stat">
     <div class="stat-circle">
-      <span class="stat-number text-primary">&gt;9K</span>
+      <span class="stat-number text-primary">9K</span>
       <span class="stat-label fw-bolder text-black">Global Clients</span>
     </div>
   </div>

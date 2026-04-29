@@ -12,19 +12,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Seat Outlet</title>
     <meta name="robots" content="noindex nofollow">
-    <link rel="icon" type="image/png" href="<?php echo HOME_URL; ?>/assets/images/favicon-new.png">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="<?php echo HOME_URL; ?>/assets/images/favicon-new.webp">
+    
+    <!-- Critical CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
     <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/skeleton.css?v=<?php echo filemtime(__DIR__ . '/css/skeleton.css'); ?>">
+    
 
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+
+    <noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    </noscript>
     
     <?php include 'seo.php'; ?>    
 </head>
@@ -87,7 +100,7 @@
                     <!-- LEFT -->
                     <div class="d-flex align-items-center gap-4">
                         <!-- Logo -->
-                        <a href="/" class="tm-logo" style="width:256px; height:auto;"><img src="<?php echo HOME_URL; ?>/assets/seatoutlet-logo.svg" alt="Seat Outlet" width="256" height="38"></a>
+                        <a href="/" class="tm-logo"><img src="<?php echo HOME_URL; ?>/assets/seatoutlet-logo.webp" alt="Seat Outlet" width="256" height="38" loading="eager"></a>
                     </div>
                     <!-- RIGHT -->
                     <div class="d-flex align-items-center gap-3">
@@ -101,13 +114,14 @@
                             </ul>
                         </nav>
                         <div class="tm-top-links d-flex d-sm-flex d-md-flex align-items-center">
-                            <button class="btn mobile-menu-btn d-sm-block d-md-block d-lg-none d-xl-none d-xxl-none p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
+                            <div class="header-phone d-lg-none d-xl-none d-xxl-none"><a href="tel:+1512-621-8822"><i class="bi bi-telephone-fill"></i></a></div>
+                            <button class="btn mobile-menu-btn d-sm-block d-md-block d-lg-none d-xl-none d-xxl-none p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-label="menu">
                                 <i class="bi bi-list fs-3 text-white"></i>
                             </button>
                         </div>
                     </div>
                 </div>
-                <form method="post" action="<?php echo HOME_URL; ?>/search.php" class="search-bar-form">
+                <form method="post" action="<?php echo HOME_URL; ?>/search" class="search-bar-form">
                     <div class="search-bar-container d-flex flex-md-row p-md-1">
                         <div class="city-location search-item d-flex align-items-center gap-md-2 gap-1 px-3 py-2 flex-fill header-location-close locationInputFieldWrapper">
                             <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -161,7 +175,7 @@
                                 </svg>
                             </div>
                             <div id="keywordResultsHeader" class="tn-dropdown-menu dropdown"></div>
-                            <button class="btn btn-stub-primary px-4 py-2 small fw-semibold rounded-pill d-md-none d-block">
+                            <button class="btn btn-stub-primary px-4 py-2 small fw-semibold rounded-pill d-md-none d-block" aria-label="Search">
                                 <svg viewBox="0 0 23 24" width="1.5em" height="1.5em" aria-hidden="true" focusable="false" class="BaseSvg-sc-yh8lnd-0 MagnifyingGlassIcon___StyledBaseSvg-sc-1pooy9n-0 hNajXU"><path d="M3.78 4.78 1.62 10l2.16 5.22L9 17.38l5.22-2.16L16.38 10l-2.16-5.22L9 2.62zM9 1l6.36 2.64L18 10l-2.33 5.61 6.11 6.11-1.06 1.06-6.1-6.1L9 19l-6.36-2.64L0 10l2.64-6.36z"></path></svg>
                             </button>
                         </div>
@@ -199,13 +213,11 @@
                         <!-- Submenu Panel -->
                         <div class="submenu-panel" id="submenu-concerts">
                             <div class="submenu-header">
-                                <span class="back-btn">
+                                <span class="back-btn me-3">
                                     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g transform="matrix(-1,1.2246467991473532e-16,-1.2246467991473532e-16,-1,497.00405883789074,492.0039672851562)"><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#ffffff" opacity="1" data-original="#000000" class=""></path></g></svg>
                                 </span>
                                 <span>Concerts</span>
-                                <span class="close-btn" data-bs-dismiss="offcanvas">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 365.717 365" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><g fill="#f44336"><path d="M356.34 296.348 69.727 9.734c-12.5-12.5-32.766-12.5-45.247 0L9.375 24.816c-12.5 12.504-12.5 32.77 0 45.25L295.988 356.68c12.504 12.5 32.77 12.5 45.25 0l15.082-15.082c12.524-12.48 12.524-32.75.02-45.25zm0 0" fill="#ffffff" opacity="1" data-original="#f44336" class=""></path><path d="M295.988 9.734 9.375 296.348c-12.5 12.5-12.5 32.77 0 45.25l15.082 15.082c12.504 12.5 32.77 12.5 45.25 0L356.34 70.086c12.504-12.5 12.504-32.766 0-45.246L341.258 9.758c-12.5-12.524-32.766-12.524-45.27-.024zm0 0" fill="#ffffff" opacity="1" data-original="#f44336" class=""></path></g></g></svg>
-                                </span>
+                                
                             </div>
 
                             <ul>
@@ -217,9 +229,11 @@
                                 <li><a href="/category/latin-1890">Latin</a></li>
                                 <li><a href="/category/alternative-1862">Alternative</a></li>
                                 <!-- second -->
+                                <hr class="line">
                                 <li>
                                     <h3 class="sub-menu-heading">Discover More</h3>
                                 </li>
+                                <li><a href="#" class="view-all">All Concerts <i class="bi bi-arrow-right"></i></a></li>
                                 <li><a href="/category/50s-60s-era-1860">50s / 60s Era</a></li>
                                 <li><a href="/category/alternative-1862">Alternative</a></li>
                                 <li><a href="/category/bluegrass-1866">Bluegrass</a></li>
@@ -259,13 +273,11 @@
                         <!-- Submenu Panel -->
                         <div class="submenu-panel" id="submenu-sports">
                             <div class="submenu-header">
-                                <span class="back-btn">
+                                <span class="back-btn me-3">
                                     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g transform="matrix(-1,1.2246467991473532e-16,-1.2246467991473532e-16,-1,497.00405883789074,492.0039672851562)"><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#ffffff" opacity="1" data-original="#000000" class=""></path></g></svg>
                                 </span>
                                 <span>Sports</span>
-                                <span class="close-btn" data-bs-dismiss="offcanvas">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 365.717 365" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><g fill="#f44336"><path d="M356.34 296.348 69.727 9.734c-12.5-12.5-32.766-12.5-45.247 0L9.375 24.816c-12.5 12.504-12.5 32.77 0 45.25L295.988 356.68c12.504 12.5 32.77 12.5 45.25 0l15.082-15.082c12.524-12.48 12.524-32.75.02-45.25zm0 0" fill="#ffffff" opacity="1" data-original="#f44336" class=""></path><path d="M295.988 9.734 9.375 296.348c-12.5 12.5-12.5 32.77 0 45.25l15.082 15.082c12.504 12.5 32.77 12.5 45.25 0L356.34 70.086c12.504-12.5 12.504-32.766 0-45.246L341.258 9.758c-12.5-12.524-32.766-12.524-45.27-.024zm0 0" fill="#ffffff" opacity="1" data-original="#f44336" class=""></path></g></g></svg>
-                                </span>
+                                
                             </div>
 
                             <ul>
@@ -277,9 +289,11 @@
                                 <li><a href="/category/nhl-1972">NHL</a></li>
                                 <li><a href="/category/mls-1970">MLS</a></li>
                                 <!-- second -->
+                                <hr class="line">
                                 <li>
                                     <h3 class="sub-menu-heading">Discover More</h3>
                                 </li>
+                                <li><a href="#" class="view-all">All Sports <i class="bi bi-arrow-right"></i></a></li>
                                 <li><a href="/category/baseball-1864">Baseball</a></li>
                                 <li><a href="/category/basketball-1865">Basketball</a></li>
                                 <li><a href="/category/boxing-1867">Boxing</a></li>
@@ -317,13 +331,11 @@
                         <!-- Submenu Panel -->
                         <div class="submenu-panel" id="submenu-theater">
                             <div class="submenu-header">
-                                <span class="back-btn">
+                                <span class="back-btn me-3">
                                     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g transform="matrix(-1,1.2246467991473532e-16,-1.2246467991473532e-16,-1,497.00405883789074,492.0039672851562)"><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#ffffff" opacity="1" data-original="#000000" class=""></path></g></svg>
                                 </span>
                                 <span>Theater</span>
-                                <span class="close-btn" data-bs-dismiss="offcanvas">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 365.717 365" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><g fill="#f44336"><path d="M356.34 296.348 69.727 9.734c-12.5-12.5-32.766-12.5-45.247 0L9.375 24.816c-12.5 12.504-12.5 32.77 0 45.25L295.988 356.68c12.504 12.5 32.77 12.5 45.25 0l15.082-15.082c12.524-12.48 12.524-32.75.02-45.25zm0 0" fill="#ffffff" opacity="1" data-original="#f44336" class=""></path><path d="M295.988 9.734 9.375 296.348c-12.5 12.5-12.5 32.77 0 45.25l15.082 15.082c12.504 12.5 32.77 12.5 45.25 0L356.34 70.086c12.504-12.5 12.504-32.766 0-45.246L341.258 9.758c-12.5-12.524-32.766-12.524-45.27-.024zm0 0" fill="#ffffff" opacity="1" data-original="#f44336" class=""></path></g></g></svg>
-                                </span>
+                                
                             </div>
 
                             <ul>
@@ -332,9 +344,11 @@
                                 </li>
                                 <li><a href="/category/broadway-1868">Broadway</a></li>
                                 <!-- second -->
+                                 <hr class="line">
                                 <li>
                                     <h3 class="sub-menu-heading">Discover More</h3>
                                 </li>
+                                <li><a href="#" class="view-all">All Theater <i class="bi bi-arrow-right"></i></a></li>
                                 <li><a href="/category/ballet-1863">Ballet</a></li>
                                 <li><a href="/category/broadway-1868">Broadway</a></li>
                                 <li><a href="/category/children-family-1869">Children / Family</a></li>
@@ -357,12 +371,17 @@
                     <li>
                         <a href="#" title="Cities" class="mobile-menu">Cities</a>
                     </li>
-                    <li>
-                        <a href="/about-us.php" title="About Us" class="mobile-menu">About Us</a>
-                    </li>
+                </ul>
+                <ul class="mobile-main-menu-new">
                     <li>
                         <a href="/contact/" title="Contact Us" class="mobile-menu">Contact Us</a>
                     </li>
+                    <li>
+                        <a href="tel:+1512-621-8822" title="Call Us (512)-621-8822" class="mobile-menu">Call Us (512)-621-8822</a>
+                    </li>                    
+                    <li>
+                        <a href="/about-us.php" title="About Us" class="mobile-menu">About Us</a>
+                    </li>                    
                     <li>
                         <a href="/faq/" title="Faqs" class="mobile-menu">Faqs</a>
                     </li>
@@ -375,7 +394,7 @@
                     <li>
                         <a href="/cookie-policy/" title="Cookie Policy" class="mobile-menu">Cookie Policy</a>
                     </li>
-                </ul>         
+                </ul>     
             </nav>
         </div>
     </div>

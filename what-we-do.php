@@ -1,4 +1,4 @@
-<?php include 'header-mehul.php'; ?>
+<?php include 'header.php'; ?>
 
 <style>
     :root {
@@ -28,7 +28,7 @@
     /* ── TYPOGRAPHY ── */
     h1, h2, h3, .display-font { letter-spacing: .04em; }
     h1  { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
-    h2  { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.1; }
+    /* h2  { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.1; } */
 
   
 
@@ -229,7 +229,7 @@
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     @media (max-width: 575.98px){
-    .hero{padding:0px 10px 10px !important;}}
+    .hero{padding:50px 10px 50px 10px !important;}}
   </style>
 
 

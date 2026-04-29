@@ -1,5 +1,5 @@
 <?php include 'header.php'; ?>
- 
+
 <style>
 /* SECTION 1 — HERO */
 .about-us-section .hero-section {
@@ -76,7 +76,7 @@
   transform: translateX(-50%);
 }
 
-.about-us-section .about-us-section .section-title {
+.about-us-section .section-title {
   font-size: clamp(2rem, 3vw, 2.6rem);
   font-weight: 600;
   text-transform: uppercase;
@@ -165,6 +165,12 @@
   width: 450px;
 }
 
+.about-us-section .industry-content {
+  width: 450px; /* ← Change to: */
+  width: calc(100% - 40px); /* fits any slide width */
+  max-width: 450px;          /* keeps your original cap */
+}
+
 .about-us-section .industry-year {
   display: inline-flex;
   align-items: center;
@@ -216,7 +222,7 @@
 .about-us-section .custom-arrow.slick-prev {
   bottom: -70px;
   top: unset;
-  right: 110px;
+  left: 60px;
 }
 
 .about-us-section .custom-arrow.slick-next {
@@ -291,7 +297,7 @@
 
 /* Scroll reveal */
 .about-us-section .scroll-fade {
-  opacity: 0;
+  opacity: 1;
   transform: translateY(30px);
   transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
@@ -941,6 +947,11 @@
 
 <?php include 'footer.php'; ?>
 
+<!-- jQuery FIRST -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+
 <script>
     // Initialize interactions once DOM is ready
 $(function () {
@@ -950,8 +961,10 @@ $(function () {
     yearSpan.textContent = new Date().getFullYear();
   }
 
-  // Slick Slider initialization
-  $(".industry-slider").slick({
+
+// ✅ Use jQuery() or $() — not jquery()
+jQuery(document).ready(function ($) {
+  $('.industry-slider').slick({
     slidesToShow: 3,
     slidesToScroll: 1,
     autoplay: true,
@@ -961,38 +974,16 @@ $(function () {
     dots: false,
     pauseOnHover: true,
     cssEase: "ease-out",
-    nextArrow:
-      '<button type="button" class="slick-next custom-arrow"><span>&rarr;</span></button>',
-    prevArrow:
-      '<button type="button" class="slick-prev custom-arrow"><span>&larr;</span></button>',
+    nextArrow: '<button type="button" class="slick-next custom-arrow"><span>&rarr;</span></button>',
+    prevArrow: '<button type="button" class="slick-prev custom-arrow"><span>&larr;</span></button>',
     responsive: [
-      {
-        breakpoint: 1365, // Laptop
-        settings: {
-          slidesToShow: 2.5
-        }
-      },
-      {
-        breakpoint: 1199, // Laptop
-        settings: {
-          slidesToShow: 2
-        }
-      },
-      {
-        breakpoint: 991, // tablets
-        settings: {
-          slidesToShow: 1.5
-        }
-      },
-      {
-        breakpoint: 768, // mobile
-        settings: {
-          slidesToShow: 1
-        }
-      }
+      { breakpoint: 1365, settings: { slidesToShow: 2.5 } },
+      { breakpoint: 1199, settings: { slidesToShow: 2 } },
+      { breakpoint: 991, settings: { slidesToShow: 1.5 } },
+      { breakpoint: 768, settings: { slidesToShow: 1 } }
     ]
   });
-
+});
   // Scroll-triggered fade-in animations
   const revealElements = document.querySelectorAll(".scroll-fade");
 

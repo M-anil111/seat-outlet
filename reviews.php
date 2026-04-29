@@ -245,6 +245,8 @@
     flex-shrink: 0;
 }
 
+.trust-panel .trust-item img{max-width: 70px;}
+
 /* Mascot panel */
 .mascot-panel {
     background-color: var(--trust-panel-bg);
@@ -324,7 +326,7 @@
 
 @media (max-width: 767.98px) {
     .reviews-section{
-        padding: 50px 0;
+        padding: 30px 0;
     }
     .reviews-title {
         font-size: 24px; /* 1.5rem */

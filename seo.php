@@ -30,11 +30,13 @@ STRUCTURED DATA (JSON-LD)
       "url": "https://beta.seatoutlet.com/",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://beta.seatoutlet.com/assets/seatoutlet-logo.svg"
+        "url": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp"
       },
       "sameAs": [
-        "https://www.facebook.com/",
-        "https://www.instagram.com/"
+        "https://www.facebook.com/profile.php?id=61588886945534",
+        "https://www.instagram.com/seatoutlet/",
+        "https://www.youtube.com/@SeatOutlet",
+        "https://linktr.ee/seatoutlet"
       ],
       "description": "Verified ticket marketplace network to buy concert, sports, and event tickets online."
     },
@@ -55,7 +57,7 @@ STRUCTURED DATA (JSON-LD)
       "description": "Buy event tickets online, explore concert tickets online, browse a sports tickets marketplace, and compare ticket prices online.",
       "primaryImageOfPage": {
         "@type": "ImageObject",
-        "url": "https://beta.seatoutlet.com/assets/seatoutlet-logo.svg"
+        "url": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp"
       }
     },
 

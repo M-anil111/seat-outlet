@@ -2,13 +2,33 @@
 include 'header.php';
 $festivalNames = getTopFestivalPerformers();
 ?>
+<section class="top-hero-slider">
 
+
+  <div class="hero-slider">
+
+    <!-- Slide 1 – Concert / Event -->
+    <div class="slide">
+      <img src="<?php echo HOME_URL; ?>/assets/home-slider.webp" alt="Live Concert Event" laoding="eager" fetchpriority="high" />
+      <div class="slide-overlay"></div>
+      <div class="slide-caption">
+        <span class="tag">Live Events</span>
+        <h2>Experience Live Events<br>Like Never Before</h2>
+        <p>From sold-out concerts to must-see sports and theater shows discover verified tickets at competitive prices across our trusted marketplace network.</p>
+        <a href="#" class="btn-slide">Explore Events</a>
+      </div>
+    </div>
+
+
+
+  </div><!-- /.hero-slider -->
+</section>
 
 <!-- Top Picks Section -->
 <section class="container pt-md-5 pt-4">
   <div class="mb-lg-4 mb-3 pb-2">
-    <div class="location-selector-wrapper d-flex flex-wrap align-items-center justify-content-md-between">
-      <h2 class="fw-bold fs-4 mb-0">Our Top Picks Near <span id="nearLocationText"></span></h2>
+    <div class="location-selector-wrapper d-flex flex-wrap align-items-center">
+      <h2 class="fw-bold fs-4 mb-0">Our Top Picks Near </h2>
       <div class="so-right-searchbar ps-md-0 ps-2">
       <button type="button" class="location-selector" id="locationToggleBtn">
         <span class="location-selector-link" id="locationSelectorText">Select your location <i class="bi bi-chevron-down"></i></span>
@@ -98,12 +118,12 @@ $festivalNames = getTopFestivalPerformers();
       <div class="row align-items-center g-xxl-4 g-xl-3 g-lg-2 g-3">
 
         <!-- Left Heading -->
-        <div class="col-lg-3">
-          <h3 class="fw-bold mb-lg-0 mb-3 so-experieance">Experience Live Events<br class="so-nobrake"> with Confidence</h3>
+        <div class="col-lg-12">
+          <h3 class="fw-bold mb-lg-0 mb-3 so-experieance">Experience Live Events with Confidence</h3>
         </div>
-
+        <div class="row g-3">
         <!-- Feature 1 -->
-        <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="col-lg-4 col-md-4 col-sm-6">
           <div class="feature-box d-flex">
             <i class="bi bi-star-fill text-white feature-icon"></i>
             <div>
@@ -114,7 +134,7 @@ $festivalNames = getTopFestivalPerformers();
         </div>
 
         <!-- Feature 2 -->
-        <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="col-lg-4 col-md-4 col-sm-6">
           <div class="feature-box d-flex">
             <i class="bi bi-shield-check text-white feature-icon"></i>
             <div>
@@ -125,7 +145,7 @@ $festivalNames = getTopFestivalPerformers();
         </div>
 
         <!-- Feature 3 -->
-        <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="col-lg-4 col-md-4 col-sm-6">
           <div class="feature-box d-flex">
             <i class="bi bi-gift-fill text-white feature-icon"></i>
             <div>
@@ -134,48 +154,38 @@ $festivalNames = getTopFestivalPerformers();
             </div>
           </div>
         </div>
+      </div>
 
       </div>
     </div>
   </div>
 </section>
 
+<section class="section top_performers bg-white categories teams-nearby py-5" id="topPerformersSection">
+  <div class="container">
+    <div class="categories__grid">
 
-<section class="teams-nearby bg-white py-3 teams-section">
-  <div class="container py-md-5 py-3 slider-bg text-white">
-    <div class="d-flex justify-content-between align-items-center">
-      <h2 class="section__title section__title--center fw-bold fs-4 mb-4 text-black">
-        Top Teams
-      </h2>
-      <div class="slider-arrows"></div>
-    </div>
-   
-    <div class="category-scroll-wrapper">
-      <ul class="nav nav-pills mb-3 category-scroll" role="tablist">
-        <li class="nav-item" role="presentation">
-          <button class="sport-cat active" data-bs-toggle="pill" data-bs-target="#tab-NFL" type="button" data-slug="NFL">NFL</button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="sport-cat" data-bs-toggle="pill" data-bs-target="#tab-NBA" type="button" data-slug="NBA">NBA</button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="sport-cat" data-bs-toggle="pill" data-bs-target="#tab-MLB" type="button" data-slug="MLB">MLB</button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="sport-cat" data-bs-toggle="pill" data-bs-target="#tab-NHL" type="button" data-slug="NHL">NHL</button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="sport-cat" data-bs-toggle="pill" data-bs-target="#tab-MLS" type="button" data-slug="MLS">MLS</button>
-        </li>
-      </ul>
-    </div>
-    <div class="tab-content tab-pane show active" id="sportsTabContent">
-      <?php echo generateTeamSkeleton(4); ?>
+      <div class="categories__col">
+        <h3 class="categories__heading">Top Concert Performers</h3>
+        <ul class="categories__list" id="concerts-list"></ul>
+        <a href="/concerts" class="common-btn">View All Concerts</a>
+      </div>
+
+      <div class="categories__col">
+        <h3 class="categories__heading">Top Sports Performers</h3>
+        <ul class="categories__list" id="sports-list"></ul>
+        <a href="/sports" class="common-btn">View All Sports</a>
+      </div>
+
+      <div class="categories__col">
+        <h3 class="categories__heading">Top Theater Performers</h3>
+        <ul class="categories__list" id="theater-list"></ul>
+        <a href="/theater" class="common-btn">View All Theatre</a>
+      </div>
+
     </div>
   </div>
 </section>
-
-<?php //include "home-personalized-picks.php"; ?>
 
 <section class="section categories teams-nearby py-5">
   <div class="container">
@@ -308,7 +318,54 @@ $festivalNames = getTopFestivalPerformers();
   </div>
 </section>
 
-<section class="section reasons teams-nearby py-md-5 py-4 mt-3" aria-labelledby="reasons-heading">
+<section id="policies" class="py-5" style="background-color: #fff;">
+  <div class="container">
+    <div class="row g-5 align-items-start">
+      <div class="col-lg-4">
+        <span class="section-label">Why Choose Seat Outlet</span>
+        <h2 class="section-title fs-4">Your Tickets, Confidently Sourced.</h2>
+        <div class="section-divider"></div>
+        <p class="text-muted">Trusted sources, better prices, zero stress.
+        Everything you need for a smooth ticket buying experience.</p>
+        <a href="/why-us.php" class="btn common-btn mt-3">Get Your Tickets</a>
+      </div>
+      <div class="col-lg-8">
+        <div class="row g-4">
+          <div class="col-sm-6">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="bi bi-patch-check-fill"></i></div>
+              <h4>Trusted providers</h4>
+              <p>Every seller verified before listing a single ticket.</p>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="feature-card">
+              <div class="feature-icon"> <i class="bi bi-shield-lock-fill"></i></div>
+              <h4>Secure checkout</h4>
+              <p>Reliable payment options, no hidden surprises.</p>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="bi bi-currency-exchange"></i></div>
+              <h4>Easy price compare</h4>
+              <p>Best deals across platforms, side by side.</p>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="bi bi-calendar-event"></i></div>
+              <h4>Wide event selection</h4>
+              <p>Sports, concerts, theatre all venues covered.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section reasons teams-nearby py-md-5 py-4 aria-labelledby="reasons-heading">
   <div class="container">
     <h2 id="reasons-heading" class="section__title section__title--center fw-bold fs-4 mb-lg-5 mb-4">The Seat Outlet Advantage</h2>
     <!-- <p class="section__subtitle text-center">Great seats, amazing prices.</p> -->
@@ -430,9 +487,7 @@ $festivalNames = getTopFestivalPerformers();
         </div>
 
         <div class="testimonial-card">
-
-
-          <p class="testimonial-text">
+           <p class="testimonial-text">
             <strong>Great experience for sports events</strong> As a regular sports fan, I use this platform often. It’s easy to find tickets across different sellers, and the pricing is very competitive.
           </p>
           <div class="rating">★★★★★</div>
@@ -450,66 +505,113 @@ $festivalNames = getTopFestivalPerformers();
   </section>
 </div>
 
-<?php include "ajax/load-newsletter.php"; ?>
+<section class="newsletter-section py-5">
+    <div class="container"> 
+		<div class="row g-3 align-items-center justify-content-between">
+			<div class="col-lg-4">
+				<div class="col-12 d-flex align-items-center gap-3 justify-content-md-center">
+					<div class="newsletter-icon">
+						<i class="bi bi-send-fill fs-5"></i>
+					</div>
+					<div class="text-uppercase fw-bold text-white fs-5">
+						Newsletter Sign Up!
+					</div>
+				</div>
+			</div>
+			<div class="col-lg-8">
+				<form method="POST" action="/contact-submit.php">
+					<div class="newsletter-icontact">						
+						<div class="col-12 col-md-4 col-lg-3">
+							<input maxlength="50" name="fname" type="text" class="form-control newsletter-input" placeholder="First Name" required />
+						</div>
+						<div class="col-12 col-md-4 col-lg-3">
+							<input maxlength="50" name="lname" type="text" class="form-control newsletter-input" placeholder="Last Name" required />
+						</div>
+						<div class="col-12 col-md-4 col-lg-3">
+							<input maxlength="150" name="email" type="text" class="form-control newsletter-input" placeholder="Email" required />               
+						</div>							
+						<div class="col-12 col-md-4 col-lg-3"> 
+							<button type="submit" class="btn newsletter-btn px-4">Submit</button>
+						</div>						
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</section> 
 
 <section class="partners-section teams-nearby py-5">
   <div class="container">
     <h2 class="mb-4 fw-bold fs-4 mb-md-5 mb-4">Partners</h2>
 
-    <div class="row g-3 g-md-4 justify-content-center partners-grid">
+    <div class="row g-3 g-md-4 justify-content-md-center partners-grid">
 
-      <div class="col-6 col-md-3">
-        <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/hunt-tickets.webp" class="img-fluid" alt="Hunt Tickets" width="115" height="115" loading="lazy">
-        </div>
-      </div>
+    <div class="col-6 col-md-3">
+  <div class="partner-card text-center">
+    <a href="https://www.hunttickets.us/" target="_blank" rel="noopener">
+      <img src="<?php echo HOME_URL; ?>/assets/hunt-tickets.webp" class="img-fluid" alt="Hunt Tickets" width="115" height="115" loading="lazy">
+    </a>
+  </div>
+</div>
 
-      <div class="col-6 col-md-3">
-        <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/lite.webp" class="img-fluid" alt="Lite" width="115" height="115" loading="lazy">
-        </div>
-      </div>
+<div class="col-6 col-md-3">
+  <div class="partner-card text-center">
+    <a href="https://www.millerlite.com/" target="_blank" rel="noopener">
+      <img src="<?php echo HOME_URL; ?>/assets/lite.webp" class="img-fluid" alt="Lite" width="115" height="115" loading="lazy">
+    </a>
+  </div>
+</div>
 
-      <div class="col-6 col-md-3">
-        <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/seat-geek.webp" class="img-fluid" alt="Seat Geek" width="115" height="115" loading="lazy">
-        </div>
-      </div>
+<div class="col-6 col-md-3">
+  <div class="partner-card text-center">
+    <a href="https://mindshare.consulting/" target="_blank" rel="noopener">
+      <img src="<?php echo HOME_URL; ?>/assets/mindshare-logo.webp" class="img-fluid partner-network-img" alt="mindshare.consulting" width="115" height="115" loading="lazy">
+    </a>
+  </div>
+</div>
 
-      <div class="col-6 col-md-3">
-        <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/viralpep.webp" class="img-fluid" alt="Electolit" width="115" height="115" loading="lazy">
-        </div>
-      </div>
+<div class="col-6 col-md-3">
+  <div class="partner-card text-center">
+    <a href="https://www.viralpep.com/" target="_blank" rel="noopener">
+      <img src="<?php echo HOME_URL; ?>/assets/viralpep.webp" class="img-fluid" alt="viralpep" width="115" height="115" loading="lazy">
+    </a>
+  </div>
+</div>
 
-      <div class="col-6 col-md-3">
-        <div class="partner-card text-center">
-          <img src="<?php echo AWS_CDN_URL; ?>images/jimbeam.webp" class="img-fluid" alt="Jimbeam" width="115" height="115" loading="lazy">
-        </div>
-      </div>
+<div class="col-6 col-md-3">
+  <div class="partner-card text-center">
+    <a href="https://www.jimbeam.com/" target="_blank" rel="noopener">
+      <img src="<?php echo AWS_CDN_URL; ?>images/jimbeam.webp" class="img-fluid" alt="Jimbeam" width="115" height="115" loading="lazy">
+    </a>
+  </div>
+</div>
 
-      <div class="col-6 col-md-3">
-        <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/gtn.webp" class="img-fluid" alt="Grab Tickets Now" width="115" height="115" loading="lazy">
-        </div>
-      </div>
+<div class="col-6 col-md-3">
+  <div class="partner-card text-center">
+    <a href="http://grabticketsnow.com/" target="_blank" rel="noopener">
+      <img src="<?php echo HOME_URL; ?>/assets/gtn.webp" class="img-fluid" alt="Grab Tickets Now" width="115" height="115" loading="lazy">
+    </a>
+  </div>
+</div>
 
-      <div class="col-6 col-md-3">
-        <div class="partner-card text-center">
-          <img src="<?php echo HOME_URL; ?>/assets/ticket-scanner.webp" class="img-fluid partner-img" alt="Ticket Scanner" width="150" height="150" loading="lazy">
-        </div>
-      </div>
+<div class="col-6 col-md-3">
+  <div class="partner-card text-center">
+    <a href="https://www.ticketscanner.ca/" target="_blank" rel="noopener">
+      <img src="<?php echo HOME_URL; ?>/assets/ticket-scanner.webp" class="img-fluid partner-img" alt="Ticket Scanner" width="150" height="150" loading="lazy">
+    </a>
+  </div>
+</div>
 
-      <div class="col-6 col-md-3">
-        <div class="partner-card text-center">
-          <img src="<?php echo AWS_CDN_URL; ?>images/lyft.webp" class="img-fluid" alt="Lyft" width="115" height="115" loading="lazy">
-        </div>
-      </div>
+<div class="col-6 col-md-3">
+  <div class="partner-card text-center">
+    <a href="https://www.ticketnetwork.com/" target="_blank" rel="noopener">
+      <img src="<?php echo HOME_URL; ?>/assets/ticketnetwork.webp" class="img-fluid" alt="Ticket Network" width="115" height="115" loading="lazy">
+    </a>
+  </div>
+</div>
 
     </div>
   </div>
 </section>
 
-
 <?php include 'footer.php'; ?>
-

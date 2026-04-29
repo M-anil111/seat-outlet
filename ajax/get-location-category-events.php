@@ -67,7 +67,8 @@ if (!empty($events)) {
             'performer'       => $evtPerformer,
             'tab'             => $tab,
             'defaultCategory' => $event['defaultCategory'] ?? [],
-            'placeholder'     => getCategoryFallbackImage($event['defaultCategory'] ?? [], $tab)
+            'placeholder'     => getCategoryFallbackImage($event['defaultCategory'] ?? [], $tab),
+            'edate'           => $timestamp ? $timestamp : '',
         ];
     }
 }

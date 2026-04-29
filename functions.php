@@ -970,7 +970,7 @@ function fetchLocationCategoryEvents($rootPath, $type = '', $loc1 = '', $loc2 = 
 
     $params = [
         'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
-        'perPage' => 8,
+        'perPage' => 6,
         'sort' => '-salesRank', 
         'salesRankOptions' => '{"interval":"day","metric":"ticketVolume"}', 
     ];
@@ -1057,16 +1057,16 @@ function fetchGroupedEvents($rootPath, $type = '', $loc1 = '', $loc2 = '') {
         if (count($grouped) === count($subcategories)) break;
     }
     
-    if (count($grouped) < 8) {
+    if (count($grouped) < 6) {
         foreach ($events as $event) {
             if (isset($usedEventIds[$event['id']])) continue;
             $grouped[] = $event;
             $usedEventIds[$event['id']] = true;
-            if (count($grouped) >= 8) break;
+            if (count($grouped) >= 6) break;
         }
     }
 
-    return array_slice(array_values($grouped), 0, 8);
+    return array_slice(array_values($grouped), 0, 6);
 }
 
 function normalizeKey($v) {
@@ -1830,7 +1830,7 @@ function getCategoryFallbackImage($defaultCategory, $tab = '') {
         $slug = $tab;
     }
 
-    return AWS_CDN_URL . 'categories/' . strtolower($slug) . '.jpg';
+    return AWS_CDN_URL . 'categories/' . strtolower($slug) . '.webp';
 }
 
 function getEventImage($artist, $defaultCategory, $event, $tab) {
@@ -2186,7 +2186,7 @@ function getTeamImage($team, $cat, $subcat) {
         set_image($imageCacheKey, $imageUrl);
         return $imageUrl;
     }
-    return AWS_CDN_URL . 'categories/'.$subcat.'.jpg';
+    return AWS_CDN_URL . 'categories/'.$subcat.'.webp';
 }
 
 function set_image($imageCacheKey, $imageUrl, $mysqli = MYSQLI) {
@@ -2286,7 +2286,7 @@ $concertsKeywords = [
     "latin" => ['latin music','reggaeton','latin artist'],
     "new-age" => ['new age','instrumental','ambient'],
     "other" => ['music','artist'],
-    "pop-rock" => ['pop','rock','band','artist'],
+    "pop-rock" => ['pop','rock','band','artist','musician'],
     "rnb-soul" => ['rnb','soul','singer'],
     "rap-hip-hop" => ['rap','hip hop','rapper'],
     "reggae-reggaeton" => ['reggae','reggaeton'],
@@ -2471,4 +2471,30 @@ function getCorrectKGEntityVenue($venueName, $apiKey = GKGSAPI_KEY) {
             }
         }  
     }
+}
+
+function getTopPerformersByCategory($categoryPath) {
+
+    $params = [
+        'categoryFilter' => "contains(path,'$categoryPath')",
+        'sort'   => 'salesRank',
+        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
+        'perPage'=> 5
+    ];   
+    
+    $data = tnRequest('/catalog/v2/performers', $params);
+
+    $performers = [];
+
+    if (!empty($data['results'])) {
+        foreach ($data['results'] as $item) {
+            $performers[] = [
+                'id'   => $item['id'] ?? '',
+                'name' => $item['text']['name'] ?? '',
+                'slug' => strtolower($item['uriComponent']) ?? ''
+            ];
+        }
+    }
+
+    return $performers;
 }

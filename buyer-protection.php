@@ -97,7 +97,9 @@
   font-size: 14px;
   color: #666;
 }
-
+.feature-card::before{
+  display: none;
+}
     /* Responsive */
 
     @media (max-width: 991px) {

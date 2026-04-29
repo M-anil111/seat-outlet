@@ -56,7 +56,7 @@ switch ($type) {
     case 'event':
         $imageUrl = getEventImage($artist, $defaultCategory, $event, $tab);
         if (!$imageUrl) {
-            $imageUrl = AWS_CDN_URL . 'categories/' . strtolower($tab) . '.jpg';
+            $imageUrl = AWS_CDN_URL . 'categories/' . strtolower($tab) . '.webp';
         }
         break;
 

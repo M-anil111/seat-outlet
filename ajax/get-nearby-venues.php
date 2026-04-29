@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 $solt = $_GET['solt'];
 $solg = $_GET['solg'];
 
-$nearbyVenues = getNearbyVenues($solt, $solg, 8);
+$nearbyVenues = getNearbyVenues($solt, $solg, 6);
 
 $output = [];
 if(!empty($nearbyVenues)) {

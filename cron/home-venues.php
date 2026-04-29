@@ -1,7 +1,7 @@
 <?php
 require_once '../functions.php';
 
-$topVenues = getTopVenues(8);
+$topVenues = getTopVenues(6);
 
 $output = [];    
 
@@ -12,7 +12,7 @@ if (!empty($topVenues)) {
             'name'  => $venue['text']['name'] ?? '',
             'city'  => $venue['city']['text']['name'] ?? '',
             'state' => $venue['stateProvince']['text']['abbr'] ?? '',
-            'image' => "/assets/soplaceholder.png"
+            'image' => "/assets/venue.webp"
         ];       
     }
 }

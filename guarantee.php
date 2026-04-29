@@ -258,14 +258,14 @@
 }
 
 /* CTA section */
-.ticketingtruths-page .cta-section {
+.ticketingtruths-page .cta-section-last {
     background-image:url(../assets/images/cta-banner.webp) ;
     color: #ffffff;
     padding: 100px 0;
     text-align: center;
     position: relative;
 }
-.ticketingtruths-page .cta-section::before {
+.ticketingtruths-page .cta-section-last::before {
     content: "";
     position: absolute;
     width: 100%;
@@ -328,7 +328,7 @@
     
 }
 @media (max-width: 1199px){
-    .ticketingtruths-page .cta-section{
+    .ticketingtruths-page .cta-section-last{
         padding: 80px 0;
     }
     .ticketingtruths-page .section-heading{
@@ -373,7 +373,7 @@
     .hero-title {
         font-size: 32px;
     }
-    .ticketingtruths-page .cta-section {
+    .ticketingtruths-page .cta-section-last {
         padding: 50px 0;
     }
     .guarantee-modern-inner {
@@ -532,7 +532,7 @@
         </section>
 
         <!-- Final CTA Section -->
-        <section class="cta-section">
+        <section class="cta-section-last">
             <div class="container">
                <div class="cta-content">
                <h2 class="cta-title">Experience Our Guarantee Today</h2>

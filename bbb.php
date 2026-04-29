@@ -1,4 +1,73 @@
 <?php include 'header.php'; ?>
+<style>
+.why-us-page .faq-card {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 18px 55px rgba(15, 23, 42, 0.12);
+    border: 1px solid rgba(209, 213, 219, 0.8);
+    padding: 0;
+}
+.why-us-page .faq-card .accordion {
+    padding: 25px 30px;
+}
+.why-us-page .accordion-item {
+    border-radius: 0.85rem !important;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+    background-color: #ffffff;
+}
+.why-us-page .accordion-button:not(.collapsed) {
+    color: #2556E0;
+    background-color: rgba(37, 86, 224, 0.03);
+    box-shadow: inset 0 -1px 0 rgba(229, 231, 235, 0.7);
+}
+.why-us-page .accordion-button::after {
+    filter: hue-rotate(200deg);
+}
+.why-us-page .accordion-body {
+    font-size: 0.95rem;
+    color: #4b5563;
+    line-height: 1.7;
+    padding-top: 15px;
+}
+.why-us-page .accordion-button:focus {
+    box-shadow: 0 0 0 0.15rem rgba(37, 86, 224, 0.28);
+    border-color: #2556E0;
+}
+.why-us-page .accordion-button {
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+    font-weight: 500;
+    font-size: 18px;
+}
+.why-us-page .faq-card h3 {
+    font-size: 21px;
+    font-weight: 600;
+    padding: 25px 30px;
+    background-color: #2556E0;
+    border-radius: 10px 10px 0 0;
+    color: #fff;
+    margin: 0;
+}
+.why-us-page .section-title{font-size: 24px;
+    font-weight: 700;
+    margin-bottom: .6rem;}
+
+@media (max-width: 991px) {
+  .why-us-page .main-title {
+    font-size: 36px !important;
+    line-height: 1.2 !important;
+}
+    }
+    @media (max-width: 576px) {
+  .why-us-page .main-title {
+    font-size: 24px !important;
+    line-height: 1.2 !important;
+}
+    }
+</style>
+
 
 <div class="why-us-page">
 <section class="hero-so-why">
@@ -49,9 +118,9 @@
 </section>
  
 <!-- ════════════════════ COMMITMENT ════════════════════ -->
-<section id="commitment" class="bg-surface py-5">
+<section id="commitment" class="bg-surface pb-5">
   <div class="container">
-    <div class="row align-items-center g-5">
+    <div class="row align-items-center g-2 g-md-4 g-lg-5">
       <div class="col-lg-5">
         <span class="section-label">Customer First</span>
         <h2 class="section-title">Our Commitment to Customer Trust</h2>
@@ -65,7 +134,7 @@
         </ul>
       </div>
       <div class="col-lg-7">
-        <div class="commitment-band">
+        <div class="commitment-band mt-3 mt-md-0 mt-lg-0">
           <span class="section-label">Why It Matters</span>
           <h2 class="mb-3" style="font-size:1.6rem;">Building Long-Term Trust with Every Customer</h2>
           <p style="color:rgba(255,255,255,.75); font-size:.95rem;">We understand that purchasing event tickets online requires confidence. That's why we prioritize customer satisfaction, safe transactions, and honest communication in everything we do.</p>
@@ -160,16 +229,16 @@
 <!-- ════════════════════ POLICIES ════════════════════ -->
 <section id="policies" class="bg-surface py-5">
   <div class="container">
-    <div class="row g-5 align-items-start">
+    <div class="row g-2 g-md-4 g-lg-5 align-items-start">
       <div class="col-lg-4">
         <span class="section-label">Transparency First</span>
         <h2 class="section-title">Transparent Policies &amp; Practices</h2>
         <div class="section-divider"></div>
         <p class="text-muted">We believe in clear and straightforward policies so customers always know what to expect. We encourage customers to review all details before purchase to ensure a smooth experience.</p>
-        <a href="#" class="btn common-btn mt-2">Review Full Policies</a>
+        <a href="#" class="btn common-btn mt-4">Review Full Policies</a>
       </div>
       <div class="col-lg-8">
-        <div class="row g-4">
+        <div class="row g-4 pt-4 pt-lg-0 pt-md-0">
           <div class="col-sm-6">
             <div class="feature-card">
               <div class="feature-icon"><i class="bi bi-file-text-fill"></i></div>
@@ -203,7 +272,7 @@
     </div>
   </div>
 </section>
-<section class="faq-section py-5">
+<section class="faq-section py-3 py-md-2 py-lg-2">
             <div class="container">
                 <div class="row justify-content-center">
                     <div class="col-lg-12">
