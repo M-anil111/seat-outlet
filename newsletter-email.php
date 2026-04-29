@@ -169,7 +169,7 @@ try {
     
    <!-- Footer -->
     <tr>
-      <td align="center" bgcolor="#2c463a" style="padding:15px 10px; border-top:1px solid #444;">
+      <td align="center" bgcolor="#2556e0" style="padding:15px 10px; border-top:1px solid #444;">
         <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:auto;">
           <tr>
             <td style="font-size:13px; color:#fff; white-space:nowrap;">
@@ -257,7 +257,7 @@ EOD;
       <tr>
       <td align="center" style="padding:20px;">
         <a href="https://beta.seatoutlet.com/" target="_blank" 
-           style="background:#2c463a; color:#ffffff; text-decoration:none; font-size:16px; 
+           style="background:#2556e0; color:#ffffff; text-decoration:none; font-size:16px; 
                   padding:12px 24px; border-radius:5px; display:inline-block;">
            Visit Our Website
         </a>
@@ -266,7 +266,7 @@ EOD;
 
     <!-- Footer -->
     <tr>
-      <td bgcolor="#2c463a" style="padding:20px; font-size:13px; color:#fff; text-align:center;">
+      <td bgcolor="#2556e0" style="padding:20px; font-size:13px; color:#fff; text-align:center;">
         Best regards, <br>
         <strong>Seat Outlet</strong><br>
         Phone: <a href="tel:8505299455" style="color:#c3a102; text-decoration:none;">850-529-9455</a><br>
