@@ -5,7 +5,7 @@ $festivalNames = getTopFestivalPerformers();
 <section class="top-hero-slider">
 
 
-  <div class="hero-slider">
+  <div class="hero_slider">
 
     <!-- Slide 1 – Concert / Event -->
     <div class="slide">
@@ -368,7 +368,6 @@ $festivalNames = getTopFestivalPerformers();
 <section class="section reasons teams-nearby py-md-5 py-4 aria-labelledby="reasons-heading">
   <div class="container">
     <h2 id="reasons-heading" class="section__title section__title--center fw-bold fs-4 mb-lg-5 mb-4">The Seat Outlet Advantage</h2>
-    <!-- <p class="section__subtitle text-center">Great seats, amazing prices.</p> -->
     <div class="reasons__grid">
       <article class="reason-card">
         <div class="reason-card__icon">
@@ -519,7 +518,10 @@ $festivalNames = getTopFestivalPerformers();
 				</div>
 			</div>
 			<div class="col-lg-8">
-				<form method="POST" action="/contact-submit.php">
+				<form method="POST" action="<?php echo HOME_URL; ?>/newsletter-email.php" id="newsletterForm">
+          <!-- Honeypot -->
+          <input type="text" name="company" value="" style="display:none" autocomplete="off">
+          <input type="hidden" name="token" id="recaptchaToken">	
 					<div class="newsletter-icontact">						
 						<div class="col-12 col-md-4 col-lg-3">
 							<input maxlength="50" name="fname" type="text" class="form-control newsletter-input" placeholder="First Name" required />
@@ -528,11 +530,19 @@ $festivalNames = getTopFestivalPerformers();
 							<input maxlength="50" name="lname" type="text" class="form-control newsletter-input" placeholder="Last Name" required />
 						</div>
 						<div class="col-12 col-md-4 col-lg-3">
-							<input maxlength="150" name="email" type="text" class="form-control newsletter-input" placeholder="Email" required />               
-						</div>							
-						<div class="col-12 col-md-4 col-lg-3"> 
+							<input maxlength="150" name="email" type="email" class="form-control newsletter-input" placeholder="Email" required />               
+						</div>
+            <?php if (!empty($_SESSION['form_error'])): ?>
+                <div class="alert alert-danger mb-3">
+                    <?php 
+                        echo htmlspecialchars($_SESSION['form_error']);
+                        unset($_SESSION['form_error']);
+                    ?>
+                </div>
+            <?php endif; ?>
+            <div class="col-12 col-md-4 col-lg-3"> 
 							<button type="submit" class="btn newsletter-btn px-4">Submit</button>
-						</div>						
+						</div>	            				
 					</div>
 				</form>
 			</div>

@@ -567,46 +567,6 @@ $('.venue-slider').on('setPosition', function(){
 ===================================================== */
 
 /* =====================================================
-    Home hero banner start
-===================================================== */
-
-document.addEventListener('DOMContentLoaded', function () {
-  const slider = document.querySelector('.hero-slider');
-
-  if (!slider) return;
-
-  // Prevent duplicate init (important for performance)
-  if (slider.classList.contains('slick-initialized')) return;
-
-  // Lazy load slick only when needed (optional but recommended)
-  requestAnimationFrame(() => {
-    $(slider).slick({
-      slidesToShow: 1,
-      autoplay: true,
-      autoplaySpeed: 5000,
-      speed: 900,
-      fade: true,
-      cssEase: 'ease-in-out',
-      dots: false,
-      arrows: true,
-      pauseOnHover: true,
-      infinite: true,
-      adaptiveHeight: false,
-      responsive: [
-        { breakpoint: 992, settings: { dots: true, arrows: false } },
-        { breakpoint: 768, settings: { dots: true, arrows: false } },
-        { breakpoint: 576, settings: { dots: true, arrows: false } }
-      ]
-    });
-  });
-});
-
-
-/* =====================================================
-    Home hero banner end
-===================================================== */
-
-/* =====================================================
     Top Performers Start
 ===================================================== */
 

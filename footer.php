@@ -142,8 +142,21 @@
     <script src="<?php echo HOME_URL; ?>/js/performer.js?v=<?php echo filemtime(__DIR__ . '/js/performer.js'); ?>" defer></script>
 <?php } ?>
 
-<?php include 'modals.php'; ?>
+<?php 
+  include 'modals.php'; 
+  $recaptcha_site_key = RECAPTCHA_SITE_KEY;
+?>
+
+<script src="https://www.google.com/recaptcha/api.js?render=<?php echo $recaptcha_site_key; ?>&onload=onRecaptchaLoad" async defer></script>
 <script>
+        function onRecaptchaLoad() {
+          grecaptcha.ready(function() {
+            grecaptcha.execute('<?php echo $recaptcha_site_key; ?>', {action: 'submit'}).then(function(token) {
+              document.getElementById('recaptchaToken').value = token;
+            });
+          });
+        }
+
         let mapsPromise = null;
         function loadGoogleMapsApi() {
             if (mapsPromise) return mapsPromise;
@@ -168,6 +181,9 @@
 
             return mapsPromise;
         }
+
+        
     </script>
+    
   </body>
 </html>

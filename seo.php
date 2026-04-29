@@ -7,12 +7,12 @@
 <meta property="og:description" content="Compare ticket prices and buy event tickets online securely.">
 <meta property="og:url" content="https://beta.seatoutlet.com/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://beta.seatoutlet.com/assets/seatoutlet-logo.svg">
+<meta property="og:image" content="https://beta.seatoutlet.com/assets/seatoutlet-logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Seat Outlet Ticket Marketplace">
 <meta name="twitter:description" content="Buy tickets for concerts, sports, and events online.">
-<meta name="twitter:image" content="https://beta.seatoutlet.com/assets/seatoutlet-logo.svg">
+<meta name="twitter:image" content="https://beta.seatoutlet.com/assets/seatoutlet-logo.webp">
 
 
 <!-- ============================

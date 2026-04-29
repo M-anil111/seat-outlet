@@ -15,5 +15,7 @@ define('AWS_ACCESS_KEY', getenv('AWS_ACCESS_KEY') ?: '520632cd9d3ddeac1687d57736
 define('AWS_SECRET_KEY', getenv('AWS_SECRET_KEY') ?: '46602349a317d609f33a5356cf0d7e39b45ef176b3c8e982edaf92bb86ec3900');
 define('AWS_BUCKET_NAME', getenv('AWS_BUCKET_NAME') ?: 'seat-outlet-assets');
 define('AWS_CDN_URL', getenv('AWS_CDN_URL') ?: 'https://cdn-beta.seatoutlet.com/');
+define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Lfnn9AsAAAAAOQN5tu9jU-fBVBCdYXKPgmkc8J1');
+define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: '6Lfnn9AsAAAAAONimemstyyc7lGqK_RuopuRitDf');
 
 
