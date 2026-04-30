@@ -506,7 +506,7 @@ $festivalNames = getTopFestivalPerformers();
 
 <section class="newsletter-section py-5">
     <div class="container"> 
-		<div class="row g-3 align-items-center justify-content-between">
+		<div class="row g-3 justify-content-between">
 			<div class="col-lg-4">
 				<div class="col-12 d-flex align-items-center gap-3 justify-content-md-center">
 					<div class="newsletter-icon">
@@ -532,19 +532,12 @@ $festivalNames = getTopFestivalPerformers();
 						<div class="col-12 col-md-4 col-lg-3">
 							<input maxlength="150" name="email" type="email" class="form-control newsletter-input" placeholder="Email" required />               
 						</div>
-            <?php if (!empty($_SESSION['form_error'])): ?>
-                <div class="alert alert-danger mb-3">
-                    <?php 
-                        echo htmlspecialchars($_SESSION['form_error']);
-                        unset($_SESSION['form_error']);
-                    ?>
-                </div>
-            <?php endif; ?>
             <div class="col-12 col-md-4 col-lg-3"> 
-							<button type="submit" class="btn newsletter-btn px-4">Submit</button>
+							<button type="submit" class="newsletter-btn px-4">Submit</button>
 						</div>	            				
 					</div>
 				</form>
+        <div class="text-white mt-3 d-none" id="form_error"></div>
 			</div>
 		</div>
 	</div>
@@ -591,7 +584,7 @@ $festivalNames = getTopFestivalPerformers();
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://www.jimbeam.com/" target="_blank" rel="noopener">
-      <img src="<?php echo AWS_CDN_URL; ?>images/jimbeam.webp" class="img-fluid" alt="Jimbeam" width="115" height="115" loading="lazy">
+      <img src="<?php echo HOME_URL; ?>/assets/jimbeam.webp" class="img-fluid" alt="Jimbeam" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>

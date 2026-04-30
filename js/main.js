@@ -595,6 +595,26 @@ $(document).ready(function(){
     $('.back-btn').click(function(){
         $(this).closest('.submenu-panel').removeClass('active');
     });
+
+
+    var currentPath = window.location.pathname.replace(/\/$/, "");
+
+    $('footer a').each(function () {
+  
+      var href = $(this).attr('href');
+  
+      // ❌ skip invalid links
+      if (!href || href === '#' || href.startsWith('#')) return;
+  
+      var linkPath = new URL(this.href).pathname.replace(/\/$/, "");
+  
+      if (currentPath === linkPath) {
+        $(this).addClass('active');
+      }
+  
+    });
+  
+  
 });
 
 /* =====================================================

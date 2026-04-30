@@ -38,24 +38,6 @@ function required($v) {
     return isset($v) && trim($v) !== '';
 }
 
-/* =========================
-   GOOGLE reCAPTCHA
-========================= */
-$recaptchaSecret  = '6Lfnn9AsAAAAAONimemstyyc7lGqK_RuopuRitDf';
-$recaptchaResponse = $_POST['g-recaptcha-response'] ?? $_POST['token'] ?? '';
-
-$verify = file_get_contents(
-    'https://www.google.com/recaptcha/api/siteverify?secret=' .
-    urlencode($recaptchaSecret) .
-    '&response=' . urlencode($recaptchaResponse)
-);
-
-$captcha = json_decode($verify, true);
-if (empty($captcha['success'])) {
-    $_SESSION['form_error'] = 'CAPTCHA verification failed.';
-    header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/'));
-    exit;
-}
 
 // ========== GET FORM DATA ==========
 $fname = $_POST['fname'] ?? '';
@@ -81,6 +63,7 @@ if (!empty($ip_address) && $ip_address !== '127.0.0.1') {
    MAILER
 ========================= */
 $mail = new PHPMailer(true);
+
 $sent = false;
 
 try {
@@ -106,7 +89,7 @@ try {
 
     $mail->isHTML(true);
     $mail->Subject = 'New Newsletter Subscription Received';
-
+    
     $mail->Body = <<<EOD
 <!DOCTYPE html>
 <html>
@@ -120,7 +103,7 @@ try {
     
     <!-- Logo -->
     <tr>
-      <td align="center" bgcolor="#ffffff" style="padding:20px;">
+      <td align="center" bgcolor="#ffffff" style="padding:40px 20px 20px; border-bottom:1px #e1e1e1 solid;">
         <a href="https://beta.seatoutlet.com" title="Seat Outlet">
           <img src="https://beta.seatoutlet.com/assets/seatoutlet.png" 
                alt="Seat Outlet" style="display:block; max-width:220px;">
@@ -130,7 +113,7 @@ try {
     
     <!-- Greeting -->
     <tr>
-      <td align="center" style="padding:20px 30px 10px 30px; font-size:20px; font-weight:bold; color:#333;">
+      <td align="center" style="padding:40px 30px 10px 30px; font-size:20px; font-weight:bold; color:#333;">
          Hello Admin, 
       </td>
     </tr>
@@ -149,7 +132,7 @@ try {
         <table width="100%" cellpadding="6" cellspacing="0" style="font-size:14px; color:#333;">
           <tr><td style="font-weight:bold;" width="35%">First Name:</td><td>{$fname}</td></tr>
           <tr><td style="font-weight:bold;" width="35%">Last Name:</td><td>{$lname}</td></tr>
-          <tr><td style="font-weight:bold;">Email Address:</td><td><a href="mailto:{$email}" style="color:#c3a102;">{$email}</a></td></tr>
+          <tr><td style="font-weight:bold;">Email Address:</td><td><a href="mailto:{$email}" style="color:#2556e0;">{$email}</a></td></tr>
         </table>
       </td>
     </tr>
@@ -159,8 +142,8 @@ try {
       <td style="padding:0 30px 20px 30px;">
         <h4 style="margin:20px 0 10px 0; font-size:16px; color:#2c463a;">Tracking Information:</h4>
         <table width="100%" cellpadding="6" cellspacing="0" style="font-size:14px; color:#333;">
-          <tr><td style="font-weight:bold;">Page URL:</td><td><a href="{$page_url}" style="color:#0066cc;">{$page_url}</a></td></tr>
-          <tr><td style="font-weight:bold;">IP Address:</td><td>{$ip_address}</td></tr>
+          <tr><td style="font-weight:bold;" width="23%">Page URL:</td><td><a href="{$page_url}" style="color:#0066cc;">{$page_url}</a></td></tr>
+          <tr><td style="font-weight:bold;" width="23%">IP Address:</td><td>{$ip_address}</td></tr>
           <tr><td style="font-weight:bold;">Browser:</td><td>{$browser}</td></tr>
           <tr><td style="font-weight:bold;">Country:</td><td>{$country}</td></tr>
         </table>
@@ -169,7 +152,7 @@ try {
     
    <!-- Footer -->
     <tr>
-      <td align="center" bgcolor="#2556e0" style="padding:15px 10px; border-top:1px solid #444;">
+      <td align="center" bgcolor="#000" style="padding:15px 10px; border-top:1px solid #444;">
         <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:auto;">
           <tr>
             <td style="font-size:13px; color:#fff; white-space:nowrap;">
@@ -230,7 +213,7 @@ EOD;
     
     <!-- Header -->
     <tr>
-      <td align="center" bgcolor="#ffffff" style="padding:20px;">
+      <td align="center" bgcolor="#ffffff" style="padding:40px 20px 20px; border-bottom:1px #e1e1e1 solid;">
         <a href="https://beta.seatoutlet.com/" title="Seat Outlet">
             <img src="https://beta.seatoutlet.com/assets/seatoutlet.png" 
                 alt="Seat Outlet" style="display:block; max-width:220px;">
@@ -257,7 +240,7 @@ EOD;
       <tr>
       <td align="center" style="padding:20px;">
         <a href="https://beta.seatoutlet.com/" target="_blank" 
-           style="background:#2556e0; color:#ffffff; text-decoration:none; font-size:16px; 
+           style="background:#1b3bb0; color:#ffffff; text-decoration:none; font-size:16px; 
                   padding:12px 24px; border-radius:5px; display:inline-block;">
            Visit Our Website
         </a>
@@ -269,8 +252,8 @@ EOD;
       <td bgcolor="#2556e0" style="padding:20px; font-size:13px; color:#fff; text-align:center;">
         Best regards, <br>
         <strong>Seat Outlet</strong><br>
-        Phone: <a href="tel:8505299455" style="color:#c3a102; text-decoration:none;">850-529-9455</a><br>
-        Website: <a href="https://beta.seatoutlet.com/" style="color:#c3a102; text-decoration:none;">
+        Phone: <a href="tel:8505299455" style="color:#b5d3fb; text-decoration:none;">850-529-9455</a><br>
+        Website: <a href="https://beta.seatoutlet.com/" style="color:#b5d3fb; text-decoration:none;">
           beta.seatoutlet.com/
         </a>
       </td>
@@ -302,7 +285,6 @@ $data = [
   'country'                       => $country ?? '',
   'browser'                       => $browser ?? ''
 ];
-
 
 $mysqli = MYSQLI;
 

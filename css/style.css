@@ -608,11 +608,20 @@ h3,
     font-weight: 500;
 }
 
+.tm-footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.tm-footer-col li{
+  margin-bottom: 8px;
+}
 .tm-footer-col a {
   color: #e0e0e0;
   font-size: 16px;
   text-decoration: none;
   margin-bottom: 10px;
+  display: inline-block;
 }
 
 .tm-footer-col a:hover {
@@ -620,6 +629,10 @@ h3,
   color: #a5c8fd;
 }
 
+.tm-footer .tm-footer-col a.active {
+  color: #a5c8fd;
+  
+}
 /* Brand */
 .tm-footer-col .tm-logo {  
   font-size: 32px !important;
@@ -660,6 +673,9 @@ h3,
 .social-icons a.google-icon {
     width: 30px;
     height: 25px;
+}
+.social-icons a:hover svg, .social-icons a.blogger-icon:hover svg, .social-icons a.google-icon:hover {
+  fill: #a5c8fd !important; /* hover color */
 }
 
 /* App buttons */
@@ -702,6 +718,11 @@ h3,
   text-align: center;
     margin-top: 20px;
 }
+.policies ul{list-style: none;
+  padding: 0;
+  margin: 0;     display: flex;
+  text-align: center;
+  justify-content: center;}
 .policies a {
   color: #e0e0e0;
   margin-right: 10px;
@@ -709,7 +730,7 @@ h3,
   font-size: 14px;
 }
 
-.policies a:hover {
+.policies a:hover, .policies a.active {
   text-decoration: underline;
   color: #a5c8fd;
 }

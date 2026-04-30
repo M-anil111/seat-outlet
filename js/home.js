@@ -1,3 +1,6 @@
+
+
+
 $('.custom-slider').on('setPosition', function(){
   	equalHeightSlider('custom-slider', 'event-card');
 });
@@ -5,7 +8,8 @@ $('.custom-slider').on('setPosition', function(){
 $('.venue-slider').on('setPosition', function(){
 	equalHeightSlider('venue-slider', 'venue-card');
 });
- 
+
+
 /* =====================================================
     EVENTS Section
 ===================================================== */
@@ -648,3 +652,88 @@ document.addEventListener("DOMContentLoaded", function () {
 /* =====================================================
     Top Performers End
 ===================================================== */
+
+/* =====================================================
+    Newsletter Form Start
+===================================================== */
+
+let recaptchaLoaded = false;
+
+function loadRecaptcha(callback) {
+  if (recaptchaLoaded) {
+    callback();
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.src = "https://www.google.com/recaptcha/api.js?render=" + RECAPTCHA_SITE_KEY;
+  script.async = true;
+  script.defer = true;
+
+  script.onload = function () {
+    recaptchaLoaded = true;
+    callback();
+  };
+
+  document.body.appendChild(script);
+}
+
+document.getElementById("newsletterForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const form = this;
+  const msg = document.getElementById("form_error");
+  const btn = form.querySelector("button");
+
+  msg.classList.add("d-none");
+  btn.disabled = true;
+
+  loadRecaptcha(function () {
+
+    grecaptcha.ready(function() {
+      grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: "newsletter" })
+      .then(function(token) {
+
+        document.getElementById("recaptchaToken").value = token;
+
+        const formData = new FormData(form);
+
+        fetch("ajax/check-email.php", {
+          method: "POST",
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+
+          btn.disabled = false;
+
+          if (data.status === "duplicate") {
+            msg.innerHTML = "This email is already subscribed.";
+            msg.classList.remove("d-none");
+          } 
+          else if (data.status === "recaptcha") {
+            msg.innerHTML = "reCAPTCHA failed. Try again.";
+            msg.classList.remove("d-none");
+          } 
+          else if (data.status === "success") {
+            msg.classList.add("d-none");
+            form.submit();
+          }
+
+        })
+        .catch(() => {
+          btn.disabled = false;
+          msg.innerHTML = "Server error.";
+          msg.classList.remove("d-none");
+        });
+
+      });
+    });
+
+  });
+
+});
+/* =====================================================
+    Newsletter Form End
+===================================================== */
+
