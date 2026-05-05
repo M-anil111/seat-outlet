@@ -85,25 +85,33 @@ $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'];
 $count = count($events);
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
-if(!empty($keywordHeader)) {
-	$artistData = searchSuggestions($keywordHeader, 'performers');
-	$venueData = searchSuggestions($keywordHeader, 'venues');
-}
+// if(!empty($keywordHeader)) {
+// 	$artistVenueData = getKeywordSearchResults($keywordHeader);
+// 	$artistData = $artistVenueData['performers'] ?? [];
+// 	$venueData = $artistVenueData['venues'] ?? [];
+// }
 $faqs = getFaqs($mysqli, 'search');
 ?>
 
 <section>
 	<div class="container">
+		
+		<?php if(!empty($keywordHeader)) { ?>
+			<div class="section-suggestions new-slider py-md-5 py-4">
+				<h2 class="fw-bold fs-4 mb-4">Top Suggestions</h2>			
+				<div class="suggestion-slider"></div>
+			</div>
+		<?php } ?>
 
-		<?php if(!empty($artistData) || !empty($venueData)) { ?>
+		<?php /*if($artistData['totalResultCount'] > 0 || $venueData['totalResultCount'] > 0) { ?>
 			<div class="section-suggestions new-slider py-md-5 py-4">
 				<h2 class="fw-bold fs-4 mb-4">Top Suggestions</h2>			
 				<div class="suggestion-slider ">
-					<?php if(!empty($artistData)) { ?>
-						<?php foreach($artistData as $artistItem) { 
-							$defaultCategory = $artistItem['cat'];
+					<?php if($artistData['totalResultCount'] > 0) { ?>
+						<?php foreach($artistData['results'] as $artistItem) { 
+							$artistDetails = getTnPerformerById($artistItem['id']);
+							$defaultCategory = $artistDetails['defaultCategory'];
 							$artistImage = getArtistImage($artistItem['name'], $defaultCategory);	
-							if(empty($artistImage)) continue;
 							$subcategory = '';
 							if (!empty($defaultCategory)) {
 								if ($defaultCategory['depth'] == 2) {
@@ -128,7 +136,7 @@ $faqs = getFaqs($mysqli, 'search');
 								}							
 							}
 						?>
-							<a href="/artist/<?php echo strtolower($artistItem['slug']); ?>" class="team-link">
+							<a href="/artist/<?php echo createSlug($artistItem['name'], $artistItem['id']); ?>" class="team-link">
 								<div class="card venue-card">
 									<div class="venue-img">
 										<img src="<?php echo $artistImage; ?>" alt="<?php echo $artistItem['name']; ?>" class="img-fluid">
@@ -141,15 +149,15 @@ $faqs = getFaqs($mysqli, 'search');
 							</a>
 						<?php } ?>
 					<?php } ?>
-					<?php if(!empty($venueData)) { ?>
-						<?php foreach($venueData as $venueItem) { 
+					<?php if($venueData['totalResultCount'] > 0) { ?>
+						<?php foreach($venueData['results'] as $venueItem) {
 							$venueImage = getVenueImage($venueItem['name']);
-							if(empty($venueImage)) continue;					
+							$imgUrl = !empty($venueImage) ? $venueImage : '/assets/venue.webp'; 				
 						?>
-							<a href="/venue/<?php echo strtolower($venueItem['slug']); ?>" class="team-link">
+							<a href="/venue/<?php echo createSlug($venueItem['name'], $venueItem['id']); ?>" class="team-link">
 								<div class="card venue-card">
 									<div class="venue-img">
-										<img src="<?php echo $venueImage; ?>" alt="<?php echo $venueItem['name']; ?>" class="img-fluid">
+										<img src="<?php echo $imgUrl; ?>" alt="<?php echo $venueItem['name']; ?>" class="img-fluid">
 									</div>
 									<div class="venue-content text-center">
 										<h5 class="venue-title"><?php echo $venueItem['name']; ?></h5>
@@ -161,7 +169,7 @@ $faqs = getFaqs($mysqli, 'search');
 					<?php } ?>							
 				</div>
 			</div>
-		<?php } ?>
+		<?php }*/ ?>
 
 
         <div class="tab-section section-performer-content" id="default">
@@ -282,9 +290,10 @@ $faqs = getFaqs($mysqli, 'search');
 								</div>
 							<?php } ?>
 						<?php } else { ?>
-							<h4 style="padding: 20px;">
-								No Events found!
-							</h4>
+							<div class="text-center no-events-found">
+								<h4>No Upcoming Events</h4>
+								<p>We're sorry, but we couldn't find any upcoming events for "<?php echo $keywordHeader; ?>". Please try updating your location, date range or searching for something else.</p>
+							</div>
 						<?php } ?>
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">

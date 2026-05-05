@@ -1,23 +1,122 @@
 <?php include 'header.php';
 $perPage = 20;
-$concertPath = ".1859.1986.";
-$sportsPath = ".1859.1988.";
-$theaterPath = ".1859.1989.";
 $today = date('Y-m-d');
 $params = [
-	"filter" => "date/date ge $today and (startswith(defaultCategory/path, '$sportsPath') or startswith(defaultCategory/path, '$concertPath') or startswith(defaultCategory/path, '$theaterPath'))",
+	"filter" => "date/date ge $today and country/alphaCode eq 'US'",
 	"perPage" => $perPage,
-	"page" => 1, 
-	"q" => "*"
+	"page" => 1,
 ];
 $year = date('Y');
-$results = getAllCatsEvents();
-$total_count = getAllCatsEventsCount();
+$results = getAllEvents();
+$total_count = getAllEventsCount();
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'];
 $count = count($events);
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 ?>
+<style>
+	.hero-section.section-padding {
+    padding: 60px 0;
+}
+
+/* Hero Section */
+.hero-section {
+    position: relative;
+    background-color: #05070b;
+    color: #ffffff;
+    overflow: hidden;
+    padding-bottom:120px;
+}
+
+.hero-section::before {
+    content: "";
+    position: absolute;
+    right: -18%;
+    top: -25%;
+    width: 55%;
+    height: 170%;
+    background: linear-gradient(135deg, #0b1120 0%, #0056d6 55%, #0b1120 100%);
+    transform: skewX(-18deg);
+    opacity: 0.9;
+    z-index: 0;
+}
+
+.hero-title {
+    font-weight: 800;
+    line-height: 1.1;
+    font-size: 65px;
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.hero-title .hero-title-blue {
+    color: #2556E0;
+    letter-spacing: 0.06em;
+    display: block;
+}
+
+.hero-title .hero-title-white {
+    color: #ffffff;
+    letter-spacing: 0.06em;
+}
+
+.hero-subtitle {
+    color: #d1d5db;
+    font-size: 16px;
+    text-align: center;
+    z-index: 2;
+    position: relative;
+}
+
+/* ================= MEDIA QUERIES ================= */
+
+
+@media (max-width: 1365px){
+    .hero-title{
+        font-size: 60px;
+    }
+}
+@media (max-width: 991px){
+    .hero-title {
+        font-size: 50px;
+    }
+}
+@media (max-width: 767.98px) {
+    .hero-section.section-padding {
+        padding: 50px 0;
+    }
+
+    .hero-section::before {
+        right: -40%;
+        width: 80%;
+        height: 150%;
+    }
+
+    .hero-subtitle {
+        font-size: 14.4px;
+    }
+
+    .hero-title {
+        font-size: 32px;
+    }
+}
+</style>
+<!-- Hero Section -->
+<section class="hero-section section-padding">
+	<div class="container">		
+		<!-- Hero Content -->
+		<div class="row justify-content-center align-items-center">
+			<div class="col-lg-7 col-md-8">
+				<h1 class="hero-title text-center">
+					<span class="hero-title-white">Buy Tickets Online</span>
+				</h1>
+				<p class="hero-subtitle">
+					Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.
+				</p>
+			</div>
+		</div>
+	</div>
+</section>
 
 <section>
 	<div class="container">
@@ -39,6 +138,38 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 						</div>
 					</div>
 					<div class="list-category-bg pb-3">
+						<div class="filter-bar">
+							<input type="hidden" id="latEvent" value="">
+							<input type="hidden" id="lngEvent" value="">
+							<input type="hidden" id="sdateEvent" value="">
+							<input type="hidden" id="edateEvent" value="">
+							<div class="row">
+								<div class="col-md-6">
+									<label class="filter-label">Location</label>
+									<div class="filter-input">
+										<i class="bi bi-geo-alt"></i>
+										<input type="text" class="form-control" placeholder="City or Zip Code" id="locationInput" autocomplete="off">
+										<button type="button" id="locationInputReset" class="d-none so-close-octagon">
+											<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
+											<path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
+											<path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+											</svg>
+										</button>
+										<div id="locationResults" class="tn-dropdown-menu dropdown"></div>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<label class="filter-label">Dates</label>
+									<div class="filter-input">
+										<i class="bi bi-calendar3"></i>
+										<input type="text" id="performerDatePicker" placeholder="Select Date Range" class="form-control" autocomplete="off" readonly value="<?php echo !empty($dateTitle) ? $dateTitle : ''; ?>">  
+										<div class="filter-arrow"><i id="dateArrow" class="bi bi-chevron-down"></i></div>
+									</div>
+								</div>
+							</div>
+							<h3 id="locationHeading" class="mt-4 fs-5"></h3>
+							<div id="location-no-results" class="text-center no-location"></div>
+						</div>
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">
 								<?php foreach ($events as $event) { 
@@ -145,7 +276,61 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
-					</div>				
+					</div>	
+					<div class="tab-section content-section-detail mb-0" id="promocode">
+						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Event Promo Codes in the US</h2>
+						<p>Apply verified ticket promo codes and save instantly on all events at checkout.</p>
+						<div class="row g-3 mt-2">
+							<div class="col-md-6">
+								<div class="offer-pill d-flex align-items-center justify-content-between">
+									<div class="d-flex align-items-center">
+										<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
+											<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+												<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+													stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+												<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
+											</svg>
+										</div>
+										<div class="offer-text">
+											<div class="offer-title">5% OFF</div>
+											<div class="offer-subtitle">TAKE5</div>
+										</div>
+									</div>
+									<div class="offer-copy text-end">
+										<button type="button"
+											class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+											data-code="TAKE5">
+											Copy
+										</button>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="offer-pill d-flex align-items-center justify-content-between">
+									<div class="d-flex align-items-center">
+										<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
+											<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+												<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
+													stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
+												<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
+											</svg>
+										</div>
+										<div class="offer-text">
+											<div class="offer-title">10% OFF</div>
+											<div class="offer-subtitle">TAKE10</div>
+										</div>
+									</div>
+									<div class="offer-copy text-end">
+										<button type="button"
+											class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
+											data-code="TAKE10">
+											Copy
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>				
+					</div>			
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">

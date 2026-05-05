@@ -241,50 +241,11 @@ function getRelatedPerformers($categoryPath, $currentPerformerId, $limit = 20) {
     return array_slice($related, 0, $limit);
 }
 
-function getLocationSuggestions($keyword) {
-    if(preg_match('/^(?=.*\d)[A-Za-z0-9\- ]{3,10}$/', $keyword)) {
-        $location = getLocationFromInput($keyword);
-        $latVal = $location['latitude'];
-        $lngVal = $location['longitude'];
-        $output['searchType'] = 'zip';
-        $output['results'][0]['city']['text']['name'] = $location['city'];
-        $output['results'][0]['stateProvince']['text']['abbr'] = $location['state'];
-        $output['results'][0]['postalCode'] = $location['zip'];        
-    }elseif(preg_match('/^[\p{L}\s\'\-\.]{2,}$/u', $keyword)) {
-        $keyword      = tnEscapeFilterValue($keyword);
-        $stateKeyword = strtoupper(tnEscapeFilterValue($keyword));
-        $params = [
-            'filter' => "startswith(city/text/name,'$keyword')",
-            'rollup'  => 'city',
-            'perPage' => 100,
-            'page'   => 1
-        ];
-        $output = tnRequest('/catalog/v2/events', $params);
-        $output['searchType'] = 'city';
-    }   
-
-    return $output;
-}
-
-function getTnEvents($params = [], $flag = 0) {
-    $url = BASE_URL . '/catalog/v2/events';
-
-    $defaultParams = [
-        'page'    => 1,
-        'perPage' => 20,
-    ];
-
-    if(!$flag) { 
-        $today = date('Y-m-d');
-        $params['filter'] = "date/date ge $today";
-    }
-
-    $params = array_merge($defaultParams, $params);
-
+function getTnEvents($params = []) {
     return tnRequest('/catalog/v2/events', $params);
 }
 
-function tnEscapeFilterValue(string $value): string {
+function tnEscapeFilterValue($value = '') {
     return str_replace("'", "''", $value);
 }
 
@@ -505,131 +466,6 @@ function getConcertEvents($limit = 12) {
     return $data['results'] ?? [];
 }
 
-function getLocationFromInput($input, $mysqli = MYSQLI) {
-
-    $type = null;
-    $zip = $city = $state = $lat = $lng = null;
-
-    if (is_string($input) && preg_match('/^\d{5}$/', $input)) {
-        $type = 'zip';
-        $zip = trim($input);
-    }
-    elseif (is_array($input) && isset($input['city'], $input['state'])) {
-        $type = 'city';
-        $city  = trim($input['city']);
-        $state = trim($input['state']);
-    }
-    elseif (is_array($input) && isset($input['lat'], $input['lng'])) {
-        $type = 'latlng';
-        $lat = floatval($input['lat']);
-        $lng = floatval($input['lng']);
-    }
-    else {
-        return [];
-    }
-
-    if ($type === 'zip') {
-
-        $stmt = $mysqli->prepare("SELECT * FROM locations WHERE zip = ? LIMIT 1");
-        $stmt->bind_param("s", $zip);
-        $stmt->execute();
-        $result = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        if ($result) return $result;
-    }
-
-    if ($type === 'city') {
-
-        $stmt = $mysqli->prepare("SELECT * FROM locations WHERE city = ? AND state = ? LIMIT 1");
-        $stmt->bind_param("ss", $city, $state);
-        $stmt->execute();
-        $result = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        if ($result) return $result;
-    }
-
-    if ($type === 'latlng') {
-
-        $stmt = $mysqli->prepare("SELECT * FROM locations WHERE latitude = ? AND longitude = ? LIMIT 1");
-        $stmt->bind_param("dd", $lat, $lng);
-        $stmt->execute();
-        $result = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        if ($result) return $result;
-    }
-
-    $accessToken = getTnAccessToken();
-    $params = ['perPage' => 1];
-
-    if ($type === 'zip') {
-        $params['filter'] = "code eq '$zip'";
-    }
-
-    if ($type === 'city') {
-       $params['filter'] = "startswith(city/text/name,'$city')";
-    }
-
-    if ($type === 'latlng') {
-        $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $lat, $lng);
-    }
-
-    $url = BASE_URL . '/catalog/v2/postalCodes/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    $data = json_decode($response, true);
-
-    if (empty($data['results'])) return [];
-
-    $loc = $data['results'][0];
-
-    $city      = $loc['city']['text']['name'] ?? '';
-    $state     = $loc['stateProvince']['text']['abbr'] ?? '';
-    $zip       = $loc['code'] ?? '';
-    $country   = $loc['country']['alphaCode'] ?? '';
-    $latitude  = $loc['geoCenter']['latitude'] ?? '';
-    $longitude = $loc['geoCenter']['longitude'] ?? '';
-
-    $stmt = $mysqli->prepare("
-        INSERT IGNORE INTO locations (city, state, country, zip, latitude, longitude)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ");
-
-    $stmt->bind_param("ssssss", $city, $state, $country, $zip, $latitude, $longitude);
-    $stmt->execute();
-    $stmt->close();
-
-    $stmt = $mysqli->prepare("SELECT * FROM locations WHERE zip = ? LIMIT 1");
-    $stmt->bind_param("s", $zip);
-    $stmt->execute();
-    $result = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-
-    return $result;
-}
-
 function getNearbyVenues($lt, $lg, $limit = 20) {
 
     $accessToken = getTnAccessToken();
@@ -773,6 +609,53 @@ function getKeywordSearchSuggestions($q) {
     // ============================
     // 4. RETURN DATA
     // ============================
+    return $data;
+}
+
+function getKeywordSearchResults($q) {
+
+    $q = trim($q);
+
+    if (!$q) return [];
+
+    $params = [
+        'q' => $q,
+        'performersRequested' => 5,
+        'venuesRequested' => 5
+    ];
+
+    $url = BASE_URL . '/catalog/v2/suggest?' . http_build_query($params);
+
+    $accessToken = getTnAccessToken();
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $accessToken,
+            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
+        ],
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_CONNECTTIMEOUT => 5
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        curl_close($ch);
+        return [];
+    }
+
+    curl_close($ch);
+
+    if (!$response) return [];
+
+    $data = json_decode($response, true);
+
+    if (!$data) return [];
+
     return $data;
 }
 
@@ -1278,14 +1161,10 @@ function buildVenueSkeleton($count = 8) {
     return $html;
 }
 
-function getAllCatsEventsCount() {
-
-    $concertPath = ".1859.1986.";
-	$sportsPath = ".1859.1988.";
-	$theaterPath = ".1859.1989.";
+function getAllEventsCount() {
     $today = date('Y-m-d');
     $params = [
-        'filter' => "date/date ge $today and (startswith(defaultCategory/path, '$sportsPath') or startswith(defaultCategory/path, '$concertPath') or startswith(defaultCategory/path, '$theaterPath'))",
+        "filter" => "date/date ge $today and country/alphaCode eq 'US'",
         'perPage' => 500,
         'page' => 1
     ];
@@ -1297,18 +1176,13 @@ function getAllCatsEventsCount() {
     return $count;
 }
 
-function getAllCatsEvents() {
+function getAllEvents() {
 
     $accessToken = getTnAccessToken();
 
-    $concertPath = ".1859.1986.";
-	$sportsPath = ".1859.1988.";
-	$theaterPath = ".1859.1989.";
-
-	$today = date('Y-m-d');
-
+    $today = date('Y-m-d');
     $params = [
-        'filter' => "date/date ge $today and (startswith(defaultCategory/path, '$sportsPath') or startswith(defaultCategory/path, '$concertPath') or startswith(defaultCategory/path, '$theaterPath'))",
+        "filter" => "date/date ge $today and country/alphaCode eq 'US'",
         'perPage' => 20,
         'page' => 1
     ];

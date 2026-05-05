@@ -18,7 +18,6 @@
  <path d="M0.2,33.1h24.2L7.1,16.7l9.5-9.6L33,23.8V0h14.2v23.8L63.6,7.1l9.5,9.6L55.8,33H80v13.5H55.7l17.3,16.7l-9.5,9.4L40,49.1  L16.5,72.7L7,63.2l17.3-16.7H0V33.1H0.2z M33.1,65.8h14.2v32H33.1V65.8z">
  </path>
 </svg></a>
-        <!-- <a href="https://linktr.ee/seatoutlet" aria-label="Linktree" target="_blank"><i class="bi bi-link-45deg fs-4"></i></a> -->
       </div>
      
 
@@ -151,55 +150,45 @@
 <script src="<?php echo HOME_URL; ?>/js/main.js?v=<?php echo filemtime(__DIR__ . '/js/main.js'); ?>" defer></script>
 <?php if ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>  
     <script src="<?php echo HOME_URL; ?>/js/home.js?v=<?php echo filemtime(__DIR__ . '/js/home.js'); ?>" defer></script>
-<?php }elseif($_SERVER['REQUEST_URI'] == '/search') { ?>
+<?php } ?>
+<?php if($_SERVER['REQUEST_URI'] == '/search' || $_SERVER['REQUEST_URI'] == '/tickets' || strpos($_SERVER['REQUEST_URI'], '/artist/') === 0 || strpos($_SERVER['REQUEST_URI'], '/category/') === 0 || strpos($_SERVER['REQUEST_URI'], '/venue/') === 0 || strpos($_SERVER['REQUEST_URI'], '/city/') === 0) { ?>
+    <script src="<?php echo HOME_URL; ?>/js/events-listing.js?v=<?php echo filemtime(__DIR__ . '/js/events-listing.js'); ?>" defer></script>
+<?php } ?>
+<?php if($_SERVER['REQUEST_URI'] == '/search') { ?>
     <script src="<?php echo HOME_URL; ?>/js/search.js?v=<?php echo filemtime(__DIR__ . '/js/search.js'); ?>" defer></script>
-<?php }elseif (strpos($_SERVER['REQUEST_URI'], '/artist/') === 0) { ?>
+<?php } ?>
+<?php if (strpos($_SERVER['REQUEST_URI'], '/artist/') === 0) { ?>
     <script src="<?php echo HOME_URL; ?>/js/performer.js?v=<?php echo filemtime(__DIR__ . '/js/performer.js'); ?>" defer></script>
 <?php } ?>
 
 <?php 
   include 'modals.php'; 
-  $recaptcha_site_key = RECAPTCHA_SITE_KEY;
 ?>
 
-<!-- <script src="https://www.google.com/recaptcha/api.js?render=<?php echo $recaptcha_site_key; ?>&onload=onRecaptchaLoad" async defer></script> -->
 <script>
-        const RECAPTCHA_SITE_KEY = "<?php echo $recaptcha_site_key; ?>";
-        // function onRecaptchaLoad() {
-        //   grecaptcha.ready(function() {
-        //     grecaptcha.execute('<?php echo $recaptcha_site_key; ?>', {action: 'submit'}).then(function(token) {
-        //       document.getElementById('recaptchaToken').value = token;
-        //     });
-        //   });
-        // }
+	const RECAPTCHA_SITE_KEY = "<?php echo RECAPTCHA_SITE_KEY; ?>";
+	let mapsPromise = null;
+	function loadGoogleMapsApi() {
+		if (mapsPromise) return mapsPromise;
 
-        let mapsPromise = null;
-        function loadGoogleMapsApi() {
-            if (mapsPromise) return mapsPromise;
+		mapsPromise = new Promise((resolve, reject) => {
+			if (window.google && google.maps && google.maps.places) {
+				resolve(window.google);
+				return;
+			}
 
-            mapsPromise = new Promise((resolve, reject) => {
-                if (window.google && window.google.maps) {
-                resolve(window.google);
-                return;
-                }
+			const script = document.createElement('script');
+			script.src = `https://maps.googleapis.com/maps/api/js?key=<?php echo GAPI_KEY; ?>&libraries=places`;
+			script.async = true;
+			script.defer = true;
+			script.onload = () => resolve(window.google);
+			script.onerror = reject;
+			document.head.appendChild(script);
+		});
 
-                window.__seatOutletMapsInit = function () {
-                    resolve(window.google);
-                };
-
-                const script = document.createElement('script');
-                script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo GAPI_KEY; ?>&libraries=places&loading=async&callback=__seatOutletMapsInit';
-                script.async = true;
-                script.defer = true;
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-
-            return mapsPromise;
-        }
-
-        
-    </script>
+		return mapsPromise;
+	}        
+</script>
     
   </body>
 </html>

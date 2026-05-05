@@ -5,7 +5,7 @@ require_once '../functions.php';
 header('Content-Type: application/json; charset=UTF-8');
 
 $page       = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-$perPage    = isset($_GET['perPage']) ? max(1, min(100, (int) $_GET['perPage'])) : 2;
+$perPage    = isset($_GET['perPage']) ? max(1, min(100, (int) $_GET['perPage'])) : 20;
 $performerId= isset($_GET['performerId']) ? max(0, (int) $_GET['performerId']) : 0;
 $type       = isset($_GET['type']) ? $_GET['type'] : '';
 
@@ -27,23 +27,29 @@ try {
         $params['page']    = $page;
         $params['perPage'] = $perPage;
 
-        //echo json_encode($params);
         if($type == 'search') {
             $response = getHeaderSearchEvents($params);
         }else{
             $response = getLoadMoreEvents($params);
         }        
-        $total_count = $response['totalCount'];
-        $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
+        // $total_count = $response['totalCount'];
+        // $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
+        $total_pages = 0;
     }
 
     $results = $response['results'] ?? [];
-    $count   = $response['count'] ?? count($results);
+    $count   = count($results);
+
+    if ($performerId) {
+        $hasMore = ($page < $total_pages);
+    } else {
+        $hasMore = ($count === $perPage);
+    }
 
     echo json_encode([
         'events'   => $results,
-        'hasMore'  => ($page < $total_pages),
-        'nextPage' => $page + 1,
+        'hasMore'  => $hasMore,
+        'nextPage' => $hasMore ? $page + 1 : $page,
         'count'    => $count,
     ]);
 } catch (Throwable $e) {

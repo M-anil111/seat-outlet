@@ -5020,3 +5020,13 @@ a.common-btn:hover{
 .hero-slider.slick-initialized { visibility: visible; }
 
 /* hero slider css End */
+.no-events-found {
+  padding: 20px;
+}
+.no-events-found h4 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.no-events-found p {
+  font-size: 14px;
+}

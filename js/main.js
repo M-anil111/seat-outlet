@@ -99,9 +99,8 @@ function initLocationSearch(inputId, type = '') {
         componentRestrictions: { country: 'us' }
     });
     autocomplete.addListener('place_changed', function () {
-        input.closest('.locationInputFieldWrapper')?.classList.remove('pac-active');
         const place = autocomplete.getPlace();
-        if (!place.address_components) return;
+        if (!place || !place.geometry) return;
         let city = '';
         let state = '';
         place.address_components.forEach(component => {
@@ -110,7 +109,7 @@ function initLocationSearch(inputId, type = '') {
                 city = component.long_name;
             }
             if (types.includes('administrative_area_level_1')) {
-            state = component.long_name;
+                state = component.short_name;
             }        
         });
         const lat = place.geometry.location.lat();
@@ -131,6 +130,39 @@ function initLocationSearch(inputId, type = '') {
                     loadNearbyVenues();
                 }
             }, 200);
+        }else if(type == 'event') {
+            const resetBtn = document.getElementById('locationInputReset');
+            const locRes = document.getElementById('locationResults');
+            const locHdg = document.getElementById('locationHeading');
+            const locNoRes = document.getElementById('location-no-results');
+            const latEvent = document.getElementById('latEvent');
+            const lngEvent = document.getElementById('lngEvent');
+            const sdateEvent = document.getElementById('sdateEvent');
+            const edateEvent = document.getElementById('edateEvent');
+            if (input.value !== '') {                
+                resetBtn.classList.remove('d-none');
+                locRes.classList.add('d-none');
+            }
+            resetBtn.onclick = function () {
+                input.value = '';
+                resetBtn.classList.add('d-none');
+                locRes.classList.remove('d-none');    
+                locHdg.innerHTML = '';
+                locNoRes.innerHTML = '';    
+                updateEventsSection({
+                    flag: 'reset'
+                });
+            };
+        
+            latEvent.value = lat;
+            lngEvent.value = lng;
+            updateHeading(input.value);
+            updateEventsSection({
+                lat,
+                lng,
+                startDate: sdateEvent.value,
+                endDate: edateEvent.value
+            });
         }else{
             DOM.latHeader.value = lat;
             DOM.lngHeader.value = lng;  
@@ -207,9 +239,7 @@ if (DOM.inputHeader) {
         initLocationSearch('locationInputHeader');
         DOM.inputHeader.removeEventListener('focus', once);
     }, { once: true });
-}
 
-if(DOM.inputHeader) {
     DOM.inputHeader.addEventListener('click', function () {
         const q = this.value.trim();
         if (q.length === 0) {
@@ -222,7 +252,7 @@ if(DOM.inputHeader) {
         }
     });
 }
-  
+
 if(DOM.resultsHeader) {
     DOM.resultsHeader.addEventListener('click', function (e) {  
         if (e.target.id === 'useCurrentLocationHeader') {
@@ -603,7 +633,6 @@ $(document).ready(function(){
   
       var href = $(this).attr('href');
   
-      // ❌ skip invalid links
       if (!href || href === '#' || href.startsWith('#')) return;
   
       var linkPath = new URL(this.href).pathname.replace(/\/$/, "");

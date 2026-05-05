@@ -29,6 +29,10 @@ if (!empty($event) && !empty($tab)) {
     $type = 'venue';
     $cacheKeyBase = 'venue|' . $venue;
 
+} elseif (!empty($artist)) {
+    $type = 'artist';
+    $cacheKeyBase = 'artist|' . $artist;
+
 } else {
     echo json_encode([
         'success' => false,
@@ -65,6 +69,10 @@ switch ($type) {
         if (!$imageUrl) {
             $imageUrl = AWS_CDN_URL . 'images/venue.webp';
         }
+        break;
+
+    case 'artist':
+        $imageUrl = getArtistImage($artist, $defaultCategory);
         break;
 }
 

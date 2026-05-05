@@ -306,7 +306,7 @@ $('.venue-slider').on('setPosition', function(){
         locationPanel.classList.toggle('show');
         if (cityInput) cityInput.focus();
       });
-  
+
       document.addEventListener('click', function (e) {
         if (!locationPanel.classList.contains('show')) return;
         if (locationPanel.contains(e.target) || e.target === locationToggleBtn) return;

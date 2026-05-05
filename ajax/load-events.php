@@ -5,63 +5,41 @@ require_once '../functions.php';
 header('Content-Type: text/html; charset=UTF-8');
 
 // Raw inputs
-$city      = trim($_GET['city']  ?? '');
-$state     = trim($_GET['state'] ?? '');
-$zip       = trim($_GET['zip']   ?? '');
-$cpid      = trim($_GET['cpid']  ?? '');
-$lat       = trim($_GET['lat']   ?? '');
-$lng       = trim($_GET['lng']   ?? '');
+$lat       = trim($_GET['lat'] ?? '');
+$lng       = trim($_GET['lng'] ?? '');
 $startDate = trim($_GET['startDate'] ?? '');
-$endDate   = trim($_GET['endDate']   ?? '');
+$endDate   = trim($_GET['endDate'] ?? '');
 
-// Basic sanitization to prevent malformed filters and injection.
-$city  = preg_replace('/[^a-zA-Z0-9\s\-]/', '', $city);
-$state = strtoupper(preg_replace('/[^A-Z]/', '', $state));
-$zip   = preg_replace('/[^0-9]/', '', $zip);
-
-$cpidInt = (int) $cpid;
-$latVal  = is_numeric($lat) ? (float) $lat : null;
-$lngVal  = is_numeric($lng) ? (float) $lng : null;
+$latVal = is_numeric($lat) ? (float) $lat : null;
+$lngVal = is_numeric($lng) ? (float) $lng : null;
 
 $datePattern = '/^\d{4}-\d{2}-\d{2}$/';
-if (!preg_match($datePattern, $startDate)) {
-    $startDate = '';
-}
-if (!preg_match($datePattern, $endDate)) {
-    $endDate = '';
-}
+if (!preg_match($datePattern, $startDate)) $startDate = '';
+if (!preg_match($datePattern, $endDate))   $endDate   = '';
 
 $params = [
     'perPage' => 20,
     'page'    => 1
 ];
 
-if ($cpidInt > 0) {
-    $params['performerFilter'] = 'id eq ' . $cpidInt;
+$filters = [];
+$today = date('Y-m-d');
+if ($startDate !== '' && $endDate !== '') {
+    $filters[] = "date/date ge $startDate";
+    $filters[] = "date/date le $endDate";
+} else {
+    $filters[] = "country/alphaCode eq 'US'";
+    $filters[] = "date/date ge $today";
 }
-
-$flag = 0;
 
 if ($latVal !== null && $lngVal !== null) {
     $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $latVal, $lngVal);
-} elseif ($zip !== '') {
-    $location = getLocationFromInput($zip);
-    $latVal = $location['latitude'];
-    $lngVal = $location['longitude'];
-    $params = [
-        'geoFilter'  => sprintf('nearby(%F, %F, 50mi)', $latVal, $lngVal),
-        'rollup'  => 'zip',
-        'perPage' => 1
-    ];    
-} elseif ($city !== '' && $state !== '') {
-    $params['filter'] = "city/text/name eq '$city' and stateProvince/text/abbr eq '$state'";
-} elseif ($startDate !== '' && $endDate !== '') {
-    $flag = 1;
-    $params['filter'] = "date/date ge $startDate and date/date le $endDate";
 }
 
+$params['filter'] = implode(' and ', $filters);
+
 try {
-    $response = getTnEvents($params, $flag);
+    $response = getTnEvents($params);
 } catch (Throwable $e) {
     http_response_code(500);
     echo '<div class="error">Failed to load events</div>';
@@ -71,8 +49,7 @@ try {
 $events = $response['results'] ?? [];
 
 if (empty($events)) {
-    $locationData = getLocationFromInput(['lat' => $latVal, 'lng' => $lngVal]);
-    echo 'no|'.$locationData['city'].'|'.$locationData['state'];
+    echo 'no';
     exit;
 }
 
