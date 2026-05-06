@@ -24,7 +24,7 @@ window.addEventListener('scroll', () => {
         ticking = true;
     }
 });
-  
+
 DOM.backToTop.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 });
@@ -139,6 +139,9 @@ function initLocationSearch(inputId, type = '') {
             const lngEvent = document.getElementById('lngEvent');
             const sdateEvent = document.getElementById('sdateEvent');
             const edateEvent = document.getElementById('edateEvent');
+            setCookie('so_label', input.value);
+            setCookie('so_lat', lat);
+            setCookie('so_lng', lng);  
             if (input.value !== '') {                
                 resetBtn.classList.remove('d-none');
                 locRes.classList.add('d-none');

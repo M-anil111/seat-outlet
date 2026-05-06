@@ -5,12 +5,11 @@ $today = date('Y-m-d');
 $params = [
 	"filter" => "date/date ge $today and startswith(defaultCategory/path, '$theaterPath')",
 	"perPage" => $perPage,
-	"page" => 1, 
-	"q" => "*"
+	"page" => 1
 ];
 $year = date('Y');
 $results = getTheaterCatEvents();
-$total_count = getTheaterCatEventsCount();
+$total_count = $results['totalCount'];
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'];
 $count = count($events);

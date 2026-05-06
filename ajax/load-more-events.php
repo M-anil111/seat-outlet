@@ -14,50 +14,44 @@ try {
         $response = getTnPerformerEvents($performerId, [
             'page'    => $page,
             'perPage' => $perPage,
-        ]);
-        $total_count = getTnPerformerEventsCount($performerId);
-        $total_pages = $perPage > 0 ? (int) ceil($total_count / $perPage) : 0;
+            'includeTotalCount' => 'true'
+        ]);        
     }else{
         $params = [];
-
         if (!empty($_GET['params'])) {
             $params = json_decode($_GET['params'], true) ?? [];
         }
-
         $params['page']    = $page;
         $params['perPage'] = $perPage;
-
-        if($type == 'search') {
+        $params['includeTotalCount'] = 'true';
+        if($type === 'search') {
             $response = getHeaderSearchEvents($params);
         }else{
             $response = getLoadMoreEvents($params);
-        }        
-        // $total_count = $response['totalCount'];
-        // $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-        $total_pages = 0;
+        }               
     }
 
-    $results = $response['results'] ?? [];
-    $count   = count($results);
+    $total_count = $response['totalCount'];
+    $total_pages = $perPage > 0 ? (int) ceil($total_count / $perPage) : 0;
 
-    if ($performerId) {
-        $hasMore = ($page < $total_pages);
-    } else {
-        $hasMore = ($count === $perPage);
-    }
+    $results = $response['results'] ?? [];   
+    $hasMore = ($page < $total_pages);
 
     echo json_encode([
-        'events'   => $results,
-        'hasMore'  => $hasMore,
-        'nextPage' => $hasMore ? $page + 1 : $page,
-        'count'    => $count,
+        'events'      => $results,
+        'totalCount'  => $total_count,
+        'currentPage' => $page,
+        'nextPage'    => $hasMore ? ($page + 1) : null,
+        'hasMore'     => $hasMore
     ]);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
-        'events'   => [],
-        'hasMore'  => false,
-        'nextPage' => $page,
-        'error'    => 'Failed to load events',
+        'events'      => [],
+        'totalCount'  => 0,
+        'currentPage' => $page,
+        'nextPage'    => null,
+        'hasMore'     => false,
+        'error'       => 'Failed to load events'
     ]);
 }

@@ -142,25 +142,9 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
 
     $today = date('Y-m-d');
     $params['filter'] = "date/date ge $today";
+    $params['includeTotalCount'] = 'true';
 
     return tnRequest('/catalog/v2/events/', $params);
-}
-
-function getTnPerformerEventsCount($performerId = 0, $params = []) {
-    if ($performerId > 0) {
-        $params['performerFilter'] = 'id eq ' . (int) $performerId;
-    }
-
-    $today = date('Y-m-d');
-    $params['filter']  = "date/date ge $today";
-    $params['page']    = 1;
-    $params['perPage'] = 500;
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    $count = (int) ($json['count'] ?? 0);
-
-    return $count;
 }
 
 function getTnPerformerById($performerId) {
@@ -406,7 +390,7 @@ function get_bio($performerId, $mysqli = MYSQLI) {
     return $result ?? null;
 }
 
-function getFaqs($mysqli, $type = null) {
+function getFaqs($type = null, $mysqli = MYSQLI) {
 
     $faqs = [];
 
@@ -1161,21 +1145,6 @@ function buildVenueSkeleton($count = 8) {
     return $html;
 }
 
-function getAllEventsCount() {
-    $today = date('Y-m-d');
-    $params = [
-        "filter" => "date/date ge $today and country/alphaCode eq 'US'",
-        'perPage' => 500,
-        'page' => 1
-    ];
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    $count = (int) ($json['count'] ?? 0);
-
-    return $count;
-}
-
 function getAllEvents() {
 
     $accessToken = getTnAccessToken();
@@ -1184,7 +1153,8 @@ function getAllEvents() {
     $params = [
         "filter" => "date/date ge $today and country/alphaCode eq 'US'",
         'perPage' => 20,
-        'page' => 1
+        'page' => 1,
+        'includeTotalCount' => 'true'
     ];
 
     $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
@@ -1213,24 +1183,6 @@ function getAllEvents() {
     $data = json_decode($response, true);
 
     return $data;
-}
-
-function getSportsCatEventsCount() {
-
-	$sportsPath = ".1859.1988.";	
-    $today = date('Y-m-d');
-
-    $params = [
-        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$sportsPath')",
-        'perPage' => 500,
-        'page' => 1
-    ];
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    $count = (int) ($json['count'] ?? 0);
-
-    return $count;
 }
 
 function getSportsCatEvents() {
@@ -1243,7 +1195,8 @@ function getSportsCatEvents() {
     $params = [
         'filter' => "date/date ge $today and startswith(defaultCategory/path, '$sportsPath')",
         'perPage' => 20,
-        'page' => 1
+        'page' => 1,
+        'includeTotalCount' => 'true'
     ];
 
     $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
@@ -1272,24 +1225,6 @@ function getSportsCatEvents() {
     $data = json_decode($response, true);
 
     return $data;
-}
-
-function getConcertsCatEventsCount() {
-
-	$concertPath = ".1859.1986.";	
-    $today = date('Y-m-d');
-
-    $params = [
-        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$concertPath')",
-        'perPage' => 500,
-        'page' => 1
-    ];
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    $count = (int) ($json['count'] ?? 0);
-
-    return $count;
 }
 
 function getConcertsCatEvents() {
@@ -1302,7 +1237,8 @@ function getConcertsCatEvents() {
     $params = [
         'filter' => "date/date ge $today and startswith(defaultCategory/path, '$concertPath')",
         'perPage' => 20,
-        'page' => 1
+        'page' => 1,
+        'includeTotalCount' => 'true'
     ];
 
     $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
@@ -1331,24 +1267,6 @@ function getConcertsCatEvents() {
     $data = json_decode($response, true);
 
     return $data;
-}
-
-function getTheaterCatEventsCount() {
-
-	$theaterPath = ".1859.1989.";
-    $today = date('Y-m-d');
-
-    $params = [
-        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$theaterPath')",
-        'perPage' => 500,
-        'page' => 1
-    ];
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    $count = (int) ($json['count'] ?? 0);
-
-    return $count;
 }
 
 function getTheaterCatEvents() {
@@ -1361,7 +1279,8 @@ function getTheaterCatEvents() {
     $params = [
         'filter' => "date/date ge $today and startswith(defaultCategory/path, '$theaterPath')",
         'perPage' => 20,
-        'page' => 1
+        'page' => 1,
+        'includeTotalCount' => 'true'
     ];
 
     $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
@@ -1392,24 +1311,6 @@ function getTheaterCatEvents() {
     return $data;
 }
 
-function getFestivalCatEventsCount() {
-
-	$festivalPath = ".1859.1986.1877.";
-    $today = date('Y-m-d');
-
-    $params = [
-        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$festivalPath')",
-        'perPage' => 500,
-        'page' => 1
-    ];
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    $count = (int) ($json['count'] ?? 0);
-
-    return $count;
-}
-
 function getFestivalCatEvents() {
 
     $accessToken = getTnAccessToken();
@@ -1420,7 +1321,8 @@ function getFestivalCatEvents() {
     $params = [
         'filter' => "date/date ge $today and startswith(defaultCategory/path, '$festivalPath')",
         'perPage' => 20,
-        'page' => 1
+        'page' => 1,
+        'includeTotalCount' => 'true'
     ];
 
     $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);

@@ -159,6 +159,10 @@ if (!empty($defaultCategory)) {
     }
   }
 }
+
+$eventDateRaw = $event['date']['date'];
+$timestamp    = strtotime($eventDateRaw);
+$year = date('Y');
 ?>
 
 
@@ -171,26 +175,27 @@ if (!empty($defaultCategory)) {
       <!-- Date Box -->
 
       <div class="date-box text-center me-3">
-        <div class="month">
-          MAY </div>
-        <div class="day">
-          04 </div>
+        <div class="month"><?php echo strtoupper(date('M', $timestamp)); ?></div>
+        <div class="day"><?php echo date('d', $timestamp); ?></div>
+        <?php if(date('Y', $timestamp) > $year) { ?>
+						<div class="month"><?php echo date('Y', $timestamp); ?></div>
+				<?php } ?>
       </div>
 
       <!-- Event Details -->
       <div class="event-info">
       <div class="d-flex align-items-center gap-2">
-												<span class="fw-semibold day-weeks">Monday</span>
+												<span class="fw-semibold day-weeks"><?php echo date('D', $timestamp); ?></span>
 												<span class="dot">·</span>
-												<span class="time-clock">7:00 PM	</span>
+												<span class="time-clock"><?php echo $event['date']['text']['time']; ?></span>
 											</div>
         <h5 class="event-title mb-1">
-          Netflix Is A Joke Festival: Ralph Barbosa
+          <?php echo $eventNameSafe; ?>
         </h5>
         <p class="event-location mb-2">
-          Orpheum Theatre - Los Angeles, Los Angeles, CA
+          <?php echo $event['venue']['text']['name'] . ', ' . $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr']; ?> 
         </p>
-        <a href="#" class="btn common-btn">Show All Events</a>
+        <a href="/tickets" class="btn common-btn">Show All Events</a>
       </div>
 
     </div>

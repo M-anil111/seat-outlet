@@ -5,104 +5,20 @@ $params = [
 	"filter" => "date/date ge $today and country/alphaCode eq 'US'",
 	"perPage" => $perPage,
 	"page" => 1,
+	"includeTotalCount" => "true"
 ];
 $year = date('Y');
 $results = getAllEvents();
-$total_count = getAllEventsCount();
+$total_count = $results['totalCount'];
+
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'];
-$count = count($events);
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
+$faqs = getFaqs('events');
 ?>
-<style>
-	.hero-section.section-padding {
-    padding: 60px 0;
-}
 
-/* Hero Section */
-.hero-section {
-    position: relative;
-    background-color: #05070b;
-    color: #ffffff;
-    overflow: hidden;
-    padding-bottom:120px;
-}
-
-.hero-section::before {
-    content: "";
-    position: absolute;
-    right: -18%;
-    top: -25%;
-    width: 55%;
-    height: 170%;
-    background: linear-gradient(135deg, #0b1120 0%, #0056d6 55%, #0b1120 100%);
-    transform: skewX(-18deg);
-    opacity: 0.9;
-    z-index: 0;
-}
-
-.hero-title {
-    font-weight: 800;
-    line-height: 1.1;
-    font-size: 65px;
-    position: relative;
-    margin-bottom: 20px;
-}
-
-.hero-title .hero-title-blue {
-    color: #2556E0;
-    letter-spacing: 0.06em;
-    display: block;
-}
-
-.hero-title .hero-title-white {
-    color: #ffffff;
-    letter-spacing: 0.06em;
-}
-
-.hero-subtitle {
-    color: #d1d5db;
-    font-size: 16px;
-    text-align: center;
-    z-index: 2;
-    position: relative;
-}
-
-/* ================= MEDIA QUERIES ================= */
-
-
-@media (max-width: 1365px){
-    .hero-title{
-        font-size: 60px;
-    }
-}
-@media (max-width: 991px){
-    .hero-title {
-        font-size: 50px;
-    }
-}
-@media (max-width: 767.98px) {
-    .hero-section.section-padding {
-        padding: 50px 0;
-    }
-
-    .hero-section::before {
-        right: -40%;
-        width: 80%;
-        height: 150%;
-    }
-
-    .hero-subtitle {
-        font-size: 14.4px;
-    }
-
-    .hero-title {
-        font-size: 32px;
-    }
-}
-</style>
 <!-- Hero Section -->
-<section class="hero-section section-padding">
+<section class="tickets-hero-section section-padding">
 	<div class="container">		
 		<!-- Hero Content -->
 		<div class="row justify-content-center align-items-center">
@@ -244,7 +160,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 								<div class="load-more-wrapper text-center mt-5">
 									<div class="load-progress mx-auto mb-3">
 										<div class="small mb-2">
-											Loaded <strong id="loadedCount"><?php echo $count; ?></strong> out of <strong id="totalCount"><?php echo $total_count; ?></strong> events
+											Loaded <strong id="loadedCount"><?php echo $perPage; ?></strong> out of <strong id="totalCount"><?php echo $total_count; ?></strong> events
 										</div>
 										<div class="progress progress-thin">
 											<div class="progress-bar" id="progressBar" style="width: <?php echo $percent; ?>%;"></div>
@@ -352,6 +268,58 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 				</div>
 			</div>
 		</div>
+		<div class="tab-section content-section-detail">
+			<div class="row">
+				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
+					<div class="me-0 me-md-3 me-lg-3 me-xl-3 me-xxl-3">
+						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">About Live Events Across the United States</h2>
+						Discover upcoming live events across the United States with access to concerts, sports games, theater performances, comedy shows, festivals, and more. Seat Outlet helps fans explore events in major cities and venues nationwide with an easy-to-browse event listing experience.<br><br>
+						Browse thousands of upcoming events by date, location, performer, venue, or category. Whether you're searching for last-minute tickets, planning ahead for a major tour, or looking for weekend entertainment near you, our event listings make it simple to find the right experience.<br><br>
+						From chart-topping concerts and championship sports matchups to Broadway shows and family-friendly entertainment, Seat Outlet connects fans with a wide selection of live events happening throughout the country.
+					</div>
+				</div>
+				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
+					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
+						<img src="/assets/event-ticket-buying.webp" alt="About Live Events Across the United States" class="img-about img-fluid rounded" />
+					</div>
+				</div>				
+			</div>
+		</div>
+		<?php if (!empty($faqs)) { ?>
+			<div class="tab-section content-section-detail">
+				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo $artistName; ?> Events</h2>
+				<div class="accordion" id="faqAccordion">
+					<?php foreach ($faqs as $index => $faq) {
+						$collapseId = 'collapse' . $index;
+						$headingId  = 'heading' . $index;
+						$question = str_replace('[artist_name]', $artistName, $faq['question']);
+						$answer   = str_replace('[artist_name]', $artistName, $faq['answer']);
+						$isFirst = ($index === 0);
+					?>
+						<div class="accordion-item">
+							<h2 class="accordion-header" id="<?php echo $headingId; ?>">
+								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>" 
+										type="button"
+										data-bs-toggle="collapse"
+										data-bs-target="#<?php echo $collapseId; ?>"
+										aria-expanded="<?php echo $isFirst ? 'true' : 'false'; ?>"
+										aria-controls="<?php echo $collapseId; ?>">
+									<?php echo $question; ?>
+								</button>
+							</h2>
+							<div id="<?php echo $collapseId; ?>" 
+								class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>" 
+								aria-labelledby="<?php echo $headingId; ?>" 
+								data-bs-parent="#faqAccordion">
+								<div class="accordion-body">
+									<?php echo nl2br($answer); ?>
+								</div>
+							</div>
+						</div>
+					<?php } ?>
+				</div>
+			</div>
+		<?php } ?>
 	</div>
 </section>
 

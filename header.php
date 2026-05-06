@@ -40,6 +40,8 @@
     </noscript>
     <?php if ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>  
         <?php include 'seo.php'; ?>
+    <?php }elseif ($_SERVER['REQUEST_URI'] == '/tickets' || $_SERVER['REQUEST_URI'] == '/tickets.php') { ?>  
+        <?php include 'seo-tickets.php'; ?>
     <?php } ?>
     
 </head>

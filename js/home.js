@@ -1,6 +1,3 @@
-
-
-
 $('.custom-slider').on('setPosition', function(){
   	equalHeightSlider('custom-slider', 'event-card');
 });
@@ -8,7 +5,6 @@ $('.custom-slider').on('setPosition', function(){
 $('.venue-slider').on('setPosition', function(){
 	equalHeightSlider('venue-slider', 'venue-card');
 });
-
 
 /* =====================================================
     EVENTS Section

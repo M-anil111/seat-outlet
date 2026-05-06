@@ -30,7 +30,7 @@ $eventsResponse = getTnPerformerEvents($id, [
     'perPage' => $perPage
 ]);
 
-$total_count = getTnPerformerEventsCount($id);
+$total_count = $eventsResponse['totalCount'];
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 
 $events = $eventsResponse['results'] ?? [];
@@ -44,7 +44,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
 $artistName = $performer['text']['name'];
 $performer_bio = getArtistBio($artistName, $id);
-$faqs = getFaqs($mysqli, 'performer');
+$faqs = getFaqs('performer');
 if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 	$topcats = [
 		'.1859.1988.1879.1959.' => 'nfl',

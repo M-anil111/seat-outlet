@@ -1,4 +1,27 @@
 /* =====================================================
+    PROMOCODES COPY
+===================================================== */
+    
+document.querySelectorAll(".offer-copy-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        const code = btn.dataset.code || btn.previousElementSibling.textContent.trim();
+        navigator.clipboard
+        .writeText(code)
+        .then(() => {
+            btn.textContent = "Copied";
+            setTimeout(() => (btn.textContent = "Copy"), 1500);
+        })
+        .catch(() => {
+            alert("Unable to copy code. Please copy manually.");
+        });
+    });
+});
+      
+/* =====================================================
+    ARTIST PROMOCODES COPY End
+===================================================== */
+
+/* =====================================================
     ARTIST FILTER
 ===================================================== */
   
@@ -93,19 +116,74 @@ function updateEventsSection(location) {
     if (location.endDate)   params.append('endDate', location.endDate);
 
     fetch(`/ajax/load-events.php?${params}`)
-    .then(res => res.text())
-    .then(html => {
-        if(html == 'no') {   
-            document.getElementById('location-no-results').innerHTML = '<strong>No events available in your selected area</strong><p>Try changing locations or browse through the available events below</p>';
-        }else{
-            document.getElementById('location-no-results').innerHTML = '';
-            const temp = document.createElement('div');
-            temp.innerHTML = html;
-            const count = temp.querySelectorAll('.performer-event-item').length;
-            const countmsg = count > 1 ? ' RESULTS' : ' RESULT';
-            document.getElementById('results_count').innerHTML = count + countmsg;
-            document.getElementById('eventsSection').innerHTML = html;
+    .then(res => res.json())
+    .then(data => {
+        loadMoreBtn.querySelector('#btnSpinner').classList.add('d-none');
+
+        if (data.error) {
+            console.error(data.error);
+            return;
         }
+
+        if (!data.events || data.events.length === 0) {
+            document.getElementById('location-no-results').innerHTML = '<strong>No events available in your selected area</strong><p>Try changing locations or browse through the available events below</p>';
+            return;
+        }
+
+        document.getElementById('location-no-results').innerHTML = '';
+        eventsSection.innerHTML = '';
+
+        data.events.forEach(event => {
+            eventsSection.insertAdjacentHTML(
+                'beforeend',
+                renderEvent(event)
+            );
+        });
+
+        const loaded = data.totalCount;
+        const countmsg = loaded > 1 ? ' RESULTS' : ' RESULT';
+        document.getElementById('results_count').innerHTML = loaded + countmsg;
+        document.getElementById('totalCount').textContent = loaded;
+
+        // =========================
+        // LOAD MORE BUTTON UPDATE
+        // =========================
+
+        loadMoreBtn.dataset.page = 2;
+
+        loadMoreBtn.dataset.total = data.totalCount;
+
+        const savedParams = {};
+        if (location.lat && location.lng) {
+            savedParams.geoFilter = `nearby(${location.lat}, ${location.lng}, 50mi)`;
+        }
+        if (location.startDate && location.endDate) {
+            savedParams.filter =
+                `date/date ge ${location.startDate} and date/date le ${location.endDate}`;
+        } else {
+            savedParams.filter =
+                `country/alphaCode eq 'US' and date/date ge ${new Date().toISOString().split('T')[0]}`;
+        }
+        loadMoreBtn.dataset.params = JSON.stringify(savedParams);
+
+        // show/hide load more
+        if (data.hasMore) {
+            loadMoreBtn.classList.remove('d-none');
+            backToTopBtn.classList.add('d-none');
+        } else {
+            loadMoreBtn.classList.add('d-none');
+            backToTopBtn.classList.remove('d-none');
+        }
+
+        // progress
+        loadedCount.textContent = data.events.length;
+
+        const percent = data.totalCount > 0
+            ? ((data.events.length / data.totalCount) * 100)
+            : 0;
+
+        progressBar.style.width = percent + '%';
+
         if(input.value !== '') {
             resetBtn.classList.remove('d-none');
             resetBtn.addEventListener('click', function () {
@@ -113,6 +191,8 @@ function updateEventsSection(location) {
                 this.classList.add('d-none');       
                 document.getElementById('location-no-results').innerHTML = '';
                 document.getElementById('locationHeading').innerHTML = '';
+                latEvent.value = '';
+                lngEvent.value = '';
                 updateEventsSection({
                     startDate: sdateEvent.value,
                     endDate: edateEvent.value
@@ -121,6 +201,7 @@ function updateEventsSection(location) {
         }     
     })
     .catch(err => {
+        loadMoreBtn.querySelector('#btnSpinner').classList.add('d-none');
         console.error('Failed to load events', err);
     }); 
 }
@@ -207,6 +288,8 @@ let picker = flatpickr("#performerDatePicker", {
         footer.querySelector("#fp-reset").addEventListener("click", () => {
             instance.clear();
             instance.close();
+            sdateEvent.value = '';
+            edateEvent.value = '';
             updateEventsSection({
                 lat: latEvent.value,
                 lng: lngEvent.value
@@ -226,30 +309,6 @@ window.addEventListener("resize", function () {
     
 /* =====================================================
     ARTIST FILTER End
-===================================================== */
-
-
-/* =====================================================
-    PROMOCODES COPY
-===================================================== */
-    
-document.querySelectorAll(".offer-copy-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-        const code = btn.dataset.code || btn.previousElementSibling.textContent.trim();
-        navigator.clipboard
-        .writeText(code)
-        .then(() => {
-            btn.textContent = "Copied";
-            setTimeout(() => (btn.textContent = "Copy"), 1500);
-        })
-        .catch(() => {
-            alert("Unable to copy code. Please copy manually.");
-        });
-    });
-});
-      
-/* =====================================================
-    ARTIST PROMOCODES COPY End
 ===================================================== */
 
 /* =====================================================
@@ -274,26 +333,29 @@ if (loadMoreBtn) {
         const perPage     = this.dataset.perpage;
         const total     = this.dataset.total;
         const type     = this.dataset.type;
-        let params = this.dataset.params;
+        let params = {};
+        try {
+            params = JSON.parse(this.dataset.params || '{}');
+        } catch (e) {
+            params = {};
+        }
           
         this.disabled = true;
         loadMoreBtn.querySelector('#btnSpinner').classList.remove('d-none');
         if(performerId) {
             fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&performerId=${performerId}`;
         }else{
-            fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&params=${encodeURIComponent(params)}&type=${type || 'all'}`;
+            fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&params=${encodeURIComponent(JSON.stringify(params))}&type=${type || 'all'}`;
         }        
         fetch(fetchUrl)
         .then(res => res.json())
-        .then(data => {                    
+        .then(data => {   
             data.events.forEach(event => {
                 eventsSection.insertAdjacentHTML('beforeend', renderEvent(event));
             });
 
             let loaded = eventsSection.querySelectorAll('.performer-event-item').length;
-            const countmsg = loaded === 1 ? ' RESULT' : ' RESULTS';
-            document.getElementById('results_count').innerHTML = loaded + countmsg;
-
+     
             if (data.hasMore) { 
                 loadMoreBtn.dataset.page = data.nextPage;   
                 loadMoreBtn.disabled = false;                 
@@ -306,6 +368,7 @@ if (loadMoreBtn) {
             const percent = (loaded / total) * 100;
             progressBar.style.width = percent + '%';
             loadedCount.textContent = loaded;
+            document.getElementById('totalCount').textContent = loadMoreBtn.dataset.total;
         });
     });
 }
