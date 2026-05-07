@@ -9,6 +9,7 @@ $lat       = trim($_GET['lat'] ?? '');
 $lng       = trim($_GET['lng'] ?? '');
 $startDate = trim($_GET['startDate'] ?? '');
 $endDate   = trim($_GET['endDate'] ?? '');
+$pid       = $_GET['pid'];
 
 $latVal = is_numeric($lat) ? (float) $lat : null;
 $lngVal = is_numeric($lng) ? (float) $lng : null;
@@ -24,6 +25,7 @@ $params = [
     'page'    => $page
 ];
 
+
 $filters = [];
 $today = date('Y-m-d');
 if ($startDate !== '' && $endDate !== '') {
@@ -36,6 +38,10 @@ if ($startDate !== '' && $endDate !== '') {
 
 if ($latVal !== null && $lngVal !== null) {
     $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $latVal, $lngVal);
+}
+
+if($pid > 0) {
+    $params['performerFilter'] = "id eq " . (int) $pid;
 }
 
 $params['filter'] = implode(' and ', $filters);

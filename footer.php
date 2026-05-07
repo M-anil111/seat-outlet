@@ -121,7 +121,7 @@
         <div class="space-between d-flex pe-2">
           Website Designed by 
           <a class="px-2 footer-bottom-logo" style="color: #e1c24e;" href="https://www.jaymehta.co/" target="_blank" title="Jay Mehta Digital">
-            <img src="/assets/images/jm.png" alt="Website Design Service by Jay Mehta Digital" style="max-width:100px;" width="100" height="19">
+            <img src="/assets/images/jm.webp" alt="Website Design Service by Jay Mehta Digital" style="max-width:100px;" width="100" height="19">
           </a> | 
         </div> 
         <div class="space-between d-flex">

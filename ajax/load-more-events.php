@@ -6,31 +6,22 @@ header('Content-Type: application/json; charset=UTF-8');
 
 $page       = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage    = isset($_GET['perPage']) ? max(1, min(100, (int) $_GET['perPage'])) : 20;
-$performerId= isset($_GET['performerId']) ? max(0, (int) $_GET['performerId']) : 0;
 $type       = isset($_GET['type']) ? $_GET['type'] : '';
 
 try {
-    if($performerId) {
-        $response = getTnPerformerEvents($performerId, [
-            'page'    => $page,
-            'perPage' => $perPage,
-            'includeTotalCount' => 'true'
-        ]);        
-    }else{
-        $params = [];
-        if (!empty($_GET['params'])) {
-            $params = json_decode($_GET['params'], true) ?? [];
-        }
-        $params['page']    = $page;
-        $params['perPage'] = $perPage;
-        $params['includeTotalCount'] = 'true';
-        if($type === 'search') {
-            $response = getHeaderSearchEvents($params);
-        }else{
-            $response = getLoadMoreEvents($params);
-        }               
+    $params = [];
+    if (!empty($_GET['params'])) {
+        $params = json_decode($_GET['params'], true) ?? [];
     }
-
+    $params['page']    = $page;
+    $params['perPage'] = $perPage;
+    $params['includeTotalCount'] = 'true';
+    if($type === 'search') {
+        $response = getHeaderSearchEvents($params);
+    }else{
+        $response = getLoadMoreEvents($params);
+    }       
+    
     $total_count = $response['totalCount'];
     $total_pages = $perPage > 0 ? (int) ceil($total_count / $perPage) : 0;
 

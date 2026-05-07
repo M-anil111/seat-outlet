@@ -110,11 +110,11 @@
                     <div class="d-flex align-items-center gap-3">
                         <nav class="tm-nav-wrapper d-none d-sm-none d-md-none d-lg-block d-xl-block d-xxl-block">
                             <ul class="tm-nav" id="mainMenu">
-                                <li class="menu-item"><a href="#">Concerts</a></li>
-                                <li class="menu-item"><a href="#">Sports</a></li>
-                                <li class="menu-item"><a href="#">Theater</a></li>
-                                <li class="menu-item"><a href="#">Festivals</a></li>
-                                <li class="menu-item"><a href="#">Cities</a></li>
+                                <li class="menu-item"><a href="/concerts">Concerts</a></li>
+                                <li class="menu-item"><a href="/sports">Sports</a></li>
+                                <li class="menu-item"><a href="/theater">Theater</a></li>
+                                <li class="menu-item"><a href="/festivals">Festivals</a></li>
+                                <li class="menu-item"><a href="/cities">Cities</a></li>
                             </ul>
                         </nav>
                         <div class="tm-top-links d-flex d-sm-flex d-md-flex align-items-center">
@@ -161,20 +161,8 @@
                             </button>
                             <div id="search-loader" class="search-loader" style="display:none;">
                                 <svg width="16" height="16" viewBox="0 0 50 50">
-                                    <circle 
-                                    cx="25" cy="25" r="20" 
-                                    fill="none" 
-                                    stroke="#666" 
-                                    stroke-width="4"
-                                    stroke-linecap="round"
-                                    stroke-dasharray="90,150"
-                                    stroke-dashoffset="0">
-                                    <animateTransform
-                                        attributeName="transform"
-                                        type="rotate"
-                                        repeatCount="indefinite"
-                                        dur="1s"
-                                        values="0 25 25;360 25 25"/>
+                                    <circle cx="25" cy="25" r="20" fill="none" stroke="#666" stroke-width="4" stroke-linecap="round" stroke-dasharray="90,150" stroke-dashoffset="0">
+                                        <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="1s" values="0 25 25;360 25 25" />
                                     </circle>
                                 </svg>
                             </div>
@@ -208,7 +196,7 @@
                     <li class="has-submenu">
 
                         <!-- ✅ ADD class + data-target -->
-                        <a href="#" class="open-submenu" data-target="submenu-concerts">
+                        <a href="/concerts" class="open-submenu" data-target="submenu-concerts">
                             Concerts <span class="arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
                             </span>
@@ -237,7 +225,7 @@
                                 <li>
                                     <h3 class="sub-menu-heading">Discover More</h3>
                                 </li>
-                                <li><a href="#" class="view-all">All Concerts <i class="bi bi-arrow-right"></i></a></li>
+                                <li><a href="/concerts" class="view-all">All Concerts <i class="bi bi-arrow-right"></i></a></li>
                                 <li><a href="/category/50s-60s-era-1860">50s / 60s Era</a></li>
                                 <li><a href="/category/alternative-1862">Alternative</a></li>
                                 <li><a href="/category/bluegrass-1866">Bluegrass</a></li>
@@ -268,7 +256,7 @@
                     <li class="has-submenu">
 
                         <!-- ✅ ADD class + data-target -->
-                        <a href="#" class="open-submenu" data-target="submenu-sports">
+                        <a href="/sports" class="open-submenu" data-target="submenu-sports">
                         Sports <span class="arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
                             </span>
@@ -297,7 +285,7 @@
                                 <li>
                                     <h3 class="sub-menu-heading">Discover More</h3>
                                 </li>
-                                <li><a href="#" class="view-all">All Sports <i class="bi bi-arrow-right"></i></a></li>
+                                <li><a href="/sports" class="view-all">All Sports <i class="bi bi-arrow-right"></i></a></li>
                                 <li><a href="/category/baseball-1864">Baseball</a></li>
                                 <li><a href="/category/basketball-1865">Basketball</a></li>
                                 <li><a href="/category/boxing-1867">Boxing</a></li>
@@ -326,7 +314,7 @@
                     <li class="has-submenu">
 
                         <!-- ✅ ADD class + data-target -->
-                        <a href="#" class="open-submenu" data-target="submenu-theater">
+                        <a href="/theater" class="open-submenu" data-target="submenu-theater">
                             Theater <span class="arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
                             </span>
@@ -352,7 +340,7 @@
                                 <li>
                                     <h3 class="sub-menu-heading">Discover More</h3>
                                 </li>
-                                <li><a href="#" class="view-all">All Theater <i class="bi bi-arrow-right"></i></a></li>
+                                <li><a href="/theater" class="view-all">All Theater <i class="bi bi-arrow-right"></i></a></li>
                                 <li><a href="/category/ballet-1863">Ballet</a></li>
                                 <li><a href="/category/broadway-1868">Broadway</a></li>
                                 <li><a href="/category/children-family-1869">Children / Family</a></li>
@@ -370,10 +358,10 @@
 
                     </li>
                     <li>
-                        <a href="#" title="Festivals" class="mobile-menu">Festivals</a>
+                        <a href="/festivals" title="Festivals" class="mobile-menu">Festivals</a>
                     </li>
                     <li>
-                        <a href="#" title="Cities" class="mobile-menu">Cities</a>
+                        <a href="/cities" title="Cities" class="mobile-menu">Cities</a>
                     </li>
                 </ul>
                 <ul class="mobile-main-menu-new">
@@ -384,7 +372,7 @@
                         <a href="tel:+1512-621-8822" title="Call Us (512)-621-8822" class="mobile-menu">Call Us (512)-621-8822</a>
                     </li>                    
                     <li>
-                        <a href="/about-us.php" title="About Us" class="mobile-menu">About Us</a>
+                        <a href="/about-us/" title="About Us" class="mobile-menu">About Us</a>
                     </li>                    
                     <li>
                         <a href="/faq/" title="Faqs" class="mobile-menu">Faqs</a>

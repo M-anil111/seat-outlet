@@ -32,6 +32,9 @@ const latEvent = document.getElementById('latEvent');
 const lngEvent = document.getElementById('lngEvent');
 const sdateEvent = document.getElementById('sdateEvent');
 const edateEvent = document.getElementById('edateEvent');
+const pidEvent = document.getElementById('pidEvent');
+const loadMoreBtn = document.getElementById('loadMoreBtn');
+const spinner = loadMoreBtn?.querySelector('.btnSpinner');
 
 function getActiveLocation() {
     const lat = latEvent.value || getCookie('so_lat');
@@ -62,7 +65,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 lat: savedLat,
                 lng: savedLng,
                 startDate: sdateEvent.value,
-                endDate: edateEvent.value
+                endDate: edateEvent.value,
+                pid: pidEvent.value
             });
         }
         
@@ -114,32 +118,48 @@ function updateEventsSection(location) {
     if (location.lng)   params.append('lng', location.lng);
     if (location.startDate)   params.append('startDate', location.startDate);
     if (location.endDate)   params.append('endDate', location.endDate);
+    if (location.pid)   params.append('pid', location.pid);
 
     fetch(`/ajax/load-events.php?${params}`)
     .then(res => res.json())
     .then(data => {
-        loadMoreBtn.querySelector('#btnSpinner').classList.add('d-none');
-
-        if (data.error) {
-            console.error(data.error);
-            return;
+        
+        if (spinner) {
+            spinner.classList.add('d-none');
         }
+
+        if(input.value !== '') {
+            resetBtn.classList.remove('d-none');
+            resetBtn.addEventListener('click', function () {
+                input.value = '';
+                this.classList.add('d-none');       
+                document.getElementById('location-no-results').innerHTML = '';
+                document.getElementById('locationHeading').innerHTML = '';
+                latEvent.value = '';
+                lngEvent.value = '';
+                updateEventsSection({
+                    startDate: sdateEvent.value,
+                    endDate: edateEvent.value,
+                    pid: pidEvent.value
+                });
+            }); 
+        }  
 
         if (!data.events || data.events.length === 0) {
             document.getElementById('location-no-results').innerHTML = '<strong>No events available in your selected area</strong><p>Try changing locations or browse through the available events below</p>';
             return;
         }
-
+        
         document.getElementById('location-no-results').innerHTML = '';
         eventsSection.innerHTML = '';
-
+        
         data.events.forEach(event => {
             eventsSection.insertAdjacentHTML(
                 'beforeend',
                 renderEvent(event)
             );
         });
-
+        
         const loaded = data.totalCount;
         const countmsg = loaded > 1 ? ' RESULTS' : ' RESULT';
         document.getElementById('results_count').innerHTML = loaded + countmsg;
@@ -148,7 +168,7 @@ function updateEventsSection(location) {
         // =========================
         // LOAD MORE BUTTON UPDATE
         // =========================
-
+        
         loadMoreBtn.dataset.page = 2;
 
         loadMoreBtn.dataset.total = data.totalCount;
@@ -164,8 +184,11 @@ function updateEventsSection(location) {
             savedParams.filter =
                 `country/alphaCode eq 'US' and date/date ge ${new Date().toISOString().split('T')[0]}`;
         }
+        if(location.pid) {
+            savedParams.performerFilter = `id eq ${location.pid}`;
+        }
         loadMoreBtn.dataset.params = JSON.stringify(savedParams);
-
+        
         // show/hide load more
         if (data.hasMore) {
             loadMoreBtn.classList.remove('d-none');
@@ -174,7 +197,7 @@ function updateEventsSection(location) {
             loadMoreBtn.classList.add('d-none');
             backToTopBtn.classList.remove('d-none');
         }
-
+        
         // progress
         loadedCount.textContent = data.events.length;
 
@@ -183,25 +206,12 @@ function updateEventsSection(location) {
             : 0;
 
         progressBar.style.width = percent + '%';
-
-        if(input.value !== '') {
-            resetBtn.classList.remove('d-none');
-            resetBtn.addEventListener('click', function () {
-                input.value = '';
-                this.classList.add('d-none');       
-                document.getElementById('location-no-results').innerHTML = '';
-                document.getElementById('locationHeading').innerHTML = '';
-                latEvent.value = '';
-                lngEvent.value = '';
-                updateEventsSection({
-                    startDate: sdateEvent.value,
-                    endDate: edateEvent.value
-                });
-            }); 
-        }     
+   
     })
     .catch(err => {
-        loadMoreBtn.querySelector('#btnSpinner').classList.add('d-none');
+        if (spinner) {
+            spinner.classList.add('d-none');
+        }
         console.error('Failed to load events', err);
     }); 
 }
@@ -230,7 +240,8 @@ function getCurrentLocation() {
                 lat,
                 lng,
                 startDate: sdateEvent.value,
-                endDate: edateEvent.value
+                endDate: edateEvent.value,
+                pid: pidEvent.value
             });
         },
         error => {
@@ -271,7 +282,8 @@ let picker = flatpickr("#performerDatePicker", {
                 lat: latEvent.value,
                 lng: lngEvent.value,
                 startDate,
-                endDate
+                endDate,
+                pid: pidEvent.value
             });
         }
     },
@@ -292,7 +304,8 @@ let picker = flatpickr("#performerDatePicker", {
             edateEvent.value = '';
             updateEventsSection({
                 lat: latEvent.value,
-                lng: lngEvent.value
+                lng: lngEvent.value,
+                pid: pidEvent.value
             });
         });
     }
@@ -322,14 +335,12 @@ if (backToTopBtn) {
     });
 }
 
-const loadMoreBtn = document.getElementById('loadMoreBtn');
 const eventsSection = document.getElementById('eventsSection');
 const progressBar = document.getElementById('progressBar');
 const loadedCount = document.getElementById('loadedCount');
 if (loadMoreBtn) {
     loadMoreBtn.addEventListener('click', function () {
         const page = parseInt(this.dataset.page, 10) || 1;
-        const performerId = this.dataset.performer;
         const perPage     = this.dataset.perpage;
         const total     = this.dataset.total;
         const type     = this.dataset.type;
@@ -341,12 +352,10 @@ if (loadMoreBtn) {
         }
           
         this.disabled = true;
-        loadMoreBtn.querySelector('#btnSpinner').classList.remove('d-none');
-        if(performerId) {
-            fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&performerId=${performerId}`;
-        }else{
-            fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&params=${encodeURIComponent(JSON.stringify(params))}&type=${type || 'all'}`;
-        }        
+        if (spinner) {
+            spinner.classList.remove('d-none');
+        }
+        fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&params=${encodeURIComponent(JSON.stringify(params))}&type=${type || 'all'}`;
         fetch(fetchUrl)
         .then(res => res.json())
         .then(data => {   
@@ -359,7 +368,7 @@ if (loadMoreBtn) {
             if (data.hasMore) { 
                 loadMoreBtn.dataset.page = data.nextPage;   
                 loadMoreBtn.disabled = false;                 
-                loadMoreBtn.querySelector('#btnSpinner').classList.add('d-none');
+                loadMoreBtn.classList.add('d-none');
             } else {
                 loadMoreBtn.classList.add('d-none');
                 backToTopBtn.classList.remove('d-none');
@@ -395,6 +404,10 @@ function renderEvent(event) {
         let names = eperformers.map(performer => performer.name ?? null).filter(Boolean);
         dataPerformers = names.join('|');
     }
+    const eSlug = normalizeKey(event.text.name) + '-' + event.id;
+    const cityName = event.city.text.name + ', ' + event.stateProvince.text.abbr;
+    const citySlug = normalizeKey(cityName) + '-' + event.city.id;
+    const venueSlug = normalizeKey(event.venue.text.name) + '-' + event.venue.id;
     return `
     <div class="d-flex align-items-center justify-content-between performer-event-item">
         <div class="date-box text-center me-3">
@@ -412,14 +425,14 @@ function renderEvent(event) {
                     data-location="${event.city.text.name}, ${event.stateProvince.text.abbr}" data-title="${event.text.name}" data-performers="${dataPerformers}"></i>
             </div>
             <div class="fw-semibold location-venue-name">
-                <a href="#">${event.city.text.name}, ${event.stateProvince.text.abbr}</a> · <a href="#">${event.venue.text.name}</a>
+                <a href="/city/${citySlug}">${cityName}</a> · <a href="/venue/${venueSlug}">${event.venue.text.name}</a>
             </div>
             <div class="text-muted small">
-                <a href="/event.php?id=${event.id}">${event.text.name}</a>
+                <a href="/event/${eSlug}">${event.text.name}</a>
             </div>
         </div>
         <div class="ms-3">
-            <a href="/event.php?id=${event.id}" class="btn btn-primary d-flex align-items-center gap-2">
+            <a href="/event/${eSlug}" class="btn btn-primary d-flex align-items-center gap-2">
                 <span class="d-none d-md-inline">
                     Find Tickets
                 </span>

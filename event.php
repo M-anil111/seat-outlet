@@ -128,9 +128,14 @@
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 if ($id <= 0) {
-  echo '<div class="container"><p>Invalid event.</p></div>';
-  include 'footer.php';
-  exit;
+  $slug  = $_GET['slug'] ?? '';
+  $parts = explode('-', (string) $slug);
+  $id    = (int) end($parts);
+  if ($id <= 0) {
+    echo '<div class="container"><p>Invalid event.</p></div>';
+    include 'footer.php';
+    exit;
+  }
 }
 
 $event = getTnEventById($id);
@@ -166,13 +171,13 @@ $year = date('Y');
 ?>
 
 
-<div class="container-fluid event-detail">
+<!-- <div class="container-fluid event-detail">
   <div class="event-card d-flex flex-wrap align-items-center justify-content-between">
 
-    <!-- Left Section -->
+ 
     <div class="d-flex align-items-baseline">
 
-      <!-- Date Box -->
+
 
       <div class="date-box text-center me-3">
         <div class="month"><?php echo strtoupper(date('M', $timestamp)); ?></div>
@@ -182,7 +187,7 @@ $year = date('Y');
 				<?php } ?>
       </div>
 
-      <!-- Event Details -->
+     
       <div class="event-info">
       <div class="d-flex align-items-center gap-2">
 												<span class="fw-semibold day-weeks"><?php echo date('D', $timestamp); ?></span>
@@ -200,7 +205,7 @@ $year = date('Y');
 
     </div>
 
-    <!-- Right Section -->
+  
     <div class="guarantee text-md-end mt-3 mt-md-0">
       <h6 class="mb-1">100% Money-Back Guarantee</h6>
       <p class="mb-0 small">
@@ -209,9 +214,9 @@ $year = date('Y');
     </div>
 
   </div>
-</div>
+</div> -->
 
-<div class="hero">
+<!-- <div class="hero">
   <div class="hero-content">
     <h1><?php echo $eventNameSafe; ?></h1>
     <h2 id="artist-<?php echo $event['performers'][0]['id']; ?>"><?php echo 'Performer: ' . $event['performers'][0]['name']; ?></h2>
@@ -220,7 +225,7 @@ $year = date('Y');
       <?php print_r($event); ?>
     </div>
   </div>
-</div>
+</div> -->
 
 <div id="tn-maps" style="height:500px; margin-top: 50px;"></div>
 <script src="<?php echo htmlspecialchars($mapScriptUrl, ENT_QUOTES, 'UTF-8'); ?>"></script>

@@ -1,16 +1,16 @@
-<title>Seat Outlet – Buy Tickets Online</title>
+<title>Seat Outlet – Buy Verified Event Tickets Online</title>
 <meta name="description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
-<meta name="keywords" content="Verified Ticket Marketplace Network, buy event tickets online, concert tickets online, sports tickets marketplace, compare ticket prices online">
+<meta name="keywords" content="Buy verified event tickets online, concert tickets online, sports tickets online, live event tickets, secure ticket marketplace">
 <link rel="canonical" href="https://beta.seatoutlet.com/">
 
-<meta property="og:title" content="Buy Tickets Online | Seat Outlet">
+<meta property="og:title" content="Buy Verified Event Tickets Online | Seat Outlet">
 <meta property="og:description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
 <meta property="og:url" content="https://beta.seatoutlet.com/">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://beta.seatoutlet.com/assets/seatoutlet-logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Buy Tickets Online | Seat Outlet">
+<meta name="twitter:title" content="Buy Verified Event Tickets Online | Seat Outlet">
 <meta name="twitter:description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
 <meta name="twitter:image" content="https://beta.seatoutlet.com/assets/seatoutlet-logo.webp">
 
@@ -90,27 +90,19 @@ STRUCTURED DATA (JSON-LD)
       "@id": "https://beta.seatoutlet.com/#organization",
       "name": "Seat Outlet",
       "url": "https://beta.seatoutlet.com/",
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "reviewCount": "1200",
-        "bestRating": "5",
-        "worstRating": "1"
-      },
       "logo": {
         "@type": "ImageObject",
         "@id": "https://beta.seatoutlet.com/#logo",
         "url": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp"
       },
       "image": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp",
-      "description": "Verified ticket marketplace network to buy concert, sports, and event tickets online.",
+      "description": "Verified ticket marketplace network to buy concert, sports, theater, and live event tickets online.",
       "sameAs": [
         "https://www.facebook.com/profile.php?id=61588886945534",
         "https://www.instagram.com/seatoutlet/",
         "https://www.youtube.com/@SeatOutlet",
         "https://linktr.ee/seatoutlet"
       ],
-
       "review": [
         {
           "@type": "Review",
@@ -172,7 +164,14 @@ STRUCTURED DATA (JSON-LD)
             "bestRating": "5"
           }
         }
-      ]
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "reviewCount": "1200",
+        "bestRating": "5",
+        "worstRating": "1"
+      }
     },
 
     {
@@ -182,14 +181,15 @@ STRUCTURED DATA (JSON-LD)
       "name": "Seat Outlet",
       "publisher": {
         "@id": "https://beta.seatoutlet.com/#organization"
-      }
+      },
     },
 
     {
       "@type": "WebPage",
-      "@id": "https://beta.seatoutlet.com/#webpage",
-      "url": "https://beta.seatoutlet.com/",
-      "name": "Verified Ticket Marketplace Network for Concerts & Sports Tickets",
+      "@id": "https://beta.seatoutlet.com/tickets#webpage",
+      "url": "https://beta.seatoutlet.com/tickets",
+      "name": "Buy Verified Event Tickets Online",
+      "description": "Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.",
       "isPartOf": {
         "@id": "https://beta.seatoutlet.com/#website"
       },
@@ -199,22 +199,13 @@ STRUCTURED DATA (JSON-LD)
       "primaryImageOfPage": {
         "@type": "ImageObject",
         "url": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp"
-      },
-      "description": "Buy event tickets online, explore concert tickets online, browse a sports tickets marketplace, and compare ticket prices online."
+      }
     },
 
-    <?= json_encode([
-        "@context" => "https://schema.org",
-        "@graph" => $eventsSchema
-    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); ?>,
-    <?= json_encode([
-      "@context" => "https://schema.org",
-      "@graph" => $imageSchema
-    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); ?>,
-   
+    <?= json_encode($eventsSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); ?>,
+
+    <?= json_encode($imageSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); ?>
 
   ]
 }
 </script>
-
-

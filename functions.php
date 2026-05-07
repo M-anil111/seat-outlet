@@ -135,15 +135,9 @@ function getTnPerformers($params = []) {
 }
 
 function getTnPerformerEvents($performerId = 0, $params = []) {
-
     if ($performerId > 0) {
         $params['performerFilter'] = 'id eq ' . (int) $performerId;
     }
-
-    $today = date('Y-m-d');
-    $params['filter'] = "date/date ge $today";
-    $params['includeTotalCount'] = 'true';
-
     return tnRequest('/catalog/v2/events/', $params);
 }
 
@@ -1856,9 +1850,11 @@ function getTopFestivalPerformers() {
 }
 
 function createSlug($name, $id) {
-    $slug = strtolower($name . '-' . $id);
-    $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug);
-    $slug = preg_replace('/\s+/', '-', $slug);
+    $name = strtolower(trim($name));
+    $name = preg_replace('/[^a-z0-9\s-]/', '', $name);
+    $name = preg_replace('/\s+/', '-', $name);
+    $name = preg_replace('/-+/', '-', $name);
+    $slug = $name . '-' . $id;
     return $slug;
 }
 

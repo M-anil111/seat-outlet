@@ -18,29 +18,25 @@ if ($id <= 0) {
 
 $performer = getTnPerformerById($id);
 
-// Ensure we have the expected structure before proceeding.
-if (empty($performer) || empty($performer['defaultCategory'])) {
-	echo '<div class="container"><p>Performer not found.</p></div>';
-	include 'footer.php';
-	exit;
-}
+$today = date('Y-m-d');
+$params = [
+	"filter" => "date/date ge $today and country/alphaCode eq 'US'",
+	"perPage" => $perPage,
+	"page" => 1,
+	"includeTotalCount" => "true",
+	"performerFilter" => "id eq " . (int) $id
+];
 
-$eventsResponse = getTnPerformerEvents($id, [
-    'page'    => $page,
-    'perPage' => $perPage
-]);
-
-$total_count = $eventsResponse['totalCount'];
+$results = getTnEvents($params);
+$total_count = $results['totalCount'];
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-
-$events = $eventsResponse['results'] ?? [];
-$count  = $eventsResponse['count'] ?? count($events);
+$events = $results['results'];
+$percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 
 $sep = '<span class="separator"><strong> / </strong></span>';
 $breadcrumbs = buildCategoryBreadcrumb($performer['defaultCategory']);
 $relatedPerformersResponse = getRelatedPerformers($performer['defaultCategory']['path'], $id);
 $relatedPerformers = $relatedPerformersResponse;
-$percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
 $artistName = $performer['text']['name'];
 $performer_bio = getArtistBio($artistName, $id);
@@ -155,8 +151,8 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 								<h2>
 									<?php echo strtoupper($artistName); ?> <?php echo strtoupper($breadcrumbs[1]['label']); ?> IN US <span class="dot">·</span>
 									<span class="count" id="results_count">
-										<?php echo (int) $count; ?>
-										<?php echo $count > 1 ? 'RESULTS' : 'RESULT'; ?>
+										<?php echo (int) $total_count; ?>
+										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
 									</span>
 								</h2>
 							</div>
@@ -164,26 +160,24 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 					</div>
 					<div class="list-category-bg pb-3">
 						<div class="filter-bar">
+							<input type="hidden" id="latEvent" value="">
+							<input type="hidden" id="lngEvent" value="">
+							<input type="hidden" id="sdateEvent" value="">
+							<input type="hidden" id="edateEvent" value="">
+							<input type="hidden" id="pidEvent" value="<?php echo $id; ?>">
 							<div class="row">
 								<div class="col-md-6">
 									<label class="filter-label">Location</label>
 									<div class="filter-input">
 										<i class="bi bi-geo-alt"></i>
-										<input
-											type="text"
-											class="form-control"
-											placeholder="City or Zip Code"
-											id="locationInput"
-											autocomplete="off"
-											data-cpid="<?php echo (int) $id; ?>"
-											data-dcat="<?php echo strtolower($breadcrumbs[1]['label']); ?>">
-											<button type="button" id="locationInputReset" class="d-none so-close-octagon">
-												<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
-												<path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
-												<path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
-												</svg>
-											</button>
-											<div id="locationResults" class="tn-dropdown-menu dropdown"></div>
+										<input type="text" class="form-control" placeholder="City or Zip Code" id="locationInput" autocomplete="off">
+										<button type="button" id="locationInputReset" class="d-none so-close-octagon">
+											<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
+											<path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
+											<path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+											</svg>
+										</button>
+										<div id="locationResults" class="tn-dropdown-menu dropdown"></div>
 									</div>
 								</div>
 								<div class="col-md-6">
@@ -208,6 +202,10 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 										return $performer['name'] ?? null;
 									}, $evtPerformers);
 									$dataPerformers = implode('|', array_filter($names));	
+									$slug = createSlug($event['text']['name'], $event['id']);
+									$city = $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr'];
+									$citySlug = createSlug($city, $event['city']['id']);
+									$venueSlug = createSlug($event['venue']['text']['name'], $event['venue']['id']);
 								?>
 									<div class="d-flex align-items-center justify-content-between performer-event-item">
 										<div class="date-box text-center me-3">
@@ -246,19 +244,16 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 												></i>
 											</div>
 											<div class="fw-semibold location-venue-name">
-												<a href="#">
-													<?php echo $event['city']['text']['name']; ?>,
-													<?php echo $event['stateProvince']['text']['abbr']; ?>
-												</a>
+												<a href="/city/<?php echo $citySlug; ?>"><?php echo $city; ?></a>
 												·
-												<a href="#"><?php echo $event['venue']['text']['name']; ?></a>
+												<a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a>
 											</div>
 											<div class="text-muted small">
-												<a href="/event.php?id=<?php echo (int) ($event['id'] ?? 0); ?>"><?php echo $event['text']['name']; ?></a>
+												<a href="/event/<?php echo $slug; ?>"><?php echo $event['text']['name']; ?></a>
 											</div>
 										</div>
 										<div class="ms-3">
-											<a href="/event.php?id=<?php echo (int) ($event['id'] ?? 0); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets
 												</span>
@@ -272,7 +267,7 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 								<div class="load-more-wrapper text-center mt-5">
 									<div class="load-progress mx-auto mb-3">
 										<div class="small mb-2">
-											Loaded <strong id="loadedCount"><?php echo $count; ?></strong> out of <strong id="totalCount"><?php echo $total_count; ?></strong> events
+											Loaded <strong id="loadedCount"><?php echo $perPage; ?></strong> out of <strong id="totalCount"><?php echo $total_count; ?></strong> events
 										</div>
 										<div class="progress progress-thin">
 											<div class="progress-bar" id="progressBar" style="width: <?php echo $percent; ?>%;"></div>
@@ -283,15 +278,15 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 										id="loadMoreBtn"
 										data-total="<?php echo (int) $total_count; ?>"
 										data-page="2"
-										data-performer="<?php echo (int) $id; ?>"
+										data-params="<?php echo htmlspecialchars(json_encode($params), ENT_QUOTES, 'UTF-8'); ?>"
 										data-perpage="<?php echo (int) $perPage; ?>">
 										<span class="btn-text">More Events</span>
-										<span class="spinner-border spinner-border-sm d-none" id="btnSpinner"></span>
+										<span class="btnSpinner spinner-border spinner-border-sm d-none"></span>
 										<i class="bi bi-chevron-down"></i>
 									</button>
 									<button class="btn more-events-btn d-inline-flex align-items-center gap-2 d-none" id="backToTopJs">
 										<span class="btn-text">Back to Top</span>
-										<span class="spinner-border spinner-border-sm d-none" id="btnSpinner"></span>
+										<span class="btnSpinner spinner-border spinner-border-sm d-none"></span>
 										<i class="bi bi-chevron-up"></i>
 									</button>
 								</div>

@@ -15,7 +15,7 @@ $festivalNames = getTopFestivalPerformers();
         <span class="tag">Live Events</span>
         <h2>Experience Live Events<br>Like Never Before</h2>
         <p>From sold-out concerts to must-see sports and theater shows discover verified tickets at competitive prices across our trusted marketplace network.</p>
-        <a href="#" class="btn-slide">Explore Events</a>
+        <a href="/tickets" class="btn-slide">Explore Events</a>
       </div>
     </div>
 
@@ -40,25 +40,16 @@ $festivalNames = getTopFestivalPerformers();
 
         <div class="location-panel-input-row">
           <div class="location-input-shell">
-            <input
-              type="text"
-              class="location-input locationInputField"
-              id="cityLocationInput"
-              autocomplete="off"
-              placeholder="Austin, TX" />
-            <button type="button" class="location-input-clear" id="locationClearBtn" aria-label="Clear location">
-              ✕
-            </button>
+            <input type="text" class="location-input locationInputField" id="cityLocationInput" autocomplete="off" placeholder="Austin, TX" />
+            <button type="button" class="location-input-clear" id="locationClearBtn" aria-label="Clear location">✕</button>
             <div id="cityLocationDd" class="cityLocationDd w-100 locationInputFieldWrapper" style="display:none;"></div>
           </div>
         </div>
 
         <button type="button" class="location-panel-option" id="useCurrentLocationCity">
           <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 10l9-7 9 7-9 11-9-11z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 10l3 3 3-3" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10l9-7 9 7-9 11-9-11z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10l3 3 3-3" />
           </svg>
           <span>Current location</span>
         </button>
@@ -259,52 +250,52 @@ $festivalNames = getTopFestivalPerformers();
     <div id="browseCitiesWrapper">
       <div class="row g-3 cities-row">
           <div class="col-auto">
-              <a href="/city/new-york-3027" class="city-pill">New York, NY</a>
+              <a href="/city/new-york-ny-3027" class="city-pill">New York, NY</a>
           </div>
           <div class="col-auto">
-              <a href="/city/los-angeles-2551" class="city-pill">Los Angeles, CA</a>
+              <a href="/city/los-angeles-ca-2551" class="city-pill">Los Angeles, CA</a>
           </div>
           <div class="col-auto">
-              <a href="/city/chicago-915" class="city-pill">Chicago, IL</a>
+              <a href="/city/chicago-il-915" class="city-pill">Chicago, IL</a>
           </div>
           <div class="col-auto">
-              <a href="/city/houston-2013" class="city-pill">Houston, TX</a>
+              <a href="/city/houston-tx-2013" class="city-pill">Houston, TX</a>
           </div>
           <div class="col-auto">
-              <a href="/city/phoenix-3396" class="city-pill">Phoenix, AZ</a>
+              <a href="/city/phoenix-az-3396" class="city-pill">Phoenix, AZ</a>
           </div>
           <div class="col-auto">
-              <a href="/city/philadelphia-3394" class="city-pill">Philadelphia, PA</a>
+              <a href="/city/philadelphia-pa-3394" class="city-pill">Philadelphia, PA</a>
           </div>
           <div class="col-auto">
-              <a href="/city/san-antonio-3846" class="city-pill">San Antonio, TX</a>
+              <a href="/city/san-antonio-tx-3846" class="city-pill">San Antonio, TX</a>
           </div>
           <div class="col-auto">
-              <a href="/city/san-diego-3854" class="city-pill">San Diego, CA</a>
+              <a href="/city/san-diego-ca-3854" class="city-pill">San Diego, CA</a>
           </div>
           <div class="col-auto">
-              <a href="/city/dallas-1121" class="city-pill">Dallas, TX</a>
+              <a href="/city/dallas-tx-1121" class="city-pill">Dallas, TX</a>
           </div>
           <div class="col-auto">
-              <a href="/city/jacksonville-2108" class="city-pill">Jacksonville, FL</a>
+              <a href="/city/jacksonville-fl-2108" class="city-pill">Jacksonville, FL</a>
           </div>
           <div class="col-auto">
-              <a href="/city/fort-worth-1558" class="city-pill">Fort Worth, TX</a>
+              <a href="/city/fort-worth-tx-1558" class="city-pill">Fort Worth, TX</a>
           </div>
           <div class="col-auto">
-              <a href="/city/san-jose-3862" class="city-pill">San Jose, CA</a>
+              <a href="/city/san-jose-ca-3862" class="city-pill">San Jose, CA</a>
           </div>
           <div class="col-auto">
-              <a href="/city/austin-247" class="city-pill">Austin, TX</a>
+              <a href="/city/austin-tx-247" class="city-pill">Austin, TX</a>
           </div>
           <div class="col-auto">
-              <a href="/city/charlotte-880" class="city-pill">Charlotte, NC</a>
+              <a href="/city/charlotte-nc-880" class="city-pill">Charlotte, NC</a>
           </div>
           <div class="col-auto">
-              <a href="/city/columbus-1025" class="city-pill">Columbus, OH</a>
+              <a href="/city/columbus-oh-1025" class="city-pill">Columbus, OH</a>
           </div>
           <div class="col-auto">
-              <a href="/city/indianapolis-2061" class="city-pill">Indianapolis, IN</a>
+              <a href="/city/indianapolis-in-2061" class="city-pill">Indianapolis, IN</a>
           </div>
       </div>
     </div>
@@ -524,13 +515,13 @@ $festivalNames = getTopFestivalPerformers();
           <input type="hidden" name="token" id="recaptchaToken">	
 					<div class="newsletter-icontact">						
 						<div class="col-12 col-md-4 col-lg-3">
-							<input maxlength="50" name="fname" type="text" class="form-control newsletter-input" placeholder="First Name" required />
+							<input name="fname" type="text" class="form-control newsletter-input" placeholder="First Name" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />
 						</div>
 						<div class="col-12 col-md-4 col-lg-3">
-							<input maxlength="50" name="lname" type="text" class="form-control newsletter-input" placeholder="Last Name" required />
+							<input name="lname" type="text" class="form-control newsletter-input" placeholder="Last Name" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />
 						</div>
 						<div class="col-12 col-md-4 col-lg-3">
-							<input maxlength="150" name="email" type="email" class="form-control newsletter-input" placeholder="Email" required />               
+							<input name="email" type="email" class="form-control newsletter-input" placeholder="Email" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />               
 						</div>
             <div class="col-12 col-md-4 col-lg-3"> 
 							<button type="submit" class="newsletter-btn px-4">Submit</button>

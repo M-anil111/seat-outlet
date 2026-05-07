@@ -32,9 +32,10 @@ $('.venue-slider').on('setPosition', function(){
       data.forEach((event, index) => {
         const loadingType = index < 2 ? 'eager' : 'lazy';
         const fetchPriority = index < 2 ? 'high' : 'low';
+        const eSlug = normalizeKey(event.name) + '-' + event.id;
     
         html += `
-          <a href="/event.php?id=${encodeURIComponent(event.id)}" class="team-link">
+          <a href="/event/${eSlug}" class="team-link">
             <article class="event-card" data-event-index="${index}">
               <div class="event-card__img">
                 <img

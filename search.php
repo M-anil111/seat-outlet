@@ -85,13 +85,22 @@ $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'];
 $count = count($events);
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
-// if(!empty($keywordHeader)) {
-// 	$artistVenueData = getKeywordSearchResults($keywordHeader);
-// 	$artistData = $artistVenueData['performers'] ?? [];
-// 	$venueData = $artistVenueData['venues'] ?? [];
-// }
-$faqs = getFaqs($mysqli, 'search');
+$faqs = getFaqs('search');
 ?>
+
+<!-- Hero Section -->
+<section class="search-hero-section section-padding">
+	<div class="container">		
+		<!-- Hero Content -->
+		<div class="row justify-content-center align-items-center">
+			<div class="col-lg-7 col-md-8">
+				<h1 class="hero-title text-center">
+					<span class="hero-title-white">Search Tickets Online</span>
+				</h1>
+			</div>
+		</div>
+	</div>
+</section>
 
 <section>
 	<div class="container">
@@ -103,76 +112,7 @@ $faqs = getFaqs($mysqli, 'search');
 			</div>
 		<?php } ?>
 
-		<?php /*if($artistData['totalResultCount'] > 0 || $venueData['totalResultCount'] > 0) { ?>
-			<div class="section-suggestions new-slider py-md-5 py-4">
-				<h2 class="fw-bold fs-4 mb-4">Top Suggestions</h2>			
-				<div class="suggestion-slider ">
-					<?php if($artistData['totalResultCount'] > 0) { ?>
-						<?php foreach($artistData['results'] as $artistItem) { 
-							$artistDetails = getTnPerformerById($artistItem['id']);
-							$defaultCategory = $artistDetails['defaultCategory'];
-							$artistImage = getArtistImage($artistItem['name'], $defaultCategory);	
-							$subcategory = '';
-							if (!empty($defaultCategory)) {
-								if ($defaultCategory['depth'] == 2) {
-									$subcategory = $defaultCategory['text']['name'];
-								} else {
-									if (!empty($defaultCategory['ancestors'])) {
-										foreach ($defaultCategory['ancestors'] as $ancestor) {
-											if ($ancestor['depth'] == 2) {
-												$subcategory = $ancestor['text']['name'];
-												break;
-											}
-										}										
-									}
-								}	
-								if(empty($subcategory) || $subcategory == 'OTHER') {
-									foreach ($defaultCategory['ancestors'] as $ancestor) {
-										if ($ancestor['depth'] == 1) {
-											$subcategory = $ancestor['text']['name'];
-											break;
-										}
-									}
-								}							
-							}
-						?>
-							<a href="/artist/<?php echo createSlug($artistItem['name'], $artistItem['id']); ?>" class="team-link">
-								<div class="card venue-card">
-									<div class="venue-img">
-										<img src="<?php echo $artistImage; ?>" alt="<?php echo $artistItem['name']; ?>" class="img-fluid">
-									</div>
-									<div class="venue-content text-center">
-										<h5 class="venue-title"><?php echo $artistItem['name']; ?></h5>
-										<p class="venue-location mb-0"><?php echo ucfirst(strtolower($subcategory)); ?></p>
-									</div>
-								</div>
-							</a>
-						<?php } ?>
-					<?php } ?>
-					<?php if($venueData['totalResultCount'] > 0) { ?>
-						<?php foreach($venueData['results'] as $venueItem) {
-							$venueImage = getVenueImage($venueItem['name']);
-							$imgUrl = !empty($venueImage) ? $venueImage : '/assets/venue.webp'; 				
-						?>
-							<a href="/venue/<?php echo createSlug($venueItem['name'], $venueItem['id']); ?>" class="team-link">
-								<div class="card venue-card">
-									<div class="venue-img">
-										<img src="<?php echo $imgUrl; ?>" alt="<?php echo $venueItem['name']; ?>" class="img-fluid">
-									</div>
-									<div class="venue-content text-center">
-										<h5 class="venue-title"><?php echo $venueItem['name']; ?></h5>
-										<p class="venue-location mb-0"><?php echo $venueItem['city'] . ', ' . $venueItem['state']; ?></p>
-									</div>
-								</div>
-							</a>
-						<?php } ?>
-					<?php } ?>							
-				</div>
-			</div>
-		<?php }*/ ?>
-
-
-        <div class="tab-section section-performer-content" id="default">
+		<div class="tab-section section-performer-content" id="default">
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">
 					<div class="mb-3 mb-md-4 mb-lg-4">
@@ -200,6 +140,10 @@ $faqs = getFaqs($mysqli, 'search');
 										return $performer['name'] ?? null;
 									}, $evtPerformers);
 									$dataPerformers = implode('|', array_filter($names));	
+									$slug = createSlug($event['text']['name'], $event['id']);
+									$city = $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr'];
+									$citySlug = createSlug($city, $event['city']['id']);
+									$venueSlug = createSlug($event['venue']['text']['name'], $event['venue']['id']);
 								?>
 									<div class="d-flex align-items-center justify-content-between performer-event-item">
 										<div class="date-box text-center me-3">
@@ -238,19 +182,16 @@ $faqs = getFaqs($mysqli, 'search');
 												></i>
 											</div>
 											<div class="fw-semibold location-venue-name">
-												<a href="#">
-													<?php echo $event['city']['text']['name']; ?>,
-													<?php echo $event['stateProvince']['text']['abbr']; ?>
-												</a>
+												<a href="/city/<?php echo $citySlug; ?>"><?php echo $city; ?></a>
 												·
-												<a href="#"><?php echo $event['venue']['text']['name']; ?></a>
+												<a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a>
 											</div>
 											<div class="text-muted small">
-												<a href="/event.php?id=<?php echo (int) ($event['id'] ?? 0); ?>"><?php echo $event['text']['name']; ?></a>
+												<a href="/event/<?php echo $slug; ?>"><?php echo $event['text']['name']; ?></a>
 											</div>
 										</div>
 										<div class="ms-3">
-											<a href="/event.php?id=<?php echo (int) ($event['id'] ?? 0); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets
 												</span>
@@ -279,12 +220,12 @@ $faqs = getFaqs($mysqli, 'search');
 										data-params="<?php echo htmlspecialchars(json_encode($params), ENT_QUOTES, 'UTF-8'); ?>"
 										data-perpage="<?php echo (int) $perPage; ?>">
 										<span class="btn-text">More Events</span>
-										<span class="spinner-border spinner-border-sm d-none" id="btnSpinner"></span>
+										<span class="btnSpinner spinner-border spinner-border-sm d-none"></span>
 										<i class="bi bi-chevron-down"></i>
 									</button>
 									<button class="btn more-events-btn d-inline-flex align-items-center gap-2 d-none" id="backToTopJs">
 										<span class="btn-text">Back to Top</span>
-										<span class="spinner-border spinner-border-sm d-none" id="btnSpinner"></span>
+										<span class="btnSpinner spinner-border spinner-border-sm d-none"></span>
 										<i class="bi bi-chevron-up"></i>
 									</button>
 								</div>
@@ -297,7 +238,7 @@ $faqs = getFaqs($mysqli, 'search');
 						<?php } ?>
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
+						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" width="804" height="96" />
 					</div>	
 					<div class="tab-section content-section-detail mb-0" id="promocode">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Exclusive Discounts on Event Tickets</h2>
@@ -358,7 +299,7 @@ $faqs = getFaqs($mysqli, 'search');
 					<div class="sticky-top sidebar-inner">
 						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
+								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.webp" alt="Sponsored advertisement" class="ad-image" width="335" height="279" />
 							</div>
 						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">

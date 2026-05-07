@@ -34,8 +34,10 @@ function getMonthCount() {
 }
 
 function normalizeKey(v) {
-    if (typeof v === 'number') v = v.toFixed(8);
-    return String(v || '').toLowerCase().replace(/\./g, '-').replace(/ /g, '_');
+    return v.toLowerCase().trim()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');   
 }
 
 function escapeHtml(str) {
@@ -139,6 +141,7 @@ function initLocationSearch(inputId, type = '') {
             const lngEvent = document.getElementById('lngEvent');
             const sdateEvent = document.getElementById('sdateEvent');
             const edateEvent = document.getElementById('edateEvent');
+            const pidEvent = document.getElementById('pidEvent');
             setCookie('so_label', input.value);
             setCookie('so_lat', lat);
             setCookie('so_lng', lng);  
@@ -164,7 +167,8 @@ function initLocationSearch(inputId, type = '') {
                 lat,
                 lng,
                 startDate: sdateEvent.value,
-                endDate: edateEvent.value
+                endDate: edateEvent.value,
+                pid: pidEvent.value
             });
         }else{
             DOM.latHeader.value = lat;
