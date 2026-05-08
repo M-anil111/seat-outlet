@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 lng: savedLng,
                 startDate: sdateEvent.value,
                 endDate: edateEvent.value,
-                pid: pidEvent.value
+                pid: pidEvent ? pidEvent.value : ''
             });
         }
         
@@ -96,6 +96,7 @@ if(results) {
         }
     });
     document.addEventListener('click', function (e) {
+        if (!input || !results) return;
         if (!input.contains(e.target) && !results.contains(e.target)) {
             results.innerHTML = '';
         }
@@ -128,7 +129,7 @@ function updateEventsSection(location) {
             spinner.classList.add('d-none');
         }
 
-        if(input.value !== '') {
+        if (input && input.value !== '') {
             resetBtn.classList.remove('d-none');
             resetBtn.addEventListener('click', function () {
                 input.value = '';
@@ -140,7 +141,7 @@ function updateEventsSection(location) {
                 updateEventsSection({
                     startDate: sdateEvent.value,
                     endDate: edateEvent.value,
-                    pid: pidEvent.value
+                    pid: pidEvent ? pidEvent.value : ''
                 });
             }); 
         }  
@@ -175,7 +176,7 @@ function updateEventsSection(location) {
 
         const savedParams = {};
         if (location.lat && location.lng) {
-            savedParams.geoFilter = `nearby(${location.lat}, ${location.lng}, 50mi)`;
+            savedParams.geoFilter = `nearby(${location.lat},${location.lng},50mi)`;
         }
         if (location.startDate && location.endDate) {
             savedParams.filter =
@@ -241,7 +242,7 @@ function getCurrentLocation() {
                 lng,
                 startDate: sdateEvent.value,
                 endDate: edateEvent.value,
-                pid: pidEvent.value
+                pid: pidEvent ? pidEvent.value : ''
             });
         },
         error => {
@@ -283,7 +284,7 @@ let picker = flatpickr("#performerDatePicker", {
                 lng: lngEvent.value,
                 startDate,
                 endDate,
-                pid: pidEvent.value
+                pid: pidEvent ? pidEvent.value : ''
             });
         }
     },
@@ -305,7 +306,7 @@ let picker = flatpickr("#performerDatePicker", {
             updateEventsSection({
                 lat: latEvent.value,
                 lng: lngEvent.value,
-                pid: pidEvent.value
+                pid: pidEvent ? pidEvent.value : ''
             });
         });
     }

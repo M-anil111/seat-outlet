@@ -168,7 +168,7 @@ function initLocationSearch(inputId, type = '') {
                 lng,
                 startDate: sdateEvent.value,
                 endDate: edateEvent.value,
-                pid: pidEvent.value
+                pid: pidEvent ? pidEvent.value : ''
             });
         }else{
             DOM.latHeader.value = lat;
