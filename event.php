@@ -229,22 +229,8 @@ $year = date('Y');
 
 <div id="tn-maps" style="height:500px; margin-top: 50px;"></div>
 <script src="<?php echo htmlspecialchars($mapScriptUrl, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<input type="hidden" id="checkoutUrl" value="checkout.seatoutlet.com">
-<script type="text/javascript">
-  Seatics.config.checkoutUrl = $("#checkoutUrl").val();
-  Seatics.config.enableLegalDisclosureMobile = true;
-  Seatics.config.preCheckoutButtonHtml = 'Continue to Payment';
-  Seatics.config.buyButtonContentHtml = '<div class="buy-btn">' + 'Buy Now' + '</div>';
-  Seatics.config.defaultSort = Seatics.SortOptions.PriceAsc;
-  Seatics.config.tgMarkTooltipText = 'We recommend this seller&#039;s tickets.';
-  Seatics.config.enableMyList = true;
-  Seatics.config.showCents = false;
-  Seatics.config.skipPrecheckoutMobile = true;
-  Seatics.config.showZoomControls = true;
-  Seatics.config.ticketListOnRight = true;
-  Seatics.config.legendExpanded = true;
-  Seatics.config.skipPrecheckoutDesktop = true;
-</script>
+
+
 
 
 

@@ -139,7 +139,18 @@ $faqs = getFaqs('search');
 									$names = array_map(function ($performer) {
 										return $performer['name'] ?? null;
 									}, $evtPerformers);
+									$performerSlugs = array_map(function ($performer) {
+										$name = $performer['name'] ?? '';
+										$id   = $performer['id'] ?? '';
+									
+										$slug = strtolower(trim($name));
+										$slug = preg_replace('/[^a-z0-9]+/i', '-', $slug);
+										$slug = trim($slug, '-');
+									
+										return $slug && $id ? $slug . '-' . $id : null;
+									}, $evtPerformers);
 									$dataPerformers = implode('|', array_filter($names));	
+									$dataPerformerSlugs  = implode('|', array_filter($performerSlugs));
 									$slug = createSlug($event['text']['name'], $event['id']);
 									$city = $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr'];
 									$citySlug = createSlug($city, $event['city']['id']);
@@ -176,9 +187,11 @@ $faqs = getFaqs('search');
 													data-id="<?php echo (int) ($event['id'] ?? 0); ?>"
 													data-date="<?php echo date('D, M d', $timestamp); ?>"
 													data-venue="<?php echo $event['venue']['text']['name']; ?>"
+													data-venueSlug="<?php echo $venueSlug; ?>"
 													data-location="<?php echo $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr']; ?>"
 													data-title="<?php echo $event['text']['name']; ?>"
-													data-performers="<?php echo $dataPerformers; ?>"
+													data-performers="<?php echo htmlspecialchars($dataPerformers); ?>"
+													data-performer-slugs="<?php echo htmlspecialchars($dataPerformerSlugs); ?>"
 												></i>
 											</div>
 											<div class="fw-semibold location-venue-name">
@@ -238,7 +251,7 @@ $faqs = getFaqs('search');
 						<?php } ?>
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" width="804" height="96" />
+						<img src="/images/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" width="804" height="96" />
 					</div>	
 					<div class="tab-section content-section-detail mb-0" id="promocode">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Exclusive Discounts on Event Tickets</h2>
@@ -299,7 +312,7 @@ $faqs = getFaqs('search');
 					<div class="sticky-top sidebar-inner">
 						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.webp" alt="Sponsored advertisement" class="ad-image" width="335" height="279" />
+								<img src="/images/6233961956292020331.webp" alt="Sponsored advertisement" class="ad-image" width="335" height="279" />
 							</div>
 						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">

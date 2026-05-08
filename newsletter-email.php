@@ -105,7 +105,7 @@ try {
     <tr>
       <td align="center" bgcolor="#ffffff" style="padding:40px 20px 20px; border-bottom:1px #e1e1e1 solid;">
         <a href="https://beta.seatoutlet.com" title="Seat Outlet">
-          <img src="https://beta.seatoutlet.com/assets/seatoutlet.png" 
+          <img src="https://beta.seatoutlet.com/images/seatoutlet.png" 
                alt="Seat Outlet" style="display:block; max-width:220px;">
         </a>
       </td>
@@ -160,7 +160,7 @@ try {
             </td>
             <td style="padding:0 3px;">
               <a href="https://www.jaymehta.co/" target="_blank" style="text-decoration:none;">
-                <img src="https://beta.seatoutlet.com/assets/images/jm.png"
+                <img src="https://beta.seatoutlet.com/images/jm.png"
                     alt="Jay Mehta Digital"
                     style="display:inline-block; vertical-align:middle; max-width:90px;">
               </a>
@@ -170,7 +170,7 @@ try {
             </td>
             <td style="padding-left:5px;">
               <a href="https://www.mindshare.consulting/" target="_blank" style="text-decoration:none;">
-                <img src="https://beta.seatoutlet.com/assets/images/mindshare-logo.webp"
+                <img src="https://beta.seatoutlet.com/images/mindshare-logo.webp"
                     alt="Mindshare Consulting Inc"
                     style="display:inline-block; vertical-align:middle; max-width:90px; margin-top:-2px;">
               </a>
@@ -215,7 +215,7 @@ EOD;
     <tr>
       <td align="center" bgcolor="#ffffff" style="padding:40px 20px 20px; border-bottom:1px #e1e1e1 solid;">
         <a href="https://beta.seatoutlet.com/" title="Seat Outlet">
-            <img src="https://beta.seatoutlet.com/assets/seatoutlet.png" 
+            <img src="https://beta.seatoutlet.com/images/seatoutlet.png" 
                 alt="Seat Outlet" style="display:block; max-width:220px;">
             </a>
       </td>

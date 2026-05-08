@@ -7,25 +7,25 @@
 <meta property="og:description" content="Compare ticket prices and buy event tickets online securely.">
 <meta property="og:url" content="https://beta.seatoutlet.com/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://beta.seatoutlet.com/assets/seatoutlet-logo.webp">
+<meta property="og:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Seat Outlet Ticket Marketplace">
 <meta name="twitter:description" content="Buy tickets for concerts, sports, and events online.">
-<meta name="twitter:image" content="https://beta.seatoutlet.com/assets/seatoutlet-logo.webp">
+<meta name="twitter:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
 
 <?php 
  
 $images = [
-  "https://beta.seatoutlet.com/assets/home-slider.webp",
-  "https://beta.seatoutlet.com/assets/hunt-tickets.webp",
-  "https://beta.seatoutlet.com/assets/lite.webp",
-  "https://beta.seatoutlet.com/assets/mindshare-logo.webp",
-  "https://beta.seatoutlet.com/assets/viralpep.webp",
-  "https://beta.seatoutlet.com/assets/jimbeam.webp",
-  "https://beta.seatoutlet.com/assets/gtn.webp",
-  "https://beta.seatoutlet.com/assets/ticket-scanner.webp",
-  "https://beta.seatoutlet.com/assets/ticketnetwork.webp"
+  "https://beta.seatoutlet.com/images/home-slider.webp",
+  "https://beta.seatoutlet.com/images/hunt-tickets.webp",
+  "https://beta.seatoutlet.com/images/lite.webp",
+  "https://beta.seatoutlet.com/images/mindshare-logo.webp",
+  "https://beta.seatoutlet.com/images/viralpep.webp",
+  "https://beta.seatoutlet.com/images/jimbeam.webp",
+  "https://beta.seatoutlet.com/images/gtn.webp",
+  "https://beta.seatoutlet.com/images/ticket-scanner.webp",
+  "https://beta.seatoutlet.com/images/ticketnetwork.webp"
 ];
 
 $imageSchema = [];
@@ -219,9 +219,9 @@ STRUCTURED DATA (JSON-LD)
       "logo": {
         "@type": "ImageObject",
         "@id": "https://beta.seatoutlet.com/#logo",
-        "url": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp"
+        "url": "https://beta.seatoutlet.com/images/seatoutlet-logo.webp"
       },
-      "image": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp",
+      "image": "https://beta.seatoutlet.com/images/seatoutlet-logo.webp",
       "description": "Verified ticket marketplace network to buy concert, sports, and event tickets online.",
       "sameAs": [
         "https://www.facebook.com/profile.php?id=61588886945534",
@@ -317,7 +317,7 @@ STRUCTURED DATA (JSON-LD)
       },
       "primaryImageOfPage": {
         "@type": "ImageObject",
-        "url": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp"
+        "url": "https://beta.seatoutlet.com/images/seatoutlet-logo.webp"
       },
       "description": "Buy event tickets online, explore concert tickets online, browse a sports tickets marketplace, and compare ticket prices online."
     },

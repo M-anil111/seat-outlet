@@ -13,7 +13,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex nofollow">
-    <link rel="icon" type="image/png" href="<?php echo HOME_URL; ?>/assets/images/favicon-new.webp">
+    <link rel="icon" type="image/png" href="/images/favicon-new.webp">
     
     <!-- Critical CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
@@ -104,7 +104,7 @@
                     <!-- LEFT -->
                     <div class="d-flex align-items-center gap-4">
                         <!-- Logo -->
-                        <a href="/" class="tm-logo"><img src="<?php echo HOME_URL; ?>/assets/seatoutlet-logo.webp" alt="Seat Outlet" width="256" height="38" loading="eager"></a>
+                        <a href="/" class="tm-logo"><img src="/images/seatoutlet-logo.webp" alt="Seat Outlet" width="256" height="38" loading="eager"></a>
                     </div>
                     <!-- RIGHT -->
                     <div class="d-flex align-items-center gap-3">
@@ -125,7 +125,7 @@
                         </div>
                     </div>
                 </div>
-                <form method="post" action="<?php echo HOME_URL; ?>/search" class="search-bar-form">
+                <form method="post" action="/search" class="search-bar-form">
                     <div class="search-bar-container d-flex flex-md-row p-md-1">
                         <div class="city-location search-item d-flex align-items-center gap-md-2 gap-1 px-3 py-2 flex-fill header-location-close locationInputFieldWrapper">
                             <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -186,7 +186,7 @@
 
     <div class="offcanvas offcanvas-start header-menu-mobile-logo" tabindex="-1" id="mobileMenu">
         <div class="offcanvas-header">
-            <a href="<?php echo HOME_URL; ?>" class="tm-logo" style="width:200px; height:auto;"><img src="<?php echo HOME_URL; ?>/assets/blue-logo.webp" alt="Seat Outlet" width="200" height="40"></a>
+            <a href="/" class="tm-logo" style="width:200px; height:auto;"><img src="/images/blue-logo.webp" alt="Seat Outlet" width="200" height="40"></a>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         
@@ -366,25 +366,25 @@
                 </ul>
                 <ul class="mobile-main-menu-new">
                     <li>
-                        <a href="/contact/" title="Contact Us" class="mobile-menu">Contact Us</a>
+                        <a href="/contact" title="Contact Us" class="mobile-menu">Contact Us</a>
                     </li>
                     <li>
                         <a href="tel:+1512-621-8822" title="Call Us (512)-621-8822" class="mobile-menu">Call Us (512)-621-8822</a>
                     </li>                    
                     <li>
-                        <a href="/about-us/" title="About Us" class="mobile-menu">About Us</a>
+                        <a href="/about-us" title="About Us" class="mobile-menu">About Us</a>
                     </li>                    
                     <li>
-                        <a href="/faq/" title="Faqs" class="mobile-menu">Faqs</a>
+                        <a href="/faq" title="Faqs" class="mobile-menu">Faqs</a>
                     </li>
                     <li>
-                        <a href="/privacy-policy/" title="Privacy Policy" class="mobile-menu">Privacy Policy</a>
+                        <a href="/privacy-policy" title="Privacy Policy" class="mobile-menu">Privacy Policy</a>
                     </li>
                     <li>
-                        <a href="/terms-and-conditions/" title="Terms of Use" class="mobile-menu">Terms of Use</a>
+                        <a href="/terms-and-conditions" title="Terms of Use" class="mobile-menu">Terms of Use</a>
                     </li>
                     <li>
-                        <a href="/cookie-policy/" title="Cookie Policy" class="mobile-menu">Cookie Policy</a>
+                        <a href="/cookie-policy" title="Cookie Policy" class="mobile-menu">Cookie Policy</a>
                     </li>
                 </ul>     
             </nav>

@@ -259,7 +259,7 @@
 
 /* CTA section */
 .ticketingtruths-page .cta-section-last {
-    background-image:url(../assets/images/cta-banner.webp) ;
+    background-image:url(../images/cta-banner.webp) ;
     color: #ffffff;
     padding: 100px 0;
     text-align: center;
@@ -454,7 +454,7 @@
                 <div class="guarantee-modern-visual">
                     <div class="guarantee-image-frame">
                         <img
-                            src="/assets/images/ticket-trusted.webp"
+                            src="/images/ticket-trusted.webp"
                             alt="Happy customers at an event"
                         />
                         <div class="guarantee-sticker">
@@ -474,7 +474,7 @@
                     <div class="col-md-6 mb-4 mb-lg-0">
                         <div class="section-image-wrapper img-left">
                             <img
-                                src="/assets/images/stage.webp"
+                                src="/images/stage.webp"
                                 alt="Stage performance"
                                
                             />
@@ -521,7 +521,7 @@
                     <div class="col-md-6">
                         <div class="section-image-wrapper">
                             <img
-                                src="/assets/images/ticket-trusted.webp"
+                                src="/images/ticket-trusted.webp"
                                 alt="Box office staff"
                                
                             />

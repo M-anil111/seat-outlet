@@ -9,7 +9,7 @@ $festivalNames = getTopFestivalPerformers();
 
     <!-- Slide 1 – Concert / Event -->
     <div class="slide">
-      <img src="<?php echo HOME_URL; ?>/assets/home-slider.webp" alt="Live Concert Event" laoding="eager" fetchpriority="high" />
+      <img src="/images/home-slider.webp" alt="Live Concert Event" laoding="eager" fetchpriority="high" />
       <div class="slide-overlay"></div>
       <div class="slide-caption">
         <span class="tag">Live Events</span>
@@ -318,7 +318,7 @@ $festivalNames = getTopFestivalPerformers();
         <div class="section-divider"></div>
         <p class="text-muted">Trusted sources, better prices, zero stress.
         Everything you need for a smooth ticket buying experience.</p>
-        <a href="/why-us.php" class="btn common-btn mt-3">Get Your Tickets</a>
+        <a href="/why-us" class="btn common-btn mt-3">Get Your Tickets</a>
       </div>
       <div class="col-lg-8">
         <div class="row g-4">
@@ -509,7 +509,7 @@ $festivalNames = getTopFestivalPerformers();
 				</div>
 			</div>
 			<div class="col-lg-8">
-				<form method="POST" action="<?php echo HOME_URL; ?>/newsletter-email.php" id="newsletterForm">
+				<form method="POST" action="/newsletter-email.php" id="newsletterForm">
           <!-- Honeypot -->
           <input type="text" name="company" value="" style="display:none" autocomplete="off">
           <input type="hidden" name="token" id="recaptchaToken">	
@@ -543,7 +543,7 @@ $festivalNames = getTopFestivalPerformers();
     <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://www.hunttickets.us/" target="_blank" rel="noopener">
-      <img src="<?php echo HOME_URL; ?>/assets/hunt-tickets.webp" class="img-fluid" alt="Hunt Tickets" width="115" height="115" loading="lazy">
+      <img src="/images/hunt-tickets.webp" class="img-fluid" alt="Hunt Tickets" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>
@@ -551,7 +551,7 @@ $festivalNames = getTopFestivalPerformers();
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://www.millerlite.com/" target="_blank" rel="noopener">
-      <img src="<?php echo HOME_URL; ?>/assets/lite.webp" class="img-fluid" alt="Lite" width="115" height="115" loading="lazy">
+      <img src="/images/lite.webp" class="img-fluid" alt="Lite" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>
@@ -559,7 +559,7 @@ $festivalNames = getTopFestivalPerformers();
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://mindshare.consulting/" target="_blank" rel="noopener">
-      <img src="<?php echo HOME_URL; ?>/assets/mindshare-logo.webp" class="img-fluid partner-network-img" alt="mindshare.consulting" width="115" height="115" loading="lazy">
+      <img src="/images/mindshare-logo.webp" class="img-fluid partner-network-img" alt="mindshare.consulting" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>
@@ -567,7 +567,7 @@ $festivalNames = getTopFestivalPerformers();
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://www.viralpep.com/" target="_blank" rel="noopener">
-      <img src="<?php echo HOME_URL; ?>/assets/viralpep.webp" class="img-fluid" alt="viralpep" width="115" height="115" loading="lazy">
+      <img src="/images/viralpep.webp" class="img-fluid" alt="viralpep" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>
@@ -575,7 +575,7 @@ $festivalNames = getTopFestivalPerformers();
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://www.jimbeam.com/" target="_blank" rel="noopener">
-      <img src="<?php echo HOME_URL; ?>/assets/jimbeam.webp" class="img-fluid" alt="Jimbeam" width="115" height="115" loading="lazy">
+      <img src="/images/jimbeam.webp" class="img-fluid" alt="Jimbeam" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>
@@ -583,7 +583,7 @@ $festivalNames = getTopFestivalPerformers();
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="http://grabticketsnow.com/" target="_blank" rel="noopener">
-      <img src="<?php echo HOME_URL; ?>/assets/gtn.webp" class="img-fluid" alt="Grab Tickets Now" width="115" height="115" loading="lazy">
+      <img src="/images/gtn.webp" class="img-fluid" alt="Grab Tickets Now" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>
@@ -591,7 +591,7 @@ $festivalNames = getTopFestivalPerformers();
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://www.ticketscanner.ca/" target="_blank" rel="noopener">
-      <img src="<?php echo HOME_URL; ?>/assets/ticket-scanner.webp" class="img-fluid partner-img" alt="Ticket Scanner" width="150" height="150" loading="lazy">
+      <img src="/images/ticket-scanner.webp" class="img-fluid partner-img" alt="Ticket Scanner" width="150" height="150" loading="lazy">
     </a>
   </div>
 </div>
@@ -599,7 +599,7 @@ $festivalNames = getTopFestivalPerformers();
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://www.ticketnetwork.com/" target="_blank" rel="noopener">
-      <img src="<?php echo HOME_URL; ?>/assets/ticketnetwork.webp" class="img-fluid" alt="Ticket Network" width="115" height="115" loading="lazy">
+      <img src="/images/ticketnetwork.webp" class="img-fluid" alt="Ticket Network" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>

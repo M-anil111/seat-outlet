@@ -7,17 +7,17 @@
 <meta property="og:description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
 <meta property="og:url" content="https://beta.seatoutlet.com/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://beta.seatoutlet.com/assets/seatoutlet-logo.webp">
+<meta property="og:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Buy Verified Event Tickets Online | Seat Outlet">
 <meta name="twitter:description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
-<meta name="twitter:image" content="https://beta.seatoutlet.com/assets/seatoutlet-logo.webp">
+<meta name="twitter:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
 
 <?php 
  
  $images = [
-  "https://beta.seatoutlet.com/assets/event-ticket-buying.webp"
+  "https://beta.seatoutlet.com/images/event-ticket-buying.webp"
 ];
 
 $imageSchema = [];
@@ -93,9 +93,9 @@ STRUCTURED DATA (JSON-LD)
       "logo": {
         "@type": "ImageObject",
         "@id": "https://beta.seatoutlet.com/#logo",
-        "url": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp"
+        "url": "https://beta.seatoutlet.com/images/seatoutlet-logo.webp"
       },
-      "image": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp",
+      "image": "https://beta.seatoutlet.com/images/seatoutlet-logo.webp",
       "description": "Verified ticket marketplace network to buy concert, sports, theater, and live event tickets online.",
       "sameAs": [
         "https://www.facebook.com/profile.php?id=61588886945534",
@@ -198,7 +198,7 @@ STRUCTURED DATA (JSON-LD)
       },
       "primaryImageOfPage": {
         "@type": "ImageObject",
-        "url": "https://beta.seatoutlet.com/assets/seatoutlet-logo.webp"
+        "url": "https://beta.seatoutlet.com/images/seatoutlet-logo.webp"
       }
     },
 

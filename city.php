@@ -63,7 +63,22 @@ $year = date('Y');
 									$names = array_map(function ($performer) {
 										return $performer['name'] ?? null;
 									}, $evtPerformers);
+									$performerSlugs = array_map(function ($performer) {
+										$name = $performer['name'] ?? '';
+										$id   = $performer['id'] ?? '';
+									
+										$slug = strtolower(trim($name));
+										$slug = preg_replace('/[^a-z0-9]+/i', '-', $slug);
+										$slug = trim($slug, '-');
+									
+										return $slug && $id ? $slug . '-' . $id : null;
+									}, $evtPerformers);
 									$dataPerformers = implode('|', array_filter($names));	
+									$dataPerformerSlugs  = implode('|', array_filter($performerSlugs));
+									$slug = createSlug($event['text']['name'], $event['id']);
+									$city = $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr'];
+									$citySlug = createSlug($city, $event['city']['id']);
+									$venueSlug = createSlug($event['venue']['text']['name'], $event['venue']['id']);	
 								?>
 									<div class="d-flex align-items-center justify-content-between performer-event-item">
 										<div class="date-box text-center me-3">
@@ -96,25 +111,24 @@ $year = date('Y');
 													data-id="<?php echo (int) ($event['id'] ?? 0); ?>"
 													data-date="<?php echo date('D, M d', $timestamp); ?>"
 													data-venue="<?php echo $event['venue']['text']['name']; ?>"
+													data-venueSlug="<?php echo $venueSlug; ?>"
 													data-location="<?php echo $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr']; ?>"
 													data-title="<?php echo $event['text']['name']; ?>"
-													data-performers="<?php echo $dataPerformers; ?>"
+													data-performers="<?php echo htmlspecialchars($dataPerformers); ?>"
+													data-performer-slugs="<?php echo htmlspecialchars($dataPerformerSlugs); ?>"
 												></i>
 											</div>
 											<div class="fw-semibold location-venue-name">
-												<a href="#">
-													<?php echo $event['city']['text']['name']; ?>,
-													<?php echo $event['stateProvince']['text']['abbr']; ?>
-												</a>
+												<a href="/city/<?php echo $citySlug; ?>"><?php echo $city; ?></a>
 												·
-												<a href="#"><?php echo $event['venue']['text']['name']; ?></a>
+												<a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a>
 											</div>
 											<div class="text-muted small">
-												<a href="/event.php?id=<?php echo (int) ($event['id'] ?? 0); ?>"><?php echo $event['text']['name']; ?></a>
+												<a href="/event/<?php echo $slug; ?>"><?php echo $event['text']['name']; ?></a>
 											</div>
 										</div>
 										<div class="ms-3">
-											<a href="/event.php?id=<?php echo (int) ($event['id'] ?? 0); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets
 												</span>
@@ -159,7 +173,7 @@ $year = date('Y');
 						<?php } ?>
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
+						<img src="/images/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
 					</div>	
 					<div class="tab-section content-section-detail mb-0" id="promocode">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Exclusive Discounts on Event Tickets</h2>
@@ -220,7 +234,7 @@ $year = date('Y');
 					<div class="sticky-top sidebar-inner">
 						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
+								<img src="/images/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
 							</div>
 						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">

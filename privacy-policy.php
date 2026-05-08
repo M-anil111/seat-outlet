@@ -105,7 +105,7 @@
                     If you do not agree with this Privacy Policy, you should not use the Platform or provide us with your personal information.​
                 </p>
                 <p>
-                    For information about how we use cookies and similar technologies, please see our <a href="/cookie-policy.php" title="Cookie Policy" target="_blank">Cookie Policy</a>. For terms governing your use of the Platform, please see our  <a href="/terms-of-use.php" title="Terms of Use" target="_blank">Terms of Use</a>.
+                    For information about how we use cookies and similar technologies, please see our <a href="/cookie-policy" title="Cookie Policy" target="_blank">Cookie Policy</a>. For terms governing your use of the Platform, please see our  <a href="/terms-and-conditions" title="Terms of Use" target="_blank">Terms of Use</a>.
                 </p>
 
                 <!-- 1 -->
@@ -235,7 +235,7 @@
                         </li>
                         <li>
                         <p>
-                        Cookies and similar technologies: Cookies, pixels, SDKs, and local storage used for authentication, security, preferences, analytics, and advertising. For more details, see our <a href="/cookie-policy.php" title="Cookie Policy" target="_blank">Cookie Policy</a>.
+                        Cookies and similar technologies: Cookies, pixels, SDKs, and local storage used for authentication, security, preferences, analytics, and advertising. For more details, see our <a href="/cookie-policy" title="Cookie Policy" target="_blank">Cookie Policy</a>.
                     </p>
                         </li>
                     </ul>
@@ -428,7 +428,7 @@
                     <ul>
                         <li>
                         <p>
-                        Detecting and preventing fraud, unauthorized activities, and abuse (including bots, scalping, or resale in violation of our  <a href="/terms-of-use.php" title="Terms of Use" target="_blank">Terms of Use</a>)
+                        Detecting and preventing fraud, unauthorized activities, and abuse (including bots, scalping, or resale in violation of our  <a href="/terms-and-conditions" title="Terms of Use" target="_blank">Terms of Use</a>)
                     </p>
                         </li>
                         <li>
@@ -536,7 +536,7 @@
     </li>
     <li>
         <p>
-            Enforce our <a href="/terms-of-use.php" title="Terms of Use" target="_blank">Terms of Use</a> and other agreements
+            Enforce our <a href="/terms-and-conditions" title="Terms of Use" target="_blank">Terms of Use</a> and other agreements
         </p>
     </li>
     <li>
@@ -677,7 +677,7 @@
 </ul>
 
                     <p>
-                        You can manage your cookie preferences through your browser settings, device settings, and any cookie banner or preferences tool provided on the Platform, subject to limitations. For more details, please refer to our dedicated <a href="/cookie-policy.php" title="Cookie Policy" target="_blank">Cookie Policy</a>.
+                        You can manage your cookie preferences through your browser settings, device settings, and any cookie banner or preferences tool provided on the Platform, subject to limitations. For more details, please refer to our dedicated <a href="/cookie-policy" title="Cookie Policy" target="_blank">Cookie Policy</a>.
                     </p>
                 </div>
 

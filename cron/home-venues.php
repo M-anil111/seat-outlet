@@ -12,7 +12,7 @@ if (!empty($topVenues)) {
             'name'  => $venue['text']['name'] ?? '',
             'city'  => $venue['city']['text']['name'] ?? '',
             'state' => $venue['stateProvince']['text']['abbr'] ?? '',
-            'image' => "/assets/venue.webp"
+            'image' => "/images/venue.webp"
         ];       
     }
 }

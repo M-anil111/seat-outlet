@@ -460,20 +460,33 @@ document.addEventListener('click', function (e) {
     const elocation = icon.getAttribute('data-location');
     const etitle = icon.getAttribute('data-title');
     const eperformers = icon.getAttribute('data-performers');
-  
+    const performerSlugs = icon.getAttribute('data-performer-slugs');
+    const names = eperformers ? eperformers.split('|') : [];
+    const slugs = performerSlugs ? performerSlugs.split('|') : [];
+    const venueSlug = icon.getAttribute('data-venueSlug');
+    
     document.getElementById('offcanvasDate').textContent = edate;
     document.getElementById('offcanvasVenue').innerHTML = evenue;
     document.getElementById('offcanvasLocation').innerHTML = elocation;
     document.getElementById('offcanvasTitle').innerHTML = etitle;
-    document.getElementById('offcanvasId').href = '/event.php?id=' + eid;
+    document.getElementById('offcanvasId').href = '/event/' + normalizeKey(etitle) + '-' + eid;
     const eplist = document.getElementById('offcanvasPerformers');
     eplist.innerHTML = '';
-    eperformers.split('|').forEach(name => {
+    names.forEach((name, index) => {
+        const slug = slugs[index] || '';
+    
         const li = document.createElement('li');
-        li.innerHTML = `<a href="#">${name.trim()}</a>`;
+    
+        li.innerHTML = `
+            <a href="/artist/${slug}">
+                ${name.trim()}
+            </a>
+        `;
+    
         eplist.appendChild(li);
     });
     document.getElementById('venue-link').innerHTML = evenue;
+    document.getElementById('venue-link').href = '/venue/' + venueSlug;
 });
   
 /* =====================================================
