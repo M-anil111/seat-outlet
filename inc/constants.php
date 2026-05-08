@@ -3,6 +3,7 @@
 define('CONSUMER_KEY', getenv('CONSUMER_KEY') ?: 'jT5nvemtgBtQg3TC6uDusyg3wRoa');
 define('CONSUMER_SECRET', getenv('CONSUMER_SECRET') ?: 'Ka_zGhkONDbXh9Lv4uCDDvXzH88a');
 define('WEBSITE_CONFIG_ID', getenv('WEBSITE_CONFIG_ID') ?: 12498);
+define('WEBSITE_CONFIG_ID_LIVE', getenv('WEBSITE_CONFIG_ID_LIVE') ?: 27773);
 define('BASE_URL', getenv('BASE_URL') ?: 'https://sandbox.tn-apis.com');
 define('BROKER_ID', getenv('BROKER_ID') ?: 9250);
 define('SITE_ID', getenv('SITE_ID') ?: 30);

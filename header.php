@@ -39,9 +39,9 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     </noscript>
     <?php if ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>  
-        <?php include 'seo.php'; ?>
+        <?php include 'inc/seo.php'; ?>
     <?php }elseif ($_SERVER['REQUEST_URI'] == '/tickets' || $_SERVER['REQUEST_URI'] == '/tickets.php') { ?>  
-        <?php include 'seo-tickets.php'; ?>
+        <?php include 'inc/seo-tickets.php'; ?>
     <?php } ?>
     
 </head>

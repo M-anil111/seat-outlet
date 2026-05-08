@@ -146,10 +146,12 @@ foreach ($files as $file) {
 
       $imageCacheKey = 'so_img_' . md5($tab . '|' . $event['name'] . '|' . $event['performer']);
       $cachedImage = get_image($imageCacheKey);
-      $imageSchema[] = [
-          "@type" => "ImageObject",
-          "url" => $cachedImage
-      ];
+      if($cachedImage) {
+          $imageSchema[] = [
+              "@type" => "ImageObject",
+              "url" => $cachedImage
+          ];
+      }      
   }
 }
 

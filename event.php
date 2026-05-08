@@ -147,7 +147,9 @@ if (empty($event) || empty($event['text']['name'])) {
 }
 
 $eventNameSafe = htmlspecialchars($event['text']['name'], ENT_QUOTES, 'UTF-8');
-$mapScriptUrl  = 'https://mapwidget3.seatics.com/js?eventId=' . $id . '&websiteConfigId=12498&mobileOptimized=true&includeJQuery=false&containerId=tn-maps&useDarkTheme=false';
+//$wcid = 12498;
+$wcid = 27773;
+$mapScriptUrl  = 'https://mapwidget3.seatics.com/js?eventId=' . $id . '&websiteConfigId=' . $wcid . '&mobileOptimized=true&includeJQuery=false&containerId=tn-maps&useDarkTheme=false';
 $defaultCategory = $event['defaultCategory'];
 $subcategory = '';
 if (!empty($defaultCategory)) {

@@ -164,7 +164,7 @@
 <?php } ?>
 
 <?php 
-  include 'modals.php'; 
+  include 'inc/modals.php'; 
 ?>
 
 <script>
