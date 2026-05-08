@@ -84,7 +84,7 @@ $faqs = getFaqs('events');
 								</div>
 							</div>
 							<h3 id="locationHeading" class="mt-4 fs-5"></h3>
-							<div id="location-no-results" class="text-center no-location"></div>
+							<div id="location-no-results" class="text-center no-location mt-5 mb-5"></div>
 						</div>
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">
