@@ -1,80 +1,78 @@
-<title>Seat Outlet – Buy Verified Event Tickets Online</title>
-<meta name="description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
-<meta name="keywords" content="Buy verified event tickets online, concert tickets online, sports tickets online, live event tickets, secure ticket marketplace">
-<link rel="canonical" href="https://beta.seatoutlet.com/tickets">
+<?php 
+  $id = isset($_GET['id']) ? (int) $_GET['id'] : 0; 
+  if ($id <= 0) {
+    $slug  = $_GET['slug'] ?? '';
+    $parts = explode('-', (string) $slug);
+    $id    = (int) end($parts);
+    if ($id <= 0) {
+      echo '<div class="container"><p>Invalid event.</p></div>';
+      include 'footer.php';
+      exit;
+    }
+  }
+  $event = getTnEventById($id);
+  $metaDescription = "Buy {$event['text']['name']} tickets at {$event['venue']['text']['name']} in {$event['city']['text']['name']}, {$event['stateProvince']['text']['abbr']}. View event date, venue details, seating options, and secure your tickets online at Seat Outlet.";
+  $keywords[] = $event['text']['name'] . " tickets";
+  $keywords[] = "buy " . $event['text']['name'] . " tickets";
+  $keywords[] = $event['venue']['text']['name'] . " tickets";
+  $keywords[] = "events in " . $event['city']['text']['name'] . " " . $event['stateProvince']['text']['abbr'];
+  $keywords[] = "tickets in " . $event['city']['text']['name'] . " " . $event['stateProvince']['text']['abbr'];
+  $metaKeywords = implode(", ", array_unique($keywords));
+?>
+<title>Seat Outlet – <?php echo $event['text']['name']; ?></title>
+<meta name="description" content="<?php echo $metaDescription; ?>">
+<meta name="keywords" content="<?php echo htmlspecialchars($metaKeywords, ENT_QUOTES, 'UTF-8'); ?>">
+<link rel="canonical" href="https://beta.seatoutlet.com/event/<?php echo $event['uriComponent']; ?>">
 
-<meta property="og:title" content="Buy Verified Event Tickets Online | Seat Outlet">
-<meta property="og:description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
-<meta property="og:url" content="https://beta.seatoutlet.com/tickets">
+<meta property="og:title" content="<?php echo $event['text']['name']; ?> | Seat Outlet">
+<meta property="og:description" content="<?php echo $metaDescription; ?>">
+<meta property="og:url" content="https://beta.seatoutlet.com/event/<?php echo $event['uriComponent']; ?>">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Buy Verified Event Tickets Online | Seat Outlet">
-<meta name="twitter:description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
+<meta name="twitter:title" content="<?php echo $event['text']['name']; ?> | Seat Outlet">
+<meta name="twitter:description" content="<?php echo $metaDescription; ?>">
 <meta name="twitter:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
 
-<?php 
- 
- $images = [
-  "https://beta.seatoutlet.com/images/event-ticket-buying.webp"
-];
+<?php  
+$eventsSchema = [];
+if(!empty($event)) {
+    $city = $event['city']['text']['name'];
+    $state = $event['stateProvince']['text']['abbr'];
+    $startDate = $event['date']['date'];
+    $price = $event['pricingInfo']['lowPrice']['value'];
+    $eventsSchema[] = [
+        "@type" => "Event",
+        "name" => $event['text']['name'],
+        "startDate" => $startDate,
+        "eventStatus" => "https://schema.org/EventScheduled",
 
-$imageSchema = [];
+        "location" => [
+            "@type" => "Place",
+            "name" => $event['text']['venue'],
+            "address" => [
+                "@type" => "PostalAddress",
+                "addressLocality" => $city,
+                "addressRegion" => $state,
+                "addressCountry" => "US"
+            ]
+        ],
+        "performer" => [
+            "@type" => "PerformingGroup",
+            "name" => $event['performers'][0]['name']
+        ],
 
-foreach ($images as $img) {
-    $imageSchema[] = [
-        "@type" => "ImageObject",
-        "url" => $img
+        "offers" => [
+            "@type" => "Offer",
+            "url" => "https://beta.seatoutlet.com/event/" . $event['id'],
+            "price" => $price,
+            "priceCurrency" => "USD",
+            "availability" => "https://schema.org/InStock"
+        ]
     ];
 }
 
-$eventsSchema = [];
-$results = getAllEvents();
-if(!empty($results['results'])) {
-
-  foreach ($results['results'] as $event) {    
-
-      
-      $city = $event['city']['text']['name'];
-      $state = $event['stateProvince']['text']['abbr'];
-
-      // 🔥 Convert UNIX → ISO
-      $startDate = $event['date']['date'];
-
-      $price = $event['pricingInfo']['lowPrice']['value'];
-
-      $eventsSchema[] = [
-          "@type" => "Event",
-          "name" => $event['text']['name'],
-          "startDate" => $startDate,
-          "eventStatus" => "https://schema.org/EventScheduled",
-
-          "location" => [
-              "@type" => "Place",
-              "name" => $event['text']['venue'],
-              "address" => [
-                  "@type" => "PostalAddress",
-                  "addressLocality" => $city,
-                  "addressRegion" => $state,
-                  "addressCountry" => "US"
-              ]
-          ],
-          "performer" => [
-              "@type" => "PerformingGroup",
-              "name" => $event['performers'][0]['name']
-          ],
-
-          "offers" => [
-              "@type" => "Offer",
-              "url" => "https://beta.seatoutlet.com/event/" . $event['id'],
-              "price" => $price,
-              "priceCurrency" => "USD",
-              "availability" => "https://schema.org/InStock"
-          ]
-      ];
-  }
-}
 ?>
 <!-- ============================
 STRUCTURED DATA (JSON-LD)
@@ -182,29 +180,9 @@ STRUCTURED DATA (JSON-LD)
       "publisher": {
         "@id": "https://beta.seatoutlet.com/#organization"
       },
-    },
+    },    
 
-    {
-      "@type": "WebPage",
-      "@id": "https://beta.seatoutlet.com/tickets#webpage",
-      "url": "https://beta.seatoutlet.com/tickets",
-      "name": "Buy Verified Event Tickets Online",
-      "description": "Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.",
-      "isPartOf": {
-        "@id": "https://beta.seatoutlet.com/#website"
-      },
-      "about": {
-        "@id": "https://beta.seatoutlet.com/#organization"
-      },
-      "primaryImageOfPage": {
-        "@type": "ImageObject",
-        "url": "https://beta.seatoutlet.com/images/seatoutlet-logo.webp"
-      }
-    },
-
-    <?= json_encode($eventsSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); ?>,
-
-    <?= json_encode($imageSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); ?>
+    <?= json_encode($eventsSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); ?>
 
   ]
 }

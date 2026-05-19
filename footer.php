@@ -77,7 +77,7 @@
     <li><a href="/sports">Sports</a></li>
     <li><a href="/concerts">Concerts</a></li>
     <li><a href="/theater">Theater</a></li>
-    <li><a href="/festivals">Festivals</a></li>
+    <li><a href="/festival">Festivals</a></li>
     <li><a href="/cities">Cities</a></li>
     <li><a href="/deals-promotions">Deals & Promotions</a></li>
   </ul>
@@ -191,7 +191,7 @@
 		return mapsPromise;
 	}        
   <?php if (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>
-    Seatics.config.checkoutUrl = 'checkout.seatoutlet.com';
+    Seatics.config.checkoutUrl = 'https://checkout.seatoutlet.com';
     Seatics.config.enableLegalDisclosureMobile = true;
     Seatics.config.preCheckoutButtonHtml = 'Continue to Payment';
     Seatics.config.buyButtonContentHtml = '<div class="buy-btn">' + 'Buy Now' + '</div>';

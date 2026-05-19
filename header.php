@@ -42,6 +42,8 @@
         <?php include 'inc/seo.php'; ?>
     <?php }elseif ($_SERVER['REQUEST_URI'] == '/tickets' || $_SERVER['REQUEST_URI'] == '/tickets.php') { ?>  
         <?php include 'inc/seo-tickets.php'; ?>
+    <?php }elseif (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>  
+        <?php include 'inc/seo-event.php'; ?>
     <?php } ?>
     
 </head>
@@ -113,7 +115,7 @@
                                 <li class="menu-item"><a href="/concerts">Concerts</a></li>
                                 <li class="menu-item"><a href="/sports">Sports</a></li>
                                 <li class="menu-item"><a href="/theater">Theater</a></li>
-                                <li class="menu-item"><a href="/festivals">Festivals</a></li>
+                                <li class="menu-item"><a href="/festival">Festivals</a></li>
                                 <li class="menu-item"><a href="/cities">Cities</a></li>
                             </ul>
                         </nav>
@@ -358,7 +360,7 @@
 
                     </li>
                     <li>
-                        <a href="/festivals" title="Festivals" class="mobile-menu">Festivals</a>
+                        <a href="/festival" title="Festivals" class="mobile-menu">Festivals</a>
                     </li>
                     <li>
                         <a href="/cities" title="Cities" class="mobile-menu">Cities</a>

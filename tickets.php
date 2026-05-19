@@ -203,7 +203,7 @@ $faqs = getFaqs('events');
 								No Events found!
 							</h4>
 						<?php } ?>
-					</div>	
+					</div>
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="/images/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" width="804" height="96" />
 					</div>	
@@ -277,7 +277,16 @@ $faqs = getFaqs('events');
 							<div class="guarantee-icon">
 								<i class="bi bi-shield-check"></i>
 							</div>
-						</div>						
+						</div>
+						<!-- <div class="category-links guarantee-card d-flex align-items-center justify-content-between">
+							<div class="guarantee">
+								<strong>Categories</strong><br>
+								<a href="/concerts" class="common-btn">View All Concerts Events</a>
+								<a href="/sports" class="common-btn">View All Sports Events</a>
+								<a href="/theater" class="common-btn">View All Theater Events</a>
+								<a href="/festival" class="common-btn">View All Festival Events</a>
+							</div>
+						</div>							 -->
 					</div>
 				</div>
 			</div>
