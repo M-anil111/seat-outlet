@@ -33,6 +33,27 @@ pipelines:
             - |
                 git ftp init -vv --insecure --user $FTP_USERNAME --passwd $FTP_PASSWORD sftp://$FTP_HOST:4124//home/seatoutlet-beta/htdocs/beta.seatoutlet.com/
 
+            # Generate inc/env.local.php from secured repository variables and push it
+            # straight to the server. This file is never committed to git - it only
+            # ever exists inside this pipeline run and on the deployed server.
+            - |
+                php -r '
+                $vars = ["DB_PASS","CONSUMER_KEY","CONSUMER_SECRET","GAPI_KEY","GKGSAPI_KEY","AWS_ACCESS_KEY","AWS_SECRET_KEY","RECAPTCHA_SECRET_KEY","SMTP_USER","SMTP_PASS"];
+                $lines = ["<?php"];
+                foreach ($vars as $v) {
+                    $val = getenv($v);
+                    if ($val === false || $val === "") {
+                        fwrite(STDERR, "Missing required pipeline variable: $v\n");
+                        exit(1);
+                    }
+                    $lines[] = "putenv(" . var_export($v . "=" . $val, true) . ");";
+                }
+                file_put_contents("env.local.php", implode("\n", $lines) . "\n");
+                echo "Generated env.local.php with " . count($vars) . " variables\n";
+                '
+                curl -sS --user "$FTP_USERNAME:$FTP_PASSWORD" -T env.local.php "sftp://$FTP_HOST:4124//home/seatoutlet-beta/htdocs/beta.seatoutlet.com/inc/env.local.php"
+                rm -f env.local.php
+
 definitions:
   caches:
     git-ftp: /usr/bin/git-ftp
