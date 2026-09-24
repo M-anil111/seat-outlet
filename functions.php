@@ -151,49 +151,48 @@ function getTnEventById($eventId) {
     return tnRequest($endpoint);
 }
 
-function buildCategoryBreadcrumb($defaultCategory) {
- 
-    $breadcrumb = [];
+function stripCategoryRootPath($path) {
+    static $rootPaths = ['.1859.1986.', '.1859.1988.', '.1859.1989.'];
+    return str_replace('.', '', str_replace($rootPaths, '', $path));
+}
 
-    $breadcrumb[] = [
-        'label' => 'Home',
-        'url'   => HOME_URL
+function buildCategoryBreadcrumb($defaultCategory) {
+
+    $breadcrumb = [
+        [
+            'label' => 'Home',
+            'url'   => HOME_URL
+        ]
     ];
 
     if($defaultCategory['depth'] == 1) {
         $breadcrumb[] = [
             'label' => ucwords(strtolower($defaultCategory['text']['name'])),
-           'url'   => '/' . sanitize_title($defaultCategory['text']['name'])
+            'url'   => '/' . sanitize_title($defaultCategory['text']['name'])
         ];
     }
     if (!empty($defaultCategory['ancestors'])) {
+        $depth1 = [];
+        $depth2 = [];
         foreach ($defaultCategory['ancestors'] as $ancestor) {
-            if($ancestor['depth'] == 1) {
-                $breadcrumb[] = [
+            if ($ancestor['depth'] == 1) {
+                $depth1[] = [
                     'label' => ucwords(strtolower($ancestor['text']['name'])),
                     'url'   => '/' . sanitize_title($ancestor['text']['name'])
                 ];
-            }
-        }
-        foreach ($defaultCategory['ancestors'] as $ancestor) {
-            if($ancestor['depth'] == 2) {
-                $path = $ancestor['path'];
-                $path = str_replace(['.1859.1986.', '.1859.1988.', '.1859.1989.'], '', $path); 
-                $path = str_replace('.', '', $path);
-                $breadcrumb[] = [
+            } elseif ($ancestor['depth'] == 2) {
+                $depth2[] = [
                     'label' => ucwords(strtolower($ancestor['text']['name'])),
-                    'url'   => '/category/' . sanitize_title($ancestor['text']['name']) . '-' . $path
+                    'url'   => '/category/' . sanitize_title($ancestor['text']['name']) . '-' . stripCategoryRootPath($ancestor['path'])
                 ];
             }
         }
+        $breadcrumb = array_merge($breadcrumb, $depth1, $depth2);
     }
     if(count($breadcrumb) < 3) {
-        $path = $defaultCategory['path'];
-        $path = str_replace(['.1859.1986.', '.1859.1988.', '.1859.1989.'], '', $path); 
-        $path = str_replace('.', '', $path);
         $breadcrumb[] = [
             'label' => ucwords(strtolower($defaultCategory['text']['name'])),
-            'url'   => '/category/' . sanitize_title($defaultCategory['text']['name']) . '-' . $path
+            'url'   => '/category/' . sanitize_title($defaultCategory['text']['name']) . '-' . stripCategoryRootPath($defaultCategory['path'])
         ];
     }
 
@@ -1624,7 +1623,8 @@ function getEventImage($artist, $defaultCategory, $event, $tab) {
             if(empty($subcat)) {
                 foreach ($defaultCategory['ancestors'] as $ancestor) {
                     if($ancestor['depth'] == 2) {
-                        $cat = $ancestor['text']['name'];
+                        $subcat = $ancestor['text']['name'];
+                        break;
                     }
                 }
             }
@@ -1681,7 +1681,8 @@ function getArtistImage($artist, $defaultCategory) {
             if(empty($subcat)) {
                 foreach ($defaultCategory['ancestors'] as $ancestor) {
                     if($ancestor['depth'] == 2) {
-                        $cat = $ancestor['text']['name'];
+                        $subcat = $ancestor['text']['name'];
+                        break;
                     }
                 }
             }
@@ -2161,6 +2162,10 @@ function getWikiTitle($wikiUrl) {
 
 function getCorrectKGEntity($performerName, $category, $subcategory, $apiKey = GKGSAPI_KEY) {
     $keywords = getKgKeywordsByCategory($category, $subcategory);
+    // No category signal to validate against - don't guess at an entity, let the caller fall back.
+    if (empty($keywords)) {
+        return null;
+    }
 
     $url = 'https://kgsearch.googleapis.com/v1/entities:search?' . http_build_query([
         'query' => $performerName,
@@ -2178,28 +2183,66 @@ function getCorrectKGEntity($performerName, $category, $subcategory, $apiKey = G
         return null;
     }
 
+    // Entity types that are never a performer - catches a place/movie/book/etc. that
+    // happens to share the performer's exact name (the "duplicate name" case).
+    $rejectedTypes = ['place', 'city', 'country', 'administrativearea', 'book', 'movie', 'tvseries', 'tvepisode', 'videogame', 'product', 'event'];
+    $performerNameNormalized = strtolower(trim($performerName));
+
+    $bestEntity = null;
+    $bestScore = -1;
+
     foreach ($data['itemListElement'] as $item) {
         if (empty($item['result']) || !is_array($item['result'])) {
             continue;
         }
 
-        $entity = $item['result']; 
+        $entity = $item['result'];
+
+        // Name must match exactly (case/whitespace-insensitive). A fuzzy KG hit for a
+        // different, similarly-named entity is exactly what we're trying to reject.
+        $entityName = strtolower(trim($entity['name'] ?? ''));
+        if ($entityName === '' || $entityName !== $performerNameNormalized) {
+            continue;
+        }
+
+        $types = array_map('strtolower', $entity['@type'] ?? []);
+        if (count(array_intersect($types, $rejectedTypes)) > 0) {
+            continue;
+        }
+
         $description = strtolower($entity['description'] ?? '');
-        
-        foreach($keywords as $word) {
+        $keywordMatched = false;
+        foreach ($keywords as $word) {
             $word = strtolower($word);
-            if ($word !== '' && strpos($description, $word) !== false && $entity['name'] == $performerName) {                                
-                if(!empty($entity['image']['contentUrl'])) {
-                    $image = $entity['image']['contentUrl'];
-                }else{
-                    $wikiUrl = $entity['detailedDescription']['url'];
-                    $title = getWikiTitle($wikiUrl);
-                    $image = getWikimediaImage($title);
-                }
-                return $image;             
+            if ($word !== '' && strpos($description, $word) !== false) {
+                $keywordMatched = true;
+                break;
             }
-        }  
+        }
+        if (!$keywordMatched) {
+            continue;
+        }
+
+        // Among everything that passes the checks above, keep the most relevant match
+        // rather than stopping at the first one - KG can return more than one candidate.
+        $score = (float) ($item['resultScore'] ?? 0);
+        if ($score > $bestScore) {
+            $bestScore = $score;
+            $bestEntity = $entity;
+        }
     }
+
+    if (!$bestEntity) {
+        return null;
+    }
+
+    if (!empty($bestEntity['image']['contentUrl'])) {
+        return $bestEntity['image']['contentUrl'];
+    }
+
+    $wikiUrl = $bestEntity['detailedDescription']['url'] ?? null;
+    $title = $wikiUrl ? getWikiTitle($wikiUrl) : null;
+    return $title ? getWikimediaImage($title) : null;
 }
 
 function getCorrectKGEntityVenue($venueName, $apiKey = GKGSAPI_KEY) {
