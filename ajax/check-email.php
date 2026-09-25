@@ -1,10 +1,11 @@
-<?php 
+<?php
 include '../db/config.php';
+include '../inc/constants.php';
 
 header('Content-Type: application/json');
 
 $email = $_POST['email'] ?? '';
-$recaptchaSecret  = '6Lfnn9AsAAAAAONimemstyyc7lGqK_RuopuRitDf';
+$recaptchaSecret  = RECAPTCHA_SECRET_KEY;
 $recaptchaResponse = $_POST['token'] ?? $_POST['g-recaptcha-response'] ?? '';
 
 $verify = file_get_contents(

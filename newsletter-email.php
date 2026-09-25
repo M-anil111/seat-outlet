@@ -68,11 +68,17 @@ $sent = false;
 
 try {
 
+    $smtpUser = getenv('SMTP_USER');
+    $smtpPass = getenv('SMTP_PASS');
+    if ($smtpUser === false || $smtpUser === '' || $smtpPass === false || $smtpPass === '') {
+        throw new Exception('SMTP_USER/SMTP_PASS environment variables are not set.');
+    }
+
     $mail->isSMTP();
     $mail->Host       = 'smtp-relay.brevo.com';
     $mail->SMTPAuth   = true;
-    $mail->Username   = 'a9aa64001@smtp-brevo.com';
-    $mail->Password   = 'xsmtpsib-41690a322b8ba6220e63d2fea8b972c356987134281a173e9cb28e57652d9ed5-H7xKvwOtfy0izOuH';
+    $mail->Username   = $smtpUser;
+    $mail->Password   = $smtpPass;
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port       = 587;
 
@@ -266,7 +272,7 @@ EOD;
     $mail->send();
 
 } catch (Exception $e) {
-    error_log($mail->ErrorInfo);
+    error_log($e->getMessage() . ' ' . $mail->ErrorInfo);
     http_response_code(500);
     exit;
 }

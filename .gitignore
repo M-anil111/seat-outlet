@@ -48,3 +48,11 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Secrets - real credentials must only ever exist in Bitbucket repository
+# variables, never committed here. inc/env.local.php is generated fresh by the
+# deploy pipeline from those variables and must never be checked in.
+.env
+.env.*
+!.env.example
+inc/env.local.php
+

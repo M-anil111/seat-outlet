@@ -1,14 +1,5 @@
 <?php
 
-// Deploy-generated file holding real secret values as putenv() calls, sourced from
-// Bitbucket repository variables at deploy time. Never committed to git - only exists
-// on a server after the "Deploy To Demo" pipeline step has run. Safe to be absent
-// (e.g. local dev): getenv() calls below then fall through to their own defaults.
-$envLocalFile = __DIR__ . '/inc/env.local.php';
-if (file_exists($envLocalFile)) {
-    require $envLocalFile;
-}
-
 include 'db/config.php';
 include 'inc/constants.php';
 require 'vendor/autoload.php';
