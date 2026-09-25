@@ -63,7 +63,7 @@ pipelines:
             - |
                 REMOTE_ROOT="/home/seatoutlet-beta/htdocs/beta.seatoutlet.com"
                 find . -type f -not -path './.git/*' -print0 | \
-                  xargs -0 -P 1 -I{} bash -c '
+                  xargs -0 -P 4 -I{} bash -c '
                     f="{}"
                     rel="${f#./}"
                     curl -sS --ftp-create-dirs --user "$0:$1" -T "$f" "sftp://$2:4124/$3/$rel" \
@@ -71,7 +71,7 @@ pipelines:
                   ' "$FTP_USERNAME" "$FTP_PASSWORD" "$FTP_HOST" "$REMOTE_ROOT"
                 echo "Upload pass complete"
                 FAIL_COUNT=$(find . -type f -not -path './.git/*' -print0 | \
-                  xargs -0 -P 1 -I{} bash -c '
+                  xargs -0 -P 4 -I{} bash -c '
                     f="{}"; rel="${f#./}"
                     curl -sS --user "$0:$1" -o /dev/null "sftp://$2:4124/$3/$rel" || echo x
                   ' "$FTP_USERNAME" "$FTP_PASSWORD" "$FTP_HOST" "$REMOTE_ROOT" | wc -l)
