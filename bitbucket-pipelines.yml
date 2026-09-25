@@ -21,7 +21,7 @@ pipelines:
           deployment: production
           script:
             - apt-get update
-            - apt-get install -y lftp curl
+            - apt-get install -y curl
             - |
                 echo "Public IP of this pipeline is:"
                 curl -s ifconfig.me
@@ -46,14 +46,19 @@ pipelines:
                 echo "Generated inc/env.local.php with " . count($vars) . " variables\n";
                 '
 
-            # Upload the whole tree over SFTP via lftp rather than git-ftp - git-ftp's
-            # bundled curl/libssh2 in this image attempts SSH public-key auth first
-            # and fails outright instead of falling back to the supplied password.
+            # Upload the whole tree over SFTP with plain curl, one file at a time -
+            # git-ftp's bundled curl/libssh2 in this image attempts SSH public-key
+            # auth first and fails outright instead of falling back to the supplied
+            # password; lftp's "-u user,pass" syntax also breaks if the password
+            # contains a comma. curl's --user user:pass splits only on the first
+            # colon and takes the rest verbatim, so it's safe for any password.
             - |
-                lftp -u "$FTP_USERNAME,$FTP_PASSWORD" -p 4124 sftp://$FTP_HOST -e "
-                set sftp:auto-confirm yes;
-                set net:max-retries 3;
-                set net:timeout 30;
-                mirror -R --parallel=4 ./ /home/seatoutlet-beta/htdocs/beta.seatoutlet.com/;
-                bye
-                "
+                REMOTE_ROOT="/home/seatoutlet-beta/htdocs/beta.seatoutlet.com"
+                find . -type f -not -path './.git/*' -print0 | \
+                  xargs -0 -P 8 -I{} bash -c '
+                    f="{}"
+                    rel="${f#./}"
+                    curl -sS --ftp-create-dirs --user "$0:$1" -T "$f" "sftp://$2:4124/$3/$rel" \
+                      || echo "FAILED: $rel"
+                  ' "$FTP_USERNAME" "$FTP_PASSWORD" "$FTP_HOST" "$REMOTE_ROOT"
+                echo "Upload pass complete"
