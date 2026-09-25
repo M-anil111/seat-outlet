@@ -21,10 +21,18 @@ pipelines:
           deployment: production
           script:
             - apt-get update
-            - apt-get install -y curl
+            - apt-get install -y curl openssh-client
             - |
                 echo "Public IP of this pipeline is:"
                 curl -s ifconfig.me
+
+            # Trust the server's real SSH host key so curl's SFTP connections can
+            # verify it properly, instead of skipping verification entirely.
+            - |
+                mkdir -p ~/.ssh
+                ssh-keyscan -p 4124 "$FTP_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+                echo "Known hosts populated:"
+                cat ~/.ssh/known_hosts
 
             # Generate inc/env.local.php from secured repository variables. This file
             # is never committed to git - it's created fresh in the build workspace on
@@ -62,3 +70,13 @@ pipelines:
                       || echo "FAILED: $rel"
                   ' "$FTP_USERNAME" "$FTP_PASSWORD" "$FTP_HOST" "$REMOTE_ROOT"
                 echo "Upload pass complete"
+                FAIL_COUNT=$(find . -type f -not -path './.git/*' -print0 | \
+                  xargs -0 -P 8 -I{} bash -c '
+                    f="{}"; rel="${f#./}"
+                    curl -sS --user "$0:$1" -o /dev/null "sftp://$2:4124/$3/$rel" || echo x
+                  ' "$FTP_USERNAME" "$FTP_PASSWORD" "$FTP_HOST" "$REMOTE_ROOT" | wc -l)
+                echo "Post-upload verification: $FAIL_COUNT file(s) not confirmed on server"
+                if [ "$FAIL_COUNT" -gt 0 ]; then
+                  echo "Deploy verification failed - not all files reached the server"
+                  exit 1
+                fi
