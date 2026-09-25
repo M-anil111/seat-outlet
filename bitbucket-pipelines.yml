@@ -19,7 +19,6 @@ pipelines:
             cloud:
               atlassian-ip-ranges: true
           deployment: production
-          trigger: manual
           caches:
             - git-ftp
           script:
