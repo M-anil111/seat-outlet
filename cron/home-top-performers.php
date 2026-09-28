@@ -1,5 +1,5 @@
 <?php
-require_once '../functions.php';
+require_once __DIR__ . '/../functions.php';
 
 $concerts = getTopPerformersByCategory(".1859.1986.");
 $sports   = getTopPerformersByCategory(".1859.1988.");

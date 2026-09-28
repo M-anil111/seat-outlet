@@ -1,6 +1,6 @@
 <?php
-include '../db/config.php';
-include '../inc/constants.php';
+include __DIR__ . '/../db/config.php';
+include __DIR__ . '/../inc/constants.php';
 
 header('Content-Type: application/json');
 

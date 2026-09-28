@@ -210,11 +210,19 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch('/ajax/get_ip_details.php')
     .then(res => res.json())
     .then(data => {
+        // The IP geolocation lookup can legitimately come back empty (rate
+        // limited, IP not in its database, timed out server-side) - without
+        // this check, the UI showed a literal "undefined, undefined" as the
+        // detected location, and that broken value got saved to the
+        // so_label cookie, so it stuck around on every later page load too.
+        if (!data || !data.city || !data.state) {
+            return;
+        }
         setCookie('so_lat', encodeURIComponent(data.lat));
         setCookie('so_lng', encodeURIComponent(data.lng));
         setCookie('so_label', data.city + ', ' + data.state);
         if (DOM.locationSelectorText) DOM.locationSelectorText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
-        window.locationReady = true;  
+        window.locationReady = true;
         if (typeof reloadActiveTab === 'function') {
             reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
         }

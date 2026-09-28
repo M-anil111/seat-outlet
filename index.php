@@ -374,7 +374,7 @@ $festivalNames = getTopFestivalPerformers();
           </svg>
         </div>
         <h3 class="reason-card__title">No Hidden Fees</h3>
-        <p class="reason-card__desc">See the total cost upfront, which means best prices guaranteed for your ticket from the start of a signing or listing.</p>
+        <p class="reason-card__desc">See the total cost upfront, with no hidden fees added at checkout.</p>
       </article>
       <article class="reason-card">
         <div class="reason-card__icon">
