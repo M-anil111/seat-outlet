@@ -1,4 +1,14 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical. Kept noindex (header.php's site-wide default) since
+// the visible content is still illustrative sample testimonials - see
+// the disclaimer added to this page.
+$pageMetaTitle       = 'Customer Testimonials | Seat Outlet';
+$pageMetaDescription = 'See what Seat Outlet customers say about buying concert, sports, and event tickets through our verified ticket marketplace.';
+$pageCanonicalUrl    = HOME_URL . '/testimonials';
+include 'header.php';
+?>
 
 <style>
     .testimonial-page {

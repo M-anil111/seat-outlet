@@ -1,4 +1,12 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical.
+$pageMetaTitle       = 'Our Guarantee | Seat Outlet';
+$pageMetaDescription = 'Seat Outlet stands behind every order with a Buyer Protection Guarantee: valid tickets, on-time delivery, secure payments, and a full refund if an event is canceled.';
+$pageCanonicalUrl    = HOME_URL . '/guarantee';
+include 'header.php';
+?>
 
 <style>
 

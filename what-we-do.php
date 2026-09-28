@@ -1,4 +1,12 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical.
+$pageMetaTitle       = 'What We Do at Seat Outlet | Seat Outlet';
+$pageMetaDescription = 'Seat Outlet connects fans with live events across concerts, sports, and theater - making it easy to discover, compare, and securely book tickets.';
+$pageCanonicalUrl    = HOME_URL . '/what-we-do';
+include 'header.php';
+?>
 
 <style>
     :root {

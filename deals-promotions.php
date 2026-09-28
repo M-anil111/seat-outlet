@@ -1,4 +1,12 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical.
+$pageMetaTitle       = 'Deals & Promotions – Ticket Discount Codes | Seat Outlet';
+$pageMetaDescription = 'Save on concert, sports, and event tickets with exclusive Seat Outlet promo codes. Browse the latest discount codes and tips to maximize your savings.';
+$pageCanonicalUrl    = HOME_URL . '/deals-promotions';
+include 'header.php';
+?>
 
 <style>
     /* Content layout: simple, step-by-step */
@@ -102,7 +110,7 @@
                     <h2> Exclusive Promo Codes for Concerts, Sports & Events</h2>
                     <p>
                     <p>Save more on every event you love with our exclusive <strong>ticket promo codes</strong>. Whether you're booking tickets for <strong>concerts, sports games, or theater shows, our deals</strong> help you get the best seats at the best prices.</p>
-<p>Welcome to the official <strong>Deals &amp; Promotions</strong> page of GrabTicketsNow, where affordable entertainment meets unforgettable experiences. We believe live events should be accessible to everyone, which is why we <strong>regularly offer verified promo codes</strong> to help you save on your next booking.</p>
+<p>Welcome to the official <strong>Deals &amp; Promotions</strong> page of Seat Outlet, where affordable entertainment meets unforgettable experiences. We believe live events should be accessible to everyone, which is why we <strong>regularly offer verified promo codes</strong> to help you save on your next booking.</p>
 <p>From <strong>high-energy concerts and sold-out sports events</strong> to <strong>family-friendly shows and theater performances</strong>, our<strong> discount codes</strong> are designed to make every moment more affordable without compromising on experience.</p>
 
                 </div>
@@ -227,9 +235,9 @@
 
                 <!-- 7 -->
                 <div class="policy-section" id="section-7">
-                    <h2>Why Choose GrabTicketsNow?</h2>
-                   
-<p>At GrabTicketsNow, we go beyond just selling tickets. We help you experience more while spending less.</p>
+                    <h2>Why Choose Seat Outlet?</h2>
+
+<p>At Seat Outlet, we go beyond just selling tickets. We help you experience more while spending less.</p>
 <ul>
 <li>Wide selection of events across categories</li>
 <li>Secure and easy checkout process</li>

@@ -1,4 +1,14 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical. Kept noindex (header.php's site-wide default) since
+// the visible content is still illustrative sample reviews - see the
+// disclaimer added to this page.
+$pageMetaTitle       = 'Customer Reviews | Seat Outlet';
+$pageMetaDescription = 'Read customer reviews of Seat Outlet, a ticket marketplace for buying concert, sports, and event tickets online.';
+$pageCanonicalUrl    = HOME_URL . '/reviews';
+include 'header.php';
+?>
 <style>
     /* ========== Page Header ========== */
 

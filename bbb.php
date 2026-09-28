@@ -1,4 +1,12 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical.
+$pageMetaTitle       = 'Seat Outlet BBB Profile & Customer Commitment | Seat Outlet';
+$pageMetaDescription = 'Learn about Seat Outlet\'s commitment to secure transactions, verified ticket listings, and transparent policies as a trusted ticket marketplace.';
+$pageCanonicalUrl    = HOME_URL . '/bbb';
+include 'header.php';
+?>
 <style>
 .why-us-page .faq-card {
     background-color: #ffffff;
