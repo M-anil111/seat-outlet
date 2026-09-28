@@ -2421,9 +2421,10 @@ function getTopPerformersByCategory($categoryPath) {
 |--------------------------------------------------------------------------
 | Page rules (light SEO / redirect / schema admin table)
 |--------------------------------------------------------------------------
-| CRUD for the page_rules table used by the admin panel. Front-end pages do
-| not call these yet - see the comment on the page_rules migration in
-| db/admin-schema.sql for why that's a deliberate follow-up step.
+| CRUD for the page_rules table used by the admin panel (see
+| db/migrations/0002_page_rules.sql for the schema). resolvePageRule(),
+| below, is what header.php calls to actually apply a rule on the
+| front end.
 */
 
 function normalizePagePath($path) {
