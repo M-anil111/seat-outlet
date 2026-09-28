@@ -7,6 +7,17 @@ require 'vendor/autoload.php';
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 
+// Error monitoring. Only active when SENTRY_DSN is set in the environment -
+// see inc/constants.php. Initialized as early as possible so it also catches
+// errors during the rest of this file's own setup.
+if (SENTRY_DSN !== '') {
+    \Sentry\init([
+        'dsn' => SENTRY_DSN,
+        'environment' => SENTRY_ENVIRONMENT,
+        'traces_sample_rate' => 0.2,
+    ]);
+}
+
 function getS3Client() {
 
     $accountId = AWS_ACCOUNT_ID;
@@ -2313,4 +2324,127 @@ function getTopPerformersByCategory($categoryPath) {
     }
 
     return $performers;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Page rules (light SEO / redirect / schema admin table)
+|--------------------------------------------------------------------------
+| CRUD for the page_rules table used by the admin panel. Front-end pages do
+| not call these yet - see the comment on the page_rules migration in
+| db/admin-schema.sql for why that's a deliberate follow-up step.
+*/
+
+function normalizePagePath($path) {
+    $path = parse_url((string) $path, PHP_URL_PATH) ?: '/';
+    if ($path !== '/' && substr($path, -1) === '/') {
+        $path = rtrim($path, '/');
+    }
+    return $path === '' ? '/' : $path;
+}
+
+function listPageRules($search = '', $mysqli = MYSQLI) {
+    if ($search !== '') {
+        $stmt = $mysqli->prepare(
+            'SELECT * FROM page_rules WHERE url_path LIKE CONCAT(\'%\', ?, \'%\') ORDER BY updated_at DESC'
+        );
+        $stmt->bind_param('s', $search);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        $result = $mysqli->query('SELECT * FROM page_rules ORDER BY updated_at DESC');
+    }
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = $row;
+    }
+    if (isset($stmt)) {
+        $stmt->close();
+    }
+    return $rows;
+}
+
+function getPageRuleById($id, $mysqli = MYSQLI) {
+    $stmt = $mysqli->prepare('SELECT * FROM page_rules WHERE ID = ? LIMIT 1');
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ?: null;
+}
+
+function getPageRuleByPath($urlPath, $mysqli = MYSQLI) {
+    $urlPath = normalizePagePath($urlPath);
+    $stmt = $mysqli->prepare('SELECT * FROM page_rules WHERE url_path = ? AND is_active = 1 LIMIT 1');
+    $stmt->bind_param('s', $urlPath);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ?: null;
+}
+
+function savePageRule(array $data, $mysqli = MYSQLI) {
+    $id              = (int) ($data['id'] ?? 0);
+    $urlPath         = normalizePagePath($data['url_path'] ?? '');
+    $metaTitle       = trim((string) ($data['meta_title'] ?? '')) ?: null;
+    $metaDescription = trim((string) ($data['meta_description'] ?? '')) ?: null;
+    $canonicalUrl    = trim((string) ($data['canonical_url'] ?? '')) ?: null;
+    $robots          = trim((string) ($data['robots'] ?? '')) ?: null;
+    $schemaJson      = trim((string) ($data['schema_json'] ?? '')) ?: null;
+    $redirectTo      = trim((string) ($data['redirect_to'] ?? '')) ?: null;
+    $redirectCode    = !empty($data['redirect_code']) ? (int) $data['redirect_code'] : null;
+    $isActive        = !empty($data['is_active']) ? 1 : 0;
+
+    if ($urlPath === '' || $urlPath === '/' && empty($data['url_path'])) {
+        throw new InvalidArgumentException('A URL path is required.');
+    }
+    if ($schemaJson !== null) {
+        json_decode($schemaJson);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new InvalidArgumentException('Schema JSON is not valid JSON: ' . json_last_error_msg());
+        }
+    }
+    if ($redirectCode !== null && !in_array($redirectCode, [301, 302], true)) {
+        throw new InvalidArgumentException('Redirect code must be 301 or 302.');
+    }
+
+    if ($id > 0) {
+        $stmt = $mysqli->prepare(
+            'UPDATE page_rules SET url_path = ?, meta_title = ?, meta_description = ?, canonical_url = ?,
+             robots = ?, schema_json = ?, redirect_to = ?, redirect_code = ?, is_active = ?, updated_at = NOW()
+             WHERE ID = ?'
+        );
+        $stmt->bind_param(
+            'sssssssiii',
+            $urlPath, $metaTitle, $metaDescription, $canonicalUrl, $robots, $schemaJson,
+            $redirectTo, $redirectCode, $isActive, $id
+        );
+    } else {
+        $stmt = $mysqli->prepare(
+            'INSERT INTO page_rules
+             (url_path, meta_title, meta_description, canonical_url, robots, schema_json,
+              redirect_to, redirect_code, is_active, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+        );
+        $stmt->bind_param(
+            'sssssssii',
+            $urlPath, $metaTitle, $metaDescription, $canonicalUrl, $robots, $schemaJson,
+            $redirectTo, $redirectCode, $isActive
+        );
+    }
+    $ok = $stmt->execute();
+    $error = $stmt->error;
+    $stmt->close();
+    if (!$ok) {
+        throw new RuntimeException($error ?: 'Could not save this page rule.');
+    }
+    return true;
+}
+
+function deletePageRule($id, $mysqli = MYSQLI) {
+    $stmt = $mysqli->prepare('DELETE FROM page_rules WHERE ID = ?');
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $stmt->close();
+    return true;
 }

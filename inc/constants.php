@@ -12,8 +12,16 @@ define('AWS_BUCKET_NAME', getenv('AWS_BUCKET_NAME') ?: 'seat-outlet-assets');
 define('AWS_CDN_URL', getenv('AWS_CDN_URL') ?: 'https://cdn-beta.seatoutlet.com/');
 define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Lfnn9AsAAAAAOQN5tu9jU-fBVBCdYXKPgmkc8J1');
 
+// Sentry error monitoring: optional. A DSN only lets Sentry *receive* events -
+// it's not a secret in the same sense as an API key - but it still comes from
+// the environment rather than being hardcoded, same as everything else here.
+// Sentry is simply not initialized (see functions.php) when this is empty, so
+// local/dev environments without a DSN configured work exactly as before.
+define('SENTRY_DSN', getenv('SENTRY_DSN') ?: '');
+define('SENTRY_ENVIRONMENT', getenv('SENTRY_ENVIRONMENT') ?: (BASE_URL === 'https://www.tn-apis.com' ? 'production' : 'sandbox'));
+
 // Real credentials: must come from the environment, no literal fallback. A deploy
-// generates inc/env.local.php from Bitbucket's secured repository variables before
+// generates inc/env.local.php from GitHub's encrypted repository secrets before
 // this file is included - see functions.php.
 $requiredSecrets = [
     'CONSUMER_KEY',

@@ -1,6 +1,6 @@
 <?php
 // Deploy-generated file holding real secret values as putenv() calls, sourced from
-// Bitbucket repository variables at deploy time. Never committed to git - only exists
+// GitHub repository secrets at deploy time. Never committed to git - only exists
 // on a server after the "Deploy To Demo" pipeline step has run. Loaded here (rather
 // than in functions.php) so every entry point that needs the DB or constants.php
 // secrets gets them, whether it goes through functions.php or includes this file

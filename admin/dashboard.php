@@ -1,12 +1,58 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 admin_require_login();
+require_once __DIR__ . '/../functions.php';
 
 $pageTitle = 'Dashboard — Seat Outlet Admin';
-include __DIR__ . '/includes/header.php';
-?>
-        <h1 class="admin-title">Welcome, <?php echo htmlspecialchars($_SESSION['admin_name'], ENT_QUOTES, 'UTF-8'); ?></h1>
-        <p class="admin-subtitle">You're signed in to the Seat Outlet admin panel.</p>
+$currentPage = 'dashboard';
 
-        <a href="logout" class="admin-btn"><i class="bi bi-box-arrow-right"></i> Sign Out</a>
-<?php include __DIR__ . '/includes/footer.php'; ?>
+$allRules = listPageRules();
+$totalRules = count($allRules);
+$redirectCount = count(array_filter($allRules, fn($r) => !empty($r['redirect_to'])));
+$activeCount = count(array_filter($allRules, fn($r) => (int) $r['is_active'] === 1));
+
+include __DIR__ . '/includes/app-header.php';
+?>
+        <div class="row mb-3">
+            <div class="col">
+                <h2 class="page-title">Welcome, <?php echo htmlspecialchars($_SESSION['admin_name'], ENT_QUOTES, 'UTF-8'); ?></h2>
+                <div class="text-secondary">You're signed in to the Seat Outlet admin panel.</div>
+            </div>
+        </div>
+
+        <div class="row row-deck row-cards">
+            <div class="col-sm-6 col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="subheader">Page Rules</div>
+                        <div class="h1 mb-0"><?php echo (int) $totalRules; ?></div>
+                        <div class="text-secondary">Total SEO / redirect overrides</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="subheader">Active</div>
+                        <div class="h1 mb-0"><?php echo (int) $activeCount; ?></div>
+                        <div class="text-secondary">Rules currently applied</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="subheader">Redirects</div>
+                        <div class="h1 mb-0"><?php echo (int) $redirectCount; ?></div>
+                        <div class="text-secondary">301 / 302 rules configured</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <a href="page-rules" class="btn btn-primary">
+                <i class="ti ti-file-search me-1"></i> Manage Page SEO &amp; Redirects
+            </a>
+        </div>
+<?php include __DIR__ . '/includes/app-footer.php'; ?>
