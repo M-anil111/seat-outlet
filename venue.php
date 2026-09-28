@@ -1,5 +1,5 @@
-<?php 
-include 'header.php'; 
+<?php
+require_once 'functions.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -11,12 +11,20 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
-	echo '<div class="container"><p>Invalid city.</p></div>';
+	include 'header.php';
+	echo '<div class="container"><p>Invalid venue.</p></div>';
 	include 'footer.php';
 	exit;
 }
 
 $venue = getTnVenueById($id);
+
+if (empty($venue)) {
+	include 'header.php';
+	echo '<div class="container"><p>Venue not found.</p></div>';
+	include 'footer.php';
+	exit;
+}
 
 $today = date('Y-m-d');
 $params = [
@@ -32,6 +40,18 @@ $count  = $eventsResponse['count'] ?? count($events);
 
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
+
+$venueName  = $venue['text']['name'] ?? '';
+$venueCityLabel = trim(($venue['city']['text']['name'] ?? '') . ', ' . ($venue['stateProvince']['text']['abbr'] ?? ''), ', ');
+
+// --- SEO: computed before including header.php, same convention as the
+// artist-city/concerts-city/etc. pages - see functions.php. This page was
+// previously rendering with no <title> and no canonical tag at all. ---
+$pageMetaTitle       = "$venueName Tickets - $venueCityLabel | Seat Outlet";
+$pageMetaDescription = "Buy tickets to upcoming events at $venueName in $venueCityLabel. Compare prices and book securely on Seat Outlet.";
+$pageCanonicalUrl    = HOME_URL . '/venue/' . createSlug($venueName, $id);
+
+include 'header.php';
 ?>
 
 <section>

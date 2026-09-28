@@ -1,6 +1,17 @@
-<?php include 'header.php';
+<?php
+require_once 'functions.php';
+// SEO: this page previously rendered with no <title>/canonical at all.
+$pageMetaTitle       = 'Festival Tickets | Seat Outlet';
+$pageMetaDescription = 'Buy festival tickets for upcoming music and cultural festivals. Compare prices and book securely on Seat Outlet.';
+$pageCanonicalUrl    = HOME_URL . '/festival';
+include 'header.php';
 $perPage = 20;
-$festivalPath = ".1859.1989.";
+// Was ".1859.1989." (theater's own path, not festivals') - a copy-paste bug
+// that made this page show the exact same events as theater.php: real
+// duplicate content under two different URLs. LOCATION_CATEGORY_PATHS in
+// functions.php (already verified live against the sandbox API for the new
+// location pages) has the correct festivals path.
+$festivalPath = LOCATION_CATEGORY_PATHS['festivals'];
 $today = date('Y-m-d');
 $params = [
 	"filter" => "date/date ge $today and startswith(defaultCategory/path, '$festivalPath')",

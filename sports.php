@@ -1,4 +1,10 @@
-<?php include 'header.php';
+<?php
+require_once 'functions.php';
+// SEO: this page previously rendered with no <title>/canonical at all.
+$pageMetaTitle       = 'Sports Tickets | Seat Outlet';
+$pageMetaDescription = 'Buy sports tickets for upcoming games and matchups. Compare prices and book securely on Seat Outlet.';
+$pageCanonicalUrl    = HOME_URL . '/sports';
+include 'header.php';
 $perPage = 20;
 $sportsPath = ".1859.1988.";
 $today = date('Y-m-d');

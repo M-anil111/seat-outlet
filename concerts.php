@@ -1,4 +1,10 @@
-<?php include 'header.php';
+<?php
+require_once 'functions.php';
+// SEO: this page previously rendered with no <title>/canonical at all.
+$pageMetaTitle       = 'Concert Tickets | Seat Outlet';
+$pageMetaDescription = 'Buy concert tickets for upcoming shows and tours. Compare prices and book securely on Seat Outlet.';
+$pageCanonicalUrl    = HOME_URL . '/concerts';
+include 'header.php';
 $perPage = 20;
 $concertPath = ".1859.1986.";
 $today = date('Y-m-d');

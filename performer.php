@@ -1,5 +1,5 @@
-<?php 
-include 'header.php'; 
+<?php
+require_once 'functions.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -11,12 +11,20 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
+	include 'header.php';
 	echo '<div class="container"><p>Invalid performer.</p></div>';
 	include 'footer.php';
 	exit;
 }
 
 $performer = getTnPerformerById($id);
+
+if (empty($performer) || empty($performer['defaultCategory'])) {
+	include 'header.php';
+	echo '<div class="container"><p>Performer not found.</p></div>';
+	include 'footer.php';
+	exit;
+}
 
 $today = date('Y-m-d');
 $params = [
@@ -55,6 +63,15 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 	$imageType = 'artist';
 	$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
 }
+
+// --- SEO: computed before including header.php, same convention as the
+// artist-city/concerts-city/etc. pages - see functions.php. This page was
+// previously rendering with no <title> and no canonical tag at all. ---
+$pageMetaTitle       = "$artistName Tickets | Seat Outlet";
+$pageMetaDescription = "Buy verified $artistName tickets. Compare prices across sellers and find upcoming $artistName shows near you on Seat Outlet.";
+$pageCanonicalUrl    = HOME_URL . '/artist/' . strtolower($performer['uriComponent'] ?? createSlug($artistName, $id));
+
+include 'header.php';
 ?>
 
 <section class="section-featured-header text-sm-center text-md-start">

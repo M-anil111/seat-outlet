@@ -1,5 +1,5 @@
-<?php 
-include 'header.php'; 
+<?php
+require_once 'functions.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -11,12 +11,20 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
+	include 'header.php';
 	echo '<div class="container"><p>Invalid city.</p></div>';
 	include 'footer.php';
 	exit;
 }
 
 $city = getTnCityById($id);
+
+if (empty($city)) {
+	include 'header.php';
+	echo '<div class="container"><p>City not found.</p></div>';
+	include 'footer.php';
+	exit;
+}
 
 $today = date('Y-m-d');
 $params = [
@@ -32,6 +40,17 @@ $count  = $eventsResponse['count'] ?? count($events);
 
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
+
+$cityLabel = trim(($city['text']['name'] ?? '') . ', ' . ($city['stateProvince']['text']['abbr'] ?? ''), ', ');
+
+// --- SEO: computed before including header.php, same convention as the
+// artist-city/concerts-city/etc. pages - see functions.php. This page was
+// previously rendering with no <title> and no canonical tag at all. ---
+$pageMetaTitle       = "Events in $cityLabel Tickets | Seat Outlet";
+$pageMetaDescription = "Find concert, sports, and event tickets in $cityLabel. Compare prices and book securely on Seat Outlet.";
+$pageCanonicalUrl    = HOME_URL . '/city/' . createSlug($cityLabel, $id);
+
+include 'header.php';
 ?>
 
 <section>

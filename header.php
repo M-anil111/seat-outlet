@@ -80,6 +80,26 @@
         <?php include 'inc/seo-tickets.php'; ?>
     <?php }elseif (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>
         <?php include 'inc/seo-event.php'; ?>
+    <?php } else { ?>
+        <?php
+        // Fallback for every page that hasn't set $pageMetaTitle and isn't
+        // one of the hardcoded special cases above (audited: this used to
+        // be true of the large majority of pages on the site - concerts.php,
+        // performer.php, city.php, venue.php, category.php, search.php, and
+        // every static marketing page - meaning they rendered with no
+        // <title> tag and no canonical link at all). A generic, mechanical
+        // title/self-referencing canonical beats none; it's not a
+        // replacement for a page setting its own real $pageMetaTitle/
+        // $pageCanonicalUrl the way the location pages do, just a safety net
+        // so nothing ships with a blank <title> or a missing canonical.
+        $fallbackPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $fallbackSlug = trim($fallbackPath, '/');
+        $fallbackName = $fallbackSlug === '' ? 'Home' : ucwords(str_replace(['-', '_'], ' ', basename($fallbackSlug)));
+        $fallbackTitle = $fallbackName . ' | Seat Outlet';
+        $fallbackCanonical = rtrim(HOME_URL, '/') . $fallbackPath;
+        ?>
+        <title><?php echo htmlspecialchars($fallbackTitle, ENT_QUOTES, 'UTF-8'); ?></title>
+        <link rel="canonical" href="<?php echo htmlspecialchars($fallbackCanonical, ENT_QUOTES, 'UTF-8'); ?>">
     <?php } ?>
 
 </head>

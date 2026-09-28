@@ -1,5 +1,5 @@
-<?php 
-include 'header.php'; 
+<?php
+require_once 'functions.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -11,13 +11,32 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
+	include 'header.php';
 	echo '<div class="container"><p>Invalid category.</p></div>';
 	include 'footer.php';
 	exit;
 }
 
 $cat = getTnCatById($id);
-$catName = $cat['results'][0]['text']['name'];
+$catName = $cat['results'][0]['text']['name'] ?? '';
+
+if ($catName === '') {
+	include 'header.php';
+	echo '<div class="container"><p>Category not found.</p></div>';
+	include 'footer.php';
+	exit;
+}
+
+// --- SEO: computed before including header.php, same convention as the
+// artist-city/concerts-city/etc. pages - see functions.php. This page was
+// previously rendering with no <title> and no canonical tag at all. Uses
+// the incoming slug as-is (rather than reconstructing it) since this
+// page's own slug format is a separate, pre-existing convention. ---
+$pageMetaTitle       = "$catName Tickets | Seat Outlet";
+$pageMetaDescription = "Buy $catName tickets. Compare prices and book securely on Seat Outlet.";
+$pageCanonicalUrl    = HOME_URL . '/category/' . $slug;
+
+include 'header.php';
 
 $today = date('Y-m-d');
 $params = [
