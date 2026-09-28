@@ -19,12 +19,20 @@ if (SENTRY_DSN !== '') {
 }
 
 function getS3Client() {
+    // Constructing an S3Client resolves config and builds an HTTP handler
+    // stack - real work, even though it's not a network call by itself. A
+    // single page render can call this a dozen+ times (once per image
+    // existence check/upload), so it's worth building once per request.
+    static $client = null;
+    if ($client !== null) {
+        return $client;
+    }
 
     $accountId = AWS_ACCOUNT_ID;
     $accessKey = AWS_ACCESS_KEY;
     $secretKey = AWS_SECRET_KEY;
-    
-    return new S3Client([
+
+    $client = new S3Client([
         'version' => 'latest',
         'region'  => 'auto',
         'endpoint' => "https://$accountId.r2.cloudflarestorage.com",
@@ -33,6 +41,8 @@ function getS3Client() {
             'secret' => $secretKey,
         ],
     ]);
+
+    return $client;
 }
 
 function downloadImage($url) {
@@ -53,11 +63,31 @@ function downloadImage($url) {
     return $data;
 }
 
+// Nearly every page on the site calls this (indirectly, via tnRequest())
+// before it can make its real TicketNetwork API call. The `static` local
+// only avoids re-fetching within a single request - PHP-FPM/CGI processes
+// don't persist that between requests, so this was doing a full OAuth2
+// round-trip to key-manager.tn-apis.com on every single page view, even
+// though the token it gets back is valid for a full hour (`expires_in`).
+// APCu caches it across requests for that same lifetime (minus a safety
+// margin), so most page views skip this round-trip entirely. Falls back to
+// the exact previous per-request-only behavior when APCu isn't installed.
+const TN_ACCESS_TOKEN_CACHE_KEY = 'tn_access_token';
+const TN_ACCESS_TOKEN_EXPIRY_BUFFER = 60; // seconds
+
 function getTnAccessToken() {
     static $accessToken = null;
 
     if ($accessToken !== null) {
         return $accessToken;
+    }
+
+    if (function_exists('apcu_fetch')) {
+        $cached = apcu_fetch(TN_ACCESS_TOKEN_CACHE_KEY, $found);
+        if ($found) {
+            $accessToken = $cached;
+            return $accessToken;
+        }
     }
 
     $basicAuth = base64_encode(CONSUMER_KEY . ':' . CONSUMER_SECRET);
@@ -94,6 +124,12 @@ function getTnAccessToken() {
     }
 
     $accessToken = $data['access_token'];
+
+    if (function_exists('apcu_store')) {
+        $expiresIn = (int) ($data['expires_in'] ?? 3600);
+        $ttl = max(60, $expiresIn - TN_ACCESS_TOKEN_EXPIRY_BUFFER);
+        apcu_store(TN_ACCESS_TOKEN_CACHE_KEY, $accessToken, $ttl);
+    }
 
     return $accessToken;
 }
@@ -153,9 +189,33 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
     return tnRequest('/catalog/v2/events/', $params);
 }
 
+// The /catalog/v2/suggest endpoint (used for header search autocomplete)
+// only returns id+name for performers, no category data - so
+// ajax/get-suggestions.php calls this once per suggested performer to get
+// enough to render each result, meaning one autocomplete keystroke can
+// trigger several of these in a row. A performer's category assignment is
+// effectively static, so it's cached the same optional-APCu way as
+// everything else here rather than re-fetched live every time. Every
+// existing caller (performer.php, artist-*.php, etc.) benefits from this
+// too, not just the autocomplete path.
 function getTnPerformerById($performerId) {
-    $endpoint = "/catalog/v2/performers/" . (int) $performerId;
-    return tnRequest($endpoint);
+    $performerId = (int) $performerId;
+    $cacheKey = 'tn_performer:' . $performerId;
+
+    if (function_exists('apcu_fetch')) {
+        $cached = apcu_fetch($cacheKey, $found);
+        if ($found) {
+            return $cached;
+        }
+    }
+
+    $result = tnRequest('/catalog/v2/performers/' . $performerId);
+
+    if (function_exists('apcu_store')) {
+        apcu_store($cacheKey, $result, 3600);
+    }
+
+    return $result;
 }
 
 function getTnEventById($eventId) {

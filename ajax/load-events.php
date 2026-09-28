@@ -9,7 +9,7 @@ $lat       = trim($_GET['lat'] ?? '');
 $lng       = trim($_GET['lng'] ?? '');
 $startDate = trim($_GET['startDate'] ?? '');
 $endDate   = trim($_GET['endDate'] ?? '');
-$pid       = $_GET['pid'];
+$pid       = (int) ($_GET['pid'] ?? 0);
 
 $latVal = is_numeric($lat) ? (float) $lat : null;
 $lngVal = is_numeric($lng) ? (float) $lng : null;
