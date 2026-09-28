@@ -56,3 +56,6 @@ Thumbs.db
 !.env.example
 inc/env.local.php
 
+
+# Short-lived TicketNetwork response cache (tnRequestCached); the feed files in cache/ stay tracked
+cache/tn_*.json

@@ -229,6 +229,116 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
 // everything else here rather than re-fetched live every time. Every
 // existing caller (performer.php, artist-*.php, etc.) benefits from this
 // too, not just the autocomplete path.
+/*
+|--------------------------------------------------------------------------
+| Short-lived file cache for TicketNetwork reads
+|--------------------------------------------------------------------------
+| The host has no APCu (checked), so the apcu-only caches in this file were
+| no-ops in production and every performer page view re-fetched the
+| performer, its events and its related performers live (~1.5-2s TTFB).
+| cache/ is the same file cache the homepage feeds use.
+*/
+function tnRequestCached($endpoint, array $params = [], $ttl = 600) {
+    $key = 'tn_' . md5($endpoint . '?' . http_build_query($params));
+    $cached = cache_get($key, $ttl);
+    if ($cached !== false) {
+        return $cached;
+    }
+    $data = tnRequest($endpoint, $params);
+    if (!empty($data) && is_array($data) && !isset($data['code']) && !isset($data['Message'])) {
+        cache_set($key, $data);
+    }
+    return $data;
+}
+
+/**
+ * Page 1 of a performer's upcoming events, date order, cached 10 minutes.
+ * Returns [params, response]; params are what the More Events button gets
+ * so page 2+ continue the same set. No country filter: a performer page
+ * lists that performer's own dates wherever they are (the old US-only
+ * filter left international acts with an empty page).
+ */
+function getPerformerPageEvents($performerId, $perPage = 20) {
+    $params = [
+        'filter'            => 'date/date ge ' . date('Y-m-d'),
+        'performerFilter'   => 'id eq ' . (int) $performerId,
+        'sort'              => 'date/date',
+        'perPage'           => (int) $perPage,
+        'page'              => 1,
+        'includeTotalCount' => 'true',
+    ];
+    return [$params, tnRequestCached('/catalog/v2/events', $params, 600)];
+}
+
+/** Cheapest "From" price and range across a set of listed events. */
+function performerPriceSnapshot(array $events) {
+    $min = null; $max = null; $priced = 0; $tickets = 0;
+    foreach ($events as $event) {
+        $low = $event['pricingInfo']['lowPrice']['value'] ?? null;
+        if ($low !== null && (float) $low > 0) {
+            $priced++;
+            $min = $min === null ? (float) $low : min($min, (float) $low);
+            $max = $max === null ? (float) $low : max($max, (float) $low);
+        }
+        $tickets += (int) ($event['_metadata']['ticketCount'] ?? 0);
+    }
+    return [
+        'from'    => $min !== null ? '$' . number_format($min, 0) : '',
+        'to'      => $max !== null ? '$' . number_format($max, 0) : '',
+        'priced'  => $priced,
+        'tickets' => $tickets,
+    ];
+}
+
+/** BreadcrumbList + one Event node per listed event, for the performer page. */
+function buildPerformerPageJsonLd(string $artistName, int $performerId, array $events, array $breadcrumbs, string $imageUrl = '') {
+    $nodes = [];
+    $crumbs = [];
+    foreach ($breadcrumbs as $i => $crumb) {
+        $crumbs[] = ['@type' => 'ListItem', 'position' => $i + 1, 'name' => $crumb['label'] ?? '', 'item' => $crumb['url'] ?? HOME_URL];
+    }
+    $crumbs[] = ['@type' => 'ListItem', 'position' => count($crumbs) + 1, 'name' => $artistName . ' Tickets', 'item' => HOME_URL . '/artist/' . createSlug($artistName, $performerId)];
+    $nodes[] = ['@type' => 'BreadcrumbList', 'itemListElement' => $crumbs];
+
+    foreach (array_slice($events, 0, 20) as $event) {
+        $startDate = $event['date']['datetime'] ?? $event['date']['date'] ?? '';
+        if ($startDate === '') continue;
+        $price = $event['pricingInfo']['lowPrice']['value'] ?? null;
+        $node = [
+            '@type'       => 'Event',
+            'name'        => $event['text']['name'] ?? $artistName,
+            'startDate'   => $startDate,
+            'eventStatus' => 'https://schema.org/EventScheduled',
+            'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
+            'url'         => HOME_URL . '/event/' . createSlug($event['text']['name'] ?? '', $event['id'] ?? 0),
+            'location'    => [
+                '@type'   => 'Place',
+                'name'    => $event['venue']['text']['name'] ?? '',
+                'address' => [
+                    '@type'           => 'PostalAddress',
+                    'addressLocality' => $event['city']['text']['name'] ?? '',
+                    'addressRegion'   => $event['stateProvince']['text']['abbr'] ?? '',
+                    'addressCountry'  => $event['country']['alphaCode'] ?? 'US',
+                ],
+            ],
+            'performer'   => buildEventPerformerSchema($event),
+        ];
+        if ($imageUrl !== '') $node['image'] = $imageUrl;
+        if ($price !== null && (float) $price > 0) {
+            $node['offers'] = [
+                '@type'         => 'Offer',
+                'url'           => $node['url'],
+                'price'         => (string) $price,
+                'priceCurrency' => 'USD',
+                'availability'  => !empty($event['_metadata']['hasTickets']) ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+                'validFrom'     => date('Y-m-d'),
+            ];
+        }
+        $nodes[] = $node;
+    }
+    return $nodes;
+}
+
 function getTnPerformerById($performerId) {
     $performerId = (int) $performerId;
     $cacheKey = 'tn_performer:' . $performerId;
@@ -240,7 +350,8 @@ function getTnPerformerById($performerId) {
         }
     }
 
-    $result = tnRequest('/catalog/v2/performers/' . $performerId);
+    // File cache (6h) so hosts without APCu don't refetch on every view.
+    $result = tnRequestCached('/catalog/v2/performers/' . $performerId, [], 6 * 3600);
 
     if (function_exists('apcu_store')) {
         apcu_store($cacheKey, $result, 3600);
@@ -313,9 +424,9 @@ function getRelatedPerformers($categoryPath, $currentPerformerId, $limit = 20) {
         'perPage'=> $limit
     ];
 
-    $data = tnRequest('/catalog/v2/performers', $params);
+    $data = tnRequestCached('/catalog/v2/performers', $params, 6 * 3600);
 
-    $related = array_filter($data['results'], function ($p) use ($currentPerformerId) {
+    $related = array_filter($data['results'] ?? [], function ($p) use ($currentPerformerId) {
         return $p['id'] != $currentPerformerId;
     });
 
