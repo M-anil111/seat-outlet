@@ -715,10 +715,10 @@
                     <div class="mascot-panel">
                         <p class="mascot-text mb-2 fw-semibold">Ask your friend to go with you!</p>
                         <div class="social-icons">
-                            <a href="#"><i class="bi bi-facebook fs-4"></i></a>
+                            <a href="https://www.facebook.com/profile.php?id=61588886945534" target="_blank"><i class="bi bi-facebook fs-4"></i></a>
                             <a href="#"><i class="bi bi-twitter-x fs-4"></i></a>
-                            <a href="#"><i class="bi bi-youtube fs-4"></i></a>
-                            <a href="#"><i class="bi bi-instagram fs-4"></i></a>
+                            <a href="https://www.youtube.com/@SeatOutlet" target="_blank"><i class="bi bi-youtube fs-4"></i></a>
+                            <a href="https://www.instagram.com/seatoutlet/" target="_blank"><i class="bi bi-instagram fs-4"></i></a>
                         </div>
                     </div>
                 </div>

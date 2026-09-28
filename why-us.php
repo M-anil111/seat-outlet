@@ -7,7 +7,7 @@
   <div class="hero-left col-lg-6 col-xl-6 col-xxl-6">
     <h1 class="main-title mb-lg-4 mb-3 text-white">Why SeatOutlet</h1>
     <p class="text-white mb-4">You know every beat of your business: never stopping, powering through late nights and record-breaking weekends. So you deserve a partner that can support you through every event, every game and every show.</p>
-    <a href="#" class="btn btn-primary h-auto px-3 py-2">Work With Us</a>
+    <a href="/contact" class="btn btn-primary h-auto px-3 py-2">Work With Us</a>
   </div>
   
   <div class="hero-right col-lg-6 col-xl-6 col-xxl-6">
@@ -105,7 +105,7 @@
         <div class="article-type">Article</div>
         <div class="article-title">Five INTIX 2026 Takeaways Shaping The Future Of Ticketing And Live Events</div>
         <div class="article-excerpt">INTIX 2026 reinforced a reality that clients live every day. Ticketing is no longer about a single system or a single moment. It depends on how…</div>
-        <a href="#" class="article-link">View Insight <span class="arrow">→</span></a>
+        <a href="/blog" class="article-link">View Insight <span class="arrow">→</span></a>
       </div>
     </div>
  
@@ -118,7 +118,7 @@
         <div class="article-type">Article</div>
         <div class="article-title">Kicking Off STEM Learning: LAFC, Learn Fresh And SeatOutlet</div>
         <div class="article-excerpt">At SeatOutlet, our commitment to live events extends beyond the venue to creating meaningful community impact. This season, we partnered wi…</div>
-        <a href="#" class="article-link">View Insight <span class="arrow">→</span></a>
+        <a href="/blog" class="article-link">View Insight <span class="arrow">→</span></a>
       </div>
     </div>
  
@@ -131,7 +131,7 @@
         <div class="article-type" style="color:rgba(255,255,255,0.7);">Article</div>
         <div class="article-title">SeatOutlet And New York Jets Team Up With Soldiers To Sidelines</div>
         <div class="article-excerpt">As part of the NFL's Salute to Service initiative, SeatOutlet and the New York Jets supported over 100 veterans and service members as they…</div>
-        <a href="#" class="article-link">View Insight <span class="arrow">→</span></a>
+        <a href="/blog" class="article-link">View Insight <span class="arrow">→</span></a>
       </div>
     </div>
   </div>
@@ -142,7 +142,7 @@
 <div class="container">
  <div class="text-center">
     <h2 class="text-white">Want To Learn More About Our Services?</h2>
-  <a href="#" class="btn btn-primary h-auto px-3 py-2 mt-4">Work With Us</a>
+  <a href="/contact" class="btn btn-primary h-auto px-3 py-2 mt-4">Work With Us</a>
 </div>
 </div>
 </section>

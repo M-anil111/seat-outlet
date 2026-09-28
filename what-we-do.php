@@ -245,8 +245,8 @@
           Seat Outlet connects fans with live events across concerts, sports, theater, and more. Find, compare, and book tickets securely in just a few clicks.
         </p>
         <div class="d-flex flex-wrap gap-3 fade-up delay-3">
-          <a href="#" class="btn btn-primary-brand">Find Tickets Near You <i class="bi bi-arrow-right ms-1"></i></a>
-          <a href="#" class="btn btn-outline-brand">Browse Events</a>
+          <a href="/" class="btn btn-primary-brand">Find Tickets Near You <i class="bi bi-arrow-right ms-1"></i></a>
+          <a href="/tickets" class="btn btn-outline-brand">Browse Events</a>
         </div>
         <div class="d-flex flex-wrap hero-stat-row fade-up delay-4">
           <div class="hero-stat">
@@ -541,7 +541,7 @@
         <p class="mb-0">Ready to experience live events without the stress? Seat Outlet makes it easy to find and book tickets you can trust.</p>
       </div>
       <div class="col-lg-4 text-lg-end">
-        <a href="#" class="btn btn-white btn-lg">
+        <a href="/" class="btn btn-white btn-lg">
           <i class="bi bi-ticket-perforated me-2"></i>Find Tickets Near You
         </a>
       </div>

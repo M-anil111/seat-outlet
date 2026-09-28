@@ -235,7 +235,7 @@
         <h2 class="section-title">Transparent Policies &amp; Practices</h2>
         <div class="section-divider"></div>
         <p class="text-muted">We believe in clear and straightforward policies so customers always know what to expect. We encourage customers to review all details before purchase to ensure a smooth experience.</p>
-        <a href="#" class="btn common-btn mt-4">Review Full Policies</a>
+        <a href="/terms-and-conditions" class="btn common-btn mt-4">Review Full Policies</a>
       </div>
       <div class="col-lg-8">
         <div class="row g-4 pt-4 pt-lg-0 pt-md-0">
@@ -335,7 +335,7 @@
  <div class="text-center">
     <h2 class="text-white"> A Ticket Platform You Can Trust</h2>
     <p style="color:#fff;">We are committed to maintaining high standards of customer satisfaction, secure transactions, and transparent practices.</p>
-  <a href="#" class="btn btn-primary h-auto px-3 py-2 mt-4">Start Your Search Today</a>
+  <a href="/" class="btn btn-primary h-auto px-3 py-2 mt-4">Start Your Search Today</a>
 </div>
 </div>
 </section>
