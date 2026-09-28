@@ -2448,3 +2448,20 @@ function deletePageRule($id, $mysqli = MYSQLI) {
     $stmt->close();
     return true;
 }
+
+/**
+ * Front-end entry point for page_rules: looks up the rule for the current
+ * request path and, if it's a redirect, sends it and exits immediately -
+ * callers must invoke this before any HTML output. Otherwise returns the
+ * rule (or null) for header.php to use as SEO metadata overrides.
+ */
+function resolvePageRule($mysqli = MYSQLI) {
+    $path = normalizePagePath($_SERVER['REQUEST_URI'] ?? '/');
+    $rule = getPageRuleByPath($path, $mysqli);
+    if ($rule && !empty($rule['redirect_to'])) {
+        $code = (int) ($rule['redirect_code'] ?: 301);
+        header('Location: ' . $rule['redirect_to'], true, $code);
+        exit;
+    }
+    return $rule;
+}

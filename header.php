@@ -1,9 +1,16 @@
-<?php include 'functions.php'; 
+<?php include 'functions.php';
     if(!empty($_POST['startInputHeader']) && !empty($_POST['endInputHeader'])) {
         $dateTitle = $_POST['startInputHeader'] . ' to ' . $_POST['endInputHeader'];
     }else{
         $dateTitle = '';
-    }    
+    }
+
+    // Admin-configured per-URL overrides (page_rules). Must run before any
+    // HTML output: resolvePageRule() sends a redirect and exits immediately
+    // when one is configured for this exact path. Otherwise it returns the
+    // rule row (or null, the default - unchanged behavior) for the <head>
+    // block below to use in place of the hardcoded/per-page-type SEO tags.
+    $pageRule = resolvePageRule();
 ?>
 
 <!DOCTYPE html>
@@ -12,7 +19,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex nofollow">
+    <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? 'noindex nofollow', ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" type="image/png" href="/images/favicon-new.webp">
     
     <!-- Critical CSS -->
@@ -38,14 +45,25 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     </noscript>
-    <?php if ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>  
+    <?php if ($pageRule && !empty($pageRule['meta_title'])) { ?>
+        <title><?php echo htmlspecialchars($pageRule['meta_title'], ENT_QUOTES, 'UTF-8'); ?></title>
+        <?php if (!empty($pageRule['meta_description'])) { ?>
+        <meta name="description" content="<?php echo htmlspecialchars($pageRule['meta_description'], ENT_QUOTES, 'UTF-8'); ?>">
+        <?php } ?>
+        <?php if (!empty($pageRule['canonical_url'])) { ?>
+        <link rel="canonical" href="<?php echo htmlspecialchars($pageRule['canonical_url'], ENT_QUOTES, 'UTF-8'); ?>">
+        <?php } ?>
+        <?php if (!empty($pageRule['schema_json'])) { ?>
+        <script type="application/ld+json"><?php echo $pageRule['schema_json']; ?></script>
+        <?php } ?>
+    <?php } elseif ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>
         <?php include 'inc/seo.php'; ?>
-    <?php }elseif ($_SERVER['REQUEST_URI'] == '/tickets' || $_SERVER['REQUEST_URI'] == '/tickets.php') { ?>  
+    <?php }elseif ($_SERVER['REQUEST_URI'] == '/tickets' || $_SERVER['REQUEST_URI'] == '/tickets.php') { ?>
         <?php include 'inc/seo-tickets.php'; ?>
-    <?php }elseif (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>  
+    <?php }elseif (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>
         <?php include 'inc/seo-event.php'; ?>
     <?php } ?>
-    
+
 </head>
 
 <body>
