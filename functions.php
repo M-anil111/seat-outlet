@@ -2625,3 +2625,147 @@ function resolvePageRule($mysqli = MYSQLI) {
     }
     return $rule;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Reusable schema.org JSON-LD builders
+|--------------------------------------------------------------------------
+| These exist because inc/seo.php, inc/seo-event.php and inc/seo-tickets.php
+| were each hand-writing a JSON-LD <script> tag, with the same fabricated
+| Organization reviews/AggregateRating copy-pasted into all three, a
+| trailing comma in two of them that made the whole block invalid JSON
+| (verified: json_decode() on that exact fragment returns NULL with a
+| syntax error), and several schema nodes wrapped in their own nested
+| {"@context":...,"@graph":[...]} sub-document instead of being flat nodes
+| in the outer graph (also verified: that decodes as valid JSON, but the
+| resulting @graph element is a PHP/JSON array with no @type, which
+| Google's structured data parser can't resolve to any schema.org type).
+|
+| outputJsonLdGraph() builds the whole @graph as one real PHP array and
+| lets json_encode() produce the <script> tag's contents in a single call,
+| so there is no hand-written JSON left to typo a comma into.
+*/
+
+function buildOrganizationSchema() {
+    // Deliberately no "review" or "aggregateRating" here. The Organization
+    // schema in every seo include file previously had six fabricated named
+    // reviews and a hardcoded 4.8-star/1200-review AggregateRating - not
+    // backed by any reviews table or collection flow anywhere in this app.
+    // Google's structured data policies prohibit fake ratings/reviews and
+    // enforce it with a manual action that can strip rich results
+    // sitewide. Add this back once there's a real reviews data source to
+    // pull from - never with placeholder numbers.
+    return [
+        "@type" => "Organization",
+        "@id" => HOME_URL . "/#organization",
+        "name" => "Seat Outlet",
+        "url" => HOME_URL . "/",
+        "logo" => [
+            "@type" => "ImageObject",
+            "@id" => HOME_URL . "/#logo",
+            "url" => HOME_URL . "/images/seatoutlet-logo.webp"
+        ],
+        "image" => HOME_URL . "/images/seatoutlet-logo.webp",
+        "description" => "Verified ticket marketplace network to buy concert, sports, theater, and live event tickets online.",
+        "sameAs" => [
+            "https://www.facebook.com/profile.php?id=61588886945534",
+            "https://www.instagram.com/seatoutlet/",
+            "https://www.youtube.com/@SeatOutlet",
+            "https://linktr.ee/seatoutlet"
+        ]
+    ];
+}
+
+function buildWebsiteSchema() {
+    return [
+        "@type" => "WebSite",
+        "@id" => HOME_URL . "/#website",
+        "url" => HOME_URL . "/",
+        "name" => "Seat Outlet",
+        "publisher" => [
+            "@id" => HOME_URL . "/#organization"
+        ]
+    ];
+}
+
+/**
+ * @param array $breadcrumbs Same shape buildCategoryBreadcrumb() returns:
+ *                           [['label' => ..., 'url' => ...], ...]
+ * @param string|null $currentLabel The current (non-linked) page/item name,
+ *                                  appended as the last, unlinked crumb -
+ *                                  matches how the visible breadcrumb <nav>
+ *                                  on these pages renders it.
+ */
+function buildBreadcrumbListSchema(array $breadcrumbs, ?string $currentLabel = null) {
+    $items = [];
+    $position = 1;
+
+    foreach ($breadcrumbs as $crumb) {
+        if (empty($crumb['label'])) continue;
+        $items[] = [
+            "@type" => "ListItem",
+            "position" => $position++,
+            "name" => $crumb['label'],
+            "item" => !empty($crumb['url']) ? $crumb['url'] : null,
+        ];
+    }
+
+    if ($currentLabel !== null && $currentLabel !== '') {
+        $items[] = [
+            "@type" => "ListItem",
+            "position" => $position++,
+            "name" => $currentLabel,
+        ];
+    }
+
+    return [
+        "@type" => "BreadcrumbList",
+        "itemListElement" => $items,
+    ];
+}
+
+/**
+ * @param array $faqs Each element ['question' => ..., 'answer' => ...],
+ *                     already through any placeholder substitution (e.g.
+ *                     [artist_name]) so this matches the visible accordion
+ *                     content exactly - Google requires FAQPage schema to
+ *                     match what's actually shown on the page.
+ */
+function buildFaqPageSchema(array $faqs) {
+    $items = [];
+    foreach ($faqs as $faq) {
+        if (empty($faq['question']) || empty($faq['answer'])) continue;
+        $items[] = [
+            "@type" => "Question",
+            "name" => strip_tags($faq['question']),
+            "acceptedAnswer" => [
+                "@type" => "Answer",
+                "text" => strip_tags($faq['answer']),
+            ],
+        ];
+    }
+
+    if (empty($items)) return null;
+
+    return [
+        "@type" => "FAQPage",
+        "mainEntity" => $items,
+    ];
+}
+
+/**
+ * Renders one JSON-LD <script> tag from a flat array of schema.org nodes.
+ * Filters out any null entries (e.g. buildFaqPageSchema() returning null
+ * when there are no FAQs) so callers don't need to guard every call site.
+ */
+function outputJsonLdGraph(array $nodes) {
+    $nodes = array_values(array_filter($nodes));
+    if (empty($nodes)) return;
+
+    echo '<script type="application/ld+json">' . "\n";
+    echo json_encode([
+        "@context" => "https://schema.org",
+        "@graph" => $nodes,
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    echo "\n" . '</script>' . "\n";
+}
