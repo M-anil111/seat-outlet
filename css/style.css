@@ -49,6 +49,23 @@ h1,
     font-size: 70px;
     line-height: 110%;
 }
+
+/* .hero-title/.hero-section/.hero-inner get page-specific font-size overrides
+   under .cities/.privacy-page/.tickets-hero-section/etc. elsewhere in this
+   file, but the partner pages (dotbooker.php, wingcms.php, salespeep.php,
+   our-network.php) use them unscoped, so they fall through to the bare h1
+   rule above - a single unbreakable brand name like "Dotbooker" at 70px
+   doesn't fit a 320px viewport and forces real page-level horizontal
+   scroll. Verified live at 320/280px. */
+.hero-title {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+@media (max-width: 767.98px) {
+    .hero-title {
+        font-size: 44px;
+    }
+}
 h2,
 .h2 {
     font-size: 32px;
@@ -1689,6 +1706,11 @@ h3,
   @media (max-width: 576px) {
     .offer-pill {
       width: 100%;
+      /* min-width: 260px (above) isn't cleared here, so on viewports
+         narrower than ~290px the pill can't actually shrink to 100% and
+         forces horizontal page scroll - verified on tickets/city/venue/
+         category at 280px. */
+      min-width: 0;
     }
   }
 

@@ -7,6 +7,16 @@
     --admin-bg: #eef2fb;
 }
 
+/* Unlike style.css (which resets box-sizing globally), this standalone
+   sheet never did, so `.admin-input-wrap input { width: 100%; padding: ... }`
+   added its horizontal padding on top of that 100% instead of inside it -
+   confirmed live: the login password field rendered 314px wide inside a
+   272px card on a 320px viewport, pushing the whole page into horizontal
+   scroll. */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 body.admin-body {
     min-height: 100vh;
     background: var(--admin-bg);
