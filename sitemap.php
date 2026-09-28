@@ -98,6 +98,21 @@ foreach (listBlogPosts() as $post) {
     ];
 }
 
+// Top US cities by sales (same source as cities.php) and their category
+// pages. The per-city category pages are the only combinator pages listed:
+// a top city has concerts, sports and theater; deeper combinations
+// (performer x location, venue x category) stay link-only.
+foreach (getTopCities(60) as $index => $city) {
+    $citySlug = createSlug($city['label'], $city['id']);
+    $urls[] = ['loc' => HOME_URL . '/city/' . $citySlug, 'changefreq' => 'daily', 'priority' => '0.7'];
+    $urls[] = ['loc' => HOME_URL . '/event-city/' . $citySlug, 'changefreq' => 'daily', 'priority' => '0.6'];
+    if ($index < 30) {
+        foreach (['concerts-city', 'sports-city', 'theater-city'] as $prefix) {
+            $urls[] = ['loc' => HOME_URL . '/' . $prefix . '/' . $citySlug, 'changefreq' => 'daily', 'priority' => '0.6'];
+        }
+    }
+}
+
 // Live, upcoming, US events - bounded to a handful of pages so this stays
 // fast; increase MAX_EVENT_PAGES if the catalog grows well past this.
 const SITEMAP_MAX_EVENT_PAGES = 10;

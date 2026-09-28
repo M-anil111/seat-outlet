@@ -653,29 +653,59 @@ function getTopVenues($limit = 20) {
  * for free, just deduplicated by city id.
  */
 function getTopCities($limit = 60) {
-    $venues = getTopVenues($limit * 3);
-
-    $seen = [];
-    $cities = [];
-    foreach ($venues as $venue) {
-        $cityId = $venue['city']['id'] ?? null;
-        $cityName = $venue['city']['text']['name'] ?? '';
-        if (empty($cityId) || $cityName === '' || isset($seen[$cityId])) {
-            continue;
-        }
-        $seen[$cityId] = true;
-        $stateAbbr = $venue['stateProvince']['text']['abbr'] ?? '';
-        $cities[] = [
-            'id'    => $cityId,
-            'name'  => $cityName,
-            'state' => $stateAbbr,
-            'label' => trim($cityName . ', ' . $stateAbbr, ', '),
-        ];
-        if (count($cities) >= $limit) {
-            break;
-        }
+    $cacheKey = 'top_cities';
+    $cached = cache_get($cacheKey, 12 * 3600);
+    if (is_array($cached) && count($cached) >= min($limit, 10)) {
+        return array_slice($cached, 0, $limit);
     }
 
+    // /catalog/v2/cities supports the same -salesRank sort as performers and
+    // venues and carries _metadata.eventCount/ticketCount (verified live), so
+    // "top cities" is the API's own answer rather than a derivation from the
+    // top-venues list (which put one-venue towns next to New York).
+    $data = tnRequest('/catalog/v2/cities', [
+        'filter'           => "country/alphaCode eq 'US' and _metadata/hasTickets eq true",
+        'sort'             => '-salesRank',
+        'salesRankOptions' => '{"interval":"week","metric":"ticketVolume"}',
+        'perPage'          => min(200, $limit * 2),
+    ]);
+
+    $cities = [];
+    foreach ($data['results'] ?? [] as $city) {
+        $cityId = (int) ($city['id'] ?? 0);
+        $cityName = trim((string) ($city['text']['name'] ?? ''));
+        // TicketNetwork files virtual / at-home events under a placeholder
+        // "Your Home" city; it is not a place a buyer would browse.
+        if ($cityId <= 0 || $cityName === '' || strcasecmp($cityName, 'Your Home') === 0) continue;
+        if ((int) ($city['_metadata']['eventCount'] ?? 0) < 3) continue;
+        $stateAbbr = $city['stateProvince']['text']['abbr'] ?? '';
+        $cities[] = [
+            'id'         => $cityId,
+            'name'       => $cityName,
+            'state'      => $stateAbbr,
+            'stateId'    => (int) ($city['stateProvince']['id'] ?? 0),
+            'label'      => trim($cityName . ', ' . $stateAbbr, ', '),
+            'eventCount' => (int) ($city['_metadata']['eventCount'] ?? 0),
+        ];
+        if (count($cities) >= $limit) break;
+    }
+
+    if (empty($cities)) {
+        // API hiccup: derive from top venues as before rather than render nothing.
+        $seen = [];
+        foreach (getTopVenues($limit * 3) as $venue) {
+            $cityId = $venue['city']['id'] ?? null;
+            $cityName = $venue['city']['text']['name'] ?? '';
+            if (empty($cityId) || $cityName === '' || isset($seen[$cityId])) continue;
+            $seen[$cityId] = true;
+            $stateAbbr = $venue['stateProvince']['text']['abbr'] ?? '';
+            $cities[] = ['id' => $cityId, 'name' => $cityName, 'state' => $stateAbbr, 'stateId' => (int) ($venue['stateProvince']['id'] ?? 0), 'label' => trim($cityName . ', ' . $stateAbbr, ', '), 'eventCount' => 0];
+            if (count($cities) >= $limit) break;
+        }
+        return $cities;
+    }
+
+    cache_set($cacheKey, $cities);
     return $cities;
 }
 
@@ -3163,6 +3193,102 @@ function getPerformerNounForPath($categoryPath): array {
  * isn't copy-pasted four times. Echoes the HTML directly (call site is a
  * plain top-level page, not a function with output buffering set up).
  */
+/*
+|--------------------------------------------------------------------------
+| Internal links between the location pages
+|--------------------------------------------------------------------------
+| The 24 category/performer x location pages are excluded from the sitemap
+| (see sitemap.php) so they are only discoverable through links. These two
+| helpers put those links on every page that has the data for them.
+*/
+
+const LOCATION_CATEGORY_PAGES = [
+    'city'    => ['plain' => 'city',    'pages' => ['event-city' => 'All events', 'concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals']],
+    'state'   => ['plain' => 'state',   'pages' => ['events-state' => 'All events', 'concerts-state' => 'Concerts', 'sports-state' => 'Sports', 'theater-state' => 'Theater', 'festivals-state' => 'Festivals']],
+    'country' => ['plain' => 'country', 'pages' => ['concert-country' => 'Concerts', 'theater-country' => 'Theater', 'festivals-country' => 'Festivals']],
+    'venue'   => ['plain' => 'venue',   'pages' => ['concert-venue' => 'Concerts', 'theater-venue' => 'Theater', 'festivals-venue' => 'Festivals']],
+];
+
+/**
+ * "Browse {location} by category" pills. $currentPrefix (e.g. 'concerts-city')
+ * is rendered as the plain location page link instead of a self-link.
+ */
+function renderLocationCategoryLinks(string $dimension, $locationValue, string $locationLabel, string $currentPrefix = ''): void {
+    $conf = LOCATION_CATEGORY_PAGES[$dimension] ?? null;
+    if (!$conf || $locationLabel === '' || $locationValue === null || $locationValue === '') return;
+    $slug = createSlug($locationLabel, $locationValue);
+    $links = [];
+    if ($currentPrefix !== '') {
+        $links[] = ['href' => '/' . $conf['plain'] . '/' . $slug, 'text' => 'All events in ' . $locationLabel];
+    }
+    foreach ($conf['pages'] as $prefix => $label) {
+        if ($prefix === $currentPrefix) continue;
+        if ($currentPrefix === '' && $label === 'All events') continue; // plain page already is "all events"
+        $links[] = ['href' => '/' . $prefix . '/' . $slug, 'text' => $label . ' in ' . $locationLabel];
+    }
+    if (!$links) return;
+    ?>
+    <div class="tab-section content-section-detail" id="browse-<?php echo htmlspecialchars($dimension, ENT_QUOTES, 'UTF-8'); ?>">
+        <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+        <div class="d-flex flex-wrap gap-2">
+            <?php foreach ($links as $l) { ?>
+                <a href="<?php echo htmlspecialchars($l['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm"><?php echo htmlspecialchars($l['text'], ENT_QUOTES, 'UTF-8'); ?></a>
+            <?php } ?>
+        </div>
+    </div>
+    <?php
+}
+
+/**
+ * "{Performer} tickets by city / venue / state" pills built from the
+ * performer's own upcoming events, linking into artist-city / artist-venue /
+ * artist-state. Used by performer.php and the artist location renderer.
+ */
+function renderPerformerLocationLinks(string $artistName, int $performerId, array $events, string $skipDimension = ''): void {
+    $performerSlug = createSlug($artistName, $performerId);
+    $dims = [
+        'city'  => ['prefix' => 'artist-city',  'heading' => 'by City'],
+        'venue' => ['prefix' => 'artist-venue', 'heading' => 'by Venue'],
+        'state' => ['prefix' => 'artist-state', 'heading' => 'by State'],
+    ];
+    foreach ($dims as $dim => $conf) {
+        if ($dim === $skipDimension) continue;
+        $items = []; $seen = [];
+        foreach ($events as $event) {
+            switch ($dim) {
+                case 'city':
+                    $id = $event['city']['id'] ?? null;
+                    $label = trim(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
+                    break;
+                case 'venue':
+                    $id = $event['venue']['id'] ?? null;
+                    $label = (string) ($event['venue']['text']['name'] ?? '');
+                    break;
+                default:
+                    $id = $event['stateProvince']['id'] ?? null;
+                    $label = (string) ($event['stateProvince']['text']['name'] ?? '');
+            }
+            if (empty($id) || $label === '' || $label === ',' || isset($seen[$id])) continue;
+            $seen[$id] = true;
+            $items[] = ['id' => $id, 'label' => $label];
+            if (count($items) >= 8) break;
+        }
+        if (!$items) continue;
+        ?>
+        <div class="tab-section content-section-detail" id="performer-<?php echo $dim; ?>">
+            <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets <?php echo $conf['heading']; ?></h2>
+            <div class="d-flex flex-wrap gap-2">
+                <?php foreach ($items as $it) { ?>
+                    <a href="/<?php echo $conf['prefix']; ?>/<?php echo htmlspecialchars($performerSlug, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($it['label'], $it['id']), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">
+                        <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo $dim === 'venue' ? 'at' : 'in'; ?> <?php echo htmlspecialchars($it['label'], ENT_QUOTES, 'UTF-8'); ?>
+                    </a>
+                <?php } ?>
+            </div>
+        </div>
+        <?php
+    }
+}
+
 function renderCategoryCityLinksBlock(array $events, string $urlPrefix, string $categoryLabel): void {
     $cities = [];
     $seenCityIds = [];
@@ -3244,6 +3370,9 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
     $events      = $eventsResponse['results'] ?? [];
     $count       = $eventsResponse['count'] ?? count($events);
+    // Unfiltered upcoming events feed the "by city / venue / state" links,
+    // so a Taylor-Swift-in-Austin page links to her other cities too.
+    $allPerformerEvents = getTnPerformerEvents($performerId, ['filter' => 'date/date ge ' . date('Y-m-d'), 'perPage' => 100, 'sort' => 'date/date'])['results'] ?? [];
     $percent     = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
     $year        = date('Y');
 
@@ -3518,6 +3647,14 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                 </div>
             <?php } ?>
 
+            <div class="tab-section content-section-detail" id="more-tickets">
+                <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets</h2>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/artist/<?php echo htmlspecialchars(createSlug($artistName, $performerId), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">All <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets</a>
+                    <a href="/<?php echo htmlspecialchars(LOCATION_CATEGORY_PAGES[$dimension]['plain'] ?? $dimension, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($locationLabel, $locationValue), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">All events in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+                </div>
+            </div>
+            <?php renderPerformerLocationLinks($artistName, (int) $performerId, $allPerformerEvents ?? $events, $dimension); ?>
             <?php if (!empty($relatedPerformers)) { ?>
                 <div class="tab-section content-section-detail" id="fans">
                     <div class="row g-4">
@@ -3741,6 +3878,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                 </h3>
                             <?php } ?>
                         </div>
+                        <?php renderLocationCategoryLinks($dimension, $locationValue, $locationLabel, $urlPrefix); ?>
                         <div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
                             <img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
                         </div>

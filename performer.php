@@ -491,6 +491,7 @@ include 'header.php';
 				</div>
 			</div>
 		<?php } ?>
+		<?php renderPerformerLocationLinks($artistName, (int) $id, $events ?? [], 'city'); ?>
 		<?php if (!empty($relatedPerformers)) { $i = 0; ?>
 			<div class="tab-section content-section-detail" id="fans">
 				<div class="row g-4">

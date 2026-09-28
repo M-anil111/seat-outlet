@@ -164,6 +164,7 @@ include 'header.php';
 							</h3>
 						<?php } ?>
 					</div>
+					<?php renderLocationCategoryLinks('country', $code, $countryLabel); ?>
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="/images/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
 					</div>

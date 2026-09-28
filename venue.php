@@ -196,6 +196,7 @@ include 'header.php';
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
 						<img src="/images/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
 					</div>	
+					<?php renderLocationCategoryLinks('venue', $id, $venueName); ?>
 					<div class="tab-section content-section-detail mb-0" id="promocode">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Exclusive Discounts on Event Tickets</h2>
 						<p>Save on your tickets with these SeatOutlet promo codes:</p>
