@@ -1971,6 +1971,61 @@ function getTnVenueEventsCount($venueId = 0, $params = []) {
     return $count;
 }
 
+/**
+ * state.php/country.php's own event fetchers - same shape as
+ * getTnCityEvents()/getTnVenueEvents() above, for the two location
+ * dimensions that didn't have a plain (all-categories) events page yet.
+ */
+function getTnStateEvents($stateId = 0, $params = []) {
+
+    $today = date('Y-m-d');
+    if ($stateId > 0) {
+        $params['filter'] = "stateProvince/id eq $stateId and date/date ge $today";
+    }
+
+    return tnRequest('/catalog/v2/events/', $params);
+}
+
+function getTnStateEventsCount($stateId = 0, $params = []) {
+
+    $today = date('Y-m-d');
+    if ($stateId > 0) {
+        $params['filter'] = "stateProvince/id eq $stateId and date/date ge $today";
+    }
+
+    $params['page']    = 1;
+    $params['perPage'] = 500;
+
+    $json = tnRequest('/catalog/v2/events/', $params);
+
+    return (int) ($json['count'] ?? 0);
+}
+
+function getTnCountryEvents($countryCode = '', $params = []) {
+
+    $today = date('Y-m-d');
+    if ($countryCode !== '') {
+        $params['filter'] = "country/alphaCode eq '" . tnEscapeFilterValue($countryCode) . "' and date/date ge $today";
+    }
+
+    return tnRequest('/catalog/v2/events/', $params);
+}
+
+function getTnCountryEventsCount($countryCode = '', $params = []) {
+
+    $today = date('Y-m-d');
+    if ($countryCode !== '') {
+        $params['filter'] = "country/alphaCode eq '" . tnEscapeFilterValue($countryCode) . "' and date/date ge $today";
+    }
+
+    $params['page']    = 1;
+    $params['perPage'] = 500;
+
+    $json = tnRequest('/catalog/v2/events/', $params);
+
+    return (int) ($json['count'] ?? 0);
+}
+
 function getTopFestivalPerformers() {
 
     $params = [
