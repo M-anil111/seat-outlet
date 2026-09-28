@@ -2,6 +2,12 @@
 require_once __DIR__ . '/includes/auth.php';
 admin_require_guest();
 
+if (!admin_registration_is_open()) {
+    admin_flash_set('error', 'Registration is closed. Contact an existing admin for access.');
+    header('Location: login');
+    exit;
+}
+
 $errors = [];
 $nameValue = '';
 $emailValue = '';
