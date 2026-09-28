@@ -31,7 +31,7 @@ if ($token !== '' && $reset && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
 
             admin_flash_set('success', 'Your password has been updated. Please sign in.');
-            header('Location: login.php');
+            header('Location: login');
             exit;
         }
     }
@@ -47,12 +47,12 @@ include __DIR__ . '/includes/header.php';
 <?php if (!$reset): ?>
         <h1 class="admin-title">Link Expired</h1>
         <p class="admin-subtitle">This password reset link is invalid or has expired. Please request a new one.</p>
-        <a href="forgot-password.php" class="admin-btn">Request New Link <i class="bi bi-arrow-right"></i></a>
+        <a href="forgot-password" class="admin-btn">Request New Link <i class="bi bi-arrow-right"></i></a>
 <?php else: ?>
         <h1 class="admin-title">Reset Password</h1>
         <p class="admin-subtitle">Choose a new password for <?php echo htmlspecialchars($reset['email'], ENT_QUOTES, 'UTF-8'); ?>.</p>
 
-        <form method="post" action="reset-password.php" novalidate>
+        <form method="post" action="reset-password" novalidate>
             <input type="hidden" name="csrf_token" value="<?php echo admin_csrf_token(); ?>">
             <input type="hidden" name="token" value="<?php echo htmlspecialchars($token, ENT_QUOTES, 'UTF-8'); ?>">
 

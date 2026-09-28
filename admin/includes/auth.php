@@ -43,14 +43,14 @@ function admin_is_logged_in(): bool {
 
 function admin_require_login(): void {
     if (!admin_is_logged_in()) {
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 }
 
 function admin_require_guest(): void {
     if (admin_is_logged_in()) {
-        header('Location: dashboard.php');
+        header('Location: dashboard');
         exit;
     }
 }

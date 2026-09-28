@@ -31,14 +31,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->close();
 
                 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-                $resetLink = $scheme . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']) . '/reset-password.php?token=' . $token;
+                $resetLink = $scheme . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']) . '/reset-password?token=' . $token;
 
                 admin_send_password_reset_email($admin['email'], $admin['name'], $resetLink);
             }
         }
 
         admin_flash_set('success', $genericMessage);
-        header('Location: forgot-password.php');
+        header('Location: forgot-password');
         exit;
     }
 }
@@ -49,7 +49,7 @@ include __DIR__ . '/includes/header.php';
         <h1 class="admin-title">Forgot Password</h1>
         <p class="admin-subtitle">Enter your email address and we'll send you a link to reset your password.</p>
 
-        <form method="post" action="forgot-password.php" novalidate>
+        <form method="post" action="forgot-password" novalidate>
             <input type="hidden" name="csrf_token" value="<?php echo admin_csrf_token(); ?>">
 
             <div class="admin-form-group">
@@ -66,5 +66,5 @@ include __DIR__ . '/includes/header.php';
 
         <div class="admin-divider">OR</div>
 
-        <p class="admin-footer-link">Remembered your password? <a href="login.php">Sign In</a></p>
+        <p class="admin-footer-link">Remembered your password? <a href="login">Sign In</a></p>
 <?php include __DIR__ . '/includes/footer.php'; ?>

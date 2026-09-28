@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($stmt->execute()) {
                     $stmt->close();
                     admin_flash_set('success', 'Account created successfully. Please sign in.');
-                    header('Location: login.php');
+                    header('Location: login');
                     exit;
                 }
 
@@ -58,7 +58,7 @@ include __DIR__ . '/includes/header.php';
         <h1 class="admin-title">Create Admin Account</h1>
         <p class="admin-subtitle">Set up your account to access the Seat Outlet admin panel.</p>
 
-        <form method="post" action="register.php" novalidate>
+        <form method="post" action="register" novalidate>
             <input type="hidden" name="csrf_token" value="<?php echo admin_csrf_token(); ?>">
 
             <div class="admin-form-group">
@@ -100,5 +100,5 @@ include __DIR__ . '/includes/header.php';
 
         <div class="admin-divider">OR</div>
 
-        <p class="admin-footer-link">Already have an account? <a href="login.php">Sign In</a></p>
+        <p class="admin-footer-link">Already have an account? <a href="login">Sign In</a></p>
 <?php include __DIR__ . '/includes/footer.php'; ?>

@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]);
                 }
 
-                header('Location: dashboard.php');
+                header('Location: dashboard');
                 exit;
             }
         }
@@ -57,7 +57,7 @@ include __DIR__ . '/includes/header.php';
         <h1 class="admin-title">Welcome Back</h1>
         <p class="admin-subtitle">Sign in to access your Seat Outlet admin panel.</p>
 
-        <form method="post" action="login.php" novalidate>
+        <form method="post" action="login" novalidate>
             <input type="hidden" name="csrf_token" value="<?php echo admin_csrf_token(); ?>">
 
             <div class="admin-form-group">
@@ -85,7 +85,7 @@ include __DIR__ . '/includes/header.php';
                     <input class="form-check-input" type="checkbox" name="keep_signed_in" id="keep_signed_in">
                     <label class="form-check-label" for="keep_signed_in">Keep me signed in</label>
                 </div>
-                <a href="forgot-password.php">Forgot Password?</a>
+                <a href="forgot-password">Forgot Password?</a>
             </div>
 
             <button type="submit" class="admin-btn">Sign In <i class="bi bi-arrow-right"></i></button>
@@ -93,5 +93,5 @@ include __DIR__ . '/includes/header.php';
 
         <div class="admin-divider">OR</div>
 
-        <p class="admin-footer-link">Don't have an account? <a href="register.php">Register Now</a></p>
+        <p class="admin-footer-link">Don't have an account? <a href="register">Register Now</a></p>
 <?php include __DIR__ . '/includes/footer.php'; ?>
