@@ -296,7 +296,23 @@ function resizeAndConvertToWebP($imageContent, $maxWidth = 500, $quality = 80) {
     return $webpData;
 }
 
+function s3ExistsCacheKey($key) {
+    return 's3_object_exists:' . $key;
+}
+
+// Called once per performer/venue image rendered on a page (city/state
+// listing pages and "Fans Also Viewed" grids can render a dozen or more),
+// on every single page load, even for images that were verified to exist
+// moments ago. That was a real network round-trip to R2 per image, every
+// time - cached here the same optional-APCu way as page_rules.
 function s3ObjectExists($key) {
+    if (function_exists('apcu_fetch')) {
+        $cached = apcu_fetch(s3ExistsCacheKey($key), $found);
+        if ($found) {
+            return $cached;
+        }
+    }
+
     try {
         $client = getS3Client();
 
@@ -305,11 +321,22 @@ function s3ObjectExists($key) {
             'Key'    => $key
         ]);
 
-        return true;
+        $exists = true;
 
     } catch (\Aws\Exception\AwsException $e) {
-        return false;
+        $exists = false;
     }
+
+    if (function_exists('apcu_store')) {
+        // Once uploaded, an image essentially never disappears - cache a hit
+        // for a full day. Cache a miss for only a minute so an image
+        // processAndStoreImage() is about to upload (it calls this right
+        // beforehand) is reflected on the very next request, not stuck
+        // behind a long TTL.
+        apcu_store(s3ExistsCacheKey($key), $exists, $exists ? 86400 : 60);
+    }
+
+    return $exists;
 }
 
 function uploadImageToS3($imageContent, $key, $contentType) {
@@ -1577,6 +1604,10 @@ function processAndStoreImage($imageUrl, $name, $type) {
     if (!$webpImage) return '';
 
     uploadImageToS3($webpImage, $key, 'image/webp');
+
+    if (function_exists('apcu_store')) {
+        apcu_store(s3ExistsCacheKey($key), true, 86400);
+    }
 
     return getS3PublicUrl($key);
 }
