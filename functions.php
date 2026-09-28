@@ -4281,12 +4281,29 @@ function extractSeoContentSignals($html) {
     }
 
     // Remove the shared chrome so word count/keyword/link checks only see
-    // this page's own content, not the nav menu or footer link list on
-    // every single page.
+    // this page's own content, not the nav menu, footer link list, ticker
+    // topbar, or the shared "Our 100% Guarantee"/"Event information"
+    // modal-and-offcanvas templates every page includes - all identical on
+    // every page, so left in place they'd make every page's content look
+    // the same to the scorer. .header-top-section (header.php) wraps the
+    // topbar+ticker AND the <header> tag together, so tag-only removal
+    // missed the topbar/ticker text sitting next to <header> inside it.
     foreach (['header', 'nav', 'footer', 'script', 'style', 'noscript'] as $tag) {
-        $nodes = $xpath->query("//{$tag}");
-        foreach ($nodes as $node) {
+        foreach ($xpath->query("//{$tag}") as $node) {
             $node->parentNode->removeChild($node);
+        }
+    }
+    $chromeSelectors = [
+        "//div[contains(concat(' ', normalize-space(@class), ' '), ' header-top-section ')]",
+        "//*[@id='mobileMenu']",
+        "//*[@id='staticBackdrop']",
+        "//*[@id='offcanvasRight']",
+    ];
+    foreach ($chromeSelectors as $selector) {
+        foreach ($xpath->query($selector) as $node) {
+            if ($node->parentNode) {
+                $node->parentNode->removeChild($node);
+            }
         }
     }
 

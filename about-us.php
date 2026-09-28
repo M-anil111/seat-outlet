@@ -453,15 +453,16 @@
             <?php echo getContentBlock('/about-us', 'hero-story', '
             <h1 class="main-title mb-lg-4 mb-3">Our Story</h1>
             <p class="text-white mb-3">
-              SeatOutlet was created to make live events easier to access for fans everywhere.
-              We focus on simplifying ticket discovery while delivering a secure and reliable
-              buying experience. Our platform connects fans with verified ticket sources so they
-              can enjoy concerts, sports, theatre, and live entertainment without stress.
+              SeatOutlet is a trusted ticket marketplace created to make live events easier to
+              access for fans everywhere. We focus on simplifying ticket discovery while
+              delivering a secure and reliable buying experience. Our platform connects fans
+              with verified ticket sources so they can enjoy concerts, sports, theatre, and
+              live entertainment without stress.
             </p>
             <p class="text-white mb-4">
               We believe unforgettable moments should be easy to reach, which is why SeatOutlet
               continues building smarter tools and trusted partnerships that bring fans closer
-              to the events they love.
+              to the events they love - backed by our <a class="text-white" href="/guarantee">100% guarantee</a>.
             </p>'); ?>
             <button type="button" class="btn-primary btn px-4">
               Work With Us
@@ -484,16 +485,14 @@
       <div class="container">
         <div class="text-center mb-lg-5 mb-4">
           <span class="section-label">About Us</span>
-          <h2 class="section-title mt-2">Built for Fans, Built for Live</h2>
+          <h2 class="section-title mt-2">A Trusted Ticket Marketplace Built for Fans, Built for Live</h2>
         </div>
 
         <div class="row align-items-center">
-          <!-- Left: Image / Logo -->
+          <!-- Left: Image -->
           <div class="col-md-5">
             <div class="about-image-wrapper">
-              <div class="about-image-placeholder">
-                <span class="about-logo-initial">S</span>
-              </div>
+              <img src="/images/team-event.webp" class="img-fluid rounded" alt="The trusted ticket marketplace team at a live event" loading="lazy">
             </div>
           </div>
 
@@ -511,13 +510,15 @@
               customer-first service to make ticket purchasing simple and dependable.
             </p>
             <p>
-              Our team focuses on creating intuitive tools that help customers compare seating options,
-              understand pricing clearly, and secure tickets confidently. We are continuously improving
-              our platform to support fans, event organizers, and ticket providers.
+              As a trusted ticket marketplace, our team focuses on creating intuitive tools that help
+              customers compare seating options, understand pricing clearly, and secure tickets
+              confidently. We are continuously improving our platform to support fans, event
+              organizers, and ticket providers.
             </p>
             <p>
               SeatOutlet is committed to delivering smooth event experiences from search to checkout
-              and beyond.
+              and beyond, in an industry that has grown alongside the modern
+              <a href="https://en.wikipedia.org/wiki/Concert" target="_blank" rel="noopener">live concert</a> scene.
             </p>'); ?>
           </div>
         </div>
@@ -536,6 +537,11 @@
                     Our industry moves at a fast pace, constantly evolving with new technologies, trends, and customer expectations. We stay ahead by continuously adapting, innovating, and improving our services to deliver reliable and forward-thinking solutions for our clients.
                     </p>
                 </div>
+        <div class="d-flex flex-wrap gap-3 px-4 px-xxl-5 mb-4">
+          <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Live stage performance at an event booked through our trusted ticket marketplace" loading="lazy">
+          <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Concert crowd, part of our trusted ticket marketplace network" loading="lazy">
+          <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Fans at a live event on our trusted ticket marketplace" loading="lazy">
+        </div>
         <div class="industry-slider">
           <!-- 2022 -->
           <div class="industry-slide">
@@ -610,6 +616,17 @@
           </div>
         </div>
       </div>
+      <div class="container px-4 px-xxl-5 mt-4">
+        <p class="text-white">
+          Every improvement we make to this trusted ticket marketplace starts with the same question:
+          does this make it easier for a fan to find, compare, and book the tickets they actually want?
+          That's why we've focused on the fundamentals - clear pricing with no surprise fees at
+          checkout, a seat map that shows exactly what you're buying, and customer support that
+          answers real questions instead of routing you through a maze of automated replies. As a
+          trusted ticket marketplace, we work directly with venues, promoters, and verified resellers
+          so the inventory on our platform reflects real availability, not placeholder listings.
+        </p>
+      </div>
     </section>
 
     <!-- SECTION 4 — GLOBAL PRESENCE -->
@@ -623,6 +640,9 @@
                 <p class="text-dark mb-3">
                   SeatOutlet helps customers access events across major cities and venues around the world.
                   Our growing network ensures fans can discover live entertainment wherever they travel or live.
+                  As a trusted ticket marketplace, we continue adding new markets, venues, and event
+                  categories so that whether you're planning a trip abroad or looking for something to do
+                  close to home, there's a real, verified event waiting for you to book.
                 </p>
             </div>
         </div>

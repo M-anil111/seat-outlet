@@ -249,8 +249,10 @@ include 'header.php';
         <div class="container">
             <div class="row justify-content-center text-center">
                 <div class="col-lg-9 hero-inner">
-                    <h1 class="hero-title">What Our Customers Say</h1>
-                    <p class="hero-subtitle">Don't just take our word for it - hear from thousands of satisfied customers who have discovered amazing events and secured their tickets through SeatOutlet</p>
+                    <h1 class="hero-title">Customer Testimonials: What Our Customers Say</h1>
+                    <p class="hero-subtitle">Don't just take our word for it - read customer testimonials from thousands of satisfied customers who have discovered amazing events and secured their tickets through SeatOutlet, backed by our
+                    <a href="/guarantee">satisfaction guarantee</a>. From last-minute concert tickets to
+                    season-long sports packages, these are the moments our customers came back to tell us about.</p>
                 </div>
             </div>
         </div>
@@ -271,6 +273,14 @@ include 'header.php';
         <div class="alert alert-warning" role="alert">
             <strong>Note:</strong> The testimonials and stats below are illustrative examples while we build out real customer review collection. Real verified testimonials will replace this content soon.
         </div>
+        <p class="mt-3">
+          Customer testimonials matter because they're one of the few signals a new visitor has to
+          judge whether a marketplace actually delivers on its promises. We take that seriously, which
+          is why we're building a real collection system instead of just writing quotes ourselves -
+          once it's live, every testimonial on this page will link back to a verifiable order, and
+          you'll be able to filter by event type, city, or ticket category to see feedback relevant to
+          what you're planning to book.
+        </p>
     </div>
 
     <!-- Testimonials Content -->
@@ -387,8 +397,10 @@ include 'header.php';
             </div>
 
             <div class="stats-section">
-                <h2>Trusted by Thousands</h2>
-                <p>Join the SeatOutlet community and discover amazing events near you</p>
+                <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded mb-3" alt="Fans who left customer testimonials for Seat Outlet at a live event" loading="lazy">
+                <h2>Real Customer Testimonials, Trusted by Thousands</h2>
+                <p>Join the SeatOutlet community and discover amazing events near you. Read more about what drives genuine
+                <a href="https://en.wikipedia.org/wiki/Customer_satisfaction" target="_blank" rel="noopener">customer satisfaction</a>.</p>
                 <div class="stats-grid">
                     <div class="stat-item">
                         <h2>50K+</h2>
@@ -407,6 +419,21 @@ include 'header.php';
                         <p>Customer Support</p>
                     </div>
                 </div>
+                <div class="d-flex justify-content-center flex-wrap gap-3 mt-4">
+                    <img src="/images/team-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Team behind real customer testimonials" loading="lazy">
+                    <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Live event featured in customer testimonials" loading="lazy">
+                    <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Concert fans sharing customer testimonials" loading="lazy">
+                </div>
+                <p class="mt-4 text-center">
+                  If you've booked with us before, we'd genuinely like to hear how it went - good or
+                  bad. Real customer testimonials, including the critical ones, are how a ticket
+                  marketplace actually improves over time. Once our verified review collection system
+                  launches, you'll be able to leave feedback directly from your order confirmation, no
+                  separate account or login required, and every submitted review will be checked
+                  against a real order before it's published on this page. Until then, please treat the
+                  examples shown above as a preview of the intended format, not as a record of any
+                  actual customer feedback we have collected so far from real ticket buyers.
+                </p>
             </div>
         </div>
     </section>

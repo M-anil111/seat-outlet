@@ -9,12 +9,12 @@ $festivalNames = getTopFestivalPerformers();
 
     <!-- Slide 1 – Concert / Event -->
     <div class="slide">
-      <img src="/images/home-slider.webp" alt="Live Concert Event" laoding="eager" fetchpriority="high" />
+      <img src="/images/home-slider.webp" alt="Ticket Marketplace - Live Concert Event" laoding="eager" fetchpriority="high" />
       <div class="slide-overlay"></div>
       <div class="slide-caption">
         <span class="tag">Live Events</span>
         <h2>Experience Live Events<br>Like Never Before</h2>
-        <p>From sold-out concerts to must-see sports and theater shows discover verified tickets at competitive prices across our trusted marketplace network.</p>
+        <p>From sold-out concerts to must-see sports and theater shows discover verified tickets at competitive prices across our trusted ticket marketplace network.</p>
         <a href="/tickets" class="btn-slide">Explore Events</a>
       </div>
     </div>
@@ -110,7 +110,7 @@ $festivalNames = getTopFestivalPerformers();
 
         <!-- Left Heading -->
         <div class="col-lg-12">
-          <h3 class="fw-bold mb-lg-0 mb-3 so-experieance">Experience Live Events with Confidence</h3>
+          <h3 class="fw-bold mb-lg-0 mb-3 so-experieance">Your Ticket Marketplace for Live Events, with Confidence</h3>
         </div>
         <div class="row g-3">
         <!-- Feature 1 -->
@@ -130,7 +130,7 @@ $festivalNames = getTopFestivalPerformers();
             <i class="bi bi-shield-check text-white feature-icon"></i>
             <div>
               <div class="fw-bold">Millions of Tickets Sold</div>
-              <small>Trusted marketplace connecting fans since day one</small>
+              <small>Trusted ticket marketplace connecting fans since day one</small>
             </div>
           </div>
         </div>
@@ -183,6 +183,12 @@ $festivalNames = getTopFestivalPerformers();
     <h2 class="section__title section__title--center fw-bold fs-4 mb-4">
       Browse by Categories
     </h2>
+    <p class="text-center mb-4">
+      Our ticket marketplace covers concerts, sports, theater, and festivals across the country, so
+      whether you're after front-row seats for a stadium tour or last-minute tickets to a local show,
+      there's a category for it below. Every listing on our ticket marketplace is sourced from
+      verified sellers, so you can compare pricing and seating options with confidence before you buy.
+    </p>
     <div class="categories__grid">
       <div class="categories__col">
         <h3 class="categories__heading">Concerts</h3>
@@ -359,6 +365,7 @@ $festivalNames = getTopFestivalPerformers();
 <section class="section reasons teams-nearby py-md-5 py-4 aria-labelledby="reasons-heading">
   <div class="container">
     <h2 id="reasons-heading" class="section__title section__title--center fw-bold fs-4 mb-lg-5 mb-4">The Seat Outlet Advantage</h2>
+    <p class="text-center mb-4">Here's why fans choose our ticket marketplace for every concert, game, and show.</p>
     <div class="reasons__grid">
       <article class="reason-card">
         <div class="reason-card__icon">

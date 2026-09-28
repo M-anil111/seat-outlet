@@ -6,7 +6,7 @@
         <div class="row align-items-center">
   <div class="hero-left col-lg-6 col-xl-6 col-xxl-6">
     <h1 class="main-title mb-lg-4 mb-3 text-white">Why SeatOutlet</h1>
-    <p class="text-white mb-4">You know every beat of your business: never stopping, powering through late nights and record-breaking weekends. So you deserve a partner that can support you through every event, every game and every show.</p>
+    <p class="text-white mb-4">As a ticket marketplace partner, you know every beat of your business: never stopping, powering through late nights and record-breaking weekends. So you deserve a partner that can support you through every event, every game and every show.</p>
     <a href="/contact" class="btn btn-primary h-auto px-3 py-2">Work With Us</a>
   </div>
   
@@ -23,10 +23,20 @@
 <!-- ── PARTNERSHIP ── -->
 <section class="partnership container mt-5">
   <div class="partnership-left">
-    <h2>Success Built On <br class="so-nobrake">Partnership &amp; <br class="so-nobrake">Innovation</h2>
+    <h2>A Ticket Marketplace Partner Built On <br class="so-nobrake">Partnership &amp; <br class="so-nobrake">Innovation</h2>
   </div>
   <div class="partnership-right">
-    <p>We're honored to partner with you and set your business up for success with industry-leading insights, unrivaled reach and easy-to-use, streamlined tools.</p>
+    <p>We're honored to partner with you and set your business up for success with industry-leading insights, unrivaled reach and easy-to-use, streamlined tools. Read more about the
+    <a href="https://en.wikipedia.org/wiki/Ticket_(admission)" target="_blank" rel="noopener">modern ticketing industry</a> we operate in.</p>
+    <p>
+      Innovation, for us, isn't a buzzword on a slide deck - it's the reason our platform keeps
+      changing while the fundamentals of a good ticket marketplace partner stay the same: be honest
+      about pricing, be fast when something goes wrong, and make it easy for fans to find what
+      they're looking for. We invest in the parts of the experience that are easy to overlook, like
+      how quickly a search result loads or how clearly a seat map communicates what you're actually
+      buying, because those details are what turn a first-time buyer into a repeat customer, and a
+      repeat customer is what makes any ticket marketplace partner worth keeping around.
+    </p>
   </div>
 </section>
  
@@ -35,14 +45,15 @@
   <div class="card-text">
     
       <div class="section-tag text-white fw-bolder">Our Team</div>
-      <h3>Our people and the support they provide are one of our biggest strengths and your greatest benefits.</h3>
-    
-   
-      
-      <a href="#">Get To Know Us <span class="arrow">→</span></a>
-   
+      <h3>As your ticket marketplace partner, our people and the support they provide are one of our biggest strengths and your greatest benefits.</h3>
+
+
+
+      <a href="/about-us">Get To Know Us <span class="arrow">→</span></a>
+
   </div>
   <div class="card-stat">
+    <img src="/images/team-event.webp" class="img-fluid rounded mb-3" alt="Seat Outlet ticket marketplace partner team" loading="lazy">
     <div class="stat-circle">
       <span class="stat-number text-primary">4.1</span>
       <span class="stat-label fw-bolder text-black">Trust Score<br>The most trusted brand in ticketing</span>
@@ -56,6 +67,7 @@
     
       <div class="stat-big">2017</div>
       <div class="stat-sublabel fw-bolder text-black">Year SeatOutlet Was Founded in Canada</div>
+      <img src="/images/stage.webp" class="img-fluid rounded mt-3" alt="Live event booked through your ticket marketplace partner" loading="lazy">
 
   </div>
   <div class="card-text dark">
@@ -64,9 +76,10 @@
       <?php echo getContentBlock('/why-us', 'founding-story', '
       <h3 class="mb-4">Founded in Canada in 2017, we\'re the partner that\'s investing in you and your fans, to keep you on the pulse of what\'s next.</h3>'); ?>
       <a href="/about-us">See Our Journey <span class="arrow">→</span></a>
+      <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded mt-3" alt="Fans supported by our ticket marketplace partner network" loading="lazy">
     </div>
-    
-  
+
+
 </div>
  
 <!-- ── CLIENTS CARD ── -->
@@ -75,8 +88,15 @@
     
       <div class="section-tag text-white fw-bolder">Our Clients</div>
       <h3>Trusted by the most recognized clients in sports, festivals, venues and brands around the world.</h3>
-    
-    <a href="#">Learn More <span class="arrow">→</span></a>
+      <p class="text-white mb-3">
+        As a ticket marketplace partner, we know that every venue, festival, and brand has different
+        needs - a stadium managing thousands of seats per game is solving a different problem than a
+        boutique venue running a handful of shows a year. That's why our approach starts with
+        understanding your event calendar, your audience, and your existing ticketing setup before we
+        talk about tools. A ticket marketplace partner that doesn't take the time to understand your
+        business isn't actually a partner - it's just another vendor.
+      </p>
+    <a href="/contact">Learn More <span class="arrow">→</span></a>
   </div>
   <div class="card-stat">
     <div class="stat-circle">
@@ -143,6 +163,13 @@
 <div class="container">
  <div class="text-center">
     <h2 class="text-white">Want To Learn More About Our Services?</h2>
+    <p class="text-white mb-3" style="max-width:760px; margin-left:auto; margin-right:auto;">
+      Whether you're a venue looking for a reliable ticket marketplace partner, a festival organizer
+      planning your next event, or a brand exploring a live-events sponsorship, our team is ready to
+      talk through what a partnership would actually look like for you - no generic pitch decks,
+      just a straightforward conversation about your goals and how we can help. Reach out below and
+      a member of our team will personally follow up to schedule a time that works well for you.
+    </p>
   <a href="/contact" class="btn btn-primary h-auto px-3 py-2 mt-4">Work With Us</a>
 </div>
 </div>

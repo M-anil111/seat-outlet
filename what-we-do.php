@@ -250,7 +250,7 @@ include 'header.php';
         <div class="hero-tag fade-up"><i class="bi bi-ticket-perforated me-1"></i> Trusted Ticket Marketplace</div>
         <h1 class="fade-up delay-1">Your Seat<br>Awaits <em>You</em></h1>
         <p class="hero-sub fade-up delay-2">
-          <?php echo getContentBlock('/what-we-do', 'hero-sub', 'Seat Outlet connects fans with live events across concerts, sports, theater, and more. Find, compare, and book tickets securely in just a few clicks.'); ?>
+          <?php echo getContentBlock('/what-we-do', 'hero-sub', 'We make ticket buying simple: Seat Outlet connects fans with live events across concerts, sports, theater, and more. Find, compare, and book tickets securely in just a few clicks.'); ?>
         </p>
         <div class="d-flex flex-wrap gap-3 fade-up delay-3">
           <a href="/" class="btn btn-primary-brand">Find Tickets Near You <i class="bi bi-arrow-right ms-1"></i></a>
@@ -316,8 +316,11 @@ include 'header.php';
       <div class="col-lg-5">
         <div class="section-eyebrow">How It Works</div>
         <h2 class="mb-3">Making Event Ticket Buying Simple</h2>
+        <img src="/images/stage.webp" class="img-fluid rounded mb-3" style="max-width:200px;" alt="Live shows made ticket buying simple" loading="lazy">
         <div class="section-divider"></div>
-        <p class="text-secondary">Finding tickets should not be complicated. At Seat Outlet, we simplify the entire process from search to checkout so you can spend less time searching and more time enjoying your event.</p>
+        <p class="text-secondary">Finding tickets should not be complicated. At Seat Outlet, we simplify the entire process from search to checkout so you can spend less time searching and more time enjoying your
+        <a href="https://en.wikipedia.org/wiki/Live_event" target="_blank" rel="noopener">live event</a>.</p>
+        <img src="/images/event-ticket-buying.webp" class="img-fluid rounded mt-3" alt="Making ticket buying simple on Seat Outlet" loading="lazy">
       </div>
       <div class="col-lg-6 offset-lg-1">
         <div class="d-flex flex-column gap-4">
@@ -350,6 +353,14 @@ include 'header.php';
             </div>
           </div>
         </div>
+        <p class="text-secondary mt-4">
+          We make ticket buying simple by removing the steps that don't need to be there - no account
+          required just to browse, no forced newsletter sign-up before checkout, and no last-minute fees
+          that weren't shown up front. If a step in the process doesn't help you get to your seat faster
+          or with more confidence, we work to remove it. Ticket buying simple isn't a slogan here - it's
+          a design constraint we hold every new feature to before it ships, and it's why we keep coming
+          back to the same question: does this make ticket buying simpler, or just different?
+        </p>
       </div>
     </div>
   </div>
@@ -546,7 +557,11 @@ include 'header.php';
     <div class="row align-items-center g-4">
       <div class="col-lg-8">
         <h2 class="mb-2">Book Your Next Event with Confidence</h2>
-        <p class="mb-0">Ready to experience live events without the stress? Seat Outlet makes it easy to find and book tickets you can trust.</p>
+        <p class="mb-0">Ready to experience live events without the stress? We make ticket buying simple - Seat Outlet makes it easy to find and book tickets you can trust.</p>
+        <div class="d-flex flex-wrap gap-3 mt-3">
+          <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:180px;" alt="Concert tickets made ticket buying simple" loading="lazy">
+          <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:180px;" alt="Fans who found ticket buying simple with Seat Outlet" loading="lazy">
+        </div>
       </div>
       <div class="col-lg-4 text-lg-end">
         <a href="/" class="btn btn-white btn-lg">

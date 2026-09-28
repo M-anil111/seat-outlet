@@ -107,9 +107,11 @@ include 'header.php';
 
                 <!-- 1 -->
                 <div class="policy-section" id="section-1">
+                    <img src="/images/cta-banner.webp" class="img-fluid rounded mb-3" alt="Seat Outlet promo codes for concerts, sports and events" loading="lazy">
                     <h2> Exclusive Promo Codes for Concerts, Sports & Events</h2>
                     <p>
-                    <p>Save more on every event you love with our exclusive <strong>ticket promo codes</strong>. Whether you're booking tickets for <strong>concerts, sports games, or theater shows, our deals</strong> help you get the best seats at the best prices.</p>
+                    <p>Save more on every event you love with our exclusive <strong>ticket promo codes</strong>. Whether you're booking tickets for <strong>concerts, sports games, or theater shows, our deals</strong> help you get the best seats at the best prices - see our full
+                    <a href="/tickets">ticket listings</a> to get started.</p>
 <p>Welcome to the official <strong>Deals &amp; Promotions</strong> page of Seat Outlet, where affordable entertainment meets unforgettable experiences. We believe live events should be accessible to everyone, which is why we <strong>regularly offer verified promo codes</strong> to help you save on your next booking.</p>
 <p>From <strong>high-energy concerts and sold-out sports events</strong> to <strong>family-friendly shows and theater performances</strong>, our<strong> discount codes</strong> are designed to make every moment more affordable without compromising on experience.</p>
 
@@ -126,7 +128,8 @@ include 'header.php';
                     <li>Get more value on <strong>group bookings and special occasions</strong></li>
                     <li><strong>Updated regularly</strong> with fresh offers</li>
                     </ul>
-                    <p>Whether you're planning a weekend outing, a <strong>date night, or a big group event</strong>, our <strong>deals make it easier to enjoy premium</strong> experiences for less.</p>
+                    <p>Whether you're planning a weekend outing, a <strong>date night, or a big group event</strong>, our <strong>deals make it easier to enjoy premium</strong> experiences for less - the same
+                    <a href="https://en.wikipedia.org/wiki/Coupon" target="_blank" rel="noopener">discount-code approach</a> used across retail.</p>
 
                 </div>
                 <div class="tab-section content-section-detail mb-0" id="promocode">
@@ -197,6 +200,11 @@ include 'header.php';
 
                 <!-- 4 -->
                 <div class="policy-section" id="section-4">
+                    <div class="d-flex flex-wrap gap-3 mb-3">
+                        <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Concert tickets available with our promo codes" loading="lazy">
+                        <img src="/images/event-basketball.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Sports tickets available with our promo codes" loading="lazy">
+                        <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Theater and live show tickets with our promo codes" loading="lazy">
+                    </div>
                     <h2>Tips to Maximize Your Savings</h2>
                     <p>To get the most out of our deals, keep these tips in mind:</p>
 <ul>

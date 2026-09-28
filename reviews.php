@@ -375,7 +375,7 @@ include 'header.php';
                 <div class="mb-4">
                     <p class="text-uppercase text-muted small">DISCOVER LIVE EVENTS</p>
                     <h1 class="reviews-title mt-2 mb-lg-4 mb-3">SeatOutlet Customer Reviews</h1>
-                    <h2 class="reviews-subtitle">Customer Feedback – SeatOutlet</h2>
+                    <h2 class="reviews-subtitle">Customer Reviews &amp; Feedback – SeatOutlet</h2>
                 </div>
 
                 <!--
@@ -464,7 +464,8 @@ include 'header.php';
                         <div class="col-12 col-lg-3 col-md-4">
                             <div class="overall-rating h-100 align-items-center">                                
                                 <p class="percentage-value mb-1">89%</p>
-                                <p class="percentage-desc small text-center">of customers say they would purchase tickets again through SeatOutlet.</p>
+                                <p class="percentage-desc small text-center">of customers who left reviews say they would purchase tickets again through SeatOutlet - read more customer reviews below, or see our
+                                <a href="/guarantee">satisfaction guarantee</a>.</p>
                             </div>
                         </div>
                     </div>
@@ -723,7 +724,7 @@ include 'header.php';
                 <div class="sidebar-sticky">
                     <!-- Crowd/Event Image -->
                     <div class="sidebar-image mb-4">
-                        <img src="/images/crowd-at-concert-or-event.webp" alt="Crowd at concert or event" class="img-fluid rounded">
+                        <img src="/images/crowd-at-concert-or-event.webp" alt="Fans who left customer reviews at a live event" class="img-fluid rounded">
                     </div>
                     <!-- Trust Badges Panel -->
                     <div class="trust-panel mb-4 bg-white border-0">

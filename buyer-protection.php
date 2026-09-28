@@ -207,8 +207,12 @@
 
                 <!-- 1 -->
                 <div class="policy-section" id="section-1">
-                    <h2> Trusted Purchase Protection</h2>
+                    <img src="/images/secure-payment-p3.png" class="img-fluid rounded mb-3" alt="Buyer protection secures every ticket order" loading="lazy">
+                    <h2>Buyer Protection: Trusted Purchase Protection</h2>
                     <p>
+                    Our buyer protection guarantee is backed by the same
+                    <a href="https://www.ftc.gov/consumer-advice" target="_blank" rel="noopener">consumer-safety principles the FTC recommends</a>
+                    for online purchases.
                     </p>
                     <p>To help ensure a safe experience, orders placed through the marketplace typically include protections such as:</p>
 <ul>
@@ -221,10 +225,11 @@
 
                 </div>
 
-               
+
                 <div class="policy-section" id="section-10">
                     <h2>Our Commitment</h2>
-                    <p>We want you to buy with confidence. Our Buyer Protection Guarantee is designed to make sure you receive the tickets you ordered and enjoy your event without worry.</p>
+                    <p>We want you to buy with confidence. Our Buyer Protection Guarantee is designed to make sure you receive the tickets you ordered and enjoy your event without worry - see our
+                    <a href="/guarantee">full guarantee policy</a> for details.</p>
                 </div>
             </div>
         </div>
