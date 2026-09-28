@@ -59,10 +59,7 @@ if (!empty($results['results'])) {
                   "addressCountry" => "US"
               ]
           ],
-          "performer" => [
-              "@type" => "PerformingGroup",
-              "name" => $event['performers'][0]['name'] ?? ($event['text']['name'] ?? '')
-          ],
+          "performer" => buildEventPerformerSchema($event),
 
           "offers" => [
               "@type" => "Offer",

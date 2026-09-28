@@ -15,9 +15,9 @@ $params = [
 ];
 $year = date('Y');
 $results = getTheaterCatEvents();
-$total_count = $results['totalCount'];
+$total_count = $results['totalCount'] ?? 0;
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-$events = $results['results'];
+$events = $results['results'] ?? [];
 $count = count($events);
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 ?>
@@ -155,9 +155,9 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 								</div>
 							<?php } ?>
 						<?php } else { ?>
-							<h4 style="padding: 20px;">
+							<h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
 								No Events found!
-							</h4>
+							</h3>
 						<?php } ?>
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">

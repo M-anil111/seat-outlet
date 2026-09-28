@@ -158,9 +158,9 @@ include 'header.php';
 								</div>
 							<?php } ?>
 						<?php } else { ?>
-							<h4 style="padding: 20px;">
+							<h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
 								No events found in <?php echo htmlspecialchars($countryLabel, ENT_QUOTES, 'UTF-8'); ?> right now.
-							</h4>
+							</h3>
 						<?php } ?>
 					</div>
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">

@@ -1,4 +1,15 @@
-<?php include 'functions.php';
+<?php
+// Was a plain include (not include_once). Harmless as long as every page
+// included header.php as its very first statement (the original,
+// universal pattern), but a real fatal "Cannot redeclare function" bug for
+// every page built during this engagement that does require_once
+// 'functions.php' BEFORE include 'header.php' - guarantee.php, bbb.php,
+// city.php, venue.php, category.php, performer.php, state.php, country.php,
+// the partner pages, and more (~20 files). Caught by actually executing
+// these pages end to end against a live local PHP server + MariaDB
+// instance, not by php -l or the static checkers, which don't catch
+// runtime double-inclusion.
+include_once 'functions.php';
     if(!empty($_POST['startInputHeader']) && !empty($_POST['endInputHeader'])) {
         $dateTitle = $_POST['startInputHeader'] . ' to ' . $_POST['endInputHeader'];
     }else{
@@ -87,7 +98,15 @@
         <?php if (!empty($pageMetaDescription)) { ?>
         <meta name="twitter:description" content="<?php echo htmlspecialchars($pageMetaDescription, ENT_QUOTES, 'UTF-8'); ?>">
         <?php } ?>
-        <?php if (!empty($pageJsonLdNodes)) { outputJsonLdGraph(array_merge([buildOrganizationSchema(), buildWebsiteSchema()], $pageJsonLdNodes)); } ?>
+        <?php
+        // Was gated behind !empty($pageJsonLdNodes) - meaning any page that
+        // set $pageMetaTitle without also building its own schema nodes
+        // (guarantee.php, bbb.php, testimonials.php, and 40+ others)
+        // got ZERO structured data, not even the baseline Organization/
+        // WebSite graph every other path on the site has. Always emit that
+        // baseline here; merge in page-specific nodes when present.
+        outputJsonLdGraph(array_merge([buildOrganizationSchema(), buildWebsiteSchema()], $pageJsonLdNodes ?? []));
+        ?>
     <?php } elseif ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>
         <?php include 'inc/seo.php'; ?>
     <?php }elseif ($_SERVER['REQUEST_URI'] == '/tickets' || $_SERVER['REQUEST_URI'] == '/tickets.php') { ?>
@@ -118,6 +137,7 @@
         <meta property="og:url" content="<?php echo htmlspecialchars($fallbackCanonical, ENT_QUOTES, 'UTF-8'); ?>">
         <meta property="og:type" content="website">
         <meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
+        <?php outputJsonLdGraph([buildOrganizationSchema(), buildWebsiteSchema()]); ?>
     <?php } ?>
 
 </head>
@@ -194,7 +214,7 @@
                             </ul>
                         </nav>
                         <div class="tm-top-links d-flex d-sm-flex d-md-flex align-items-center">
-                            <div class="header-phone d-lg-none d-xl-none d-xxl-none"><a href="tel:+1512-621-8822"><i class="bi bi-telephone-fill"></i></a></div>
+                            <div class="header-phone d-lg-none d-xl-none d-xxl-none"><a href="tel:+1512-621-8822" aria-label="Call us at (512) 621-8822"><i class="bi bi-telephone-fill"></i></a></div>
                             <button class="btn mobile-menu-btn d-sm-block d-md-block d-lg-none d-xl-none d-xxl-none p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-label="menu">
                                 <i class="bi bi-list fs-3 text-white"></i>
                             </button>
@@ -209,7 +229,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                             <input type="text" placeholder="City or Zip Code" class="w-100" autocomplete="off" class="locationInputField" id="locationInputHeader" name="locationInputHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="location-suggestions" aria-activedescendant="" aria-label="Search by city or zip code" value="<?php echo !empty($_POST['locationInputHeader']) ? htmlspecialchars($_POST['locationInputHeader']) : ''; ?>" />
-                            <button type="button" id="locationHeaderReset" class="location-close<?php echo !empty($_POST['locationInputHeader']) ? '' : ' d-none'; ?>">												
+                            <button type="button" id="locationHeaderReset" class="location-close<?php echo !empty($_POST['locationInputHeader']) ? '' : ' d-none'; ?>" aria-label="Clear location">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
                                     <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
                                     <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
@@ -229,7 +249,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                             <input type="text" placeholder="Performer, City or Venue" class="w-100" autocomplete="off" id="keywordHeader" name="keywordHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-suggestions" aria-activedescendant="" aria-label="Search for performers, cities or venues" value="<?php echo !empty($_POST['keywordHeader']) ? htmlspecialchars($_POST['keywordHeader']) : ''; ?>" />
-                            <button type="button" id="keywordHeaderReset" class="d-none location-close">												
+                            <button type="button" id="keywordHeaderReset" class="d-none location-close" aria-label="Clear search">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
                                     <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
                                     <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
@@ -263,7 +283,7 @@
     <div class="offcanvas offcanvas-start header-menu-mobile-logo" tabindex="-1" id="mobileMenu">
         <div class="offcanvas-header">
             <a href="/" class="tm-logo" style="width:200px; height:auto;"><img src="/images/blue-logo.webp" alt="Seat Outlet" width="200" height="40"></a>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close menu"></button>
         </div>
         
         <div class="offcanvas-body header-menu-mobile">

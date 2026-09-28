@@ -92,6 +92,6 @@ $currentPage = $currentPage ?? '';
                     <?php if ($flash): ?>
                         <div class="alert <?php echo $flash['type'] === 'success' ? 'alert-success' : 'alert-danger'; ?> alert-dismissible" role="alert">
                             <?php echo htmlspecialchars($flash['message'], ENT_QUOTES, 'UTF-8'); ?>
-                            <a class="btn-close" data-bs-dismiss="alert"></a>
+                            <a class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss"></a>
                         </div>
                     <?php endif; ?>

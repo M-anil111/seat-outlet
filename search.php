@@ -80,9 +80,9 @@ include 'header.php';
 
 $year = date('Y');
 $results = getHeaderSearchEvents($params);
-$total_count = $results['totalCount'];
+$total_count = $results['totalCount'] ?? 0;
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-$events = $results['results'];
+$events = $results['results'] ?? [];
 $count = count($events);
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $faqs = getFaqs('search');

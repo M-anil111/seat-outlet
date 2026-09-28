@@ -112,7 +112,20 @@ function getTnAccessToken() {
     if ($response === false) {
         $error = curl_error($ch);
         curl_close($ch);
-        throw new Exception('Token request error: ' . $error);
+        // Was `throw new Exception(...)` here and below - uncaught
+        // anywhere in this codebase (grepped: zero try/catch around any
+        // TN API call), so any TicketNetwork outage or auth hiccup 500'd
+        // every page that touches TN data: every category page, event
+        // page, performer page, and location page. Reproduced live
+        // (invalid_client against a real local server) - concerts.php/
+        // sports.php/theater.php/festival.php all fatal-crashed mid-render
+        // with a truncated page. Degrading gracefully to "no token" here
+        // means downstream tnRequest() gets a real 401 from TN instead,
+        // which every caller already handles the same way an empty
+        // result set is handled (getConcertsCatEvents() etc. already do
+        // `$data['results'] ?? []`).
+        \Sentry\captureMessage('TicketNetwork token request failed: ' . $error);
+        return '';
     }
 
     curl_close($ch);
@@ -120,7 +133,8 @@ function getTnAccessToken() {
     $data = json_decode($response, true);
 
     if (empty($data['access_token'])) {
-        throw new Exception('Token error: ' . $response);
+        \Sentry\captureMessage('TicketNetwork token error: ' . substr((string) $response, 0, 500));
+        return '';
     }
 
     $accessToken = $data['access_token'];
@@ -161,18 +175,24 @@ function tnRequest($endpoint, $params = [], $method = 'GET') {
     if ($response === false) {
         $error = curl_error($ch);
         curl_close($ch);
-        throw new Exception('cURL error: ' . $error);
+        // Was `throw new Exception(...)` - see getTnAccessToken()'s
+        // matching fix above for why: uncaught anywhere in this codebase,
+        // so a transient TN network failure 500'd the calling page instead
+        // of showing "no events". Every caller already treats a missing
+        // 'results'/'count' key as empty (`$data['results'] ?? []`), so an
+        // empty array here degrades the same way an empty API result does.
+        \Sentry\captureMessage('TicketNetwork API cURL error (' . $endpoint . '): ' . $error);
+        return [];
     }
 
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    
-
     $decoded = json_decode($response, true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new Exception('Invalid JSON response from TicketNetwork API');
+        \Sentry\captureMessage('TicketNetwork API returned invalid JSON (' . $endpoint . ', HTTP ' . $httpCode . ')');
+        return [];
     }
 
     return $decoded;
@@ -2924,6 +2944,36 @@ function deleteBlogPost($id, $mysqli = MYSQLI) {
 | so there is no hand-written JSON left to typo a comma into.
 */
 
+/**
+ * Event.performer for schema.org accepts either one entity or an array of
+ * them. A single-artist concert has one real performer, but a sports
+ * matchup event ("Austin FC vs Inter Milan") has two - the previous code
+ * (`$event['performers'][0]['name'] ?? $event['text']['name']`) only ever
+ * listed the first team, silently dropping the opponent from structured
+ * data. Uses every entry in $event['performers'] when there's more than
+ * one, falling back to the event's own name only when TicketNetwork
+ * didn't supply any performer entities at all.
+ */
+function buildEventPerformerSchema(array $event) {
+    $performers = $event['performers'] ?? [];
+    if (empty($performers)) {
+        return [
+            "@type" => "PerformingGroup",
+            "name" => $event['text']['name'] ?? '',
+        ];
+    }
+    if (count($performers) === 1) {
+        return [
+            "@type" => "PerformingGroup",
+            "name" => $performers[0]['name'] ?? ($event['text']['name'] ?? ''),
+        ];
+    }
+    return array_map(fn($p) => [
+        "@type" => "PerformingGroup",
+        "name" => $p['name'] ?? '',
+    ], $performers);
+}
+
 function buildOrganizationSchema() {
     // Deliberately no "review" or "aggregateRating" here. The Organization
     // schema in every seo include file previously had six fabricated named
@@ -3265,6 +3315,32 @@ function getCategoryCityLinkPrefix($categoryPath): string {
 }
 
 /**
+ * "Taylor Swift tickets" reads fine, but the exact same generic wording
+ * ("tickets") gets duller (not wrong, just generic) for other performer
+ * types, and site copy asking for "game" for sports/"show" for theater
+ * needed a way to know which is which for a given performer, not just for
+ * the category-location pages. Reuses the same category-path detection
+ * as getCategoryCityLinkPrefix() (festivals checked before concerts since
+ * festivals nests under concerts' path).
+ */
+function getPerformerNounForPath($categoryPath): array {
+    $categoryPath = (string) $categoryPath;
+    if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['festivals']) === 0) {
+        return ['noun' => 'festival', 'nounCap' => 'Festival'];
+    }
+    if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['concerts']) === 0) {
+        return ['noun' => 'concert', 'nounCap' => 'Concert'];
+    }
+    if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['sports']) === 0) {
+        return ['noun' => 'game', 'nounCap' => 'Game'];
+    }
+    if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['theater']) === 0) {
+        return ['noun' => 'show', 'nounCap' => 'Show'];
+    }
+    return ['noun' => 'event', 'nounCap' => 'Event'];
+}
+
+/**
  * Real internal links from a category page (concerts.php, sports.php,
  * theater.php, festival.php) into the matching category-city location
  * pages, built from that page's own already-fetched $events - same
@@ -3364,17 +3440,27 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     $performer_bio   = getArtistBio($artistName, $performerId);
     $performer_image = getArtistImage($artistName, $performer['defaultCategory']);
 
+    // Same generic "tickets" wording read fine for a music artist ("Taylor
+    // Swift tickets") but flat for other performer types - a sports team's
+    // page should talk about games, a theater production about a show. All
+    // performer types share the exact same TicketNetwork "performer"
+    // entity and this same renderer, so the noun is derived from the
+    // performer's own real category path rather than hardcoded.
+    $noun = getPerformerNounForPath($performer['defaultCategory']['path'] ?? '');
+
     $faqsRaw = getFaqs('performer');
-    $faqs = array_map(function ($faq) use ($artistName, $locationLabel) {
+    $faqs = array_map(function ($faq) use ($artistName, $locationLabel, $noun) {
+        $tokens = ['[artist_name]', '[location]', '[event_noun]'];
+        $values = [$artistName, $locationLabel, $noun['noun']];
         return [
-            'question' => str_replace(['[artist_name]', '[location]'], [$artistName, $locationLabel], $faq['question']),
-            'answer'   => str_replace(['[artist_name]', '[location]'], [$artistName, $locationLabel], $faq['answer']),
+            'question' => str_replace($tokens, $values, $faq['question']),
+            'answer'   => str_replace($tokens, $values, $faq['answer']),
         ];
     }, $faqsRaw);
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
-    $pageMetaTitle       = "$artistName Tickets in $locationLabel | Seat Outlet";
-    $pageMetaDescription = "Buy verified $artistName tickets in $locationLabel. Compare prices across sellers and find upcoming $artistName shows near you on Seat Outlet.";
+    $pageMetaTitle       = "$artistName {$noun['nounCap']} Tickets in $locationLabel | Seat Outlet";
+    $pageMetaDescription = "Buy verified $artistName {$noun['noun']} tickets in $locationLabel. Compare prices across sellers and find upcoming $artistName {$noun['noun']}s near you on Seat Outlet.";
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($artistName, $performerId) . '/' . createSlug($locationLabel, $locationValue);
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema(array_map(fn($c) => ['label' => $c['label'], 'url' => null], $breadcrumbs), "$artistName in $locationLabel"),
@@ -3411,7 +3497,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                         <div class="row align-items-center text-center text-md-start">
                             <div class="col-md-3">
                                 <div class="img-artist">
-                                    <img src="<?php echo $performer_image; ?>" alt="<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" />
+                                    <img src="<?php echo $performer_image; ?>" alt="<?php echo htmlspecialchars("$artistName $noun[nounCap] tickets in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" />
                                 </div>
                             </div>
                             <div class="col-md-9 text-white">
@@ -3538,9 +3624,9 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <h4 style="padding: 20px;">
+                                <h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
                                     No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets found in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now.
-                                </h4>
+                                </h3>
                             <?php } ?>
                         </div>
                         <div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
@@ -3576,7 +3662,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                     </div>
                     <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
                         <div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-                            <img src="<?php echo $performer_image; ?>" alt="<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>" />
+                            <img src="<?php echo $performer_image; ?>" alt="<?php echo htmlspecialchars("About $artistName in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" />
                         </div>
                     </div>
                 </div>
@@ -3833,9 +3919,9 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <h4 style="padding: 20px;">
+                                <h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
                                     No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets found in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now.
-                                </h4>
+                                </h3>
                             <?php } ?>
                         </div>
                         <div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">

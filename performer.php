@@ -322,9 +322,9 @@ include 'header.php';
 								</div>
 							<?php } ?>
 						<?php } else { ?>
-							<h4 style="padding: 20px;">
+							<h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
 								No <?php echo strtoupper($breadcrumbs[1]['label']); ?> found!
-							</h4>
+							</h3>
 						<?php } ?>
 					</div>	
 					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">

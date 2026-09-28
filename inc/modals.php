@@ -44,7 +44,7 @@
             <div class="venue-label fs-5 fw-semibold mb-1">
                 VENUE
             </div>
-            <a href="#" class="venue-link fs-6" id="venue-link"></a>
+            <a href="#" class="venue-link fs-6" id="venue-link" aria-label="Venue details"></a>
         </div>
 	</div>
 </div>
