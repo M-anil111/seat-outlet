@@ -157,7 +157,7 @@
         </div>
         <div class="col-lg-6">
           <div class="vp-hero-visual">
-            <img src="<?php echo HOME_URL; ?>/images/viralpep-hero-dashboard.png" alt="Viralpep dashboard" style="width:100%;height:100%;object-fit:cover;">
+            <img src="<?php echo HOME_URL; ?>/images/viralpep-hero-dashboard.webp" alt="Viralpep dashboard" style="width:100%;height:100%;object-fit:cover;">
           </div>
         </div>
       </div>
@@ -186,20 +186,16 @@
         <p class="text-secondary">Manage all your social media content in one place. Plan, create, schedule and publish across multiple platforms with a streamlined, collaborative workflow.</p>
       </div>
 
-      <div class="vp-platform-row">
-        <div class="vp-platform"><div class="vp-platform-icon"><i class="bi bi-facebook"></i></div>Facebook</div>
-        <div class="vp-platform"><div class="vp-platform-icon"><i class="bi bi-instagram"></i></div>Instagram</div>
-        <div class="vp-platform"><div class="vp-platform-icon"><i class="bi bi-linkedin"></i></div>LinkedIn</div>
-        <div class="vp-platform"><div class="vp-platform-icon"><i class="bi bi-twitter-x"></i></div>X / Twitter</div>
-        <div class="vp-platform"><div class="vp-platform-icon"><i class="bi bi-pinterest"></i></div>Pinterest</div>
+      <div class="text-center mb-5">
+        <img src="<?php echo HOME_URL; ?>/images/viralpep-platform-icons.webp" alt="Facebook, Instagram, LinkedIn, X/Twitter, Pinterest" style="max-width:100%;height:auto;">
       </div>
 
       <div class="row g-4">
         <div class="col-md-6">
-          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-create-post.png" alt="Create Post composer"></div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-create-post.webp" alt="Create Post composer"></div>
         </div>
         <div class="col-md-6">
-          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-post-preview.png" alt="Post Preview"></div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-post-preview.webp" alt="Post Preview"></div>
         </div>
       </div>
     </div>
@@ -210,7 +206,7 @@
     <div class="container">
       <div class="row g-5 align-items-center">
         <div class="col-lg-6">
-          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-content-calendar.png" alt="Content Calendar"></div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-content-calendar.webp" alt="Content Calendar"></div>
         </div>
         <div class="col-lg-6">
           <h2>Advanced Scheduling Tools for Smarter Content Planning</h2>
@@ -245,7 +241,7 @@
           </div>
         </div>
         <div class="col-lg-6">
-          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-media-library.png" alt="Media Library"></div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-media-library.webp" alt="Media Library"></div>
         </div>
       </div>
     </div>
@@ -256,7 +252,7 @@
     <div class="container">
       <div class="row g-5 align-items-center">
         <div class="col-lg-6">
-          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-team-collaboration.png" alt="Team Collaboration"></div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-team-collaboration.webp" alt="Team Collaboration"></div>
         </div>
         <div class="col-lg-6">
           <h2>Team Collaboration Made Simple</h2>
@@ -286,7 +282,7 @@
           </p>
         </div>
         <div class="col-lg-6">
-          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-performance-overview.png" alt="Performance Overview"></div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-performance-overview.webp" alt="Performance Overview"></div>
         </div>
       </div>
     </div>
