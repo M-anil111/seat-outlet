@@ -383,6 +383,20 @@ if (loadMoreBtn) {
     });
 }
   
+// Mirrors renderEventPriceTag()/eventDealInfo() in functions.php so rows
+// appended by "More Events" look identical to the server-rendered ones.
+function buildPriceTag(event) {
+    const info = event && event.pricingInfo ? event.pricingInfo : null;
+    if (!info || !info.lowPrice) return '';
+    const low = Number(info.lowPrice.value || 0);
+    const formatted = info.lowPrice.text && info.lowPrice.text.formatted ? info.lowPrice.text.formatted : '';
+    if (!formatted || low <= 0) return '';
+    const avg = info.averagePrice ? Number(info.averagePrice.value || 0) : 0;
+    const isDeal = avg > 0 && low <= avg * 0.6;
+    const safe = String(formatted).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return '<div class="event-price-tag">' + (isDeal ? '<span class="event-deal-badge">Deal</span> ' : '') + 'From <strong>' + safe + '</strong></div>';
+}
+
 function renderEvent(event) {
     const evtdate = new Date(event.date.date);
     const emonth = evtdate.toLocaleString('en-US', { month: 'short' });
@@ -409,6 +423,7 @@ function renderEvent(event) {
     const cityName = event.city.text.name + ', ' + event.stateProvince.text.abbr;
     const citySlug = normalizeKey(cityName) + '-' + event.city.id;
     const venueSlug = normalizeKey(event.venue.text.name) + '-' + event.venue.id;
+    const priceTag = buildPriceTag(event);
     return `
     <div class="d-flex align-items-center justify-content-between performer-event-item">
         <div class="date-box text-center me-3">
@@ -433,6 +448,7 @@ function renderEvent(event) {
             </div>
         </div>
         <div class="ms-3">
+            ${priceTag}
             <a href="/event/${eSlug}" class="btn btn-primary d-flex align-items-center gap-2">
                 <span class="d-none d-md-inline">
                     Find Tickets

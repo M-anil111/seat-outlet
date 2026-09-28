@@ -5206,3 +5206,9 @@ a.common-btn:hover{
       font-size: 32px;
   }
 }
+/* Listing rows: "From $X" price + data-driven Deal badge (see renderEventPriceTag()) */
+.performer-event-item .ms-3{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.event-price-tag{font-size:13px;color:#555;white-space:nowrap;line-height:1.2}
+.event-price-tag strong{color:#111;font-size:15px}
+.event-deal-badge{display:inline-block;background:#e8f7ee;color:#137a3a;border:1px solid #b9e6c9;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.3px;padding:1px 6px;text-transform:uppercase;vertical-align:middle}
+@media (max-width:576px){.event-price-tag{font-size:12px}.event-price-tag strong{font-size:13px}}

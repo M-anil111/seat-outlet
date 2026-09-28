@@ -121,6 +121,7 @@ include 'header.php';
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">Find Tickets</span>
 												<i class="bi bi-chevron-right"></i>

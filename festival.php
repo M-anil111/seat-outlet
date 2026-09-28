@@ -11,13 +11,7 @@ $perPage = 20;
 // duplicate content under two different URLs. LOCATION_CATEGORY_PATHS in
 // functions.php (already verified live against the sandbox API for the new
 // location pages) has the correct festivals path.
-$festivalPath = LOCATION_CATEGORY_PATHS['festivals'];
-$today = date('Y-m-d');
-$params = [
-	"filter" => "date/date ge $today and startswith(defaultCategory/path, '$festivalPath')",
-	"perPage" => $perPage,
-	"page" => 1
-];
+$params = categoryListingParams(LOCATION_CATEGORY_PATHS['festivals'], $perPage);
 $year = date('Y');
 $results = getFestivalCatEvents();
 $total_count = $results['totalCount'] ?? 0;
@@ -121,6 +115,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets

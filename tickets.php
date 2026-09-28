@@ -1,18 +1,12 @@
 <?php include 'header.php';
 $perPage = 20;
-$today = date('Y-m-d');
-$params = [
-	"filter" => "date/date ge $today and country/alphaCode eq 'US'",
-	"perPage" => $perPage,
-	"page" => 1,
-	"includeTotalCount" => "true"
-];
+$params = categoryListingParams('', $perPage);
 $year = date('Y');
 $results = getAllEvents();
-$total_count = $results['totalCount'];
+$total_count = (int) ($results['totalCount'] ?? 0);
 
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-$events = $results['results'];
+$events = $results['results'] ?? [];
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $faqs = getFaqs('events');
 ?>
@@ -160,6 +154,7 @@ $faqs = getFaqs('events');
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets

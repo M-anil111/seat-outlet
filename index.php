@@ -1,6 +1,52 @@
 <?php
 include 'header.php';
 $festivalNames = getTopFestivalPerformers();
+
+// "Browse by Categories": top subcategories by tickets on sale, refreshed by
+// cron/home-categories.php. The lists below are only the fallback for a
+// missing/empty cache so the section never renders blank (all ids verified
+// against the catalog's category tree).
+$topCategories = cache_get('top_categories', 7 * 86400);
+if (!is_array($topCategories)) {
+    $topCategories = [];
+}
+$fallbackCategories = [
+    'concerts' => [
+        ['slug' => 'pop-rock-1903', 'name' => 'Pop / Rock'],
+        ['slug' => 'comedy-1872', 'name' => 'Comedy'],
+        ['slug' => 'country-folk-1873', 'name' => 'Country / Folk'],
+        ['slug' => 'alternative-1862', 'name' => 'Alternative'],
+        ['slug' => 'classical-1871', 'name' => 'Classical'],
+        ['slug' => 'las-vegas-shows-1888', 'name' => 'Las Vegas Shows'],
+        ['slug' => 'jazz-blues-1885', 'name' => 'Jazz / Blues'],
+        ['slug' => 'rap-hip-hop-1906', 'name' => 'Rap / Hip Hop'],
+    ],
+    'sports' => [
+        ['slug' => 'football-1879', 'name' => 'Football'],
+        ['slug' => 'basketball-1865', 'name' => 'Basketball'],
+        ['slug' => 'baseball-1864', 'name' => 'Baseball'],
+        ['slug' => 'hockey-1883', 'name' => 'Hockey'],
+        ['slug' => 'soccer-1913', 'name' => 'Soccer'],
+        ['slug' => 'boxing-1867', 'name' => 'Boxing'],
+        ['slug' => 'golf-1880', 'name' => 'Golf'],
+        ['slug' => 'tennis-1916', 'name' => 'Tennis'],
+    ],
+    'theater' => [
+        ['slug' => 'broadway-1868', 'name' => 'Broadway'],
+        ['slug' => 'musical-play-1894', 'name' => 'Musical / Play'],
+        ['slug' => 'west-end-2060', 'name' => 'West End'],
+        ['slug' => 'las-vegas-1887', 'name' => 'Las Vegas'],
+        ['slug' => 'off-broadway-1896', 'name' => 'Off-broadway'],
+        ['slug' => 'children-family-1869', 'name' => 'Children / Family'],
+        ['slug' => 'ballet-1863', 'name' => 'Ballet'],
+        ['slug' => 'opera-1898', 'name' => 'Opera'],
+    ],
+];
+foreach ($fallbackCategories as $key => $list) {
+    if (empty($topCategories[$key])) {
+        $topCategories[$key] = $list;
+    }
+}
 ?>
 <section class="top-hero-slider">
 
@@ -193,14 +239,9 @@ $festivalNames = getTopFestivalPerformers();
       <div class="categories__col">
         <h3 class="categories__heading">Concerts</h3>
         <ul class="categories__list">
-          <li><a href="/category/reggae-reggaeton-1907">Reggae / Reggaeton</a></li>
-          <li><a href="/category/religious-1908">Religious</a></li>
-          <li><a href="/category/50s-60s-era-1860">50s / 60s Era</a></li>
-          <li><a href="/category/children-family-2094">Children / Family</a></li>
-          <li><a href="/category/new-age-1895">New Age</a></li>
-          <li><a href="/category/bluegrass-1866">Bluegrass</a></li>
-          <li><a href="/category/performance-series-2062">Performance Series</a></li>
-          <li><a href="/category/holiday-1884">Holiday</a></li>
+          <?php foreach ($topCategories['concerts'] as $topCat) { ?>
+            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
+          <?php } ?>
         </ul>
         <a href="/concerts" class="common-btn">View All Concerts</a>
         
@@ -208,28 +249,18 @@ $festivalNames = getTopFestivalPerformers();
       <div class="categories__col">
         <h3 class="categories__heading">Sports</h3>
         <ul class="categories__list">
-          <li><a href="/category/golf-1880">Golf</a></li>
-          <li><a href="/category/baseball-1864">Baseball</a></li>
-          <li><a href="/category/olympics-1897">Olympics</a></li>
-          <li><a href="/category/cricket-1874">Cricket</a></li>
-          <li><a href="/category/gymnastics-1881">Gymnastics</a></li>
-          <li><a href="/category/rugby-1911">Rugby</a></li>
-          <li><a href="/category/tennis-1916">Tennis</a></li>
-          <li><a href="/category/mixed-martial-arts-2027">Mixed Martial Arts</a></li>
+          <?php foreach ($topCategories['sports'] as $topCat) { ?>
+            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
+          <?php } ?>
         </ul>
         <a href="/sports" class="common-btn">View All Sports</a>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Theatre</h3>
         <ul class="categories__list">
-          <li><a href="/category/musical-play-1894">Musical / Play</a></li>
-          <li><a href="/category/broadway-1868">Broadway</a></li>
-          <li><a href="/category/children-family-1869">Children / Family</a></li>
-          <li><a href="/category/off-broadway-1896">Off-broadway</a></li>
-          <li><a href="/category/ballet-1863">Ballet</a></li>
-          <li><a href="/category/opera-1898">Opera</a></li>
-          <li><a href="/category/cirque-du-soleil-2031">Cirque Du Soleil</a></li>
-          <li><a href="/category/dance-1875">Dance</a></li>
+          <?php foreach ($topCategories['theater'] as $topCat) { ?>
+            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
+          <?php } ?>
         </ul>
         <a href="/theater" class="common-btn">View All Theatre</a>
       </div>

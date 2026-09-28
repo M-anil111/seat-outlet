@@ -6,13 +6,7 @@ $pageMetaDescription = 'Buy concert tickets for upcoming shows and tours. Compar
 $pageCanonicalUrl    = HOME_URL . '/concerts';
 include 'header.php';
 $perPage = 20;
-$concertPath = ".1859.1986.";
-$today = date('Y-m-d');
-$params = [
-	"filter" => "date/date ge $today and startswith(defaultCategory/path, '$concertPath')",
-	"perPage" => $perPage,
-	"page" => 1
-];
+$params = categoryListingParams(TN_CATEGORY_PATH_CONCERTS, $perPage);
 $year = date('Y');
 $results = getConcertsCatEvents();
 $total_count = $results['totalCount'] ?? 0;
@@ -116,6 +110,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets

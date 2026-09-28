@@ -250,6 +250,7 @@ $faqs = getFaqs('performer');
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event.php?id=<?php echo (int) ($event['id'] ?? 0); ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets

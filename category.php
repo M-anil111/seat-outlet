@@ -18,7 +18,7 @@ if ($id <= 0) {
 }
 
 $cat = getTnCatById($id);
-$catName = $cat['results'][0]['text']['name'] ?? '';
+$catName = ucwords(strtolower(trim($cat['results'][0]['text']['name'] ?? '')));
 
 if ($catName === '') {
 	include 'header.php';
@@ -40,7 +40,7 @@ include 'header.php';
 
 $today = date('Y-m-d');
 $params = [
-    'filter' => "contains(defaultCategory/path, '$id') and date/date ge $today"
+    'filter' => "contains(defaultCategory/path, '.$id.') and date/date ge $today"
 ];
 $eventsResponse = getTnCatEvents($id, ['perPage' => $perPage, 'page' => 1]);
 
@@ -64,7 +64,7 @@ $year = date('Y');
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h2>
-									<?php echo $catName; ?> CATEGORY EVENTS <span class="dot">·</span>
+									<?php echo htmlspecialchars(strtoupper($catName), ENT_QUOTES, 'UTF-8'); ?> CATEGORY EVENTS <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $total_count; ?>
 										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
@@ -148,6 +148,7 @@ $year = date('Y');
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets

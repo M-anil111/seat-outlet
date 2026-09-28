@@ -1,5 +1,7 @@
 <?php 
+require_once 'functions.php';
 
+$searchInput = array_merge($_GET, $_POST);
 
 $params = [];
 $filterParts = [];
@@ -13,12 +15,12 @@ $keywordHeader = '';
 |--------------------------------------------------------------------------
 */
 if (
-    isset($_POST['latHeader'], $_POST['lngHeader'], $_POST['locationInputHeader']) &&
-    $_POST['latHeader'] !== '' && $_POST['lngHeader'] !== '' &&
-	$_POST['locationInputHeader'] !== ''
+    isset($searchInput['latHeader'], $searchInput['lngHeader'], $searchInput['locationInputHeader']) &&
+    $searchInput['latHeader'] !== '' && $searchInput['lngHeader'] !== '' &&
+	$searchInput['locationInputHeader'] !== ''
 ) {
-	$lat = floatval($_POST['latHeader']);
-    $lng = floatval($_POST['lngHeader']);
+	$lat = floatval($searchInput['latHeader']);
+    $lng = floatval($searchInput['lngHeader']);
     $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $lat, $lng);
 }
 
@@ -29,10 +31,10 @@ if (
 */
 
 if (
-	isset($_POST['keywordHeader']) &&
-	$_POST['keywordHeader'] !== ''
+	isset($searchInput['keywordHeader']) &&
+	$searchInput['keywordHeader'] !== ''
 ) {
-	$keywordHeader = $_POST['keywordHeader'];
+	$keywordHeader = $searchInput['keywordHeader'];
 	$keywordTitle = ucfirst(strtolower($keywordHeader));
 	$params['q'] = $keywordHeader;
 }else{
@@ -45,12 +47,12 @@ if (
 |--------------------------------------------------------------------------
 */
 if (
-	isset($_POST['startInputHeader'], $_POST['endInputHeader']) &&
-	$_POST['startInputHeader'] !== '' &&
-    $_POST['endInputHeader'] !== ''
+	isset($searchInput['startInputHeader'], $searchInput['endInputHeader']) &&
+	$searchInput['startInputHeader'] !== '' &&
+    $searchInput['endInputHeader'] !== ''
 ) {
-	$startTimestamp = strtotime($_POST['startInputHeader']);
-    $endTimestamp   = strtotime($_POST['endInputHeader']);
+	$startTimestamp = strtotime($searchInput['startInputHeader']);
+    $endTimestamp   = strtotime($searchInput['endInputHeader']);
 
     if ($startTimestamp && $endTimestamp) {
         $startDate = date('Y-m-d', $startTimestamp);
@@ -75,6 +77,13 @@ $perPage = 20;
 $params['page'] = 1;
 $params['perPage'] = $perPage;
 $params['sort'] = 'date/date';
+
+// Search results are user-specific, near-infinite URL variants; keep them
+// out of the index but give the tab a real title (there was none).
+$pageMetaTitle       = ($keywordHeader !== '' ? ucwords(strtolower($keywordHeader)) . ' Tickets - Search Results' : 'Search Tickets') . ' | Seat Outlet';
+$pageMetaDescription = 'Search concert, sports, theater and festival tickets by performer, city or venue on Seat Outlet.';
+$pageCanonicalUrl    = HOME_URL . '/search';
+$pageRobots          = 'noindex, follow';
 
 include 'header.php'; 
 
@@ -204,6 +213,7 @@ $faqs = getFaqs('search');
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets
@@ -246,7 +256,7 @@ $faqs = getFaqs('search');
 						<?php } else { ?>
 							<div class="text-center no-events-found">
 								<h4>No Upcoming Events</h4>
-								<p>We're sorry, but we couldn't find any upcoming events for "<?php echo $keywordHeader; ?>". Please try updating your location, date range or searching for something else.</p>
+								<p>We're sorry, but we couldn't find any upcoming events for "<?php echo htmlspecialchars($keywordHeader, ENT_QUOTES, 'UTF-8'); ?>". Please try updating your location, date range or searching for something else.</p>
 							</div>
 						<?php } ?>
 					</div>	

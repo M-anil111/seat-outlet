@@ -295,7 +295,8 @@ function getRelatedPerformers($categoryPath, $currentPerformerId, $limit = 20) {
     $categoryPathEsc = tnEscapeFilterValue($categoryPath);
     $params = [
         'filter' => "defaultCategory/path eq '$categoryPathEsc'",
-        'sort'   => 'salesRank',
+        'eventFilter' => '_metadata/hasTickets eq true',
+        'sort'   => '-salesRank',
         'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'page'   => 1,
         'perPage'=> $limit
@@ -897,15 +898,15 @@ function getMostPopularEvents($catPath = '', $lat = '', $lng = '') {
             'perPage' => 20,
             'page'    => 1,
             'filter'  => "date/date ge '$today' and contains(defaultCategory/path,'$catPath')",
-            'geoFilter' => "nearby($lat, $lng, '50mi')",
-            'sort'    => 'salesRank'
+            'geoFilter' => "nearby($lat, $lng, 50mi)",
+            'sort'    => '-salesRank'
         ];
     }else{
         $params = [
             'perPage' => 20,
             'page'    => 1,
             'filter'  => "date/date ge " . $today . " and contains(defaultCategory/path,'$catPath')",
-            'sort'    => 'salesRank'
+            'sort'    => '-salesRank'
         ];
     }
     
@@ -979,10 +980,15 @@ function tnGetCategoryNearby($rootPath, $lat, $lng, $limit = 12) {
 function fetchLocationCategoryEvents($rootPath, $type = '', $loc1 = '', $loc2 = '') {
     $accessToken = getTnAccessToken();
     $today = date('Y-m-d');
+    // Featured feeds only: TicketNetwork parks date-TBA events decades out
+    // (2070+, time "TBA"); they can carry inventory, so hasTickets alone
+    // doesn't exclude them, and a homepage card for "Feb 2072" reads as a
+    // bug. Full listings are not windowed.
+    $horizon = date('Y-m-d', strtotime('+2 years'));
     $rootPath = tnEscapeFilterValue($rootPath);
 
     $params = [
-        'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
+        'filter' => "date/date ge $today and date/date le $horizon and _metadata/hasTickets eq true and contains(defaultCategory/path,'$rootPath')",
         'perPage' => 6,
         'sort' => '-salesRank', 
         'salesRankOptions' => '{"interval":"day","metric":"ticketVolume"}', 
@@ -1037,9 +1043,14 @@ function fetchGroupedEvents($rootPath, $type = '', $loc1 = '', $loc2 = '') {
 
     $subcategories = $paths[$rootPath];    
     $today = date('Y-m-d');
+    // Featured feeds only: TicketNetwork parks date-TBA events decades out
+    // (2070+, time "TBA"); they can carry inventory, so hasTickets alone
+    // doesn't exclude them, and a homepage card for "Feb 2072" reads as a
+    // bug. Full listings are not windowed.
+    $horizon = date('Y-m-d', strtotime('+2 years'));
 
     $params = [
-        'filter' => "date/date ge $today and contains(defaultCategory/path,'$rootPath')",
+        'filter' => "date/date ge $today and date/date le $horizon and _metadata/hasTickets eq true and contains(defaultCategory/path,'$rootPath')",
         'sort' => '-salesRank', 
         'salesRankOptions' => '{"interval":"day","metric":"ticketVolume"}', 
         'perPage' => 150
@@ -1162,7 +1173,7 @@ function getTeamsByCategoryFallback($categorySlug, $limit = 20) {
     $params = [
         'categoryFilter' => "path eq '{$categoryPaths[$categorySlug]}'",
         'eventFilter' => "country/alphaCode eq 'US'",
-        'sort' => 'salesRank',
+        'sort' => '-salesRank',
         'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'perPage'   => $limit
     ];       
@@ -1291,212 +1302,169 @@ function buildVenueSkeleton($count = 8) {
     return $html;
 }
 
-function getAllEvents() {
+/*
+|--------------------------------------------------------------------------
+| Category listing feeds (/tickets, /concerts, /sports, /theater, /festival)
+|--------------------------------------------------------------------------
+| These five pages used to have five copy-pasted cURL blocks with NO sort
+| parameter, so TicketNetwork returned events in its default (date) order
+| and page 1 of "Concerts" was simply whatever happened to be on today.
+| They now share one implementation that asks the API for its own top
+| sellers (sort=-salesRank; the descending form is the real "top", the
+| ascending form returns the salesRank=100 baseline alphabetically) and
+| restricts the feed to events that actually have inventory. Without the
+| hasTickets filter the sales-rank sort surfaces placeholder "TBD" events
+| with zero tickets (dated 2070+ in the sandbox) that nobody can buy.
+|
+| categoryListingParams() is public because each page also hands the same
+| params to the browser (data-params on the "More Events" button) so
+| ajax/load-more-events.php pages through the *same* ordered result set;
+| sort/salesRankOptions are on that endpoint's allow-list.
+*/
 
-    $accessToken = getTnAccessToken();
+const TN_CATEGORY_PATH_CONCERTS = '.1859.1986.';
+const TN_CATEGORY_PATH_SPORTS   = '.1859.1988.';
+const TN_CATEGORY_PATH_THEATER  = '.1859.1989.';
+const TN_CATEGORY_PATH_FESTIVAL = '.1859.1986.1877.';
 
+function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1) {
     $today = date('Y-m-d');
-    $params = [
-        "filter" => "date/date ge $today and country/alphaCode eq 'US'",
-        'perPage' => 20,
-        'page' => 1,
-        'includeTotalCount' => 'true'
-    ];
-
-    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
+    $filter = "date/date ge $today and _metadata/hasTickets eq true";
+    if ($categoryPath !== '') {
+        $filter .= " and startswith(defaultCategory/path, '" . tnEscapeFilterValue($categoryPath) . "')";
+    } else {
+        $filter .= " and country/alphaCode eq 'US'";
     }
+    return [
+        'filter'            => $filter,
+        'sort'              => '-salesRank',
+        'salesRankOptions'  => '{"interval":"day","metric":"orderVolume"}',
+        'perPage'           => (int) $perPage,
+        'page'              => (int) $page,
+        'includeTotalCount' => 'true',
+    ];
+}
 
-    curl_close($ch);
+function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1) {
+    return tnRequest('/catalog/v2/events/', categoryListingParams($categoryPath, $perPage, $page));
+}
 
-    $data = json_decode($response, true);
-
-    return $data;
+function getAllEvents() {
+    return getCategoryListingEvents('');
 }
 
 function getSportsCatEvents() {
-
-    $accessToken = getTnAccessToken();
-
-    $sportsPath = ".1859.1988.";
-	$today = date('Y-m-d');
-
-    $params = [
-        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$sportsPath')",
-        'perPage' => 20,
-        'page' => 1,
-        'includeTotalCount' => 'true'
-    ];
-
-    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    $data = json_decode($response, true);
-
-    return $data;
+    return getCategoryListingEvents(TN_CATEGORY_PATH_SPORTS);
 }
 
 function getConcertsCatEvents() {
-
-    $accessToken = getTnAccessToken();
-
-    $concertPath = ".1859.1986.";
-	$today = date('Y-m-d');
-
-    $params = [
-        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$concertPath')",
-        'perPage' => 20,
-        'page' => 1,
-        'includeTotalCount' => 'true'
-    ];
-
-    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    $data = json_decode($response, true);
-
-    return $data;
+    return getCategoryListingEvents(TN_CATEGORY_PATH_CONCERTS);
 }
 
 function getTheaterCatEvents() {
-
-    $accessToken = getTnAccessToken();
-
-    $theaterPath = ".1859.1989.";
-	$today = date('Y-m-d');
-
-    $params = [
-        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$theaterPath')",
-        'perPage' => 20,
-        'page' => 1,
-        'includeTotalCount' => 'true'
-    ];
-
-    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    $data = json_decode($response, true);
-
-    return $data;
+    return getCategoryListingEvents(TN_CATEGORY_PATH_THEATER);
 }
 
 function getFestivalCatEvents() {
+    return getCategoryListingEvents(TN_CATEGORY_PATH_FESTIVAL);
+}
 
-    $accessToken = getTnAccessToken();
+/*
+|--------------------------------------------------------------------------
+| Listing price / deal helpers
+|--------------------------------------------------------------------------
+| The events list endpoint already returns pricingInfo (lowPrice /
+| averagePrice / highPrice, each with .value and .text.formatted) and
+| _metadata.ticketCount for every event, so "From $X" costs no extra API
+| call. Until now only the homepage cards used it; every other listing row
+| showed a bare "Find Tickets" button with no price, which is the single
+| biggest piece of information a buyer wants before clicking.
+|
+| "Deal" is data-driven, not a promo code: an event is flagged when its
+| cheapest listing is at most 60% of the average listing price for that
+| event, i.e. there is genuinely cheap inventory relative to the rest of
+| the map. Nothing here promises a discount the checkout can't apply.
+*/
 
-    $festivalPath = ".1859.1986.1877.";
-	$today = date('Y-m-d');
+const EVENT_DEAL_RATIO = 0.6;
 
-    $params = [
-        'filter' => "date/date ge $today and startswith(defaultCategory/path, '$festivalPath')",
-        'perPage' => 20,
-        'page' => 1,
-        'includeTotalCount' => 'true'
-    ];
-
-    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
+function eventFromPrice(array $event) {
+    $formatted = $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '';
+    $value     = $event['pricingInfo']['lowPrice']['value'] ?? null;
+    if ($formatted === '' || $value === null || (float) $value <= 0) {
+        return '';
     }
+    return (string) $formatted;
+}
 
-    curl_close($ch);
+function eventDealInfo(array $event) {
+    $low  = $event['pricingInfo']['lowPrice']['value'] ?? null;
+    $avg  = $event['pricingInfo']['averagePrice']['value'] ?? null;
+    $from = eventFromPrice($event);
+    $isDeal = $from !== ''
+        && $avg !== null && (float) $avg > 0
+        && (float) $low <= (float) $avg * EVENT_DEAL_RATIO;
+    return [
+        'from'    => $from,
+        'avg'     => $event['pricingInfo']['averagePrice']['text']['formatted'] ?? '',
+        'is_deal' => $isDeal,
+        'tickets' => (int) ($event['_metadata']['ticketCount'] ?? 0),
+    ];
+}
 
-    $data = json_decode($response, true);
+function renderEventPriceTag(array $event) {
+    $deal = eventDealInfo($event);
+    if ($deal['from'] === '') {
+        return;
+    }
+    echo '<div class="event-price-tag">';
+    if ($deal['is_deal']) {
+        echo '<span class="event-deal-badge">Deal</span> ';
+    }
+    echo 'From <strong>' . htmlspecialchars($deal['from'], ENT_QUOTES, 'UTF-8') . '</strong>';
+    echo '</div>';
+}
 
-    return $data;
+/*
+|--------------------------------------------------------------------------
+| Top subcategories (homepage "Browse by Categories")
+|--------------------------------------------------------------------------
+| The category tree has no salesRank, but every category carries
+| _metadata.ticketCount / eventCount, so "top" = the children of a root
+| with the most inventory on sale right now. Replaces a hard-coded list
+| that had Reggae, Religious and 50s/60s Era as the concert picks.
+| Refreshed by cron/home-categories.php into cache/top_categories.json.
+*/
+
+function getTopSubcategories($rootPath, $limit = 8) {
+    $data = tnRequest('/catalog/v2/categories', [
+        'filter'  => "parentCategory/path eq '" . tnEscapeFilterValue($rootPath) . "'",
+        'perPage' => 100,
+    ]);
+    $rows = [];
+    foreach ($data['results'] ?? [] as $cat) {
+        $name = $cat['text']['name'] ?? '';
+        $path = $cat['path'] ?? '';
+        if ($name === '' || $path === '' || strtoupper($name) === 'OTHER') {
+            continue;
+        }
+        $segments = array_values(array_filter(explode('.', $path)));
+        $id = (int) end($segments);
+        if ($id <= 0) {
+            continue;
+        }
+        $rows[] = [
+            'id'          => $id,
+            'name'        => ucwords(strtolower($name)),
+            'slug'        => createSlug($name, $id),
+            'ticketCount' => (int) ($cat['_metadata']['ticketCount'] ?? 0),
+            'eventCount'  => (int) ($cat['_metadata']['eventCount'] ?? 0),
+        ];
+    }
+    usort($rows, function ($a, $b) {
+        return [$b['ticketCount'], $b['eventCount']] <=> [$a['ticketCount'], $a['eventCount']];
+    });
+    return array_slice($rows, 0, $limit);
 }
 
 function searchPostalCodes($text, $country = 'US', $limit = 20) {
@@ -1947,6 +1915,22 @@ function getTnCityEvents($cityId = 0, $params = []) {
     return tnRequest('/catalog/v2/events/', $params);
 }
 
+/**
+ * Total number of events matching $params. The old count functions asked
+ * for perPage=500 and returned the size of that one page, but the API
+ * caps a page at 200, so every listing that had more than 200 upcoming
+ * events (Broadway alone has 500+) reported 200 and its "More Events"
+ * button stopped 10 pages in. includeTotalCount gives the real figure
+ * from a 1-row request.
+ */
+function tnCountEvents(array $params) {
+    $params['page']    = 1;
+    $params['perPage'] = 1;
+    $params['includeTotalCount'] = 'true';
+    $json = tnRequest('/catalog/v2/events/', $params);
+    return (int) ($json['totalCount'] ?? $json['count'] ?? 0);
+}
+
 function getTnCityEventsCount($cityId = 0, $params = []) {
     
     $today = date('Y-m-d');
@@ -1954,14 +1938,7 @@ function getTnCityEventsCount($cityId = 0, $params = []) {
         $params['filter'] = "city/id eq $cityId and date/date ge $today";
     }
 
-    $params['page']    = 1;
-    $params['perPage'] = 500;
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    $count = (int) ($json['count'] ?? 0);
-
-    return $count;
+    return tnCountEvents($params);
 }
 
 function getTnVenueEvents($venueId = 0, $params = []) {
@@ -1981,14 +1958,7 @@ function getTnVenueEventsCount($venueId = 0, $params = []) {
         $params['filter'] = "venue/id eq $venueId and date/date ge $today";
     }
 
-    $params['page']    = 1;
-    $params['perPage'] = 500;
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    $count = (int) ($json['count'] ?? 0);
-
-    return $count;
+    return tnCountEvents($params);
 }
 
 /**
@@ -2013,12 +1983,7 @@ function getTnStateEventsCount($stateId = 0, $params = []) {
         $params['filter'] = "stateProvince/id eq $stateId and date/date ge $today";
     }
 
-    $params['page']    = 1;
-    $params['perPage'] = 500;
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    return (int) ($json['count'] ?? 0);
+    return tnCountEvents($params);
 }
 
 function getTnCountryEvents($countryCode = '', $params = []) {
@@ -2038,12 +2003,7 @@ function getTnCountryEventsCount($countryCode = '', $params = []) {
         $params['filter'] = "country/alphaCode eq '" . tnEscapeFilterValue($countryCode) . "' and date/date ge $today";
     }
 
-    $params['page']    = 1;
-    $params['perPage'] = 500;
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    return (int) ($json['count'] ?? 0);
+    return tnCountEvents($params);
 }
 
 function getTopFestivalPerformers() {
@@ -2085,7 +2045,7 @@ function getTnCatEvents($catId = 0, $params = []) {
 
     $today = date('Y-m-d');
     if ($catId > 0) {
-        $params['filter'] = "contains(defaultCategory/path, '$catId') and date/date ge $today";
+        $params['filter'] = "contains(defaultCategory/path, '.$catId.') and date/date ge $today";
     }
 
     return tnRequest('/catalog/v2/events/', $params);
@@ -2095,17 +2055,10 @@ function getTnCatEventsCount($catId = 0, $params = []) {
     
     $today = date('Y-m-d');
     if ($catId > 0) {
-        $params['filter'] = "contains(defaultCategory/path, '$catId') and date/date ge $today";
+        $params['filter'] = "contains(defaultCategory/path, '.$catId.') and date/date ge $today";
     }
 
-    $params['page']    = 1;
-    $params['perPage'] = 500;
-
-    $json = tnRequest('/catalog/v2/events/', $params);
-
-    $count = (int) ($json['count'] ?? 0);
-
-    return $count;
+    return tnCountEvents($params);
 }
 
 function getTnCatById($catId) {
@@ -2502,12 +2455,18 @@ function getCorrectKGEntityVenue($venueName, $apiKey = GKGSAPI_KEY) {
 
 function getTopPerformersByCategory($categoryPath) {
 
+    // eventFilter keeps the list to performers who actually have inventory
+    // on sale: without it the sales-rank sort surfaces performers with no
+    // upcoming events at all (verified live), which is a dead click for a
+    // buyer. Sort was 'salesRank' (ascending = the salesRank=100 baseline in
+    // alphabetical order: "3 Doors Down, 50 Cent, A Perfect Circle").
     $params = [
-        'categoryFilter' => "contains(path,'$categoryPath')",
-        'sort'   => 'salesRank',
+        'categoryFilter' => "contains(path,'" . tnEscapeFilterValue($categoryPath) . "')",
+        'eventFilter' => '_metadata/hasTickets eq true',
+        'sort'   => '-salesRank',
         'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'perPage'=> 5
-    ];   
+    ];
     
     $data = tnRequest('/catalog/v2/performers', $params);
 
@@ -3805,6 +3764,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                                 <div class="text-muted small"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
                                             </div>
                                             <div class="ms-3">
+                                                <?php renderEventPriceTag($event); ?>
                                                 <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
                                                     <span class="d-none d-md-inline">Find Tickets</span>
                                                     <i class="bi bi-chevron-right"></i>
@@ -4101,6 +4061,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                                 </div>
                                             </div>
                                             <div class="ms-3">
+                                                <?php renderEventPriceTag($event); ?>
                                                 <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
                                                     <span class="d-none d-md-inline">Find Tickets</span>
                                                     <i class="bi bi-chevron-right"></i>

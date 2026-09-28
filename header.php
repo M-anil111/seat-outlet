@@ -10,8 +10,16 @@
 // instance, not by php -l or the static checkers, which don't catch
 // runtime double-inclusion.
 include_once 'functions.php';
-    if(!empty($_POST['startInputHeader']) && !empty($_POST['endInputHeader'])) {
-        $dateTitle = $_POST['startInputHeader'] . ' to ' . $_POST['endInputHeader'];
+    // The header search form now submits via GET so a results page has a
+    // shareable/bookmarkable URL and the browser back button works (a POST
+    // results page re-prompted "resubmit form?"). Old POST submissions and
+    // any external links still work: both sources are merged here and
+    // search.php reads the same array. Values are only ever echoed through
+    // htmlspecialchars() below - the hidden lat/lng/date inputs previously
+    // reflected raw request data into value="" attributes.
+    $searchInput = $searchInput ?? array_merge($_GET, $_POST);
+    if(!empty($searchInput['startInputHeader']) && !empty($searchInput['endInputHeader'])) {
+        $dateTitle = $searchInput['startInputHeader'] . ' to ' . $searchInput['endInputHeader'];
     }else{
         $dateTitle = '';
     }
@@ -30,7 +38,7 @@ include_once 'functions.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? 'noindex nofollow', ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? 'noindex nofollow'), ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" type="image/png" href="/images/favicon-new.webp">
     
     <!-- Critical CSS -->
@@ -221,15 +229,15 @@ include_once 'functions.php';
                         </div>
                     </div>
                 </div>
-                <form method="post" action="/search" class="search-bar-form">
+                <form method="get" action="/search" class="search-bar-form">
                     <div class="search-bar-container d-flex flex-md-row p-md-1">
                         <div class="city-location search-item d-flex align-items-center gap-md-2 gap-1 px-3 py-2 flex-fill header-location-close locationInputFieldWrapper">
                             <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
-                            <input type="text" placeholder="City or Zip Code" class="w-100" autocomplete="off" class="locationInputField" id="locationInputHeader" name="locationInputHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="location-suggestions" aria-activedescendant="" aria-label="Search by city or zip code" value="<?php echo !empty($_POST['locationInputHeader']) ? htmlspecialchars($_POST['locationInputHeader']) : ''; ?>" />
-                            <button type="button" id="locationHeaderReset" class="location-close<?php echo !empty($_POST['locationInputHeader']) ? '' : ' d-none'; ?>" aria-label="Clear location">
+                            <input type="text" placeholder="City or Zip Code" class="w-100" autocomplete="off" class="locationInputField" id="locationInputHeader" name="locationInputHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="location-suggestions" aria-activedescendant="" aria-label="Search by city or zip code" value="<?php echo !empty($searchInput['locationInputHeader']) ? htmlspecialchars($searchInput['locationInputHeader'], ENT_QUOTES, 'UTF-8') : ''; ?>" />
+                            <button type="button" id="locationHeaderReset" class="location-close<?php echo !empty($searchInput['locationInputHeader']) ? '' : ' d-none'; ?>" aria-label="Clear location">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
                                     <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
                                     <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
@@ -248,7 +256,7 @@ include_once 'functions.php';
                             <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
-                            <input type="text" placeholder="Performer, City or Venue" class="w-100" autocomplete="off" id="keywordHeader" name="keywordHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-suggestions" aria-activedescendant="" aria-label="Search for performers, cities or venues" value="<?php echo !empty($_POST['keywordHeader']) ? htmlspecialchars($_POST['keywordHeader']) : ''; ?>" />
+                            <input type="text" placeholder="Performer, City or Venue" class="w-100" autocomplete="off" id="keywordHeader" name="keywordHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-suggestions" aria-activedescendant="" aria-label="Search for performers, cities or venues" value="<?php echo !empty($searchInput['keywordHeader']) ? htmlspecialchars($searchInput['keywordHeader'], ENT_QUOTES, 'UTF-8') : ''; ?>" />
                             <button type="button" id="keywordHeaderReset" class="d-none location-close" aria-label="Clear search">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
                                     <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
@@ -267,10 +275,10 @@ include_once 'functions.php';
                                 <svg viewBox="0 0 23 24" width="1.5em" height="1.5em" aria-hidden="true" focusable="false" class="BaseSvg-sc-yh8lnd-0 MagnifyingGlassIcon___StyledBaseSvg-sc-1pooy9n-0 hNajXU"><path d="M3.78 4.78 1.62 10l2.16 5.22L9 17.38l5.22-2.16L16.38 10l-2.16-5.22L9 2.62zM9 1l6.36 2.64L18 10l-2.33 5.61 6.11 6.11-1.06 1.06-6.1-6.1L9 19l-6.36-2.64L0 10l2.64-6.36z"></path></svg>
                             </button>
                         </div>
-                        <input type="hidden" id="latHeader" name="latHeader" value="<?php echo !empty($_POST['latHeader']) ? $_POST['latHeader'] : ''; ?>">
-                        <input type="hidden" id="lngHeader" name="lngHeader" value="<?php echo !empty($_POST['lngHeader']) ? $_POST['lngHeader'] : ''; ?>">
-                        <input type="hidden" id="startInputHeader" name="startInputHeader" value="<?php echo !empty($_POST['startInputHeader']) ? $_POST['startInputHeader'] : ''; ?>">
-                        <input type="hidden" id="endInputHeader" name="endInputHeader" value="<?php echo !empty($_POST['endInputHeader']) ? $_POST['endInputHeader'] : ''; ?>">
+                        <input type="hidden" id="latHeader" name="latHeader" value="<?php echo !empty($searchInput['latHeader']) ? htmlspecialchars($searchInput['latHeader'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                        <input type="hidden" id="lngHeader" name="lngHeader" value="<?php echo !empty($searchInput['lngHeader']) ? htmlspecialchars($searchInput['lngHeader'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                        <input type="hidden" id="startInputHeader" name="startInputHeader" value="<?php echo !empty($searchInput['startInputHeader']) ? htmlspecialchars($searchInput['startInputHeader'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                        <input type="hidden" id="endInputHeader" name="endInputHeader" value="<?php echo !empty($searchInput['endInputHeader']) ? htmlspecialchars($searchInput['endInputHeader'], ENT_QUOTES, 'UTF-8') : ''; ?>">
                         <button class="btn btn-stub-primary px-4 py-2 small fw-semibold rounded-pill d-md-block d-none">Search</button>
                     </div>
                 </form>

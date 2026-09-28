@@ -49,7 +49,7 @@ $params['includeTotalCount'] = 'true';
 
 try {
     $response = getTnEvents($params);
-    $total_count = $response['totalCount'];
+    $total_count = (int) ($response['totalCount'] ?? 0);
     $total_pages = $perPage > 0 ? (int) ceil($total_count / $perPage) : 0;
     $results = $response['results'] ?? [];   
     $hasMore = ($page < $total_pages);
