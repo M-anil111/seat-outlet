@@ -86,6 +86,10 @@ function downloadImage($url) {
 const TN_ACCESS_TOKEN_CACHE_KEY = 'tn_access_token';
 const TN_ACCESS_TOKEN_EXPIRY_BUFFER = 60; // seconds
 
+function tnTokenCacheFile() {
+    return rtrim(sys_get_temp_dir(), '/') . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY . '|' . BASE_URL) . '.json';
+}
+
 function getTnAccessToken() {
     static $accessToken = null;
 
@@ -97,6 +101,19 @@ function getTnAccessToken() {
         $cached = apcu_fetch(TN_ACCESS_TOKEN_CACHE_KEY, $found);
         if ($found) {
             $accessToken = $cached;
+            return $accessToken;
+        }
+    }
+
+    // File cache for hosts without APCu (this one): without it every page
+    // view and every AJAX call paid a ~0.4s OAuth round-trip before its
+    // first catalog request. Kept outside the web root because cache/ is
+    // served statically.
+    $tokenFile = tnTokenCacheFile();
+    if (is_file($tokenFile)) {
+        $stored = json_decode((string) file_get_contents($tokenFile), true);
+        if (!empty($stored['token']) && (int) ($stored['expires_at'] ?? 0) > time()) {
+            $accessToken = $stored['token'];
             return $accessToken;
         }
     }
@@ -149,27 +166,89 @@ function getTnAccessToken() {
     }
 
     $accessToken = $data['access_token'];
+    $expiresIn = (int) ($data['expires_in'] ?? 3600);
+    $ttl = max(60, $expiresIn - TN_ACCESS_TOKEN_EXPIRY_BUFFER);
 
     if (function_exists('apcu_store')) {
-        $expiresIn = (int) ($data['expires_in'] ?? 3600);
-        $ttl = max(60, $expiresIn - TN_ACCESS_TOKEN_EXPIRY_BUFFER);
         apcu_store(TN_ACCESS_TOKEN_CACHE_KEY, $accessToken, $ttl);
+    }
+    $tmp = $tokenFile . '.' . uniqid('tmp_', true);
+    if (@file_put_contents($tmp, json_encode(['token' => $accessToken, 'expires_at' => time() + $ttl]), LOCK_EX) !== false) {
+        @chmod($tmp, 0600);
+        @rename($tmp, $tokenFile);
     }
 
     return $accessToken;
 }
 
-function tnRequest($endpoint, $params = [], $method = 'GET') {
-    $accessToken = getTnAccessToken(); 
-   
-    $url = BASE_URL . $endpoint;
+/*
+|--------------------------------------------------------------------------
+| TicketNetwork request layer
+|--------------------------------------------------------------------------
+| Every catalog call goes through tnRequest(). GET responses are cached in
+| cache/ (file cache; the host has no APCu) for a TTL chosen per endpoint
+| by tnDefaultTtl() unless the caller passes one: reference data
+| (performers, venues, cities, categories, ...) for 6h, event lists 10 min,
+| search 5 min, per-user geo queries 5 min. Pass $ttl = 0 to bypass.
+|
+| Set the TN_PROFILE env var to a writable file path to get one JSON line
+| per HTTP request with every call, cache hit/miss and milliseconds.
+*/
 
+const TN_CACHE_SWEEP_AGE = 86400;
+
+function tnDefaultTtl($endpoint, array $params) {
+    $e = trim($endpoint, '/');
+    if (!empty($params['geoFilter']))            return 300;
+    if (strpos($e, 'events/search') !== false)   return 300;
+    if (strpos($e, 'catalog/v2/events') === 0)   return 600;
+    if (strpos($e, 'catalog/v2/suggest') === 0)  return 3600;
+    return 6 * 3600;
+}
+
+function tnProfile($endpoint, $hit, $ms) {
+    $file = getenv('TN_PROFILE');
+    if ($file === false || $file === '') return;
+    if (!isset($GLOBALS['tn_profile'])) {
+        $GLOBALS['tn_profile'] = ['uri' => $_SERVER['REQUEST_URI'] ?? ($_SERVER['argv'][0] ?? 'cli'), 'calls' => []];
+        register_shutdown_function(function () use ($file) {
+            $p = $GLOBALS['tn_profile'];
+            $misses = array_filter($p['calls'], fn($c) => !$c['hit']);
+            $line = json_encode([
+                'uri'   => $p['uri'],
+                'calls' => count($p['calls']),
+                'hits'  => count($p['calls']) - count($misses),
+                'ms'    => (int) array_sum(array_column($p['calls'], 'ms')),
+                'live'  => array_values(array_map(fn($c) => $c['endpoint'] . ' ' . $c['ms'] . 'ms', $misses)),
+            ]);
+            @file_put_contents($file, $line . "\n", FILE_APPEND);
+        });
+    }
+    $GLOBALS['tn_profile']['calls'][] = ['endpoint' => $endpoint, 'hit' => $hit, 'ms' => (int) $ms];
+}
+
+function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
+    $params = is_array($params) ? $params : [];
+    $ttl = $ttl === null ? tnDefaultTtl($endpoint, $params) : (int) $ttl;
+    $cacheKey = null;
+
+    if ($method === 'GET' && $ttl > 0) {
+        $cacheKey = 'tn_' . md5(WEBSITE_CONFIG_ID . '|' . trim($endpoint, '/') . '?' . http_build_query($params));
+        $cached = cache_get($cacheKey, $ttl);
+        if ($cached !== false) {
+            tnProfile($endpoint, true, 0);
+            return $cached;
+        }
+    }
+
+    $t0 = microtime(true);
+    $accessToken = getTnAccessToken();
+    $url = BASE_URL . $endpoint;
     if (!empty($params)) {
         $url .= '?' . http_build_query($params);
     }
 
     $ch = curl_init($url);
-
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_CUSTOMREQUEST  => $method,
@@ -178,7 +257,9 @@ function tnRequest($endpoint, $params = [], $method = 'GET') {
             'Accept: application/json',
             'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID,
         ],
-        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_TIMEOUT        => 20,
+        CURLOPT_ENCODING       => '',
     ]);
 
     $response = curl_exec($ch);
@@ -186,18 +267,17 @@ function tnRequest($endpoint, $params = [], $method = 'GET') {
     if ($response === false) {
         $error = curl_error($ch);
         curl_close($ch);
-        // Was `throw new Exception(...)` - see getTnAccessToken()'s
-        // matching fix above for why: uncaught anywhere in this codebase,
-        // so a transient TN network failure 500'd the calling page instead
-        // of showing "no events". Every caller already treats a missing
-        // 'results'/'count' key as empty (`$data['results'] ?? []`), so an
-        // empty array here degrades the same way an empty API result does.
+        tnProfile($endpoint, false, (microtime(true) - $t0) * 1000);
+        // Uncaught anywhere in this codebase, so a transient TN network
+        // failure used to 500 the calling page; every caller treats a
+        // missing 'results'/'count' key as empty.
         \Sentry\captureMessage('TicketNetwork API cURL error (' . $endpoint . '): ' . $error);
         return [];
     }
 
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    tnProfile($endpoint, false, (microtime(true) - $t0) * 1000);
 
     $decoded = json_decode($response, true);
 
@@ -206,7 +286,29 @@ function tnRequest($endpoint, $params = [], $method = 'GET') {
         return [];
     }
 
+    if ($cacheKey !== null && $httpCode === 200 && is_array($decoded) && !isset($decoded['code']) && !isset($decoded['Message'])) {
+        cache_set($cacheKey, $decoded);
+        if (mt_rand(1, 200) === 1) {
+            tnCacheSweep();
+        }
+    }
+
     return $decoded;
+}
+
+/** Delete stale tn_*.json response files so cache/ doesn't grow unbounded. */
+function tnCacheSweep() {
+    $cutoff = time() - TN_CACHE_SWEEP_AGE;
+    foreach (glob(cache_dir() . 'tn_*.json') ?: [] as $file) {
+        if (@filemtime($file) < $cutoff) {
+            @unlink($file);
+        }
+    }
+}
+
+/** Kept for existing callers; tnRequest() itself now caches. */
+function tnRequestCached($endpoint, array $params = [], $ttl = 600) {
+    return tnRequest($endpoint, $params, 'GET', $ttl);
 }
 
 function getTnPerformers($params = []) {
@@ -229,27 +331,6 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
 // everything else here rather than re-fetched live every time. Every
 // existing caller (performer.php, artist-*.php, etc.) benefits from this
 // too, not just the autocomplete path.
-/*
-|--------------------------------------------------------------------------
-| Short-lived file cache for TicketNetwork reads
-|--------------------------------------------------------------------------
-| The host has no APCu (checked), so the apcu-only caches in this file were
-| no-ops in production and every performer page view re-fetched the
-| performer, its events and its related performers live (~1.5-2s TTFB).
-| cache/ is the same file cache the homepage feeds use.
-*/
-function tnRequestCached($endpoint, array $params = [], $ttl = 600) {
-    $key = 'tn_' . md5($endpoint . '?' . http_build_query($params));
-    $cached = cache_get($key, $ttl);
-    if ($cached !== false) {
-        return $cached;
-    }
-    $data = tnRequest($endpoint, $params);
-    if (!empty($data) && is_array($data) && !isset($data['code']) && !isset($data['Message'])) {
-        cache_set($key, $data);
-    }
-    return $data;
-}
 
 /**
  * Page 1 of a performer's upcoming events, date order, cached 10 minutes.
@@ -649,7 +730,6 @@ function getFaqs($type = null, $mysqli = MYSQLI) {
 
 function getConcertEvents($limit = 12) {
 
-    $accessToken = getTnAccessToken();
     $concertRootPath = ".1859.1986.";
 
     $params = [
@@ -657,37 +737,13 @@ function getConcertEvents($limit = 12) {
         'perPage' => $limit
     ];
 
-    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/events/', $params);
 
     return $data['results'] ?? [];
 }
 
 function getNearbyVenues($lt, $lg, $limit = 20) {
 
-    $accessToken = getTnAccessToken();
     $radius = '50mi';
     
     if (empty($lt) && empty($lg)) {
@@ -701,32 +757,13 @@ function getNearbyVenues($lt, $lg, $limit = 20) {
         'salesRankOptions' => '{"interval":"week","metric":"ticketVolume"}'
     ];    
 
-    $url = BASE_URL . '/catalog/v2/venues/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 30
-    ]);
-
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/venues/', $params);
     
     return $data['results'] ?? [];
 }
 
 function getTopVenues($limit = 20) {
 
-    $accessToken = getTnAccessToken();
-    
     $params = [ 
         'filter' => "country/alphaCode eq 'US'", 
         'sort' => '-salesRank', 
@@ -734,24 +771,7 @@ function getTopVenues($limit = 20) {
         'perPage' => $limit 
     ];
 
-    $url = BASE_URL . '/catalog/v2/venues/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 30
-    ]);
-
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/venues/', $params);
 
     return $data['results'] ?? [];
 }
@@ -852,35 +872,7 @@ function getKeywordSearchSuggestions($q) {
         'citiesRequested' => 5
     ];
 
-    $url = BASE_URL . '/catalog/v2/suggest?' . http_build_query($params);
-
-    $accessToken = getTnAccessToken();
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20,
-        CURLOPT_CONNECTTIMEOUT => 5
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    if (!$response) return [];
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/suggest', $params);
 
     if (!$data) return [];
 
@@ -907,35 +899,7 @@ function getKeywordSearchResults($q) {
         'venuesRequested' => 5
     ];
 
-    $url = BASE_URL . '/catalog/v2/suggest?' . http_build_query($params);
-
-    $accessToken = getTnAccessToken();
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20,
-        CURLOPT_CONNECTTIMEOUT => 5
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    if (!$response) return [];
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/suggest', $params);
 
     if (!$data) return [];
 
@@ -943,25 +907,12 @@ function getKeywordSearchResults($q) {
 }
 
 function tnCurlRequest($url) {
-
-    $accessToken = getTnAccessToken();
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT        => 20
-    ]);
-
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    return json_decode($response, true);
+    // Legacy signature (full URL). Delegates to tnRequest() so it shares the
+    // cache, timeouts, error handling and profiling.
+    $parts = parse_url($url);
+    $params = [];
+    parse_str($parts['query'] ?? '', $params);
+    return tnRequest($parts['path'] ?? '', $params);
 }
 
 function getEmptySuggestionResponse() {
@@ -983,67 +934,20 @@ function getEmptySuggestionResponse() {
 
 function getHeaderSearchEvents($params = []) {
 
-    $accessToken = getTnAccessToken();
-
-    $url = BASE_URL . '/catalog/v2/events/search';
-
-    if (!empty($params)) {
-        $url .= '?' . http_build_query($params);
-    }
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/events/search', $params);
 
     return $data ?? [];
 }
 
 function getLoadMoreEvents($params = []) {
 
-    $accessToken = getTnAccessToken();
-
-    $url = BASE_URL . '/catalog/v2/events';
-
-    if (!empty($params)) {
-        $url .= '?' . http_build_query($params);
-    }
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/events', $params);
 
     return $data ?? [];
 }
 
 function getMostPopularEvents($catPath = '', $lat = '', $lng = '') {
     
-    $accessToken = getTnAccessToken();
     $today = date('Y-m-d');
     if(!empty($lat) && !empty($lng)) {
         $params = [
@@ -1063,37 +967,12 @@ function getMostPopularEvents($catPath = '', $lat = '', $lng = '') {
     }
     
 
-    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/events/', $params);
 
     return $data['results'] ?? [];
 }
 
 function tnGetCategoryNearby($rootPath, $lat, $lng, $limit = 12) {
-
-    $accessToken = getTnAccessToken();
 
     $params = [
         'filter'    => "defaultCategory/path eq '$rootPath'",
@@ -1101,36 +980,12 @@ function tnGetCategoryNearby($rootPath, $lat, $lng, $limit = 12) {
         'perPage'   => $limit
     ];
 
-    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/events/', $params);
 
     return $data['results'] ?? [];
 }
 
 function fetchLocationCategoryEvents($rootPath, $type = '', $loc1 = '', $loc2 = '') {
-    $accessToken = getTnAccessToken();
     $today = date('Y-m-d');
     // Featured feeds only: TicketNetwork parks date-TBA events decades out
     // (2070+, time "TBA"); they can carry inventory, so hasTickets alone
@@ -1152,30 +1007,7 @@ function fetchLocationCategoryEvents($rootPath, $type = '', $loc1 = '', $loc2 = 
         $params['geoFilter'] = sprintf('nearby(%F,%F,50mi)', $lat, $lng);
     }
 
-    $url = BASE_URL . '/catalog/v2/events/?' . http_build_query($params);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/events/', $params);
 
     return $data['results'] ?? [];
 }
@@ -1273,7 +1105,6 @@ function getTeamsByCategory($categorySlug, $limit = 50) {
         return [];
     }
 
-    $accessToken = getTnAccessToken();
     $categoryPath = $categoryPaths[$categorySlug];
 
     $params = [
@@ -1281,22 +1112,7 @@ function getTeamsByCategory($categorySlug, $limit = 50) {
         'perPage' => $limit
     ];
 
-    $url = BASE_URL . '/catalog/v2/performers?' . http_build_query($params);
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ]
-    ]);
-
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/performers', $params);
     $results = $data['results'] ?? [];
 
     return $results;
@@ -1319,8 +1135,6 @@ function getTeamsByCategoryFallback($categorySlug, $limit = 20) {
         return [];
     }
 
-    $accessToken = getTnAccessToken();
-
     $cacheKey = "teams_{$categorySlug}";
     $params = [
         'categoryFilter' => "path eq '{$categoryPaths[$categorySlug]}'",
@@ -1335,22 +1149,7 @@ function getTeamsByCategoryFallback($categorySlug, $limit = 20) {
         return $cached;
     }
 
-    $url = BASE_URL . '/catalog/v2/performers?' . http_build_query($params);
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ]
-    ]);
-
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    $data = json_decode((string)$response, true);
+    $data = tnRequest('/catalog/v2/performers', $params);
     $results = $data['results'] ?? [];
 
     cache_set($cacheKey, $results);
@@ -1621,8 +1420,6 @@ function getTopSubcategories($rootPath, $limit = 8) {
 
 function searchPostalCodes($text, $country = 'US', $limit = 20) {
 
-    $accessToken = getTnAccessToken();
-
     if (!$text) {
         return [];
     }
@@ -1641,30 +1438,7 @@ function searchPostalCodes($text, $country = 'US', $limit = 20) {
         'sort'    => 'city'
     ];
 
-    $url = BASE_URL . '/catalog/v2/postalCodes/?' . http_build_query($params);
-    
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $accessToken,
-            'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID
-        ],
-        CURLOPT_TIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return [];
-    }
-
-    curl_close($ch);
-
-    $data = json_decode($response, true);
+    $data = tnRequest('/catalog/v2/postalCodes/', $params);
 
     return $data;
 }

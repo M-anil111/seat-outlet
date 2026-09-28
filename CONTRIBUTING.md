@@ -111,6 +111,33 @@ one-time bootstrap step: it only works when zero admin accounts exist yet
 second admin after that needs a manual database insert until an invite flow
 exists.
 
+## TicketNetwork calls, caching and profiling
+
+Every catalog call goes through `tnRequest()` in `functions.php`. GET
+responses are cached as `cache/tn_*.json` (gitignored) for a TTL chosen per
+endpoint: reference data (performers, venues, cities, categories,
+postal codes) 6 hours, event lists 10 minutes, `events/search` and per-user
+geo queries 5 minutes, `suggest` 1 hour. Pass `$ttl = 0` to bypass. The OAuth
+token is cached in the system temp dir for its real lifetime (the host has
+no APCu, so the APCu-only caches never worked in production).
+
+Set the `TN_PROFILE` environment variable to a writable file path and every
+HTTP request appends one JSON line: URI, number of catalog calls, cache
+hits, total milliseconds and the list of live calls. That is how the
+per-page numbers in the PR were produced.
+
+Crons (all safe to run concurrently with traffic):
+
+| Script | Schedule | Purpose |
+|---|---|---|
+| `cron/home-events.php`, `home-top-performers.php`, `home-venues.php`, `home-categories.php` | hourly | homepage feeds |
+| `cron/warm-listings.php` | every 5 min | keeps /tickets, /concerts, /sports, /theater, /festival, top category and top city feeds warm so no visitor waits on the API |
+| `cron/resolve-images.php` | every 10–15 min | entity image queue |
+
+Card images on the homepage and search suggestions load through one
+batched `POST /ajax/get-images.php` per slider (was one GET per card,
+sequentially).
+
 ## Entity images (performers, teams, venues, festivals, cities)
 
 `inc/images.php` resolves images through one source chain per entity type

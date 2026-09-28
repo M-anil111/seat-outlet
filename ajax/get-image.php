@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../functions.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: public, max-age=600');
 
 // Serve-only endpoint for cards on the homepage / search suggestions.
 // It never calls a third-party API inside the request: it returns the

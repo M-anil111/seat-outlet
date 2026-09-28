@@ -43,64 +43,9 @@ function buildSuggestionSkeleton(count = 6) {
 
 let suggestionLoadToken = 0;
 
-async function fetchImageSequentially(img, loadToken) {
-    if (!img || loadToken !== suggestionLoadToken) return;
-  
-    const artist = img.dataset.artist ? decodeURIComponent(img.dataset.artist) : '';
-    const venue = img.dataset.venue ? decodeURIComponent(img.dataset.venue) : '';
-    const category = img.dataset.category || '{}';
-  
-    const endpoint =
-        `/ajax/get-image.php?artist=${encodeURIComponent(artist)}` +
-        `&venue=${encodeURIComponent(venue)}` +
-        `&category=${encodeURIComponent(category)}`;
-  
-    try {
-      const res = await fetch(endpoint);  
-      const data = await res.json();
-  
-      if (loadToken !== suggestionLoadToken) return;
-  
-      if (data && data.image) {
-        const tempImg = new Image();
-
-        img.style.opacity = '0';
-        img.style.transition = 'opacity 0.3s ease';
-  
-        tempImg.onload = function () {
-            img.src = data.image;
-            if (data.credit) img.title = data.credit;
-          if (data.credit) img.title = data.credit;
-            
-          requestAnimationFrame(() => {
-            img.style.opacity = '1';
-            img.classList.add('loaded');
-          });
-        };
-
-        tempImg.onerror = function () {
-            img.style.opacity = '1';
-            img.classList.add('loaded');
-        };
-
-        tempImg.src = data.image;
-        
-      }
-  
-    } catch (err) {
-      console.error('Image load failed:', name, err);
-    }
-  }
-  
-  async function loadImagesOneByOne(container, loadToken) {
-    const images = container.querySelectorAll('.venue-dynamic-image');
-  
-    for (const img of images) {
-      if (loadToken !== suggestionLoadToken) break;
-  
-      await fetchImageSequentially(img, loadToken);
-    }
-  }
+async function loadImagesOneByOne(container, loadToken) {
+    await window.soBatchLoadImages(container, '.venue-dynamic-image', () => loadToken === suggestionLoadToken);
+}
   
 window.loadTopSuggestions = function(keyword) {
 

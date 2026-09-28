@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../functions.php';
 
 header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: public, max-age=300');
 
 $page       = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage    = isset($_GET['perPage']) ? max(1, min(100, (int) $_GET['perPage'])) : 20;

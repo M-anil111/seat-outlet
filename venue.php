@@ -30,9 +30,11 @@ $today = date('Y-m-d');
 $params = [
     'filter' => "venue/id eq $id and date/date ge $today",
 ];
-$eventsResponse = getTnVenueEvents($id, ['perPage' => $perPage, 'page' => 1]);
+$eventsResponse = getTnVenueEvents($id, ['perPage' => $perPage, 'page' => 1, 'includeTotalCount' => 'true']);
 
-$total_count = getTnVenueEventsCount($id);
+// totalCount rides on the list response (includeTotalCount) - this used to
+// be a second, separate API call per page view.
+$total_count = (int) ($eventsResponse['totalCount'] ?? 0);
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 
 $events = $eventsResponse['results'] ?? [];

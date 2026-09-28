@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../functions.php';
 
 header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: public, max-age=300');
 
 // Raw inputs
 $lat       = trim($_GET['lat'] ?? '');

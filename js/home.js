@@ -115,61 +115,9 @@ $('.venue-slider').on('setPosition', function(){
       });
     }
     
-    async function fetchImageSequentially(img, loadToken) {
-      if (!img || loadToken !== currentLoadToken) return;
-  
-      const eventName = img.dataset.event ? decodeURIComponent(img.dataset.event) : '';
-      const artist = img.dataset.artist ? decodeURIComponent(img.dataset.artist) : '';
-      const tab = img.dataset.tab ? decodeURIComponent(img.dataset.tab) : '';
-      const category = img.dataset.category || '{}';
-  
-      const url =
-        `/ajax/get-image.php?event=${encodeURIComponent(eventName)}` +
-        `&artist=${encodeURIComponent(artist)}` +
-        `&tab=${encodeURIComponent(tab)}` +
-        `&category=${encodeURIComponent(category)}`;
-  
-        try {
-          const res = await fetch(url);
-          const data = await res.json();
-        
-          if (loadToken !== currentLoadToken) return;
-        
-          if (data && data.image) {
-            const tempImg = new Image();
-        
-            img.style.opacity = '0';
-            img.style.transition = 'opacity 0.3s ease';
-        
-            tempImg.onload = function () {
-        
-              img.src = data.image;
-            if (data.credit) img.title = data.credit;
-          if (data.credit) img.title = data.credit;
-              if (data.credit) img.title = data.credit;
-        
-              requestAnimationFrame(() => {
-                img.style.opacity = '1';
-                img.classList.add('loaded');
-              });
-        
-            };
-        
-            tempImg.src = data.image;
-          }
-        
-        } catch (err) {
-          console.error('Image load failed:', eventName, err);
-        }
-    }
-
     async function loadImagesOneByOne(container, loadToken) {
-      const images = container.querySelectorAll('.event-dynamic-image');
-  
-      for (const img of images) {
-        if (loadToken !== currentLoadToken) break;
-        await fetchImageSequentially(img, loadToken);
-      }
+      // Name kept for the call sites; it is one batched request now.
+      await window.soBatchLoadImages(container, '.event-dynamic-image', () => loadToken === currentLoadToken);
     }
 
     window.loadLocationCategory = async function(tabId, type, loc1, loc2) {
@@ -408,50 +356,8 @@ $('.venue-slider').on('setPosition', function(){
 
   let venueLoadToken = 0;
 
-  async function fetchVenueImageSequentially(img, loadToken) {
-    if (!img || loadToken !== venueLoadToken) return;
-  
-    const venueName = img.dataset.venue
-      ? decodeURIComponent(img.dataset.venue)
-      : '';
-  
-    if (!venueName) return;
-  
-    const url = `/ajax/get-image.php?venue=${encodeURIComponent(venueName)}`;
-  
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-  
-      if (loadToken !== venueLoadToken) return;
-  
-      if (data && data.image) {
-        const tempImg = new Image();
-  
-        tempImg.onload = function () {
-          img.src = data.image;
-          if (data.credit) img.title = data.credit;
-  
-          setTimeout(() => {
-            img.classList.add('loaded');
-          }, 50);
-        };
-  
-        tempImg.src = data.image;
-      }
-  
-    } catch (err) {
-      console.error('Venue image load failed:', venueName, err);
-    }
-  }
-
   async function loadVenueImagesOneByOne(container, loadToken) {
-    const images = container.querySelectorAll('.venue-dynamic-image');
-  
-    for (const img of images) {
-      if (loadToken !== venueLoadToken) break;
-      await fetchVenueImageSequentially(img, loadToken);
-    }
+    await window.soBatchLoadImages(container, '.venue-dynamic-image', () => loadToken === venueLoadToken);
   }
   
   window.loadNearbyVenues = function() { 
