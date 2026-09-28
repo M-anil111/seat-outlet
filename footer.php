@@ -64,7 +64,7 @@
     <li><a href="/what-we-do">What we do</a></li>
     <li><a href="/faq">FAQ's</a></li>
     <li><a href="/contact">Contact</a></li>
-    <li><a href="#">Blog</a></li>
+    <li><a href="/blog">Blog</a></li>
   </ul>
 </div>
     
@@ -89,7 +89,7 @@
     <li><a href="/privacy-policy">Privacy Policy</a></li>
     <li><a href="/terms-and-conditions">Terms of Use</a></li>
     <li><a href="/cookie-policy">Cookie Policy</a></li>
-    <li><a href="#">Sitemap</a></li>
+    <li><a href="/sitemap.php">Sitemap</a></li>
   </ul>
   </div>
   <!-- Divider -->
