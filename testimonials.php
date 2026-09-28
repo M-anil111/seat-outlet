@@ -246,6 +246,23 @@
         </div>
     </section>
 
+    <!--
+        Same finding as reviews.php: the testimonial cards below and the
+        "50K+"/"4.9/5"/"98%" stats further down are illustrative sample
+        content, not real collected customer feedback - no reviews table
+        or collection flow backs this page. See functions.php's
+        buildOrganizationSchema() for the matching fix already applied to
+        this site's machine-readable schema (fabricated review/
+        aggregateRating removed there). Replace with real testimonials/
+        stats before this page goes live/indexed - it's currently noindex
+        by header.php's site-wide default.
+    -->
+    <div class="container mt-4">
+        <div class="alert alert-warning" role="alert">
+            <strong>Note:</strong> The testimonials and stats below are illustrative examples while we build out real customer review collection. Real verified testimonials will replace this content soon.
+        </div>
+    </div>
+
     <!-- Testimonials Content -->
     <section class="section-padding">
         <div class="container">

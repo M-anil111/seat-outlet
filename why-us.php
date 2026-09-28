@@ -54,14 +54,14 @@
 <div class="grid-section container">
   <div class="card-stat white-bg">
     
-      <div class="stat-big">1976</div>
-      <div class="stat-sublabel fw-bolder text-black">Year SeatOutlet Was Founded</div>
-    
+      <div class="stat-big">2017</div>
+      <div class="stat-sublabel fw-bolder text-black">Year SeatOutlet Was Founded in Canada</div>
+
   </div>
   <div class="card-text dark">
-    
+
       <div class="section-tag text-white fw-bolder mb-4">Our Story</div>
-      <h3 class="mb-4">We're the partner that's investing in you and your fans, to keep you on the pulse of what's next.</h3>
+      <h3 class="mb-4">Founded in Canada in 2017, we're the partner that's investing in you and your fans, to keep you on the pulse of what's next.</h3>
       <a href="#">See Our Journey <span class="arrow">→</span></a>
     </div>
     

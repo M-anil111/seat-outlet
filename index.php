@@ -395,6 +395,17 @@ $festivalNames = getTopFestivalPerformers();
   <section class="section-padding">
     <div class="container">
       <h2 id="testimonials-heading" class="section__title section__title--center fw-bold fs-4 mb-lg-5 mb-4">Trusted by Thousands of Fans</h2>
+      <!--
+          Same finding as testimonials.php/reviews.php: these are
+          illustrative sample testimonials, not real collected customer
+          feedback. Unlike those two (noindex by default), this is the
+          homepage - real visitors and crawlers see this content, so this
+          is the highest-priority one of the three to replace with real
+          testimonials.
+      -->
+      <div class="alert alert-warning mb-4" role="alert">
+          <strong>Note:</strong> The testimonials below are illustrative examples while we build out real customer review collection.
+      </div>
       <div class="testimonials-grid">
         <div class="testimonial-card">
 
