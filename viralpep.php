@@ -88,6 +88,9 @@
     }
     .vp-image-box i { font-size: 3rem; color: rgba(37,99,255,.30); }
 
+    .vp-shot { border-radius: 12px; overflow: hidden; border: 1px solid var(--vp-border); box-shadow: 0 10px 30px rgba(37,99,255,.10); background: #fff; }
+    .vp-shot img { width: 100%; display: block; }
+
     /* use case cards */
     .vp-usecase-bg { background: var(--vp-mid); }
     .vp-usecase-card { background: var(--vp-card); border: 1px solid var(--vp-border); border-radius: 12px; padding: 24px 22px; height: 100%;
@@ -154,7 +157,7 @@
         </div>
         <div class="col-lg-6">
           <div class="vp-hero-visual">
-            <i class="bi bi-kanban"></i>
+            <img src="<?php echo HOME_URL; ?>/images/viralpep-hero-dashboard.png" alt="Viralpep dashboard" style="width:100%;height:100%;object-fit:cover;">
           </div>
         </div>
       </div>
@@ -193,22 +196,10 @@
 
       <div class="row g-4">
         <div class="col-md-6">
-          <div class="vp-mock-card">
-            <div class="vp-mock-head">Create Post</div>
-            <div class="vp-mock-body">
-              <i class="bi bi-pencil-square"></i>
-              <span>Compose and schedule content across platforms</span>
-            </div>
-          </div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-create-post.png" alt="Create Post composer"></div>
         </div>
         <div class="col-md-6">
-          <div class="vp-mock-card">
-            <div class="vp-mock-head">Post Preview</div>
-            <div class="vp-mock-body">
-              <i class="bi bi-eye"></i>
-              <span>See exactly how your post will look before it goes live</span>
-            </div>
-          </div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-post-preview.png" alt="Post Preview"></div>
         </div>
       </div>
     </div>
@@ -219,13 +210,7 @@
     <div class="container">
       <div class="row g-5 align-items-center">
         <div class="col-lg-6">
-          <div class="vp-mock-card">
-            <div class="vp-mock-head">Content Calendar</div>
-            <div class="vp-mock-body">
-              <i class="bi bi-calendar3"></i>
-              <span>Visual weekly content calendar across all channels</span>
-            </div>
-          </div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-content-calendar.png" alt="Content Calendar"></div>
         </div>
         <div class="col-lg-6">
           <h2>Advanced Scheduling Tools for Smarter Content Planning</h2>
@@ -260,13 +245,7 @@
           </div>
         </div>
         <div class="col-lg-6">
-          <div class="vp-mock-card">
-            <div class="vp-mock-head">Media Library</div>
-            <div class="vp-mock-body">
-              <i class="bi bi-images"></i>
-              <span>Organize images, videos and reusable templates</span>
-            </div>
-          </div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-media-library.png" alt="Media Library"></div>
         </div>
       </div>
     </div>
@@ -277,13 +256,7 @@
     <div class="container">
       <div class="row g-5 align-items-center">
         <div class="col-lg-6">
-          <div class="vp-mock-card">
-            <div class="vp-mock-head">Team Collaboration</div>
-            <div class="vp-mock-body">
-              <i class="bi bi-people"></i>
-              <span>Assign roles, review content and track approvals</span>
-            </div>
-          </div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-team-collaboration.png" alt="Team Collaboration"></div>
         </div>
         <div class="col-lg-6">
           <h2>Team Collaboration Made Simple</h2>
@@ -313,13 +286,7 @@
           </p>
         </div>
         <div class="col-lg-6">
-          <div class="vp-mock-card">
-            <div class="vp-mock-head">Performance Overview</div>
-            <div class="vp-mock-body">
-              <i class="bi bi-bar-chart-line"></i>
-              <span>Engagement trends and content performance at a glance</span>
-            </div>
-          </div>
+          <div class="vp-shot"><img src="<?php echo HOME_URL; ?>/images/viralpep-performance-overview.png" alt="Performance Overview"></div>
         </div>
       </div>
     </div>
