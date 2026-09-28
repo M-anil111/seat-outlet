@@ -66,6 +66,12 @@ $currentPage = $currentPage ?? '';
                                 <span class="nav-link-title">Page Content</span>
                             </a>
                         </li>
+                        <li class="nav-item <?php echo $currentPage === 'images' ? 'active' : ''; ?>">
+                            <a class="nav-link" href="images">
+                                <span class="nav-link-icon"><i class="ti ti-photo"></i></span>
+                                <span class="nav-link-title">Images</span>
+                            </a>
+                        </li>
                         <li class="nav-item <?php echo $currentPage === 'seo-scores' ? 'active' : ''; ?>">
                             <a class="nav-link" href="seo-scores">
                                 <span class="nav-link-icon"><i class="ti ti-gauge"></i></span>

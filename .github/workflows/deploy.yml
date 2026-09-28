@@ -63,13 +63,16 @@ jobs:
               "DB_PASS", "CONSUMER_KEY", "CONSUMER_SECRET", "GAPI_KEY", "GKGSAPI_KEY",
               "AWS_ACCESS_KEY", "AWS_SECRET_KEY", "RECAPTCHA_SECRET_KEY", "SMTP_USER", "SMTP_PASS",
               "SENTRY_DSN", "SENTRY_ENVIRONMENT",
+              "THESPORTSDB_KEY", "PEXELS_API_KEY",
           ];
+          // Optional: Sentry, the image-source keys, and the Knowledge Graph key
+          // (no longer used for images; kept so an existing secret still flows through).
+          $optional = ["SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY"];
           $lines = ["<?php"];
           foreach ($vars as $v) {
               $val = getenv($v);
               if ($val === false || $val === "") {
-                  // SENTRY_DSN / SENTRY_ENVIRONMENT are optional - everything else stays required.
-                  if (str_starts_with($v, "SENTRY_")) {
+                  if (in_array($v, $optional, true)) {
                       continue;
                   }
                   fwrite(STDERR, "Missing required repository secret: $v\n");
@@ -93,6 +96,8 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_ENVIRONMENT: ${{ secrets.SENTRY_ENVIRONMENT }}
+          THESPORTSDB_KEY: ${{ secrets.THESPORTSDB_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
 
       # Upload the whole tree over SFTP with plain curl, one file at a time -
       # git-ftp's bundled curl/libssh2 attempts SSH public-key auth first and

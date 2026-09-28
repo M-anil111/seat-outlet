@@ -69,6 +69,8 @@ async function fetchImageSequentially(img, loadToken) {
   
         tempImg.onload = function () {
             img.src = data.image;
+            if (data.credit) img.title = data.credit;
+          if (data.credit) img.title = data.credit;
             
           requestAnimationFrame(() => {
             img.style.opacity = '1';

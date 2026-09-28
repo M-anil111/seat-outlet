@@ -49,20 +49,12 @@ $year = date('Y');
 $artistName = $performer['text']['name'];
 $performer_bio = getArtistBio($artistName, $id);
 $faqs = getFaqs('performer');
-if(strtolower($breadcrumbs[1]['label']) == 'sports') {
-	$topcats = [
-		'.1859.1988.1879.1959.' => 'nfl',
-		'.1859.1988.1865.1971.' => 'nba',
-		'.1859.1988.1864.1969.' => 'mlb',
-		'.1859.1988.1883.1972.' => 'nhl',
-		'.1859.1988.1913.1970.' => 'mls'
-	];
-	$imageType = 'team';
-	$performer_image = getTeamImage($artistName, $topcats[$performer['defaultCategory']['path']], strtolower($performer['defaultCategory']['ancestors'][0]['text']['name']));
-}else{
-	$imageType = 'artist';
-	$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
-}
+$imageType = imageEntityTypeForPerformer($performer['defaultCategory'] ?? []);
+// Single-entity page: resolve synchronously (bounded by inc/images.php's
+// timeouts) so the first visitor gets a real image; the result is stored.
+$performerImg    = getEntityImage($imageType, $artistName, ['category' => $performer['defaultCategory'] ?? [], 'resolve' => true]);
+$performer_image = $performerImg['url'];
+$pageOgImage     = $performerImg['status'] !== 'fallback' ? $performer_image : null;
 
 // --- SEO: computed before including header.php, same convention as the
 // artist-city/concerts-city/etc. pages - see functions.php. This page was
@@ -104,6 +96,7 @@ include 'header.php';
 						<div class="col-md-3">
 							<div class="img-artist">
 								<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" />
+								<?php renderImageCredit($performerImg, 'img-credit'); ?>
 							</div>
 						</div>
 						<div class="col-md-9 text-white">
@@ -502,20 +495,16 @@ include 'header.php';
 			<div class="tab-section content-section-detail" id="fans">
 				<div class="row g-4">
 					<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo $artistName; ?> Fans Also Love</h2>
-					<?php foreach ($relatedPerformers as $performer) { 
-						$artistName = $performer['text']['name'];
-						if($imageType == 'team') {
-							$performer_image = getTeamImage($artistName, $topcats[$performer['defaultCategory']['path']], strtolower($performer['defaultCategory']['ancestors'][0]['text']['name']));
-						}else{
-							$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
-						}						
-						$i++;
-						if($i > 8) continue;
+					<?php foreach (array_slice($relatedPerformers, 0, 8) as $related) { 
+						// Was: image lookups for *every* related performer (not
+						// just the 8 shown) with live third-party calls each.
+						$relatedName  = $related['text']['name'] ?? '';
+						$relatedImage = getArtistImage($relatedName, $related['defaultCategory'] ?? [], false);
 					?>
 						<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-							<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
+							<a href="/artist/<?php echo strtolower($related['uriComponent'] ?? ''); ?>" class="band-card-bootstrap text-decoration-none">
 								<div class="position-relative overflow-hidden rounded">
-									<img src="<?php echo $performer_image; ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
+									<img src="<?php echo htmlspecialchars($relatedImage, ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo htmlspecialchars($relatedName, ENT_QUOTES, 'UTF-8'); ?>">
 									<div class="band-content d-flex justify-content-between align-items-center">
 										<span class="band-name"></span>								
 									</div>

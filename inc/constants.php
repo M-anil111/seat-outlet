@@ -17,6 +17,13 @@ define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Lfnn9AsAAAAAOQN5t
 // the environment rather than being hardcoded, same as everything else here.
 // Sentry is simply not initialized (see functions.php) when this is empty, so
 // local/dev environments without a DSN configured work exactly as before.
+// Optional image-source keys (see inc/images.php). Missing = source skipped
+// (Pexels) or the provider's public free key is used (TheSportsDB key "3").
+define('THESPORTSDB_KEY', getenv('THESPORTSDB_KEY') ?: '3');
+define('PEXELS_API_KEY', getenv('PEXELS_API_KEY') ?: '');
+// Google Knowledge Graph is no longer an image source; the key is optional.
+define('GKGSAPI_KEY', getenv('GKGSAPI_KEY') ?: '');
+
 define('SENTRY_DSN', getenv('SENTRY_DSN') ?: '');
 define('SENTRY_ENVIRONMENT', getenv('SENTRY_ENVIRONMENT') ?: (BASE_URL === 'https://www.tn-apis.com' ? 'production' : 'sandbox'));
 
@@ -27,7 +34,6 @@ $requiredSecrets = [
     'CONSUMER_KEY',
     'CONSUMER_SECRET',
     'GAPI_KEY',
-    'GKGSAPI_KEY',
     'AWS_ACCESS_KEY',
     'AWS_SECRET_KEY',
     'RECAPTCHA_SECRET_KEY',

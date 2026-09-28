@@ -49,6 +49,10 @@ $cityLabel = trim(($city['text']['name'] ?? '') . ', ' . ($city['stateProvince']
 $pageMetaTitle       = "Events in $cityLabel Tickets | Seat Outlet";
 $pageMetaDescription = "Find concert, sports, and event tickets in $cityLabel. Compare prices and book securely on Seat Outlet.";
 $pageCanonicalUrl    = HOME_URL . '/city/' . createSlug($cityLabel, $id);
+$cityImg = getEntityImage('city', $cityLabel);
+if ($cityImg['status'] !== 'fallback' && $cityImg['url'] !== '') {
+    $pageOgImage = $cityImg['url'];
+}
 
 include 'header.php';
 ?>

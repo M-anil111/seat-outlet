@@ -111,6 +111,39 @@ one-time bootstrap step: it only works when zero admin accounts exist yet
 second admin after that needs a manual database insert until an invite flow
 exists.
 
+## Entity images (performers, teams, venues, festivals, cities)
+
+`inc/images.php` resolves images through one source chain per entity type
+and records where each image came from:
+
+| Type | Sources, in order | Notes |
+|---|---|---|
+| artist | Wikidata → Commons | People and shows. Only CC0 / CC BY / CC BY-SA / public domain files are accepted; the photographer credit is stored and rendered under the image. |
+| team | TheSportsDB → Wikidata | Photo assets (fanart, banner, stadium) before the badge. `THESPORTSDB_KEY` env var; the public free key `3` is used when unset (30 req/min). |
+| venue | Wikidata → TheSportsDB venues | Venue search on TheSportsDB is a paid-tier endpoint and returns nothing on the free key. |
+| festival | Wikidata → Openverse | Openverse is filtered to `cc0,by,by-sa` and its attribution string is stored. |
+| city | Wikidata → Pexels | Pexels only when `PEXELS_API_KEY` is set. |
+
+Lookups never run inside a card/AJAX request: `ajax/get-image.php` serves
+what is stored (or the category fallback) and queues the entity. Single
+entity pages (`performer.php`, `venue.php`) resolve synchronously with
+6-second timeouts so the first visitor gets a real image.
+
+Run `php cron/resolve-images.php` every 10–15 minutes. It pre-warms
+everything in the homepage caches and works the queue in a bounded batch
+with a pause between entities (Wikimedia allows 200 req/min with a
+User-Agent that carries contact info; the agent string is
+`SeatOutletBot/1.0 (+HOME_URL/contact)`). Misses are retried after 7 days,
+rate limits and storage errors after 90 minutes; nothing is cached forever.
+
+Admin → Images lists every row with its status, source, license and credit,
+lets you upload or paste a replacement (`manual`, never auto-replaced), or
+send a row back to the queue. Migration `0008_images_provenance.sql` adds
+the provenance columns.
+
+Google Knowledge Graph is no longer used for images and `GKGSAPI_KEY` is
+optional.
+
 ## Optional performance layer: APCu
 
 Several hot paths (`page_rules` lookups, TicketNetwork's OAuth token,

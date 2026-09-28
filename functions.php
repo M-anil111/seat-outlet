@@ -46,20 +46,31 @@ function getS3Client() {
 }
 
 function downloadImage($url) {
+    if (!preg_match('#^https?://#i', (string) $url)) return '';
     $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
-
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS      => 3,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_USERAGENT      => imageUserAgent(),
+        // Was `die("cURL Error: ...")` on failure, which turned a JSON
+        // endpoint into plain text and killed whatever page called it.
+        CURLOPT_NOPROGRESS     => false,
+        CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
+            return ($dlTotal > IMAGE_MAX_DOWNLOAD_BYTES || $dlNow > IMAGE_MAX_DOWNLOAD_BYTES) ? 1 : 0;
+        },
+    ]);
     $data = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        die("cURL Error: " . curl_error($ch));
-    }
-
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_errno($ch);
     curl_close($ch);
+    if ($err || $code !== 200 || $data === false || $data === '') {
+        return '';
+    }
     return $data;
 }
 
@@ -1553,102 +1564,7 @@ function fixImageOrientation($imageContent) {
     return $fixed;
 }
 
-function getWikimediaImage($title = "") {
 
-    if (!$title) return '';
-
-    $url = "https://en.wikipedia.org/w/api.php?" . http_build_query([
-        "action" => "query",
-        "titles" => $title,
-        "prop" => "pageimages",
-        "piprop" => "original",
-        "format" => "json"
-    ]);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_USERAGENT => "SeatOutletBot/1.0"
-    ]);
-
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    if (!$response) return '';
-
-    $data = json_decode($response, true);
-
-    $pages = $data['query']['pages'] ?? [];
-    $page  = reset($pages);
-
-    return $page['original']['source'] ?? '';
-}
-
-function getWikimediaImageAccurate($title, $cat, $subcat) {
-    if (!$title) return '';
-
-    $keywords = getKgKeywordsByCategory($cat, $subcat);
-
-    // STEP 1: GET PAGE + IMAGE + CATEGORIES
-    $url = "https://en.wikipedia.org/w/api.php?" . http_build_query([
-        "action" => "query",
-        "titles" => $title,
-        "prop" => "pageimages|categories",
-        "piprop" => "original",
-        "cllimit" => "20",
-        "format" => "json"
-    ]);
-
-    $ch = curl_init($url);
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_USERAGENT => "SeatOutletBot/1.0"
-    ]);
-
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    if (!$response) return '';
-
-    $data = json_decode($response, true);
-
-    $pages = $data['query']['pages'] ?? [];
-    $page  = reset($pages);
-
-    if (!$page) return '';
-
-    // STEP 2: EXTRACT IMAGE
-    $image = $page['original']['source'] ?? '';
-
-    if (!$image) return '';
-
-    // STEP 3: EXTRACT CATEGORIES
-    $categories = $page['categories'] ?? [];
-
-    $categoryText = '';
-
-    foreach ($categories as $cat) {
-        $categoryText .= ' ' . strtolower(str_replace('Category:', '', $cat['title']));
-    }
-
-    // STEP 4: MATCH WITH KEYWORDS
-    $matchScore = 0;
-
-    foreach ($keywords as $word) {
-        if (strpos($categoryText, strtolower($word)) !== false) {
-            $matchScore++;
-        }
-    }
-
-    // STEP 5: VALIDATE MATCH
-    if ($matchScore > 0) {
-        return $image; // ✅ correct entity
-    }
-
-    return ''; // ❌ reject wrong entity
-}
 
 function getStoredImageUrl($name, $type) {
 
@@ -1682,16 +1598,58 @@ function processAndStoreImage($imageUrl, $name, $type) {
 
     $imageContent = fixImageOrientation($imageContent);
 
-    $webpImage = resizeAndConvertToWebP($imageContent, 800, 80);
+    $webpImage = resizeAndConvertToWebP($imageContent, 1200, 82);
     if (!$webpImage) return '';
 
-    uploadImageToS3($webpImage, $key, 'image/webp');
+    try {
+        uploadImageToS3($webpImage, $key, 'image/webp');
+    } catch (Throwable $e) {
+        // Storage outage must not surface as a fatal from an image lookup;
+        // the caller stores a short-lived fallback and retries later.
+        \Sentry\captureMessage('Image upload to storage failed (' . $key . '): ' . $e->getMessage());
+        return '';
+    }
 
     if (function_exists('apcu_store')) {
         apcu_store(s3ExistsCacheKey($key), true, 86400);
     }
 
     return getS3PublicUrl($key);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Entity image facade
+|--------------------------------------------------------------------------
+| Thin wrappers kept for the existing call sites; the implementation lives
+| in inc/images.php (per-type source chain, license capture, cron queue).
+| $resolve=false is for lists (related performers, cards): serve what is
+| stored or the fallback and queue the lookup, never block the page.
+*/
+
+function getArtistImage($artist, $defaultCategory, $resolve = true) {
+    if (!$artist) return '';
+    $type = imageEntityTypeForPerformer($defaultCategory ?: []);
+    return getEntityImage($type, $artist, ['category' => $defaultCategory ?: [], 'resolve' => $resolve])['url'];
+}
+
+function getTeamImage($team, $cat = '', $subcat = '', $resolve = true) {
+    if (!$team) return '';
+    return getEntityImage('team', $team, ['tab' => 'sports', 'resolve' => $resolve])['url'];
+}
+
+function getVenueImage($venue, $resolve = true) {
+    if (!$venue) return '';
+    return getEntityImage('venue', $venue, ['resolve' => $resolve])['url'];
+}
+
+function getEventImage($artist, $defaultCategory, $event, $tab) {
+    // Event names ("X vs. Y", "Tour 2027 - Night 2") never have an image of
+    // their own; the performer does. Serve-only: cards must not block.
+    if ($artist) {
+        return getArtistImage($artist, $defaultCategory, false);
+    }
+    return getCategoryFallbackImage($defaultCategory ?: [], $tab);
 }
 
 $venueKeywords = [
@@ -1706,7 +1664,7 @@ function getCategoryFallbackImage($defaultCategory, $tab = '') {
     $subcategory = '';
 
     if (!empty($defaultCategory)) {
-        if ($defaultCategory['depth'] == 2) {
+        if (($defaultCategory['depth'] ?? 0) == 2) {
             $subcategory = $defaultCategory['text']['name'];
         } else {
             foreach ($defaultCategory['ancestors'] ?? [] as $ancestor) {
@@ -1727,127 +1685,8 @@ function getCategoryFallbackImage($defaultCategory, $tab = '') {
     return AWS_CDN_URL . 'categories/' . strtolower($slug) . '.webp';
 }
 
-function getEventImage($artist, $defaultCategory, $event, $tab) {
-    $cat = '';
-    $subcat = '';
-    if($defaultCategory['depth'] == 1) {
-        $cat = strtolower($defaultCategory['text']['name']);
-    }
-    if($defaultCategory['depth'] == 2) {
-        $subcat = $defaultCategory['text']['name'];
-    }
-    if(empty($cat) || empty($subcat)) {
-        if (!empty($defaultCategory['ancestors'])) {
-            if(empty($cat)) {
-                foreach ($defaultCategory['ancestors'] as $ancestor) {
-                    if($ancestor['depth'] == 1) {
-                        $cat = strtolower($ancestor['text']['name']);
-                    }
-                }
-            }
-            if(empty($subcat)) {
-                foreach ($defaultCategory['ancestors'] as $ancestor) {
-                    if($ancestor['depth'] == 2) {
-                        $subcat = $ancestor['text']['name'];
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    $storedEvent = getStoredImageUrl($event, 'events');
-    if ($storedEvent) return $storedEvent;
 
-    $eventImage = getWikimediaImageAccurate($event, $cat, $subcat);
-    if ($eventImage) {
-        return processAndStoreImage($eventImage, $event, 'events');
-    }
 
-    if ($artist) {
-        
-        $storedArtist = getStoredImageUrl($artist, 'artists');
-        if ($storedArtist) return $storedArtist;
-
-        $artistImage = getWikimediaImageAccurate($artist, $cat, $subcat);
-        if ($artistImage) {
-            return processAndStoreImage($artistImage, $artist, 'artists');
-        }else{
-            $image = getCorrectKGEntity($artist, $cat, $subcat);
-            if($image) {
-                return processAndStoreImage($image, $artist, 'artists');
-            }
-        }
-    }
-
-    return getCategoryFallbackImage($defaultCategory, $cat);
-}
-
-function getArtistImage($artist, $defaultCategory) {
-
-    if (!$artist) return '';
-
-    $cat = '';
-    $subcat = '';
-    if($defaultCategory['depth'] == 1) {
-        $cat = strtolower($defaultCategory['text']['name']);
-    }
-    if($defaultCategory['depth'] == 2) {
-        $subcat = $defaultCategory['text']['name'];
-    }
-    if(empty($cat) || empty($subcat)) {
-        if (!empty($defaultCategory['ancestors'])) {
-            if(empty($cat)) {
-                foreach ($defaultCategory['ancestors'] as $ancestor) {
-                    if($ancestor['depth'] == 1) {
-                        $cat = strtolower($ancestor['text']['name']);
-                    }
-                }
-            }
-            if(empty($subcat)) {
-                foreach ($defaultCategory['ancestors'] as $ancestor) {
-                    if($ancestor['depth'] == 2) {
-                        $subcat = $ancestor['text']['name'];
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    $storedArtist = getStoredImageUrl($artist, 'artists');
-    if ($storedArtist) return $storedArtist;
-
-    $artistImage = getWikimediaImageAccurate($artist, $cat, $subcat);
-    if ($artistImage) {
-        return processAndStoreImage($artistImage, $artist, 'artists');
-    }else{        
-        $image = getCorrectKGEntity($artist, $cat, $subcat);
-        if($image) {
-            return processAndStoreImage($image, $artist, 'artists');
-        }
-    }
-
-    return getCategoryFallbackImage($defaultCategory, $cat);
-}
-
-function getVenueImage($venue) {
-    if (!$venue) return '';
-
-    $storedVenue = getStoredImageUrl($venue, 'venues');
-    if ($storedVenue) return $storedVenue;
-
-    $venueImage = getWikimediaImage($venue);
-    if ($venueImage) {
-        return processAndStoreImage($venueImage, $venue, 'venues');
-    }else{
-        $image = getCorrectKGEntityVenue($venue);
-        if($image) {
-            return processAndStoreImage($image, $venue, 'venues');
-        }
-    }
-
-    return '';
-}
 
 function convertToFloat($value) {
 
@@ -2067,65 +1906,8 @@ function getTnCatById($catId) {
     return tnRequest("/catalog/v2/categories/", $params);
 }
 
-function openverse_search($q) {
 
-    $url = "https://api.openverse.engineering/v1/images?q=". urlencode($q) . "&page_size=10";
 
-    $response = file_get_contents($url);
-
-    if (!$response) return [];
-
-    $data = json_decode($response, true);
-
-    return $data['results'] ?? [];
-}
-
-function pickBestImage($results, $name) {
-
-    $name = strtolower(str_replace(' ', '', $name));
-
-    foreach ($results as $img) {
-        $tags  = array_map(function($t) {
-            return strtolower($t['name']);
-        }, $img['tags'] ?? []);
-
-        if(!empty($tags) && in_array($name, $tags)) {
-            return $img['thumbnail'];
-        }
-    }
-
-    return $results[0]['thumbnail'] ?? '';
-}
-
-function getTeamImage($team, $cat, $subcat) {
-    $cacheKeyBase = 'team|' . $team;
-    $imageCacheKey = 'so_img_' . md5($cacheKeyBase);
-    $img = get_image($imageCacheKey);
-    
-    if($img) {
-        return $img; 
-    }
-
-    $image = '';
-    $results = openverse_search($team);
-    if(!empty($results)) {
-        foreach($results as $res) {
-            if(!empty($res['tags'])) {
-                foreach($res['tags'] as $tag) {
-                    if($tag['name'] == $cat || $tag['name'] == $subcat) {
-                        $image = $res['thumbnail'];
-                    }
-                }
-            }
-        }
-    }
-    if($image) {
-        $imageUrl = processAndStoreImage($image, $team, 'artistteams');
-        set_image($imageCacheKey, $imageUrl);
-        return $imageUrl;
-    }
-    return AWS_CDN_URL . 'categories/'.$subcat.'.webp';
-}
 
 function set_image($imageCacheKey, $imageUrl, $mysqli = MYSQLI) {
 
@@ -2311,147 +2093,8 @@ function getKgKeywordsByCategory($category, $subcategory) {
     return [];
 }
 
-function getWikiTitle($wikiUrl) {
-    if (!$wikiUrl) return null;
 
-    $path = parse_url($wikiUrl, PHP_URL_PATH);
-    $title = basename($path);
 
-    if (!$title) return null;
-
-    $title = urldecode($title);
-    $title = str_replace('_', ' ', $title);
-
-    return $title;
-}
-
-function getCorrectKGEntity($performerName, $category, $subcategory, $apiKey = GKGSAPI_KEY) {
-    $keywords = getKgKeywordsByCategory($category, $subcategory);
-    // No category signal to validate against - don't guess at an entity, let the caller fall back.
-    if (empty($keywords)) {
-        return null;
-    }
-
-    $url = 'https://kgsearch.googleapis.com/v1/entities:search?' . http_build_query([
-        'query' => $performerName,
-        'limit' => 10,
-        'key'   => $apiKey
-    ]);
-
-    $response = @file_get_contents($url);
-    if ($response === false) {
-        return null;
-    }
-
-    $data = json_decode($response, true);
-    if (empty($data['itemListElement']) || !is_array($data['itemListElement'])) {
-        return null;
-    }
-
-    // Entity types that are never a performer - catches a place/movie/book/etc. that
-    // happens to share the performer's exact name (the "duplicate name" case).
-    $rejectedTypes = ['place', 'city', 'country', 'administrativearea', 'book', 'movie', 'tvseries', 'tvepisode', 'videogame', 'product', 'event'];
-    $performerNameNormalized = strtolower(trim($performerName));
-
-    $bestEntity = null;
-    $bestScore = -1;
-
-    foreach ($data['itemListElement'] as $item) {
-        if (empty($item['result']) || !is_array($item['result'])) {
-            continue;
-        }
-
-        $entity = $item['result'];
-
-        // Name must match exactly (case/whitespace-insensitive). A fuzzy KG hit for a
-        // different, similarly-named entity is exactly what we're trying to reject.
-        $entityName = strtolower(trim($entity['name'] ?? ''));
-        if ($entityName === '' || $entityName !== $performerNameNormalized) {
-            continue;
-        }
-
-        $types = array_map('strtolower', $entity['@type'] ?? []);
-        if (count(array_intersect($types, $rejectedTypes)) > 0) {
-            continue;
-        }
-
-        $description = strtolower($entity['description'] ?? '');
-        $keywordMatched = false;
-        foreach ($keywords as $word) {
-            $word = strtolower($word);
-            if ($word !== '' && strpos($description, $word) !== false) {
-                $keywordMatched = true;
-                break;
-            }
-        }
-        if (!$keywordMatched) {
-            continue;
-        }
-
-        // Among everything that passes the checks above, keep the most relevant match
-        // rather than stopping at the first one - KG can return more than one candidate.
-        $score = (float) ($item['resultScore'] ?? 0);
-        if ($score > $bestScore) {
-            $bestScore = $score;
-            $bestEntity = $entity;
-        }
-    }
-
-    if (!$bestEntity) {
-        return null;
-    }
-
-    if (!empty($bestEntity['image']['contentUrl'])) {
-        return $bestEntity['image']['contentUrl'];
-    }
-
-    $wikiUrl = $bestEntity['detailedDescription']['url'] ?? null;
-    $title = $wikiUrl ? getWikiTitle($wikiUrl) : null;
-    return $title ? getWikimediaImage($title) : null;
-}
-
-function getCorrectKGEntityVenue($venueName, $apiKey = GKGSAPI_KEY) {
-    global $venueKeywords;
-
-    $url = 'https://kgsearch.googleapis.com/v1/entities:search?' . http_build_query([
-        'query' => $venueName,
-        'limit' => 10,
-        'key'   => $apiKey
-    ]);
-
-    $response = @file_get_contents($url);
-    if ($response === false) {
-        return null;
-    }
-
-    $data = json_decode($response, true);
-    if (empty($data['itemListElement']) || !is_array($data['itemListElement'])) {
-        return null;
-    }
-
-    foreach ($data['itemListElement'] as $item) {
-        if (empty($item['result']) || !is_array($item['result'])) {
-            continue;
-        }
-
-        $entity = $item['result']; 
-        $description = strtolower($entity['description'] ?? '');
-        
-        foreach($venueKeywords as $word) {
-            $word = strtolower($word);
-            if ($word !== '' && strpos($description, $word) !== false) {                                
-                if(!empty($entity['image']['contentUrl'])) {
-                    $image = $entity['image']['contentUrl'];
-                }else{
-                    $wikiUrl = $entity['detailedDescription']['url'];
-                    $title = getWikiTitle($wikiUrl);
-                    $image = getWikimediaImage($title);
-                }
-                return $image;             
-            }
-        }  
-    }
-}
 
 function getTopPerformersByCategory($categoryPath) {
 
@@ -3881,7 +3524,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                         <h2 class="so-heading">Fans Also Viewed</h2>
                         <?php foreach (array_slice($relatedPerformers, 0, 8) as $related) {
                             $relatedName = $related['text']['name'] ?? '';
-                            $relatedImage = getArtistImage($relatedName, $related['defaultCategory'] ?? []);
+                            $relatedImage = getArtistImage($relatedName, $related['defaultCategory'] ?? [], false);
                         ?>
                             <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
                                 <a href="/artist/<?php echo htmlspecialchars(strtolower($related['uriComponent'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" class="band-card-bootstrap text-decoration-none">
@@ -4720,3 +4363,6 @@ function seoScoreBadgeClass($score) {
     }
     return 'bg-green-lt';
 }
+
+// Entity image layer (performers, teams, venues, festivals, cities).
+require_once __DIR__ . '/inc/images.php';
