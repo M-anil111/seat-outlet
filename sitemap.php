@@ -7,13 +7,12 @@
 // - INCLUDED: Seat Outlet's own static/marketing pages, its category index
 //   pages, and every currently-listed, upcoming, US event (live from the
 //   TicketNetwork API - no fabricated URLs).
-// - INCLUDED: the four "network partner" pages (Grab Tickets Now, Ticket
-//   Deals, Hunt Tickets, Ticket Scanner) - these describe real partner
-//   sites and are genuine Seat Outlet content, per the site's own SEO
-//   documentation.
-// - EXCLUDED: austin-sign-masters.php, viralpep.php, it-sprinkles.php,
-//   mindshare-consulting.php - these are unrelated client/demo landing
-//   pages hosted in the same codebase, not Seat Outlet marketplace content.
+// - INCLUDED: the "network partner" pages (Grab Tickets Now, Ticket Deals,
+//   Hunt Tickets, Ticket Scanner, Dotbooker, WingCMS, Salespeep, Signs N
+//   More Inc, IT Sprinkles, Austin Sign Masters, Viralpep, Mindshare
+//   Consulting) and /our-network, the hub page linking all of them - these
+//   are real businesses, deliberately networked together, not orphaned
+//   demo clutter.
 // - EXCLUDED: admin/, ajax/, cache/, search.php, category.php, performer.php,
 //   performer-new.php, city.php, venue.php - each of these needs a specific
 //   ID/query param and has no safe "list all valid IDs" source in this repo
@@ -63,6 +62,15 @@ $staticPaths = [
     '/hunt-tickets',
     '/ticket-scanner',
     '/grab-tickets-now',
+    '/our-network',
+    '/dotbooker',
+    '/wingcms',
+    '/salespeep',
+    '/signs-n-more',
+    '/it-sprinkles',
+    '/austin-sign-masters',
+    '/viralpep',
+    '/mindshare-consulting',
     '/terms-and-conditions',
     '/privacy-policy',
     '/cookie-policy',
