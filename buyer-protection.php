@@ -139,7 +139,7 @@
     
     <h2 class="fw-bold mb-3">Trust & Safety Focus</h2>
     <p class="text-muted mb-5">
-    We are committed to providing a safe and reliable ticket purchasing experience. Our Buyer Protection Guarantee ensures that every order placed through our platform is secure, authentic, and supported from purchase to event day.
+    <?php echo getContentBlock('/buyer-protection', 'trust-safety-intro', 'We are committed to providing a safe and reliable ticket purchasing experience. Our Buyer Protection Guarantee ensures that every order placed through our platform is secure, authentic, and supported from purchase to event day.'); ?>
     </p>
 
     <div class="row g-4">

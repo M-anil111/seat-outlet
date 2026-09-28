@@ -250,7 +250,7 @@ include 'header.php';
         <div class="hero-tag fade-up"><i class="bi bi-ticket-perforated me-1"></i> Trusted Ticket Marketplace</div>
         <h1 class="fade-up delay-1">Your Seat<br>Awaits <em>You</em></h1>
         <p class="hero-sub fade-up delay-2">
-          Seat Outlet connects fans with live events across concerts, sports, theater, and more. Find, compare, and book tickets securely in just a few clicks.
+          <?php echo getContentBlock('/what-we-do', 'hero-sub', 'Seat Outlet connects fans with live events across concerts, sports, theater, and more. Find, compare, and book tickets securely in just a few clicks.'); ?>
         </p>
         <div class="d-flex flex-wrap gap-3 fade-up delay-3">
           <a href="/" class="btn btn-primary-brand">Find Tickets Near You <i class="bi bi-arrow-right ms-1"></i></a>

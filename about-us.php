@@ -450,6 +450,7 @@
         <div class="row align-items-center">
           <!-- Left Column -->
           <div class="col-lg-6 left-content">
+            <?php echo getContentBlock('/about-us', 'hero-story', '
             <h1 class="main-title mb-lg-4 mb-3">Our Story</h1>
             <p class="text-white mb-3">
               SeatOutlet was created to make live events easier to access for fans everywhere.
@@ -461,7 +462,7 @@
               We believe unforgettable moments should be easy to reach, which is why SeatOutlet
               continues building smarter tools and trusted partnerships that bring fans closer
               to the events they love.
-            </p>
+            </p>'); ?>
             <button type="button" class="btn-primary btn px-4">
               Work With Us
             </button>
@@ -498,6 +499,7 @@
 
           <!-- Right: Text -->
           <div class="col-md-7 mt-md-0 mt-4 about-content text-md-start text-center ps-lg-5 ps-md-4 ps-0">
+            <?php echo getContentBlock('/about-us', 'about-body', '
             <p>
               SeatOutlet began with a simple goal — helping fans find great seats quickly and safely.
               Over time, we have grown into a trusted ticket marketplace that prioritizes transparency,
@@ -516,7 +518,7 @@
             <p>
               SeatOutlet is committed to delivering smooth event experiences from search to checkout
               and beyond.
-            </p>
+            </p>'); ?>
           </div>
         </div>
       </div>

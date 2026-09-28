@@ -413,9 +413,7 @@ include 'header.php';
                         <span class="hero-title-blue">Guarantee</span>
                     </h1>
                     <p class="hero-subtitle">
-                    We stand firmly behind the quality of our products and services.
-                    Every purchase you make with us is backed by our clear, honest,
-                    and customer‑first guarantee.
+                    <?php echo getContentBlock('/guarantee', 'hero-subtitle', 'We stand firmly behind the quality of our products and services. Every purchase you make with us is backed by our clear, honest, and customer‑first guarantee.'); ?>
                     </p>
                 </div>
             </div>

@@ -2736,6 +2736,217 @@ function resolvePageRule($mysqli = MYSQLI) {
 }
 
 /**
+ * Page Content Management (page_content_blocks table -
+ * db/migrations/0006_page_content_blocks.sql). Lets an admin edit specific
+ * copy blocks on static pages without a code deploy. A page opts in by
+ * wrapping a piece of copy in getContentBlock($pagePath, $blockKey,
+ * $defaultHtml) - with no matching row (or an empty content column) it
+ * just returns $defaultHtml unchanged, so nothing on the site changes
+ * until an admin actually edits that block. Same APCu-cache-with-fallback
+ * pattern as page_rules above, since a page with editable blocks calls
+ * this once per block on every front-end render.
+ */
+const CONTENT_BLOCK_CACHE_TTL = 60;
+
+function contentBlockCacheKey($pagePath, $blockKey) {
+    return 'seatoutlet_content_block:' . $pagePath . ':' . $blockKey;
+}
+
+function getContentBlock($pagePath, $blockKey, $defaultHtml, $mysqli = MYSQLI) {
+    $pagePath = normalizePagePath($pagePath);
+    $cacheKey = contentBlockCacheKey($pagePath, $blockKey);
+
+    if (function_exists('apcu_fetch')) {
+        $cached = apcu_fetch($cacheKey, $success);
+        if ($success) {
+            return $cached !== null && $cached !== '' ? $cached : $defaultHtml;
+        }
+    }
+
+    $stmt = $mysqli->prepare('SELECT content FROM page_content_blocks WHERE page_path = ? AND block_key = ? LIMIT 1');
+    $stmt->bind_param('ss', $pagePath, $blockKey);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    $content = $row['content'] ?? null;
+
+    if (function_exists('apcu_store')) {
+        apcu_store($cacheKey, $content, CONTENT_BLOCK_CACHE_TTL);
+    }
+
+    return $content !== null && $content !== '' ? $content : $defaultHtml;
+}
+
+function contentBlockCacheForget($pagePath, $blockKey) {
+    if (function_exists('apcu_delete')) {
+        apcu_delete(contentBlockCacheKey(normalizePagePath($pagePath), $blockKey));
+    }
+}
+
+/**
+ * The pages/blocks wired up to be editable today. Purely a UI convenience
+ * for the admin list screen (so there's something to browse/edit before
+ * any row exists yet) - getContentBlock() itself works for any page_path/
+ * block_key a developer chooses, registered here or not.
+ */
+function getContentBlockRegistry() {
+    return [
+        ['page_path' => '/about-us', 'block_key' => 'hero-story', 'label' => 'About Us — Hero intro (2 paragraphs)'],
+        ['page_path' => '/about-us', 'block_key' => 'about-body', 'label' => 'About Us — "Built for Fans" body (4 paragraphs)'],
+        ['page_path' => '/why-us', 'block_key' => 'founding-story', 'label' => 'Why Us — Founding story headline'],
+        ['page_path' => '/what-we-do', 'block_key' => 'hero-sub', 'label' => 'What We Do — Hero subtitle'],
+        ['page_path' => '/guarantee', 'block_key' => 'hero-subtitle', 'label' => 'Guarantee — Hero subtitle'],
+        ['page_path' => '/buyer-protection', 'block_key' => 'trust-safety-intro', 'label' => 'Buyer Protection — Trust & Safety intro'],
+    ];
+}
+
+function listPageContentBlocks($search = '', $mysqli = MYSQLI) {
+    $rows = [];
+    if ($search !== '') {
+        $stmt = $mysqli->prepare(
+            'SELECT * FROM page_content_blocks WHERE page_path LIKE CONCAT(\'%\', ?, \'%\') OR block_key LIKE CONCAT(\'%\', ?, \'%\') OR label LIKE CONCAT(\'%\', ?, \'%\') ORDER BY page_path, block_key'
+        );
+        $stmt->bind_param('sss', $search, $search, $search);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        $result = $mysqli->query('SELECT * FROM page_content_blocks ORDER BY page_path, block_key');
+    }
+    while ($row = $result->fetch_assoc()) {
+        $rows[$row['page_path'] . '|' . $row['block_key']] = $row;
+    }
+    if (isset($stmt)) {
+        $stmt->close();
+    }
+
+    // Merge in registered-but-never-edited blocks so the admin list shows
+    // every known editable area, not just the ones already customized.
+    foreach (getContentBlockRegistry() as $entry) {
+        $key = $entry['page_path'] . '|' . $entry['block_key'];
+        if (!isset($rows[$key])) {
+            $rows[$key] = [
+                'ID' => null,
+                'page_path' => $entry['page_path'],
+                'block_key' => $entry['block_key'],
+                'label' => $entry['label'],
+                'content' => null,
+                'updated_at' => null,
+            ];
+        } else {
+            // A registered block's label is the canonical one, even if a
+            // freeform row (from before it was registered) saved a
+            // different label.
+            $rows[$key]['label'] = $entry['label'];
+        }
+    }
+
+    if ($search !== '') {
+        $needle = mb_strtolower($search);
+        $rows = array_filter($rows, function ($row) use ($needle) {
+            return str_contains(mb_strtolower($row['page_path']), $needle)
+                || str_contains(mb_strtolower($row['block_key']), $needle)
+                || str_contains(mb_strtolower($row['label']), $needle);
+        });
+    }
+
+    $rows = array_values($rows);
+    usort($rows, fn($a, $b) => [$a['page_path'], $a['block_key']] <=> [$b['page_path'], $b['block_key']]);
+    return $rows;
+}
+
+function getPageContentBlockById($id, $mysqli = MYSQLI) {
+    $stmt = $mysqli->prepare('SELECT * FROM page_content_blocks WHERE ID = ? LIMIT 1');
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ?: null;
+}
+
+function getPageContentBlockByPathKey($pagePath, $blockKey, $mysqli = MYSQLI) {
+    $pagePath = normalizePagePath($pagePath);
+    $stmt = $mysqli->prepare('SELECT * FROM page_content_blocks WHERE page_path = ? AND block_key = ? LIMIT 1');
+    $stmt->bind_param('ss', $pagePath, $blockKey);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ?: null;
+}
+
+function savePageContentBlock(array $data, $mysqli = MYSQLI) {
+    $id        = (int) ($data['id'] ?? 0);
+    $pagePath  = normalizePagePath($data['page_path'] ?? '');
+    $blockKey  = trim((string) ($data['block_key'] ?? ''));
+    $label     = trim((string) ($data['label'] ?? ''));
+    $content   = (string) ($data['content'] ?? '');
+
+    if ($pagePath === '' || $pagePath === '/' && empty($data['page_path'])) {
+        throw new InvalidArgumentException('A page path is required.');
+    }
+    if ($blockKey === '') {
+        throw new InvalidArgumentException('A block key is required.');
+    }
+    if ($label === '') {
+        throw new InvalidArgumentException('A label is required.');
+    }
+
+    $oldPagePath = null;
+    $oldBlockKey = null;
+    if ($id > 0) {
+        $existing = getPageContentBlockById($id, $mysqli);
+        $oldPagePath = $existing['page_path'] ?? null;
+        $oldBlockKey = $existing['block_key'] ?? null;
+    }
+
+    if ($id > 0) {
+        $stmt = $mysqli->prepare(
+            'UPDATE page_content_blocks SET page_path = ?, block_key = ?, label = ?, content = ?, updated_at = NOW()
+             WHERE ID = ?'
+        );
+        $stmt->bind_param('ssssi', $pagePath, $blockKey, $label, $content, $id);
+    } else {
+        // A registered block (or a re-save of one that was deleted) may
+        // already have a row from before - upsert instead of erroring on
+        // the unique key.
+        $stmt = $mysqli->prepare(
+            'INSERT INTO page_content_blocks (page_path, block_key, label, content, created_at, updated_at)
+             VALUES (?, ?, ?, ?, NOW(), NOW())
+             ON DUPLICATE KEY UPDATE label = VALUES(label), content = VALUES(content), updated_at = NOW()'
+        );
+        $stmt->bind_param('ssss', $pagePath, $blockKey, $label, $content);
+    }
+    $ok = $stmt->execute();
+    $error = $stmt->error;
+    $stmt->close();
+    if (!$ok) {
+        throw new RuntimeException($error ?: 'Could not save this content block.');
+    }
+
+    contentBlockCacheForget($pagePath, $blockKey);
+    if ($oldPagePath !== null && ($oldPagePath !== $pagePath || $oldBlockKey !== $blockKey)) {
+        contentBlockCacheForget($oldPagePath, $oldBlockKey);
+    }
+
+    return true;
+}
+
+function deletePageContentBlock($id, $mysqli = MYSQLI) {
+    $existing = getPageContentBlockById($id, $mysqli);
+
+    $stmt = $mysqli->prepare('DELETE FROM page_content_blocks WHERE ID = ?');
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $stmt->close();
+
+    if ($existing !== null) {
+        contentBlockCacheForget($existing['page_path'], $existing['block_key']);
+    }
+
+    return true;
+}
+
+/**
  * Blog (blog_posts table - db/migrations/0004_blog_posts.sql). Same CRUD
  * shape as page_rules above: list/get/save/delete, admin-facing, no caching
  * layer (unlike page_rules this isn't hit on every single front-end page
