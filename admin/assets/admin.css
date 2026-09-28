@@ -36,31 +36,13 @@ body.admin-body {
 
 .admin-logo {
     text-align: center;
-    margin-bottom: 6px;
+    margin-bottom: 28px;
 }
 
 .admin-logo img {
     height: 34px;
     width: auto;
-}
-
-.admin-logo-tag {
-    text-align: center;
-    color: var(--admin-primary);
-    font-weight: 600;
-    font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
-}
-
-.admin-logo-tag::before,
-.admin-logo-tag::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--admin-border);
+    max-width: 100%;
 }
 
 .admin-title {

@@ -26,9 +26,8 @@ $flash = admin_flash_get();
     <div class="admin-wrap">
         <div class="admin-card">
             <div class="admin-logo">
-                <img src="/images/seatoutlet-logo.svg" alt="Seat Outlet">
+                <img src="/images/admin-logo.png" alt="Seat Outlet Admin">
             </div>
-            <div class="admin-logo-tag">Admin</div>
 
             <?php if ($flash): ?>
                 <div class="admin-alert admin-alert-<?php echo $flash['type'] === 'success' ? 'success' : 'error'; ?>">
