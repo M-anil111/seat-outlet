@@ -3297,7 +3297,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                     <?php if ($index > 0) { ?>
                                         <?php echo $sep; ?>
                                     <?php } ?>
-                                    <a href="#">
+                                    <a href="<?php echo htmlspecialchars($item['url'] ?? '#', ENT_QUOTES, 'UTF-8'); ?>">
                                         <?php echo htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8'); ?>
                                     </a>
                                 <?php } ?>
@@ -3381,6 +3381,9 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                         $eventDateRaw = $event['date']['date'] ?? '';
                                         $timestamp    = $eventDateRaw ? strtotime($eventDateRaw) : false;
                                         $eventSlug    = createSlug($event['text']['name'] ?? '', $event['id'] ?? 0);
+                                        $evtCityLabel = trim(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
+                                        $evtCitySlug  = !empty($event['city']['id']) ? createSlug($evtCityLabel, $event['city']['id']) : null;
+                                        $evtVenueSlug = !empty($event['venue']['id']) ? createSlug($event['venue']['text']['name'] ?? '', $event['venue']['id']) : null;
                                     ?>
                                         <div class="d-flex align-items-center justify-content-between performer-event-item">
                                             <div class="date-box text-center me-3">
@@ -3397,9 +3400,9 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                                     <span class="time-clock"><?php echo htmlspecialchars($event['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
                                                 </div>
                                                 <div class="fw-semibold location-venue-name">
-                                                    <a href="#"><?php echo htmlspecialchars($event['city']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars($event['stateProvince']['text']['abbr'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                                                    <a href="<?php echo $evtCitySlug ? '/city/' . htmlspecialchars($evtCitySlug, ENT_QUOTES, 'UTF-8') : '#'; ?>"><?php echo htmlspecialchars($event['city']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars($event['stateProvince']['text']['abbr'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                                                     ·
-                                                    <a href="#"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                                                    <a href="<?php echo $evtVenueSlug ? '/venue/' . htmlspecialchars($evtVenueSlug, ENT_QUOTES, 'UTF-8') : '#'; ?>"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                                                 </div>
                                                 <div class="text-muted small"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
                                             </div>
