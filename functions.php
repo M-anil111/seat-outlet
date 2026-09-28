@@ -2979,6 +2979,24 @@ function getCategoryEventsByLocation(string $categoryKey, string $dimension, $lo
 }
 
 /**
+ * Maps an event's own defaultCategory/path (real field, already used
+ * elsewhere - see cron/home-events.php, ajax/get-location-category-events.php)
+ * to the matching category-city location page prefix, for linking an event
+ * page back to "more events like this in this city" - see event.php.
+ * Checks festivals before concerts since festivals' path is a sub-path of
+ * concerts' (".1859.1986.1877." starts with ".1859.1986."), same nesting
+ * getCategoryEventsByLocation() already accounts for.
+ */
+function getCategoryCityLinkPrefix($categoryPath): string {
+    $categoryPath = (string) $categoryPath;
+    if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['festivals']) === 0) return 'festivals-city';
+    if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['concerts']) === 0) return 'concerts-city';
+    if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['sports']) === 0) return 'sports-city';
+    if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['theater']) === 0) return 'theater-city';
+    return 'event-city';
+}
+
+/**
  * Track A page renderer (artist-city.php, artist-state.php,
  * artist-country.php, artist-venue.php): one performer's events, filtered to
  * a single location dimension. All four files are thin wrappers around this

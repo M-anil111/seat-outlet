@@ -151,6 +151,62 @@ $wcid = 12498;
 $mapScriptUrl  = 'https://mapwidget3.seatics.com/js?eventId=' . $id . '&websiteConfigId=' . $wcid . '&mobileOptimized=true&includeJQuery=false&containerId=tn-maps&useDarkTheme=false';
 ?>
 
+<?php
+// Real internal links back into the city/category and artist-city location
+// pages, using data already fetched above ($event) - not fabricated. This
+// page had no editorial content at all before (it's almost entirely the
+// third-party Seatics ticketing widget below), and the .event-detail/
+// .event-card/.date-box/etc. CSS above was already fully styled but had no
+// matching HTML anywhere in this file to use it - dead styling for a
+// section that was apparently never finished.
+$eventCategoryPath = $event['defaultCategory']['path'] ?? '';
+$eventCityName  = $event['city']['text']['name'] ?? '';
+$eventCityId    = $event['city']['id'] ?? null;
+$eventCityLabel = trim($eventCityName . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
+$eventVenueName = $event['venue']['text']['name'] ?? '';
+$eventVenueId   = $event['venue']['id'] ?? null;
+$primaryPerformer = $event['performers'][0] ?? null;
+$categoryCityPrefix = getCategoryCityLinkPrefix($eventCategoryPath);
+$eventTimestamp = !empty($event['date']['date']) ? strtotime($event['date']['date']) : false;
+?>
+<section class="event-detail">
+  <div class="container">
+    <div class="event-card d-flex align-items-center gap-3 flex-wrap">
+      <?php if ($eventTimestamp) { ?>
+        <div class="date-box text-center">
+          <div class="month"><?php echo htmlspecialchars(strtoupper(date('M', $eventTimestamp)), ENT_QUOTES, 'UTF-8'); ?></div>
+          <div class="date"><?php echo htmlspecialchars(date('d', $eventTimestamp), ENT_QUOTES, 'UTF-8'); ?></div>
+        </div>
+      <?php } ?>
+      <div class="flex-grow-1">
+        <div class="event-title"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+        <div class="event-location mt-1">
+          <?php if (!empty($eventCityId)) { ?>
+            <a href="/<?php echo htmlspecialchars($categoryCityPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($eventCityLabel, $eventCityId), ENT_QUOTES, 'UTF-8'); ?>">
+              More events in <?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?>
+            </a>
+          <?php } ?>
+          <?php if (!empty($eventVenueId)) { ?>
+            <?php echo !empty($eventCityId) ? ' &middot; ' : ''; ?>
+            <a href="/venue/<?php echo htmlspecialchars(createSlug($eventVenueName, $eventVenueId), ENT_QUOTES, 'UTF-8'); ?>">
+              More at <?php echo htmlspecialchars($eventVenueName, ENT_QUOTES, 'UTF-8'); ?>
+            </a>
+          <?php } ?>
+        </div>
+        <?php if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !empty($eventCityId)) { ?>
+          <a class="common-btn mt-2" href="/artist-city/<?php echo htmlspecialchars(createSlug($primaryPerformer['name'], $primaryPerformer['id']), ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($eventCityLabel, $eventCityId), ENT_QUOTES, 'UTF-8'); ?>">
+            More <?php echo htmlspecialchars($primaryPerformer['name'], ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?>
+          </a>
+        <?php } ?>
+      </div>
+      <div class="guarantee text-end">
+        <h6>Shop Tickets Worry Free</h6>
+        <p>Every order is backed by our Buyer Protection Guarantee.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <div id="tn-maps" class="seatics" style="height: calc(100vh - 50px);width: 100%;"></div>
 <script src="<?php echo htmlspecialchars($mapScriptUrl, ENT_QUOTES, 'UTF-8'); ?>"></script>
 
