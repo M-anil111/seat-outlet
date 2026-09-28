@@ -54,6 +54,12 @@ $currentPage = $currentPage ?? '';
                                 <span class="nav-link-title">Page SEO &amp; Redirects</span>
                             </a>
                         </li>
+                        <li class="nav-item <?php echo $currentPage === 'blog-posts' ? 'active' : ''; ?>">
+                            <a class="nav-link" href="blog-posts">
+                                <span class="nav-link-icon"><i class="ti ti-notes"></i></span>
+                                <span class="nav-link-title">Blog Posts</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>

@@ -53,6 +53,7 @@ $staticPaths = [
     '/contact',
     '/cities',
     '/tickets',
+    '/blog',
     '/concerts',
     '/sports',
     '/theater',
@@ -73,6 +74,19 @@ foreach ($staticPaths as $path) {
         'loc' => HOME_URL . $path,
         'changefreq' => $path === '/' ? 'daily' : 'weekly',
         'priority' => $path === '/' ? '1.0' : '0.6',
+    ];
+}
+
+// Published blog posts - real rows from blog_posts, not a static list.
+foreach (listBlogPosts() as $post) {
+    if (($post['status'] ?? '') !== 'published' || empty($post['published_at']) || strtotime($post['published_at']) > time()) {
+        continue;
+    }
+    $urls[] = [
+        'loc' => HOME_URL . '/blog/' . $post['slug'],
+        'changefreq' => 'monthly',
+        'priority' => '0.5',
+        'lastmod' => date('Y-m-d', strtotime($post['updated_at'] ?? $post['published_at'])),
     ];
 }
 

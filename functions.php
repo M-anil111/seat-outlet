@@ -2660,6 +2660,195 @@ function resolvePageRule($mysqli = MYSQLI) {
     return $rule;
 }
 
+/**
+ * Blog (blog_posts table - db/migrations/0004_blog_posts.sql). Same CRUD
+ * shape as page_rules above: list/get/save/delete, admin-facing, no caching
+ * layer (unlike page_rules this isn't hit on every single front-end page
+ * load, just blog.php/blog-post.php, so it doesn't need one).
+ */
+function blogGenerateUniqueSlug($title, ?int $excludeId = null, $mysqli = MYSQLI) {
+    $base = sanitize_title($title);
+    if ($base === '') {
+        $base = 'post';
+    }
+    $slug = $base;
+    $suffix = 2;
+    while (blogSlugExists($slug, $excludeId, $mysqli)) {
+        $slug = $base . '-' . $suffix;
+        $suffix++;
+    }
+    return $slug;
+}
+
+function blogSlugExists($slug, ?int $excludeId, $mysqli = MYSQLI) {
+    if ($excludeId !== null) {
+        $stmt = $mysqli->prepare('SELECT ID FROM blog_posts WHERE slug = ? AND ID != ? LIMIT 1');
+        $stmt->bind_param('si', $slug, $excludeId);
+    } else {
+        $stmt = $mysqli->prepare('SELECT ID FROM blog_posts WHERE slug = ? LIMIT 1');
+        $stmt->bind_param('s', $slug);
+    }
+    $stmt->execute();
+    $found = $stmt->get_result()->fetch_assoc() !== null;
+    $stmt->close();
+    return $found;
+}
+
+function listBlogPosts($search = '', $mysqli = MYSQLI) {
+    if ($search !== '') {
+        $stmt = $mysqli->prepare(
+            'SELECT * FROM blog_posts WHERE title LIKE CONCAT(\'%\', ?, \'%\') ORDER BY updated_at DESC'
+        );
+        $stmt->bind_param('s', $search);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        $result = $mysqli->query('SELECT * FROM blog_posts ORDER BY updated_at DESC');
+    }
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = $row;
+    }
+    if (isset($stmt)) {
+        $stmt->close();
+    }
+    return $rows;
+}
+
+function getBlogPostById($id, $mysqli = MYSQLI) {
+    $stmt = $mysqli->prepare('SELECT * FROM blog_posts WHERE ID = ? LIMIT 1');
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ?: null;
+}
+
+function getBlogPostBySlug($slug, bool $onlyPublished = true, $mysqli = MYSQLI) {
+    $sql = 'SELECT * FROM blog_posts WHERE slug = ?';
+    if ($onlyPublished) {
+        $sql .= ' AND status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()';
+    }
+    $sql .= ' LIMIT 1';
+    $stmt = $mysqli->prepare($sql);
+    $stmt->bind_param('s', $slug);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ?: null;
+}
+
+function countPublishedBlogPosts($mysqli = MYSQLI) {
+    $result = $mysqli->query(
+        'SELECT COUNT(*) AS c FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()'
+    );
+    $row = $result->fetch_assoc();
+    return (int) ($row['c'] ?? 0);
+}
+
+function listPublishedBlogPosts(int $page = 1, int $perPage = 10, $mysqli = MYSQLI) {
+    $page = max(1, $page);
+    $offset = ($page - 1) * $perPage;
+    $stmt = $mysqli->prepare(
+        'SELECT * FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()
+         ORDER BY published_at DESC LIMIT ? OFFSET ?'
+    );
+    $stmt->bind_param('ii', $perPage, $offset);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = $row;
+    }
+    $stmt->close();
+    return $rows;
+}
+
+function saveBlogPost(array $data, $mysqli = MYSQLI) {
+    $id              = (int) ($data['id'] ?? 0);
+    $title           = trim((string) ($data['title'] ?? ''));
+    $excerpt         = trim((string) ($data['excerpt'] ?? '')) ?: null;
+    $content         = (string) ($data['content'] ?? '');
+    $featuredImage   = trim((string) ($data['featured_image'] ?? '')) ?: null;
+    $authorName      = trim((string) ($data['author_name'] ?? '')) ?: null;
+    $metaTitle       = trim((string) ($data['meta_title'] ?? '')) ?: null;
+    $metaDescription = trim((string) ($data['meta_description'] ?? '')) ?: null;
+    $status          = ($data['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
+    $slugInput       = trim((string) ($data['slug'] ?? ''));
+
+    if ($title === '') {
+        throw new InvalidArgumentException('A title is required.');
+    }
+    if (trim(strip_tags($content)) === '') {
+        throw new InvalidArgumentException('Post content is required.');
+    }
+
+    $existing = $id > 0 ? getBlogPostById($id, $mysqli) : null;
+
+    if ($slugInput !== '') {
+        $slug = sanitize_title($slugInput);
+        if ($slug !== '' && blogSlugExists($slug, $id > 0 ? $id : null, $mysqli)) {
+            throw new InvalidArgumentException('That slug is already used by another post.');
+        }
+        if ($slug === '') {
+            $slug = blogGenerateUniqueSlug($title, $id > 0 ? $id : null, $mysqli);
+        }
+    } else {
+        $slug = $existing['slug'] ?? blogGenerateUniqueSlug($title, $id > 0 ? $id : null, $mysqli);
+    }
+
+    // First time a post is marked published, stamp published_at now (unless
+    // one was already set, e.g. re-saving an already-published post, or
+    // explicitly backdating/scheduling via the admin form).
+    $publishedAt = $existing['published_at'] ?? null;
+    if (!empty($data['published_at'])) {
+        $parsed = strtotime((string) $data['published_at']);
+        $publishedAt = $parsed ? date('Y-m-d H:i:s', $parsed) : $publishedAt;
+    } elseif ($status === 'published' && empty($publishedAt)) {
+        $publishedAt = date('Y-m-d H:i:s');
+    }
+
+    if ($id > 0) {
+        $stmt = $mysqli->prepare(
+            'UPDATE blog_posts SET title = ?, slug = ?, excerpt = ?, content = ?, featured_image = ?,
+             author_name = ?, meta_title = ?, meta_description = ?, status = ?, published_at = ?, updated_at = NOW()
+             WHERE ID = ?'
+        );
+        $stmt->bind_param(
+            'ssssssssssi',
+            $title, $slug, $excerpt, $content, $featuredImage,
+            $authorName, $metaTitle, $metaDescription, $status, $publishedAt, $id
+        );
+    } else {
+        $stmt = $mysqli->prepare(
+            'INSERT INTO blog_posts
+             (title, slug, excerpt, content, featured_image, author_name, meta_title, meta_description, status, published_at, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+        );
+        $stmt->bind_param(
+            'ssssssssss',
+            $title, $slug, $excerpt, $content, $featuredImage,
+            $authorName, $metaTitle, $metaDescription, $status, $publishedAt
+        );
+    }
+    $ok = $stmt->execute();
+    $error = $stmt->error;
+    $stmt->close();
+    if (!$ok) {
+        throw new RuntimeException($error ?: 'Could not save this post.');
+    }
+
+    return true;
+}
+
+function deleteBlogPost($id, $mysqli = MYSQLI) {
+    $stmt = $mysqli->prepare('DELETE FROM blog_posts WHERE ID = ?');
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $stmt->close();
+    return true;
+}
+
 /*
 |--------------------------------------------------------------------------
 | Reusable schema.org JSON-LD builders
@@ -2785,6 +2974,30 @@ function buildFaqPageSchema(array $faqs) {
         "@type" => "FAQPage",
         "mainEntity" => $items,
     ];
+}
+
+/**
+ * @param array $post A blog_posts row (see db/migrations/0004_blog_posts.sql)
+ *                     and $url its real, canonical public URL.
+ */
+function buildArticleSchema(array $post, string $url) {
+    $node = [
+        "@type" => "Article",
+        "@id" => $url . '#article',
+        "mainEntityOfPage" => ["@id" => $url . '#webpage'],
+        "headline" => $post['title'] ?? '',
+        "description" => $post['meta_description'] ?? ($post['excerpt'] ?? ''),
+        "datePublished" => !empty($post['published_at']) ? date('c', strtotime($post['published_at'])) : null,
+        "dateModified" => !empty($post['updated_at']) ? date('c', strtotime($post['updated_at'])) : null,
+        "publisher" => ["@id" => HOME_URL . '/#organization'],
+    ];
+    if (!empty($post['author_name'])) {
+        $node['author'] = ["@type" => "Person", "name" => $post['author_name']];
+    }
+    if (!empty($post['featured_image'])) {
+        $node['image'] = $post['featured_image'];
+    }
+    return $node;
 }
 
 /**
