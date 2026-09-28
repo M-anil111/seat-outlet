@@ -184,13 +184,14 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 							<div class="guarantee-icon">
 								<i class="bi bi-shield-check"></i>
 							</div>
-						</div>						
+						</div>
 					</div>
 				</div>
 			</div>
+			<?php renderCategoryCityLinksBlock($events, 'festivals-city', 'Festival'); ?>
 		</div>
 	</div>
 </section>
 
-	
+
 <?php include 'footer.php'; ?>

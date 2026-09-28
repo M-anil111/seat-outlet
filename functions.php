@@ -3210,6 +3210,50 @@ function getCategoryCityLinkPrefix($categoryPath): string {
 }
 
 /**
+ * Real internal links from a category page (concerts.php, sports.php,
+ * theater.php, festival.php) into the matching category-city location
+ * pages, built from that page's own already-fetched $events - same
+ * pattern as performer.php's "Tickets by City" block, generalized so it
+ * isn't copy-pasted four times. Echoes the HTML directly (call site is a
+ * plain top-level page, not a function with output buffering set up).
+ */
+function renderCategoryCityLinksBlock(array $events, string $urlPrefix, string $categoryLabel): void {
+    $cities = [];
+    $seenCityIds = [];
+    foreach ($events as $event) {
+        $cityId = $event['city']['id'] ?? null;
+        $cityName = $event['city']['text']['name'] ?? '';
+        if (empty($cityId) || $cityName === '' || isset($seenCityIds[$cityId])) {
+            continue;
+        }
+        $seenCityIds[$cityId] = true;
+        $cities[] = [
+            'id' => $cityId,
+            'label' => trim($cityName . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', '),
+        ];
+        if (count($cities) >= 12) {
+            break;
+        }
+    }
+
+    if (empty($cities)) {
+        return;
+    }
+    ?>
+    <div class="tab-section content-section-detail" id="cities">
+        <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> Tickets by City</h2>
+        <div class="d-flex flex-wrap gap-2">
+            <?php foreach ($cities as $city) { ?>
+                <a href="/<?php echo htmlspecialchars($urlPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">
+                    <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
+                </a>
+            <?php } ?>
+        </div>
+    </div>
+    <?php
+}
+
+/**
  * Track A page renderer (artist-city.php, artist-state.php,
  * artist-country.php, artist-venue.php): one performer's events, filtered to
  * a single location dimension. All four files are thin wrappers around this
