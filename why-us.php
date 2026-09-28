@@ -91,7 +91,7 @@
     <h2>Make The Most Of<br>Your Solutions</h2>
     <p>Dive into some practical resources, like guides from our collection of insights, to help you learn how to maximize results using our tools and services.</p>
     <div style="display:flex;align-items:flex-start;padding-top:4px;">
-      <a href="#" class="view-all">View All Insights <span class="arrow">→</span></a>
+      <a href="/blog" class="view-all">View All Insights <span class="arrow">→</span></a>
     </div>
   </div>
  

@@ -196,7 +196,7 @@ $festivalNames = getTopFestivalPerformers();
           <li><a href="/category/performance-series-2062">Performance Series</a></li>
           <li><a href="/category/holiday-1884">Holiday</a></li>
         </ul>
-        <a href="#" class="common-btn">View All Concerts</a>
+        <a href="/concerts" class="common-btn">View All Concerts</a>
         
       </div>
       <div class="categories__col">
@@ -211,7 +211,7 @@ $festivalNames = getTopFestivalPerformers();
           <li><a href="/category/tennis-1916">Tennis</a></li>
           <li><a href="/category/mixed-martial-arts-2027">Mixed Martial Arts</a></li>
         </ul>
-        <a href="#" class="common-btn">View All Sports</a>
+        <a href="/sports" class="common-btn">View All Sports</a>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Theatre</h3>
@@ -225,7 +225,7 @@ $festivalNames = getTopFestivalPerformers();
           <li><a href="/category/cirque-du-soleil-2031">Cirque Du Soleil</a></li>
           <li><a href="/category/dance-1875">Dance</a></li>
         </ul>
-        <a href="#" class="common-btn">View All Theatre</a>
+        <a href="/theater" class="common-btn">View All Theatre</a>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Festivals</h3>
@@ -236,7 +236,7 @@ $festivalNames = getTopFestivalPerformers();
             <?php } ?>
           </ul>   
         <?php } ?>  
-        <a href="#" class="common-btn">View All Festivals</a>   
+        <a href="/festival" class="common-btn">View All Festivals</a>
       </div>
     </div>
   </div>
