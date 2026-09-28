@@ -613,6 +613,40 @@ function getTopVenues($limit = 20) {
     return $data['results'] ?? [];
 }
 
+/**
+ * Real, live top cities for cities.php's category grids - built from
+ * getTopVenues() (already in production use, see cron/home-venues.php)
+ * rather than a fresh, unverified endpoint: each venue result embeds its
+ * city's id/name/state, so top venues by sales rank gives real top cities
+ * for free, just deduplicated by city id.
+ */
+function getTopCities($limit = 60) {
+    $venues = getTopVenues($limit * 3);
+
+    $seen = [];
+    $cities = [];
+    foreach ($venues as $venue) {
+        $cityId = $venue['city']['id'] ?? null;
+        $cityName = $venue['city']['text']['name'] ?? '';
+        if (empty($cityId) || $cityName === '' || isset($seen[$cityId])) {
+            continue;
+        }
+        $seen[$cityId] = true;
+        $stateAbbr = $venue['stateProvince']['text']['abbr'] ?? '';
+        $cities[] = [
+            'id'    => $cityId,
+            'name'  => $cityName,
+            'state' => $stateAbbr,
+            'label' => trim($cityName . ', ' . $stateAbbr, ', '),
+        ];
+        if (count($cities) >= $limit) {
+            break;
+        }
+    }
+
+    return $cities;
+}
+
 function getPerformerUriComponent($performerId, $key = 'uriComponent') {
 
     $data = getTnPerformerById($performerId);

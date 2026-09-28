@@ -443,6 +443,43 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 				</div>
 			</div>
 		<?php } ?>
+		<?php
+		// Real internal links into the artist-city location pages (see
+		// functions.php's renderArtistLocationPage()) for the cities this
+		// artist actually has upcoming events in on this page - built from
+		// $events above, not a fabricated/guessed city list. Capped to the
+		// first several distinct cities so this doesn't turn into a wall of
+		// links when an artist has dozens of tour stops.
+		$performerCities = [];
+		$seenCityIds = [];
+		foreach ($events as $event) {
+			$cityId = $event['city']['id'] ?? null;
+			$cityName = $event['city']['text']['name'] ?? '';
+			if (empty($cityId) || $cityName === '' || isset($seenCityIds[$cityId])) {
+				continue;
+			}
+			$seenCityIds[$cityId] = true;
+			$performerCities[] = [
+				'id'    => $cityId,
+				'label' => trim($cityName . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', '),
+			];
+			if (count($performerCities) >= 8) {
+				break;
+			}
+		}
+		?>
+		<?php if (!empty($performerCities)) { ?>
+			<div class="tab-section content-section-detail" id="cities">
+				<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets by City</h2>
+				<div class="d-flex flex-wrap gap-2">
+					<?php foreach ($performerCities as $city) { ?>
+						<a href="/artist-city/<?php echo htmlspecialchars(createSlug($artistName, $id), ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">
+							<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
+						</a>
+					<?php } ?>
+				</div>
+			</div>
+		<?php } ?>
 		<?php if (!empty($relatedPerformers)) { $i = 0; ?>
 			<div class="tab-section content-section-detail" id="fans">
 				<div class="row g-4">
