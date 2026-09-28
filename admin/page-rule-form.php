@@ -13,7 +13,7 @@ if ($id > 0 && !$existing) {
 
 $errors = [];
 $values = $existing ?: [
-    'url_path' => '', 'meta_title' => '', 'meta_description' => '', 'canonical_url' => '',
+    'url_path' => '', 'focus_keyword' => '', 'meta_title' => '', 'meta_description' => '', 'canonical_url' => '',
     'robots' => '', 'schema_json' => '', 'redirect_to' => '', 'redirect_code' => '', 'is_active' => 1,
 ];
 
@@ -66,6 +66,22 @@ include __DIR__ . '/includes/app-header.php';
                             <?php echo !empty($values['is_active']) ? 'checked' : ''; ?>>
                         <span class="form-check-label">Active</span>
                     </label>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><h3 class="card-title">Focus Keyword &amp; SEO Score</h3></div>
+                <div class="card-body">
+                    <div class="mb-0">
+                        <label class="form-label">Focus keyword</label>
+                        <input type="text" name="focus_keyword" class="form-control"
+                            placeholder="e.g. buy concert tickets"
+                            value="<?php echo htmlspecialchars($values['focus_keyword'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                        <small class="form-hint">
+                            Save this rule, then check its score on the
+                            <a href="seo-scores">Page Content &amp; SEO Scores</a> screen.
+                        </small>
+                    </div>
                 </div>
             </div>
 

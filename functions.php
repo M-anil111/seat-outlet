@@ -2634,6 +2634,7 @@ function getPageRuleByPath($urlPath, $mysqli = MYSQLI) {
 function savePageRule(array $data, $mysqli = MYSQLI) {
     $id              = (int) ($data['id'] ?? 0);
     $urlPath         = normalizePagePath($data['url_path'] ?? '');
+    $focusKeyword    = trim((string) ($data['focus_keyword'] ?? '')) ?: null;
     $metaTitle       = trim((string) ($data['meta_title'] ?? '')) ?: null;
     $metaDescription = trim((string) ($data['meta_description'] ?? '')) ?: null;
     $canonicalUrl    = trim((string) ($data['canonical_url'] ?? '')) ?: null;
@@ -2666,25 +2667,25 @@ function savePageRule(array $data, $mysqli = MYSQLI) {
 
     if ($id > 0) {
         $stmt = $mysqli->prepare(
-            'UPDATE page_rules SET url_path = ?, meta_title = ?, meta_description = ?, canonical_url = ?,
+            'UPDATE page_rules SET url_path = ?, focus_keyword = ?, meta_title = ?, meta_description = ?, canonical_url = ?,
              robots = ?, schema_json = ?, redirect_to = ?, redirect_code = ?, is_active = ?, updated_at = NOW()
              WHERE ID = ?'
         );
         $stmt->bind_param(
-            'sssssssiii',
-            $urlPath, $metaTitle, $metaDescription, $canonicalUrl, $robots, $schemaJson,
+            'ssssssssiii',
+            $urlPath, $focusKeyword, $metaTitle, $metaDescription, $canonicalUrl, $robots, $schemaJson,
             $redirectTo, $redirectCode, $isActive, $id
         );
     } else {
         $stmt = $mysqli->prepare(
             'INSERT INTO page_rules
-             (url_path, meta_title, meta_description, canonical_url, robots, schema_json,
+             (url_path, focus_keyword, meta_title, meta_description, canonical_url, robots, schema_json,
               redirect_to, redirect_code, is_active, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
         );
         $stmt->bind_param(
-            'sssssssii',
-            $urlPath, $metaTitle, $metaDescription, $canonicalUrl, $robots, $schemaJson,
+            'ssssssssii',
+            $urlPath, $focusKeyword, $metaTitle, $metaDescription, $canonicalUrl, $robots, $schemaJson,
             $redirectTo, $redirectCode, $isActive
         );
     }
@@ -3053,6 +3054,7 @@ function listPublishedBlogPosts(int $page = 1, int $perPage = 10, $mysqli = MYSQ
 function saveBlogPost(array $data, $mysqli = MYSQLI) {
     $id              = (int) ($data['id'] ?? 0);
     $title           = trim((string) ($data['title'] ?? ''));
+    $focusKeyword    = trim((string) ($data['focus_keyword'] ?? '')) ?: null;
     $excerpt         = trim((string) ($data['excerpt'] ?? '')) ?: null;
     $content         = (string) ($data['content'] ?? '');
     $featuredImage   = trim((string) ($data['featured_image'] ?? '')) ?: null;
@@ -3096,24 +3098,24 @@ function saveBlogPost(array $data, $mysqli = MYSQLI) {
 
     if ($id > 0) {
         $stmt = $mysqli->prepare(
-            'UPDATE blog_posts SET title = ?, slug = ?, excerpt = ?, content = ?, featured_image = ?,
+            'UPDATE blog_posts SET title = ?, focus_keyword = ?, slug = ?, excerpt = ?, content = ?, featured_image = ?,
              author_name = ?, meta_title = ?, meta_description = ?, status = ?, published_at = ?, updated_at = NOW()
              WHERE ID = ?'
         );
         $stmt->bind_param(
-            'ssssssssssi',
-            $title, $slug, $excerpt, $content, $featuredImage,
+            'sssssssssssi',
+            $title, $focusKeyword, $slug, $excerpt, $content, $featuredImage,
             $authorName, $metaTitle, $metaDescription, $status, $publishedAt, $id
         );
     } else {
         $stmt = $mysqli->prepare(
             'INSERT INTO blog_posts
-             (title, slug, excerpt, content, featured_image, author_name, meta_title, meta_description, status, published_at, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+             (title, focus_keyword, slug, excerpt, content, featured_image, author_name, meta_title, meta_description, status, published_at, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
         );
         $stmt->bind_param(
-            'ssssssssss',
-            $title, $slug, $excerpt, $content, $featuredImage,
+            'sssssssssss',
+            $title, $focusKeyword, $slug, $excerpt, $content, $featuredImage,
             $authorName, $metaTitle, $metaDescription, $status, $publishedAt
         );
     }
@@ -4196,4 +4198,547 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
 
     <?php
     include 'footer.php';
+}
+
+
+/**
+ * Focus Keyword SEO Score (page_rules.focus_keyword / blog_posts.focus_keyword
+ * - db/migrations/0007_seo_focus_keyword.sql). Modeled directly on Rank
+ * Math's own open-source scoring engine (github.com/rankmath/seo-by-rank-math,
+ * assets/admin/src/analyzer/analysis/*.js) - same checks, same point values
+ * for the ones below, not a from-scratch invention. Two checks from Rank
+ * Math's set are deliberately left out: titleSentiment (needs a full
+ * sentiment-word lexicon this project doesn't have) and contentHasTOC
+ * (detects specific WordPress table-of-contents plugins, not applicable
+ * here). Everything else - keyword in title/description/URL/content/
+ * subheadings/image-alt, keyword density, content length, internal/external
+ * links, paragraph length, title length/number/power-words - is
+ * implemented the same way Rank Math checks it. The 18 checks below sum to
+ * 98 raw points; the displayed score is that normalized to /100 so it reads
+ * the same way Rank Math's does.
+ */
+const SEO_SCORE_MAX_RAW = 98;
+
+const SEO_POWER_WORDS = [
+    'free', 'ultimate', 'essential', 'secret', 'secrets', 'proven', 'guide', 'guaranteed',
+    'best', 'top', 'exclusive', 'new', 'amazing', 'easy', 'instant', 'save', 'discover',
+    'unlock', 'boost', 'powerful', 'complete', 'definitive', 'trusted', 'verified',
+    'limited', 'now', 'simple', 'quick', 'effortless', 'insider', 'expert', 'official',
+    'genuine', 'authentic', 'winning', 'incredible', 'unbeatable', 'unforgettable',
+];
+
+/**
+ * Self-fetches a page's own rendered HTML over HTTP (not by reading the
+ * .php source) so the score reflects what a browser/crawler actually sees -
+ * the same page after header.php/footer.php/functions.php have all run,
+ * with real TicketNetwork data where applicable, exactly like Rank Math
+ * analyzes the rendered post rather than the raw editor markup.
+ */
+function fetchRenderedPageHtml($pagePath) {
+    $pagePath = normalizePagePath($pagePath);
+    $url = rtrim(HOME_URL, '/') . $pagePath;
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS => 3,
+        CURLOPT_TIMEOUT => 10,
+        CURLOPT_HTTPHEADER => ['User-Agent: SeatOutletSeoScorer/1.0'],
+    ]);
+    $html = curl_exec($ch);
+    $ok = $html !== false && curl_getinfo($ch, CURLINFO_HTTP_CODE) === 200;
+    curl_close($ch);
+
+    return $ok ? $html : null;
+}
+
+/**
+ * Parses a page's rendered HTML into the same signals Rank Math's Paper/
+ * Researcher classes extract from a post: title, meta description, body
+ * text with the shared header/nav/footer/script/style chrome stripped out
+ * (header.php/footer.php wrap every page in <header>/<nav>/<footer> tags,
+ * so this reliably isolates the page's own content), subheading text,
+ * image alt attributes, and outbound/internal links.
+ */
+function extractSeoContentSignals($html) {
+    $doc = new DOMDocument();
+    libxml_use_internal_errors(true);
+    $doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
+    libxml_clear_errors();
+    $xpath = new DOMXPath($doc);
+
+    $title = '';
+    $titleNodes = $xpath->query('//title');
+    if ($titleNodes->length > 0) {
+        $title = trim($titleNodes->item(0)->textContent);
+    }
+
+    $metaDescription = '';
+    $descNodes = $xpath->query('//meta[@name="description"]/@content');
+    if ($descNodes->length > 0) {
+        $metaDescription = trim($descNodes->item(0)->textContent);
+    }
+
+    // Remove the shared chrome so word count/keyword/link checks only see
+    // this page's own content, not the nav menu or footer link list on
+    // every single page.
+    foreach (['header', 'nav', 'footer', 'script', 'style', 'noscript'] as $tag) {
+        $nodes = $xpath->query("//{$tag}");
+        foreach ($nodes as $node) {
+            $node->parentNode->removeChild($node);
+        }
+    }
+
+    $bodyNodes = $xpath->query('//body');
+    $bodyText = $bodyNodes->length > 0 ? preg_replace('/\s+/', ' ', trim($bodyNodes->item(0)->textContent)) : '';
+
+    $headings = [];
+    foreach (['h2', 'h3', 'h4', 'h5', 'h6'] as $tag) {
+        foreach ($xpath->query("//{$tag}") as $node) {
+            $headings[] = trim($node->textContent);
+        }
+    }
+
+    $imageAlts = [];
+    $imageCount = 0;
+    foreach ($xpath->query('//img') as $node) {
+        $imageCount++;
+        $alt = trim($node->getAttribute('alt'));
+        if ($alt !== '') {
+            $imageAlts[] = $alt;
+        }
+    }
+
+    $videoCount = $xpath->query('//video')->length + $xpath->query('//iframe')->length;
+
+    $paragraphs = [];
+    foreach ($xpath->query('//p') as $node) {
+        $text = trim($node->textContent);
+        if ($text !== '') {
+            $paragraphs[] = str_word_count($text);
+        }
+    }
+
+    $host = parse_url(HOME_URL, PHP_URL_HOST) ?: '';
+    $internalLinks = 0;
+    $externalLinks = 0;
+    $externalDofollow = 0;
+    foreach ($xpath->query('//a[@href]') as $node) {
+        $href = trim($node->getAttribute('href'));
+        if ($href === '' || str_starts_with($href, '#') || str_starts_with($href, 'javascript:')) {
+            continue;
+        }
+        $linkHost = parse_url($href, PHP_URL_HOST);
+        $isExternal = $linkHost !== null && $linkHost !== '' && strcasecmp($linkHost, $host) !== 0;
+        if ($isExternal) {
+            $externalLinks++;
+            $rel = strtolower($node->getAttribute('rel'));
+            if (!str_contains($rel, 'nofollow')) {
+                $externalDofollow++;
+            }
+        } else {
+            $internalLinks++;
+        }
+    }
+
+    return [
+        'title' => $title,
+        'meta_description' => $metaDescription,
+        'body_text' => $bodyText,
+        'headings' => $headings,
+        'image_alts' => $imageAlts,
+        'image_count' => $imageCount,
+        'video_count' => $videoCount,
+        'paragraph_word_counts' => $paragraphs,
+        'internal_links' => $internalLinks,
+        'external_links' => $externalLinks,
+        'external_dofollow_links' => $externalDofollow,
+    ];
+}
+
+/**
+ * The scoring engine itself - runs the 18 checks against a set of already-
+ * extracted signals (from either extractSeoContentSignals() for a static
+ * page, or directly from a blog_posts row - see scoreBlogPost()) plus a
+ * focus keyword and the page's URL path. Returns the same shape either way
+ * so the admin UI doesn't need to know which source produced it.
+ */
+function computeSeoScore(array $signals, $focusKeyword, $urlPath) {
+    $focusKeyword = trim((string) $focusKeyword);
+    $checks = [];
+    $earn = function ($key, $label, $weight, $passed, $passMsg, $failMsg) use (&$checks) {
+        $checks[] = [
+            'key' => $key,
+            'label' => $label,
+            'weight' => $weight,
+            'earned' => $passed ? $weight : 0,
+            'status' => $passed ? 'pass' : 'fail',
+            'message' => $passed ? $passMsg : $failMsg,
+        ];
+    };
+    $na = function ($key, $label, $weight, $msg) use (&$checks) {
+        $checks[] = [
+            'key' => $key, 'label' => $label, 'weight' => $weight,
+            'earned' => 0, 'status' => 'na', 'message' => $msg,
+        ];
+    };
+
+    $title = $signals['title'] ?? '';
+    $description = $signals['meta_description'] ?? '';
+    $bodyText = $signals['body_text'] ?? '';
+    $bodyTextLower = mb_strtolower($bodyText);
+    $titleLower = mb_strtolower($title);
+    $descLower = mb_strtolower($description);
+    $keywordLower = mb_strtolower($focusKeyword);
+
+    if ($focusKeyword === '') {
+        $na('no_keyword', 'Focus Keyword', 0, 'Set a Focus Keyword to run the on-page checks below.');
+        return [
+            'raw' => 0, 'max_raw' => SEO_SCORE_MAX_RAW, 'score' => 0, 'checks' => $checks,
+        ];
+    }
+
+    // --- Title ---
+    $earn('keyword_in_title', 'Focus Keyword in the SEO Title', 36,
+        $title !== '' && str_contains($titleLower, $keywordLower),
+        'The Focus Keyword appears in the SEO title.',
+        'Add the Focus Keyword to the SEO title.');
+
+    $earn('title_starts_with_keyword', 'Focus Keyword near the beginning of the Title', 3,
+        $titleLower !== '' && str_starts_with(ltrim($titleLower), $keywordLower),
+        'The Focus Keyword is used at the beginning of the SEO title.',
+        'Use the Focus Keyword near the beginning of the SEO title.');
+
+    $earn('title_has_number', 'Title contains a number', 1,
+        (bool) preg_match('/\d/', $title),
+        'The SEO title contains a number, which can improve click-through rate.',
+        'Consider adding a number to the title to improve click-through rate.');
+
+    $powerWordPattern = '/\b(' . implode('|', array_map('preg_quote', SEO_POWER_WORDS)) . ')\b/i';
+    $earn('title_has_power_word', 'Title contains a power word', 1,
+        (bool) preg_match($powerWordPattern, $title),
+        'The SEO title contains a power word.',
+        'Consider adding a power word (e.g. "best", "guide", "proven") to the title.');
+
+    // --- Meta description ---
+    $earn('keyword_in_description', 'Focus Keyword in the Meta Description', 2,
+        $description !== '' && str_contains($descLower, $keywordLower),
+        'The Focus Keyword appears in the meta description.',
+        'Add the Focus Keyword to the meta description.');
+
+    // --- URL ---
+    $slugForCheck = mb_strtolower(str_replace(['-', '_'], ' ', $urlPath));
+    $earn('keyword_in_url', 'Focus Keyword in the URL', 5,
+        str_contains($slugForCheck, $keywordLower),
+        'The Focus Keyword appears in the URL.',
+        'Use the Focus Keyword in the URL/slug.');
+
+    $earn('url_length', 'URL is a reasonable length', 4,
+        strlen($urlPath) <= 75,
+        'The URL is a reasonable length (75 characters or fewer).',
+        'The URL is longer than 75 characters - consider shortening it.');
+
+    // --- Content ---
+    $hasBody = $bodyText !== '';
+    if (!$hasBody) {
+        $na('no_content', 'Content-based checks', 0, 'Could not read this page\'s content (self-fetch failed or the page has no body text) - content checks are skipped.');
+    } else {
+        $earn('keyword_in_10_percent', 'Focus Keyword in the first 10% of content', 3,
+            keywordInFirstPercentOfContent($bodyTextLower, $keywordLower),
+            'The Focus Keyword appears early in the content.',
+            'Use the Focus Keyword in the first 10% of the content.');
+
+        $earn('keyword_in_content', 'Focus Keyword used in the content', 3,
+            str_contains($bodyTextLower, $keywordLower),
+            'The Focus Keyword is used in the content.',
+            'Use the Focus Keyword in the content.');
+
+        $wordCount = str_word_count($bodyText);
+        $keywordOccurrences = $wordCount > 0 ? substr_count($bodyTextLower, $keywordLower) : 0;
+        $density = $wordCount > 0 ? round(($keywordOccurrences / $wordCount) * 100, 2) : 0;
+        [$densityScore, $densityStatus, $densityMsg] = scoreKeywordDensity($density, $keywordOccurrences);
+        $checks[] = [
+            'key' => 'keyword_density', 'label' => 'Focus Keyword density', 'weight' => 6,
+            'earned' => $densityScore, 'status' => $densityStatus, 'message' => $densityMsg,
+        ];
+
+        $hasSubheadingKeyword = false;
+        foreach ($signals['headings'] ?? [] as $heading) {
+            if (str_contains(mb_strtolower($heading), $keywordLower)) {
+                $hasSubheadingKeyword = true;
+                break;
+            }
+        }
+        $earn('keyword_in_subheadings', 'Focus Keyword in a subheading (H2-H6)', 3,
+            $hasSubheadingKeyword,
+            'The Focus Keyword appears in at least one subheading.',
+            'Add the Focus Keyword to at least one subheading (H2, H3, etc.).');
+
+        $hasImageAltKeyword = false;
+        foreach ($signals['image_alts'] ?? [] as $alt) {
+            if (str_contains(mb_strtolower($alt), $keywordLower)) {
+                $hasImageAltKeyword = true;
+                break;
+            }
+        }
+        $earn('keyword_in_image_alt', 'Focus Keyword in an image alt attribute', 2,
+            $hasImageAltKeyword,
+            'The Focus Keyword appears in at least one image alt attribute.',
+            'Add the Focus Keyword to the alt attribute of at least one image.');
+
+        [$lengthScore, $lengthMsg] = scoreContentLength($wordCount);
+        $checks[] = [
+            'key' => 'content_length', 'label' => 'Content length', 'weight' => 8,
+            'earned' => $lengthScore, 'status' => $lengthScore > 0 ? 'pass' : 'fail', 'message' => $lengthMsg,
+        ];
+
+        $internalLinks = (int) ($signals['internal_links'] ?? 0);
+        $externalLinks = (int) ($signals['external_links'] ?? 0);
+        $externalDofollow = (int) ($signals['external_dofollow_links'] ?? 0);
+
+        $earn('links_internal', 'Has internal links', 5,
+            $internalLinks > 0,
+            "Found $internalLinks internal link(s).",
+            'Add at least one internal link (to another page on this site).');
+
+        $earn('links_external', 'Links to an external resource', 4,
+            $externalLinks > 0,
+            "Found $externalLinks external link(s).",
+            'Link out to at least one relevant external resource.');
+
+        $earn('links_not_all_nofollow', 'Has at least one dofollow external link', 2,
+            $externalDofollow > 0,
+            'At least one external link is dofollow.',
+            'All external links are nofollow - consider making at least one dofollow.');
+
+        $imageCount = (int) ($signals['image_count'] ?? 0);
+        $videoCount = (int) ($signals['video_count'] ?? 0);
+        $assetScore = min(6, imageCountScore($imageCount) + videoCountScore($videoCount));
+        $checks[] = [
+            'key' => 'content_has_assets', 'label' => 'Content contains images/video', 'weight' => 6,
+            'earned' => $assetScore, 'status' => $assetScore > 0 ? 'pass' : 'fail',
+            'message' => $assetScore > 0
+                ? "Found $imageCount image(s) and $videoCount video(s)."
+                : 'Add at least one image or video to make the content more appealing.',
+        ];
+
+        $longestParagraph = 0;
+        foreach ($signals['paragraph_word_counts'] ?? [] as $wc) {
+            $longestParagraph = max($longestParagraph, $wc);
+        }
+        $earn('short_paragraphs', 'Paragraphs are a reasonable length', 3,
+            $longestParagraph <= 120,
+            'No paragraph is longer than 120 words.',
+            "The longest paragraph is $longestParagraph words - break it up for readability.");
+    }
+
+    // --- Cross-page: keyword reuse (informational, not scored) ---
+    $duplicates = findOtherPagesUsingFocusKeyword($focusKeyword, $urlPath);
+    if (!empty($duplicates)) {
+        $checks[] = [
+            'key' => 'keyword_reuse', 'label' => 'Focus Keyword uniqueness', 'weight' => 0,
+            'earned' => 0, 'status' => 'warning',
+            'message' => 'This keyword is already the focus keyword on: ' . implode(', ', $duplicates)
+                . ' - competing pages for the same keyword can hurt both (keyword cannibalization).',
+        ];
+    }
+
+    $raw = array_sum(array_column($checks, 'earned'));
+    return [
+        'raw' => $raw,
+        'max_raw' => SEO_SCORE_MAX_RAW,
+        'score' => (int) round(($raw / SEO_SCORE_MAX_RAW) * 100),
+        'checks' => $checks,
+    ];
+}
+
+function keywordInFirstPercentOfContent($bodyTextLower, $keywordLower) {
+    $words = preg_split('/\s+/', trim($bodyTextLower));
+    if (count($words) > 400) {
+        $words = array_slice($words, 0, (int) floor(count($words) * 0.1));
+    }
+    return str_contains(implode(' ', $words), $keywordLower);
+}
+
+/** Same boundaries as Rank Math's keywordDensity.js: fail <0.5% or >2.5%, fair 0.5-0.75%, good 0.76-1.0%, best otherwise. */
+function scoreKeywordDensity($density, $occurrences) {
+    if ($density < 0.5) {
+        return [0, 'fail', "Keyword density is {$density}% (appears $occurrences time(s)), which is low - aim for around 1%."];
+    }
+    if ($density > 2.5) {
+        return [0, 'fail', "Keyword density is {$density}% (appears $occurrences time(s)), which is high - this can look like keyword stuffing."];
+    }
+    if ($density >= 0.5 && $density <= 0.75) {
+        return [2, 'warning', "Keyword density is {$density}% (appears $occurrences time(s)) - fair, could be a bit higher."];
+    }
+    if ($density >= 0.76 && $density <= 1.0) {
+        return [3, 'pass', "Keyword density is {$density}% (appears $occurrences time(s)) - good."];
+    }
+    return [6, 'pass', "Keyword density is {$density}% (appears $occurrences time(s)) - best."];
+}
+
+/** Same boundaries as Rank Math's lengthContent.js. */
+function scoreContentLength($wordCount) {
+    if ($wordCount >= 2500) {
+        return [8, "Content is $wordCount words long. Good job!"];
+    }
+    if ($wordCount >= 2000) {
+        return [5, "Content is $wordCount words long - solid, 2500+ is ideal."];
+    }
+    if ($wordCount >= 1500) {
+        return [4, "Content is $wordCount words long - decent, consider expanding toward 2500."];
+    }
+    if ($wordCount >= 1000) {
+        return [3, "Content is $wordCount words long - below the recommended 2500."];
+    }
+    if ($wordCount >= 600) {
+        return [2, "Content is $wordCount words long - the minimum recommended is 600."];
+    }
+    return [0, "Content is $wordCount words long. Consider using at least 600 words."];
+}
+
+/** Same score hash as Rank Math's contentHasAssets.js. */
+function imageCountScore($count) {
+    $map = [0 => 0, 1 => 1, 2 => 2, 3 => 4];
+    return $map[$count] ?? 6;
+}
+
+function videoCountScore($count) {
+    $map = [0 => 0, 1 => 1];
+    return $map[$count] ?? 2;
+}
+
+/**
+ * Cross-page keyword-cannibalization check: does any other page_rules row
+ * or blog_posts row already use this same focus keyword?
+ */
+function findOtherPagesUsingFocusKeyword($focusKeyword, $excludeUrlPath, $mysqli = MYSQLI) {
+    $excludeUrlPath = normalizePagePath($excludeUrlPath);
+    $matches = [];
+
+    $stmt = $mysqli->prepare('SELECT url_path FROM page_rules WHERE focus_keyword = ? AND url_path != ?');
+    $stmt->bind_param('ss', $focusKeyword, $excludeUrlPath);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $matches[] = $row['url_path'];
+    }
+    $stmt->close();
+
+    $stmt = $mysqli->prepare('SELECT slug FROM blog_posts WHERE focus_keyword = ? AND CONCAT(\'/blog/\', slug) != ?');
+    $stmt->bind_param('ss', $focusKeyword, $excludeUrlPath);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $matches[] = '/blog/' . $row['slug'];
+    }
+    $stmt->close();
+
+    return $matches;
+}
+
+/** Scores a static page: self-fetches its rendered HTML, then runs computeSeoScore(). */
+function scoreStaticPage($urlPath, $focusKeyword) {
+    $html = fetchRenderedPageHtml($urlPath);
+    if ($html === null) {
+        return [
+            'raw' => 0, 'max_raw' => SEO_SCORE_MAX_RAW, 'score' => null,
+            'checks' => [[
+                'key' => 'fetch_failed', 'label' => 'Could not load this page', 'weight' => 0,
+                'earned' => 0, 'status' => 'fail',
+                'message' => "Couldn't fetch $urlPath (page not reachable at " . HOME_URL . ' - check the path is correct and the site is up).',
+            ]],
+        ];
+    }
+    $signals = extractSeoContentSignals($html);
+    return computeSeoScore($signals, $focusKeyword, $urlPath);
+}
+
+/** Scores a blog post directly from its stored fields - no HTTP fetch needed. */
+function scoreBlogPost(array $post) {
+    $title = $post['meta_title'] ?: $post['title'];
+    $description = $post['meta_description'] ?: $post['excerpt'];
+    $content = $post['content'] ?? '';
+
+    $doc = new DOMDocument();
+    libxml_use_internal_errors(true);
+    $doc->loadHTML('<?xml encoding="utf-8" ?><div>' . $content . '</div>');
+    libxml_clear_errors();
+    $xpath = new DOMXPath($doc);
+
+    $headings = [];
+    foreach (['h2', 'h3', 'h4', 'h5', 'h6'] as $tag) {
+        foreach ($xpath->query("//{$tag}") as $node) {
+            $headings[] = trim($node->textContent);
+        }
+    }
+    $imageAlts = [];
+    $imageCount = 0;
+    foreach ($xpath->query('//img') as $node) {
+        $imageCount++;
+        $alt = trim($node->getAttribute('alt'));
+        if ($alt !== '') {
+            $imageAlts[] = $alt;
+        }
+    }
+    $videoCount = $xpath->query('//video')->length + $xpath->query('//iframe')->length;
+    $paragraphs = [];
+    foreach ($xpath->query('//p') as $node) {
+        $text = trim($node->textContent);
+        if ($text !== '') {
+            $paragraphs[] = str_word_count($text);
+        }
+    }
+    $host = parse_url(HOME_URL, PHP_URL_HOST) ?: '';
+    $internalLinks = 0;
+    $externalLinks = 0;
+    $externalDofollow = 0;
+    foreach ($xpath->query('//a[@href]') as $node) {
+        $href = trim($node->getAttribute('href'));
+        if ($href === '' || str_starts_with($href, '#')) {
+            continue;
+        }
+        $linkHost = parse_url($href, PHP_URL_HOST);
+        $isExternal = $linkHost !== null && $linkHost !== '' && strcasecmp($linkHost, $host) !== 0;
+        if ($isExternal) {
+            $externalLinks++;
+            if (!str_contains(strtolower($node->getAttribute('rel')), 'nofollow')) {
+                $externalDofollow++;
+            }
+        } else {
+            $internalLinks++;
+        }
+    }
+    $bodyText = preg_replace('/\s+/', ' ', trim($doc->textContent));
+
+    $signals = [
+        'title' => $title,
+        'meta_description' => $description,
+        'body_text' => $bodyText,
+        'headings' => $headings,
+        'image_alts' => $imageAlts,
+        'image_count' => $imageCount,
+        'video_count' => $videoCount,
+        'paragraph_word_counts' => $paragraphs,
+        'internal_links' => $internalLinks,
+        'external_links' => $externalLinks,
+        'external_dofollow_links' => $externalDofollow,
+    ];
+
+    return computeSeoScore($signals, $post['focus_keyword'] ?? '', '/blog/' . $post['slug']);
+}
+
+/** Rank Math's own red/orange/green score bands, used for the admin UI's badges. */
+function seoScoreBadgeClass($score) {
+    if ($score === null) {
+        return 'bg-secondary-lt';
+    }
+    if ($score < 50) {
+        return 'bg-danger-lt';
+    }
+    if ($score < 80) {
+        return 'bg-orange-lt';
+    }
+    return 'bg-green-lt';
 }

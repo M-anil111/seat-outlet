@@ -13,7 +13,7 @@ if ($id > 0 && !$existing) {
 
 $errors = [];
 $values = $existing ?: [
-    'title' => '', 'slug' => '', 'excerpt' => '', 'content' => '', 'featured_image' => '',
+    'title' => '', 'focus_keyword' => '', 'slug' => '', 'excerpt' => '', 'content' => '', 'featured_image' => '',
     'author_name' => '', 'meta_title' => '', 'meta_description' => '', 'status' => 'draft',
     'published_at' => '',
 ];
@@ -65,6 +65,16 @@ include __DIR__ . '/includes/app-header.php';
                         <input type="text" name="slug" class="form-control" placeholder="Leave blank to auto-generate from the title"
                             value="<?php echo htmlspecialchars($values['slug'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                         <small class="form-hint">Public URL will be /blog/{slug}.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Focus keyword</label>
+                        <input type="text" name="focus_keyword" class="form-control"
+                            placeholder="e.g. best concert venues in austin"
+                            value="<?php echo htmlspecialchars($values['focus_keyword'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                        <small class="form-hint">
+                            Save this post, then check its score on the
+                            <a href="seo-scores">Page Content &amp; SEO Scores</a> screen.
+                        </small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Excerpt</label>
