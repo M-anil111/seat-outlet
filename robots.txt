@@ -1,0 +1,20 @@
+# Seat Outlet
+#
+# Site-wide indexing is still gated per-page via the <meta name="robots">
+# tag in header.php (default "noindex nofollow" until a page_rules row or
+# hardcoded page override says otherwise - see header.php and
+# db/migrations/0002_page_rules.sql). That per-page tag is what actually
+# controls indexing; this file only controls crawling, and Googlebot needs
+# to be able to crawl a page to see its noindex tag in the first place, so
+# nothing here is disallowed except real non-content paths.
+
+User-agent: *
+Disallow: /admin/
+Disallow: /ajax/
+Disallow: /cache/
+Disallow: /vendor/
+Disallow: /db/
+Disallow: /tools/
+Disallow: /search
+
+Sitemap: https://beta.seatoutlet.com/sitemap.php

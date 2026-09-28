@@ -56,6 +56,24 @@
         <?php if (!empty($pageRule['schema_json'])) { ?>
         <script type="application/ld+json"><?php echo $pageRule['schema_json']; ?></script>
         <?php } ?>
+    <?php } elseif (!empty($pageMetaTitle)) { ?>
+        <?php
+        // Set by the including page (before `include 'header.php'`) when it
+        // already knows its own real title/description/canonical/schema -
+        // e.g. the location-filtered performer/category pages, which need
+        // to look up a performer and/or city/state/country/venue before
+        // they can say anything real about themselves. Takes precedence
+        // over the hardcoded per-page-type includes below, but not over an
+        // explicit admin page_rules override above.
+        ?>
+        <title><?php echo htmlspecialchars($pageMetaTitle, ENT_QUOTES, 'UTF-8'); ?></title>
+        <?php if (!empty($pageMetaDescription)) { ?>
+        <meta name="description" content="<?php echo htmlspecialchars($pageMetaDescription, ENT_QUOTES, 'UTF-8'); ?>">
+        <?php } ?>
+        <?php if (!empty($pageCanonicalUrl)) { ?>
+        <link rel="canonical" href="<?php echo htmlspecialchars($pageCanonicalUrl, ENT_QUOTES, 'UTF-8'); ?>">
+        <?php } ?>
+        <?php if (!empty($pageJsonLdNodes)) { outputJsonLdGraph(array_merge([buildOrganizationSchema(), buildWebsiteSchema()], $pageJsonLdNodes)); } ?>
     <?php } elseif ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>
         <?php include 'inc/seo.php'; ?>
     <?php }elseif ($_SERVER['REQUEST_URI'] == '/tickets' || $_SERVER['REQUEST_URI'] == '/tickets.php') { ?>

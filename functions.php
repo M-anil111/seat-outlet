@@ -2769,3 +2769,767 @@ function outputJsonLdGraph(array $nodes) {
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     echo "\n" . '</script>' . "\n";
 }
+
+/*
+|--------------------------------------------------------------------------
+| Location-filtered category & performer pages (artist-*, concert-*,
+| concerts-*, event-*, events-*, festivals-*, sports-*, theater-*, theatre-*)
+|--------------------------------------------------------------------------
+| These 23 pages were previously broken: every one called getTnPerformerById()
+| regardless of what its own filename promised, ignored the location entirely,
+| and rendered literal "{city}"/"{state}" placeholder text plus a hardcoded
+| "Aaron Lewis" leftover from whatever performer the template was built
+| against. This section is the real data layer: parsing a location slug per
+| dimension (country is the odd one out - TicketNetwork identifies countries
+| by two-letter alpha code, not a numeric ID, confirmed against the live
+| sandbox API: /catalog/v2/countries/1 -> 404, /catalog/v2/countries/US ->
+| 200), building the matching OData filter fragment, fetching a display name,
+| and combining that with either a performer filter (artist-*) or a category
+| path filter (everything else) - both confirmed to combine correctly with a
+| location filter via a live sandbox request.
+*/
+
+/**
+ * The "name-name-123" slug pattern (trailing numeric ID) used for
+ * performers, events, venues, cities etc. throughout this app - was
+ * duplicated inline (explode('-') + end()) in every page that needed it.
+ */
+function extractTrailingId(string $slug): int {
+    $parts = explode('-', trim($slug, '/'));
+    return (int) end($parts);
+}
+
+const LOCATION_CATEGORY_PATHS = [
+    'concert'   => '.1859.1986.',
+    'concerts'  => '.1859.1986.',
+    'sports'    => '.1859.1988.',
+    'theater'   => '.1859.1989.',
+    'theatre'   => '.1859.1989.',
+    'festivals' => '.1859.1986.1877.',
+    'events'    => null, // no category constraint - every category
+];
+
+/**
+ * Extracts the trailing identifier from a location slug. Every dimension
+ * except country uses a numeric TicketNetwork ID (e.g. "austin-tx-247");
+ * country slugs end in a two-letter alpha code instead (e.g.
+ * "united-states-us" - confirmed against the live API's own uriComponent
+ * for the US: "United-States-of-America-US").
+ *
+ * @return int|string|null int for city/state/venue, a 2-letter string for
+ *                          country, or null if the slug doesn't match.
+ */
+function parseLocationSlug(string $dimension, string $slug) {
+    $slug = trim($slug, '/');
+    $parts = explode('-', $slug);
+    if (empty($parts)) return null;
+
+    if ($dimension === 'country') {
+        $code = strtoupper(end($parts));
+        return preg_match('/^[A-Z]{2}$/', $code) ? $code : null;
+    }
+
+    $id = (int) end($parts);
+    return $id > 0 ? $id : null;
+}
+
+/**
+ * @return string|null The OData filter fragment for this dimension/value,
+ *                      or null if the dimension is unrecognized.
+ */
+function getLocationFilterFragment(string $dimension, $locationValue): ?string {
+    switch ($dimension) {
+        case 'city':    return 'city/id eq ' . (int) $locationValue;
+        case 'state':   return 'stateProvince/id eq ' . (int) $locationValue;
+        case 'venue':   return 'venue/id eq ' . (int) $locationValue;
+        case 'country': return "country/alphaCode eq '" . tnEscapeFilterValue((string) $locationValue) . "'";
+        default:        return null;
+    }
+}
+
+/**
+ * Fetches a human-readable name (+ region, for breadcrumbs/headings) for a
+ * location value. Every dimension has its own TicketNetwork resource except
+ * country, whose display name comes back on the same countries/{code}
+ * lookup used for the filter.
+ */
+function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
+    switch ($dimension) {
+        case 'city':
+            $city = getTnCityById((int) $locationValue);
+            if (empty($city)) return null;
+            return [
+                'name' => $city['text']['name'] ?? '',
+                'region' => $city['stateProvince']['text']['abbr'] ?? '',
+                'label' => trim(($city['text']['name'] ?? '') . ', ' . ($city['stateProvince']['text']['abbr'] ?? ''), ', '),
+            ];
+        case 'state':
+            $state = getTnStateById((int) $locationValue);
+            if (empty($state)) return null;
+            return [
+                'name' => $state['text']['name'] ?? '',
+                'region' => $state['text']['abbr'] ?? '',
+                'label' => $state['text']['name'] ?? '',
+            ];
+        case 'venue':
+            $venue = getTnVenueById((int) $locationValue);
+            if (empty($venue)) return null;
+            return [
+                'name' => $venue['text']['name'] ?? '',
+                'region' => trim(($venue['city']['text']['name'] ?? '') . ', ' . ($venue['stateProvince']['text']['abbr'] ?? ''), ', '),
+                'label' => $venue['text']['name'] ?? '',
+            ];
+        case 'country':
+            $country = getTnCountryByCode((string) $locationValue);
+            if (empty($country)) return null;
+            return [
+                'name' => $country['text']['name'] ?? '',
+                'region' => $country['alphaCode'] ?? '',
+                'label' => $country['text']['name'] ?? '',
+            ];
+        default:
+            return null;
+    }
+}
+
+function getTnStateById($stateId) {
+    $endpoint = '/catalog/v2/stateProvinces/' . (int) $stateId;
+    return tnRequest($endpoint);
+}
+
+function getTnCountryByCode($alphaCode) {
+    $alphaCode = strtoupper(preg_replace('/[^A-Za-z]/', '', (string) $alphaCode));
+    if ($alphaCode === '') return null;
+    $endpoint = '/catalog/v2/countries/' . $alphaCode;
+    return tnRequest($endpoint);
+}
+
+/**
+ * Track A (artist-city/state/country/venue): one performer's events,
+ * additionally filtered to one location. Reuses getTnPerformerEvents()
+ * exactly as it already works elsewhere - performerFilter and a location
+ * `filter` combine in one request (confirmed live against the sandbox API).
+ */
+function getPerformerEventsByLocation(int $performerId, string $dimension, $locationValue, array $params = []) {
+    $locationFilter = getLocationFilterFragment($dimension, $locationValue);
+    if ($locationFilter === null) return ['results' => [], 'totalCount' => 0];
+
+    $today = date('Y-m-d');
+    $params['filter'] = $locationFilter . " and date/date ge $today";
+
+    return getTnPerformerEvents($performerId, $params);
+}
+
+/**
+ * Track B (concert-venue, theater-state, sports-city, etc.): every event in
+ * a category, filtered to one location - no fixed performer. $categoryKey
+ * is one of LOCATION_CATEGORY_PATHS's keys ('events' has no category
+ * constraint at all, matching how events-city/events-state work today).
+ */
+function getCategoryEventsByLocation(string $categoryKey, string $dimension, $locationValue, array $params = []) {
+    $locationFilter = getLocationFilterFragment($dimension, $locationValue);
+    if ($locationFilter === null) return ['results' => [], 'totalCount' => 0];
+
+    $today = date('Y-m-d');
+    $categoryPath = LOCATION_CATEGORY_PATHS[$categoryKey] ?? null;
+
+    $filterParts = [$locationFilter, "date/date ge $today"];
+    if ($categoryPath !== null) {
+        $filterParts[] = "startswith(defaultCategory/path, '" . tnEscapeFilterValue($categoryPath) . "')";
+    }
+
+    $params['filter'] = implode(' and ', $filterParts);
+    $params['includeTotalCount'] = $params['includeTotalCount'] ?? 'true';
+
+    return tnRequest('/catalog/v2/events/', $params);
+}
+
+/**
+ * Track A page renderer (artist-city.php, artist-state.php,
+ * artist-country.php, artist-venue.php): one performer's events, filtered to
+ * a single location dimension. All four files are thin wrappers around this
+ * function - the URL contract (confirmed with the site owner) is two path
+ * segments, performer slug then location slug, rewritten server-side into
+ * $_GET['slug'] and $_GET['loc'].
+ */
+function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
+    $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+    $perPage = 20;
+
+    $performerId   = extractTrailingId($_GET['slug'] ?? '');
+    $locationValue = parseLocationSlug($dimension, $_GET['loc'] ?? '');
+
+    if ($performerId <= 0 || $locationValue === null) {
+        include 'header.php';
+        echo '<div class="container py-5"><p>Invalid performer or location.</p></div>';
+        include 'footer.php';
+        return;
+    }
+
+    $performer = getTnPerformerById($performerId);
+    $location  = getLocationDisplayInfo($dimension, $locationValue);
+
+    if (empty($performer) || empty($performer['defaultCategory']) || empty($location)) {
+        include 'header.php';
+        echo '<div class="container py-5"><p>Performer or location not found.</p></div>';
+        include 'footer.php';
+        return;
+    }
+
+    $artistName    = $performer['text']['name'];
+    $locationLabel = $location['label'];
+
+    $eventsResponse = getPerformerEventsByLocation($performerId, $dimension, $locationValue, [
+        'page'    => $page,
+        'perPage' => $perPage,
+        'includeTotalCount' => 'true',
+    ]);
+
+    $total_count = $eventsResponse['totalCount'] ?? 0;
+    $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
+    $events      = $eventsResponse['results'] ?? [];
+    $count       = $eventsResponse['count'] ?? count($events);
+    $percent     = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
+    $year        = date('Y');
+
+    $sep = '<span class="separator"><strong> / </strong></span>';
+    $breadcrumbs = buildCategoryBreadcrumb($performer['defaultCategory']);
+    $categoryLabel = end($breadcrumbs)['label'] ?? '';
+
+    $relatedPerformers = getRelatedPerformers($performer['defaultCategory']['path'], $performerId);
+    $performer_bio   = getArtistBio($artistName, $performerId);
+    $performer_image = getArtistImage($artistName, $performer['defaultCategory']);
+
+    $faqsRaw = getFaqs('performer');
+    $faqs = array_map(function ($faq) use ($artistName, $locationLabel) {
+        return [
+            'question' => str_replace(['[artist_name]', '[location]'], [$artistName, $locationLabel], $faq['question']),
+            'answer'   => str_replace(['[artist_name]', '[location]'], [$artistName, $locationLabel], $faq['answer']),
+        ];
+    }, $faqsRaw);
+
+    // --- SEO: computed before including header.php so the <head> can use real data ---
+    $pageMetaTitle       = "$artistName Tickets in $locationLabel | Seat Outlet";
+    $pageMetaDescription = "Buy verified $artistName tickets in $locationLabel. Compare prices across sellers and find upcoming $artistName shows near you on Seat Outlet.";
+    $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($artistName, $performerId) . '/' . createSlug($locationLabel, $locationValue);
+    $pageJsonLdNodes = array_values(array_filter([
+        buildBreadcrumbListSchema(array_map(fn($c) => ['label' => $c['label'], 'url' => null], $breadcrumbs), "$artistName in $locationLabel"),
+        buildFaqPageSchema($faqs),
+    ]));
+
+    include 'header.php';
+    ?>
+
+    <section class="section-featured-header text-sm-center text-md-start">
+        <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
+            style="background-image: url('<?php echo HOME_URL; ?>/assets/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+            <div class="container mx-xl-5 mx-lg-5 mx-md-3">
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <div class="section-content">
+                            <nav class="breadcrumb justify-content-sm-center justify-content-md-start">
+                                <?php foreach ($breadcrumbs as $index => $item) { ?>
+                                    <?php if ($index > 0) { ?>
+                                        <?php echo $sep; ?>
+                                    <?php } ?>
+                                    <a href="#">
+                                        <?php echo htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </a>
+                                <?php } ?>
+                                <?php echo $sep; ?>
+                                <span class="current">
+                                    <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>
+                                </span>
+                            </nav>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="row align-items-center text-center text-md-start">
+                            <div class="col-md-3">
+                                <div class="img-artist">
+                                    <img src="<?php echo $performer_image; ?>" alt="<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" />
+                                </div>
+                            </div>
+                            <div class="col-md-9 text-white">
+                                <div class="artist-heading text-center text-md-start text-lg-start text-xl-start text-xxl-start">
+                                    <div class="artist-category">
+                                        <a href="<?php echo htmlspecialchars(sanitize_title($categoryLabel), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?>
+                                        </a>
+                                    </div>
+                                    <h1 class="artist-title">
+                                        <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?>
+                                    </h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="so-tabs sticky-tabs">
+        <div class="artist-tabs tabs-wrapper">
+            <ul class="nav nav-tabs artist-tabs-nav" id="artistTabs">
+                <li class="nav-item">
+                    <button class="nav-link active" type="button" data-target="default" onclick="scrollToElement('default')">
+                        <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" type="button" data-target="about" onclick="scrollToElement('about')">About</button>
+                </li>
+                <?php if (!empty($faqs)) { ?>
+                <li class="nav-item">
+                    <button class="nav-link" type="button" data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
+                </li>
+                <?php } ?>
+            </ul>
+            <span class="active-underline"></span>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <div class="tab-section section-performer-content" id="default">
+                <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
+                    <div class="col-sm-12 col-md-8 left-bar">
+                        <div class="mb-3 mb-md-4 mb-lg-4">
+                            <div class="d-flex justify-content-between align-items-center results-header">
+                                <div class="results-title">
+                                    <span class="active-indicator"></span>
+                                    <h2>
+                                        <?php echo htmlspecialchars(strtoupper($artistName), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN <?php echo htmlspecialchars(strtoupper($locationLabel), ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
+                                        <span class="count" id="results_count">
+                                            <?php echo (int) $count; ?>
+                                            <?php echo $count > 1 ? 'RESULTS' : 'RESULT'; ?>
+                                        </span>
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-category-bg pb-3">
+                            <?php if (!empty($events)) { ?>
+                                <div id="eventsSection" class="section-artist-content event-row-all">
+                                    <?php foreach ($events as $event) {
+                                        $eventDateRaw = $event['date']['date'] ?? '';
+                                        $timestamp    = $eventDateRaw ? strtotime($eventDateRaw) : false;
+                                        $eventSlug    = createSlug($event['text']['name'] ?? '', $event['id'] ?? 0);
+                                    ?>
+                                        <div class="d-flex align-items-center justify-content-between performer-event-item">
+                                            <div class="date-box text-center me-3">
+                                                <div class="month"><?php echo $timestamp ? htmlspecialchars(strtoupper(date('M', $timestamp)), ENT_QUOTES, 'UTF-8') : ''; ?></div>
+                                                <div class="day"><?php echo $timestamp ? htmlspecialchars(date('d', $timestamp), ENT_QUOTES, 'UTF-8') : ''; ?></div>
+                                                <?php if ($timestamp && date('Y', $timestamp) > $year) { ?>
+                                                    <div class="month"><?php echo htmlspecialchars(date('Y', $timestamp), ENT_QUOTES, 'UTF-8'); ?></div>
+                                                <?php } ?>
+                                            </div>
+                                            <div class="flex-grow-1 w-50">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="fw-semibold day-weeks"><?php echo $timestamp ? htmlspecialchars(date('D', $timestamp), ENT_QUOTES, 'UTF-8') : ''; ?></span>
+                                                    <span class="dot">·</span>
+                                                    <span class="time-clock"><?php echo htmlspecialchars($event['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+                                                </div>
+                                                <div class="fw-semibold location-venue-name">
+                                                    <a href="#"><?php echo htmlspecialchars($event['city']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars($event['stateProvince']['text']['abbr'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                                                    ·
+                                                    <a href="#"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                                                </div>
+                                                <div class="text-muted small"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                                            </div>
+                                            <div class="ms-3">
+                                                <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+                                                    <span class="d-none d-md-inline">Find Tickets</span>
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    <?php } ?>
+                                </div>
+                                <?php if ($total_pages > 1) { ?>
+                                    <div class="load-more-wrapper text-center mt-5">
+                                        <div class="load-progress mx-auto mb-3">
+                                            <div class="small mb-2">
+                                                Loaded <strong id="loadedCount"><?php echo $count; ?></strong> out of <strong id="totalCount"><?php echo $total_count; ?></strong> events
+                                            </div>
+                                            <div class="progress progress-thin">
+                                                <div class="progress-bar" id="progressBar" style="width: <?php echo $percent; ?>%;"></div>
+                                            </div>
+                                        </div>
+                                        <button
+                                            class="btn more-events-btn d-inline-flex align-items-center gap-2"
+                                            id="loadMoreBtn"
+                                            data-total="<?php echo (int) $total_count; ?>"
+                                            data-page="2"
+                                            data-performer="<?php echo (int) $performerId; ?>"
+                                            data-perpage="<?php echo (int) $perPage; ?>">
+                                            <span class="btn-text">More Events</span>
+                                            <span class="spinner-border spinner-border-sm d-none" id="btnSpinner"></span>
+                                            <i class="bi bi-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                <?php } ?>
+                            <?php } else { ?>
+                                <h4 style="padding: 20px;">
+                                    No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets found in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now.
+                                </h4>
+                            <?php } ?>
+                        </div>
+                        <div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
+                            <img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
+                        </div>
+                    </div>
+                    <div id="secondary" class="sidebar col-sm-12 col-md-4">
+                        <div class="sticky-top sidebar-inner">
+                            <div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
+                                <div class="mt-3 mt-md-3 mt-lg-0">
+                                    <img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
+                                </div>
+                            </div>
+                            <div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                                <div class="guarantee">
+                                    <strong>Shop Tickets Worry Free</strong><br>
+                                    <span>With Our 100% Guarantee</span>
+                                </div>
+                                <div class="guarantee-icon"><i class="bi bi-shield-check"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-section content-section-detail" id="about">
+                <div class="row">
+                    <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
+                        <div class="so-about me-3">
+                            <h2 class="so-heading mb-3">About <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <p><?php echo $performer_bio; ?></p>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
+                        <div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
+                            <img src="<?php echo $performer_image; ?>" alt="<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <?php if (!empty($faqs)) { ?>
+                <div class="tab-section content-section-detail" id="faqs">
+                    <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <div class="accordion" id="faqAccordion">
+                        <?php foreach ($faqs as $index => $faq) {
+                            $collapseId = 'collapse' . $index;
+                            $headingId  = 'heading' . $index;
+                            $isFirst = ($index === 0);
+                        ?>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="<?php echo $headingId; ?>">
+                                    <button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#<?php echo $collapseId; ?>"
+                                            aria-expanded="<?php echo $isFirst ? 'true' : 'false'; ?>"
+                                            aria-controls="<?php echo $collapseId; ?>">
+                                        <?php echo htmlspecialchars($faq['question'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </button>
+                                </h2>
+                                <div id="<?php echo $collapseId; ?>"
+                                    class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>"
+                                    aria-labelledby="<?php echo $headingId; ?>"
+                                    data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        <?php echo nl2br(htmlspecialchars($faq['answer'], ENT_QUOTES, 'UTF-8')); ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php } ?>
+                    </div>
+                </div>
+            <?php } ?>
+
+            <?php if (!empty($relatedPerformers)) { ?>
+                <div class="tab-section content-section-detail" id="fans">
+                    <div class="row g-4">
+                        <h2 class="so-heading">Fans Also Viewed</h2>
+                        <?php foreach (array_slice($relatedPerformers, 0, 8) as $related) {
+                            $relatedName = $related['text']['name'] ?? '';
+                            $relatedImage = getArtistImage($relatedName, $related['defaultCategory'] ?? []);
+                        ?>
+                            <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                                <a href="/artist/<?php echo htmlspecialchars(strtolower($related['uriComponent'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" class="band-card-bootstrap text-decoration-none">
+                                    <div class="position-relative overflow-hidden rounded">
+                                        <img src="<?php echo $relatedImage ?: (HOME_URL . '/assets/placeholder.webp'); ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo htmlspecialchars($relatedName, ENT_QUOTES, 'UTF-8'); ?>">
+                                        <div class="band-content d-flex justify-content-between align-items-center">
+                                            <span class="band-name"><?php echo htmlspecialchars($relatedName, ENT_QUOTES, 'UTF-8'); ?></span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        <?php } ?>
+                    </div>
+                </div>
+            <?php } ?>
+        </div>
+    </section>
+
+    <?php
+    include 'footer.php';
+}
+
+/**
+ * Track B page renderer (concert-venue.php, sports-city.php,
+ * theater-state.php, festivals-country.php, event-city.php, etc. - 20 files
+ * total): every event in a category, filtered to a single location - no
+ * fixed performer. Modeled on concerts.php's real, working listing pattern
+ * (dynamic /city, /venue, /event links; no placeholder tokens), extended
+ * with a location filter and the same SEO head/FAQ treatment as the Track A
+ * artist pages. URL contract: one path segment, the location slug,
+ * rewritten server-side into $_GET['slug'].
+ */
+function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, string $dimension, string $urlPrefix): void {
+    $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+    $perPage = 20;
+
+    $locationValue = parseLocationSlug($dimension, $_GET['slug'] ?? '');
+
+    if ($locationValue === null) {
+        include 'header.php';
+        echo '<div class="container py-5"><p>Invalid location.</p></div>';
+        include 'footer.php';
+        return;
+    }
+
+    $location = getLocationDisplayInfo($dimension, $locationValue);
+
+    if (empty($location)) {
+        include 'header.php';
+        echo '<div class="container py-5"><p>Location not found.</p></div>';
+        include 'footer.php';
+        return;
+    }
+
+    $locationLabel = $location['label'];
+
+    $eventsResponse = getCategoryEventsByLocation($categoryKey, $dimension, $locationValue, [
+        'page'    => $page,
+        'perPage' => $perPage,
+        'includeTotalCount' => 'true',
+    ]);
+
+    $total_count = $eventsResponse['totalCount'] ?? 0;
+    $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
+    $events      = $eventsResponse['results'] ?? [];
+    $count       = $eventsResponse['count'] ?? count($events);
+    $percent     = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
+    $year        = date('Y');
+
+    $sep = '<span class="separator"><strong> / </strong></span>';
+    $breadcrumbs = [
+        ['label' => 'Home', 'url' => HOME_URL],
+        ['label' => $categoryLabel, 'url' => HOME_URL . '/' . sanitize_title($categoryLabel)],
+    ];
+
+    $faqsRaw = getFaqs($categoryKey);
+    $faqs = array_map(function ($faq) use ($categoryLabel, $locationLabel) {
+        return [
+            'question' => str_replace(['[category]', '[location]'], [$categoryLabel, $locationLabel], $faq['question']),
+            'answer'   => str_replace(['[category]', '[location]'], [$categoryLabel, $locationLabel], $faq['answer']),
+        ];
+    }, $faqsRaw);
+
+    // --- SEO: computed before including header.php so the <head> can use real data ---
+    $pageMetaTitle       = "Buy $categoryLabel Tickets in $locationLabel | Seat Outlet";
+    $pageMetaDescription = "Buy $categoryLabel tickets in $locationLabel. Compare prices across sellers, browse upcoming events, and find great seats on Seat Outlet.";
+    $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($locationLabel, $locationValue);
+    $pageJsonLdNodes = array_values(array_filter([
+        buildBreadcrumbListSchema($breadcrumbs, "$categoryLabel in $locationLabel"),
+        buildFaqPageSchema($faqs),
+    ]));
+
+    include 'header.php';
+    ?>
+
+    <section class="section-featured-header text-sm-center text-md-start">
+        <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
+            style="background-image: url('<?php echo HOME_URL; ?>/assets/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+            <div class="container mx-xl-5 mx-lg-5 mx-md-3">
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <div class="section-content">
+                            <nav class="breadcrumb justify-content-sm-center justify-content-md-start">
+                                <?php foreach ($breadcrumbs as $item) { ?>
+                                    <a href="<?php echo htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8'); ?>">
+                                        <?php echo htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </a>
+                                    <?php echo $sep; ?>
+                                <?php } ?>
+                                <span class="current">
+                                    <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?>
+                                </span>
+                            </nav>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <h1 class="artist-title text-white">
+                            <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?>
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <div class="tab-section section-performer-content" id="default">
+                <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
+                    <div class="col-sm-12 col-md-8 left-bar">
+                        <div class="mb-3 mb-md-4 mb-lg-4">
+                            <div class="d-flex justify-content-between align-items-center results-header">
+                                <div class="results-title">
+                                    <span class="active-indicator"></span>
+                                    <h2>
+                                        <?php echo htmlspecialchars(strtoupper($categoryLabel), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN <?php echo htmlspecialchars(strtoupper($locationLabel), ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
+                                        <span class="count" id="results_count">
+                                            <?php echo (int) $total_count; ?>
+                                            <?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
+                                        </span>
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-category-bg pb-3">
+                            <?php if (!empty($events)) { ?>
+                                <div id="eventsSection" class="section-artist-content event-row-all">
+                                    <?php foreach ($events as $event) {
+                                        $eventDateRaw = $event['date']['date'] ?? '';
+                                        $timestamp    = $eventDateRaw ? strtotime($eventDateRaw) : false;
+                                        $eventSlug    = createSlug($event['text']['name'] ?? '', $event['id'] ?? 0);
+                                        $eventCityLabel = trim(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
+                                        $eventCitySlug  = createSlug($eventCityLabel, $event['city']['id'] ?? 0);
+                                        $eventVenueSlug = createSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'] ?? 0);
+                                    ?>
+                                        <div class="d-flex align-items-center justify-content-between performer-event-item">
+                                            <div class="date-box text-center me-3">
+                                                <div class="month"><?php echo $timestamp ? htmlspecialchars(strtoupper(date('M', $timestamp)), ENT_QUOTES, 'UTF-8') : ''; ?></div>
+                                                <div class="day"><?php echo $timestamp ? htmlspecialchars(date('d', $timestamp), ENT_QUOTES, 'UTF-8') : ''; ?></div>
+                                                <?php if ($timestamp && date('Y', $timestamp) > $year) { ?>
+                                                    <div class="month"><?php echo htmlspecialchars(date('Y', $timestamp), ENT_QUOTES, 'UTF-8'); ?></div>
+                                                <?php } ?>
+                                            </div>
+                                            <div class="flex-grow-1 w-50">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="fw-semibold day-weeks"><?php echo $timestamp ? htmlspecialchars(date('D', $timestamp), ENT_QUOTES, 'UTF-8') : ''; ?></span>
+                                                    <span class="dot">·</span>
+                                                    <span class="time-clock"><?php echo htmlspecialchars($event['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+                                                </div>
+                                                <div class="fw-semibold location-venue-name">
+                                                    <a href="/city/<?php echo htmlspecialchars($eventCitySlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+                                                    ·
+                                                    <a href="/venue/<?php echo htmlspecialchars($eventVenueSlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                                                </div>
+                                                <div class="text-muted small">
+                                                    <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                                                </div>
+                                            </div>
+                                            <div class="ms-3">
+                                                <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+                                                    <span class="d-none d-md-inline">Find Tickets</span>
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    <?php } ?>
+                                </div>
+                                <?php if ($total_pages > 1) { ?>
+                                    <div class="load-more-wrapper text-center mt-5">
+                                        <div class="load-progress mx-auto mb-3">
+                                            <div class="small mb-2">
+                                                Loaded <strong id="loadedCount"><?php echo $count; ?></strong> out of <strong id="totalCount"><?php echo $total_count; ?></strong> events
+                                            </div>
+                                            <div class="progress progress-thin">
+                                                <div class="progress-bar" id="progressBar" style="width: <?php echo $percent; ?>%;"></div>
+                                            </div>
+                                        </div>
+                                        <button
+                                            class="btn more-events-btn d-inline-flex align-items-center gap-2"
+                                            id="loadMoreBtn"
+                                            data-total="<?php echo (int) $total_count; ?>"
+                                            data-page="2"
+                                            data-perpage="<?php echo (int) $perPage; ?>">
+                                            <span class="btn-text">More Events</span>
+                                            <span class="spinner-border spinner-border-sm d-none" id="btnSpinner"></span>
+                                            <i class="bi bi-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                <?php } ?>
+                            <?php } else { ?>
+                                <h4 style="padding: 20px;">
+                                    No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets found in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now.
+                                </h4>
+                            <?php } ?>
+                        </div>
+                        <div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
+                            <img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
+                        </div>
+                    </div>
+                    <div id="secondary" class="sidebar col-sm-12 col-md-4">
+                        <div class="sticky-top sidebar-inner">
+                            <div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
+                                <div class="mt-3 mt-md-3 mt-lg-0">
+                                    <img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
+                                </div>
+                            </div>
+                            <div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                                <div class="guarantee">
+                                    <strong>Shop Tickets Worry Free</strong><br>
+                                    <span>With Our 100% Guarantee</span>
+                                </div>
+                                <div class="guarantee-icon"><i class="bi bi-shield-check"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <?php if (!empty($faqs)) { ?>
+                <div class="tab-section content-section-detail" id="faqs">
+                    <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <div class="accordion" id="faqAccordion">
+                        <?php foreach ($faqs as $index => $faq) {
+                            $collapseId = 'collapse' . $index;
+                            $headingId  = 'heading' . $index;
+                            $isFirst = ($index === 0);
+                        ?>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="<?php echo $headingId; ?>">
+                                    <button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#<?php echo $collapseId; ?>"
+                                            aria-expanded="<?php echo $isFirst ? 'true' : 'false'; ?>"
+                                            aria-controls="<?php echo $collapseId; ?>">
+                                        <?php echo htmlspecialchars($faq['question'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </button>
+                                </h2>
+                                <div id="<?php echo $collapseId; ?>"
+                                    class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>"
+                                    aria-labelledby="<?php echo $headingId; ?>"
+                                    data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        <?php echo nl2br(htmlspecialchars($faq['answer'], ENT_QUOTES, 'UTF-8')); ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php } ?>
+                    </div>
+                </div>
+            <?php } ?>
+        </div>
+    </section>
+
+    <?php
+    include 'footer.php';
+}
