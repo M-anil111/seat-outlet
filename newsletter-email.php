@@ -1,7 +1,11 @@
 <?php
 session_start();
+// Log everything, but never render PHP errors/warnings into the HTTP
+// response of a public-facing endpoint - that leaks file paths and
+// internal state to whoever calls this script.
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;

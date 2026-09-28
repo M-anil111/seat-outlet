@@ -27,10 +27,11 @@ if (empty($performer) || empty($performer['defaultCategory'])) {
 
 $eventsResponse = getTnPerformerEvents($id, [
 	'page'    => $page,
-	'perPage' => $perPage
+	'perPage' => $perPage,
+    'includeTotalCount' => 'true'
 ]);
 
-$total_count = getTnPerformerEventsCount($id);
+$total_count = $eventsResponse['totalCount'] ?? 0;
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 
 $events = $eventsResponse['results'] ?? [];
@@ -43,10 +44,10 @@ $relatedPerformers = $relatedPerformersResponse;
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
 $artistName = $performer['text']['name'];
-$performer_bio = getArtistBio($artistName);
-$performer_image = getArtistImage($artistName);
+$performer_bio = getArtistBio($artistName, $id);
+$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
 
-$faqs = getFaqs($mysqli, 'performer');
+$faqs = getFaqs('performer');
 
 ?>
 
@@ -425,7 +426,7 @@ $faqs = getFaqs($mysqli, 'performer');
 					<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 						<div class="me-0 me-md-3 me-lg-3 me-xl-3 me-xxl-3">
 							<h2 class="mb-4 fw-bold text-black so-heading fs-4">About <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> Perfoming at {Venue}</h2>
-							<p><?php echo getArtistBioFromWikipedia($artistName); ?></p>
+							<p><?php echo $performer_bio; ?></p>
 							<!-- <p><?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> brings a unique blend of trip hop, hip hop, and cinematic soundscapes to live audiences across the country. Fans can experience immersive performances at top venues with guaranteed authentic tickets.</p>
 						<ul>
 							<li>Browse upcoming <?php echo htmlspecialchars($performer['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?> tour dates</li>
