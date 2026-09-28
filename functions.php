@@ -2373,14 +2373,61 @@ function getPageRuleById($id, $mysqli = MYSQLI) {
     return $row ?: null;
 }
 
+// Every front-end page load calls getPageRuleByPath() once (via
+// resolvePageRule()), and for the overwhelming majority of URLs today
+// there's no row to find - that's still a full round-trip to MySQL on
+// every single request, for nothing. APCu (common on shared/cPanel PHP
+// hosting, but not guaranteed - see functions.php's other optional
+// integrations for the same pattern) caches both hits and the "no rule
+// here" result for a short TTL, so repeat requests for the same URL within
+// that window skip the database entirely. Falls back to a plain query with
+// zero behavior change when APCu isn't available.
+const PAGE_RULE_CACHE_TTL = 60;
+
+function pageRuleCacheKey($urlPath) {
+    return 'seatoutlet_page_rule:' . $urlPath;
+}
+
+function pageRuleCacheGet($urlPath, &$found) {
+    $found = false;
+    if (!function_exists('apcu_fetch')) {
+        return null;
+    }
+    $value = apcu_fetch(pageRuleCacheKey($urlPath), $success);
+    $found = $success;
+    return $success ? $value : null;
+}
+
+function pageRuleCacheSet($urlPath, $value) {
+    if (function_exists('apcu_store')) {
+        apcu_store(pageRuleCacheKey($urlPath), $value, PAGE_RULE_CACHE_TTL);
+    }
+}
+
+function pageRuleCacheForget($urlPath) {
+    if (function_exists('apcu_delete')) {
+        apcu_delete(pageRuleCacheKey($urlPath));
+    }
+}
+
 function getPageRuleByPath($urlPath, $mysqli = MYSQLI) {
     $urlPath = normalizePagePath($urlPath);
+
+    $cached = pageRuleCacheGet($urlPath, $found);
+    if ($found) {
+        return $cached;
+    }
+
     $stmt = $mysqli->prepare('SELECT * FROM page_rules WHERE url_path = ? AND is_active = 1 LIMIT 1');
     $stmt->bind_param('s', $urlPath);
     $stmt->execute();
     $row = $stmt->get_result()->fetch_assoc();
     $stmt->close();
-    return $row ?: null;
+    $rule = $row ?: null;
+
+    pageRuleCacheSet($urlPath, $rule);
+
+    return $rule;
 }
 
 function savePageRule(array $data, $mysqli = MYSQLI) {
@@ -2406,6 +2453,14 @@ function savePageRule(array $data, $mysqli = MYSQLI) {
     }
     if ($redirectCode !== null && !in_array($redirectCode, [301, 302], true)) {
         throw new InvalidArgumentException('Redirect code must be 301 or 302.');
+    }
+
+    // Editing an existing rule can change its url_path - capture the old one
+    // now so its stale cache entry gets invalidated too, not just the new path's.
+    $oldUrlPath = null;
+    if ($id > 0) {
+        $existing = getPageRuleById($id, $mysqli);
+        $oldUrlPath = $existing['url_path'] ?? null;
     }
 
     if ($id > 0) {
@@ -2438,14 +2493,27 @@ function savePageRule(array $data, $mysqli = MYSQLI) {
     if (!$ok) {
         throw new RuntimeException($error ?: 'Could not save this page rule.');
     }
+
+    pageRuleCacheForget($urlPath);
+    if ($oldUrlPath !== null && $oldUrlPath !== $urlPath) {
+        pageRuleCacheForget($oldUrlPath);
+    }
+
     return true;
 }
 
 function deletePageRule($id, $mysqli = MYSQLI) {
+    $existing = getPageRuleById($id, $mysqli);
+
     $stmt = $mysqli->prepare('DELETE FROM page_rules WHERE ID = ?');
     $stmt->bind_param('i', $id);
     $stmt->execute();
     $stmt->close();
+
+    if ($existing !== null) {
+        pageRuleCacheForget($existing['url_path']);
+    }
+
     return true;
 }
 
