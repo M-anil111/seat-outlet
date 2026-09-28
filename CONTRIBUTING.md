@@ -71,6 +71,17 @@ reach beta.
 - **`.github/workflows/deploy.yml`** runs on push to `main`: lints again as
   a final gate, then deploys to beta over SFTP using the secrets below.
   This is the only workflow that touches the real server.
+- **`.github/workflows/lighthouse.yml`** runs weekly (or on demand from the
+  Actions tab): fetches the live sitemap and runs real Google Lighthouse
+  (Performance/Accessibility/Best Practices/SEO) against every URL in it
+  except individual `/event/...` pages, then commits the results to
+  `data/lighthouse-scores.json`, which `admin/lighthouse-scores.php`
+  displays. This runs in CI rather than as a PHP admin feature because
+  real Lighthouse needs a real headless Chrome to measure actual page-load
+  performance - something this app's production host doesn't run, and
+  GitHub-hosted runners come with Chrome preinstalled. Needs the
+  `LIGHTHOUSE_SITE_URL` repository *variable* (not secret - it's just the
+  public site URL) set below.
 
 ### GitHub Actions secrets (Settings → Secrets and variables → Actions)
 
@@ -81,6 +92,13 @@ Required for deploy: `DB_PASS`, `CONSUMER_KEY`, `CONSUMER_SECRET`,
 
 Optional: `SENTRY_DSN`, `SENTRY_ENVIRONMENT` - error monitoring is simply
 not initialized if these are left unset.
+
+### GitHub Actions variables (Settings → Secrets and variables → Actions → Variables tab)
+
+`LIGHTHOUSE_SITE_URL` - the site's real public URL (e.g.
+`https://beta.seatoutlet.com`), used only by `lighthouse.yml` to know what
+to run Lighthouse against. Not a secret (it's the site's own public
+address), which is why it's a repository *variable* rather than a secret.
 
 ## Admin panel
 

@@ -1,0 +1,68 @@
+name: Lighthouse scores
+
+# Runs real Google Lighthouse (github.com/GoogleChrome/lighthouse) against
+# every URL in the live sitemap - every static page and every published
+# blog post, the same set sitemap.php itself lists (see its own comment
+# for what's deliberately excluded: the location-combinator pages and city
+# lists, which aren't enumerable this way either).
+#
+# This runs in CI rather than as a PHP admin-panel feature because real
+# Lighthouse needs a real headless Chrome to render each page and measure
+# actual load performance - something this app's production host (plain
+# PHP over FTP, no Node/Chrome runtime - see CONTRIBUTING.md) doesn't
+# have and isn't a reasonable thing to add there. GitHub-hosted runners
+# come with Chrome preinstalled, so this workflow does the work here and
+# commits the results as a small JSON file the admin panel
+# (admin/lighthouse-scores.php) reads and displays - no server-side
+# headless-browser dependency, no new attack surface, no new runtime cost
+# on the actual site.
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Weekly, not on every deploy - a full Lighthouse run per URL takes a
+    # while and scores fluctuate run-to-run regardless, so there's little
+    # value running it more often than that.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: write
+
+jobs:
+  lighthouse:
+    name: Run Lighthouse against every sitemap URL
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Lighthouse CLI
+        run: npm install -g lighthouse@12
+
+      - name: Fetch the live sitemap and run Lighthouse per URL
+        env:
+          SITE_URL: ${{ vars.LIGHTHOUSE_SITE_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SITE_URL:-}" ]; then
+            echo "::error::LIGHTHOUSE_SITE_URL repository variable is not set (Settings > Secrets and variables > Actions > Variables). Skipping - see CONTRIBUTING.md."
+            exit 1
+          fi
+
+          mkdir -p data
+          php tools/lighthouse-run.php "$SITE_URL" > data/lighthouse-scores.json
+
+      - name: Commit updated scores
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/lighthouse-scores.json; then
+            echo "No score changes to commit."
+            exit 0
+          fi
+          git add data/lighthouse-scores.json
+          git commit -m "Update Lighthouse scores [skip ci]"
+          git push

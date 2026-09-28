@@ -72,6 +72,12 @@ $currentPage = $currentPage ?? '';
                                 <span class="nav-link-title">SEO Scores</span>
                             </a>
                         </li>
+                        <li class="nav-item <?php echo $currentPage === 'lighthouse-scores' ? 'active' : ''; ?>">
+                            <a class="nav-link" href="lighthouse-scores">
+                                <span class="nav-link-icon"><i class="ti ti-speedboat"></i></span>
+                                <span class="nav-link-title">Lighthouse Scores</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
