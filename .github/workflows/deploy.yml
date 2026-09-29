@@ -50,9 +50,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Trust the server's SSH host key
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
         run: |
+          echo "This runner's public IP: $(curl -s --max-time 10 https://api.ipify.org || echo unknown)"
+          if ! timeout 15 bash -c "exec 3<>/dev/tcp/$FTP_HOST/4124" 2>/dev/null; then
+            echo "::error::Cannot open TCP port 4124 on FTP_HOST from GitHub Actions. The server (or its cloud provider firewall) is dropping connections from GitHub's IP ranges - allow inbound TCP 4124 from them. Also check FTP_HOST is a bare hostname/IP (no sftp://, port or trailing slash)."
+            exit 1
+          fi
           mkdir -p ~/.ssh
-          ssh-keyscan -p 4124 "${{ secrets.FTP_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -T 15 -p 4124 "$FTP_HOST" >> ~/.ssh/known_hosts
           echo "Known hosts populated:"
           cat ~/.ssh/known_hosts
 
@@ -65,9 +72,11 @@ jobs:
               "SENTRY_DSN", "SENTRY_ENVIRONMENT",
               "THESPORTSDB_KEY", "PEXELS_API_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID", "TN_TOKEN_DIR",
           ];
-          // Optional: Sentry, the image-source keys, and the Knowledge Graph key
-          // (no longer used for images; kept so an existing secret still flows through).
-          $optional = ["SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID", "TN_TOKEN_DIR"];
+          // Optional: Sentry, the image-source keys, the Knowledge Graph key
+          // (no longer used for images; kept so an existing secret still flows through),
+          // and Brevo SMTP (newsletter and admin password-reset emails are skipped
+          // when unset; newsletter signups are still saved to the database).
+          $optional = ["SMTP_USER", "SMTP_PASS", "SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID", "TN_TOKEN_DIR"];
           $lines = ["<?php"];
           foreach ($vars as $v) {
               $val = getenv($v);

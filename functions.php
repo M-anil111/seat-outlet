@@ -2332,11 +2332,19 @@ function getPageRuleByPath($urlPath, $mysqli = MYSQLI) {
         return $cached;
     }
 
-    $stmt = $mysqli->prepare('SELECT * FROM page_rules WHERE url_path = ? AND is_active = 1 LIMIT 1');
-    $stmt->bind_param('s', $urlPath);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
+    // A missing page_rules table (migrations not yet applied after a deploy)
+    // must not take every page down: fall back to the per-page-type defaults
+    // and don't cache the miss, so rules take effect as soon as it exists.
+    try {
+        $stmt = $mysqli->prepare('SELECT * FROM page_rules WHERE url_path = ? AND is_active = 1 LIMIT 1');
+        $stmt->bind_param('s', $urlPath);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+    } catch (mysqli_sql_exception $e) {
+        error_log('page_rules lookup failed (run php db/migrate.php?): ' . $e->getMessage());
+        return null;
+    }
     $rule = $row ?: null;
 
     pageRuleCacheSet($urlPath, $rule);
@@ -2477,11 +2485,17 @@ function getContentBlock($pagePath, $blockKey, $defaultHtml, $mysqli = MYSQLI) {
         }
     }
 
-    $stmt = $mysqli->prepare('SELECT content FROM page_content_blocks WHERE page_path = ? AND block_key = ? LIMIT 1');
-    $stmt->bind_param('ss', $pagePath, $blockKey);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
+    // Same fallback as getPageRuleByPath(): no table yet means default copy.
+    try {
+        $stmt = $mysqli->prepare('SELECT content FROM page_content_blocks WHERE page_path = ? AND block_key = ? LIMIT 1');
+        $stmt->bind_param('ss', $pagePath, $blockKey);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+    } catch (mysqli_sql_exception $e) {
+        error_log('page_content_blocks lookup failed (run php db/migrate.php?): ' . $e->getMessage());
+        return $defaultHtml;
+    }
 
     $content = $row['content'] ?? null;
 

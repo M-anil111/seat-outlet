@@ -87,11 +87,15 @@ reach beta.
 
 Required for deploy: `DB_PASS`, `CONSUMER_KEY`, `CONSUMER_SECRET`,
 `GAPI_KEY`, `GKGSAPI_KEY`, `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`,
-`RECAPTCHA_SECRET_KEY`, `SMTP_USER`, `SMTP_PASS`, `FTP_HOST`,
-`FTP_USERNAME`, `FTP_PASSWORD`.
+`RECAPTCHA_SECRET_KEY`, `FTP_HOST`, `FTP_USERNAME`, `FTP_PASSWORD`.
 
 Optional: `SENTRY_DSN`, `SENTRY_ENVIRONMENT` - error monitoring is simply
 not initialized if these are left unset.
+
+Optional: `SMTP_USER`, `SMTP_PASS` (Brevo SMTP) - without them no email is
+sent: newsletter signups are still saved to `newsletter_leads` but neither
+the team notification nor the subscriber confirmation goes out, and the
+admin "forgot password" email is skipped (logged to the PHP error log).
 
 ### GitHub Actions variables (Settings → Secrets and variables → Actions → Variables tab)
 
