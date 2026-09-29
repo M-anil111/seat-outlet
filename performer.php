@@ -1,5 +1,5 @@
-<?php 
-include 'header.php'; 
+<?php
+require_once 'functions.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -11,6 +11,7 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
+	include 'header.php';
 	echo '<div class="container"><p>Invalid performer.</p></div>';
 	include 'footer.php';
 	exit;
@@ -18,20 +19,21 @@ if ($id <= 0) {
 
 $performer = getTnPerformerById($id);
 
-$today = date('Y-m-d');
-$params = [
-	"filter" => "date/date ge $today and country/alphaCode eq 'US'",
-	"perPage" => $perPage,
-	"page" => 1,
-	"includeTotalCount" => "true",
-	"performerFilter" => "id eq " . (int) $id
-];
+if (empty($performer) || empty($performer['defaultCategory'])) {
+	include 'header.php';
+	echo '<div class="container"><p>Performer not found.</p></div>';
+	include 'footer.php';
+	exit;
+}
 
-$results = getTnEvents($params);
-$total_count = $results['totalCount'];
+$today = date('Y-m-d');
+[$params, $results] = getPerformerPageEvents($id, $perPage);
+$total_count = (int) ($results['totalCount'] ?? 0);
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-$events = $results['results'];
+$events = $results['results'] ?? [];
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
+$priceSnapshot = performerPriceSnapshot($events);
+$nextEvent = $events[0] ?? null;
 
 $sep = '<span class="separator"><strong> / </strong></span>';
 $breadcrumbs = buildCategoryBreadcrumb($performer['defaultCategory']);
@@ -41,25 +43,32 @@ $year = date('Y');
 $artistName = $performer['text']['name'];
 $performer_bio = getArtistBio($artistName, $id);
 $faqs = getFaqs('performer');
-if(strtolower($breadcrumbs[1]['label']) == 'sports') {
-	$topcats = [
-		'.1859.1988.1879.1959.' => 'nfl',
-		'.1859.1988.1865.1971.' => 'nba',
-		'.1859.1988.1864.1969.' => 'mlb',
-		'.1859.1988.1883.1972.' => 'nhl',
-		'.1859.1988.1913.1970.' => 'mls'
-	];
-	$imageType = 'team';
-	$performer_image = getTeamImage($artistName, $topcats[$performer['defaultCategory']['path']], strtolower($performer['defaultCategory']['ancestors'][0]['text']['name']));
-}else{
-	$imageType = 'artist';
-	$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
+$imageType = imageEntityTypeForPerformer($performer['defaultCategory'] ?? []);
+// Single-entity page: resolve synchronously (bounded by inc/images.php's
+// timeouts) so the first visitor gets a real image; the result is stored.
+$performerImg    = getEntityImage($imageType, $artistName, ['category' => $performer['defaultCategory'] ?? [], 'resolve' => true]);
+$performer_image = $performerImg['url'];
+$pageOgImage     = $performerImg['status'] !== 'fallback' ? $performer_image : null;
+
+// --- SEO: computed before including header.php, same convention as the
+// artist-city/concerts-city/etc. pages - see functions.php. This page was
+// previously rendering with no <title> and no canonical tag at all. ---
+$pageMetaTitle       = "$artistName Tickets | Seat Outlet";
+$pageMetaDescription = "Buy verified $artistName tickets. Compare prices across sellers and find upcoming $artistName shows near you on Seat Outlet.";
+$pageCanonicalUrl    = HOME_URL . '/artist/' . strtolower($performer['uriComponent'] ?? createSlug($artistName, $id));
+if ($priceSnapshot['from'] !== '' && $total_count > 0) {
+    $pageMetaDescription = "$artistName tickets from {$priceSnapshot['from']}. $total_count upcoming " . ($total_count === 1 ? 'event' : 'events') . ". Compare prices across sellers and find $artistName shows near you on Seat Outlet.";
 }
+// BreadcrumbList + an Event node per listed date (the page emitted only the
+// site-wide Organization/WebSite graph before).
+$pageJsonLdNodes = buildPerformerPageJsonLd($artistName, (int) $id, $events, $breadcrumbs, $pageOgImage ?? '');
+
+include 'header.php';
 ?>
 
 <section class="section-featured-header text-sm-center text-md-start">
 	<div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-		style="background-image: url('/images/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+		style="background-image: url('<?php echo htmlspecialchars(($performerImg['status'] ?? '') !== 'fallback' ? $performer_image : '/images/event-so.webp', ENT_QUOTES, 'UTF-8'); ?>'); background-size: cover; background-position: center; background-repeat: no-repeat;">
 		<div class="container mx-xl-5 mx-lg-5 mx-md-3">
 			<div class="row">
 				<div class="col-12 mb-4">
@@ -86,7 +95,8 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 					<div class="row align-items-center text-center text-md-start">
 						<div class="col-md-3">
 							<div class="img-artist">
-								<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" />
+								<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" fetchpriority="high" width="300" height="300" />
+								<?php renderImageCredit($performerImg, 'img-credit'); ?>
 							</div>
 						</div>
 						<div class="col-md-9 text-white">
@@ -103,6 +113,17 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 								<h1 class="artist-title">
 								<?php echo $artistName; ?> Tickets
 								</h1>
+								<?php if ($total_count > 0) { ?>
+								<p class="artist-snapshot mb-0">
+									<?php echo (int) $total_count; ?> upcoming <?php echo $total_count === 1 ? 'event' : 'events'; ?>
+									<?php if ($priceSnapshot['from'] !== '') { ?>
+										<span class="dot">·</span> Tickets from <strong><?php echo htmlspecialchars($priceSnapshot['from'], ENT_QUOTES, 'UTF-8'); ?></strong>
+									<?php } ?>
+									<?php if ($nextEvent) { ?>
+										<span class="dot">·</span> Next: <?php echo htmlspecialchars(date('M j', strtotime($nextEvent['date']['date'] ?? 'now')) . ' in ' . ($nextEvent['city']['text']['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+									<?php } ?>
+								</p>
+								<?php } ?>
 							</div>
 						</div>
 					</div>
@@ -266,6 +287,7 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets
@@ -305,17 +327,15 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 								</div>
 							<?php } ?>
 						<?php } else { ?>
-							<h4 style="padding: 20px;">
+							<h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
 								No <?php echo strtoupper($breadcrumbs[1]['label']); ?> found!
-							</h4>
+							</h3>
 						<?php } ?>
 					</div>	
-					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="/images/adsense.webp" alt="Sponsored advertisement"	class="ad-image-left" />
-					</div>
+
 					<div class="tab-section content-section-detail mb-0" id="promocode">
-						<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo $artistName; ?> Concert Promo Codes in US</h2>
-						<p>Apply verified <?php echo $artistName; ?> ticket promo codes and save instantly on your concert tickets at checkout.</p>
+						<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Ticket Promo Codes</h2>
+						<p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
 						<div class="row g-3 mt-2">
 							<div class="col-md-6">
 								<div class="offer-pill d-flex align-items-center justify-content-between">
@@ -370,11 +390,22 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
-						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="/images/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image img-fluid" />
-							</div>
+						<?php if ($nextEvent) {
+							$nextSlug = createSlug($nextEvent['text']['name'] ?? '', $nextEvent['id'] ?? 0);
+							$nextTs   = strtotime($nextEvent['date']['date'] ?? 'now');
+							$nextDeal = eventDealInfo($nextEvent);
+						?>
+						<div class="next-event-card mb-3">
+							<div class="next-event-label">Next event</div>
+							<div class="next-event-date"><?php echo date('D, M j, Y', $nextTs); ?> · <?php echo htmlspecialchars($nextEvent['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+							<div class="next-event-name"><?php echo htmlspecialchars($nextEvent['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+							<div class="next-event-venue"><?php echo htmlspecialchars(($nextEvent['venue']['text']['name'] ?? '') . ' · ' . ($nextEvent['city']['text']['name'] ?? '') . ', ' . ($nextEvent['stateProvince']['text']['abbr'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+							<?php if ($nextDeal['from'] !== '') { ?>
+								<div class="next-event-price">From <strong><?php echo htmlspecialchars($nextDeal['from'], ENT_QUOTES, 'UTF-8'); ?></strong><?php if ($nextDeal['tickets'] > 0) { ?> · <?php echo (int) $nextDeal['tickets']; ?> tickets listed<?php } ?></div>
+							<?php } ?>
+							<a href="/event/<?php echo htmlspecialchars($nextSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary w-100 mt-2">Find Tickets</a>
 						</div>
+						<?php } ?>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
 							<div class="guarantee">
 								<strong>Shop Tickets Worry Free</strong><br>
@@ -383,12 +414,14 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 							<div class="guarantee-icon">
 								<i class="bi bi-shield-check"></i>
 							</div>
-						</div>	
-						<div class="ad-container-fixe mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="/images/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image img-fluid" />	
-							</div>
 						</div>
+						<?php if ($priceSnapshot['priced'] > 1) { ?>
+						<div class="price-snapshot-card mt-3">
+							<div class="next-event-label">Price guide</div>
+							<p class="mb-1">Cheapest listed <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets on the dates shown range from <strong><?php echo htmlspecialchars($priceSnapshot['from'], ENT_QUOTES, 'UTF-8'); ?></strong> to <strong><?php echo htmlspecialchars($priceSnapshot['to'], ENT_QUOTES, 'UTF-8'); ?></strong> per ticket.</p>
+							<p class="mb-0 small text-muted">Prices are the lowest listing per event and change as sellers update inventory.</p>
+						</div>
+						<?php } ?>
 					</div>
 				</div>
 			</div>
@@ -399,11 +432,14 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 					<div class="me-0 me-md-3 me-lg-3 me-xl-3 me-xxl-3">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">About <?php echo $artistName; ?></h2>
 						<p><?php echo $performer_bio; ?></p>
+						<?php if (!empty($performer_bio)) { ?>
+						<p class="small text-muted mb-0 bio-source">Biography adapted from <a href="https://en.wikipedia.org/wiki/<?php echo rawurlencode(str_replace(' ', '_', $artistName)); ?>" rel="nofollow noopener" target="_blank">Wikipedia</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="nofollow noopener" target="_blank">CC BY-SA</a>.</p>
+						<?php } ?>
 					</div>
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-						<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-about img-fluid rounded" />
+						<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-about img-fluid rounded" loading="lazy" />
 					</div>
 				</div>				
 			</div>
@@ -443,24 +479,58 @@ if(strtolower($breadcrumbs[1]['label']) == 'sports') {
 				</div>
 			</div>
 		<?php } ?>
+		<?php
+		// Real internal links into the artist-city location pages (see
+		// functions.php's renderArtistLocationPage()) for the cities this
+		// artist actually has upcoming events in on this page - built from
+		// $events above, not a fabricated/guessed city list. Capped to the
+		// first several distinct cities so this doesn't turn into a wall of
+		// links when an artist has dozens of tour stops.
+		$performerCities = [];
+		$seenCityIds = [];
+		foreach ($events as $event) {
+			$cityId = $event['city']['id'] ?? null;
+			$cityName = $event['city']['text']['name'] ?? '';
+			if (empty($cityId) || $cityName === '' || isset($seenCityIds[$cityId])) {
+				continue;
+			}
+			$seenCityIds[$cityId] = true;
+			$performerCities[] = [
+				'id'    => $cityId,
+				'label' => trim($cityName . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', '),
+			];
+			if (count($performerCities) >= 8) {
+				break;
+			}
+		}
+		?>
+		<?php if (!empty($performerCities)) { ?>
+			<div class="tab-section content-section-detail" id="cities">
+				<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets by City</h2>
+				<div class="d-flex flex-wrap gap-2">
+					<?php foreach ($performerCities as $city) { ?>
+						<a href="/artist-city/<?php echo htmlspecialchars(createSlug($artistName, $id), ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">
+							<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
+						</a>
+					<?php } ?>
+				</div>
+			</div>
+		<?php } ?>
+		<?php renderPerformerLocationLinks($artistName, (int) $id, $events ?? [], 'city'); ?>
 		<?php if (!empty($relatedPerformers)) { $i = 0; ?>
 			<div class="tab-section content-section-detail" id="fans">
 				<div class="row g-4">
 					<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo $artistName; ?> Fans Also Love</h2>
-					<?php foreach ($relatedPerformers as $performer) { 
-						$artistName = $performer['text']['name'];
-						if($imageType == 'team') {
-							$performer_image = getTeamImage($artistName, $topcats[$performer['defaultCategory']['path']], strtolower($performer['defaultCategory']['ancestors'][0]['text']['name']));
-						}else{
-							$performer_image = getArtistImage($artistName, $performer['defaultCategory']);
-						}						
-						$i++;
-						if($i > 8) continue;
+					<?php foreach (array_slice($relatedPerformers, 0, 8) as $related) { 
+						// Was: image lookups for *every* related performer (not
+						// just the 8 shown) with live third-party calls each.
+						$relatedName  = $related['text']['name'] ?? '';
+						$relatedImage = getArtistImage($relatedName, $related['defaultCategory'] ?? [], false);
 					?>
 						<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-							<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" class="band-card-bootstrap text-decoration-none">
+							<a href="/artist/<?php echo strtolower($related['uriComponent'] ?? ''); ?>" class="band-card-bootstrap text-decoration-none">
 								<div class="position-relative overflow-hidden rounded">
-									<img src="<?php echo $performer_image; ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo $artistName; ?>">
+									<img src="<?php echo htmlspecialchars($relatedImage, ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid w-100 h-100 band-img" loading="lazy" alt="<?php echo htmlspecialchars($relatedName, ENT_QUOTES, 'UTF-8'); ?>">
 									<div class="band-content d-flex justify-content-between align-items-center">
 										<span class="band-name"></span>								
 									</div>

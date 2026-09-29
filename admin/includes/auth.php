@@ -55,6 +55,19 @@ function admin_require_guest(): void {
     }
 }
 
+// Self-service registration (admin/register.php) has no invite/approval
+// step - it only ever checked that the visitor wasn't already logged in,
+// which does nothing to stop the public from creating themselves a fresh
+// admin account. This makes registration a one-time bootstrap step: once
+// any admin_users row exists, further registration is blocked. Adding a
+// second admin from here on is a manual DB insert (or a future
+// admin-invite feature) until one is built.
+function admin_registration_is_open(mysqli $mysqli = MYSQLI): bool {
+    $result = $mysqli->query('SELECT COUNT(*) AS c FROM admin_users');
+    $row = $result ? $result->fetch_assoc() : null;
+    return (int) ($row['c'] ?? 1) === 0;
+}
+
 function admin_password_meets_policy(string $password): bool {
     return preg_match('/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/', $password) === 1;
 }

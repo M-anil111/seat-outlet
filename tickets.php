@@ -1,18 +1,12 @@
 <?php include 'header.php';
 $perPage = 20;
-$today = date('Y-m-d');
-$params = [
-	"filter" => "date/date ge $today and country/alphaCode eq 'US'",
-	"perPage" => $perPage,
-	"page" => 1,
-	"includeTotalCount" => "true"
-];
+$params = categoryListingParams('', $perPage);
 $year = date('Y');
 $results = getAllEvents();
-$total_count = $results['totalCount'];
+$total_count = (int) ($results['totalCount'] ?? 0);
 
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-$events = $results['results'];
+$events = $results['results'] ?? [];
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $faqs = getFaqs('events');
 ?>
@@ -160,6 +154,7 @@ $faqs = getFaqs('events');
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets
@@ -199,17 +194,15 @@ $faqs = getFaqs('events');
 								</div>
 							<?php } ?>
 						<?php } else { ?>
-							<h4 style="padding: 20px;">
+							<h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
 								No Events found!
-							</h4>
+							</h3>
 						<?php } ?>
 					</div>
-					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="/images/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" width="804" height="96" />
-					</div>	
+	
 					<div class="tab-section content-section-detail mb-0" id="promocode">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Event Promo Codes in the US</h2>
-						<p>Apply verified ticket promo codes and save instantly on all events at checkout.</p>
+						<p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
 						<div class="row g-3 mt-2">
 							<div class="col-md-6">
 								<div class="offer-pill d-flex align-items-center justify-content-between">
@@ -264,11 +257,6 @@ $faqs = getFaqs('events');
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
-						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="/images/6233961956292020331.webp" alt="Sponsored advertisement" class="ad-image" width="335" height="279" />
-							</div>
-						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
 							<div class="guarantee">
 								<strong>Shop Tickets Worry Free</strong><br>

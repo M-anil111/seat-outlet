@@ -1,6 +1,52 @@
 <?php
 include 'header.php';
 $festivalNames = getTopFestivalPerformers();
+
+// "Browse by Categories": top subcategories by tickets on sale, refreshed by
+// cron/home-categories.php. The lists below are only the fallback for a
+// missing/empty cache so the section never renders blank (all ids verified
+// against the catalog's category tree).
+$topCategories = cache_get('top_categories', 7 * 86400);
+if (!is_array($topCategories)) {
+    $topCategories = [];
+}
+$fallbackCategories = [
+    'concerts' => [
+        ['slug' => 'pop-rock-1903', 'name' => 'Pop / Rock'],
+        ['slug' => 'comedy-1872', 'name' => 'Comedy'],
+        ['slug' => 'country-folk-1873', 'name' => 'Country / Folk'],
+        ['slug' => 'alternative-1862', 'name' => 'Alternative'],
+        ['slug' => 'classical-1871', 'name' => 'Classical'],
+        ['slug' => 'las-vegas-shows-1888', 'name' => 'Las Vegas Shows'],
+        ['slug' => 'jazz-blues-1885', 'name' => 'Jazz / Blues'],
+        ['slug' => 'rap-hip-hop-1906', 'name' => 'Rap / Hip Hop'],
+    ],
+    'sports' => [
+        ['slug' => 'football-1879', 'name' => 'Football'],
+        ['slug' => 'basketball-1865', 'name' => 'Basketball'],
+        ['slug' => 'baseball-1864', 'name' => 'Baseball'],
+        ['slug' => 'hockey-1883', 'name' => 'Hockey'],
+        ['slug' => 'soccer-1913', 'name' => 'Soccer'],
+        ['slug' => 'boxing-1867', 'name' => 'Boxing'],
+        ['slug' => 'golf-1880', 'name' => 'Golf'],
+        ['slug' => 'tennis-1916', 'name' => 'Tennis'],
+    ],
+    'theater' => [
+        ['slug' => 'broadway-1868', 'name' => 'Broadway'],
+        ['slug' => 'musical-play-1894', 'name' => 'Musical / Play'],
+        ['slug' => 'west-end-2060', 'name' => 'West End'],
+        ['slug' => 'las-vegas-1887', 'name' => 'Las Vegas'],
+        ['slug' => 'off-broadway-1896', 'name' => 'Off-broadway'],
+        ['slug' => 'children-family-1869', 'name' => 'Children / Family'],
+        ['slug' => 'ballet-1863', 'name' => 'Ballet'],
+        ['slug' => 'opera-1898', 'name' => 'Opera'],
+    ],
+];
+foreach ($fallbackCategories as $key => $list) {
+    if (empty($topCategories[$key])) {
+        $topCategories[$key] = $list;
+    }
+}
 ?>
 <section class="top-hero-slider">
 
@@ -9,12 +55,12 @@ $festivalNames = getTopFestivalPerformers();
 
     <!-- Slide 1 – Concert / Event -->
     <div class="slide">
-      <img src="/images/home-slider.webp" alt="Live Concert Event" laoding="eager" fetchpriority="high" />
+      <img src="/images/home-slider.webp" alt="Ticket Marketplace - Live Concert Event" loading="eager" fetchpriority="high" />
       <div class="slide-overlay"></div>
       <div class="slide-caption">
         <span class="tag">Live Events</span>
         <h2>Experience Live Events<br>Like Never Before</h2>
-        <p>From sold-out concerts to must-see sports and theater shows discover verified tickets at competitive prices across our trusted marketplace network.</p>
+        <p>From sold-out concerts to must-see sports and theater shows discover verified tickets at competitive prices across our trusted ticket marketplace network.</p>
         <a href="/tickets" class="btn-slide">Explore Events</a>
       </div>
     </div>
@@ -110,7 +156,7 @@ $festivalNames = getTopFestivalPerformers();
 
         <!-- Left Heading -->
         <div class="col-lg-12">
-          <h3 class="fw-bold mb-lg-0 mb-3 so-experieance">Experience Live Events with Confidence</h3>
+          <h3 class="fw-bold mb-lg-0 mb-3 so-experieance">Your Ticket Marketplace for Live Events, with Confidence</h3>
         </div>
         <div class="row g-3">
         <!-- Feature 1 -->
@@ -130,7 +176,7 @@ $festivalNames = getTopFestivalPerformers();
             <i class="bi bi-shield-check text-white feature-icon"></i>
             <div>
               <div class="fw-bold">Millions of Tickets Sold</div>
-              <small>Trusted marketplace connecting fans since day one</small>
+              <small>Trusted ticket marketplace connecting fans since day one</small>
             </div>
           </div>
         </div>
@@ -183,49 +229,40 @@ $festivalNames = getTopFestivalPerformers();
     <h2 class="section__title section__title--center fw-bold fs-4 mb-4">
       Browse by Categories
     </h2>
+    <p class="text-center mb-4">
+      Our ticket marketplace covers concerts, sports, theater, and festivals across the country, so
+      whether you're after front-row seats for a stadium tour or last-minute tickets to a local show,
+      there's a category for it below. Every listing on our ticket marketplace is sourced from
+      verified sellers, so you can compare pricing and seating options with confidence before you buy.
+    </p>
     <div class="categories__grid">
       <div class="categories__col">
         <h3 class="categories__heading">Concerts</h3>
         <ul class="categories__list">
-          <li><a href="/category/reggae-reggaeton-1907">Reggae / Reggaeton</a></li>
-          <li><a href="/category/religious-1908">Religious</a></li>
-          <li><a href="/category/50s-60s-era-1860">50s / 60s Era</a></li>
-          <li><a href="/category/children-family-2094">Children / Family</a></li>
-          <li><a href="/category/new-age-1895">New Age</a></li>
-          <li><a href="/category/bluegrass-1866">Bluegrass</a></li>
-          <li><a href="/category/performance-series-2062">Performance Series</a></li>
-          <li><a href="/category/holiday-1884">Holiday</a></li>
+          <?php foreach ($topCategories['concerts'] as $topCat) { ?>
+            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
+          <?php } ?>
         </ul>
-        <a href="#" class="common-btn">View All Concerts</a>
+        <a href="/concerts" class="common-btn">View All Concerts</a>
         
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Sports</h3>
         <ul class="categories__list">
-          <li><a href="/category/golf-1880">Golf</a></li>
-          <li><a href="/category/baseball-1864">Baseball</a></li>
-          <li><a href="/category/olympics-1897">Olympics</a></li>
-          <li><a href="/category/cricket-1874">Cricket</a></li>
-          <li><a href="/category/gymnastics-1881">Gymnastics</a></li>
-          <li><a href="/category/rugby-1911">Rugby</a></li>
-          <li><a href="/category/tennis-1916">Tennis</a></li>
-          <li><a href="/category/mixed-martial-arts-2027">Mixed Martial Arts</a></li>
+          <?php foreach ($topCategories['sports'] as $topCat) { ?>
+            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
+          <?php } ?>
         </ul>
-        <a href="#" class="common-btn">View All Sports</a>
+        <a href="/sports" class="common-btn">View All Sports</a>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Theatre</h3>
         <ul class="categories__list">
-          <li><a href="/category/musical-play-1894">Musical / Play</a></li>
-          <li><a href="/category/broadway-1868">Broadway</a></li>
-          <li><a href="/category/children-family-1869">Children / Family</a></li>
-          <li><a href="/category/off-broadway-1896">Off-broadway</a></li>
-          <li><a href="/category/ballet-1863">Ballet</a></li>
-          <li><a href="/category/opera-1898">Opera</a></li>
-          <li><a href="/category/cirque-du-soleil-2031">Cirque Du Soleil</a></li>
-          <li><a href="/category/dance-1875">Dance</a></li>
+          <?php foreach ($topCategories['theater'] as $topCat) { ?>
+            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
+          <?php } ?>
         </ul>
-        <a href="#" class="common-btn">View All Theatre</a>
+        <a href="/theater" class="common-btn">View All Theatre</a>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Festivals</h3>
@@ -236,7 +273,7 @@ $festivalNames = getTopFestivalPerformers();
             <?php } ?>
           </ul>   
         <?php } ?>  
-        <a href="#" class="common-btn">View All Festivals</a>   
+        <a href="/festival" class="common-btn">View All Festivals</a>
       </div>
     </div>
   </div>
@@ -359,6 +396,7 @@ $festivalNames = getTopFestivalPerformers();
 <section class="section reasons teams-nearby py-md-5 py-4 aria-labelledby="reasons-heading">
   <div class="container">
     <h2 id="reasons-heading" class="section__title section__title--center fw-bold fs-4 mb-lg-5 mb-4">The Seat Outlet Advantage</h2>
+    <p class="text-center mb-4">Here's why fans choose our ticket marketplace for every concert, game, and show.</p>
     <div class="reasons__grid">
       <article class="reason-card">
         <div class="reason-card__icon">
@@ -367,7 +405,7 @@ $festivalNames = getTopFestivalPerformers();
           </svg>
         </div>
         <h3 class="reason-card__title">No Hidden Fees</h3>
-        <p class="reason-card__desc">See the total cost upfront, which means best prices guaranteed for your ticket from the start of a signing or listing.</p>
+        <p class="reason-card__desc">See the total cost upfront, with no hidden fees added at checkout.</p>
       </article>
       <article class="reason-card">
         <div class="reason-card__icon">
@@ -395,6 +433,17 @@ $festivalNames = getTopFestivalPerformers();
   <section class="section-padding">
     <div class="container">
       <h2 id="testimonials-heading" class="section__title section__title--center fw-bold fs-4 mb-lg-5 mb-4">Trusted by Thousands of Fans</h2>
+      <!--
+          Same finding as testimonials.php/reviews.php: these are
+          illustrative sample testimonials, not real collected customer
+          feedback. Unlike those two (noindex by default), this is the
+          homepage - real visitors and crawlers see this content, so this
+          is the highest-priority one of the three to replace with real
+          testimonials.
+      -->
+      <div class="alert alert-warning mb-4" role="alert">
+          <strong>Note:</strong> The testimonials below are illustrative examples while we build out real customer review collection.
+      </div>
       <div class="testimonials-grid">
         <div class="testimonial-card">
 

@@ -1,5 +1,5 @@
-<?php 
-  $id = isset($_GET['id']) ? (int) $_GET['id'] : 0; 
+<?php
+  $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
   if ($id <= 0) {
     $slug  = $_GET['slug'] ?? '';
     $parts = explode('-', (string) $slug);
@@ -35,14 +35,15 @@
 <meta name="twitter:description" content="<?php echo $metaDescription; ?>">
 <meta name="twitter:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
 
-<?php  
-$eventsSchema = [];
-if(!empty($event)) {
+<?php
+$eventSchema = null;
+if (!empty($event)) {
     $city = $event['city']['text']['name'];
     $state = $event['stateProvince']['text']['abbr'];
     $startDate = $event['date']['date'];
-    $price = $event['pricingInfo']['lowPrice']['value'];
-    $eventsSchema[] = [
+    $price = $event['pricingInfo']['lowPrice']['value'] ?? null;
+
+    $eventSchema = [
         "@type" => "Event",
         "name" => $event['text']['name'],
         "startDate" => $startDate,
@@ -50,7 +51,7 @@ if(!empty($event)) {
 
         "location" => [
             "@type" => "Place",
-            "name" => $event['text']['venue'],
+            "name" => $event['venue']['text']['name'] ?? '',
             "address" => [
                 "@type" => "PostalAddress",
                 "addressLocality" => $city,
@@ -58,132 +59,42 @@ if(!empty($event)) {
                 "addressCountry" => "US"
             ]
         ],
-        "performer" => [
-            "@type" => "PerformingGroup",
-            "name" => $event['performers'][0]['name']
-        ],
+        "performer" => buildEventPerformerSchema($event),
 
         "offers" => [
             "@type" => "Offer",
-            "url" => "https://beta.seatoutlet.com/event/" . $event['id'],
-            "price" => $price,
+            "url" => "https://beta.seatoutlet.com/event/" . $event['uriComponent'],
+            "price" => $price ?? "0",
             "priceCurrency" => "USD",
             "availability" => "https://schema.org/InStock"
         ]
     ];
 }
 
+$webPageSchema = [
+    "@type" => "WebPage",
+    "@id" => "https://beta.seatoutlet.com/event/" . $event['uriComponent'] . "#webpage",
+    "url" => "https://beta.seatoutlet.com/event/" . $event['uriComponent'],
+    "name" => $event['text']['name'],
+    "isPartOf" => ["@id" => "https://beta.seatoutlet.com/#website"],
+    "about" => ["@id" => "https://beta.seatoutlet.com/#organization"],
+    "description" => $metaDescription,
+];
+
+$breadcrumbSchema = buildBreadcrumbListSchema([
+    ["label" => "Home", "url" => "https://beta.seatoutlet.com"],
+    ["label" => "Events", "url" => "https://beta.seatoutlet.com/tickets"],
+], $event['text']['name'] ?? null);
 ?>
 <!-- ============================
 STRUCTURED DATA (JSON-LD)
 ============================ -->
 
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-
-    {
-      "@type": "Organization",
-      "@id": "https://beta.seatoutlet.com/#organization",
-      "name": "Seat Outlet",
-      "url": "https://beta.seatoutlet.com/",
-      "logo": {
-        "@type": "ImageObject",
-        "@id": "https://beta.seatoutlet.com/#logo",
-        "url": "https://beta.seatoutlet.com/images/seatoutlet-logo.webp"
-      },
-      "image": "https://beta.seatoutlet.com/images/seatoutlet-logo.webp",
-      "description": "Verified ticket marketplace network to buy concert, sports, theater, and live event tickets online.",
-      "sameAs": [
-        "https://www.facebook.com/profile.php?id=61588886945534",
-        "https://www.instagram.com/seatoutlet/",
-        "https://www.youtube.com/@SeatOutlet",
-        "https://linktr.ee/seatoutlet"
-      ],
-      "review": [
-        {
-          "@type": "Review",
-          "author": { "@type": "Person", "name": "Sarah Mitchell" },
-          "reviewBody": "Super easy and reliable experience. I’ve used Seat Outlet multiple times and the process is always smooth.",
-          "reviewRating": {
-            "@type": "Rating",
-            "ratingValue": "5",
-            "bestRating": "5"
-          }
-        },
-        {
-          "@type": "Review",
-          "author": { "@type": "Person", "name": "James Davidson" },
-          "reviewBody": "Best place to compare ticket prices. It saved me both time and money.",
-          "reviewRating": {
-            "@type": "Rating",
-            "ratingValue": "5",
-            "bestRating": "5"
-          }
-        },
-        {
-          "@type": "Review",
-          "author": { "@type": "Person", "name": "Emily Lopez" },
-          "reviewBody": "Got great seats at a great price. Checkout process was simple and secure.",
-          "reviewRating": {
-            "@type": "Rating",
-            "ratingValue": "5",
-            "bestRating": "5"
-          }
-        },
-        {
-          "@type": "Review",
-          "author": { "@type": "Person", "name": "Michael Rodriguez" },
-          "reviewBody": "Perfect for sports fans. Easy to find tickets across sellers.",
-          "reviewRating": {
-            "@type": "Rating",
-            "ratingValue": "5",
-            "bestRating": "5"
-          }
-        },
-        {
-          "@type": "Review",
-          "author": { "@type": "Person", "name": "Amanda Wilson" },
-          "reviewBody": "Trusted and convenient ticket platform. Everything felt safe and straightforward.",
-          "reviewRating": {
-            "@type": "Rating",
-            "ratingValue": "5",
-            "bestRating": "5"
-          }
-        },
-        {
-          "@type": "Review",
-          "author": { "@type": "Person", "name": "Robert Thompson" },
-          "reviewBody": "Great experience for sports events. Pricing is competitive and easy to compare.",
-          "reviewRating": {
-            "@type": "Rating",
-            "ratingValue": "5",
-            "bestRating": "5"
-          }
-        }
-      ],
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "reviewCount": "1200",
-        "bestRating": "5",
-        "worstRating": "1"
-      }
-    },
-
-    {
-      "@type": "WebSite",
-      "@id": "https://beta.seatoutlet.com/#website",
-      "url": "https://beta.seatoutlet.com/",
-      "name": "Seat Outlet",
-      "publisher": {
-        "@id": "https://beta.seatoutlet.com/#organization"
-      },
-    },    
-
-    <?= json_encode($eventsSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); ?>
-
-  ]
-}
-</script>
+<?php
+outputJsonLdGraph([
+    buildOrganizationSchema(),
+    buildWebsiteSchema(),
+    $webPageSchema,
+    $breadcrumbSchema,
+    $eventSchema,
+]);

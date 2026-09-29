@@ -32,29 +32,16 @@ function get_client_ip() {
 }
 
 
+require_once __DIR__ . '/../inc/geoip.php';
+
 header('Content-Type: application/json');
+header('Cache-Control: private, max-age=86400');
 
 $ip = get_client_ip();
-
-$ip_response = @file_get_contents("http://ip-api.com/json/{$ip}");
-
-if ($ip_response === false) {
+$geo = geoIpLookup($ip);
+if (!$geo || $geo['city'] === '') {
     echo json_encode([]);
     exit;
 }
-
-$ipData = json_decode($ip_response, true);
-
-if (empty($ipData) || $ipData['status'] !== 'success') {
-    echo json_encode([]);
-    exit;
-}
-
-echo json_encode([
-    'city'  => $ipData['city'] ?? '',
-    'state' => $ipData['region'] ?? '',
-    'lat'  => $ipData['lat'] ?? '',
-    'lng' => $ipData['lon'] ?? '',
-]);
-
+echo json_encode(['city' => $geo['city'], 'state' => $geo['state'], 'lat' => $geo['lat'], 'lng' => $geo['lng']]);
 exit;

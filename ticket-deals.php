@@ -1,4 +1,12 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical. Copy per the site's own content documentation.
+$pageMetaTitle       = 'Ticket Deals – Discount Event Ticket Marketplace | Seat Outlet';
+$pageMetaDescription = 'Ticket Deals is part of the SeatOutlet network, surfacing concert ticket discounts and cheap sports tickets online so you never overpay for live events.';
+$pageCanonicalUrl    = HOME_URL . '/ticket-deals';
+include 'header.php';
+?>
 
 <style>
     /* Content layout: simple, step-by-step */

@@ -1,7 +1,11 @@
 <?php
 session_start();
+// Log everything, but never render PHP errors/warnings into the HTTP
+// response of a public-facing endpoint - that leaks file paths and
+// internal state to whoever calls this script.
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -52,11 +56,10 @@ $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
 $browser    = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
 
 $country = 'Unknown';
-if (!empty($ip_address) && $ip_address !== '127.0.0.1') {
-    $geo = @unserialize(@file_get_contents("http://ip-api.com/php/" . urlencode($ip_address)));
-    if (is_array($geo) && ($geo['status'] ?? '') === 'success') {
-        $country = $geo['country'] ?? 'Unknown';
-    }
+require_once __DIR__ . '/inc/geoip.php';
+$geo = geoIpLookup($ip_address);
+if ($geo && $geo['country'] !== '') {
+    $country = $geo['country'];
 }
 
 /* =========================

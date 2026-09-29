@@ -1,4 +1,14 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical. Kept noindex (header.php's site-wide default) since
+// the visible content is still illustrative sample reviews - see the
+// disclaimer added to this page.
+$pageMetaTitle       = 'Customer Reviews | Seat Outlet';
+$pageMetaDescription = 'Read customer reviews of Seat Outlet, a ticket marketplace for buying concert, sports, and event tickets online.';
+$pageCanonicalUrl    = HOME_URL . '/reviews';
+include 'header.php';
+?>
 <style>
     /* ========== Page Header ========== */
 
@@ -365,7 +375,26 @@
                 <div class="mb-4">
                     <p class="text-uppercase text-muted small">DISCOVER LIVE EVENTS</p>
                     <h1 class="reviews-title mt-2 mb-lg-4 mb-3">SeatOutlet Customer Reviews</h1>
-                    <h2 class="reviews-subtitle">Customer Feedback – SeatOutlet</h2>
+                    <h2 class="reviews-subtitle">Customer Reviews &amp; Feedback – SeatOutlet</h2>
+                </div>
+
+                <!--
+                    The rating summary and the 12 reviews below are
+                    illustrative sample content, not real collected customer
+                    feedback (no reviews table or collection flow backs
+                    this page - flagged the same way the fabricated
+                    Organization schema reviews were removed earlier).
+                    Publishing these as genuine risks a false-advertising/
+                    deceptive-reviews problem (FTC Endorsement Guides in the
+                    US, the Competition Act in Canada) and Google manual
+                    action if this page is ever indexed. Replace with a
+                    real reviews data source (Trustpilot/Google Reviews
+                    embed, or a real reviews table) before this page goes
+                    live/indexed - it's currently noindex by header.php's
+                    site-wide default.
+                -->
+                <div class="alert alert-warning mb-4" role="alert">
+                    <strong>Note:</strong> The ratings and reviews below are illustrative examples while we build out real customer review collection. Real verified reviews will replace this content soon.
                 </div>
 
                 <!-- Review Summary Box -->
@@ -435,7 +464,8 @@
                         <div class="col-12 col-lg-3 col-md-4">
                             <div class="overall-rating h-100 align-items-center">                                
                                 <p class="percentage-value mb-1">89%</p>
-                                <p class="percentage-desc small text-center">of customers say they would purchase tickets again through SeatOutlet.</p>
+                                <p class="percentage-desc small text-center">of customers who left reviews say they would purchase tickets again through SeatOutlet - read more customer reviews below, or see our
+                                <a href="/guarantee">satisfaction guarantee</a>.</p>
                             </div>
                         </div>
                     </div>
@@ -694,7 +724,7 @@
                 <div class="sidebar-sticky">
                     <!-- Crowd/Event Image -->
                     <div class="sidebar-image mb-4">
-                        <img src="/images/crowd-at-concert-or-event.webp" alt="Crowd at concert or event" class="img-fluid rounded">
+                        <img src="/images/crowd-at-concert-or-event.webp" alt="Fans who left customer reviews at a live event" class="img-fluid rounded">
                     </div>
                     <!-- Trust Badges Panel -->
                     <div class="trust-panel mb-4 bg-white border-0">
@@ -715,10 +745,10 @@
                     <div class="mascot-panel">
                         <p class="mascot-text mb-2 fw-semibold">Ask your friend to go with you!</p>
                         <div class="social-icons">
-                            <a href="#"><i class="bi bi-facebook fs-4"></i></a>
+                            <a href="https://www.facebook.com/profile.php?id=61588886945534" target="_blank"><i class="bi bi-facebook fs-4"></i></a>
                             <a href="#"><i class="bi bi-twitter-x fs-4"></i></a>
-                            <a href="#"><i class="bi bi-youtube fs-4"></i></a>
-                            <a href="#"><i class="bi bi-instagram fs-4"></i></a>
+                            <a href="https://www.youtube.com/@SeatOutlet" target="_blank"><i class="bi bi-youtube fs-4"></i></a>
+                            <a href="https://www.instagram.com/seatoutlet/" target="_blank"><i class="bi bi-instagram fs-4"></i></a>
                         </div>
                     </div>
                 </div>

@@ -55,7 +55,9 @@ function getCookie(name) {
 }
 
 function setCookie(name, value) {
-    document.cookie = name + '=' + value + ';path=/';
+    // Lax + Secure (on https) + 30-day expiry; these were session cookies with no SameSite flag.
+    const secure = location.protocol === 'https:' ? ';Secure' : '';
+    document.cookie = name + '=' + value + ';path=/;max-age=2592000;SameSite=Lax' + secure;
 }
 
 function equalHeightSlider(sectionClass, cardClass) { 
@@ -210,11 +212,19 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch('/ajax/get_ip_details.php')
     .then(res => res.json())
     .then(data => {
+        // The IP geolocation lookup can legitimately come back empty (rate
+        // limited, IP not in its database, timed out server-side) - without
+        // this check, the UI showed a literal "undefined, undefined" as the
+        // detected location, and that broken value got saved to the
+        // so_label cookie, so it stuck around on every later page load too.
+        if (!data || !data.city || !data.state) {
+            return;
+        }
         setCookie('so_lat', encodeURIComponent(data.lat));
         setCookie('so_lng', encodeURIComponent(data.lng));
         setCookie('so_label', data.city + ', ' + data.state);
         if (DOM.locationSelectorText) DOM.locationSelectorText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
-        window.locationReady = true;  
+        window.locationReady = true;
         if (typeof reloadActiveTab === 'function') {
             reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
         }
@@ -656,3 +666,53 @@ $(document).ready(function(){
 /* =====================================================
     HEADER KEYWORD FIELD End
 ===================================================== */
+
+/* =====================================================
+    BATCH IMAGE LOADER (homepage cards, venue slider, search suggestions)
+    One POST to /ajax/get-images.php for every dynamic image in a container,
+    instead of one GET per card fired sequentially. isCurrent() lets the
+    caller cancel when the slider was re-rendered meanwhile.
+===================================================== */
+window.soBatchLoadImages = async function (container, selector, isCurrent) {
+  if (!container) return;
+  const imgs = Array.from(container.querySelectorAll(selector));
+  if (!imgs.length) return;
+  const items = imgs.map(img => {
+    let category = {};
+    try { category = JSON.parse(img.dataset.category || '{}'); } catch (e) { category = {}; }
+    return {
+      artist: img.dataset.artist ? decodeURIComponent(img.dataset.artist) : '',
+      venue: img.dataset.venue ? decodeURIComponent(img.dataset.venue) : '',
+      tab: img.dataset.tab ? decodeURIComponent(img.dataset.tab) : '',
+      category: category
+    };
+  });
+  try {
+    const res = await fetch('/ajax/get-images.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+    const data = await res.json();
+    if (typeof isCurrent === 'function' && !isCurrent()) return;
+    const results = (data && data.images) || [];
+    imgs.forEach((img, i) => {
+      const r = results[i];
+      if (!r || !r.image) { img.classList.add('loaded'); return; }
+      const tempImg = new Image();
+      img.style.transition = 'opacity 0.3s ease';
+      const reveal = () => {
+        if (typeof isCurrent === 'function' && !isCurrent()) return;
+        img.src = r.image;
+        if (r.credit) img.title = r.credit;
+        requestAnimationFrame(() => { img.style.opacity = '1'; img.classList.add('loaded'); });
+      };
+      tempImg.onload = reveal;
+      tempImg.onerror = () => { img.style.opacity = '1'; img.classList.add('loaded'); };
+      tempImg.src = r.image;
+    });
+  } catch (err) {
+    console.error('Batch image load failed:', err);
+    imgs.forEach(img => img.classList.add('loaded'));
+  }
+};

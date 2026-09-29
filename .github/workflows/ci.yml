@@ -1,0 +1,95 @@
+name: CI
+
+# Runs on every pull request and every push to a non-main branch, so
+# problems are caught before merge - not after, at deploy time. (Deploy
+# itself still lints and validates composer.lock as a final gate right
+# before going to beta - see .github/workflows/deploy.yml - a little
+# overlap between the two is fine; this one is the one that actually
+# blocks a PR.)
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main]
+
+jobs:
+  lint-and-static-checks:
+    name: Lint + static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, curl, mbstring, json
+          coverage: none
+
+      - name: Lint every PHP file
+        run: |
+          status=0
+          while IFS= read -r -d '' f; do
+            php -l "$f" || status=1
+          done < <(find . -name '*.php' -not -path './vendor/*' -not -path './phpmailer/*' -print0)
+          exit $status
+
+      - name: Check for fewer-args-than-required function calls
+        run: php tools/check-arg-counts.php .
+
+      - name: Check for calls to undefined functions
+        run: php tools/check-undefined-functions.php .
+
+      - name: Validate composer.lock is in sync
+        run: |
+          composer validate --no-check-publish --no-check-all
+          composer install --no-interaction --no-progress --prefer-dist --dry-run
+
+      - name: composer audit (dependency vulnerabilities)
+        run: composer audit --no-interaction || (echo "::error::composer audit found a vulnerability advisory - see output above" && exit 1)
+
+  migrations:
+    name: Database migrations apply cleanly
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          # db/config.php deliberately treats an empty DB_PASS as "not set"
+          # and refuses to connect (see the same check in the real app) -
+          # so this needs a real password, not MYSQL_ALLOW_EMPTY_PASSWORD.
+          MYSQL_ROOT_PASSWORD: ci_root_password
+          MYSQL_DATABASE: seatoutlet_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -pci_root_password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: seatoutlet_ci
+      DB_USER: root
+      DB_PASS: ci_root_password
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli
+
+      - name: Apply migrations against a fresh database
+        run: php db/migrate.php
+
+      - name: Apply again (must be a no-op - proves idempotency)
+        run: php db/migrate.php
+
+      - name: Apply the sample seed (must also be safe to run twice)
+        run: |
+          php db/migrate.php --seed=page_rules_sample
+          php db/migrate.php --seed=page_rules_sample

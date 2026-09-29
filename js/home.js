@@ -115,58 +115,9 @@ $('.venue-slider').on('setPosition', function(){
       });
     }
     
-    async function fetchImageSequentially(img, loadToken) {
-      if (!img || loadToken !== currentLoadToken) return;
-  
-      const eventName = img.dataset.event ? decodeURIComponent(img.dataset.event) : '';
-      const artist = img.dataset.artist ? decodeURIComponent(img.dataset.artist) : '';
-      const tab = img.dataset.tab ? decodeURIComponent(img.dataset.tab) : '';
-      const category = img.dataset.category || '{}';
-  
-      const url =
-        `/ajax/get-image.php?event=${encodeURIComponent(eventName)}` +
-        `&artist=${encodeURIComponent(artist)}` +
-        `&tab=${encodeURIComponent(tab)}` +
-        `&category=${encodeURIComponent(category)}`;
-  
-        try {
-          const res = await fetch(url);
-          const data = await res.json();
-        
-          if (loadToken !== currentLoadToken) return;
-        
-          if (data && data.image) {
-            const tempImg = new Image();
-        
-            img.style.opacity = '0';
-            img.style.transition = 'opacity 0.3s ease';
-        
-            tempImg.onload = function () {
-        
-              img.src = data.image;
-        
-              requestAnimationFrame(() => {
-                img.style.opacity = '1';
-                img.classList.add('loaded');
-              });
-        
-            };
-        
-            tempImg.src = data.image;
-          }
-        
-        } catch (err) {
-          console.error('Image load failed:', eventName, err);
-        }
-    }
-
     async function loadImagesOneByOne(container, loadToken) {
-      const images = container.querySelectorAll('.event-dynamic-image');
-  
-      for (const img of images) {
-        if (loadToken !== currentLoadToken) break;
-        await fetchImageSequentially(img, loadToken);
-      }
+      // Name kept for the call sites; it is one batched request now.
+      await window.soBatchLoadImages(container, '.event-dynamic-image', () => loadToken === currentLoadToken);
     }
 
     window.loadLocationCategory = async function(tabId, type, loc1, loc2) {
@@ -215,7 +166,22 @@ $('.venue-slider').on('setPosition', function(){
   
         loadImagesOneByOne(container, loadToken);
       } catch (err) {
-        container.innerHTML = '<p>Error loading events</p>';
+        const $slider = $(selector);
+        if ($slider.hasClass('slick-initialized')) {
+          $slider.slick('unslick');
+        }
+        container.classList.remove('skeleton-loading');
+        container.innerHTML =
+          '<div class="text-center py-3">' +
+          '<p class="mb-2">We couldn\'t load events right now.</p>' +
+          '<button type="button" class="btn btn-outline-primary btn-sm retry-load-events">Try Again</button>' +
+          '</div>';
+        const retryBtn = container.querySelector('.retry-load-events');
+        if (retryBtn) {
+          retryBtn.addEventListener('click', function () {
+            window.loadLocationCategory(tabId, type, loc1, loc2);
+          });
+        }
       }
 
     }
@@ -317,7 +283,14 @@ $('.venue-slider').on('setPosition', function(){
         fetch(`/ajax/get_ip_details.php`)
           .then(res => res.json())
           .then(data => {
-            
+            // Same failure mode as main.js's version of this lookup: an
+            // empty response (rate limited, IP not resolvable, timeout)
+            // must not overwrite the location field with a literal
+            // "undefined, undefined".
+            if (!data || !data.city || !data.state) {
+              return;
+            }
+
             setCookie('so_lat', encodeURIComponent(data.lat));
             setCookie('so_lng', encodeURIComponent(data.lng));
             setCookie('so_label', encodeURIComponent(data.city + ', ' + data.state));
@@ -383,49 +356,8 @@ $('.venue-slider').on('setPosition', function(){
 
   let venueLoadToken = 0;
 
-  async function fetchVenueImageSequentially(img, loadToken) {
-    if (!img || loadToken !== venueLoadToken) return;
-  
-    const venueName = img.dataset.venue
-      ? decodeURIComponent(img.dataset.venue)
-      : '';
-  
-    if (!venueName) return;
-  
-    const url = `/ajax/get-image.php?venue=${encodeURIComponent(venueName)}`;
-  
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-  
-      if (loadToken !== venueLoadToken) return;
-  
-      if (data && data.image) {
-        const tempImg = new Image();
-  
-        tempImg.onload = function () {
-          img.src = data.image;
-  
-          setTimeout(() => {
-            img.classList.add('loaded');
-          }, 50);
-        };
-  
-        tempImg.src = data.image;
-      }
-  
-    } catch (err) {
-      console.error('Venue image load failed:', venueName, err);
-    }
-  }
-
   async function loadVenueImagesOneByOne(container, loadToken) {
-    const images = container.querySelectorAll('.venue-dynamic-image');
-  
-    for (const img of images) {
-      if (loadToken !== venueLoadToken) break;
-      await fetchVenueImageSequentially(img, loadToken);
-    }
+    await window.soBatchLoadImages(container, '.venue-dynamic-image', () => loadToken === venueLoadToken);
   }
   
   window.loadNearbyVenues = function() { 
@@ -508,9 +440,23 @@ $('.venue-slider').on('setPosition', function(){
         })
         .catch(err => {
           console.error('VENUE ERROR:', err);
-          container.innerHTML = '<p>Error loading venues</p>';
+          const $vslider = $('.venue-slider');
+          if ($vslider.hasClass('slick-initialized')) {
+            $vslider.slick('unslick');
+          }
+          container.innerHTML =
+            '<div class="text-center py-3">' +
+            '<p class="mb-2">We couldn\'t load venues right now.</p>' +
+            '<button type="button" class="btn btn-outline-primary btn-sm retry-load-venues">Try Again</button>' +
+            '</div>';
+          const retryBtn = container.querySelector('.retry-load-venues');
+          if (retryBtn) {
+            retryBtn.addEventListener('click', function () {
+              window.loadNearbyVenues();
+            });
+          }
         });
-  
+
   }
 
   function initVenueSlider(loader = '') {

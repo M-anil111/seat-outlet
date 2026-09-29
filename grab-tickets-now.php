@@ -1,4 +1,12 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical. Copy per the site's own content documentation.
+$pageMetaTitle       = 'Grab Tickets Now – Online Ticket Marketplace for Live Events | Seat Outlet';
+$pageMetaDescription = 'Grab Tickets Now is part of the SeatOutlet network, helping fans buy sports tickets online and buy concert tickets online through a streamlined, trusted marketplace.';
+$pageCanonicalUrl    = HOME_URL . '/grab-tickets-now';
+include 'header.php';
+?>
 
 <style>
     /* Content layout: simple, step-by-step */

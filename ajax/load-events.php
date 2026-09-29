@@ -1,15 +1,16 @@
 <?php
 
-require_once '../functions.php';
+require_once __DIR__ . '/../functions.php';
 
 header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: public, max-age=300');
 
 // Raw inputs
 $lat       = trim($_GET['lat'] ?? '');
 $lng       = trim($_GET['lng'] ?? '');
 $startDate = trim($_GET['startDate'] ?? '');
 $endDate   = trim($_GET['endDate'] ?? '');
-$pid       = $_GET['pid'];
+$pid       = (int) ($_GET['pid'] ?? 0);
 
 $latVal = is_numeric($lat) ? (float) $lat : null;
 $lngVal = is_numeric($lng) ? (float) $lng : null;
@@ -49,7 +50,7 @@ $params['includeTotalCount'] = 'true';
 
 try {
     $response = getTnEvents($params);
-    $total_count = $response['totalCount'];
+    $total_count = (int) ($response['totalCount'] ?? 0);
     $total_pages = $perPage > 0 ? (int) ceil($total_count / $perPage) : 0;
     $results = $response['results'] ?? [];   
     $hasMore = ($page < $total_pages);

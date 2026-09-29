@@ -1,0 +1,28 @@
+/* Thin brand layer over Tabler defaults for the admin dashboard shell
+   (post-login screens). Keeps the same primary color as the sign-in/
+   register/password screens in admin.css so the two don't feel like two
+   different products. */
+:root {
+    --tblr-primary: #2556E0;
+    --tblr-primary-rgb: 37, 86, 224;
+}
+
+.app-sidebar-brand img {
+    display: block;
+}
+
+.app-avatar {
+    background: var(--tblr-primary);
+    color: #fff;
+    font-weight: 600;
+}
+
+.app-admin-body .navbar-vertical .nav-link.active,
+.app-admin-body .navbar-vertical .nav-item.active .nav-link {
+    color: var(--tblr-primary);
+    background: rgba(var(--tblr-primary-rgb), 0.08);
+}
+
+.app-topbar {
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .06);
+}

@@ -1,10 +1,10 @@
 <?php
-require_once '../functions.php';
+require_once __DIR__ . '/../functions.php';
 
 header('Content-Type: application/json');
 
-$solt = $_GET['solt'];
-$solg = $_GET['solg'];
+$solt = $_GET['solt'] ?? '';
+$solg = $_GET['solg'] ?? '';
 
 $nearbyVenues = getNearbyVenues($solt, $solg, 6);
 

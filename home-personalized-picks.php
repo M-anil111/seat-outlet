@@ -1,137 +1,22 @@
-<!-- Personalized Picks -->
-<?php /*<section class="container py-5">
-    <h2 class="fw-bold fs-4 mb-4">Personalized Picks</h2>
-    
-    <div class="event-slider new-left-right" aria-label="Top picks carousel">
-      <a href="#" class="team-link px-3">
-        <article class="event-card">
-          <div class="event-card__img" style="background-image:url('assets/event-basketball.jpg')">
-            
-          </div>
-          <div class="event-card__body">
-            <h3 class="event-card__title venu-name-hide">Rockets at Lakers</h3>
-            <div class="mb-1">
-             <span class="mb-1 venu-date">Jan 14</span>
-             
-             <span class="mb-1 venu-name">OVO Hydro</span>
-            </div>
-            <p class="event-card__price mb-0">from <strong>$124</strong></p>
-          </div>
-        </article>
-      
-    </a>
-    <a href="#" class="team-link px-3">
-      <article class="event-card">
-        <div class="event-card__img" style="background-image:url('assets/event-football.jpg')">
-          
-        </div>
-        <div class="event-card__body">
-          <h3 class="event-card__title">Thunder at Cavaliers</h3>
-          <div class="mb-1">
-            <span class="mb-1 venu-date">Jan 14</span>
-            
-            <span class="mb-1 venu-name">OVO Hydro</span>
-           </div>
-          <p class="event-card__price mb-0">from <strong>$124</strong></p>
-        </div>
-      </article>
-    </a>
-    <a href="#" class="team-link px-3">
-      <article class="event-card">
-        <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-        
-        </div>
-        <div class="event-card__body">
-          <h3 class="event-card__title">Thunder at Cavaliers</h3>
-          <div class="mb-1">
-            <span class="mb-1 venu-date">Jan 14</span>
-      
-            <span class="mb-1 venu-name">OVO Hydro</span>
-           </div>
-          <p class="event-card__price mb-0">from <strong>$124</strong></p>
-        </div>
-      </article>
-      
-    </a>
-    <a href="#" class="team-link px-3">
-      <article class="event-card">
-        <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-          
-        </div>
-        <div class="event-card__body">
-          <h3 class="event-card__title">Thunder at Cavaliers</h3>
-          <div class="mb-1">
-            <span class="mb-1 venu-date">Jan 14</span>
-           
-            <span class="mb-1 venu-name">OVO Hydro</span>
-           </div>
-          <p class="event-card__price mb-0">from <strong>$124</strong></p>
-        </div>
-      </article>
-    </a>
-    <a href="#" class="team-link px-3">
-      <article class="event-card">
-        <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-        
-        </div>
-        <div class="event-card__body">
-          <h3 class="event-card__title">Thunder at Cavaliers</h3>
-          <div class="mb-1">
-            <span class="mb-1 venu-date">Jan 14</span>
-            
-            <span class="mb-1 venu-name">OVO Hydro</span>
-           </div>
-          <p class="event-card__price mb-0">from <strong>$124</strong></p>
-        </div>
-      </article>
-      </a>
-      <a href="#" class="team-link px-3">
-        <article class="event-card">
-          <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-       
-          </div>
-          <div class="event-card__body">
-            <h3 class="event-card__title">Thunder at Cavaliers</h3>
-            <div class="mb-1">
-              <span class="mb-1 venu-date">Jan 14</span>
-              
-              <span class="mb-1 venu-name">OVO Hydro</span>
-             </div>
-            <p class="event-card__price mb-0">from <strong>$124</strong></p>
-          </div>
-        </article>
-      </a>
-      <a href="#" class="team-link px-3">
-        <article class="event-card">
-          <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-            
-          </div>
-          <div class="event-card__body">
-            <h3 class="event-card__title">Thunder at Cavaliers</h3>
-            <div class="mb-1">
-              <span class="mb-1 venu-date">Jan 14</span>
-            
-              <span class="mb-1 venu-name">OVO Hydro</span>
-             </div>
-            <p class="event-card__price mb-0">from <strong>$124</strong></p>
-          </div>
-        </article>
-      </a>
-      <a href="#" class="team-link px-3">
-        <article class="event-card">
-          <div class="event-card__img" style="background-image:url('assets/event-concert.jpg')">
-          
-          </div>
-          <div class="event-card__body">
-            <h3 class="event-card__title">Thunder at Cavaliers</h3>
-            <div class="mb-1">
-              <span class="mb-1 venu-date">Jan 14</span>
-             
-              <span class="mb-1 venu-name">OVO Hydro</span>
-             </div>
-            <p class="event-card__price mb-0">from <strong>$124</strong></p>
-          </div>
-        </article>
-      </a>
-    </div>
-  </section>*/ ?>
+<?php
+// Intentionally disabled - not abandoned. This corresponds to the SEO
+// documentation's "Section 2: Personalized Picks (Logged-In Users)":
+// "If user is logged in: show events only from followed artists/teams/
+// preferred genres/previously viewed events. If not logged in: don't show
+// this section." That's the correct behavior - and this app has no public
+// user accounts, login, or preference-tracking system at all (only admin
+// auth exists, for the CMS). Every visitor is logged out, so per that
+// spec this section should never render, which is exactly what leaving
+// it unincluded (grepped: nothing includes this file) achieves.
+//
+// The previous version of this file was live HTML (commented out, but
+// with real markup) hardcoding fabricated events/venues/prices ("Rockets
+// at Lakers" at "OVO Hydro" for $124, repeated) - i.e. fake personalized
+// picks for a feature with no real personalization data behind it. That
+// content is removed rather than kept commented out, so it can't
+// accidentally get uncommented and shipped as real content later.
+//
+// To build this for real: user accounts + login, a followed-artists/
+// teams/genres model, and view-history tracking, then a query against
+// that data (mirroring getPerformerEventsByLocation()'s pattern in
+// functions.php) - not before.

@@ -1,0 +1,17 @@
+# Seat Outlet
+#
+# Per-page <meta name="robots"> in header.php decides indexing: index,follow
+# on the production host, noindex on beta./staging./dev. hosts (or set the
+# SITE_INDEXABLE env var). Admin page_rules can override any single URL.
+# This file only controls crawling; only real non-content paths are blocked.
+
+User-agent: *
+Disallow: /admin/
+Disallow: /ajax/
+Disallow: /cache/
+Disallow: /vendor/
+Disallow: /db/
+Disallow: /tools/
+Disallow: /search
+
+Sitemap: https://beta.seatoutlet.com/sitemap.php

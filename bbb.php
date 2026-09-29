@@ -1,4 +1,12 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical.
+$pageMetaTitle       = 'Seat Outlet BBB Profile & Customer Commitment | Seat Outlet';
+$pageMetaDescription = 'Learn about Seat Outlet\'s commitment to secure transactions, verified ticket listings, and transparent policies as a trusted ticket marketplace.';
+$pageCanonicalUrl    = HOME_URL . '/bbb';
+include 'header.php';
+?>
 <style>
 .why-us-page .faq-card {
     background-color: #ffffff;
@@ -75,7 +83,7 @@
         <div class="row align-items-center">
   <div class="hero-left col-lg-6 col-xl-6 col-xxl-6">
     <h1 class="main-title mb-lg-4 mb-3 text-white">Seat Outlet BBB Profile & Customer Commitment</h1>
-    <p class="text-white mb-4">At Seat Outlet, we are committed to providing a secure, transparent, and reliable ticket-buying experience. Our goal is to build long-term trust with every customer by delivering verified tickets, clear policies, and responsive support.</br> </br>
+    <p class="text-white mb-4">At Seat Outlet, we are committed to providing a secure, transparent, and reliable ticket-buying experience. Customer trust is our goal: we build it with every customer by delivering verified tickets, clear policies, and responsive support.</br> </br>
     We understand that purchasing event tickets online requires confidence. That’s why we prioritize customer satisfaction, safe transactions, and honest communication in everything we do.
     </p>
     <!-- <a href="#" class="btn btn-primary h-auto px-3 py-2">Work With Us</a> -->
@@ -125,7 +133,9 @@
         <span class="section-label">Customer First</span>
         <h2 class="section-title">Our Commitment to Customer Trust</h2>
         <div class="section-divider"></div>
-        <p class="text-muted mb-4">Seat Outlet operates with a customer-first approach. Every transaction is handled with care to ensure buyers receive valid tickets for their chosen events. Our team works continuously to improve service quality and ensure a smooth experience from browsing to checkout.</p>
+        <img src="/images/ticket-trusted.webp" class="img-fluid rounded mb-3" alt="Customer trust in Seat Outlet's ticket marketplace" loading="lazy">
+        <p class="text-muted mb-4">Seat Outlet operates with a customer-first approach. Every transaction is handled with care to ensure buyers receive valid tickets for their chosen events. Our team works continuously to improve service quality and ensure a smooth experience from browsing to checkout - the same kind of consumer trust the
+        <a href="https://www.bbb.org" target="_blank" rel="noopener">Better Business Bureau</a> encourages shoppers to look for online.</p>
         <ul class="check-list">
           <li><i class="bi bi-shield-lock-fill"></i> Secure and encrypted checkout process</li>
           <li><i class="bi bi-patch-check-fill"></i> Verified ticket listings from trusted sources</li>
@@ -182,7 +192,12 @@
       <span class="section-label">Help When You Need It</span>
       <h2 class="section-title">Customer Support You Can Rely On</h2>
       <div class="section-divider mx-auto"></div>
-      <p class="text-muted mx-auto" style="max-width:560px;">Whether you have questions before buying or need help after placing an order, our support team is available to resolve concerns quickly and professionally.</p>
+      <p class="text-muted mx-auto" style="max-width:560px;">Whether you have questions before buying or need help after placing an order, our support team is available to resolve concerns quickly and professionally - built on the same customer trust that guides everything we do.</p>
+    </div>
+    <div class="d-flex justify-content-center flex-wrap gap-3 mb-4">
+      <img src="/images/team-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Support team that builds customer trust at Seat Outlet" loading="lazy">
+      <img src="/images/secure-payment-p3.png" class="img-fluid rounded" style="max-width:200px;" alt="Secure payment builds customer trust" loading="lazy">
+      <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Fans who rely on our customer trust commitment" loading="lazy">
     </div>
     <div class="row g-4">
       <div class="col-md-6 col-lg-3">
@@ -235,7 +250,7 @@
         <h2 class="section-title">Transparent Policies &amp; Practices</h2>
         <div class="section-divider"></div>
         <p class="text-muted">We believe in clear and straightforward policies so customers always know what to expect. We encourage customers to review all details before purchase to ensure a smooth experience.</p>
-        <a href="#" class="btn common-btn mt-4">Review Full Policies</a>
+        <a href="/terms-and-conditions" class="btn common-btn mt-4">Review Full Policies</a>
       </div>
       <div class="col-lg-8">
         <div class="row g-4 pt-4 pt-lg-0 pt-md-0">
@@ -268,6 +283,14 @@
             </div>
           </div>
         </div>
+        <p class="text-muted mt-4">
+          Customer trust isn't something a company can claim for itself - it's earned one order at a
+          time, through policies that are actually followed and support that actually helps. That's
+          the standard we hold ourselves to: if a policy sounds good in writing but falls apart the
+          moment a customer needs it, it isn't a real policy. We'd rather have fewer promises that we
+          keep than a long list of ones we don't, because customer trust built on real follow-through
+          is the only kind worth having.
+        </p>
       </div>
     </div>
   </div>
@@ -334,8 +357,8 @@
 <div class="container">
  <div class="text-center">
     <h2 class="text-white"> A Ticket Platform You Can Trust</h2>
-    <p style="color:#fff;">We are committed to maintaining high standards of customer satisfaction, secure transactions, and transparent practices.</p>
-  <a href="#" class="btn btn-primary h-auto px-3 py-2 mt-4">Start Your Search Today</a>
+    <p style="color:#fff;">Customer trust is at the center of everything we do - we maintain high standards of customer satisfaction, secure transactions, and transparent practices.</p>
+  <a href="/" class="btn btn-primary h-auto px-3 py-2 mt-4">Start Your Search Today</a>
 </div>
 </div>
 </section>

@@ -1,7 +1,8 @@
 <?php
-require_once '../functions.php';
+require_once __DIR__ . '/../functions.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: public, max-age=3600');
 
 $q = $_GET['q'] ?? '';
 $q = trim($q);

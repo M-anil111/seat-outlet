@@ -1,0 +1,139 @@
+name: Build & Deploy
+
+# Replaces bitbucket-pipelines.yml now that this repo lives on GitHub.
+# Same two-stage shape as before (lint/build check, then deploy), same FTP
+# upload technique (proven necessary - see the comments below, carried over
+# from the Bitbucket pipeline), and the same secret names, just moved from
+# "Repository variables" (Bitbucket) to "Repository secrets" (GitHub:
+# Settings -> Secrets and variables -> Actions).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Build and check PHP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, curl, mbstring, json
+
+      - name: PHP version
+        run: php -v
+
+      - name: Lint all PHP files
+        run: |
+          status=0
+          while IFS= read -r -d '' f; do
+            php -l "$f" || status=1
+          done < <(find . -name '*.php' -not -path './vendor/*' -not -path './phpmailer/*' -print0)
+          exit $status
+
+      - name: Validate composer.lock is in sync
+        run: |
+          composer validate --no-check-publish --no-check-all
+          composer install --no-interaction --no-progress --prefer-dist --dry-run
+
+  deploy:
+    name: Deploy to Demo
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trust the server's SSH host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p 4124 "${{ secrets.FTP_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          echo "Known hosts populated:"
+          cat ~/.ssh/known_hosts
+
+      - name: Generate inc/env.local.php from GitHub Secrets
+        run: |
+          php -r '
+          $vars = [
+              "DB_PASS", "CONSUMER_KEY", "CONSUMER_SECRET", "GAPI_KEY", "GKGSAPI_KEY",
+              "AWS_ACCESS_KEY", "AWS_SECRET_KEY", "RECAPTCHA_SECRET_KEY", "SMTP_USER", "SMTP_PASS",
+              "SENTRY_DSN", "SENTRY_ENVIRONMENT",
+              "THESPORTSDB_KEY", "PEXELS_API_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID",
+          ];
+          // Optional: Sentry, the image-source keys, and the Knowledge Graph key
+          // (no longer used for images; kept so an existing secret still flows through).
+          $optional = ["SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID"];
+          $lines = ["<?php"];
+          foreach ($vars as $v) {
+              $val = getenv($v);
+              if ($val === false || $val === "") {
+                  if (in_array($v, $optional, true)) {
+                      continue;
+                  }
+                  fwrite(STDERR, "Missing required repository secret: $v\n");
+                  exit(1);
+              }
+              $lines[] = "putenv(" . var_export($v . "=" . $val, true) . ");";
+          }
+          file_put_contents("inc/env.local.php", implode("\n", $lines) . "\n");
+          echo "Generated inc/env.local.php with " . (count($lines) - 1) . " variables\n";
+          '
+        env:
+          DB_PASS: ${{ secrets.DB_PASS }}
+          CONSUMER_KEY: ${{ secrets.CONSUMER_KEY }}
+          CONSUMER_SECRET: ${{ secrets.CONSUMER_SECRET }}
+          GAPI_KEY: ${{ secrets.GAPI_KEY }}
+          GKGSAPI_KEY: ${{ secrets.GKGSAPI_KEY }}
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_ENVIRONMENT: ${{ secrets.SENTRY_ENVIRONMENT }}
+          THESPORTSDB_KEY: ${{ secrets.THESPORTSDB_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          MAXMIND_ACCOUNT_ID: ${{ secrets.MAXMIND_ACCOUNT_ID }}
+          MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
+          GEOIP_DB_PATH: ${{ vars.GEOIP_DB_PATH }}
+          TN_CHECKOUT_URL: ${{ vars.TN_CHECKOUT_URL }}
+          GTM_ID: ${{ vars.GTM_ID }}
+
+      # Upload the whole tree over SFTP with plain curl, one file at a time -
+      # git-ftp's bundled curl/libssh2 attempts SSH public-key auth first and
+      # fails outright instead of falling back to the supplied password;
+      # lftp's "-u user,pass" syntax also breaks if the password contains a
+      # comma. curl's --user user:pass splits only on the first colon and
+      # takes the rest verbatim, so it's safe for any password. (Carried over
+      # unchanged from the Bitbucket pipeline - this constraint is about the
+      # tools, not the CI provider.)
+      - name: Upload over SFTP
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          REMOTE_ROOT="/home/seatoutlet-beta/htdocs/beta.seatoutlet.com"
+          find . -type f -not -path './.git/*' -print0 | \
+            xargs -0 -P 4 -I{} bash -c '
+              f="{}"
+              rel="${f#./}"
+              curl -sS --ftp-create-dirs --user "$0:$1" -T "$f" "sftp://$2:4124/$3/$rel" \
+                || echo "FAILED: $rel"
+            ' "$FTP_USERNAME" "$FTP_PASSWORD" "$FTP_HOST" "$REMOTE_ROOT"
+          echo "Upload pass complete"
+          FAIL_COUNT=$(find . -type f -not -path './.git/*' -print0 | \
+            xargs -0 -P 4 -I{} bash -c '
+              f="{}"; rel="${f#./}"
+              curl -sS --user "$0:$1" -o /dev/null "sftp://$2:4124/$3/$rel" || echo x
+            ' "$FTP_USERNAME" "$FTP_PASSWORD" "$FTP_HOST" "$REMOTE_ROOT" | wc -l)
+          echo "Post-upload verification: $FAIL_COUNT file(s) not confirmed on server"
+          if [ "$FAIL_COUNT" -gt 0 ]; then
+            echo "Deploy verification failed - not all files reached the server"
+            exit 1
+          fi

@@ -1,5 +1,5 @@
-<?php 
-include 'header.php'; 
+<?php
+require_once 'functions.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -11,6 +11,7 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
+	include 'header.php';
 	echo '<div class="container"><p>Invalid city.</p></div>';
 	include 'footer.php';
 	exit;
@@ -18,13 +19,22 @@ if ($id <= 0) {
 
 $city = getTnCityById($id);
 
+if (empty($city)) {
+	include 'header.php';
+	echo '<div class="container"><p>City not found.</p></div>';
+	include 'footer.php';
+	exit;
+}
+
 $today = date('Y-m-d');
 $params = [
     'filter' => "city/id eq $id and date/date ge $today",
 ];
-$eventsResponse = getTnCityEvents($id, ['perPage' => $perPage, 'page' => 1]);
+$eventsResponse = getTnCityEvents($id, ['perPage' => $perPage, 'page' => 1, 'includeTotalCount' => 'true']);
 
-$total_count = getTnCityEventsCount($id);
+// totalCount rides on the list response (includeTotalCount) - this used to
+// be a second, separate API call per page view.
+$total_count = (int) ($eventsResponse['totalCount'] ?? 0);
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 
 $events = $eventsResponse['results'] ?? [];
@@ -32,6 +42,21 @@ $count  = $eventsResponse['count'] ?? count($events);
 
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $year = date('Y');
+
+$cityLabel = trim(($city['text']['name'] ?? '') . ', ' . ($city['stateProvince']['text']['abbr'] ?? ''), ', ');
+
+// --- SEO: computed before including header.php, same convention as the
+// artist-city/concerts-city/etc. pages - see functions.php. This page was
+// previously rendering with no <title> and no canonical tag at all. ---
+$pageMetaTitle       = "Events in $cityLabel Tickets | Seat Outlet";
+$pageMetaDescription = "Find concert, sports, and event tickets in $cityLabel. Compare prices and book securely on Seat Outlet.";
+$pageCanonicalUrl    = HOME_URL . '/city/' . createSlug($cityLabel, $id);
+$cityImg = getEntityImage('city', $cityLabel);
+if ($cityImg['status'] !== 'fallback' && $cityImg['url'] !== '') {
+    $pageOgImage = $cityImg['url'];
+}
+
+include 'header.php';
 ?>
 
 <section>
@@ -128,6 +153,7 @@ $year = date('Y');
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets
@@ -167,17 +193,16 @@ $year = date('Y');
 								</div>
 							<?php } ?>
 						<?php } else { ?>
-							<h4 style="padding: 20px;">
+							<h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
 								No Events found!
-							</h4>
+							</h3>
 						<?php } ?>
 					</div>	
-					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="/images/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
-					</div>	
+	
+					<?php renderLocationCategoryLinks('city', $id, $cityLabel); ?>
 					<div class="tab-section content-section-detail mb-0" id="promocode">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Exclusive Discounts on Event Tickets</h2>
-						<p>Save on your tickets with these SeatOutlet promo codes:</p>
+						<p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
 						<div class="row g-3 mt-2">
 							<div class="col-md-6">
 								<div class="offer-pill d-flex align-items-center justify-content-between">
@@ -232,11 +257,6 @@ $year = date('Y');
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
-						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="/images/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
-							</div>
-						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
 							<div class="guarantee">
 								<strong>Shop Tickets Worry Free</strong><br>

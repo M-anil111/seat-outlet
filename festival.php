@@ -1,17 +1,22 @@
-<?php include 'header.php';
+<?php
+require_once 'functions.php';
+// SEO: this page previously rendered with no <title>/canonical at all.
+$pageMetaTitle       = 'Festival Tickets | Seat Outlet';
+$pageMetaDescription = 'Buy festival tickets for upcoming music and cultural festivals. Compare prices and book securely on Seat Outlet.';
+$pageCanonicalUrl    = HOME_URL . '/festival';
+include 'header.php';
 $perPage = 20;
-$festivalPath = ".1859.1989.";
-$today = date('Y-m-d');
-$params = [
-	"filter" => "date/date ge $today and startswith(defaultCategory/path, '$festivalPath')",
-	"perPage" => $perPage,
-	"page" => 1
-];
+// Was ".1859.1989." (theater's own path, not festivals') - a copy-paste bug
+// that made this page show the exact same events as theater.php: real
+// duplicate content under two different URLs. LOCATION_CATEGORY_PATHS in
+// functions.php (already verified live against the sandbox API for the new
+// location pages) has the correct festivals path.
+$params = categoryListingParams(LOCATION_CATEGORY_PATHS['festivals'], $perPage);
 $year = date('Y');
 $results = getFestivalCatEvents();
-$total_count = $results['totalCount'];
+$total_count = $results['totalCount'] ?? 0;
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-$events = $results['results'];
+$events = $results['results'] ?? [];
 $count = count($events);
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 ?>
@@ -110,6 +115,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets
@@ -149,22 +155,15 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 								</div>
 							<?php } ?>
 						<?php } else { ?>
-							<h4 style="padding: 20px;">
+							<h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
 								No Events found!
-							</h4>
+							</h3>
 						<?php } ?>
 					</div>	
-					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="/images/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
-					</div>				
+				
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
-						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="/images/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
-							</div>
-						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
 							<div class="guarantee">
 								<strong>Shop Tickets Worry Free</strong><br>
@@ -173,13 +172,14 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 							<div class="guarantee-icon">
 								<i class="bi bi-shield-check"></i>
 							</div>
-						</div>						
+						</div>
 					</div>
 				</div>
 			</div>
+			<?php renderCategoryCityLinksBlock($events, 'festivals-city', 'Festival'); ?>
 		</div>
 	</div>
 </section>
 
-	
+
 <?php include 'footer.php'; ?>

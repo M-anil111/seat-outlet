@@ -1,5 +1,7 @@
 <?php 
+require_once 'functions.php';
 
+$searchInput = array_merge($_GET, $_POST);
 
 $params = [];
 $filterParts = [];
@@ -13,12 +15,12 @@ $keywordHeader = '';
 |--------------------------------------------------------------------------
 */
 if (
-    isset($_POST['latHeader'], $_POST['lngHeader'], $_POST['locationInputHeader']) &&
-    $_POST['latHeader'] !== '' && $_POST['lngHeader'] !== '' &&
-	$_POST['locationInputHeader'] !== ''
+    isset($searchInput['latHeader'], $searchInput['lngHeader'], $searchInput['locationInputHeader']) &&
+    $searchInput['latHeader'] !== '' && $searchInput['lngHeader'] !== '' &&
+	$searchInput['locationInputHeader'] !== ''
 ) {
-	$lat = floatval($_POST['latHeader']);
-    $lng = floatval($_POST['lngHeader']);
+	$lat = floatval($searchInput['latHeader']);
+    $lng = floatval($searchInput['lngHeader']);
     $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $lat, $lng);
 }
 
@@ -29,10 +31,10 @@ if (
 */
 
 if (
-	isset($_POST['keywordHeader']) &&
-	$_POST['keywordHeader'] !== ''
+	isset($searchInput['keywordHeader']) &&
+	$searchInput['keywordHeader'] !== ''
 ) {
-	$keywordHeader = $_POST['keywordHeader'];
+	$keywordHeader = $searchInput['keywordHeader'];
 	$keywordTitle = ucfirst(strtolower($keywordHeader));
 	$params['q'] = $keywordHeader;
 }else{
@@ -45,12 +47,12 @@ if (
 |--------------------------------------------------------------------------
 */
 if (
-	isset($_POST['startInputHeader'], $_POST['endInputHeader']) &&
-	$_POST['startInputHeader'] !== '' &&
-    $_POST['endInputHeader'] !== ''
+	isset($searchInput['startInputHeader'], $searchInput['endInputHeader']) &&
+	$searchInput['startInputHeader'] !== '' &&
+    $searchInput['endInputHeader'] !== ''
 ) {
-	$startTimestamp = strtotime($_POST['startInputHeader']);
-    $endTimestamp   = strtotime($_POST['endInputHeader']);
+	$startTimestamp = strtotime($searchInput['startInputHeader']);
+    $endTimestamp   = strtotime($searchInput['endInputHeader']);
 
     if ($startTimestamp && $endTimestamp) {
         $startDate = date('Y-m-d', $startTimestamp);
@@ -76,13 +78,20 @@ $params['page'] = 1;
 $params['perPage'] = $perPage;
 $params['sort'] = 'date/date';
 
+// Search results are user-specific, near-infinite URL variants; keep them
+// out of the index but give the tab a real title (there was none).
+$pageMetaTitle       = ($keywordHeader !== '' ? ucwords(strtolower($keywordHeader)) . ' Tickets - Search Results' : 'Search Tickets') . ' | Seat Outlet';
+$pageMetaDescription = 'Search concert, sports, theater and festival tickets by performer, city or venue on Seat Outlet.';
+$pageCanonicalUrl    = HOME_URL . '/search';
+$pageRobots          = 'noindex, follow';
+
 include 'header.php'; 
 
 $year = date('Y');
 $results = getHeaderSearchEvents($params);
-$total_count = $results['totalCount'];
+$total_count = $results['totalCount'] ?? 0;
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
-$events = $results['results'];
+$events = $results['results'] ?? [];
 $count = count($events);
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $faqs = getFaqs('search');
@@ -204,6 +213,7 @@ $faqs = getFaqs('search');
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
 													Find Tickets
@@ -246,16 +256,14 @@ $faqs = getFaqs('search');
 						<?php } else { ?>
 							<div class="text-center no-events-found">
 								<h4>No Upcoming Events</h4>
-								<p>We're sorry, but we couldn't find any upcoming events for "<?php echo $keywordHeader; ?>". Please try updating your location, date range or searching for something else.</p>
+								<p>We're sorry, but we couldn't find any upcoming events for "<?php echo htmlspecialchars($keywordHeader, ENT_QUOTES, 'UTF-8'); ?>". Please try updating your location, date range or searching for something else.</p>
 							</div>
 						<?php } ?>
 					</div>	
-					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="/images/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" width="804" height="96" />
-					</div>	
+	
 					<div class="tab-section content-section-detail mb-0" id="promocode">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Exclusive Discounts on Event Tickets</h2>
-						<p>Save on your tickets with these SeatOutlet promo codes:</p>
+						<p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
 						<div class="row g-3 mt-2">
 							<div class="col-md-6">
 								<div class="offer-pill d-flex align-items-center justify-content-between">
@@ -310,11 +318,6 @@ $faqs = getFaqs('search');
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
-						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="/images/6233961956292020331.webp" alt="Sponsored advertisement" class="ad-image" width="335" height="279" />
-							</div>
-						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
 							<div class="guarantee">
 								<strong>Shop Tickets Worry Free</strong><br>

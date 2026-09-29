@@ -1,4 +1,12 @@
-<?php include 'header.php'; ?>
+<?php
+require_once 'functions.php';
+// SEO: this page previously relied on header.php's generic fallback
+// title/canonical.
+$pageMetaTitle       = 'Our Guarantee | Seat Outlet';
+$pageMetaDescription = 'Seat Outlet stands behind every order with a Buyer Protection Guarantee: valid tickets, on-time delivery, secure payments, and a full refund if an event is canceled.';
+$pageCanonicalUrl    = HOME_URL . '/guarantee';
+include 'header.php';
+?>
 
 <style>
 
@@ -405,9 +413,7 @@
                         <span class="hero-title-blue">Guarantee</span>
                     </h1>
                     <p class="hero-subtitle">
-                    We stand firmly behind the quality of our products and services.
-                    Every purchase you make with us is backed by our clear, honest,
-                    and customer‑first guarantee.
+                    <?php echo getContentBlock('/guarantee', 'hero-subtitle', 'We stand firmly behind the quality of our products and services. Every purchase you make with us is backed by our satisfaction guarantee - clear, honest, and customer‑first.'); ?>
                     </p>
                 </div>
             </div>
@@ -455,7 +461,7 @@
                     <div class="guarantee-image-frame">
                         <img
                             src="/images/ticket-trusted.webp"
-                            alt="Happy customers at an event"
+                            alt="Customers backed by our 30-day satisfaction guarantee"
                         />
                         <div class="guarantee-sticker">
                             <span>Risk‑Free</span>
@@ -513,6 +519,8 @@
                             </p>
                             <p class="section-body">
                             Event schedules and ticket release timelines are decided by event organizers, performers, and promoters. They determine when tickets become available and how they are distributed to the public.
+                            Our <a href="/buyer-protection">buyer protection</a> policy covers every order regardless of price, and follows the same consumer-safety principles outlined by the
+                            <a href="https://www.ftc.gov/consumer-advice" target="_blank" rel="noopener">FTC's consumer advice</a> on online purchases.
                             </p>
                         </div>
                     </div>
@@ -535,10 +543,11 @@
         <section class="cta-section-last">
             <div class="container">
                <div class="cta-content">
-               <h2 class="cta-title">Experience Our Guarantee Today</h2>
+               <img src="/images/moneyback-p3.png" class="img-fluid mb-3" alt="Satisfaction guarantee money-back badge" loading="lazy" style="max-width:120px;">
+               <h2 class="cta-title">Experience Our Satisfaction Guarantee Today</h2>
                 <p class="cta-text">
                 Shop with confidence knowing that your purchase is protected. If you
-        have any questions about our guarantee, our support team is here to help.
+        have any questions about our satisfaction guarantee, our support team is here to help.
                 </p>
                 <button type="button" class="btn btn-cta">
                 Contact Support

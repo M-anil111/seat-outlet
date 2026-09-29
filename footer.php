@@ -9,11 +9,8 @@
       <p class="section-title">Let’s connect</p>
       <div class="social-icons">
         <a href="https://www.facebook.com/profile.php?id=61588886945534" aria-label="Facebook" target="_blank"><i class="bi bi-facebook fs-4"></i></a>
-        <a href="#" aria-label="Twitter" target="_blank"><i class="bi bi-twitter-x fs-4"></i></a>
         <a href="https://www.youtube.com/@SeatOutlet" aria-label="Youtube" target="_blank"><i class="bi bi-youtube fs-4"></i></a>
         <a href="https://www.instagram.com/seatoutlet/" aria-label="Instagram" target="_blank"><i class="bi bi-instagram fs-4"></i></a>
-        <a href="#" aria-label="blogger" class="blogger-icon" target="_blank"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="30" height="30" x="0" y="0" viewBox="0 0 95.938 95.938" style="enable-background:new 0 0 512 512; fill: #e0e0e0;" xml:space="preserve" class="fs-4"><g><path d="M95.329 59.861c-.031-7.134-.053-12.289-3.562-16.824-3.975-5.134-10.106-6.004-15.076-6.152.837-3.587 1.079-7.564.692-11.863C77.277 10.705 66.624.414 51.839.006L51.626 0 29.012.018l-.243-.001c-8.795 0-15.747 2.626-20.664 7.804C5.062 11.024 1.02 16.619.592 25.666l-.018 36.48c-.044.689.025 1.385.016 2.1 0 10.379 1.661 17.85 6.848 23.371 5.183 5.521 12.847 8.32 22.776 8.32.215 0 .432-.001.649-.004h34.629c8.858-.074 16.343-2.998 21.646-8.455 5.293-5.447 8.143-13.208 8.24-22.441-.001 0-.043-3.717-.049-5.176zM30.846 19.457l19.322-.023c4.554.072 8.188 4.151 8.114 8.705-.072 4.509-3.749 7.799-8.242 7.799l-19.455.008a8.245 8.245 0 0 1-8.113-8.375c.072-4.554 3.814-8.158 8.374-8.114zm36.318 54.275H28.521a8.246 8.246 0 0 1 0-16.492h38.644a8.246 8.246 0 0 1 8.246 8.246 8.246 8.246 0 0 1-8.247 8.246z" opacity="1" data-original="#e0e0e0" class="<i class=""></path></g></svg></a>
-        <a href="#" aria-label="google" class="google-icon" target="_blank"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="30" height="30" x="0" y="0" viewBox="0 0 24 24" style="enable-background:new 0 0 512 512; fill: #e0e0e0;" xml:space="preserve" class=""><g><path d="M21.823 9h-2.187v2.177h-2.177v2.187h2.177v2.177h2.187v-2.177H24v-2.187h-2.177zM7.5 19.5c4.328 0 7.203-3.038 7.203-7.326 0-.491-.051-.87-.122-1.248h-7.08v2.578h4.257c-.174 1.095-1.289 3.233-4.257 3.233-2.557 0-4.645-2.118-4.645-4.737s2.087-4.738 4.645-4.738c1.463 0 2.435.624 2.988 1.156l2.036-1.954C11.214 5.237 9.526 4.5 7.5 4.5 3.356 4.5 0 7.856 0 12s3.356 7.5 7.5 7.5z" opacity="1" data-original="#e0e0e0" class=""></path></g></svg></a>
         <a href="https://linktr.ee/seatoutlet" aria-label="Linktree" class="google-icon" target="_blank"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="30" height="25" id="Layer_1" x="0px" y="0px" viewBox="0 0 80 97.7" style="fill: #e0e0e0;" xml:space="preserve">
  <path d="M0.2,33.1h24.2L7.1,16.7l9.5-9.6L33,23.8V0h14.2v23.8L63.6,7.1l9.5,9.6L55.8,33H80v13.5H55.7l17.3,16.7l-9.5,9.4L40,49.1  L16.5,72.7L7,63.2l17.3-16.7H0V33.1H0.2z M33.1,65.8h14.2v32H33.1V65.8z">
  </path>
@@ -31,7 +28,7 @@
 
     <!-- Column 2 -->
     <div class="tm-footer-col">
-  <h4>Trust</h4>
+  <h3 class="footer-heading">Trust</h3>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/guarantee">Guarantee</a></li>
@@ -44,7 +41,7 @@
 
     <!-- Column 3 -->
     <div class="tm-footer-col">
-  <h4>Our Network</h4>
+  <h3 class="footer-heading">Our Network</h3>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/grab-tickets-now">Grab Tickets Now</a></li>
@@ -57,21 +54,21 @@
 
     <!-- Column 4 -->
     <div class="tm-footer-col">
-  <h4>About Us</h4>
+  <h3 class="footer-heading">About Us</h3>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/about-us">Who we are</a></li>
     <li><a href="/what-we-do">What we do</a></li>
     <li><a href="/faq">FAQ's</a></li>
     <li><a href="/contact">Contact</a></li>
-    <li><a href="#">Blog</a></li>
+    <li><a href="/blog">Blog</a></li>
   </ul>
 </div>
     
 
     <!-- Column 5 -->
     <div class="tm-footer-col">
-  <h4>Tickets</h4>
+  <h3 class="footer-heading">Tickets</h3>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/sports">Sports</a></li>
@@ -80,6 +77,7 @@
     <li><a href="/festival">Festivals</a></li>
     <li><a href="/cities">Cities</a></li>
     <li><a href="/deals-promotions">Deals & Promotions</a></li>
+    <li><a href="/our-network">Our Network</a></li>
   </ul>
 </div>
 
@@ -89,7 +87,7 @@
     <li><a href="/privacy-policy">Privacy Policy</a></li>
     <li><a href="/terms-and-conditions">Terms of Use</a></li>
     <li><a href="/cookie-policy">Cookie Policy</a></li>
-    <li><a href="#">Sitemap</a></li>
+    <li><a href="/sitemap.php">Sitemap</a></li>
   </ul>
   </div>
   <!-- Divider -->
@@ -99,6 +97,7 @@
       <div class="d-flex align-items-center">
         <div class="copyright me-2">
             <span class="link-tag"> © <?php echo date('Y'); ?> SeatOutlet. All rights reserved.</span>
+            <span class="link-tag geo-attribution d-block small">This product includes GeoLite2 data created by MaxMind, available from <a href="https://www.maxmind.com" rel="nofollow noopener" target="_blank">https://www.maxmind.com</a>.</span>
         </div>
         <div class="tm-country">
             <button type="button" class="btn btn-link">
@@ -144,8 +143,8 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13" defer></script>
 <?php if ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php' || $_SERVER['REQUEST_URI'] == '/search') { ?>
   <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js" defer></script>
 <?php } ?>

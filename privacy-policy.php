@@ -771,7 +771,7 @@
 
     <li>
         <strong>Contact Form:</strong> 
-        Available via the <a href="#">Contact Us</a> or <a href="#">Privacy</a> section of the Platform.
+        Available via the <a href="/contact">Contact Us</a> or <a href="#">Privacy</a> section of the Platform.
     </li>
 </ul>
 
