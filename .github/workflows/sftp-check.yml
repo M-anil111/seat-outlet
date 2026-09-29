@@ -50,10 +50,36 @@ jobs:
           DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
           DO_FIREWALL_ID: ${{ secrets.DO_FIREWALL_ID }}
         run: |
-          if [ -z "$DO_API_TOKEN" ] || [ -z "$DO_FIREWALL_ID" ]; then
-            echo "::notice::DO_API_TOKEN / DO_FIREWALL_ID not set - not changing the DigitalOcean firewall."
+          if [ -z "$DO_API_TOKEN" ]; then
+            echo "::notice::DO_API_TOKEN not set - not changing the DigitalOcean firewall."
             exit 0
           fi
+          # List the account's cloud firewalls (IDs and rules are not secret).
+          code=$(curl -sS -o fws.json -w '%{http_code}' --max-time 20 \
+            -H "Authorization: Bearer $DO_API_TOKEN" "https://api.digitalocean.com/v2/firewalls?per_page=200")
+          if [ "$code" != "200" ]; then
+            echo "::error::Listing DigitalOcean firewalls failed (HTTP $code): $(cat fws.json) - check DO_API_TOKEN has the firewall:read scope."
+            exit 1
+          fi
+          count=$(jq '.firewalls | length' fws.json)
+          echo "DigitalOcean firewalls on this account: $count"
+          jq -r --arg p "$FTP_PORT" '.firewalls[] |
+            "- id=\(.id) name=\(.name) status=\(.status) droplets=\(.droplet_ids|length) tags=\(.tags|join(",")) port \($p) inbound from: \(
+              [.inbound_rules[] | select(.protocol=="tcp" and (.ports==$p or .ports=="all" or .ports=="0")) | (.sources.addresses // []) + (.sources.tags // []) ] | flatten | join(", ") | if .=="" then "(none)" else . end)"' fws.json
+          if [ -z "$DO_FIREWALL_ID" ]; then
+            if [ "$count" = "1" ]; then
+              DO_FIREWALL_ID=$(jq -r '.firewalls[0].id' fws.json)
+              echo "::notice::DO_FIREWALL_ID not set - using the only firewall on the account ($DO_FIREWALL_ID). Save it as the DO_FIREWALL_ID secret."
+            elif [ "$count" = "0" ]; then
+              echo "::error::This DigitalOcean account has no cloud firewalls, so the block on port $FTP_PORT is on the server itself (not DigitalOcean) - or the server is in a different DigitalOcean account/team than this token."
+              exit 1
+            else
+              echo "::error::Several firewalls found - set DO_FIREWALL_ID to the id (listed above) of the one attached to the server."
+              exit 1
+            fi
+          fi
+          rm -f fws.json
+          echo "firewall_id=$DO_FIREWALL_ID" >> "$GITHUB_OUTPUT"
           ip=$(curl -sS --max-time 10 https://api.ipify.org)
           body=$(jq -nc --arg a "$ip/32" --arg p "$FTP_PORT" '{inbound_rules:[{protocol:"tcp",ports:$p,sources:{addresses:[$a]}}]}')
           code=$(curl -sS -o resp.json -w '%{http_code}' --max-time 20 -X POST \
@@ -112,7 +138,7 @@ jobs:
         if: always() && steps.do_fw.outputs.runner_ip != ''
         env:
           DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
-          DO_FIREWALL_ID: ${{ secrets.DO_FIREWALL_ID }}
+          DO_FIREWALL_ID: ${{ steps.do_fw.outputs.firewall_id }}
           RUNNER_IP: ${{ steps.do_fw.outputs.runner_ip }}
         run: |
           body=$(jq -nc --arg a "$RUNNER_IP/32" --arg p "$FTP_PORT" '{inbound_rules:[{protocol:"tcp",ports:$p,sources:{addresses:[$a]}}]}')
