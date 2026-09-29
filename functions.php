@@ -1076,37 +1076,27 @@ function getKeywordSearchSuggestions($q) {
 
     if (!$q) return [];
 
-    // ============================
-    // 1. CHECK CACHE (DB)
-    // ============================
-    $cached = get_keyword($q);
-
-    if ($cached) {
-        return json_decode($cached, true);
-    }
-
-    // ============================
-    // 2. API CALL (ONLY IF NOT CACHED)
-    // ============================
-    $params = [
+    // tnRequest() caches /suggest for an hour (stale-while-revalidate). The
+    // keywords DB table this used to read and write first never expired, so
+    // a one-off empty answer for "adelle" was served forever and every
+    // keystroke cost a DB query.
+    $data = tnRequest('/catalog/v2/suggest', [
         'q' => $q,
         'performersRequested' => 5,
         'venuesRequested' => 5,
         'citiesRequested' => 5
-    ];
-
-    $data = tnRequest('/catalog/v2/suggest', $params);
+    ]);
 
     if (!$data) return [];
 
-    // ============================
-    // 3. STORE IN CACHE (DB)
-    // ============================
-    set_keyword($q, json_encode($data));
-
-    // ============================
-    // 4. RETURN DATA
-    // ============================
+    // TicketNetwork's suggest is a prefix matcher: "adelle" finds nothing, and
+    // "carot top" only unrelated venues. No performer match on a real-looking
+    // word is the signal to offer close names.
+    if (($data['performers']['totalResultCount'] ?? 0) === 0) {
+        require_once __DIR__ . '/inc/smart.php';
+        $dym = smartDidYouMean($q, 4);
+        if ($dym) { $data['didYouMean'] = $dym; }
+    }
     return $data;
 }
 
@@ -1426,26 +1416,100 @@ const TN_CATEGORY_PATH_SPORTS   = '.1859.1988.';
 const TN_CATEGORY_PATH_THEATER  = '.1859.1989.';
 const TN_CATEGORY_PATH_FESTIVAL = '.1859.1986.1877.';
 
-function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1) {
+/** [from, to] (Y-m-d) for a "when" quick filter, or null for "any time". */
+function listingDateRange($when) {
+    $today = new DateTimeImmutable('today');
+    switch ($when) {
+        case 'today':
+            return [$today->format('Y-m-d'), $today->format('Y-m-d')];
+        case 'weekend':
+            $dow = (int) $today->format('N');            // 1=Mon .. 7=Sun
+            if ($dow >= 5) {                             // Fri/Sat/Sun: this weekend, from today
+                $from = $today;
+            } else {
+                $from = $today->modify('next friday');
+            }
+            $to = $from->modify('sunday this week');
+            if ($to < $from) $to = $from->modify('next sunday');
+            return [$from->format('Y-m-d'), $to->format('Y-m-d')];
+        case 'week':
+            return [$today->format('Y-m-d'), $today->modify('+7 days')->format('Y-m-d')];
+        case 'month':
+            return [$today->format('Y-m-d'), $today->modify('+30 days')->format('Y-m-d')];
+    }
+    return null;
+}
+
+const LISTING_WHEN = ['today' => 'Today', 'weekend' => 'This weekend', 'week' => 'Next 7 days', 'month' => 'Next 30 days'];
+const LISTING_SORT = ['popular' => 'Best sellers', 'soonest' => 'Soonest', 'price' => 'Lowest price'];
+
+function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
     $today = date('Y-m-d');
-    $filter = "date/date ge $today and _metadata/hasTickets eq true";
+    $range = listingDateRange($when);
+    $from = $range ? $range[0] : $today;
+    $filter = "date/date ge $from" . ($range ? " and date/date le {$range[1]}" : '') . " and _metadata/hasTickets eq true";
     if ($categoryPath !== '') {
         $filter .= " and startswith(defaultCategory/path, '" . tnEscapeFilterValue($categoryPath) . "')";
     } else {
         $filter .= " and country/alphaCode eq 'US'";
     }
-    return [
-        'filter'            => $filter,
-        'sort'              => '-salesRank',
-        'salesRankOptions'  => '{"interval":"day","metric":"orderVolume"}',
+    $params = ['filter' => $filter];
+    if ($sort === 'soonest') {
+        $params['sort'] = 'date/date';
+    } elseif ($sort === 'price') {
+        // Verified: the API sorts on pricingInfo/lowPrice/value (ascending = cheapest first).
+        $params['sort'] = 'pricingInfo/lowPrice/value';
+    } else {
+        $params['sort'] = '-salesRank';
+        $params['salesRankOptions'] = '{"interval":"day","metric":"orderVolume"}';
+    }
+    return $params + [
         'perPage'           => (int) $perPage,
         'page'              => (int) $page,
         'includeTotalCount' => 'true',
     ];
 }
 
-function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1) {
-    return tnRequest('/catalog/v2/events/', categoryListingParams($categoryPath, $perPage, $page));
+function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
+    return tnRequest('/catalog/v2/events/', categoryListingParams($categoryPath, $perPage, $page, $when, $sort));
+}
+
+/**
+ * "When" quick filters + sort links for a listing page. Plain links (works
+ * without JS, each state has a URL); filtered variants are noindex,follow and
+ * canonical to the base page (see listingRequestState()).
+ */
+function listingRequestState() {
+    $when = isset($_GET['when']) && isset(LISTING_WHEN[$_GET['when']]) ? $_GET['when'] : '';
+    $sort = isset($_GET['sort']) && isset(LISTING_SORT[$_GET['sort']]) ? $_GET['sort'] : 'popular';
+    return [$when, $sort, ($when !== '' || $sort !== 'popular')];
+}
+
+function renderListingFilters($basePath, $when, $sort, $total) {
+    $url = function ($w, $s) use ($basePath) {
+        $q = array_filter(['when' => $w, 'sort' => $s === 'popular' ? '' : $s]);
+        return htmlspecialchars($basePath . ($q ? '?' . http_build_query($q) : ''), ENT_QUOTES, 'UTF-8');
+    };
+    ?>
+    <div class="listing-filters" role="group" aria-label="Filter and sort events">
+        <div class="listing-filter-row">
+            <span class="listing-filter-label">When</span>
+            <a class="filter-chip <?php echo $when === '' ? 'active' : ''; ?>" href="<?php echo $url('', $sort); ?>">Any time</a>
+            <?php foreach (LISTING_WHEN as $key => $label) { ?>
+                <a class="filter-chip <?php echo $when === $key ? 'active' : ''; ?>" href="<?php echo $url($key, $sort); ?>" <?php echo $when === $key ? 'aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+            <?php } ?>
+        </div>
+        <div class="listing-filter-row">
+            <span class="listing-filter-label">Sort</span>
+            <?php foreach (LISTING_SORT as $key => $label) { ?>
+                <a class="filter-chip <?php echo $sort === $key ? 'active' : ''; ?>" href="<?php echo $url($when, $key); ?>" <?php echo $sort === $key ? 'aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+            <?php } ?>
+        </div>
+        <?php if ((int) $total === 0 && $when !== '') { ?>
+            <p class="listing-filter-empty">No events match <strong><?php echo htmlspecialchars(strtolower(LISTING_WHEN[$when]), ENT_QUOTES, 'UTF-8'); ?></strong>. <a href="<?php echo $url('', $sort); ?>">Show all dates</a>.</p>
+        <?php } ?>
+    </div>
+    <?php
 }
 
 function getAllEvents() {
@@ -1521,6 +1585,11 @@ function renderEventPriceTag(array $event) {
         echo '<span class="event-deal-badge">Deal</span> ';
     }
     echo 'From <strong>' . htmlspecialchars($deal['from'], ENT_QUOTES, 'UTF-8') . '</strong>';
+    // Factual inventory signal, not manufactured urgency: the number of tickets
+    // TicketNetwork currently lists for the event, shown only when it is small.
+    if ($deal['tickets'] > 0 && $deal['tickets'] <= 20) {
+        echo '<span class="event-low-inv">Only ' . (int) $deal['tickets'] . ' listed</span>';
+    }
     echo '</div>';
 }
 

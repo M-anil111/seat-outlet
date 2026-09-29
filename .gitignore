@@ -63,3 +63,4 @@ cache/tn_*.json
 # MaxMind GeoLite2 database (downloaded by cron/geoip-update.php, licence forbids redistribution)
 *.mmdb
 cache/sitemap_xml.json
+cache/search_vocab.json

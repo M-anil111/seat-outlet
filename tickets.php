@@ -1,8 +1,12 @@
-<?php include 'header.php';
+<?php
+require_once 'functions.php';
+[$when, $sort, $isFiltered] = listingRequestState();
+if ($isFiltered) { $pageRobots = 'noindex, follow'; }
+include 'header.php';
 $perPage = 20;
-$params = categoryListingParams('', $perPage);
+$params = categoryListingParams('', $perPage, 1, $when, $sort);
 $year = date('Y');
-$results = getAllEvents();
+$results = tnRequest('/catalog/v2/events/', $params);
 $total_count = (int) ($results['totalCount'] ?? 0);
 
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
@@ -47,6 +51,7 @@ $faqs = getFaqs('events');
 							</div>
 						</div>
 					</div>
+					<?php renderListingFilters('/tickets', $when, $sort, $total_count); ?>
 					<div class="list-category-bg pb-3">
 						<div class="filter-bar">
 							<input type="hidden" id="latEvent" value="">

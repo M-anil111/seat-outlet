@@ -190,6 +190,36 @@ sequentially).
 - `GTM_ID` env var injects Google Tag Manager; without it the dataLayer
   events still fire so a container can be attached later.
 
+## Smart search and personalization
+
+- **Typo tolerance.** TicketNetwork's search and suggest are prefix/exact
+  matchers (verified: "adelle" and "carot top" return nothing). `cron/build-search-vocab.php`
+  (daily) writes `cache/search_vocab.json`: ~1,800 top performers by sales rank plus top
+  venues and cities. `inc/smart.php` matches a mistyped query against it
+  (transposition-aware edit distance, single words also matched against name
+  words, ranked by popularity; ~20 ms, only run on zero-result searches).
+  Search results auto-correct a confident single-edit performer typo ("Showing
+  results for Adele") and otherwise offer "Did you mean"; autocomplete shows
+  "Did you mean" instead of "No results". Empty vocabulary = feature off, never an error.
+- **Zero-result recovery.** A search with no results shows close names and
+  "Popular right now" events (from the cached homepage feeds) instead of a dead end.
+- **Listing filters.** `/tickets`, `/concerts`, `/sports`, `/theater`, `/festival` take
+  `?when=today|weekend|week|month` and `?sort=popular|soonest|price` (plain links,
+  no JS). Filtered variants are `noindex, follow`. Price sort uses the
+  verified `pricingInfo/lowPrice/value` sort key. "More Events" carries the same
+  filter and sort; the endpoint pins `sort` and `salesRankOptions` to known values.
+- **Personalization (client-side only).** Recently viewed performers and recent
+  searches live in the visitor's own `localStorage` (`soLocal` in `main.js`):
+  homepage "Pick up where you left off", and recent searches + trending
+  performers in the search box before typing. Nothing is sent to the server.
+  If you add a consent banner, list this under functional storage.
+- **Price signals** (factual, from the list response): "Cheapest date" badge on
+  the performer's cheapest priced date (2+ priced dates), "Only N listed" when
+  TicketNetwork lists 20 or fewer tickets for an event.
+- **API quirk:** on `/catalog/v2/performers`, `eventFilter` combined with a
+  sales-rank sort returns HTTP 500 after 30 s from `perPage=50` upward; use
+  `filter=_metadata/hasTickets eq true` for large pages.
+
 ## Geo-IP (MaxMind GeoLite2)
 
 `inc/geoip.php` resolves a visitor's city/state/coordinates from the

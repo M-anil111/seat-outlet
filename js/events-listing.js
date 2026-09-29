@@ -394,7 +394,9 @@ function buildPriceTag(event) {
     const avg = info.averagePrice ? Number(info.averagePrice.value || 0) : 0;
     const isDeal = avg > 0 && low <= avg * 0.6;
     const safe = String(formatted).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    return '<div class="event-price-tag">' + (isDeal ? '<span class="event-deal-badge">Deal</span> ' : '') + 'From <strong>' + safe + '</strong></div>';
+    const tix = event._metadata && event._metadata.ticketCount ? Number(event._metadata.ticketCount) : 0;
+    const inv = tix > 0 && tix <= 20 ? '<span class="event-low-inv">Only ' + tix + ' listed</span>' : '';
+    return '<div class="event-price-tag">' + (isDeal ? '<span class="event-deal-badge">Deal</span> ' : '') + 'From <strong>' + safe + '</strong>' + inv + '</div>';
 }
 
 function renderEvent(event) {

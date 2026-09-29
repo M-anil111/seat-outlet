@@ -198,6 +198,13 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
+<section id="recentlyViewed" class="recently-viewed bg-white d-none" aria-labelledby="recentlyViewedHeading">
+  <div class="container">
+    <h2 id="recentlyViewedHeading" class="fw-bold mb-3">Pick up where you left off</h2>
+    <div class="row g-3 recent-row"></div>
+  </div>
+</section>
+
 <section class="section top_performers bg-white categories teams-nearby py-5" id="topPerformersSection">
   <div class="container">
     <div class="categories__grid">

@@ -465,6 +465,16 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
         const cities = data?.cities || {};
         const venues = data?.venues || {};
         let html = '<ul class="search-suggestions" role="listbox">';  
+        const dym = Array.isArray(data?.didYouMean) ? data.didYouMean : [];
+        const hasMatches = (performers.totalResultCount || 0) || (cities.totalResultCount || 0) || (venues.totalResultCount || 0);
+        if (dym.length && hasMatches) {
+            // Close names first when no performer matched but other things did
+            // (e.g. "carot top" only matches unrelated venues).
+            html += '<li class="suggestion-label">Did you mean</li>';
+            dym.forEach((item, i) => {
+                html += `<li class="result-item" id="suggestion-dym-${i}" role="option"><a href="${escapeHtml(item.url)}">${escapeHtml(item.name)}</a></li>`;
+            });
+        }
         if (
             (performers.totalResultCount || 0) ||
             (cities.totalResultCount || 0) ||
@@ -509,6 +519,14 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
                     s++;
                 });
             }    
+        } else if (Array.isArray(data?.didYouMean) && data.didYouMean.length) {
+            html += `<li class="suggestion-label">Did you mean</li>`;
+            data.didYouMean.forEach((item, i) => {
+                html += `
+                <li class="result-item" id="suggestion-${i}" role="option">
+                    <a href="${escapeHtml(item.url)}">${escapeHtml(item.name)}</a>
+                </li>`;
+            });
         } else {
             html += `<li class="result-item">No results for "${escapeHtml(q)}"</li>`;
         }
@@ -622,9 +640,48 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
         }
     });
   
+    let trendingCache = null;
+    function renderIdleSuggestions() {
+        const recents = window.soLocal ? window.soLocal.recentSearches() : [];
+        const build = function (trending) {
+            if (normalize(DOM.keywordHeader.value).length >= minChars) return;   // user has typed since
+            let html = '<ul class="search-suggestions" role="listbox">';
+            let n = 0;
+            if (recents.length) {
+                html += '<li class="suggestion-label">Recent searches</li>';
+                recents.forEach(t => {
+                    html += `<li class="result-item" id="suggestion-${n}" role="option"><a href="/search?keywordHeader=${encodeURIComponent(t)}">${escapeHtml(t)}</a></li>`;
+                    n++;
+                });
+            }
+            if (trending.length) {
+                html += '<li class="suggestion-label">Trending now</li>';
+                trending.forEach(t => {
+                    html += `<li class="result-item" id="suggestion-${n}" role="option"><a href="/artist/${escapeHtml(t.slug)}">${escapeHtml(t.name)}</a></li>`;
+                    n++;
+                });
+            }
+            html += '</ul>';
+            if (!recents.length && !trending.length) return;
+            DOM.keywordResultsHeader.innerHTML = html;
+            showSuggestions();
+            activeIndex = -1;
+        };
+        if (trendingCache) { build(trendingCache); return; }
+        fetch('/cache/top_performers.json', { cache: 'force-cache' })
+            .then(r => r.ok ? r.json() : {})
+            .then(d => {
+                const pick = [];
+                ['concerts', 'sports', 'theater'].forEach(k => (d[k] || []).slice(0, 2).forEach(p => { if (p && p.slug && p.name) pick.push({ name: p.name, slug: p.slug }); }));
+                trendingCache = pick;
+                build(pick);
+            })
+            .catch(() => { trendingCache = []; build([]); });
+    }
+
     DOM.keywordHeader.addEventListener('focus', function () {
         const q = normalize(this.value);    
-        if (q.length < minChars) return;    
+        if (q.length < minChars) { renderIdleSuggestions(); return; }
         if (searchCache[q]) {
             renderResults(searchCache[q], q);
             return;
@@ -716,3 +773,76 @@ window.soBatchLoadImages = async function (container, selector, isCurrent) {
     imgs.forEach(img => img.classList.add('loaded'));
   }
 };
+
+/* =====================================================
+    LOCAL PERSONALIZATION (recently viewed, recent searches)
+    Stored only in this browser's localStorage; nothing is sent to the
+    server and no account is needed. Cleared with the browser's site data.
+===================================================== */
+window.soLocal = (function () {
+  function read(key) {
+    try { const v = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+  }
+  function write(key, list) {
+    try { localStorage.setItem(key, JSON.stringify(list)); } catch (e) { /* private mode / quota */ }
+  }
+  const SLUG = /^[a-z0-9-]+$/;
+  return {
+    recentPerformers: function () {
+      return read('so_recent_viewed').filter(i => i && SLUG.test(String(i.slug || '')) && typeof i.name === 'string');
+    },
+    addPerformer: function (item) {
+      if (!item || !SLUG.test(String(item.slug || '')) || !item.name) return;
+      const clean = { id: String(item.id || ''), name: String(item.name).slice(0, 80), slug: item.slug, img: /^https?:\/\//.test(item.img || '') || /^\//.test(item.img || '') ? item.img : '' };
+      const list = read('so_recent_viewed').filter(i => i && i.slug !== clean.slug);
+      list.unshift(clean);
+      write('so_recent_viewed', list.slice(0, 8));
+    },
+    recentSearches: function () {
+      return read('so_recent_searches').filter(t => typeof t === 'string' && t.length >= 2);
+    },
+    addSearch: function (term) {
+      term = String(term || '').trim().slice(0, 60);
+      if (term.length < 2) return;
+      const list = read('so_recent_searches').filter(t => String(t).toLowerCase() !== term.toLowerCase());
+      list.unshift(term);
+      write('so_recent_searches', list.slice(0, 5));
+    }
+  };
+})();
+
+// Homepage: "Pick up where you left off" from the performers this browser viewed.
+document.addEventListener('DOMContentLoaded', function () {
+  const box = document.getElementById('recentlyViewed');
+  if (!box || !window.soLocal) return;
+  const items = window.soLocal.recentPerformers().slice(0, 6);
+  if (!items.length) return;
+  const row = box.querySelector('.recent-row');
+  items.forEach(function (it) {
+    const col = document.createElement('div');
+    col.className = 'col-12 col-sm-6 col-lg-4';
+    const a = document.createElement('a');
+    a.className = 'recent-card';
+    a.href = '/artist/' + it.slug;
+    if (it.img) {
+      const img = document.createElement('img');
+      img.src = it.img; img.alt = ''; img.loading = 'lazy'; img.width = 56; img.height = 56;
+      a.appendChild(img);
+    }
+    const span = document.createElement('span');
+    span.textContent = it.name;
+    a.appendChild(span);
+    col.appendChild(a);
+    row.appendChild(col);
+  });
+  box.classList.remove('d-none');
+});
+
+// Remember what was searched (submit of the header search form).
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.querySelector('form.search-bar-form');
+  const input = document.getElementById('keywordHeader');
+  if (form && input && window.soLocal) {
+    form.addEventListener('submit', function () { window.soLocal.addSearch(input.value); });
+  }
+});
