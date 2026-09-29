@@ -72,9 +72,11 @@ jobs:
               "SENTRY_DSN", "SENTRY_ENVIRONMENT",
               "THESPORTSDB_KEY", "PEXELS_API_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID",
           ];
-          // Optional: Sentry, the image-source keys, and the Knowledge Graph key
-          // (no longer used for images; kept so an existing secret still flows through).
-          $optional = ["SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID"];
+          // Optional: Sentry, the image-source keys, the Knowledge Graph key
+          // (no longer used for images; kept so an existing secret still flows through),
+          // and Brevo SMTP (newsletter and admin password-reset emails are skipped
+          // when unset; newsletter signups are still saved to the database).
+          $optional = ["SMTP_USER", "SMTP_PASS", "SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID"];
           $lines = ["<?php"];
           foreach ($vars as $v) {
               $val = getenv($v);
