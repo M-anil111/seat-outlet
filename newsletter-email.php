@@ -56,11 +56,10 @@ $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
 $browser    = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
 
 $country = 'Unknown';
-if (!empty($ip_address) && $ip_address !== '127.0.0.1') {
-    $geo = @unserialize(@file_get_contents("http://ip-api.com/php/" . urlencode($ip_address)));
-    if (is_array($geo) && ($geo['status'] ?? '') === 'success') {
-        $country = $geo['country'] ?? 'Unknown';
-    }
+require_once __DIR__ . '/inc/geoip.php';
+$geo = geoIpLookup($ip_address);
+if ($geo && $geo['country'] !== '') {
+    $country = $geo['country'];
 }
 
 /* =========================

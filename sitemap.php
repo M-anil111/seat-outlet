@@ -14,7 +14,7 @@
 //   are real businesses, deliberately networked together, not orphaned
 //   demo clutter.
 // - EXCLUDED: admin/, ajax/, cache/, search.php, category.php, performer.php,
-//   performer-new.php, city.php, venue.php - each of these needs a specific
+//   city.php, venue.php - each of these needs a specific
 //   ID/query param and has no safe "list all valid IDs" source in this repo
 //   to enumerate from.
 // - EXCLUDED: the artist-city/-state/-country/-venue and

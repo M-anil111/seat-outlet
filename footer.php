@@ -28,7 +28,7 @@
 
     <!-- Column 2 -->
     <div class="tm-footer-col">
-  <h4>Trust</h4>
+  <h3 class="footer-heading">Trust</h3>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/guarantee">Guarantee</a></li>
@@ -41,7 +41,7 @@
 
     <!-- Column 3 -->
     <div class="tm-footer-col">
-  <h4>Our Network</h4>
+  <h3 class="footer-heading">Our Network</h3>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/grab-tickets-now">Grab Tickets Now</a></li>
@@ -54,7 +54,7 @@
 
     <!-- Column 4 -->
     <div class="tm-footer-col">
-  <h4>About Us</h4>
+  <h3 class="footer-heading">About Us</h3>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/about-us">Who we are</a></li>
@@ -68,7 +68,7 @@
 
     <!-- Column 5 -->
     <div class="tm-footer-col">
-  <h4>Tickets</h4>
+  <h3 class="footer-heading">Tickets</h3>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/sports">Sports</a></li>

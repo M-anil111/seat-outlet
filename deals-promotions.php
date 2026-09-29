@@ -183,7 +183,7 @@ include 'header.php';
 						</div>
                         <p></p>	
                             </br>
-                        <p>These promo codes are easy to apply and can help you unlock immediate savings at checkout. Be sure to use them before they expire.</p>			
+                        <p>Enter a promo code in the promo code field at checkout when one is offered; codes apply only where the checkout accepts them, and savings vary by event. Be sure to use them before they expire.</p>			
 					</div>
                 <!-- 3 -->
                 <div class="policy-section" id="section-3">

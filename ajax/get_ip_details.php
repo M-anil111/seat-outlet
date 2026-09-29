@@ -32,37 +32,16 @@ function get_client_ip() {
 }
 
 
+require_once __DIR__ . '/../inc/geoip.php';
+
 header('Content-Type: application/json');
+header('Cache-Control: private, max-age=86400');
 
 $ip = get_client_ip();
-
-// Was a bare file_get_contents() with no timeout - if ip-api.com is slow or
-// unreachable, the whole page load waited on this third-party geolocation
-// call (used for the homepage's "detect my location" feature) for however
-// long PHP's default socket timeout happens to be. A short explicit
-// timeout bounds the worst case instead of stalling the page.
-// Note: ip-api.com's free tier only supports HTTP, not HTTPS - that's a
-// paid-plan feature on their end, not something to silently "fix" here.
-$context = stream_context_create(['http' => ['timeout' => 3]]);
-$ip_response = @file_get_contents("http://ip-api.com/json/{$ip}", false, $context);
-
-if ($ip_response === false) {
+$geo = geoIpLookup($ip);
+if (!$geo || $geo['city'] === '') {
     echo json_encode([]);
     exit;
 }
-
-$ipData = json_decode($ip_response, true);
-
-if (empty($ipData) || $ipData['status'] !== 'success') {
-    echo json_encode([]);
-    exit;
-}
-
-echo json_encode([
-    'city'  => $ipData['city'] ?? '',
-    'state' => $ipData['region'] ?? '',
-    'lat'  => $ipData['lat'] ?? '',
-    'lng' => $ipData['lon'] ?? '',
-]);
-
+echo json_encode(['city' => $geo['city'], 'state' => $geo['state'], 'lat' => $geo['lat'], 'lng' => $geo['lng']]);
 exit;

@@ -10,6 +10,7 @@
 // instance, not by php -l or the static checkers, which don't catch
 // runtime double-inclusion.
 include_once 'functions.php';
+    sendSecurityHeaders();
     // The header search form now submits via GET so a results page has a
     // shareable/bookmarkable URL and the browser back button works (a POST
     // results page re-prompted "resubmit form?"). Old POST submissions and
@@ -38,7 +39,7 @@ include_once 'functions.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? 'noindex nofollow'), ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" type="image/png" href="/images/favicon-new.webp">
     
     <!-- Critical CSS -->

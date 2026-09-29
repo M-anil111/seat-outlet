@@ -334,8 +334,8 @@ include 'header.php';
 					</div>	
 
 					<div class="tab-section content-section-detail mb-0" id="promocode">
-						<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo $artistName; ?> Concert Promo Codes in US</h2>
-						<p>Apply verified <?php echo $artistName; ?> ticket promo codes and save instantly on your concert tickets at checkout.</p>
+						<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Ticket Promo Codes</h2>
+						<p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
 						<div class="row g-3 mt-2">
 							<div class="col-md-6">
 								<div class="offer-pill d-flex align-items-center justify-content-between">

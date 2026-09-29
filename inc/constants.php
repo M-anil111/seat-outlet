@@ -10,6 +10,15 @@ define('HOME_PATH', getenv('HOME_PATH') ?: '/home/seatoutlet-beta/htdocs/beta.se
 define('AWS_ACCOUNT_ID', getenv('AWS_ACCOUNT_ID') ?: '2f20a4f9aec4a1c3b457bc4a6165f503');
 define('AWS_BUCKET_NAME', getenv('AWS_BUCKET_NAME') ?: 'seat-outlet-assets');
 define('AWS_CDN_URL', getenv('AWS_CDN_URL') ?: 'https://cdn-beta.seatoutlet.com/');
+// Search engine indexing. Every page carried a hard-coded "noindex nofollow"
+// from the original build (right for a beta host, fatal for launch). Now:
+// explicit SITE_INDEXABLE=1/0 wins; otherwise a beta./localhost HOME_URL is
+// noindex and any other host is indexable. search/admin stay noindex.
+$indexableEnv = getenv('SITE_INDEXABLE');
+define('SITE_INDEXABLE', $indexableEnv !== false && $indexableEnv !== ''
+    ? in_array(strtolower($indexableEnv), ['1', 'true', 'yes'], true)
+    : !preg_match('#//(beta\.|staging\.|dev\.|127\.0\.0\.1|localhost)#i', HOME_URL));
+
 define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Lfnn9AsAAAAAOQN5tu9jU-fBVBCdYXKPgmkc8J1');
 
 // Sentry error monitoring: optional. A DSN only lets Sentry *receive* events -

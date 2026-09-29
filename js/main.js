@@ -55,7 +55,9 @@ function getCookie(name) {
 }
 
 function setCookie(name, value) {
-    document.cookie = name + '=' + value + ';path=/';
+    // Lax + Secure (on https) + 30-day expiry; these were session cookies with no SameSite flag.
+    const secure = location.protocol === 'https:' ? ';Secure' : '';
+    document.cookie = name + '=' + value + ';path=/;max-age=2592000;SameSite=Lax' + secure;
 }
 
 function equalHeightSlider(sectionClass, cardClass) { 

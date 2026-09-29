@@ -55,7 +55,7 @@ foreach ($fallbackCategories as $key => $list) {
 
     <!-- Slide 1 – Concert / Event -->
     <div class="slide">
-      <img src="/images/home-slider.webp" alt="Ticket Marketplace - Live Concert Event" laoding="eager" fetchpriority="high" />
+      <img src="/images/home-slider.webp" alt="Ticket Marketplace - Live Concert Event" loading="eager" fetchpriority="high" />
       <div class="slide-overlay"></div>
       <div class="slide-caption">
         <span class="tag">Live Events</span>

@@ -619,7 +619,7 @@ h3,
   flex-direction: column;
 }
 
-.tm-footer-col h4 {
+.tm-footer-col h4, .tm-footer-col h3.footer-heading {
     font-size: 18px;
     /* margin-bottom: 24px; */
     font-weight: 500;

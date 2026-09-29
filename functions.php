@@ -311,9 +311,6 @@ function tnRequestCached($endpoint, array $params = [], $ttl = 600) {
     return tnRequest($endpoint, $params, 'GET', $ttl);
 }
 
-function getTnPerformers($params = []) {
-    return tnRequest('/catalog/v2/performers', $params);
-}
 
 function getTnPerformerEvents($performerId = 0, $params = []) {
     if ($performerId > 0) {
@@ -728,19 +725,6 @@ function getFaqs($type = null, $mysqli = MYSQLI) {
     return $faqs;
 }
 
-function getConcertEvents($limit = 12) {
-
-    $concertRootPath = ".1859.1986.";
-
-    $params = [
-        'filter' => "contains(defaultCategory/path, '$concertRootPath')",
-        'perPage' => $limit
-    ];
-
-    $data = tnRequest('/catalog/v2/events/', $params);
-
-    return $data['results'] ?? [];
-}
 
 function getNearbyVenues($lt, $lg, $limit = 20) {
 
@@ -840,12 +824,6 @@ function getTopCities($limit = 60) {
     return $cities;
 }
 
-function getPerformerUriComponent($performerId, $key = 'uriComponent') {
-
-    $data = getTnPerformerById($performerId);
-
-    return $data[$key] ?? '';
-}
 
 function getKeywordSearchSuggestions($q) {
 
@@ -946,44 +924,7 @@ function getLoadMoreEvents($params = []) {
     return $data ?? [];
 }
 
-function getMostPopularEvents($catPath = '', $lat = '', $lng = '') {
-    
-    $today = date('Y-m-d');
-    if(!empty($lat) && !empty($lng)) {
-        $params = [
-            'perPage' => 20,
-            'page'    => 1,
-            'filter'  => "date/date ge '$today' and contains(defaultCategory/path,'$catPath')",
-            'geoFilter' => "nearby($lat, $lng, 50mi)",
-            'sort'    => '-salesRank'
-        ];
-    }else{
-        $params = [
-            'perPage' => 20,
-            'page'    => 1,
-            'filter'  => "date/date ge " . $today . " and contains(defaultCategory/path,'$catPath')",
-            'sort'    => '-salesRank'
-        ];
-    }
-    
 
-    $data = tnRequest('/catalog/v2/events/', $params);
-
-    return $data['results'] ?? [];
-}
-
-function tnGetCategoryNearby($rootPath, $lat, $lng, $limit = 12) {
-
-    $params = [
-        'filter'    => "defaultCategory/path eq '$rootPath'",
-        'geoFilter' => sprintf('nearby(%F,%F,50mi)', $lat, $lng),
-        'perPage'   => $limit
-    ];
-
-    $data = tnRequest('/catalog/v2/events/', $params);
-
-    return $data['results'] ?? [];
-}
 
 function fetchLocationCategoryEvents($rootPath, $type = '', $loc1 = '', $loc2 = '') {
     $today = date('Y-m-d');
@@ -1118,44 +1059,6 @@ function getTeamsByCategory($categorySlug, $limit = 50) {
     return $results;
 }
 
-function getTeamsByCategoryFallback($categorySlug, $limit = 20) {
-
-    $categorySlug = strtoupper(trim((string)$categorySlug));
-    if ($categorySlug === '') return [];
-
-    $categoryPaths = [
-        'NFL' => '.1859.1988.1879.1959.',
-        'NBA' => '.1859.1988.1865.1971.',
-        'MLB' => '.1859.1988.1864.1969.',
-        'NHL' => '.1859.1988.1883.1972.',
-        'MLS' => '.1859.1988.1913.1970.',
-    ];
-
-    if (!isset($categoryPaths[$categorySlug])) {
-        return [];
-    }
-
-    $cacheKey = "teams_{$categorySlug}";
-    $params = [
-        'categoryFilter' => "path eq '{$categoryPaths[$categorySlug]}'",
-        'eventFilter' => "country/alphaCode eq 'US'",
-        'sort' => '-salesRank',
-        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
-        'perPage'   => $limit
-    ];       
-   
-    $cached = cache_get($cacheKey, 86400);
-    if ($cached !== false) {
-        return $cached;
-    }
-
-    $data = tnRequest('/catalog/v2/performers', $params);
-    $results = $data['results'] ?? [];
-
-    cache_set($cacheKey, $results);
-
-    return $results;
-}
 
 function cache_dir() {
     $dir = __DIR__ . '/cache/';
@@ -1615,49 +1518,24 @@ function convertToFloat($value) {
     return $parts[0] . '.' . $parts[1];
 }
 
-function searchSuggestions($q, $type) {
-    
-    $params = [
-        'filter' => "contains(text/name,'$q')",
-        'perPage' => 10
-    ];
 
-    $url = BASE_URL . '/catalog/v2/'.$type.'/?' . http_build_query($params);    
-
-    $data = tnCurlRequest($url);
-
-    if($type == 'performers') {
-        if (!empty($data['results'])) {
-            foreach ($data['results'] as $item) {
-                $suggestions[] = [
-                    'id'   => $item['id'] ?? '',
-                    'name' => $item['text']['name'] ?? '',
-                    'slug' => $item['uriComponent'] ?? '',
-                    'cat'  => $item['defaultCategory'],
-                ];
-            }
-        }
-    }elseif($type == 'venues') {
-        if (!empty($data['results'])) {
-            foreach ($data['results'] as $venue) {
-                $suggestions[] = [
-                    'id'    => $venue['id'] ?? '',
-                    'name'  => $venue['text']['name'] ?? '',
-                    'city'  => $venue['city']['text']['name'] ?? '',
-                    'state' => $venue['stateProvince']['text']['abbr'] ?? '',
-                    'slug'  => $venue['uriComponent'] ?? ''
-                ];
-            }
-        }
+/**
+ * Baseline response headers for every HTML page (called from header.php
+ * before any output). No CSP yet: the pages load Bootstrap, Slick, Seatics,
+ * Google Maps and fonts from several CDNs, so a strict policy needs its own
+ * pass with reporting first.
+ */
+function sendSecurityHeaders() {
+    if (headers_sent()) return;
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: camera=(), microphone=(), payment=(), geolocation=(self)');
+    if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
     }
-    return $suggestions ?? [];
 }
 
-function displayPHPErrors() {
-    ini_set('display_errors', '1');
-    ini_set('display_startup_errors', '1');
-    error_reporting(E_ALL);
-}
 
 function getTnCityEvents($cityId = 0, $params = []) {
 
@@ -3459,17 +3337,8 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                 </h3>
                             <?php } ?>
                         </div>
-                        <div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-                            <img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
-                        </div>
-                    </div>
                     <div id="secondary" class="sidebar col-sm-12 col-md-4">
                         <div class="sticky-top sidebar-inner">
-                            <div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-                                <div class="mt-3 mt-md-3 mt-lg-0">
-                                    <img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
-                                </div>
-                            </div>
                             <div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
                                 <div class="guarantee">
                                     <strong>Shop Tickets Worry Free</strong><br>
@@ -3764,17 +3633,8 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                             <?php } ?>
                         </div>
                         <?php renderLocationCategoryLinks($dimension, $locationValue, $locationLabel, $urlPrefix); ?>
-                        <div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-                            <img src="<?php echo HOME_URL; ?>/assets/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
-                        </div>
-                    </div>
                     <div id="secondary" class="sidebar col-sm-12 col-md-4">
                         <div class="sticky-top sidebar-inner">
-                            <div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-                                <div class="mt-3 mt-md-3 mt-lg-0">
-                                    <img src="<?php echo HOME_URL; ?>/assets/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
-                                </div>
-                            </div>
                             <div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
                                 <div class="guarantee">
                                     <strong>Shop Tickets Worry Free</strong><br>

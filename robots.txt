@@ -1,12 +1,9 @@
 # Seat Outlet
 #
-# Site-wide indexing is still gated per-page via the <meta name="robots">
-# tag in header.php (default "noindex nofollow" until a page_rules row or
-# hardcoded page override says otherwise - see header.php and
-# db/migrations/0002_page_rules.sql). That per-page tag is what actually
-# controls indexing; this file only controls crawling, and Googlebot needs
-# to be able to crawl a page to see its noindex tag in the first place, so
-# nothing here is disallowed except real non-content paths.
+# Per-page <meta name="robots"> in header.php decides indexing: index,follow
+# on the production host, noindex on beta./staging./dev. hosts (or set the
+# SITE_INDEXABLE env var). Admin page_rules can override any single URL.
+# This file only controls crawling; only real non-content paths are blocked.
 
 User-agent: *
 Disallow: /admin/

@@ -195,13 +195,11 @@ include 'header.php';
 							</h3>
 						<?php } ?>
 					</div>	
-					<div class="ad-container-left my-4 mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-						<img src="/images/adsense.webp" alt="Sponsored advertisement" class="ad-image-left" />
-					</div>	
+	
 					<?php renderLocationCategoryLinks('venue', $id, $venueName); ?>
 					<div class="tab-section content-section-detail mb-0" id="promocode">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Exclusive Discounts on Event Tickets</h2>
-						<p>Save on your tickets with these SeatOutlet promo codes:</p>
+						<p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
 						<div class="row g-3 mt-2">
 							<div class="col-md-6">
 								<div class="offer-pill d-flex align-items-center justify-content-between">
@@ -256,11 +254,6 @@ include 'header.php';
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
-						<div class="ad-container mx-auto mx-lg-0 mx-xl-0 mx-xxl-0">
-							<div class="mt-3 mt-md-3 mt-lg-0">
-								<img src="/images/6233961956292020331.jpg" alt="Sponsored advertisement" class="ad-image" />
-							</div>
-						</div>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
 							<div class="guarantee">
 								<strong>Shop Tickets Worry Free</strong><br>
