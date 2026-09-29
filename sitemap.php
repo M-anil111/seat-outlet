@@ -36,6 +36,14 @@
 require_once 'functions.php';
 
 header('Content-Type: application/xml; charset=utf-8');
+header('Cache-Control: public, max-age=3600');
+// Built XML is cached for an hour: the page fetches ~10 event pages and 60
+// city lookups, which crawlers should not trigger on every request.
+$cachedSitemap = cache_get('sitemap_xml', 3600);
+if ($cachedSitemap !== false && !empty($cachedSitemap['xml'])) {
+    echo $cachedSitemap['xml'];
+    exit;
+}
 
 $staticPaths = [
     '/',
@@ -113,42 +121,44 @@ foreach (getTopCities(60) as $index => $city) {
     }
 }
 
-// Live, upcoming, US events - bounded to a handful of pages so this stays
-// fast; increase MAX_EVENT_PAGES if the catalog grows well past this.
+// Live, upcoming, US events with inventory, best sellers first, so the
+// capped list (10 pages x 200) is the events most worth crawling. Page 1
+// reports the total; the remaining pages are fetched in parallel.
 const SITEMAP_MAX_EVENT_PAGES = 10;
 const SITEMAP_EVENTS_PER_PAGE = 200;
 
 $today = date('Y-m-d');
-for ($page = 1; $page <= SITEMAP_MAX_EVENT_PAGES; $page++) {
-    $response = tnRequest('/catalog/v2/events/', [
-        'filter' => "date/date ge $today and country/alphaCode eq 'US'",
+$eventPageSpec = function ($page) use ($today) {
+    return ['/catalog/v2/events/', [
+        'filter' => "date/date ge $today and _metadata/hasTickets eq true and country/alphaCode eq 'US'",
+        'sort' => '-salesRank',
+        'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'perPage' => SITEMAP_EVENTS_PER_PAGE,
         'page' => $page,
         'includeTotalCount' => 'true',
-    ]);
-
-    $events = $response['results'] ?? [];
-    if (empty($events)) {
-        break;
-    }
-
-    foreach ($events as $event) {
+    ]];
+};
+$first = tnRequest(...$eventPageSpec(1));
+$totalPages = min(SITEMAP_MAX_EVENT_PAGES, (int) ceil(($first['totalCount'] ?? 0) / SITEMAP_EVENTS_PER_PAGE));
+$eventPages = [$first];
+if ($totalPages > 1) {
+    $rest = [];
+    for ($page = 2; $page <= $totalPages; $page++) { $rest[] = $eventPageSpec($page); }
+    $eventPages = array_merge($eventPages, tnRequestMulti($rest));
+}
+foreach ($eventPages as $response) {
+    foreach ($response['results'] ?? [] as $event) {
         $slug = createSlug($event['text']['name'] ?? '', $event['id'] ?? 0);
-        $eventDate = $event['date']['date'] ?? null;
         $urls[] = [
             'loc' => HOME_URL . '/event/' . $slug,
             'changefreq' => 'daily',
             'priority' => '0.8',
-            'lastmod' => $eventDate,
+            'lastmod' => $event['date']['date'] ?? null,
         ];
-    }
-
-    $totalCount = $response['totalCount'] ?? 0;
-    if ($page * SITEMAP_EVENTS_PER_PAGE >= $totalCount) {
-        break;
     }
 }
 
+ob_start();
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 foreach ($urls as $url) {
@@ -162,3 +172,6 @@ foreach ($urls as $url) {
     echo "  </url>\n";
 }
 echo '</urlset>' . "\n";
+$xml = ob_get_clean();
+if (!empty($urls)) { cache_set('sitemap_xml', ['xml' => $xml, 'built' => time()]); }
+echo $xml;

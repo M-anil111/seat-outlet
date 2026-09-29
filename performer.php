@@ -17,6 +17,8 @@ if ($id <= 0) {
 	exit;
 }
 
+// Performer and its first page of events are independent: fetch together.
+tnRequestMulti([['/catalog/v2/performers/' . $id, []], performerPageEventsSpec($id, $perPage)]);
 $performer = getTnPerformerById($id);
 
 if (empty($performer) || empty($performer['defaultCategory'])) {

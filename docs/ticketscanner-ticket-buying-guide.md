@@ -88,6 +88,13 @@ Never cache error bodies (`code`/`Message` keys). Sweep stale cache files occasi
 
 Add a **warm cron every 5 minutes** for the pages that get the most traffic, so the first visitor never waits on the API.
 
+### 3.2b Resilience (each of these was verified by simulating it)
+
+- **Tokens rotate.** TicketNetwork invalidates an app's previous token a few seconds after a new one is issued (token A returned 200 right after token B was issued and 401 five seconds later). Web servers, cron jobs and every other process must share one token store, fetching must be serialized with a lock, and a 401 must trigger one refresh-and-retry. Two processes with separate stores keep knocking each other out. PHP-FPM and CLI often have different temp directories; use one shared directory.
+- **Serve stale while refreshing.** Past the TTL but inside a grace window, return the cached copy immediately and refresh after the response under a non-blocking lock. This removes the "first visitor after expiry waits" cost and prevents stampedes.
+- **Circuit breaker.** After a live failure, skip live calls for ~20 seconds and serve stale or empty data instead of letting every request wait out a 20-second timeout.
+- **Parallelize independent calls** (curl_multi / your platform's equivalent) and warm the cache from the top of the page, then let the normal calls hit it. Batch lookups with `filter=id in (1,2,3)` instead of one request per id.
+
 ### 3.3 Rules that prevent bugs
 
 - One code path for all calls: timeouts (connect 5 s, total 20 s), gzip, error logging to Sentry, return an empty array on failure. **A thrown exception on an API outage took down every category page on Seat Outlet** before we caught it.
@@ -367,3 +374,5 @@ Seat Outlet after the work: server time 3–10 ms warm; Lighthouse desktop perfo
 12. Unescaped request values echoed into HTML.
 13. Fake aggregate rating hard-coded into structured data.
 14. Quoted radius in `geoFilter` (`'50mi'`) returns HTTP 400.
+15. Separate token stores per process: each fresh token invalidates the others, causing intermittent 401s.
+16. One API request per autocomplete suggestion; `filter=id in (...)` does it in one call.

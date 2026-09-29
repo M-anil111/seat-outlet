@@ -20,6 +20,7 @@ $root = $argv[1] ?? '.';
 // including the environment these checks often run in). Real usage sites
 // are already guarded; flagging them here would just be permanent noise.
 $allowlist = [
+    'fastcgi_finish_request', // PHP-FPM SAPI only; always called behind function_exists()
     'apcu_fetch', 'apcu_store', 'apcu_delete', 'apcu_exists', 'apcu_clear_cache',
 ];
 

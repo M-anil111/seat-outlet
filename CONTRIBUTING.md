@@ -121,6 +121,33 @@ geo queries 5 minutes, `suggest` 1 hour. Pass `$ttl = 0` to bypass. The OAuth
 token is cached in the system temp dir for its real lifetime (the host has
 no APCu, so the APCu-only caches never worked in production).
 
+**Resilience built into `tnRequest()`** (verified by simulating each case):
+
+- *Stale-while-revalidate.* An entry past its TTL but inside a grace window
+  (3 × TTL, max 24 h) is served immediately and refreshed after the response
+  (`fastcgi_finish_request` on PHP-FPM), behind a non-blocking lock, so the
+  visitor after an expiry does not pay API latency and a crowd cannot stampede
+  the API.
+- *Circuit breaker.* After a live failure (network error, invalid JSON, HTTP
+  5xx) live calls are skipped for 20 seconds and stale data (up to 24 h) or an
+  empty result is served, instead of every request waiting out a 20-second
+  timeout. Scoped per `BASE_URL`.
+- *Stale on error.* A failed live call falls back to any cached copy younger
+  than 24 h.
+- *Parallel prefetch.* `tnRequestMulti()` fetches independent requests with
+  `curl_multi` and fills the cache; pages call it once at the top and the
+  normal calls below hit the cache (performer, artist-by-location, sitemap,
+  warm cron). Autocomplete uses `getTnPerformersByIds()` (`filter=id in (...)`),
+  one call instead of one per suggestion.
+- *Token rotation.* TicketNetwork invalidates an app's previous token a few
+  seconds after issuing a new one (verified). Every process that talks to the
+  API must therefore share one token store, and refreshes are serialized with
+  a lock. A 401 triggers one refresh-and-retry. If web (PHP-FPM) and cron (CLI)
+  use different temp directories, or there is more than one server, set
+  `TN_TOKEN_DIR` to a directory they all share, otherwise they will keep
+  invalidating each other's tokens (Sentry logs "token was rejected (401) and
+  replaced" when that happens).
+
 Set the `TN_PROFILE` environment variable to a writable file path and every
 HTTP request appends one JSON line: URI, number of catalog calls, cache
 hits, total milliseconds and the list of live calls. That is how the
