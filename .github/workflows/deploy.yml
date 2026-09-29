@@ -46,15 +46,63 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: production
+    # One deploy at a time: each run adds and later removes its own runner IP
+    # on the DigitalOcean firewall, and overlapping uploads would interleave.
+    concurrency:
+      group: deploy-beta
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
+
+      # SFTP (TCP 4124) is closed to the internet by a DigitalOcean cloud
+      # firewall. GitHub-hosted runners have no fixed IP, so each run opens
+      # 4124 for its own public IP only, and the always() step at the end of
+      # this job removes that rule again - even when the deploy fails or is
+      # cancelled. Needs DO_API_TOKEN (scopes: firewall:read, firewall:update)
+      # and DO_FIREWALL_ID; skipped when they are unset.
+      - name: Open SFTP port for this runner (DigitalOcean firewall)
+        id: do_fw
+        env:
+          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+          DO_FIREWALL_ID: ${{ secrets.DO_FIREWALL_ID }}
+        run: |
+          if [ -z "$DO_API_TOKEN" ] || [ -z "$DO_FIREWALL_ID" ]; then
+            echo "::notice::DO_API_TOKEN / DO_FIREWALL_ID not set - not changing the DigitalOcean firewall."
+            exit 0
+          fi
+          ip=$(curl -sS --max-time 10 https://api.ipify.org)
+          if ! [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Could not determine this runner's public IPv4 address (got: '$ip')"
+            exit 1
+          fi
+          body=$(jq -nc --arg a "$ip/32" '{inbound_rules:[{protocol:"tcp",ports:"4124",sources:{addresses:[$a]}}]}')
+          code=$(curl -sS -o resp.json -w '%{http_code}' --max-time 20 -X POST \
+            -H "Authorization: Bearer $DO_API_TOKEN" -H 'Content-Type: application/json' \
+            -d "$body" "https://api.digitalocean.com/v2/firewalls/$DO_FIREWALL_ID/rules")
+          if [ "$code" != "204" ]; then
+            echo "::error::DigitalOcean firewall update failed (HTTP $code): $(cat resp.json)"
+            exit 1
+          fi
+          rm -f resp.json
+          echo "runner_ip=$ip" >> "$GITHUB_OUTPUT"
+          echo "Opened TCP 4124 on the DigitalOcean firewall for $ip/32"
 
       - name: Trust the server's SSH host key
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
         run: |
           echo "This runner's public IP: $(curl -s --max-time 10 https://api.ipify.org || echo unknown)"
-          if ! timeout 15 bash -c "exec 3<>/dev/tcp/$FTP_HOST/4124" 2>/dev/null; then
+          # A freshly added DigitalOcean firewall rule can take a few seconds
+          # to apply, so retry for up to ~60s before giving up.
+          reachable=0
+          for attempt in 1 2 3 4 5 6; do
+            if timeout 10 bash -c "exec 3<>/dev/tcp/$FTP_HOST/4124" 2>/dev/null; then
+              reachable=1; break
+            fi
+            echo "TCP 4124 not reachable yet (attempt $attempt/6)"
+            sleep 5
+          done
+          if [ "$reachable" -ne 1 ]; then
             echo "::error::Cannot open TCP port 4124 on FTP_HOST from GitHub Actions. The server (or its cloud provider firewall) is dropping connections from GitHub's IP ranges - allow inbound TCP 4124 from them. Also check FTP_HOST is a bare hostname/IP (no sftp://, port or trailing slash)."
             exit 1
           fi
@@ -146,3 +194,24 @@ jobs:
             echo "Deploy verification failed - not all files reached the server"
             exit 1
           fi
+
+      - name: Close SFTP port for this runner (DigitalOcean firewall)
+        if: always() && steps.do_fw.outputs.runner_ip != ''
+        env:
+          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+          DO_FIREWALL_ID: ${{ secrets.DO_FIREWALL_ID }}
+          RUNNER_IP: ${{ steps.do_fw.outputs.runner_ip }}
+        run: |
+          body=$(jq -nc --arg a "$RUNNER_IP/32" '{inbound_rules:[{protocol:"tcp",ports:"4124",sources:{addresses:[$a]}}]}')
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o resp.json -w '%{http_code}' --max-time 20 -X DELETE \
+              -H "Authorization: Bearer $DO_API_TOKEN" -H 'Content-Type: application/json' \
+              -d "$body" "https://api.digitalocean.com/v2/firewalls/$DO_FIREWALL_ID/rules")
+            if [ "$code" = "204" ]; then
+              echo "Removed TCP 4124 rule for $RUNNER_IP/32"; exit 0
+            fi
+            echo "Attempt $attempt: HTTP $code $(cat resp.json)"
+            sleep 5
+          done
+          echo "::error::Could not remove the firewall rule for $RUNNER_IP/32 - remove it manually in DigitalOcean (Networking -> Firewalls)."
+          exit 1
