@@ -8,8 +8,10 @@ name: Build & Deploy
 # Settings -> Secrets and variables -> Actions).
 
 on:
-  push:
-    branches: [main]
+  # Beta is deployed by deploy/pull-deploy.sh, which runs on the server and
+  # pulls from GitHub (see docs/pull-deploy.md). This SFTP push is kept as a
+  # manual fallback only: the server firewall blocks GitHub-hosted runners, so
+  # running it on every push just produced a failed run each time.
   workflow_dispatch: {}
 
 jobs:
