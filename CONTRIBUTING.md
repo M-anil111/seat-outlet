@@ -97,29 +97,6 @@ sent: newsletter signups are still saved to `newsletter_leads` but neither
 the team notification nor the subscriber confirmation goes out, and the
 admin "forgot password" email is skipped (logged to the PHP error log).
 
-Optional: `DO_API_TOKEN`, `DO_FIREWALL_ID` - when set, each deploy opens
-SFTP (TCP 4124) on the DigitalOcean cloud firewall for the runner's own IP
-only, and removes that rule again at the end of the job (also on failure or
-cancel). This lets 4124 stay closed to the internet even though
-GitHub-hosted runners have no fixed IP. Setup:
-
-1. DigitalOcean → Networking → Firewalls → create (or pick) the firewall
-   attached to the server. Keep your usual inbound rules (80, 443, the
-   CloudPanel port, SSH from your own IP). Do **not** add a 4124 rule for
-   everyone - the deploy adds its own temporary one.
-2. The server's own firewall (CloudPanel → Admin Area → Security →
-   Firewall) must allow 4124 from `0.0.0.0/0`; the DigitalOcean firewall in
-   front of it is what restricts access.
-3. DigitalOcean → API → Tokens → generate a token with custom scopes
-   `firewall:read` and `firewall:update` only → save it as `DO_API_TOKEN`.
-4. The firewall ID (the UUID in its URL,
-   `cloud.digitalocean.com/networking/firewalls/<id>`) → save as
-   `DO_FIREWALL_ID`.
-
-If a run is killed so hard the cleanup step never runs, a stray `/32` rule
-for port 4124 is left behind; delete it by hand in the firewall's inbound
-rules.
-
 ### GitHub Actions variables (Settings → Secrets and variables → Actions → Variables tab)
 
 `LIGHTHOUSE_SITE_URL` - the site's real public URL (e.g.
