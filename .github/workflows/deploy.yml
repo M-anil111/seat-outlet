@@ -8,8 +8,10 @@ name: Build & Deploy
 # Settings -> Secrets and variables -> Actions).
 
 on:
-  push:
-    branches: [main]
+  # Beta is deployed by deploy/pull-deploy.sh, which runs on the server and
+  # pulls from GitHub (see docs/pull-deploy.md). This SFTP push is kept as a
+  # manual fallback only: the server firewall blocks GitHub-hosted runners, so
+  # running it on every push just produced a failed run each time.
   workflow_dispatch: {}
 
 jobs:
@@ -70,13 +72,13 @@ jobs:
               "DB_PASS", "CONSUMER_KEY", "CONSUMER_SECRET", "GAPI_KEY", "GKGSAPI_KEY",
               "AWS_ACCESS_KEY", "AWS_SECRET_KEY", "RECAPTCHA_SECRET_KEY", "SMTP_USER", "SMTP_PASS",
               "SENTRY_DSN", "SENTRY_ENVIRONMENT",
-              "THESPORTSDB_KEY", "PEXELS_API_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID",
+              "THESPORTSDB_KEY", "PEXELS_API_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID", "TN_TOKEN_DIR",
           ];
           // Optional: Sentry, the image-source keys, the Knowledge Graph key
           // (no longer used for images; kept so an existing secret still flows through),
           // and Brevo SMTP (newsletter and admin password-reset emails are skipped
           // when unset; newsletter signups are still saved to the database).
-          $optional = ["SMTP_USER", "SMTP_PASS", "SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID"];
+          $optional = ["SMTP_USER", "SMTP_PASS", "SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID", "TN_TOKEN_DIR"];
           $lines = ["<?php"];
           foreach ($vars as $v) {
               $val = getenv($v);
@@ -112,6 +114,7 @@ jobs:
           GEOIP_DB_PATH: ${{ vars.GEOIP_DB_PATH }}
           TN_CHECKOUT_URL: ${{ vars.TN_CHECKOUT_URL }}
           GTM_ID: ${{ vars.GTM_ID }}
+          TN_TOKEN_DIR: ${{ vars.TN_TOKEN_DIR }}
 
       # Upload the whole tree over SFTP with plain curl, one file at a time -
       # git-ftp's bundled curl/libssh2 attempts SSH public-key auth first and

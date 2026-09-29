@@ -4,6 +4,8 @@ require_once 'functions.php';
 $pageMetaTitle       = 'Festival Tickets | Seat Outlet';
 $pageMetaDescription = 'Buy festival tickets for upcoming music and cultural festivals. Compare prices and book securely on Seat Outlet.';
 $pageCanonicalUrl    = HOME_URL . '/festival';
+[$when, $sort, $isFiltered] = listingRequestState();
+if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // filtered/sorted variants: canonical page stays the indexed one
 include 'header.php';
 $perPage = 20;
 // Was ".1859.1989." (theater's own path, not festivals') - a copy-paste bug
@@ -11,9 +13,9 @@ $perPage = 20;
 // duplicate content under two different URLs. LOCATION_CATEGORY_PATHS in
 // functions.php (already verified live against the sandbox API for the new
 // location pages) has the correct festivals path.
-$params = categoryListingParams(LOCATION_CATEGORY_PATHS['festivals'], $perPage);
+$params = categoryListingParams(LOCATION_CATEGORY_PATHS['festivals'], $perPage, 1, $when, $sort);
 $year = date('Y');
-$results = getFestivalCatEvents();
+$results = tnRequest('/catalog/v2/events/', $params);
 $total_count = $results['totalCount'] ?? 0;
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'] ?? [];
@@ -40,6 +42,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 							</div>
 						</div>
 					</div>
+					<?php renderListingFilters('/festival', $when, $sort, $total_count); ?>
 					<div class="list-category-bg pb-3">
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">

@@ -21,9 +21,11 @@ $response = [];
 
 /* ================= ARTISTS ================= */
 if(!empty($artists)) {
+    // One batched lookup for all suggested performers (was one request each).
+    $artistDetailsById = getTnPerformersByIds(array_column($artists, 'id'));
     foreach ($artists as $artistItem) {
 
-        $artistDetails = getTnPerformerById($artistItem['id']);
+        $artistDetails = $artistDetailsById[(int) $artistItem['id']] ?? [];
         $defaultCategory = $artistDetails['defaultCategory'] ?? [];
 
         $subcategory = '';

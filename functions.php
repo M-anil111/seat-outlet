@@ -87,17 +87,48 @@ const TN_ACCESS_TOKEN_CACHE_KEY = 'tn_access_token';
 const TN_ACCESS_TOKEN_EXPIRY_BUFFER = 60; // seconds
 
 function tnTokenCacheFile() {
-    return rtrim(sys_get_temp_dir(), '/') . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY . '|' . BASE_URL) . '.json';
+    $dir = getenv('TN_TOKEN_DIR');
+    $dir = ($dir !== false && $dir !== '') ? rtrim($dir, '/') : rtrim(sys_get_temp_dir(), '/');
+    return $dir . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY . '|' . BASE_URL) . '.json';
 }
 
-function getTnAccessToken() {
+/** Cached token if it is still inside its lifetime, else ''. */
+function tnTokenFromFile() {
+    $file = tnTokenCacheFile();
+    if (!is_file($file)) return '';
+    $stored = json_decode((string) @file_get_contents($file), true);
+    if (!empty($stored['token']) && (int) ($stored['expires_at'] ?? 0) > time()) {
+        return (string) $stored['token'];
+    }
+    return '';
+}
+
+/**
+ * OAuth access token for the catalog API.
+ *
+ * TicketNetwork invalidates an app's previous token a few seconds after a new
+ * one is issued (verified: token A worked right after B was issued, and
+ * returned 401 five seconds later). Two processes that each fetch their own
+ * token therefore knock each other out. So:
+ *   - one token store shared by everything that runs on this host (file in
+ *     the temp dir, or TN_TOKEN_DIR - point it at a shared directory when
+ *     web and cron use different temp dirs or there are several servers);
+ *   - fetching is serialized with a lock and re-checked inside it, so a
+ *     burst of requests after expiry issues one token, not one each;
+ *   - $rejected lets a caller say "this token got a 401": we use a newer one
+ *     if another process already refreshed, otherwise fetch a fresh one.
+ */
+function getTnAccessToken($rejected = '') {
     static $accessToken = null;
 
-    if ($accessToken !== null) {
+    if ($rejected === '' && $accessToken !== null) {
         return $accessToken;
     }
+    if ($rejected !== '' && $accessToken === $rejected) {
+        $accessToken = null;
+    }
 
-    if (function_exists('apcu_fetch')) {
+    if ($rejected === '' && function_exists('apcu_fetch')) {
         $cached = apcu_fetch(TN_ACCESS_TOKEN_CACHE_KEY, $found);
         if ($found) {
             $accessToken = $cached;
@@ -105,80 +136,77 @@ function getTnAccessToken() {
         }
     }
 
-    // File cache for hosts without APCu (this one): without it every page
-    // view and every AJAX call paid a ~0.4s OAuth round-trip before its
-    // first catalog request. Kept outside the web root because cache/ is
-    // served statically.
-    $tokenFile = tnTokenCacheFile();
-    if (is_file($tokenFile)) {
-        $stored = json_decode((string) file_get_contents($tokenFile), true);
-        if (!empty($stored['token']) && (int) ($stored['expires_at'] ?? 0) > time()) {
-            $accessToken = $stored['token'];
-            return $accessToken;
+    $fromFile = tnTokenFromFile();
+    if ($fromFile !== '' && $fromFile !== $rejected) {
+        return $accessToken = $fromFile;
+    }
+
+    $lockFile = tnTokenCacheFile() . '.lock';
+    $lock = @fopen($lockFile, 'c');
+    $locked = false;
+    if ($lock) {
+        for ($i = 0; $i < 100; $i++) {          // wait up to ~10s for another process
+            if (flock($lock, LOCK_EX | LOCK_NB)) { $locked = true; break; }
+            usleep(100000);
         }
     }
+    try {
+        // Someone else may have refreshed while we waited for the lock.
+        $fromFile = tnTokenFromFile();
+        if ($fromFile !== '' && $fromFile !== $rejected) {
+            return $accessToken = $fromFile;
+        }
 
-    $basicAuth = base64_encode(CONSUMER_KEY . ':' . CONSUMER_SECRET);
+        $ch = curl_init('https://key-manager.tn-apis.com/oauth2/token');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Basic ' . base64_encode(CONSUMER_KEY . ':' . CONSUMER_SECRET),
+                'Content-Type: application/x-www-form-urlencoded',
+            ],
+            CURLOPT_POSTFIELDS     => http_build_query(['grant_type' => 'client_credentials']),
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $response = curl_exec($ch);
 
-    $ch = curl_init('https://key-manager.tn-apis.com/oauth2/token');
-
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_HTTPHEADER     => [
-            'Authorization: Basic ' . $basicAuth,
-            'Content-Type: application/x-www-form-urlencoded',
-        ],
-        CURLOPT_POSTFIELDS     => http_build_query([
-            'grant_type' => 'client_credentials',
-        ]),
-        CURLOPT_TIMEOUT        => 15,
-    ]);
-
-    $response = curl_exec($ch);
-
-    if ($response === false) {
-        $error = curl_error($ch);
+        if ($response === false) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            \Sentry\captureMessage('TicketNetwork token request failed: ' . $error);
+            return '';
+        }
         curl_close($ch);
-        // Was `throw new Exception(...)` here and below - uncaught
-        // anywhere in this codebase (grepped: zero try/catch around any
-        // TN API call), so any TicketNetwork outage or auth hiccup 500'd
-        // every page that touches TN data: every category page, event
-        // page, performer page, and location page. Reproduced live
-        // (invalid_client against a real local server) - concerts.php/
-        // sports.php/theater.php/festival.php all fatal-crashed mid-render
-        // with a truncated page. Degrading gracefully to "no token" here
-        // means downstream tnRequest() gets a real 401 from TN instead,
-        // which every caller already handles the same way an empty
-        // result set is handled (getConcertsCatEvents() etc. already do
-        // `$data['results'] ?? []`).
-        \Sentry\captureMessage('TicketNetwork token request failed: ' . $error);
-        return '';
+
+        $data = json_decode($response, true);
+        if (empty($data['access_token'])) {
+            \Sentry\captureMessage('TicketNetwork token error: ' . substr((string) $response, 0, 500));
+            return '';
+        }
+
+        $accessToken = $data['access_token'];
+        $ttl = max(60, (int) ($data['expires_in'] ?? 3600) - TN_ACCESS_TOKEN_EXPIRY_BUFFER);
+
+        if (function_exists('apcu_store')) {
+            apcu_store(TN_ACCESS_TOKEN_CACHE_KEY, $accessToken, $ttl);
+        }
+        $file = tnTokenCacheFile();
+        $tmp = $file . '.' . uniqid('tmp_', true);
+        if (@file_put_contents($tmp, json_encode(['token' => $accessToken, 'expires_at' => time() + $ttl]), LOCK_EX) !== false) {
+            @chmod($tmp, 0600);
+            @rename($tmp, $file);
+        }
+        if ($rejected !== '') {
+            \Sentry\captureMessage('TicketNetwork token was rejected (401) and replaced; if this repeats, two processes are using separate token stores - set TN_TOKEN_DIR to a shared directory.', \Sentry\Severity::warning());
+        }
+        return $accessToken;
+    } finally {
+        if ($lock) {
+            if ($locked) flock($lock, LOCK_UN);
+            fclose($lock);
+        }
     }
-
-    curl_close($ch);
-
-    $data = json_decode($response, true);
-
-    if (empty($data['access_token'])) {
-        \Sentry\captureMessage('TicketNetwork token error: ' . substr((string) $response, 0, 500));
-        return '';
-    }
-
-    $accessToken = $data['access_token'];
-    $expiresIn = (int) ($data['expires_in'] ?? 3600);
-    $ttl = max(60, $expiresIn - TN_ACCESS_TOKEN_EXPIRY_BUFFER);
-
-    if (function_exists('apcu_store')) {
-        apcu_store(TN_ACCESS_TOKEN_CACHE_KEY, $accessToken, $ttl);
-    }
-    $tmp = $tokenFile . '.' . uniqid('tmp_', true);
-    if (@file_put_contents($tmp, json_encode(['token' => $accessToken, 'expires_at' => time() + $ttl]), LOCK_EX) !== false) {
-        @chmod($tmp, 0600);
-        @rename($tmp, $tokenFile);
-    }
-
-    return $accessToken;
 }
 
 /*
@@ -195,7 +223,7 @@ function getTnAccessToken() {
 | per HTTP request with every call, cache hit/miss and milliseconds.
 */
 
-const TN_CACHE_SWEEP_AGE = 86400;
+const TN_CACHE_SWEEP_AGE = 172800; // 2 days: must exceed TN_STALE_ON_ERROR (24h)
 
 function tnDefaultTtl($endpoint, array $params) {
     $e = trim($endpoint, '/');
@@ -227,33 +255,56 @@ function tnProfile($endpoint, $hit, $ms) {
     $GLOBALS['tn_profile']['calls'][] = ['endpoint' => $endpoint, 'hit' => $hit, 'ms' => (int) $ms];
 }
 
-function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
-    $params = is_array($params) ? $params : [];
-    $ttl = $ttl === null ? tnDefaultTtl($endpoint, $params) : (int) $ttl;
-    $cacheKey = null;
+/*
+| Cache entry, breaker and refresh helpers used by tnRequest()/tnRequestMulti().
+*/
+function tnCacheKey($endpoint, array $params, $method = 'GET') {
+    return 'tn_' . md5(WEBSITE_CONFIG_ID . '|' . $method . '|' . trim($endpoint, '/') . '?' . http_build_query($params));
+}
 
-    if ($method === 'GET' && $ttl > 0) {
-        $cacheKey = 'tn_' . md5(WEBSITE_CONFIG_ID . '|' . trim($endpoint, '/') . '?' . http_build_query($params));
-        $cached = cache_get($cacheKey, $ttl);
-        if ($cached !== false) {
-            tnProfile($endpoint, true, 0);
-            return $cached;
-        }
+/** @return array{data:array,age:int}|null */
+function tnCacheEntry($key) {
+    $file = cache_file_path($key);
+    if (!is_file($file)) return null;
+    $json = @file_get_contents($file);
+    $data = $json !== false && $json !== '' ? json_decode($json, true) : null;
+    if (!is_array($data)) return null;
+    return ['data' => $data, 'age' => max(0, time() - (int) @filemtime($file))];
+}
+
+/** How long past its TTL an entry may still be served while a refresh runs. */
+function tnGrace($ttl) {
+    return (int) min($ttl * 3, 86400);
+}
+
+/** Longest a stale entry may stand in for a failed live call. */
+const TN_STALE_ON_ERROR = 86400;
+
+function tnBreakerFile() {
+    return rtrim(sys_get_temp_dir(), '/') . '/seatoutlet_tn_breaker_' . md5(BASE_URL) . '.txt';
+}
+
+/** True for 20s after a live failure: skip live calls, serve stale or empty. */
+function tnBreakerOpen() {
+    $f = tnBreakerFile();
+    return is_file($f) && (time() - (int) @filemtime($f)) < 20;
+}
+
+function tnBreakerTrip($why) {
+    @touch(tnBreakerFile());
+    if (function_exists('\Sentry\captureMessage')) {
+        \Sentry\captureMessage('TicketNetwork API unavailable, circuit opened for 20s: ' . $why);
     }
+}
 
-    $t0 = microtime(true);
-    $accessToken = getTnAccessToken();
-    $url = BASE_URL . $endpoint;
-    if (!empty($params)) {
-        $url .= '?' . http_build_query($params);
-    }
-
+function tnBuildHandle($endpoint, array $params, $method, $token) {
+    $url = BASE_URL . $endpoint . (!empty($params) ? '?' . http_build_query($params) : '');
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_CUSTOMREQUEST  => $method,
         CURLOPT_HTTPHEADER     => [
-            'Authorization: Bearer ' . $accessToken,
+            'Authorization: Bearer ' . $token,
             'Accept: application/json',
             'X-Listing-Context: website-config-id=' . WEBSITE_CONFIG_ID,
         ],
@@ -261,39 +312,189 @@ function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
         CURLOPT_TIMEOUT        => 20,
         CURLOPT_ENCODING       => '',
     ]);
+    return $ch;
+}
 
-    $response = curl_exec($ch);
-
-    if ($response === false) {
-        $error = curl_error($ch);
-        curl_close($ch);
-        tnProfile($endpoint, false, (microtime(true) - $t0) * 1000);
-        // Uncaught anywhere in this codebase, so a transient TN network
-        // failure used to 500 the calling page; every caller treats a
-        // missing 'results'/'count' key as empty.
-        \Sentry\captureMessage('TicketNetwork API cURL error (' . $endpoint . '): ' . $error);
-        return [];
+/**
+ * Interprets a finished handle.
+ * @return array{ok:bool,data:array,cacheable:bool,error:string}
+ */
+function tnParseResult($ch, $response) {
+    if ($response === false || $response === null) {
+        return ['ok' => false, 'data' => [], 'cacheable' => false, 'error' => curl_error($ch) ?: 'empty response'];
     }
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $decoded = json_decode((string) $response, true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+        return ['ok' => false, 'data' => [], 'cacheable' => false, 'error' => 'invalid JSON (HTTP ' . $code . ')'];
+    }
+    if ($code >= 500) {
+        return ['ok' => false, 'data' => $decoded, 'cacheable' => false, 'error' => 'HTTP ' . $code];
+    }
+    $cacheable = $code === 200 && !isset($decoded['code']) && !isset($decoded['Message']);
+    return ['ok' => true, 'data' => $decoded, 'cacheable' => $cacheable, 'error' => '', 'auth' => $code === 401];
+}
 
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+/** One live call, no caching. A 401 (rotated token) refreshes the token and retries once. */
+function tnFetchLive($endpoint, array $params, $method) {
+    $t0 = microtime(true);
+    $token = getTnAccessToken();
+    $ch = tnBuildHandle($endpoint, $params, $method, $token);
+    $result = tnParseResult($ch, curl_exec($ch));
     curl_close($ch);
+    if (!empty($result['auth'])) {
+        $token = getTnAccessToken($token);
+        if ($token !== '') {
+            $ch = tnBuildHandle($endpoint, $params, $method, $token);
+            $result = tnParseResult($ch, curl_exec($ch));
+            curl_close($ch);
+        }
+    }
     tnProfile($endpoint, false, (microtime(true) - $t0) * 1000);
+    return $result;
+}
 
-    $decoded = json_decode($response, true);
+/**
+ * Refresh a stale entry after the response has gone out. Only one process
+ * refreshes a given key (non-blocking lock); the rest keep serving stale.
+ */
+function tnScheduleRefresh($endpoint, array $params, $method, $key) {
+    static $queued = [];
+    static $registered = false;
+    if (isset($queued[$key])) return;
+    $queued[$key] = [$endpoint, $params, $method];
+    if ($registered) return;
+    $registered = true;
+    register_shutdown_function(function () use (&$queued) {
+        if (function_exists('fastcgi_finish_request')) {
+            @fastcgi_finish_request();
+        }
+        foreach ($queued as $key => [$endpoint, $params, $method]) {
+            if (tnBreakerOpen()) break;
+            $lock = @fopen(cache_file_path($key) . '.lock', 'c');
+            if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) { if ($lock) fclose($lock); continue; }
+            $r = tnFetchLive($endpoint, $params, $method);
+            if ($r['ok'] && $r['cacheable']) {
+                cache_set($key, $r['data']);
+            } elseif (!$r['ok']) {
+                tnBreakerTrip($endpoint . ' ' . $r['error']);
+            }
+            flock($lock, LOCK_UN);
+            fclose($lock);
+            @unlink(cache_file_path($key) . '.lock');
+        }
+    });
+}
 
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        \Sentry\captureMessage('TicketNetwork API returned invalid JSON (' . $endpoint . ', HTTP ' . $httpCode . ')');
-        return [];
+function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
+    $params = is_array($params) ? $params : [];
+    $ttl = $ttl === null ? tnDefaultTtl($endpoint, $params) : (int) $ttl;
+    $key = null;
+    $entry = null;
+
+    if ($method === 'GET' && $ttl > 0) {
+        $key = tnCacheKey($endpoint, $params, $method);
+        $entry = tnCacheEntry($key);
+        if ($entry !== null) {
+            if ($entry['age'] <= $ttl) {
+                tnProfile($endpoint, true, 0);
+                return $entry['data'];
+            }
+            // Stale but inside the grace window: answer now, refresh after
+            // the response is sent, so the visitor after a TTL expiry does
+            // not pay the API latency (and a herd of them doesn't stampede it).
+            if ($entry['age'] <= $ttl + tnGrace($ttl)) {
+                tnProfile($endpoint, true, 0);
+                if (!tnBreakerOpen()) tnScheduleRefresh($endpoint, $params, $method, $key);
+                return $entry['data'];
+            }
+        }
     }
 
-    if ($cacheKey !== null && $httpCode === 200 && is_array($decoded) && !isset($decoded['code']) && !isset($decoded['Message'])) {
-        cache_set($cacheKey, $decoded);
+    // Circuit open: do not queue more 20s timeouts behind a dead API.
+    if (tnBreakerOpen()) {
+        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+    }
+
+    $r = tnFetchLive($endpoint, $params, $method);
+
+    if (!$r['ok']) {
+        tnBreakerTrip($endpoint . ' ' . $r['error']);
+        \Sentry\captureMessage('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
+        // Stale data beats a blank page during an outage.
+        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+    }
+
+    if ($key !== null && $r['cacheable']) {
+        cache_set($key, $r['data']);
         if (mt_rand(1, 200) === 1) {
             tnCacheSweep();
         }
     }
+    return $r['data'];
+}
 
-    return $decoded;
+/**
+ * Fetch several independent requests in parallel and fill the cache.
+ * $requests: list of [endpoint, params] or [endpoint, params, ttl].
+ * Returns the responses in the same order. Entries already cached (fresh or
+ * inside their grace window) are not re-fetched, so this is safe to call
+ * speculatively at the top of a page: the normal tnRequest() calls further
+ * down then hit the cache.
+ */
+function tnRequestMulti(array $requests) {
+    $out = [];
+    $todo = [];
+    foreach ($requests as $i => $req) {
+        $endpoint = $req[0];
+        $params = is_array($req[1] ?? null) ? $req[1] : [];
+        $ttl = isset($req[2]) ? (int) $req[2] : tnDefaultTtl($endpoint, $params);
+        $key = tnCacheKey($endpoint, $params, 'GET');
+        $entry = $ttl > 0 ? tnCacheEntry($key) : null;
+        if ($entry !== null && $entry['age'] <= $ttl + tnGrace($ttl)) {
+            tnProfile($endpoint, true, 0);
+            $out[$i] = $entry['data'];
+            continue;
+        }
+        $out[$i] = ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+        $todo[$i] = [$endpoint, $params, $ttl, $key];
+    }
+    if (!$todo || tnBreakerOpen()) {
+        return $out;
+    }
+
+    $token = getTnAccessToken();
+    $mh = curl_multi_init();
+    $handles = [];
+    foreach ($todo as $i => [$endpoint, $params]) {
+        $handles[$i] = tnBuildHandle($endpoint, $params, 'GET', $token);
+        curl_multi_add_handle($mh, $handles[$i]);
+    }
+    $running = null;
+    do {
+        curl_multi_exec($mh, $running);
+        if ($running) curl_multi_select($mh, 0.5);
+    } while ($running > 0);
+
+    foreach ($handles as $i => $ch) {
+        [$endpoint, $callParams, $ttl, $key] = $todo[$i];
+        $r = tnParseResult($ch, curl_multi_getcontent($ch));
+        tnProfile($endpoint, false, curl_getinfo($ch, CURLINFO_TOTAL_TIME) * 1000);
+        if (!empty($r['auth'])) {
+            // Rotated token: refresh (once, shared) and retry this request.
+            $r = tnFetchLive($endpoint, $callParams, 'GET');
+        }
+        if ($r['ok']) {
+            $out[$i] = $r['data'];
+            if ($ttl > 0 && $r['cacheable']) cache_set($key, $r['data']);
+        } else {
+            tnBreakerTrip($endpoint . ' ' . $r['error']);
+        }
+        curl_multi_remove_handle($mh, $ch);
+        curl_close($ch);
+    }
+    curl_multi_close($mh);
+    return $out;
 }
 
 /** Delete stale tn_*.json response files so cache/ doesn't grow unbounded. */
@@ -312,11 +513,17 @@ function tnRequestCached($endpoint, array $params = [], $ttl = 600) {
 }
 
 
-function getTnPerformerEvents($performerId = 0, $params = []) {
+/** [endpoint, params] for a performer's events, so callers can prefetch the exact request. */
+function performerEventsSpec($performerId = 0, $params = []) {
     if ($performerId > 0) {
         $params['performerFilter'] = 'id eq ' . (int) $performerId;
     }
-    return tnRequest('/catalog/v2/events/', $params);
+    return ['/catalog/v2/events/', $params];
+}
+
+function getTnPerformerEvents($performerId = 0, $params = []) {
+    [$endpoint, $params] = performerEventsSpec($performerId, $params);
+    return tnRequest($endpoint, $params);
 }
 
 // The /catalog/v2/suggest endpoint (used for header search autocomplete)
@@ -336,16 +543,20 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
  * lists that performer's own dates wherever they are (the old US-only
  * filter left international acts with an empty page).
  */
-function getPerformerPageEvents($performerId, $perPage = 20) {
-    $params = [
+function performerPageEventsSpec($performerId, $perPage = 20) {
+    return ['/catalog/v2/events', [
         'filter'            => 'date/date ge ' . date('Y-m-d'),
         'performerFilter'   => 'id eq ' . (int) $performerId,
         'sort'              => 'date/date',
         'perPage'           => (int) $perPage,
         'page'              => 1,
         'includeTotalCount' => 'true',
-    ];
-    return [$params, tnRequestCached('/catalog/v2/events', $params, 600)];
+    ]];
+}
+
+function getPerformerPageEvents($performerId, $perPage = 20) {
+    [$endpoint, $params] = performerPageEventsSpec($performerId, $perPage);
+    return [$params, tnRequest($endpoint, $params, 'GET', 600)];
 }
 
 /** Cheapest "From" price and range across a set of listed events. */
@@ -438,6 +649,36 @@ function getTnPerformerById($performerId) {
     return $result;
 }
 
+/**
+ * Several performers in one call (`filter=id in (...)`, verified), instead of
+ * one request per id. Each result also seeds the single-performer cache so a
+ * later getTnPerformerById() for the same id is a hit.
+ * @return array<int,array> performers keyed by id
+ */
+function getTnPerformersByIds(array $ids) {
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+    $out = [];
+    $missing = [];
+    foreach ($ids as $id) {
+        $entry = tnCacheEntry(tnCacheKey('/catalog/v2/performers/' . $id, [], 'GET'));
+        if ($entry !== null && $entry['age'] <= 6 * 3600) { $out[$id] = $entry['data']; }
+        else { $missing[] = $id; }
+    }
+    if ($missing) {
+        $res = tnRequest('/catalog/v2/performers', [
+            'filter'  => 'id in (' . implode(',', $missing) . ')',
+            'perPage' => count($missing),
+        ]);
+        foreach ($res['results'] ?? [] as $perf) {
+            $pid = (int) ($perf['id'] ?? 0);
+            if ($pid <= 0) continue;
+            $out[$pid] = $perf;
+            cache_set(tnCacheKey('/catalog/v2/performers/' . $pid, [], 'GET'), $perf);
+        }
+    }
+    return $out;
+}
+
 function getTnEventById($eventId) {
     $endpoint = "/catalog/v2/events/" . (int) $eventId;
     return tnRequest($endpoint);
@@ -491,18 +732,22 @@ function buildCategoryBreadcrumb($defaultCategory) {
     return $breadcrumb;
 }
 
-function getRelatedPerformers($categoryPath, $currentPerformerId, $limit = 20) {
+/** [endpoint, params, ttl] for the related-performers query (also used to prefetch/warm). */
+function relatedPerformersSpec($categoryPath, $limit = 20) {
     $categoryPathEsc = tnEscapeFilterValue($categoryPath);
-    $params = [
+    return ['/catalog/v2/performers', [
         'filter' => "defaultCategory/path eq '$categoryPathEsc'",
         'eventFilter' => '_metadata/hasTickets eq true',
         'sort'   => '-salesRank',
         'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}',
         'page'   => 1,
         'perPage'=> $limit
-    ];
+    ], 6 * 3600];
+}
 
-    $data = tnRequestCached('/catalog/v2/performers', $params, 6 * 3600);
+function getRelatedPerformers($categoryPath, $currentPerformerId, $limit = 20) {
+    [$endpoint, $params, $ttl] = relatedPerformersSpec($categoryPath, $limit);
+    $data = tnRequest($endpoint, $params, 'GET', $ttl);
 
     $related = array_filter($data['results'] ?? [], function ($p) use ($currentPerformerId) {
         return $p['id'] != $currentPerformerId;
@@ -831,37 +1076,27 @@ function getKeywordSearchSuggestions($q) {
 
     if (!$q) return [];
 
-    // ============================
-    // 1. CHECK CACHE (DB)
-    // ============================
-    $cached = get_keyword($q);
-
-    if ($cached) {
-        return json_decode($cached, true);
-    }
-
-    // ============================
-    // 2. API CALL (ONLY IF NOT CACHED)
-    // ============================
-    $params = [
+    // tnRequest() caches /suggest for an hour (stale-while-revalidate). The
+    // keywords DB table this used to read and write first never expired, so
+    // a one-off empty answer for "adelle" was served forever and every
+    // keystroke cost a DB query.
+    $data = tnRequest('/catalog/v2/suggest', [
         'q' => $q,
         'performersRequested' => 5,
         'venuesRequested' => 5,
         'citiesRequested' => 5
-    ];
-
-    $data = tnRequest('/catalog/v2/suggest', $params);
+    ]);
 
     if (!$data) return [];
 
-    // ============================
-    // 3. STORE IN CACHE (DB)
-    // ============================
-    set_keyword($q, json_encode($data));
-
-    // ============================
-    // 4. RETURN DATA
-    // ============================
+    // TicketNetwork's suggest is a prefix matcher: "adelle" finds nothing, and
+    // "carot top" only unrelated venues. No performer match on a real-looking
+    // word is the signal to offer close names.
+    if (($data['performers']['totalResultCount'] ?? 0) === 0) {
+        require_once __DIR__ . '/inc/smart.php';
+        $dym = smartDidYouMean($q, 4);
+        if ($dym) { $data['didYouMean'] = $dym; }
+    }
     return $data;
 }
 
@@ -1181,26 +1416,104 @@ const TN_CATEGORY_PATH_SPORTS   = '.1859.1988.';
 const TN_CATEGORY_PATH_THEATER  = '.1859.1989.';
 const TN_CATEGORY_PATH_FESTIVAL = '.1859.1986.1877.';
 
-function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1) {
-    $today = date('Y-m-d');
-    $filter = "date/date ge $today and _metadata/hasTickets eq true";
-    if ($categoryPath !== '') {
-        $filter .= " and startswith(defaultCategory/path, '" . tnEscapeFilterValue($categoryPath) . "')";
-    } else {
-        $filter .= " and country/alphaCode eq 'US'";
+/** [from, to] (Y-m-d) for a "when" quick filter, or null for "any time". */
+function listingDateRange($when) {
+    $today = new DateTimeImmutable('today');
+    switch ($when) {
+        case 'today':
+            return [$today->format('Y-m-d'), $today->format('Y-m-d')];
+        case 'weekend':
+            $dow = (int) $today->format('N');            // 1=Mon .. 7=Sun
+            if ($dow >= 5) {                             // Fri/Sat/Sun: this weekend, from today
+                $from = $today;
+            } else {
+                $from = $today->modify('next friday');
+            }
+            $to = $from->modify('sunday this week');
+            if ($to < $from) $to = $from->modify('next sunday');
+            return [$from->format('Y-m-d'), $to->format('Y-m-d')];
+        case 'week':
+            return [$today->format('Y-m-d'), $today->modify('+7 days')->format('Y-m-d')];
+        case 'month':
+            return [$today->format('Y-m-d'), $today->modify('+30 days')->format('Y-m-d')];
     }
-    return [
-        'filter'            => $filter,
-        'sort'              => '-salesRank',
-        'salesRankOptions'  => '{"interval":"day","metric":"orderVolume"}',
+    return null;
+}
+
+const LISTING_WHEN = ['today' => 'Today', 'weekend' => 'This weekend', 'week' => 'Next 7 days', 'month' => 'Next 30 days'];
+const LISTING_SORT = ['popular' => 'Best sellers', 'soonest' => 'Soonest', 'price' => 'Lowest price'];
+
+/** Sort params for a listing sort key (verified sort keys). */
+function listingSortParams($sort) {
+    if ($sort === 'soonest') {
+        return ['sort' => 'date/date'];
+    }
+    if ($sort === 'price') {
+        // Verified: the API sorts on pricingInfo/lowPrice/value (ascending = cheapest first).
+        return ['sort' => 'pricingInfo/lowPrice/value'];
+    }
+    return ['sort' => '-salesRank', 'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}'];
+}
+
+/** Listing query for any OData location/category fragment, with when/sort applied. */
+function locationListingParams($fragment, $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
+    $range = listingDateRange($when);
+    $from = $range ? $range[0] : date('Y-m-d');
+    $filter = $fragment . " and date/date ge $from" . ($range ? " and date/date le {$range[1]}" : '') . ' and _metadata/hasTickets eq true';
+    return ['filter' => $filter] + listingSortParams($sort) + [
         'perPage'           => (int) $perPage,
         'page'              => (int) $page,
         'includeTotalCount' => 'true',
     ];
 }
 
-function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1) {
-    return tnRequest('/catalog/v2/events/', categoryListingParams($categoryPath, $perPage, $page));
+function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
+    $fragment = $categoryPath !== ''
+        ? "startswith(defaultCategory/path, '" . tnEscapeFilterValue($categoryPath) . "')"
+        : "country/alphaCode eq 'US'";
+    return locationListingParams($fragment, $perPage, $page, $when, $sort);
+}
+
+function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
+    return tnRequest('/catalog/v2/events/', categoryListingParams($categoryPath, $perPage, $page, $when, $sort));
+}
+
+/**
+ * "When" quick filters + sort links for a listing page. Plain links (works
+ * without JS, each state has a URL); filtered variants are noindex,follow and
+ * canonical to the base page (see listingRequestState()).
+ */
+function listingRequestState($defaultSort = 'popular') {
+    $when = isset($_GET['when']) && isset(LISTING_WHEN[$_GET['when']]) ? $_GET['when'] : '';
+    $sort = isset($_GET['sort']) && isset(LISTING_SORT[$_GET['sort']]) ? $_GET['sort'] : $defaultSort;
+    return [$when, $sort, ($when !== '' || $sort !== $defaultSort)];
+}
+
+function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'popular') {
+    $url = function ($w, $s) use ($basePath, $defaultSort) {
+        $q = array_filter(['when' => $w, 'sort' => $s === $defaultSort ? '' : $s]);
+        return htmlspecialchars($basePath . ($q ? '?' . http_build_query($q) : ''), ENT_QUOTES, 'UTF-8');
+    };
+    ?>
+    <div class="listing-filters" role="group" aria-label="Filter and sort events">
+        <div class="listing-filter-row">
+            <span class="listing-filter-label">When</span>
+            <a class="filter-chip <?php echo $when === '' ? 'active' : ''; ?>" href="<?php echo $url('', $sort); ?>">Any time</a>
+            <?php foreach (LISTING_WHEN as $key => $label) { ?>
+                <a class="filter-chip <?php echo $when === $key ? 'active' : ''; ?>" href="<?php echo $url($key, $sort); ?>" <?php echo $when === $key ? 'aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+            <?php } ?>
+        </div>
+        <div class="listing-filter-row">
+            <span class="listing-filter-label">Sort</span>
+            <?php foreach (LISTING_SORT as $key => $label) { ?>
+                <a class="filter-chip <?php echo $sort === $key ? 'active' : ''; ?>" href="<?php echo $url($when, $key); ?>" <?php echo $sort === $key ? 'aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+            <?php } ?>
+        </div>
+        <?php if ((int) $total === 0 && $when !== '') { ?>
+            <p class="listing-filter-empty">No events match <strong><?php echo htmlspecialchars(strtolower(LISTING_WHEN[$when]), ENT_QUOTES, 'UTF-8'); ?></strong>. <a href="<?php echo $url('', $sort); ?>">Show all dates</a>.</p>
+        <?php } ?>
+    </div>
+    <?php
 }
 
 function getAllEvents() {
@@ -1276,6 +1589,11 @@ function renderEventPriceTag(array $event) {
         echo '<span class="event-deal-badge">Deal</span> ';
     }
     echo 'From <strong>' . htmlspecialchars($deal['from'], ENT_QUOTES, 'UTF-8') . '</strong>';
+    // Factual inventory signal, not manufactured urgency: the number of tickets
+    // TicketNetwork currently lists for the event, shown only when it is small.
+    if ($deal['tickets'] > 0 && $deal['tickets'] <= 20) {
+        echo '<span class="event-low-inv">Only ' . (int) $deal['tickets'] . ' listed</span>';
+    }
     echo '</div>';
 }
 
@@ -1651,7 +1969,7 @@ function getTopFestivalPerformers() {
 
     $data = tnCurlRequest($url);
 
-    return $data['performers']['results'];
+    return $data['performers']['results'] ?? [];
 }
 
 function createSlug($name, $id) {
@@ -2884,13 +3202,17 @@ function getTnCountryByCode($alphaCode) {
  * exactly as it already works elsewhere - performerFilter and a location
  * `filter` combine in one request (confirmed live against the sandbox API).
  */
-function getPerformerEventsByLocation(int $performerId, string $dimension, $locationValue, array $params = []) {
+/** Params for a performer's events at one location (also used to prefetch). */
+function performerLocationParams(string $dimension, $locationValue, array $params = []) {
     $locationFilter = getLocationFilterFragment($dimension, $locationValue);
-    if ($locationFilter === null) return ['results' => [], 'totalCount' => 0];
+    if ($locationFilter === null) return null;
+    $params['filter'] = $locationFilter . ' and date/date ge ' . date('Y-m-d');
+    return $params;
+}
 
-    $today = date('Y-m-d');
-    $params['filter'] = $locationFilter . " and date/date ge $today";
-
+function getPerformerEventsByLocation(int $performerId, string $dimension, $locationValue, array $params = []) {
+    $params = performerLocationParams($dimension, $locationValue, $params);
+    if ($params === null) return ['results' => [], 'totalCount' => 0];
     return getTnPerformerEvents($performerId, $params);
 }
 
@@ -3123,6 +3445,17 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
         include 'footer.php';
         return;
     }
+
+    // Independent requests go out together; the normal calls below then hit
+    // the cache (cold page: 4 sequential ~200ms calls -> 1 parallel round).
+    $prefetch = [
+        ['/catalog/v2/performers/' . $performerId, []],
+        performerEventsSpec($performerId, performerLocationParams($dimension, $locationValue, [
+            'page' => $page, 'perPage' => $perPage, 'includeTotalCount' => 'true',
+        ]) ?? []),
+        performerEventsSpec($performerId, ['filter' => 'date/date ge ' . date('Y-m-d'), 'perPage' => 100, 'sort' => 'date/date']),
+    ];
+    tnRequestMulti($prefetch);
 
     $performer = getTnPerformerById($performerId);
     $location  = getLocationDisplayInfo($dimension, $locationValue);

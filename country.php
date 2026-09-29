@@ -25,10 +25,10 @@ if (empty($country)) {
 }
 
 $today = date('Y-m-d');
-$params = [
-    'filter' => "country/alphaCode eq '" . tnEscapeFilterValue($code) . "' and date/date ge $today",
-];
-$eventsResponse = getTnCountryEvents($code, ['perPage' => $perPage, 'page' => 1, 'includeTotalCount' => 'true']);
+[$when, $sort, $isFiltered] = listingRequestState('popular');
+if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // canonical page stays the indexed one
+$params = locationListingParams("country/alphaCode eq '" . tnEscapeFilterValue($code) . "'", $perPage, 1, $when, $sort);
+$eventsResponse = tnRequest('/catalog/v2/events/', $params);
 
 // totalCount rides on the list response (includeTotalCount) - this used to
 // be a second, separate API call per page view.
@@ -71,6 +71,7 @@ include 'header.php';
 							</div>
 						</div>
 					</div>
+					<?php renderListingFilters('/country/' . createSlug($countryLabel, $code), $when, $sort, $total_count, 'popular'); ?>
 					<div class="list-category-bg pb-3">
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">

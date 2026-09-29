@@ -19,7 +19,17 @@ $type       = isset($_GET['type']) ? $_GET['type'] : '';
 // values. page/perPage/includeTotalCount are already server-controlled below
 // regardless of what's in here, so only the filter-shaped keys actually used
 // elsewhere in this app need to survive.
-const LOAD_MORE_ALLOWED_PARAM_KEYS = ['filter', 'geoFilter', 'performerFilter', 'sort', 'salesRankOptions'];
+const LOAD_MORE_ALLOWED_PARAM_KEYS = ['q', 'filter', 'geoFilter', 'performerFilter', 'sort', 'salesRankOptions'];
+
+// Values that are not free-form filters are pinned to the ones the site
+// itself generates, so a tampered request cannot ask the upstream API for an
+// arbitrary sort or ranking window.
+const LOAD_MORE_ALLOWED_SORTS = ['date/date', '-date/date', '-salesRank', 'salesRank', 'pricingInfo/lowPrice/value', '-pricingInfo/lowPrice/value'];
+const LOAD_MORE_ALLOWED_RANK_OPTIONS = [
+    '{"interval":"day","metric":"orderVolume"}',
+    '{"interval":"day","metric":"ticketVolume"}',
+    '{"interval":"week","metric":"ticketVolume"}',
+];
 
 try {
     $params = [];
@@ -27,6 +37,12 @@ try {
         $decoded = json_decode($_GET['params'], true);
         if (is_array($decoded)) {
             $params = array_intersect_key($decoded, array_flip(LOAD_MORE_ALLOWED_PARAM_KEYS));
+            foreach ($params as $k => $v) {
+                if (!is_string($v)) { unset($params[$k]); }
+            }
+            if (isset($params['sort']) && !in_array($params['sort'], LOAD_MORE_ALLOWED_SORTS, true)) { unset($params['sort']); }
+            if (isset($params['salesRankOptions']) && !in_array($params['salesRankOptions'], LOAD_MORE_ALLOWED_RANK_OPTIONS, true)) { unset($params['salesRankOptions']); }
+            if (isset($params['q'])) { $params['q'] = mb_substr(trim($params['q']), 0, 100); }
         }
     }
     $params['page']    = $page;

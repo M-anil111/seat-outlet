@@ -31,6 +31,30 @@ foreach ($topCategories as $bucket) {
     }
 }
 
+// Homepage festival performers (an hourly cold hit of ~1s otherwise)
+getTopFestivalPerformers();
+$warmed++;
+
+// Related-performer sets. The query is keyed by category path, so warming
+// the paths of the homepage performers covers the popular performer pages.
+$topPerformers = cache_get('top_performers', 30 * 86400) ?: [];
+$ids = [];
+foreach ($topPerformers as $bucket) {
+    foreach ((array) $bucket as $p) { if (!empty($p['id'])) $ids[] = (int) $p['id']; }
+}
+if ($ids) {
+    $paths = [];
+    foreach (getTnPerformersByIds($ids) as $perf) {
+        $path = $perf['defaultCategory']['path'] ?? '';
+        if ($path !== '') $paths[$path] = true;
+    }
+    $specs = array_map(fn($path) => relatedPerformersSpec($path), array_keys($paths));
+    if ($specs) { tnRequestMulti($specs); $warmed += count($specs); }
+    // ...and the first page of each performer's events, in parallel.
+    $eventSpecs = array_map(fn($id) => performerPageEventsSpec($id, 20), array_slice($ids, 0, 15));
+    if ($eventSpecs) { tnRequestMulti($eventSpecs); $warmed += count($eventSpecs); }
+}
+
 // Top 10 city pages
 foreach (array_slice(getTopCities(10), 0, 10) as $city) {
     getTnCityEvents((int) $city['id'], ['perPage' => 20, 'page' => 1, 'includeTotalCount' => 'true']);

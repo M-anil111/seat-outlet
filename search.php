@@ -89,6 +89,30 @@ include 'header.php';
 
 $year = date('Y');
 $results = getHeaderSearchEvents($params);
+
+// Zero results for a typed keyword: TicketNetwork search is an exact/prefix
+// matcher ("adelle" and "carot top" return nothing). Correct confident typos
+// automatically ("Showing results for Adele") and offer close names otherwise.
+require_once __DIR__ . '/inc/smart.php';
+$correctedFrom = '';
+$didYouMean = [];
+if (empty($results['results']) && $keywordHeader !== '') {
+    $auto = smartAutoCorrection($keywordHeader);
+    if ($auto !== null) {
+        $retryParams = $params;
+        $retryParams['q'] = $auto;
+        $retry = getHeaderSearchEvents($retryParams);
+        if (!empty($retry['results'])) {
+            $results = $retry;
+            $correctedFrom = $keywordHeader;
+            $keywordHeader = $auto;
+            $params = $retryParams;          // load-more must continue the corrected search
+        }
+    }
+    if (empty($results['results'])) {
+        $didYouMean = smartDidYouMean($keywordHeader, 4);
+    }
+}
 $total_count = $results['totalCount'] ?? 0;
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'] ?? [];
@@ -125,6 +149,9 @@ $faqs = getFaqs('search');
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">
 					<div class="mb-3 mb-md-4 mb-lg-4">
+						<?php if ($correctedFrom !== '') { ?>
+							<p class="search-corrected mb-2">Showing results for <strong><?php echo htmlspecialchars($keywordHeader, ENT_QUOTES, 'UTF-8'); ?></strong>. No results for &ldquo;<?php echo htmlspecialchars($correctedFrom, ENT_QUOTES, 'UTF-8'); ?>&rdquo;.</p>
+						<?php } ?>
 						<div class="d-flex justify-content-between align-items-center results-header">
 							<div class="results-title">
 								<span class="active-indicator"></span>
@@ -256,7 +283,32 @@ $faqs = getFaqs('search');
 						<?php } else { ?>
 							<div class="text-center no-events-found">
 								<h4>No Upcoming Events</h4>
+								<?php if (!empty($didYouMean)) { ?>
+									<p class="did-you-mean mb-2">Did you mean
+										<?php foreach ($didYouMean as $i => $dym) { ?><?php echo $i ? ', ' : ''; ?><a href="<?php echo htmlspecialchars($dym['url'], ENT_QUOTES, 'UTF-8'); ?>"><strong><?php echo htmlspecialchars($dym['name'], ENT_QUOTES, 'UTF-8'); ?></strong></a><?php } ?>?
+									</p>
+								<?php } ?>
 								<p>We're sorry, but we couldn't find any upcoming events for "<?php echo htmlspecialchars($keywordHeader, ENT_QUOTES, 'UTF-8'); ?>". Please try updating your location, date range or searching for something else.</p>
+							
+								<?php
+								$popular = [];
+								foreach (['concerts', 'sports', 'theatre', 'festival'] as $popTab) {
+									foreach (array_slice(cache_get('home_events_' . $popTab, 30 * 86400) ?: [], 0, 2) as $popEv) { $popular[] = $popEv; }
+								}
+								if (!empty($popular)) { ?>
+									<div class="search-popular text-start mt-4">
+										<h5 class="fw-bold mb-3">Popular right now</h5>
+										<ul class="list-unstyled mb-0">
+											<?php foreach (array_slice($popular, 0, 6) as $popEv) { ?>
+												<li class="mb-2">
+													<a href="/event/<?php echo htmlspecialchars(createSlug($popEv['name'], $popEv['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($popEv['name'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<span class="small text-muted"> · <?php echo htmlspecialchars(trim(($popEv['date'] ?? '') . ' · ' . ($popEv['loc'] ?? ''), ' ·'), ENT_QUOTES, 'UTF-8'); ?><?php echo !empty($popEv['price']) ? ' · from ' . htmlspecialchars($popEv['price'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
+												</li>
+											<?php } ?>
+										</ul>
+										<p class="mt-3 mb-0"><a href="/tickets">Browse all tickets</a> · <a href="/concerts">Concerts</a> · <a href="/sports">Sports</a> · <a href="/theater">Theater</a></p>
+									</div>
+								<?php } ?>
 							</div>
 						<?php } ?>
 					</div>	

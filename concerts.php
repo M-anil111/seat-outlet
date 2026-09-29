@@ -4,11 +4,13 @@ require_once 'functions.php';
 $pageMetaTitle       = 'Concert Tickets | Seat Outlet';
 $pageMetaDescription = 'Buy concert tickets for upcoming shows and tours. Compare prices and book securely on Seat Outlet.';
 $pageCanonicalUrl    = HOME_URL . '/concerts';
+[$when, $sort, $isFiltered] = listingRequestState();
+if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // filtered/sorted variants: canonical page stays the indexed one
 include 'header.php';
 $perPage = 20;
-$params = categoryListingParams(TN_CATEGORY_PATH_CONCERTS, $perPage);
+$params = categoryListingParams(TN_CATEGORY_PATH_CONCERTS, $perPage, 1, $when, $sort);
 $year = date('Y');
-$results = getConcertsCatEvents();
+$results = tnRequest('/catalog/v2/events/', $params);
 $total_count = $results['totalCount'] ?? 0;
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'] ?? [];
@@ -35,6 +37,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 							</div>
 						</div>
 					</div>
+					<?php renderListingFilters('/concerts', $when, $sort, $total_count); ?>
 					<div class="list-category-bg pb-3">
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">

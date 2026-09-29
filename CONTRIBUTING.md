@@ -125,6 +125,33 @@ geo queries 5 minutes, `suggest` 1 hour. Pass `$ttl = 0` to bypass. The OAuth
 token is cached in the system temp dir for its real lifetime (the host has
 no APCu, so the APCu-only caches never worked in production).
 
+**Resilience built into `tnRequest()`** (verified by simulating each case):
+
+- *Stale-while-revalidate.* An entry past its TTL but inside a grace window
+  (3 × TTL, max 24 h) is served immediately and refreshed after the response
+  (`fastcgi_finish_request` on PHP-FPM), behind a non-blocking lock, so the
+  visitor after an expiry does not pay API latency and a crowd cannot stampede
+  the API.
+- *Circuit breaker.* After a live failure (network error, invalid JSON, HTTP
+  5xx) live calls are skipped for 20 seconds and stale data (up to 24 h) or an
+  empty result is served, instead of every request waiting out a 20-second
+  timeout. Scoped per `BASE_URL`.
+- *Stale on error.* A failed live call falls back to any cached copy younger
+  than 24 h.
+- *Parallel prefetch.* `tnRequestMulti()` fetches independent requests with
+  `curl_multi` and fills the cache; pages call it once at the top and the
+  normal calls below hit the cache (performer, artist-by-location, sitemap,
+  warm cron). Autocomplete uses `getTnPerformersByIds()` (`filter=id in (...)`),
+  one call instead of one per suggestion.
+- *Token rotation.* TicketNetwork invalidates an app's previous token a few
+  seconds after issuing a new one (verified). Every process that talks to the
+  API must therefore share one token store, and refreshes are serialized with
+  a lock. A 401 triggers one refresh-and-retry. If web (PHP-FPM) and cron (CLI)
+  use different temp directories, or there is more than one server, set
+  `TN_TOKEN_DIR` to a directory they all share, otherwise they will keep
+  invalidating each other's tokens (Sentry logs "token was rejected (401) and
+  replaced" when that happens).
+
 Set the `TN_PROFILE` environment variable to a writable file path and every
 HTTP request appends one JSON line: URI, number of catalog calls, cache
 hits, total milliseconds and the list of live calls. That is how the
@@ -166,6 +193,38 @@ sequentially).
   per order number.
 - `GTM_ID` env var injects Google Tag Manager; without it the dataLayer
   events still fire so a container can be attached later.
+
+## Smart search and personalization
+
+- **Typo tolerance.** TicketNetwork's search and suggest are prefix/exact
+  matchers (verified: "adelle" and "carot top" return nothing). `cron/build-search-vocab.php`
+  (daily) writes `cache/search_vocab.json`: ~1,800 top performers by sales rank plus top
+  venues and cities. `inc/smart.php` matches a mistyped query against it
+  (transposition-aware edit distance, single words also matched against name
+  words, ranked by popularity; ~20 ms, only run on zero-result searches).
+  Search results auto-correct a confident single-edit performer typo ("Showing
+  results for Adele") and otherwise offer "Did you mean"; autocomplete shows
+  "Did you mean" instead of "No results". Empty vocabulary = feature off, never an error.
+- **Zero-result recovery.** A search with no results shows close names and
+  "Popular right now" events (from the cached homepage feeds) instead of a dead end.
+- **Listing filters.** `/tickets`, `/concerts`, `/sports`, `/theater`, `/festival` and the
+  city, venue, state, country and category pages (via `locationListingParams()`; venues default to
+  soonest, everything else to popular) take
+  `?when=today|weekend|week|month` and `?sort=popular|soonest|price` (plain links,
+  no JS). Filtered variants are `noindex, follow`. Price sort uses the
+  verified `pricingInfo/lowPrice/value` sort key. "More Events" carries the same
+  filter and sort; the endpoint pins `sort` and `salesRankOptions` to known values.
+- **Personalization (client-side only).** Recently viewed performers and recent
+  searches live in the visitor's own `localStorage` (`soLocal` in `main.js`):
+  homepage "Pick up where you left off", and recent searches + trending
+  performers in the search box before typing. Nothing is sent to the server.
+  If you add a consent banner, list this under functional storage.
+- **Price signals** (factual, from the list response): "Cheapest date" badge on
+  the performer's cheapest priced date (2+ priced dates), "Only N listed" when
+  TicketNetwork lists 20 or fewer tickets for an event.
+- **API quirk:** on `/catalog/v2/performers`, `eventFilter` combined with a
+  sales-rank sort returns HTTP 500 after 30 s from `perPage=50` upward; use
+  `filter=_metadata/hasTickets eq true` for large pages.
 
 ## Geo-IP (MaxMind GeoLite2)
 

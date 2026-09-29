@@ -36,13 +36,14 @@ $pageMetaTitle       = "$catName Tickets | Seat Outlet";
 $pageMetaDescription = "Buy $catName tickets. Compare prices and book securely on Seat Outlet.";
 $pageCanonicalUrl    = HOME_URL . '/category/' . $slug;
 
+[$when, $sort, $isFiltered] = listingRequestState('popular');
+if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // canonical page stays the indexed one
+
 include 'header.php';
 
 $today = date('Y-m-d');
-$params = [
-    'filter' => "contains(defaultCategory/path, '.$id.') and date/date ge $today"
-];
-$eventsResponse = getTnCatEvents($id, ['perPage' => $perPage, 'page' => 1, 'includeTotalCount' => 'true']);
+$params = locationListingParams("contains(defaultCategory/path, '.$id.')", $perPage, 1, $when, $sort);
+$eventsResponse = tnRequest('/catalog/v2/events/', $params);
 
 // totalCount rides on the list response (includeTotalCount) - this used to
 // be a second, separate API call per page view.
@@ -75,6 +76,7 @@ $year = date('Y');
 							</div>
 						</div>
 					</div>
+					<?php renderListingFilters('/category/' . $slug, $when, $sort, $total_count, 'popular'); ?>
 					<div class="list-category-bg pb-3">
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">

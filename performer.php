@@ -17,6 +17,8 @@ if ($id <= 0) {
 	exit;
 }
 
+// Performer and its first page of events are independent: fetch together.
+tnRequestMulti([['/catalog/v2/performers/' . $id, []], performerPageEventsSpec($id, $perPage)]);
 $performer = getTnPerformerById($id);
 
 if (empty($performer) || empty($performer['defaultCategory'])) {
@@ -33,6 +35,15 @@ $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'] ?? [];
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 $priceSnapshot = performerPriceSnapshot($events);
+// Cheapest date among the listed events (only meaningful with 2+ priced dates).
+$cheapestEventId = 0; $pricedDates = 0; $cheapestValue = null;
+foreach ($events as $ev) {
+    $lv = $ev['pricingInfo']['lowPrice']['value'] ?? null;
+    if ($lv === null || (float) $lv <= 0) continue;
+    $pricedDates++;
+    if ($cheapestValue === null || (float) $lv < $cheapestValue) { $cheapestValue = (float) $lv; $cheapestEventId = (int) $ev['id']; }
+}
+if ($pricedDates < 2) { $cheapestEventId = 0; }
 $nextEvent = $events[0] ?? null;
 
 $sep = '<span class="separator"><strong> / </strong></span>';
@@ -287,6 +298,7 @@ include 'header.php';
 											</div>
 										</div>
 										<div class="ms-3">
+											<?php if (!empty($cheapestEventId) && (int) ($event['id'] ?? 0) === $cheapestEventId) { ?><span class="event-cheapest-badge">Cheapest date</span><?php } ?>
 											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
 												<span class="d-none d-md-inline">
@@ -546,4 +558,16 @@ include 'header.php';
 </section>
 
 	
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.soLocal) {
+    window.soLocal.addPerformer({
+      id: <?php echo json_encode((string) $id); ?>,
+      name: <?php echo json_encode($artistName); ?>,
+      slug: <?php echo json_encode(strtolower(createSlug($artistName, $id))); ?>,
+      img: <?php echo json_encode(($performerImg['status'] ?? '') !== 'fallback' ? $performer_image : ''); ?>
+    });
+  }
+});
+</script>
 <?php include 'footer.php'; ?>
