@@ -1,0 +1,90 @@
+name: TicketNetwork check
+
+# Confirms the CONSUMER_KEY / CONSUMER_SECRET repository secrets work:
+# requests an OAuth token from key-manager.tn-apis.com, then makes a few
+# read-only catalog calls against the sandbox. Only status codes, counts and
+# sample event names are printed - never the credentials or the token.
+#
+# Run it from the Actions tab (Run workflow). It also runs once when this
+# file changes on a branch, so a change to the check can be seen working.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches-ignore: [main]
+    paths: ['.github/workflows/tn-check.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Token + sandbox catalog calls
+    runs-on: ubuntu-latest
+    env:
+      CONSUMER_KEY: ${{ secrets.CONSUMER_KEY }}
+      CONSUMER_SECRET: ${{ secrets.CONSUMER_SECRET }}
+      BASE_URL: https://sandbox.tn-apis.com
+      # Same default as inc/constants.php (sandbox catalog config).
+      WEBSITE_CONFIG_ID: '12498'
+    steps:
+      - name: Secrets are present
+        run: |
+          missing=0
+          for v in CONSUMER_KEY CONSUMER_SECRET; do
+            if [ -z "${!v}" ]; then echo "::error::Repository secret $v is not set"; missing=1; fi
+          done
+          exit $missing
+
+      - name: Request OAuth token
+        run: |
+          code=$(curl -sS -o token.json -w '%{http_code}' --max-time 20 \
+            -X POST https://key-manager.tn-apis.com/oauth2/token \
+            -u "$CONSUMER_KEY:$CONSUMER_SECRET" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data 'grant_type=client_credentials')
+          echo "Token endpoint HTTP $code"
+          if [ "$code" != "200" ]; then
+            # Error bodies (e.g. invalid_client) carry no secrets.
+            cat token.json; echo
+            echo "::error::Token request failed - check CONSUMER_KEY / CONSUMER_SECRET"
+            exit 1
+          fi
+          token=$(jq -r '.access_token // empty' token.json)
+          if [ -z "$token" ]; then echo "::error::No access_token in response"; exit 1; fi
+          echo "::add-mask::$token"
+          echo "Token OK: type=$(jq -r '.token_type' token.json), expires_in=$(jq -r '.expires_in' token.json)s, scope=$(jq -r '.scope // "-"' token.json)"
+          echo "TN_TOKEN=$token" >> "$GITHUB_ENV"
+          rm -f token.json
+
+      - name: Sandbox catalog calls
+        run: |
+          fail=0
+          call() {
+            local label="$1" path="$2"
+            local code
+            code=$(curl -sS -o out.json -w '%{http_code}' --max-time 30 --compressed \
+              -H "Authorization: Bearer $TN_TOKEN" \
+              -H 'Accept: application/json' \
+              -H "X-Listing-Context: website-config-id=$WEBSITE_CONFIG_ID" \
+              "$BASE_URL$path")
+            echo "::group::$label - HTTP $code  ($path)"
+            if [ "$code" = "200" ]; then
+              jq -r '
+                "top-level keys: " + (keys | join(", ")),
+                ((.results // .items // .data // []) as $r
+                  | "results on this page: \($r | length)",
+                    ($r[:5][] | "  - " + ((.name // .text // .title // (.id|tostring)) | tostring)))
+              ' out.json 2>/dev/null || head -c 500 out.json
+            else
+              head -c 1000 out.json; echo
+              fail=1
+            fi
+            echo "::endgroup::"
+          }
+          call "Events"      "/catalog/v2/events?perPage=5&page=1"
+          call "Performers"  "/catalog/v2/performers?perPage=5&page=1"
+          call "Categories"  "/catalog/v2/categories?perPage=5&page=1"
+          rm -f out.json
+          if [ $fail -ne 0 ]; then echo "::error::At least one catalog call failed"; fi
+          exit $fail
