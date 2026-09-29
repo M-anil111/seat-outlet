@@ -72,9 +72,10 @@ jobs:
             if [ "$code" = "200" ]; then
               jq -r '
                 "top-level keys: " + (keys | join(", ")),
+                "total count: \(.count // "-")",
                 ((.results // .items // .data // []) as $r
                   | "results on this page: \($r | length)",
-                    ($r[:5][] | "  - " + ((.name // .text // .title // (.id|tostring)) | tostring)))
+                    ($r[:5][] | "  - " + ((.text.name // .name // .text // .title // (.id|tostring)) | tostring)))
               ' out.json 2>/dev/null || head -c 500 out.json
             else
               head -c 1000 out.json; echo
