@@ -1443,31 +1443,35 @@ function listingDateRange($when) {
 const LISTING_WHEN = ['today' => 'Today', 'weekend' => 'This weekend', 'week' => 'Next 7 days', 'month' => 'Next 30 days'];
 const LISTING_SORT = ['popular' => 'Best sellers', 'soonest' => 'Soonest', 'price' => 'Lowest price'];
 
-function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
-    $today = date('Y-m-d');
-    $range = listingDateRange($when);
-    $from = $range ? $range[0] : $today;
-    $filter = "date/date ge $from" . ($range ? " and date/date le {$range[1]}" : '') . " and _metadata/hasTickets eq true";
-    if ($categoryPath !== '') {
-        $filter .= " and startswith(defaultCategory/path, '" . tnEscapeFilterValue($categoryPath) . "')";
-    } else {
-        $filter .= " and country/alphaCode eq 'US'";
-    }
-    $params = ['filter' => $filter];
+/** Sort params for a listing sort key (verified sort keys). */
+function listingSortParams($sort) {
     if ($sort === 'soonest') {
-        $params['sort'] = 'date/date';
-    } elseif ($sort === 'price') {
-        // Verified: the API sorts on pricingInfo/lowPrice/value (ascending = cheapest first).
-        $params['sort'] = 'pricingInfo/lowPrice/value';
-    } else {
-        $params['sort'] = '-salesRank';
-        $params['salesRankOptions'] = '{"interval":"day","metric":"orderVolume"}';
+        return ['sort' => 'date/date'];
     }
-    return $params + [
+    if ($sort === 'price') {
+        // Verified: the API sorts on pricingInfo/lowPrice/value (ascending = cheapest first).
+        return ['sort' => 'pricingInfo/lowPrice/value'];
+    }
+    return ['sort' => '-salesRank', 'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}'];
+}
+
+/** Listing query for any OData location/category fragment, with when/sort applied. */
+function locationListingParams($fragment, $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
+    $range = listingDateRange($when);
+    $from = $range ? $range[0] : date('Y-m-d');
+    $filter = $fragment . " and date/date ge $from" . ($range ? " and date/date le {$range[1]}" : '') . ' and _metadata/hasTickets eq true';
+    return ['filter' => $filter] + listingSortParams($sort) + [
         'perPage'           => (int) $perPage,
         'page'              => (int) $page,
         'includeTotalCount' => 'true',
     ];
+}
+
+function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
+    $fragment = $categoryPath !== ''
+        ? "startswith(defaultCategory/path, '" . tnEscapeFilterValue($categoryPath) . "')"
+        : "country/alphaCode eq 'US'";
+    return locationListingParams($fragment, $perPage, $page, $when, $sort);
 }
 
 function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
@@ -1479,15 +1483,15 @@ function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1, 
  * without JS, each state has a URL); filtered variants are noindex,follow and
  * canonical to the base page (see listingRequestState()).
  */
-function listingRequestState() {
+function listingRequestState($defaultSort = 'popular') {
     $when = isset($_GET['when']) && isset(LISTING_WHEN[$_GET['when']]) ? $_GET['when'] : '';
-    $sort = isset($_GET['sort']) && isset(LISTING_SORT[$_GET['sort']]) ? $_GET['sort'] : 'popular';
-    return [$when, $sort, ($when !== '' || $sort !== 'popular')];
+    $sort = isset($_GET['sort']) && isset(LISTING_SORT[$_GET['sort']]) ? $_GET['sort'] : $defaultSort;
+    return [$when, $sort, ($when !== '' || $sort !== $defaultSort)];
 }
 
-function renderListingFilters($basePath, $when, $sort, $total) {
-    $url = function ($w, $s) use ($basePath) {
-        $q = array_filter(['when' => $w, 'sort' => $s === 'popular' ? '' : $s]);
+function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'popular') {
+    $url = function ($w, $s) use ($basePath, $defaultSort) {
+        $q = array_filter(['when' => $w, 'sort' => $s === $defaultSort ? '' : $s]);
         return htmlspecialchars($basePath . ($q ? '?' . http_build_query($q) : ''), ENT_QUOTES, 'UTF-8');
     };
     ?>

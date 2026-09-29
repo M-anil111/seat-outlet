@@ -27,10 +27,10 @@ if (empty($venue)) {
 }
 
 $today = date('Y-m-d');
-$params = [
-    'filter' => "venue/id eq $id and date/date ge $today",
-];
-$eventsResponse = getTnVenueEvents($id, ['perPage' => $perPage, 'page' => 1, 'includeTotalCount' => 'true']);
+[$when, $sort, $isFiltered] = listingRequestState('soonest');
+if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // canonical page stays the indexed one
+$params = locationListingParams("venue/id eq $id", $perPage, 1, $when, $sort);
+$eventsResponse = tnRequest('/catalog/v2/events/', $params);
 
 // totalCount rides on the list response (includeTotalCount) - this used to
 // be a second, separate API call per page view.
@@ -75,6 +75,7 @@ include 'header.php';
 							</div>
 						</div>
 					</div>
+					<?php renderListingFilters('/venue/' . createSlug($venueName, $id), $when, $sort, $total_count, 'soonest'); ?>
 					<div class="list-category-bg pb-3">
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">

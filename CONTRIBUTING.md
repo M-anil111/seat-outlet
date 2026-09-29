@@ -203,7 +203,9 @@ sequentially).
   "Did you mean" instead of "No results". Empty vocabulary = feature off, never an error.
 - **Zero-result recovery.** A search with no results shows close names and
   "Popular right now" events (from the cached homepage feeds) instead of a dead end.
-- **Listing filters.** `/tickets`, `/concerts`, `/sports`, `/theater`, `/festival` take
+- **Listing filters.** `/tickets`, `/concerts`, `/sports`, `/theater`, `/festival` and the
+  city, venue, state, country and category pages (via `locationListingParams()`; venues default to
+  soonest, everything else to popular) take
   `?when=today|weekend|week|month` and `?sort=popular|soonest|price` (plain links,
   no JS). Filtered variants are `noindex, follow`. Price sort uses the
   verified `pricingInfo/lowPrice/value` sort key. "More Events" carries the same
