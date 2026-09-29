@@ -63,11 +63,11 @@ jobs:
               "DB_PASS", "CONSUMER_KEY", "CONSUMER_SECRET", "GAPI_KEY", "GKGSAPI_KEY",
               "AWS_ACCESS_KEY", "AWS_SECRET_KEY", "RECAPTCHA_SECRET_KEY", "SMTP_USER", "SMTP_PASS",
               "SENTRY_DSN", "SENTRY_ENVIRONMENT",
-              "THESPORTSDB_KEY", "PEXELS_API_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH",
+              "THESPORTSDB_KEY", "PEXELS_API_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID",
           ];
           // Optional: Sentry, the image-source keys, and the Knowledge Graph key
           // (no longer used for images; kept so an existing secret still flows through).
-          $optional = ["SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH"];
+          $optional = ["SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID"];
           $lines = ["<?php"];
           foreach ($vars as $v) {
               $val = getenv($v);
@@ -101,6 +101,8 @@ jobs:
           MAXMIND_ACCOUNT_ID: ${{ secrets.MAXMIND_ACCOUNT_ID }}
           MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
           GEOIP_DB_PATH: ${{ vars.GEOIP_DB_PATH }}
+          TN_CHECKOUT_URL: ${{ vars.TN_CHECKOUT_URL }}
+          GTM_ID: ${{ vars.GTM_ID }}
 
       # Upload the whole tree over SFTP with plain curl, one file at a time -
       # git-ftp's bundled curl/libssh2 attempts SSH public-key auth first and

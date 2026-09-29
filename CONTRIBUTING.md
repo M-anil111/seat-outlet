@@ -138,6 +138,31 @@ Card images on the homepage and search suggestions load through one
 batched `POST /ajax/get-images.php` per slider (was one GET per card,
 sequentially).
 
+## Purchase flow: seat map, checkout, confirmation
+
+- **Seat map** is the Seatics MapWidget3 on `event.php`, loaded with
+  `websiteConfigId=WEBSITE_CONFIG_ID`. Catalog event IDs and the website
+  config must come from the same TicketNetwork environment: sandbox IDs
+  with the sandbox config (12498), live IDs with the live config (27773).
+  Mixing them makes the widget report every event as expired, which is what
+  beta showed. Hooks added in `event.php`: GA4 `view_item` /
+  `select_item` / `begin_checkout` on the dataLayer, and our own
+  "no tickets / event has passed" block via `noTicketsHandler` /
+  `noEventHandler`.
+- **Checkout** is TicketNetwork's hosted white-label checkout at
+  `TN_CHECKOUT_URL` (the widget deep-links to it with `?tgid=&qty=&prc=`;
+  the host needs a DNS CNAME set up with TicketNetwork). `checkout.php`
+  (`/checkout?eid=&tgid=&qty=&prc=`) is the branded order-review step that
+  hands off to it. A self-hosted checkout (ticket hold, payment, order
+  creation) needs the Mercury API, which returns 403 "API Subscription
+  validation failed" on the current subscription.
+- **Confirmation**: `/order-confirmation?oid=&total=&email=&eid=` is the
+  purchase-complete page; ask TicketNetwork to set it as the post-purchase
+  redirect for the website config. It fires the GA4 `purchase` event once
+  per order number.
+- `GTM_ID` env var injects Google Tag Manager; without it the dataLayer
+  events still fire so a container can be attached later.
+
 ## Geo-IP (MaxMind GeoLite2)
 
 `inc/geoip.php` resolves a visitor's city/state/coordinates from the

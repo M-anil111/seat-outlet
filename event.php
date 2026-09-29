@@ -146,8 +146,10 @@ if (empty($event) || empty($event['text']['name'])) {
   exit;
 }
 
-$wcid = 12498;
-//$wcid = 27773;
+// Sandbox catalog IDs only resolve in the widget against the sandbox website
+// config, live IDs against the live one: both must come from the same
+// environment (WEBSITE_CONFIG_ID follows BASE_URL in inc/constants.php).
+$wcid = WEBSITE_CONFIG_ID;
 $mapScriptUrl  = 'https://mapwidget3.seatics.com/js?eventId=' . $id . '&websiteConfigId=' . $wcid . '&mobileOptimized=true&includeJQuery=false&containerId=tn-maps&useDarkTheme=false';
 ?>
 
@@ -208,7 +210,75 @@ $eventTimestamp = !empty($event['date']['date']) ? strtotime($event['date']['dat
 </section>
 
 <div id="tn-maps" class="seatics" style="height: calc(100vh - 50px);width: 100%;"></div>
+<div id="so-no-tickets" class="so-no-tickets d-none">
+  <div class="container py-5 text-center">
+    <h2 class="fw-bold fs-4 mb-2" id="so-no-tickets-title">No tickets are listed for this event right now</h2>
+    <p class="text-muted mb-4" id="so-no-tickets-text">Inventory changes hourly as sellers list seats. Try another date, or browse related tickets below.</p>
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+      <?php if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name'])) { ?>
+        <a class="btn btn-primary" href="/artist/<?php echo htmlspecialchars(createSlug($primaryPerformer['name'], $primaryPerformer['id']), ENT_QUOTES, 'UTF-8'); ?>">All <?php echo htmlspecialchars($primaryPerformer['name'], ENT_QUOTES, 'UTF-8'); ?> dates</a>
+      <?php } ?>
+      <?php if (!empty($eventCityId)) { ?>
+        <a class="btn btn-outline-secondary" href="/<?php echo htmlspecialchars($categoryCityPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($eventCityLabel, $eventCityId), ENT_QUOTES, 'UTF-8'); ?>">More events in <?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+      <?php } ?>
+      <?php if (!empty($eventVenueId)) { ?>
+        <a class="btn btn-outline-secondary" href="/venue/<?php echo htmlspecialchars(createSlug($eventVenueName, $eventVenueId), ENT_QUOTES, 'UTF-8'); ?>">More at <?php echo htmlspecialchars($eventVenueName, ENT_QUOTES, 'UTF-8'); ?></a>
+      <?php } ?>
+    </div>
+  </div>
+</div>
 <script src="<?php echo htmlspecialchars($mapScriptUrl, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script>
+(function () {
+  // Seatics MapWidget3 hooks (MapWidget3 Integration Guide v1.4, "Special
+  // Functions" and "User Event Tracking"). Everything here is additive: the
+  // widget's own checkout hand-off is unchanged.
+  if (!window.Seatics || !Seatics.config) return;
+  var eventPayload = {
+    item_id: '<?php echo (int) $id; ?>',
+    item_name: <?php echo json_encode($event['text']['name'] ?? ''); ?>,
+    item_category: <?php echo json_encode(strtolower($event['defaultCategory']['ancestors'][0]['text']['name'] ?? $event['defaultCategory']['text']['name'] ?? '')); ?>,
+    affiliation: 'Seat Outlet',
+    location_id: <?php echo json_encode($eventVenueName); ?>
+  };
+  function push(name, extra) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push(Object.assign({ event: name, ecommerce: { items: [eventPayload] } }, extra || {}));
+  }
+  <?php if (getenv('TN_CHECKOUT_URL')) { ?>
+  Seatics.config.checkoutUrl = <?php echo json_encode(TN_CHECKOUT_URL); ?>;
+  <?php } ?>
+  // Replaces the widget's bare "Sorry, this event has expired" / "no
+  // tickets" text with our own block that keeps the visitor on the site.
+  function showFallback(title, text) {
+    var box = document.getElementById('so-no-tickets');
+    var map = document.getElementById('tn-maps');
+    if (!box) return;
+    if (title) document.getElementById('so-no-tickets-title').textContent = title;
+    if (text) document.getElementById('so-no-tickets-text').textContent = text;
+    box.classList.remove('d-none');
+    if (map) map.style.display = 'none';
+    push('no_inventory', { reason: title });
+  }
+  Seatics.config.noEventHandler = function () {
+    showFallback('This event has already taken place', 'Browse upcoming dates for the same performer, city or venue below.');
+  };
+  Seatics.config.noTicketsHandler = function () {
+    showFallback();
+  };
+  Seatics.config.onBuyButtonClicked = function () { push('begin_checkout'); };
+  if (Seatics.TrackingEvents && Seatics.TrackingEvents.registerEventListener) {
+    Seatics.TrackingEvents.registerEventListener(function (type, data) {
+      if (type === 'FinishedLoading') {
+        push('view_item', { ticket_groups: data && data.numTicketGroups, tickets_available: data && data.numTickets });
+        if (data && data.numTicketGroups === 0) showFallback();
+      } else if (type === 'BuyButtonClicked') {
+        push('select_item', { list_placement: data && data.listPlacement });
+      }
+    });
+  }
+})();
+</script>
 
 
 <style>

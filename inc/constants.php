@@ -39,6 +39,16 @@ define('GKGSAPI_KEY', getenv('GKGSAPI_KEY') ?: '');
 // the cron only.
 define('GEOIP_DB_PATH', getenv('GEOIP_DB_PATH') ?: dirname(rtrim(HOME_PATH, '/')) . '/geoip/GeoLite2-City.mmdb');
 
+// TicketNetwork-hosted (white-label) checkout that the Seatics widget deep-links
+// to with ?tgid=&qty=&prc=. The website config (12498 sandbox / 27773 live)
+// carries this value too; the env var lets us override it and lets /checkout
+// hand off to it. Mercury (self-hosted checkout) is not enabled on this API
+// subscription - see checkout.php.
+define('TN_CHECKOUT_URL', rtrim(getenv('TN_CHECKOUT_URL') ?: 'https://checkout.seatoutlet.com', '/'));
+// Google Tag Manager container (GTM-XXXXXXX). Empty = no tag, dataLayer still
+// receives the ecommerce events so a container can be added without a deploy.
+define('GTM_ID', getenv('GTM_ID') ?: '');
+
 define('SENTRY_DSN', getenv('SENTRY_DSN') ?: '');
 define('SENTRY_ENVIRONMENT', getenv('SENTRY_ENVIRONMENT') ?: (BASE_URL === 'https://www.tn-apis.com' ? 'production' : 'sandbox'));
 
