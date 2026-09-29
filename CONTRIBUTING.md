@@ -138,6 +138,19 @@ Card images on the homepage and search suggestions load through one
 batched `POST /ajax/get-images.php` per slider (was one GET per card,
 sequentially).
 
+## Geo-IP (MaxMind GeoLite2)
+
+`inc/geoip.php` resolves a visitor's city/state/coordinates from the
+GeoLite2-City database with the vendored `maxmind-db/reader` (no network
+call per lookup). The database file is not in the repo: create a free
+MaxMind account, generate a license key, set `MAXMIND_ACCOUNT_ID` and
+`MAXMIND_LICENSE_KEY` in the environment, and run `php cron/geoip-update.php`
+weekly (MaxMind publishes updates twice a week). The file is written to
+`GEOIP_DB_PATH` (default: a `geoip/` directory beside the web root, never
+served). The GeoLite2 EULA requires the attribution line in `footer.php` and
+forbids redistributing the file. Until the file exists, lookups return null
+and the site does not pre-select a location.
+
 ## Entity images (performers, teams, venues, festivals, cities)
 
 `inc/images.php` resolves images through one source chain per entity type

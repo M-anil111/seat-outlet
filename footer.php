@@ -97,6 +97,7 @@
       <div class="d-flex align-items-center">
         <div class="copyright me-2">
             <span class="link-tag"> © <?php echo date('Y'); ?> SeatOutlet. All rights reserved.</span>
+            <span class="link-tag geo-attribution d-block small">This product includes GeoLite2 data created by MaxMind, available from <a href="https://www.maxmind.com" rel="nofollow noopener" target="_blank">https://www.maxmind.com</a>.</span>
         </div>
         <div class="tm-country">
             <button type="button" class="btn btn-link">

@@ -33,6 +33,12 @@ define('PEXELS_API_KEY', getenv('PEXELS_API_KEY') ?: '');
 // Google Knowledge Graph is no longer an image source; the key is optional.
 define('GKGSAPI_KEY', getenv('GKGSAPI_KEY') ?: '');
 
+// MaxMind GeoLite2-City database (inc/geoip.php, cron/geoip-update.php).
+// Default is a sibling of the web root so the file is never served; override
+// with GEOIP_DB_PATH. MAXMIND_ACCOUNT_ID / MAXMIND_LICENSE_KEY are read by
+// the cron only.
+define('GEOIP_DB_PATH', getenv('GEOIP_DB_PATH') ?: dirname(rtrim(HOME_PATH, '/')) . '/geoip/GeoLite2-City.mmdb');
+
 define('SENTRY_DSN', getenv('SENTRY_DSN') ?: '');
 define('SENTRY_ENVIRONMENT', getenv('SENTRY_ENVIRONMENT') ?: (BASE_URL === 'https://www.tn-apis.com' ? 'production' : 'sandbox'));
 

@@ -59,3 +59,6 @@ inc/env.local.php
 
 # Short-lived TicketNetwork response cache (tnRequestCached); the feed files in cache/ stay tracked
 cache/tn_*.json
+
+# MaxMind GeoLite2 database (downloaded by cron/geoip-update.php, licence forbids redistribution)
+*.mmdb

@@ -35,6 +35,10 @@ class ComposerStaticInite81843fa80ed411e45d076162f8d2570
             'Psr\\Http\\Client\\' => 16,
             'Predis\\' => 7,
         ),
+        'M' => 
+        array (
+            'MaxMind\\Db\\' => 11,
+        ),
         'J' => 
         array (
             'JmesPath\\' => 9,
@@ -93,6 +97,10 @@ class ComposerStaticInite81843fa80ed411e45d076162f8d2570
         'Predis\\' => 
         array (
             0 => __DIR__ . '/..' . '/predis/predis/src',
+        ),
+        'MaxMind\\Db\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/maxmind-db/reader/src/MaxMind/Db',
         ),
         'JmesPath\\' => 
         array (
