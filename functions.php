@@ -1,5 +1,19 @@
 <?php
 
+// Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
+// lose the visitor's own query string on the way, so ?when= / ?sort= / ?page=
+// silently did nothing on those pages (seen on beta). REQUEST_URI still holds the
+// original address, so restore any parameter PHP did not receive. Existing keys
+// (the rewrite's own slug) always win, so this can never override routing.
+if (!empty($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '?') !== false) {
+    parse_str((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY), $so_original_query);
+    if (is_array($so_original_query) && $so_original_query) {
+        $_GET = $_GET + $so_original_query;
+        $_REQUEST = $_REQUEST + $so_original_query;
+    }
+    unset($so_original_query);
+}
+
 include 'db/config.php';
 include 'inc/constants.php';
 require 'vendor/autoload.php';

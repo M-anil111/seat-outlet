@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../inc/cli-guard.php';
 /**
  * Download / refresh the MaxMind GeoLite2-City database used by inc/geoip.php.
  *

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../inc/cli-guard.php';
 /**
  * Runs real Google Lighthouse (must be on PATH - see
  * .github/workflows/lighthouse.yml, which installs it via npm) against

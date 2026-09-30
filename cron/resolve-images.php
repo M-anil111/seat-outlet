@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../inc/cli-guard.php';
 /**
  * Resolve entity images off the request path.
  *

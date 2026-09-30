@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../inc/cli-guard.php';
 /**
  * CI/local check: flags calls to functions that are neither PHP builtins
  * nor defined anywhere in this repo.
