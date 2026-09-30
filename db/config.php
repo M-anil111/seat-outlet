@@ -5,7 +5,7 @@
 // than in functions.php) so every entry point that needs the DB or constants.php
 // secrets gets them, whether it goes through functions.php or includes this file
 // directly (ajax/check-email.php, newsletter-email.php).
-$envLocalFile = __DIR__ . '/../inc/env.local.php';
+$envLocalFile = __DIR__ . '/../../inc/env.local.php';
 if (file_exists($envLocalFile)) {
     require $envLocalFile;
 }
