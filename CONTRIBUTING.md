@@ -279,6 +279,14 @@ optional.
   `tools/build-assets.sh` and commit the generated `css/style.min.css` and `js/*.min.js`. The pages load
   the `.min` files through `soAsset()` (functions.php), falling back to the source if a `.min` is missing.
   CI runs `tools/build-assets.sh --check` and fails when a minified file is stale. Needs Node (`npx`).
+- **One H1 per page: the keyword strip.** The strip above the header is the page's only `<h1>` and shows its focus keyword
+  (admin > Page rules > Focus keyword; blog posts and entity pages set `$pageFocusKeyword`; entity pages fall back to
+  "<name> Tickets" from the meta title; everything else shows "Buy Concert Tickets"). The same keyword closes the footer.
+  Page templates keep writing `<h1>`: `soSingleH1()` (functions.php, started in header.php) turns any other `<h1>` into
+  `<h2 class="h1 ...">` on output, and `css/style.css` styles `.h1` like `h1`. A new CSS rule that styles a page title with the
+  tag selector `h1` also needs `h2.h1` next to it. `KEYWORD_H1=0` in `inc/env.local.php` turns the whole thing off.
+- **Old URL shapes.** `soRedirectLegacyUrl()` (header.php) sends `/name.php` to `/name` and `/event.php?id=N` or `/event?id=N`
+  to `/event/<slug>-N` with a 301, and answers 404 for an id that does not exist.
 - **Bootstrap CSS.** Pages load `css/bootstrap.min.css`, which `tools/build-assets.sh` builds from `lib/bootstrap/5.3.8/bootstrap.min.css`
   keeping only the classes found in the PHP and `js/*.js` (rules in `tools/purgecss.config.cjs`). Using a new Bootstrap class in a PHP
   file or script? Just rebuild and commit the result (CI fails when it is stale). A class that is only assembled at runtime

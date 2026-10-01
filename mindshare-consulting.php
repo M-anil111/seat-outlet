@@ -24,7 +24,8 @@
       overflow-x: hidden;
     }
 
-    .mc-page h1, .mc-page h2, .mc-page h3 { letter-spacing: .01em; color: var(--mc-dark); }
+    .mc-page h1, .mc-page h2, .mc-page h3,
+.mc-page h2.h1 { letter-spacing: .01em; color: var(--mc-dark); }
 
     /* breadcrumb */
     .mc-breadcrumb { font-size: .85rem; color: var(--mc-muted); padding: 18px 0 0; }
@@ -38,7 +39,8 @@
       font-size: .78rem; font-weight: 700; letter-spacing: .12em;
       text-transform: uppercase; color: var(--mc-blue); margin-bottom: .6rem; display: block;
     }
-    .mc-hero h1 { font-size: clamp(2.2rem, 4.5vw, 3.2rem); font-weight: 700; line-height: 1.15; margin-bottom: .75rem; }
+    .mc-hero h1,
+.mc-hero h2.h1 { font-size: clamp(2.2rem, 4.5vw, 3.2rem); font-weight: 700; line-height: 1.15; margin-bottom: .75rem; }
     .mc-hero p.lead { color: var(--mc-muted); font-size: 1.05rem; max-width: 480px; }
     .mc-hero-visual {
       aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; position: relative;

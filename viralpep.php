@@ -24,7 +24,8 @@
       overflow-x: hidden;
     }
 
-    .vp-page h1, .vp-page h2, .vp-page h3 { letter-spacing: .01em; color: var(--vp-dark); }
+    .vp-page h1, .vp-page h2, .vp-page h3,
+.vp-page h2.h1 { letter-spacing: .01em; color: var(--vp-dark); }
 
     .vp-breadcrumb { font-size: .85rem; color: var(--vp-muted); padding: 18px 0 0; }
     .vp-breadcrumb a { color: var(--vp-muted); text-decoration: none; }
@@ -36,7 +37,8 @@
       font-size: .78rem; font-weight: 700; letter-spacing: .12em;
       text-transform: uppercase; color: var(--vp-blue); margin-bottom: .6rem; display: block;
     }
-    .vp-hero h1 { font-size: clamp(2.2rem, 4.5vw, 3.2rem); font-weight: 700; line-height: 1.15; margin-bottom: .75rem; }
+    .vp-hero h1,
+.vp-hero h2.h1 { font-size: clamp(2.2rem, 4.5vw, 3.2rem); font-weight: 700; line-height: 1.15; margin-bottom: .75rem; }
     .vp-hero p.lead { color: var(--vp-muted); font-size: 1.05rem; max-width: 460px; }
     .vp-hero-visual {
       aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; position: relative;

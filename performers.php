@@ -1,7 +1,12 @@
 <?php
+require_once 'functions.php';
 
-$pageTitle = "Performers | SeatOutlet";
-$metaDescription = "Browse your favorite artists and performers on SeatOutlet and find upcoming events near you.";
+// Page name: this is the A-Z directory of every artist, team and show, so it is called "Artists, Teams & Shows" (nav label: "Artists & Teams").
+$pageMetaTitle       = 'Artists, Teams & Shows A-Z | Seat Outlet';
+$pageMetaDescription = 'Browse every artist, team and show on Seat Outlet, A to Z. Find upcoming events, compare prices and buy tickets with a 100% Worry-Free Guarantee.';
+$pageCanonicalUrl    = HOME_URL . '/performers';
+$pageFocusKeyword    = 'Artist and Team Tickets';
+$pageSearchPlaceholder = 'Artists, teams or shows';
 include 'header.php';
 
 $perPage = 24;
@@ -51,117 +56,115 @@ try {
 <style>
 	.performers-hero-section {
 		position: relative;
-		background-color: #05070b;
-		color: #ffffff;
 		overflow: hidden;
+		color: #ffffff;
+		background: linear-gradient(135deg, #2556e0 0%, #1b3fb3 100%);
+	}
+	.performers-hero-section::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(60% 130% at 88% 0%, rgba(255, 255, 255, .24) 0%, rgba(255, 255, 255, 0) 62%);
+		pointer-events: none;
 	}
 	.performers-hero-section .hero-bg-photo {
 		position: absolute;
 		inset: 0;
 		background-image: url('<?php echo HOME_URL; ?>/images/crowd-at-concert-or-event.webp');
 		background-size: cover;
-		background-position: center right;
-	}
-	.performers-hero-section .hero-bg-overlay {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(90deg, #05070b 0%, #05070bd9 30%, #0b1a4dcc 55%, #2556E066 100%);
-	}
-	.performers-hero-section .hero-accent {
-		position: absolute;
-		top: 0;
-		right: -6%;
-		width: 55%;
-		height: 100%;
-		background: linear-gradient(135deg, #2556E0 0%, #1a3fae 100%);
-		clip-path: polygon(35% 0, 100% 0, 100% 100%, 10% 100%);
-		opacity: .55;
-		z-index: 0;
+		background-position: center;
+		opacity: .07;
+		mix-blend-mode: luminosity;
 	}
 	.performers-hero-section .container { position: relative; z-index: 1; }
-	.performers-hero-section .hero-inner { padding: 70px 0; max-width: 620px; }
+	.performers-hero-section .hero-inner { padding: 56px 0 60px; max-width: 640px; }
+	.performers-hero-section .hero-eyebrow {
+		display: inline-block;
+		margin-bottom: 12px;
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: .14em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, .82);
+	}
 	.performers-hero-section .hero-title {
+		margin: 0 0 14px;
 		font-weight: 800;
-		font-size: 65px;
-		line-height: 1.05;
-		margin-bottom: 16px;
+		font-size: clamp(34px, 5vw, 56px);
+		line-height: 1.08;
+		letter-spacing: -.02em;
+		color: #ffffff;
 	}
 	.performers-hero-section .hero-subtitle {
-		color: #d1d5db;
-		font-size: 18px;
-		margin-bottom: 0;
-	}
-	@media (max-width: 991px) {
-		.performers-hero-section .hero-title { font-size: 46px; }
+		max-width: 520px;
+		margin: 0;
+		font-size: clamp(15px, 1.6vw, 18px);
+		line-height: 1.5;
+		color: rgba(255, 255, 255, .9);
 	}
 	@media (max-width: 767.98px) {
-		.performers-hero-section .hero-inner { padding: 44px 0; }
-		.performers-hero-section .hero-title { font-size: 34px; }
-		.performers-hero-section .hero-subtitle { font-size: 15px; }
-		.performers-hero-section .hero-bg-overlay { background: linear-gradient(180deg, #05070bf2 55%, #05070b 100%); }
+		.performers-hero-section .hero-inner { padding: 36px 0 40px; }
 	}
 
-	/* Alphabet filter */
-	.performer-filter-row {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 22px 0;
-	}
+	/* A-Z bar: one soft rounded control. Swipes on a phone (edges fade where there is more), wraps on a larger screen. */
+	.performer-filter-row { display: block; padding: 0 0 26px; }
 	.performer-filter-wrap {
-		flex: 1 1 auto;
-		min-width: 0;
+		--fade-l: 0px;
+		--fade-r: 0px;
 		display: flex;
 		flex-wrap: nowrap;
+		gap: 4px;
+		padding: 6px;
 		overflow-x: auto;
-		gap: 10px;
-		scroll-behavior: smooth;
+		background: #ffffff;
+		border: 1px solid #e6eaf3;
+		border-radius: 999px;
+		box-shadow: 0 6px 20px rgba(17, 24, 39, .06);
+		scroll-snap-type: x proximity;
+		-webkit-overflow-scrolling: touch;
 		-ms-overflow-style: none;
 		scrollbar-width: none;
+		-webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+		mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
 	}
 	.performer-filter-wrap::-webkit-scrollbar { display: none; }
 	.performer-filter-btn {
 		flex: 0 0 auto;
-		width: 42px;
-		height: 42px;
+		scroll-snap-align: center;
+		min-width: 44px;
+		height: 44px;
+		padding: 0 4px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		border: 0;
 		border-radius: 999px;
-		background: #ffffff;
-		border: 1px solid #e5e9f2;
-		box-shadow: 0 2px 6px rgba(17, 24, 39, .06);
-		color: #1f2937;
+		background: transparent;
+		color: #374151;
 		font-weight: 600;
-		font-size: 14px;
+		font-size: 15px;
 		cursor: pointer;
-		transition: background .2s, color .2s, border-color .2s, transform .15s;
+		transition: background .2s ease, color .2s ease, box-shadow .2s ease;
 	}
-	.performer-filter-btn.is-all { width: auto; padding: 0 22px; }
-	.performer-filter-btn:hover { transform: translateY(-2px); border-color: #2556E0; }
+	.performer-filter-btn.is-all { padding: 0 20px; }
+	.performer-filter-btn:hover { background: #eef3ff; color: #2556E0; }
+	.performer-filter-btn:focus-visible { outline: 3px solid #2556E0; outline-offset: 2px; }
 	.performer-filter-btn.active {
 		background: #2556E0;
-		border-color: #2556E0;
 		color: #ffffff;
+		box-shadow: 0 4px 12px rgba(37, 86, 224, .35);
 	}
-	.performer-filter-nav {
-		flex: 0 0 auto;
-		width: 36px;
-		height: 36px;
-		border-radius: 999px;
-		background: #ffffff;
-		border: 1px solid #e5e9f2;
-		box-shadow: 0 2px 6px rgba(17, 24, 39, .06);
-		color: #2556E0;
-		padding: 0;
-		line-height: 1;
-		display: none;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
+	@media (min-width: 768px) {
+		.performer-filter-wrap {
+			flex-wrap: wrap;
+			justify-content: center;
+			overflow: visible;
+			border-radius: 26px;
+			-webkit-mask-image: none;
+			mask-image: none;
+		}
+		.performer-filter-btn { min-width: 40px; height: 40px; font-size: 14px; }
 	}
-	.performer-filter-row.is-overflowing .performer-filter-nav { display: flex; }
-	.performer-filter-nav:disabled { opacity: .4; cursor: default; }
 
 	/* Performer cards */
 	.performer-card {
@@ -238,12 +241,11 @@ try {
 
 <section class="performers-hero-section">
 	<div class="hero-bg-photo"></div>
-	<div class="hero-accent"></div>
-	<div class="hero-bg-overlay"></div>
 	<div class="container">
 		<div class="hero-inner">
-			<h1 class="hero-title">Performers</h1>
-			<p class="hero-subtitle">Discover your favorite artists, performers, and upcoming events.</p>
+			<span class="hero-eyebrow">A to Z</span>
+			<h1 class="hero-title">Artists, Teams &amp; Shows</h1>
+			<p class="hero-subtitle">Browse every artist, team and show on Seat Outlet. Pick a letter to jump straight in.</p>
 		</div>
 	</div>
 </section>
@@ -252,21 +254,19 @@ try {
 	<div class="container">
 
 		<div class="performer-filter-row" id="performerFilterRow">
-			<button type="button" class="performer-filter-nav" id="filterPrev" aria-label="Previous letters"><i class="bi bi-chevron-left"></i></button>
-			<div class="performer-filter-wrap" id="performerFilterBar">
-				<button type="button" class="performer-filter-btn is-all active" data-letter="ALL">All</button>
+			<div class="performer-filter-wrap" id="performerFilterBar" role="group" aria-label="Show artists, teams and shows starting with">
+				<button type="button" class="performer-filter-btn is-all active" data-letter="ALL" aria-pressed="true">All</button>
 				<?php foreach (range('A', 'Z') as $letter) { ?>
-					<button type="button" class="performer-filter-btn" data-letter="<?php echo $letter; ?>"><?php echo $letter; ?></button>
+					<button type="button" class="performer-filter-btn" data-letter="<?php echo $letter; ?>" aria-pressed="false"><?php echo $letter; ?></button>
 				<?php } ?>
 			</div>
-			<button type="button" class="performer-filter-nav" id="filterNext" aria-label="Next letters"><i class="bi bi-chevron-right"></i></button>
 		</div>
 
 		<div class="performers-error-state<?php echo $apiError ? '' : ' d-none'; ?>" id="performersErrorState">
-			We couldn't load performers right now. Please try again shortly.
+			We couldn't load the list right now. Please try again shortly.
 		</div>
 		<div class="performers-empty-state<?php echo ($apiError || !empty($performers)) ? ' d-none' : ''; ?>" id="performersEmptyState">
-			No performers found.
+			Nothing starts with that letter yet.
 		</div>
 			<div class="row g-4" id="performerGrid">
 				<?php foreach ($performers as $performer) { ?>
@@ -282,7 +282,7 @@ try {
 										<div class="performer-genre"><?php echo htmlspecialchars($performer['genre'], ENT_QUOTES, 'UTF-8'); ?></div>
 									<?php } ?>
 								</div>
-								<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" class="btn-view-performer">View Performer</a>
+								<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" class="btn-view-performer">View tickets</a>
 							</div>
 						</div>
 					</div>
@@ -291,7 +291,7 @@ try {
 
 		<div class="text-center mt-4 <?php echo (!$hasMore || $apiError) ? 'd-none' : ''; ?>" id="loadMorePerformersWrap">
 			<button type="button" class="btn-load-more-performers" id="loadMorePerformersBtn"
-				data-page="1" data-perpage="<?php echo (int) $perPage; ?>" data-letter="ALL">Load More Performers</button>
+				data-page="1" data-perpage="<?php echo (int) $perPage; ?>" data-letter="ALL">Show more</button>
 		</div>
 
 	</div>
@@ -300,8 +300,6 @@ try {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 	var filterBar    = document.getElementById('performerFilterBar');
-	var filterPrev    = document.getElementById('filterPrev');
-	var filterNext    = document.getElementById('filterNext');
 	var grid          = document.getElementById('performerGrid');
 	var emptyState    = document.getElementById('performersEmptyState');
 	var errorState    = document.getElementById('performersErrorState');
@@ -321,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
 							'<div class="performer-name">' + escapeHtml(p.name) + '</div>' +
 							genreHtml +
 						'</div>' +
-						'<a href="/artist/' + String(p.uriComponent).toLowerCase() + '" class="btn-view-performer">View Performer</a>' +
+						'<a href="/artist/' + String(p.uriComponent).toLowerCase() + '" class="btn-view-performer">View tickets</a>' +
 					'</div>' +
 				'</div>' +
 			'</div>';
@@ -380,8 +378,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		var btn = e.target.closest('.performer-filter-btn');
 		if (!btn) return;
 
-		filterBar.querySelectorAll('.performer-filter-btn').forEach(function (b) { b.classList.remove('active'); });
+		filterBar.querySelectorAll('.performer-filter-btn').forEach(function (b) { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
 		btn.classList.add('active');
+		btn.setAttribute('aria-pressed', 'true');
+		if (btn.scrollIntoView) { btn.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); }
 
 		var letter = btn.getAttribute('data-letter');
 		loadMoreBtn.disabled = true;
@@ -395,24 +395,15 @@ document.addEventListener('DOMContentLoaded', function () {
 		fetchPerformers(letter, page, true);
 	});
 
-	var filterRow = document.getElementById('performerFilterRow');
-
-	function updateFilterNav() {
+	// Edge fades on the swipe row: only on a side that has more to scroll to.
+	function updateFilterFades() {
 		var maxScroll = filterBar.scrollWidth - filterBar.clientWidth;
-		filterRow.classList.toggle('is-overflowing', maxScroll > 1);
-		filterPrev.disabled = filterBar.scrollLeft <= 1;
-		filterNext.disabled = filterBar.scrollLeft >= maxScroll - 1;
+		filterBar.style.setProperty('--fade-l', filterBar.scrollLeft > 1 ? '22px' : '0px');
+		filterBar.style.setProperty('--fade-r', (maxScroll > 1 && filterBar.scrollLeft < maxScroll - 1) ? '22px' : '0px');
 	}
-
-	function scrollFilter(direction) {
-		filterBar.scrollBy({ left: direction * Math.max(120, filterBar.clientWidth * 0.8), behavior: 'smooth' });
-	}
-
-	filterPrev.addEventListener('click', function () { scrollFilter(-1); });
-	filterNext.addEventListener('click', function () { scrollFilter(1); });
-	filterBar.addEventListener('scroll', updateFilterNav, { passive: true });
-	window.addEventListener('resize', updateFilterNav);
-	updateFilterNav();
+	filterBar.addEventListener('scroll', updateFilterFades, { passive: true });
+	window.addEventListener('resize', updateFilterFades);
+	updateFilterFades();
 });
 </script>
 

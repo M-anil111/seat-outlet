@@ -38,7 +38,8 @@
   .ev-date-time svg { width: 16px; height: 16px; flex: 0 0 auto; }
 
   /* Name, venue, links */
-  .event-detail h1.ev-title { font-size: 30px; font-weight: 800; color: #111827; line-height: 1.25; margin: 0 0 10px; font-family: inherit; overflow-wrap: anywhere; }
+  .event-detail h1.ev-title,
+.event-detail h2.h1.ev-title { font-size: 30px; font-weight: 800; color: #111827; line-height: 1.25; margin: 0 0 10px; font-family: inherit; overflow-wrap: anywhere; }
   .ev-venue { display: flex; align-items: flex-start; gap: 8px; color: #4b5563; font-size: 18px; line-height: 1.4; margin: 0 0 14px; }
   .ev-venue .bi { font-size: 18px; margin-top: 2px; }
   .ev-venue a { color: inherit; text-decoration: none; }
@@ -98,7 +99,8 @@
     .ev-date-num { font-size: 22px; }
     .ev-date-time { border-top: 0; margin: 0; padding: 0 0 0 10px; border-left: 1px solid #dbe3f3; }
     .ev-info { padding: 0; margin: 0; border-left: 0; }
-    .event-detail h1.ev-title { font-size: 22px; }
+    .event-detail h1.ev-title,
+.event-detail h2.h1.ev-title { font-size: 22px; }
     .ev-venue { font-size: 16px; }
     .ev-link { font-size: 15px; }
     .ev-cta { padding: 16px 0 0; }
@@ -1809,6 +1811,47 @@ font-size: 18px;
     .seatics .seller-rating .text-success { color: #3358e4 !important; }
     .seatics .sea-feedback-success { background-color: #3358e4 !important; }
     .seatics .sea-feedback-success:after { border-top-color: #3358e4 !important; }
-</style>
+    /* ======================================================================
+       Phone and foldable fit for the seat map and the ticket details panel.
+       Seatics ships fixed pixel layouts (a 3 px side padding, 10 to 21 px insets that do not
+       match each other). These rules keep the widget inside the screen and give the panel one
+       comfortable inset that scales with the screen width (14 px on a 280 px cover screen,
+       up to 24 px on an unfolded one) and respects display cutouts.
+       ====================================================================== */
+    #tn-maps { max-width: 100%; }
+    @supports (overflow: clip) { #tn-maps { overflow-x: clip; } }   /* nothing inside the widget can widen the page */
+    .seatics .map-list-ctn,
+    .seatics .map-ctn { max-width: 100% !important; box-sizing: border-box; }
+
+    #precheckout-parent {
+        --so-pc-inset: clamp(14px, 4.5vw, 24px);
+        --so-pc-inset-r: max(var(--so-pc-inset), env(safe-area-inset-right, 0px));
+        box-sizing: border-box;
+        max-width: 100vw;
+        overscroll-behavior: contain;
+    }
+    #precheckout-parent .sea-quantity-container fieldset { margin: 0; padding: 0 var(--so-pc-inset-r) 0 var(--so-pc-inset); min-width: 0; }
+    #precheckout-parent .sea-quantity-container fieldset legend { margin: 18px 0 12px; padding: 0; }
+    #precheckout-parent #sea-precheckout-qty-select { padding: 0 !important; margin: 0 !important; }
+    #precheckout-parent #sea-precheckout-qty-select .slick-list { margin: 0 !important; }
+    #precheckout-parent #sea-precheckout-qty-select .slick-track { margin-left: 0 !important; margin-right: 0 !important; }
+    #precheckout-parent .pre-checkout-price-text-ctn,
+    #precheckout-parent .sea-precheckout-fees-parent,
+    #precheckout-parent #sea-pre-checkout-disclaimer-ctn,
+    #precheckout-parent .pre-checkout-delivery-note,
+    #precheckout-parent .sea-pre-checkout-delivery-note-hdr { padding-left: var(--so-pc-inset) !important; padding-right: var(--so-pc-inset-r) !important; }
+    #precheckout-parent .pre-checkout-delivery-ctn { padding-left: var(--so-pc-inset) !important; padding-right: var(--so-pc-inset-r) !important; box-sizing: border-box; }
+    #precheckout-parent .pre-checkout-price-ctn {
+        box-sizing: border-box; height: auto !important; margin: 10px 0 18px;
+        padding: 0 var(--so-pc-inset-r) 0 var(--so-pc-inset) !important;
+    }
+    /* No "display" here on purpose: Seatics shows only one of these two buttons (sold out or not) and hides the other with it. */
+    #precheckout-parent #pre-checkout-price-cta,
+    #precheckout-parent #pre-checkout-sold-cta {
+        float: none; width: 100%; box-sizing: border-box;
+        height: 52px; padding: 14px 16px; border-radius: 12px;
+        font-size: 17px; line-height: 1.2; white-space: normal;
+    }
+  </style>
 
 <?php include 'footer.php'; ?>

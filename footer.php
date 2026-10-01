@@ -115,7 +115,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
       </div>
       <div class="keyword-bottombar">
         <div class="text-white text-center">
-            <p>Buy Concert Tickets</p>
+            <p><?php echo htmlspecialchars($GLOBALS['soFocusKw'] ?? soFocusKeyword(), ENT_QUOTES, 'UTF-8'); ?></p>
         </div>
       </div>
       <div class="d-flex align-items-center flex-wrap creater">

@@ -12,6 +12,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 // instance, not by php -l or the static checkers, which don't catch
 // runtime double-inclusion.
 include_once 'functions.php';
+    soRedirectLegacyUrl();
     sendSecurityHeaders();
     // The header search form now submits via GET so a results page has a
     // shareable/bookmarkable URL and the browser back button works (a POST
@@ -206,62 +207,36 @@ include_once 'functions.php';
 </head>
 
 <body>
+    <?php
+    // The strip above the header is the page's one <h1>: its focus keyword (admin > Page rules, or the page's own).
+    // The same keyword closes the footer. Any other <h1> in a page template is turned into an <h2> that looks the same.
+    $soFocusKw = soFocusKeyword();
+    $soKeywordH1 = getenv('KEYWORD_H1') !== '0';
+    if ($soKeywordH1) { ob_start('soSingleH1'); }
+    ?>
     <div class="header-top-section">
-        <!-- Top Utility Bar -->
+        <!-- Top keyword strip -->
         <div class="keyword-topbar">
-            <div class="text-white text-center">
-                <p>Buy Concert Tickets</p>
-            </div>
+            <?php if ($soKeywordH1) { ?>
+            <h1 class="so-keyword-h1"><?php echo htmlspecialchars($soFocusKw, ENT_QUOTES, 'UTF-8'); ?></h1>
+            <?php } else { ?>
+            <p class="so-keyword-h1"><?php echo htmlspecialchars($soFocusKw, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php } ?>
         </div>
+        <!-- Trust bar: static (it used to scroll), keeps the resale disclosure in view -->
         <div class="tm-topbar">
-            <div class="container-fluid">
-                <div class="top-ticker">
-                    <div class="ticker-track">
-                        <div class="ticker-content">
-                            <span class="ticker-item">
-                                <span class="ticker-icon"></span>
-                                Trusted marketplace for buying and selling live event tickets. Prices may vary from face value.
-                            </span>
-
-                            <span class="ticker-item">
-                                <span class="ticker-icon"></span>
-                                A trusted marketplace for live event tickets, connecting buyers and sellers worldwide.
-                            </span>
-                            <span class="ticker-item">
-                                <span class="ticker-icon"></span>
-                                Your reliable destination to buy and sell tickets for live events.
-                            </span>
-                            <span class="ticker-item">
-                                <span class="ticker-icon"></span>
-                                A secure platform for fans to buy and sell live event tickets.
-                            </span>
-                            <span class="ticker-item">
-                                <span class="ticker-icon"></span>
-                                The trusted hub for buying and selling tickets to concerts, sports, and live events.
-                            </span>
-                            <span class="ticker-item">
-                                <span class="ticker-icon"></span>
-                                A dependable marketplace for discovering and trading live event tickets.
-                            </span>
-                            <span class="ticker-item">
-                                <span class="ticker-icon"></span>
-                                Your Reliable Source for Live Event Tickets.
-                            </span>
-                            <span class="ticker-item">
-                                <span class="ticker-icon"></span>
-                                Trusted marketplace for buying and selling live event tickets. Prices may vary from face value.
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <ul class="so-trustbar">
+                <li>Trusted resale marketplace</li>
+                <li>Prices may be above or below face value</li>
+                <li><a href="/guarantee">100% Worry-Free Guarantee</a></li>
+            </ul>
         </div>
         <!-- MAIN BLUE HEADER -->
         <header class="tm-header">
             <div class="container-fluid p-0 px-md-4 px-lg-5 pb-md-4 pb-0">
                 <div class="d-flex align-items-center justify-content-between py-md-4 py-3 px-md-0 px-2">
                     <!-- LEFT -->
-                    <div class="d-flex align-items-center gap-4">
+                    <div class="d-flex align-items-center gap-4 so-header-left">
                         <!-- Logo -->
                         <a href="/" class="tm-logo"><img src="/images/seatoutlet-logo.webp" alt="Seat Outlet" width="256" height="38" loading="eager"></a>
                     </div>
@@ -276,10 +251,10 @@ include_once 'functions.php';
                                 <li class="menu-item"><a href="/cities">Cities</a></li>
                             </ul>
                         </nav>
-                        <div class="tm-top-links d-flex d-sm-flex d-md-flex align-items-center">
-                            <div class="header-phone d-lg-none d-xl-none d-xxl-none"><a href="tel:+1512-621-8822" aria-label="Call us at (512) 621-8822"><i class="bi bi-telephone-fill"></i></a></div>
-                            <button class="btn mobile-menu-btn d-sm-block d-md-block d-lg-none d-xl-none d-xxl-none p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-label="menu">
-                                <i class="bi bi-list fs-3 text-white"></i>
+                        <div class="tm-top-links so-header-actions d-flex d-sm-flex d-md-flex align-items-center">
+                            <div class="header-phone d-lg-none"><a href="tel:+1512-621-8822" class="so-icon-btn" aria-label="Call us at (512) 621-8822"><i class="bi bi-telephone-fill" aria-hidden="true"></i></a></div>
+                            <button type="button" class="btn mobile-menu-btn so-icon-btn d-lg-none p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-label="Open menu">
+                                <i class="bi bi-list" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
@@ -311,7 +286,7 @@ include_once 'functions.php';
                             <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
-                            <input type="text" placeholder="Performer, City or Venue" class="w-100" autocomplete="off" id="keywordHeader" name="keywordHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-suggestions" aria-activedescendant="" aria-label="Search for performers, cities or venues" value="<?php echo !empty($searchInput['keywordHeader']) ? htmlspecialchars($searchInput['keywordHeader'], ENT_QUOTES, 'UTF-8') : ''; ?>" />
+                            <input type="text" placeholder="<?php echo htmlspecialchars($pageSearchPlaceholder ?? 'Performer, City or Venue', ENT_QUOTES, 'UTF-8'); ?>" class="w-100" autocomplete="off" id="keywordHeader" name="keywordHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-suggestions" aria-activedescendant="" aria-label="Search for performers, cities or venues" value="<?php echo !empty($searchInput['keywordHeader']) ? htmlspecialchars($searchInput['keywordHeader'], ENT_QUOTES, 'UTF-8') : ''; ?>" />
                             <button type="button" id="keywordHeaderReset" class="d-none location-close" aria-label="Clear search">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
                                     <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>

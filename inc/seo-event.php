@@ -24,6 +24,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $evDate   = $evTs ? date('M j, Y', $evTs) : '';
   // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
   $metaTitle = $evName === '' ? (tnEntityUnavailable($event) ? 'Event temporarily unavailable | Seat Outlet' : 'Event not found | Seat Outlet') : seoClampTitle($evName . ' Tickets' . ($evPlace !== '' ? ' in ' . $evPlace : '') . ' | Seat Outlet');
+  if ($evName !== '' && empty($pageFocusKeyword)) { $pageFocusKeyword = $evName . ' Tickets'; }   // shown in the strip above the header and the footer
   $metaDescription = seoClampDescription(
       'Buy ' . $evName . ' tickets' . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
       . ($evDate !== '' ? ' on ' . $evDate : '') . '. Compare seats and prices, then check out securely at Seat Outlet.'

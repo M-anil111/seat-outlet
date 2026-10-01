@@ -34,8 +34,10 @@ include 'header.php';
     }
 
     /* ── TYPOGRAPHY ── */
-    h1, h2, h3, .display-font { letter-spacing: .04em; }
-    h1  { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
+    h1, h2, h3, .display-font,
+h2.h1 { letter-spacing: .04em; }
+    h1,
+h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
     /* h2  { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.1; } */
 
   
@@ -71,11 +73,13 @@ include 'header.php';
       border-radius: 2px;
       margin-bottom: 1.2rem;
     }
-    .hero h1 {
+    .hero h1,
+.hero h2.h1 {
     margin: 6px 0 20px 0px;
     font-size: 50px;
 }
-    .hero h1 em { font-style: normal; color: #7aa3ff; }
+    .hero h1 em,
+.hero h2.h1 em { font-style: normal; color: #7aa3ff; }
     .hero-sub { font-size: 1.15rem; color: #9ca3af; max-width: 520px; line-height: 1.75; margin-bottom: 2rem; }
     .btn-primary-brand {
       background: var(--brand-blue); color: #fff; border: none;
