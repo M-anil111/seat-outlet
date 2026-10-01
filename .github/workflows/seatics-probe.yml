@@ -1,0 +1,80 @@
+name: Seatics DOM probe (temporary)
+
+# One-off: loads the Seatics MapWidget3 for a sandbox event in a headless
+# browser and prints the widget's event header / listing markup, so the
+# event page can be styled against the real DOM. Delete after use.
+
+on:
+  push:
+    branches-ignore: [main]
+    paths: ['.github/workflows/seatics-probe.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      CONSUMER_KEY: ${{ secrets.CONSUMER_KEY }}
+      CONSUMER_SECRET: ${{ secrets.CONSUMER_SECRET }}
+    steps:
+      - name: Find sandbox events
+        run: |
+          token=$(curl -sS -X POST https://key-manager.tn-apis.com/oauth2/token \
+            -u "$CONSUMER_KEY:$CONSUMER_SECRET" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data 'grant_type=client_credentials' | jq -r '.access_token')
+          echo "::add-mask::$token"
+          curl -sS --compressed -H "Authorization: Bearer $token" -H 'Accept: application/json' \
+            -H 'X-Listing-Context: website-config-id=12498' \
+            "https://sandbox.tn-apis.com/catalog/v2/events?perPage=5&page=1&filter=_metadata%2FhasTickets%20eq%20true" > events.json
+          jq -r '.results[] | "\(.id)\t\(.text.name)\t\(.date.text.date // .date.date)"' events.json
+          jq -r '[.results[].id] | join(" ")' events.json > ids.txt
+          rm -f events.json
+
+      - name: Render widget and dump markup
+        run: |
+          npm i --no-save --silent playwright@1.56.1 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+          cat > probe.js <<'EOF'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const ids = fs.readFileSync('ids.txt', 'utf8').trim().split(/\s+/);
+          (async () => {
+            const browser = await chromium.launch();
+            for (const id of ids.slice(0, 3)) {
+              for (const [label, width] of [['desktop', 1440], ['mobile', 390]]) {
+                const page = await browser.newPage({ viewport: { width, height: 900 } });
+                const src = `https://mapwidget3.seatics.com/js?eventId=${id}&websiteConfigId=12498&mobileOptimized=true&includeJQuery=true&containerId=tn-maps&useDarkTheme=false`;
+                await page.route('https://beta.seatoutlet.com/probe.html', r => r.fulfill({ contentType: 'text/html',
+                  body: `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="tn-maps" class="seatics" style="height:calc(100vh - 50px);width:100%"></div><script src="${src}"></script></body></html>` }));
+                await page.goto('https://beta.seatoutlet.com/probe.html');
+                await page.waitForTimeout(15000);
+                const out = await page.evaluate(() => {
+                  const strip = el => {
+                    if (!el) return null;
+                    const c = el.cloneNode(true);
+                    c.querySelectorAll('svg, script, style, img').forEach(n => n.replaceWith(document.createComment(n.tagName)));
+                    return c.outerHTML.replace(/\s+/g, ' ');
+                  };
+                  const info = document.querySelector('.event-info-ctn') || document.querySelector('#event-info-area');
+                  const row = document.querySelector('#ticketsContainer .ticket-group, #ticketsContainer [class*="ticket"]');
+                  const tc = document.querySelector('#ticketsContainer');
+                  return {
+                    eventInfo: strip(info),
+                    firstListing: strip(row),
+                    ticketsContainerStart: tc ? strip(tc).slice(0, 6000) : null,
+                    bodyClasses: document.body.className,
+                    topLevel: [...document.querySelectorAll('#tn-maps > *')].map(e => e.tagName + '#' + e.id + '.' + e.className).slice(0, 30),
+                  };
+                });
+                console.log(`===== event ${id} ${label} =====`);
+                console.log(JSON.stringify(out, null, 1).slice(0, 30000));
+                await page.close();
+              }
+            }
+            await browser.close();
+          })();
+          EOF
+          node probe.js
