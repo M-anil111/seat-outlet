@@ -144,7 +144,7 @@ $faqs = getFaqs('events');
 													data-venue="<?php echo $event['venue']['text']['name']; ?>"
 													data-venueSlug="<?php echo $venueSlug; ?>"
 													data-location="<?php echo $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr']; ?>"
-													data-title="<?php echo $event['text']['name']; ?>"
+													data-title="<?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
 													data-performers="<?php echo htmlspecialchars($dataPerformers); ?>"
 													data-performer-slugs="<?php echo htmlspecialchars($dataPerformerSlugs); ?>"
 												></i>
@@ -155,12 +155,12 @@ $faqs = getFaqs('events');
 												<a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a>
 											</div>
 											<div class="text-muted small">
-												<a href="/event/<?php echo $slug; ?>"><?php echo $event['text']['name']; ?></a>
+												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
 											</div>
 										</div>
 										<div class="ms-3">
 											<?php renderEventPriceTag($event); ?>
-											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
+											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 												<span class="d-none d-md-inline">
 													Find Tickets
 												</span>
@@ -296,7 +296,7 @@ $faqs = getFaqs('events');
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-						<img src="/images/event-ticket-buying.webp" alt="About Live Events Across the United States" class="img-about img-fluid rounded" width="567" height="378" />
+						<img src="/images/event-ticket-buying-800.webp" srcset="/images/event-ticket-buying-800.webp 800w, /images/event-ticket-buying.webp 1536w" sizes="(min-width: 992px) 567px, 100vw" alt="About Live Events Across the United States" class="img-about img-fluid rounded" width="567" height="378" loading="lazy" decoding="async" />
 					</div>
 				</div>				
 			</div>

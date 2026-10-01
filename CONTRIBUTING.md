@@ -272,6 +272,34 @@ the provenance columns.
 Google Knowledge Graph is no longer used for images and `GKGSAPI_KEY` is
 optional.
 
+## Front-end assets, SEO and page speed
+
+- **Minified assets.** Edit `css/style.css`, `css/skeleton.css` and `js/*.js` as usual, then run
+  `tools/build-assets.sh` and commit the generated `css/style.min.css` and `js/*.min.js`. The pages load
+  the `.min` files through `soAsset()` (functions.php), falling back to the source if a `.min` is missing.
+  CI runs `tools/build-assets.sh --check` and fails when a minified file is stale. Needs Node (`npx`).
+- **Icons.** Only the Bootstrap Icons the code uses are shipped (`fonts/bootstrap-icons-subset.woff2` + `css/icons.css`, folded into
+  `style.min.css`). Using a new `bi-*` icon? Run `python3 tools/build-icons.py` (needs `pip install fonttools brotli`) then
+  `tools/build-assets.sh`. CI runs `python3 tools/build-icons.py --check`. The admin panel still uses the full CDN font.
+- **Fonts.** Inter is self-hosted (`fonts/inter-latin*.woff2`, declared in `css/fonts.css`, folded into `style.min.css`) so the first
+  text paint does not wait on Google. It is deliberately not preloaded (the preload competed with the render-blocking CSS and delayed
+  first paint). `css/style.css` defines an `Inter Fallback` font (Arial scaled to Inter's metrics) and reserves icon boxes (`.bi`), which keeps
+  layout shift near zero while the font arrives. Keep both when changing typography.
+- **Third-party libraries** (Bootstrap, jQuery, flatpickr, slick) are served from `lib/` at pinned versions: no CDN connection on the critical
+  path. Change a version in `tools/vendor-assets.sh`, run it, update the paths in header.php/footer.php, commit the files.
+- **Titles and descriptions.** A page sets `$pageMetaTitle` / `$pageMetaDescription` / `$pageCanonicalUrl`
+  before `include 'header.php'`; static pages without their own get theirs from `inc/page-meta.php`.
+  `header.php` trims titles to about 60 characters and descriptions to about 155. Never hard-code the
+  domain: use `HOME_URL`.
+- **One `<h1>` per page.** Listing pages use the `.results-title h1`; keep it descriptive.
+- **Structured data.** `seoOffer()` builds an Offer only from a real price; never default a missing price.
+- **Which scripts load.** footer.php decides from the URL path (not the query string). New listing-style pages
+  need their path pattern added to `$soHasEventList` or "More Events" will not work.
+- **Not-found pages.** `renderNotFoundPage('City')` answers 404 + noindex; use `tnEntityMissing($r)` (not `empty()`) on a
+  TicketNetwork get-one result, because a missing id returns `{"Message": ...}`.
+- **robots.txt.** `robots.php` builds it from the host (non-production hosts get `Disallow: /`); route `/robots.txt` to it, see docs/server-rewrites.md.
+- **Maintenance scripts** (`cron/*`, `db/migrate.php`, `tools/*`) include `inc/cli-guard.php`: command line only.
+
 ## Optional performance layer: APCu
 
 Several hot paths (`page_rules` lookups, TicketNetwork's OAuth token,

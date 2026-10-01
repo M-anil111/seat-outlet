@@ -11,19 +11,13 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
-	include 'header.php';
-	echo '<div class="container"><p>Invalid city.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('City');
 }
 
 $city = getTnCityById($id);
 
-if (empty($city)) {
-	include 'header.php';
-	echo '<div class="container"><p>City not found.</p></div>';
-	include 'footer.php';
-	exit;
+if (tnEntityMissing($city)) {
+	renderNotFoundPage('City');
 }
 
 $today = date('Y-m-d');
@@ -51,6 +45,7 @@ $cityLabel = trim(($city['text']['name'] ?? '') . ', ' . ($city['stateProvince']
 $pageMetaTitle       = "Events in $cityLabel Tickets | Seat Outlet";
 $pageMetaDescription = "Find concert, sports, and event tickets in $cityLabel. Compare prices and book securely on Seat Outlet.";
 $pageCanonicalUrl    = HOME_URL . '/city/' . createSlug($cityLabel, $id);
+$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Cities', 'url' => HOME_URL . '/cities']], $cityLabel)];
 $cityImg = getEntityImage('city', $cityLabel);
 if ($cityImg['status'] !== 'fallback' && $cityImg['url'] !== '') {
     $pageOgImage = $cityImg['url'];
@@ -68,13 +63,13 @@ include 'header.php';
 						<div class="d-flex justify-content-between align-items-center results-header">
 							<div class="results-title">
 								<span class="active-indicator"></span>
-								<h2>
+								<h1>
 									EVENTS in <?php echo $city['text']['name'] . ', ' . $city['stateProvince']['text']['abbr']; ?> <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $total_count; ?>
 										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
 									</span>
-								</h2>							
+								</h1>							
 							</div>
 						</div>
 					</div>
@@ -139,7 +134,7 @@ include 'header.php';
 													data-venue="<?php echo $event['venue']['text']['name']; ?>"
 													data-venueSlug="<?php echo $venueSlug; ?>"
 													data-location="<?php echo $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr']; ?>"
-													data-title="<?php echo $event['text']['name']; ?>"
+													data-title="<?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
 													data-performers="<?php echo htmlspecialchars($dataPerformers); ?>"
 													data-performer-slugs="<?php echo htmlspecialchars($dataPerformerSlugs); ?>"
 												></i>
@@ -150,12 +145,12 @@ include 'header.php';
 												<a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a>
 											</div>
 											<div class="text-muted small">
-												<a href="/event/<?php echo $slug; ?>"><?php echo $event['text']['name']; ?></a>
+												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
 											</div>
 										</div>
 										<div class="ms-3">
 											<?php renderEventPriceTag($event); ?>
-											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
+											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 												<span class="d-none d-md-inline">
 													Find Tickets
 												</span>

@@ -133,7 +133,7 @@ include 'header.php';
         <span class="section-label">Customer First</span>
         <h2 class="section-title">Our Commitment to Customer Trust</h2>
         <div class="section-divider"></div>
-        <img src="/images/ticket-trusted.webp" class="img-fluid rounded mb-3" alt="Customer trust in Seat Outlet's ticket marketplace" loading="lazy">
+        <img src="/images/ticket-trusted.webp" class="img-fluid rounded mb-3" alt="Customer trust in Seat Outlet's ticket marketplace" loading="lazy" width="750" height="875" decoding="async">
         <p class="text-muted mb-4">Seat Outlet operates with a customer-first approach. Every transaction is handled with care to ensure buyers receive valid tickets for their chosen events. Our team works continuously to improve service quality and ensure a smooth experience from browsing to checkout - the same kind of consumer trust the
         <a href="https://www.bbb.org" target="_blank" rel="noopener">Better Business Bureau</a> encourages shoppers to look for online.</p>
         <ul class="check-list">
@@ -195,9 +195,9 @@ include 'header.php';
       <p class="text-muted mx-auto" style="max-width:560px;">Whether you have questions before buying or need help after placing an order, our support team is available to resolve concerns quickly and professionally - built on the same customer trust that guides everything we do.</p>
     </div>
     <div class="d-flex justify-content-center flex-wrap gap-3 mb-4">
-      <img src="/images/team-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Support team that builds customer trust at Seat Outlet" loading="lazy">
-      <img src="/images/secure-payment-p3.png" class="img-fluid rounded" style="max-width:200px;" alt="Secure payment builds customer trust" loading="lazy">
-      <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Fans who rely on our customer trust commitment" loading="lazy">
+      <img src="/images/team-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Support team that builds customer trust at Seat Outlet" loading="lazy" width="250" height="250" decoding="async">
+      <img src="/images/secure-payment-p3.png" class="img-fluid rounded" style="max-width:200px;" alt="Secure payment builds customer trust" loading="lazy" width="65" height="68" decoding="async">
+      <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Fans who rely on our customer trust commitment" loading="lazy" width="442" height="442" decoding="async">
     </div>
     <div class="row g-4">
       <div class="col-md-6 col-lg-3">

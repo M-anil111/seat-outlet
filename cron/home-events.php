@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../inc/cli-guard.php';
 require_once __DIR__ . '/../functions.php';
 
 $tabs = ['concerts', 'sports', 'theatre', 'festival'];

@@ -33,6 +33,7 @@ function admin_send_password_reset_email(string $toEmail, string $toName, string
         $mail->isHTML(true);
         $mail->Subject = 'Reset your Seat Outlet Admin password';
         $safeLink = htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8');
+        $logoUrl = htmlspecialchars((defined('HOME_URL') ? HOME_URL : 'https://www.seatoutlet.com') . '/images/seatoutlet.png', ENT_QUOTES, 'UTF-8');
         $mail->Body = <<<EOD
 <!DOCTYPE html>
 <html>
@@ -42,7 +43,7 @@ function admin_send_password_reset_email(string $toEmail, string $toName, string
          style="background:#ffffff; border-radius:8px; overflow:hidden;">
     <tr>
       <td align="center" bgcolor="#ffffff" style="padding:40px 20px 20px; border-bottom:1px #e1e1e1 solid;">
-        <img src="https://beta.seatoutlet.com/images/seatoutlet.png" alt="Seat Outlet" style="display:block; max-width:220px;">
+        <img src="{$logoUrl}" alt="Seat Outlet" style="display:block; max-width:220px;">
       </td>
     </tr>
     <tr>

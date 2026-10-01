@@ -35,6 +35,7 @@ $optional = [
     'GEOIP_DB_PATH' => 'default beside the code root', 'TN_CHECKOUT_URL' => 'default https://checkout.seatoutlet.com',
     'GTM_ID' => 'no analytics tag', 'TN_TOKEN_DIR' => 'default system temp dir',
     'BASE_URL' => 'default sandbox', 'HOME_URL' => 'default https://beta.seatoutlet.com',
+    'CRON_TOKEN' => 'cron/tools refused over HTTP (CLI still works)',
 ];
 
 $ok = true;

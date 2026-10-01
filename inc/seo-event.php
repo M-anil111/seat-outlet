@@ -11,79 +11,88 @@
     }
   }
   $event = getTnEventById($id);
-  $metaDescription = "Buy {$event['text']['name']} tickets at {$event['venue']['text']['name']} in {$event['city']['text']['name']}, {$event['stateProvince']['text']['abbr']}. View event date, venue details, seating options, and secure your tickets online at Seat Outlet.";
-  $keywords[] = $event['text']['name'] . " tickets";
-  $keywords[] = "buy " . $event['text']['name'] . " tickets";
-  $keywords[] = $event['venue']['text']['name'] . " tickets";
-  $keywords[] = "events in " . $event['city']['text']['name'] . " " . $event['stateProvince']['text']['abbr'];
-  $keywords[] = "tickets in " . $event['city']['text']['name'] . " " . $event['stateProvince']['text']['abbr'];
+  $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+  $evName   = (string) ($event['text']['name'] ?? '');
+  $evVenue  = (string) ($event['venue']['text']['name'] ?? '');
+  $evCity   = (string) ($event['city']['text']['name'] ?? '');
+  $evState  = (string) ($event['stateProvince']['text']['abbr'] ?? '');
+  $evPlace  = trim($evCity . ($evState !== '' ? ', ' . $evState : ''));
+  $evUrl    = HOME_URL . '/event/' . ($event['uriComponent'] ?? '');
+  $evTs     = !empty($event['date']['date']) ? strtotime($event['date']['date']) : false;
+  $evDate   = $evTs ? date('M j, Y', $evTs) : '';
+  // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
+  $metaTitle = $evName === '' ? 'Event not found | Seat Outlet' : seoClampTitle($evName . ' Tickets' . ($evPlace !== '' ? ' in ' . $evPlace : '') . ' | Seat Outlet');
+  $metaDescription = seoClampDescription(
+      'Buy ' . $evName . ' tickets' . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
+      . ($evDate !== '' ? ' on ' . $evDate : '') . '. Compare seats and prices, then check out securely at Seat Outlet.'
+  );
+  $keywords = [];
+  $keywords[] = $evName . " tickets";
+  $keywords[] = "buy " . $evName . " tickets";
+  if ($evVenue !== '') $keywords[] = $evVenue . " tickets";
+  if ($evPlace !== '') { $keywords[] = "events in " . $evPlace; $keywords[] = "tickets in " . $evPlace; }
   $metaKeywords = implode(", ", array_unique($keywords));
 ?>
-<title>Seat Outlet – <?php echo $event['text']['name']; ?></title>
-<meta name="description" content="<?php echo $metaDescription; ?>">
-<meta name="keywords" content="<?php echo htmlspecialchars($metaKeywords, ENT_QUOTES, 'UTF-8'); ?>">
-<link rel="canonical" href="https://beta.seatoutlet.com/event/<?php echo $event['uriComponent']; ?>">
+<title><?php echo $e($metaTitle); ?></title>
+<meta name="description" content="<?php echo $e($metaDescription); ?>">
+<meta name="keywords" content="<?php echo $e($metaKeywords); ?>">
+<link rel="canonical" href="<?php echo $e($evUrl); ?>">
 
-<meta property="og:title" content="<?php echo $event['text']['name']; ?> | Seat Outlet">
-<meta property="og:description" content="<?php echo $metaDescription; ?>">
-<meta property="og:url" content="https://beta.seatoutlet.com/event/<?php echo $event['uriComponent']; ?>">
+<meta property="og:title" content="<?php echo $e($metaTitle); ?>">
+<meta property="og:description" content="<?php echo $e($metaDescription); ?>">
+<meta property="og:url" content="<?php echo $e($evUrl); ?>">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
+<meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="<?php echo $event['text']['name']; ?> | Seat Outlet">
-<meta name="twitter:description" content="<?php echo $metaDescription; ?>">
-<meta name="twitter:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
+<meta name="twitter:title" content="<?php echo $e($metaTitle); ?>">
+<meta name="twitter:description" content="<?php echo $e($metaDescription); ?>">
+<meta name="twitter:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
 
 <?php
 $eventSchema = null;
 if (!empty($event)) {
-    $city = $event['city']['text']['name'];
-    $state = $event['stateProvince']['text']['abbr'];
-    $startDate = $event['date']['date'];
-    $price = $event['pricingInfo']['lowPrice']['value'] ?? null;
-
     $eventSchema = [
         "@type" => "Event",
-        "name" => $event['text']['name'],
-        "startDate" => $startDate,
+        "name" => $evName,
+        // Full local date-time with offset when the API gives one, so search engines show the right start.
+        "startDate" => $event['date']['datetimeOffset'] ?? ($event['date']['date'] ?? ''),
         "eventStatus" => "https://schema.org/EventScheduled",
-
+        "eventAttendanceMode" => "https://schema.org/OfflineEventAttendanceMode",
+        "url" => $evUrl,
         "location" => [
             "@type" => "Place",
-            "name" => $event['venue']['text']['name'] ?? '',
+            "name" => $evVenue,
             "address" => [
                 "@type" => "PostalAddress",
-                "addressLocality" => $city,
-                "addressRegion" => $state,
+                "addressLocality" => $evCity,
+                "addressRegion" => $evState,
                 "addressCountry" => "US"
             ]
         ],
         "performer" => buildEventPerformerSchema($event),
-
-        "offers" => [
-            "@type" => "Offer",
-            "url" => "https://beta.seatoutlet.com/event/" . $event['uriComponent'],
-            "price" => $price ?? "0",
-            "priceCurrency" => "USD",
-            "availability" => "https://schema.org/InStock"
-        ]
+        "organizer" => ["@id" => HOME_URL . "/#organization"],
     ];
+    // Only claim an offer when the API reports a real price and tickets exist.
+    $offer = !empty($event['_metadata']['hasTickets']) ? seoOffer($evUrl, $event['pricingInfo']['lowPrice']['value'] ?? null) : null;
+    if ($offer) {
+        $eventSchema["offers"] = $offer;
+    }
 }
 
 $webPageSchema = [
     "@type" => "WebPage",
-    "@id" => "https://beta.seatoutlet.com/event/" . $event['uriComponent'] . "#webpage",
-    "url" => "https://beta.seatoutlet.com/event/" . $event['uriComponent'],
-    "name" => $event['text']['name'],
-    "isPartOf" => ["@id" => "https://beta.seatoutlet.com/#website"],
-    "about" => ["@id" => "https://beta.seatoutlet.com/#organization"],
+    "@id" => $evUrl . "#webpage",
+    "url" => $evUrl,
+    "name" => $evName,
+    "isPartOf" => ["@id" => HOME_URL . "/#website"],
+    "about" => ["@id" => HOME_URL . "/#organization"],
     "description" => $metaDescription,
 ];
 
 $breadcrumbSchema = buildBreadcrumbListSchema([
-    ["label" => "Home", "url" => "https://beta.seatoutlet.com"],
-    ["label" => "Events", "url" => "https://beta.seatoutlet.com/tickets"],
+    ["label" => "Home", "url" => HOME_URL],
+    ["label" => "Events", "url" => HOME_URL . "/tickets"],
 ], $event['text']['name'] ?? null);
 ?>
 <!-- ============================

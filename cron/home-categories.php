@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../inc/cli-guard.php';
 require_once __DIR__ . '/../functions.php';
 
 // Homepage "Browse by Categories": the subcategories of each root with the

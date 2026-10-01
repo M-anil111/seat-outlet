@@ -45,8 +45,16 @@ function getActiveLocation() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (input) {
-        await loadGoogleMapsApi();
-        initLocationSearch('locationInput', 'event');
+        // Google Maps (about 380 KB) is only needed for place autocomplete, so load it when the
+        // visitor first touches the location field instead of on every page view.
+        let autocompleteReady = null;
+        const ensureAutocomplete = () => autocompleteReady || (autocompleteReady = loadGoogleMapsApi().then(() => {
+            initLocationSearch('locationInput', 'event');
+            if (input.value.trim() && document.activeElement === input) {
+                input.dispatchEvent(new Event('input', { bubbles: true }));   // replay what was typed while Maps loaded
+            }
+        }));
+        ['focus', 'pointerdown', 'touchstart'].forEach((evt) => input.addEventListener(evt, ensureAutocomplete, { once: true, passive: true }));
 
         const savedLat = getCookie('so_lat');
         const savedLng = getCookie('so_lng');
@@ -262,7 +270,14 @@ let performerSelectedDatesTemp = [];
 let selectStart = null;
 let selectEnd = null;
    
-let picker = flatpickr("#performerDatePicker", {
+let picker = null;
+// The calendar is built on first use (touch/focus of the field), not on every page view:
+// creating it up front cost a few hundred ms of main-thread time on mobile.
+function getPicker() {
+    if (picker) return picker;
+    const el = document.getElementById('performerDatePicker');
+    if (!el || typeof flatpickr === 'undefined') return null;
+    picker = flatpickr(el, {
     mode: "range",
     minDate: "today",
     dateFormat: "Y-m-d",
@@ -311,7 +326,17 @@ let picker = flatpickr("#performerDatePicker", {
         });
     }
 });
-    
+    return picker;
+}
+(function () {
+    const el = document.getElementById('performerDatePicker');
+    if (!el) return;
+    ['pointerdown', 'touchstart', 'focus'].forEach((evt) => el.addEventListener(evt, function first(e) {
+        const p = getPicker();
+        if (p && e.type === 'focus') p.open();   // keyboard focus: flatpickr's own handlers were attached too late to see this event
+    }, { once: true, passive: true }));
+})();
+
 window.addEventListener("resize", function () {
     const newMonthCount = getMonthCount();
     if (!picker || !picker.config) return;
@@ -426,6 +451,9 @@ function renderEvent(event) {
     const citySlug = normalizeKey(cityName) + '-' + event.city.id;
     const venueSlug = normalizeKey(event.venue.text.name) + '-' + event.venue.id;
     const priceTag = buildPriceTag(event);
+    // Everything from the API goes through escHtml before it is put into markup.
+    const escHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const evName = escHtml(event.text.name), evVenue = escHtml(event.venue.text.name), evCityName = escHtml(cityName);
     return `
     <div class="d-flex align-items-center justify-content-between performer-event-item">
         <div class="date-box text-center me-3">
@@ -437,21 +465,21 @@ function renderEvent(event) {
             <div class="d-flex align-items-center gap-2">
                 <span class="fw-semibold day-weeks">${eday}</span>
                 <span class="dot">·</span>
-                <span class="time-clock">${event.date.text.time}</span>
+                <span class="time-clock">${escHtml(event.date.text.time)}</span>
                 <i class="bi bi-info-circle text-muted icon-i" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight" 
-                    data-id="${event.id}" data-date="${formattedDate}" data-venue="${event.venue.text.name}" 
-                    data-location="${event.city.text.name}, ${event.stateProvince.text.abbr}" data-title="${event.text.name}" data-performers="${dataPerformers}"></i>
+                    data-id="${event.id}" data-date="${formattedDate}" data-venue="${evVenue}" 
+                    data-location="${evCityName}" data-title="${evName}" data-performers="${escHtml(dataPerformers)}"></i>
             </div>
             <div class="fw-semibold location-venue-name">
-                <a href="/city/${citySlug}">${cityName}</a> · <a href="/venue/${venueSlug}">${event.venue.text.name}</a>
+                <a href="/city/${citySlug}">${evCityName}</a> · <a href="/venue/${venueSlug}">${evVenue}</a>
             </div>
             <div class="text-muted small">
-                <a href="/event/${eSlug}">${event.text.name}</a>
+                <a href="/event/${eSlug}">${evName}</a>
             </div>
         </div>
         <div class="ms-3">
             ${priceTag}
-            <a href="/event/${eSlug}" class="btn btn-primary d-flex align-items-center gap-2">
+            <a href="/event/${eSlug}" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for ${evName}">
                 <span class="d-none d-md-inline">
                     Find Tickets
                 </span>

@@ -316,11 +316,11 @@ include 'header.php';
       <div class="col-lg-5">
         <div class="section-eyebrow">How It Works</div>
         <h2 class="mb-3">Making Event Ticket Buying Simple</h2>
-        <img src="/images/stage.webp" class="img-fluid rounded mb-3" style="max-width:200px;" alt="Live shows made ticket buying simple" loading="lazy">
+        <img src="/images/stage.webp" class="img-fluid rounded mb-3" style="max-width:200px;" alt="Live shows made ticket buying simple" loading="lazy" width="750" height="843" decoding="async">
         <div class="section-divider"></div>
         <p class="text-secondary">Finding tickets should not be complicated. At Seat Outlet, we simplify the entire process from search to checkout so you can spend less time searching and more time enjoying your
         <a href="https://en.wikipedia.org/wiki/Live_event" target="_blank" rel="noopener">live event</a>.</p>
-        <img src="/images/event-ticket-buying.webp" class="img-fluid rounded mt-3" alt="Making ticket buying simple on Seat Outlet" loading="lazy">
+        <img src="/images/event-ticket-buying.webp" class="img-fluid rounded mt-3" alt="Making ticket buying simple on Seat Outlet" loading="lazy" width="1536" height="1024" decoding="async">
       </div>
       <div class="col-lg-6 offset-lg-1">
         <div class="d-flex flex-column gap-4">
@@ -559,8 +559,8 @@ include 'header.php';
         <h2 class="mb-2">Book Your Next Event with Confidence</h2>
         <p class="mb-0">Ready to experience live events without the stress? We make ticket buying simple - Seat Outlet makes it easy to find and book tickets you can trust.</p>
         <div class="d-flex flex-wrap gap-3 mt-3">
-          <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:180px;" alt="Concert tickets made ticket buying simple" loading="lazy">
-          <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:180px;" alt="Fans who found ticket buying simple with Seat Outlet" loading="lazy">
+          <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:180px;" alt="Concert tickets made ticket buying simple" loading="lazy" width="800" height="512" decoding="async">
+          <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:180px;" alt="Fans who found ticket buying simple with Seat Outlet" loading="lazy" width="442" height="442" decoding="async">
         </div>
       </div>
       <div class="col-lg-4 text-lg-end">

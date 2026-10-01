@@ -10,7 +10,7 @@ $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 
 // --- SEO: computed before including header.php, same convention used
 // throughout this app - see functions.php. ---
-$pageMetaTitle       = $page > 1 ? "Blog - Page $page | Seat Outlet" : 'Blog | Seat Outlet';
+$pageMetaTitle       = $page > 1 ? "Blog - Page $page | Seat Outlet" : 'Blog: Ticket Buying Tips & Event Guides | Seat Outlet';
 $pageMetaDescription = 'News, guides, and updates from Seat Outlet - buying tips, event spotlights, and ticket marketplace insights.';
 $pageCanonicalUrl    = HOME_URL . '/blog' . ($page > 1 ? '?page=' . $page : '');
 $pageJsonLdNodes = array_values(array_filter([

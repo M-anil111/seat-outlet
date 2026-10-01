@@ -72,7 +72,7 @@ jobs:
             if [ "$code" = "200" ]; then
               jq -r '
                 "top-level keys: " + (keys | join(", ")),
-                "total count: \(.count // "-")",
+                "total count: \(.totalCount // .count // "-")",
                 ((.results // .items // .data // []) as $r
                   | "results on this page: \($r | length)",
                     ($r[:5][] | "  - " + ((.text.name // .name // .text // .title // (.id|tostring)) | tostring)))
@@ -86,6 +86,9 @@ jobs:
           call "Events"      "/catalog/v2/events?perPage=5&page=1"
           call "Performers"  "/catalog/v2/performers?perPage=5&page=1"
           call "Categories"  "/catalog/v2/categories?perPage=5&page=1"
+          # Same queries as performers.php / ajax/get-performers.php (getTnPerformers).
+          call "Performers A-Z"        "/catalog/v2/performers?perPage=5&page=1&includeTotalCount=true&sort=text%2Fname&filter=_metadata%2FhasTickets%20eq%20true"
+          call "Performers letter A"   "/catalog/v2/performers?perPage=5&page=1&includeTotalCount=true&sort=text%2Fname&filter=_metadata%2FhasTickets%20eq%20true%20and%20startswith%28text%2Fname%2C%27A%27%29"
           rm -f out.json
           if [ $fail -ne 0 ]; then echo "::error::At least one catalog call failed"; fi
           exit $fail

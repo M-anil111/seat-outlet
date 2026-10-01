@@ -126,7 +126,7 @@
         <div class="space-between d-flex">
           Developed & Maintained by 
           <a class="px-2 footer-bottom-logo" title="Mindshare Consulting" href="https://www.mindshare.consulting/" target="_blank" > 
-            <img src="/images/mindshare-logo.webp" alt="Mindshare Consulting" style="max-width:100px;" width="100" height="22">
+            <img src="/images/mindshare-logo-230.webp" alt="Mindshare Consulting" style="max-width:100px;" width="100" height="22" loading="lazy">
           </a>
         </div>
       </div>
@@ -137,29 +137,40 @@
 </footer>
 
 <div class="backtotop">
-  <button id="backToTop" class="btn btn-primary backToTop rounded-circle">
+  <button id="backToTop" class="btn btn-primary backToTop rounded-circle" aria-label="Back to top" type="button">
 		<i class="bi bi-arrow-up"></i>
 	</button>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13" defer></script>
-<?php if ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php' || $_SERVER['REQUEST_URI'] == '/search') { ?>
-  <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js" defer></script>
+<?php
+// Decide which scripts a page needs from its PATH. These checks used to compare
+// the whole REQUEST_URI, so any query string (/search?q=adele, /tickets?when=week)
+// silently dropped search.js and events-listing.js, and /concerts, /sports,
+// /theater, /festival, /state/* and /country/* never loaded events-listing.js at
+// all, so their "More Events" button did nothing.
+$soPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$soIsHome = ($soPath === '/' || $soPath === '/index.php');
+$soIsSearch = ($soPath === '/search');
+$soHasEventList = (bool) preg_match('#^/(search|tickets|concerts|sports|theater|festival)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath);
+?>
+<script src="/lib/jquery/3.7.1/jquery.min.js" defer></script>
+<script src="/lib/bootstrap/5.3.8/bootstrap.bundle.min.js" defer></script>
+<script src="/lib/flatpickr/4.6.13/flatpickr.min.js" defer></script>
+<?php if ($soIsHome || $soIsSearch || $soPath === '/about-us') { ?>
+  <script src="/lib/slick-carousel/1.8.1/slick.min.js" defer></script>
 <?php } ?>
-<script src="<?php echo HOME_URL; ?>/js/main.js?v=<?php echo filemtime(__DIR__ . '/js/main.js'); ?>" defer></script>
-<?php if ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>  
-    <script src="<?php echo HOME_URL; ?>/js/home.js?v=<?php echo filemtime(__DIR__ . '/js/home.js'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(soAsset('js/main.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php if ($soIsHome) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/home.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
-<?php if($_SERVER['REQUEST_URI'] == '/search' || $_SERVER['REQUEST_URI'] == '/tickets' || strpos($_SERVER['REQUEST_URI'], '/artist/') === 0 || strpos($_SERVER['REQUEST_URI'], '/category/') === 0 || strpos($_SERVER['REQUEST_URI'], '/venue/') === 0 || strpos($_SERVER['REQUEST_URI'], '/city/') === 0) { ?>
-    <script src="<?php echo HOME_URL; ?>/js/events-listing.js?v=<?php echo filemtime(__DIR__ . '/js/events-listing.js'); ?>" defer></script>
+<?php if ($soHasEventList) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/events-listing.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
-<?php if($_SERVER['REQUEST_URI'] == '/search') { ?>
-    <script src="<?php echo HOME_URL; ?>/js/search.js?v=<?php echo filemtime(__DIR__ . '/js/search.js'); ?>" defer></script>
+<?php if ($soIsSearch) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/search.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
-<?php if (strpos($_SERVER['REQUEST_URI'], '/artist/') === 0) { ?>
-    <script src="<?php echo HOME_URL; ?>/js/performer.js?v=<?php echo filemtime(__DIR__ . '/js/performer.js'); ?>" defer></script>
+<?php if (strpos($soPath, '/artist/') === 0) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/performer.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
 
 <?php 
@@ -190,7 +201,7 @@
 		return mapsPromise;
 	}        
   <?php if (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>
-    Seatics.config.checkoutUrl = 'https://checkout.seatoutlet.com';
+    Seatics.config.checkoutUrl = <?php echo json_encode(TN_CHECKOUT_URL); ?>;
     Seatics.config.enableLegalDisclosureMobile = true;
     Seatics.config.preCheckoutButtonHtml = 'Continue to Payment';
     Seatics.config.buyButtonContentHtml = '<div class="buy-btn">' + 'Buy Now' + '</div>';

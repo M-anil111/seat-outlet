@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../inc/cli-guard.php';
 require_once __DIR__ . '/../functions.php';
 
 $topVenues = getTopVenues(6);
@@ -12,7 +13,7 @@ if (!empty($topVenues)) {
             'name'  => $venue['text']['name'] ?? '',
             'city'  => $venue['city']['text']['name'] ?? '',
             'state' => $venue['stateProvince']['text']['abbr'] ?? '',
-            'image' => "/images/venue.webp"
+            'image' => "/images/venue-480.webp"
         ];       
     }
 }

@@ -9,19 +9,13 @@ $slug = $_GET['slug'] ?? '';
 $code = parseLocationSlug('country', $slug);
 
 if ($code === null) {
-	include 'header.php';
-	echo '<div class="container"><p>Invalid country.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('Country');
 }
 
 $country = getLocationDisplayInfo('country', $code);
 
 if (empty($country)) {
-	include 'header.php';
-	echo '<div class="container"><p>Country not found.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('Country');
 }
 
 $today = date('Y-m-d');
@@ -48,6 +42,7 @@ $countryLabel = $country['label'];
 $pageMetaTitle       = "Events in $countryLabel Tickets | Seat Outlet";
 $pageMetaDescription = "Find concert, sports, and event tickets in $countryLabel. Compare prices and book securely on Seat Outlet.";
 $pageCanonicalUrl    = HOME_URL . '/country/' . createSlug($countryLabel, $code);
+$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/tickets']], $countryLabel)];
 
 include 'header.php';
 ?>
@@ -61,13 +56,13 @@ include 'header.php';
 						<div class="d-flex justify-content-between align-items-center results-header">
 							<div class="results-title">
 								<span class="active-indicator"></span>
-								<h2>
+								<h1>
 									EVENTS in <?php echo htmlspecialchars($countryLabel, ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $total_count; ?>
 										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
 									</span>
-								</h2>
+								</h1>
 							</div>
 						</div>
 					</div>
@@ -125,7 +120,7 @@ include 'header.php';
 										</div>
 										<div class="ms-3">
 											<?php renderEventPriceTag($event); ?>
-											<a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+											<a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 												<span class="d-none d-md-inline">Find Tickets</span>
 												<i class="bi bi-chevron-right"></i>
 											</a>

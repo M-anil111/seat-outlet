@@ -1,5 +1,19 @@
 <?php
 
+// Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
+// lose the visitor's own query string on the way, so ?when= / ?sort= / ?page=
+// silently did nothing on those pages (seen on beta). REQUEST_URI still holds the
+// original address, so restore any parameter PHP did not receive. Existing keys
+// (the rewrite's own slug) always win, so this can never override routing.
+if (!empty($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '?') !== false) {
+    parse_str((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY), $so_original_query);
+    if (is_array($so_original_query) && $so_original_query) {
+        $_GET = $_GET + $so_original_query;
+        $_REQUEST = $_REQUEST + $so_original_query;
+    }
+    unset($so_original_query);
+}
+
 include 'db/config.php';
 include 'inc/constants.php';
 require 'vendor/autoload.php';
@@ -679,6 +693,39 @@ function getTnPerformersByIds(array $ids) {
     return $out;
 }
 
+/**
+ * One page of the performer catalog (performers.php and
+ * ajax/get-performers.php). Only performers with tickets on sale, so the
+ * A-Z list has no dead clicks. Uses `filter`, not `eventFilter`, for the
+ * same reason as cron/build-search-vocab.php. tnRequest() answers [] when
+ * the API is down with nothing cached; this throws instead so callers can
+ * tell "API down" apart from "no performers for this letter".
+ */
+function getTnPerformers(array $params = []) {
+    $filter = '_metadata/hasTickets eq true';
+    if (!empty($params['filter'])) {
+        $filter .= ' and ' . $params['filter'];
+    }
+    $params['filter'] = $filter;
+
+    $data = tnRequest('/catalog/v2/performers', $params, 'GET', 6 * 3600);
+    if (!is_array($data) || !array_key_exists('results', $data)) {
+        throw new RuntimeException('TicketNetwork performers request failed');
+    }
+    return $data;
+}
+
+/** Card image for a performer list: serve-only, never blocks the page on a lookup. */
+function getPerformerImage($name, $defaultCategory) {
+    return getArtistImage($name, $defaultCategory ?: [], false);
+}
+
+/** Display label for a performer's default category, e.g. "Rock / Pop". */
+function getPerformerGenreLabel($defaultCategory) {
+    $name = trim((string) ($defaultCategory['text']['name'] ?? ''));
+    return $name === '' ? '' : ucwords(strtolower($name));
+}
+
 function getTnEventById($eventId) {
     $endpoint = "/catalog/v2/events/" . (int) $eventId;
     return tnRequest($endpoint);
@@ -778,7 +825,7 @@ function curlGet($url) {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 10,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_USERAGENT => 'SeatOutlet/1.0 (https://beta.seatoutlet.com)'
+        CURLOPT_USERAGENT => 'SeatOutlet/1.0 (' . HOME_URL . ')'
     ]);
     $response = curl_exec($ch);
     curl_close($ch);
@@ -1838,6 +1885,111 @@ function convertToFloat($value) {
 
 
 /**
+ * schema.org Offer for an event, or null when there is no real price.
+ * The homepage and listing schemas used to default a missing price to "50"/"0"
+ * and wrote prices like "$10" with the currency symbol, which is invalid and
+ * claims prices the page does not show. $price may be 7350, "7350.00" or "$1,250".
+ */
+function seoOffer($url, $price) {
+    if ($price === null || $price === '') return null;
+    $num = (float) str_replace([',', '$', ' '], '', (string) $price);
+    if ($num <= 0) return null;
+    return [
+        "@type"         => "Offer",
+        "url"           => $url,
+        "price"         => number_format($num, 2, '.', ''),
+        "priceCurrency" => "USD",
+        "availability"  => "https://schema.org/InStock",
+    ];
+}
+
+/** Trim a <title> to ~60 characters at a word boundary, keeping the brand suffix when it fits. */
+function seoClampTitle($title, $max = 62) {
+    $title = trim(preg_replace('/\s+/', ' ', (string) $title));
+    if (mb_strlen($title) <= $max) return $title;
+    $brand = ' | Seat Outlet';
+    $base = $title;
+    if (mb_substr($title, -mb_strlen($brand)) === $brand) {
+        $base = mb_substr($title, 0, -mb_strlen($brand));
+        if (mb_strlen($base) + mb_strlen($brand) <= $max) return $title;
+    } else {
+        $brand = '';
+    }
+    $room = $max - mb_strlen($brand);
+    if (mb_strlen($base) > $room) {
+        $cut = mb_substr($base, 0, $room - 1);
+        $sp = mb_strrpos($cut, ' ');
+        $base = rtrim(($sp !== false && $sp > $room * 0.6) ? mb_substr($cut, 0, $sp) : $cut, " ,:;-\u{2013}") . "\u{2026}";
+    }
+    return $base . $brand;
+}
+
+/** Trim a meta description to ~155 characters at a word boundary. */
+function seoClampDescription($desc, $max = 158) {
+    $desc = trim(preg_replace('/\s+/', ' ', (string) $desc));
+    if (mb_strlen($desc) <= $max) return $desc;
+    $cut = mb_substr($desc, 0, $max - 1);
+    $sp = mb_strrpos($cut, ' ');
+    $cut = ($sp !== false && $sp > $max * 0.6) ? mb_substr($cut, 0, $sp) : $cut;
+    return rtrim($cut, " ,:;-\u{2013}") . "\u{2026}";
+}
+
+/**
+ * True when a TicketNetwork "get one" call found nothing. A missing id does not return an
+ * empty body: the API answers {"Message":"The requested resource was not found."}, which is
+ * non-empty and used to pass every `empty($x)` check, so invalid URLs rendered as 200 pages.
+ */
+function tnEntityMissing($r) {
+    if (empty($r) || !is_array($r)) return true;
+    return isset($r['Message']) && !isset($r['id']) && !isset($r['alphaCode']);
+}
+
+/** Friendly "not found" content with ways back to inventory (no header/footer). */
+function notFoundBlockHtml($what) {
+    $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
+    return '<div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' not found</h1>'
+        . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place.</p>'
+        . '<div class="d-flex flex-wrap justify-content-center gap-2">'
+        . '<a class="btn btn-primary" href="/tickets">Browse all events</a>'
+        . '<a class="btn btn-outline-secondary" href="/concerts">Concerts</a>'
+        . '<a class="btn btn-outline-secondary" href="/sports">Sports</a>'
+        . '<a class="btn btn-outline-secondary" href="/theater">Theater</a>'
+        . '<a class="btn btn-outline-secondary" href="/cities">Cities</a>'
+        . '</div></div>';
+}
+
+/** Whole "not found" page: HTTP 404, noindex, branded. Call before any output. */
+function renderNotFoundPage($what) {
+    http_response_code(404);
+    $pageRobots = 'noindex, follow';
+    $pageMetaTitle = $what . ' not found | Seat Outlet';
+    $pageMetaDescription = 'The page you were looking for could not be found. Browse concerts, sports, theater and festival tickets on Seat Outlet.';
+    include 'header.php';
+    echo notFoundBlockHtml($what);
+    include 'footer.php';
+    exit;
+}
+
+/**
+ * URL of a front-end asset, preferring its minified build.
+ *
+ * `soAsset('js/main.js')` returns /js/main.min.js?v=<mtime> when
+ * js/main.min.js exists (made by tools/build-assets.sh; CI fails when the
+ * minified file is out of date), otherwise the readable source. css/style.css
+ * is built together with css/skeleton.css into css/style.min.css.
+ */
+function soAsset($rel) {
+    $rel = ltrim((string) $rel, '/');
+    $min = preg_replace('/\.(css|js)$/', '.min.$1', $rel);
+    $file = __DIR__ . '/' . $min;
+    if ($min !== $rel && is_file($file)) {
+        return rtrim(HOME_URL, '/') . '/' . $min . '?v=' . filemtime($file);
+    }
+    $file = __DIR__ . '/' . $rel;
+    return rtrim(HOME_URL, '/') . '/' . $rel . (is_file($file) ? '?v=' . filemtime($file) : '');
+}
+
+/**
  * Baseline response headers for every HTML page (called from header.php
  * before any output). No CSP yet: the pages load Bootstrap, Slick, Seatics,
  * Google Maps and fonts from several CDNs, so a strict policy needs its own
@@ -2012,7 +2164,7 @@ function getTnCatEventsCount($catId = 0, $params = []) {
 }
 
 function getTnCatById($catId) {
-    $params['filter'] = "contains(path, '$catId') and depth eq 2";
+    $params['filter'] = "contains(path, '." . (int) $catId . ".') and depth eq 2";
     $params['perPage'] = 1;
     return tnRequest("/catalog/v2/categories/", $params);
 }
@@ -3058,7 +3210,7 @@ function outputJsonLdGraph(array $nodes) {
     echo json_encode([
         "@context" => "https://schema.org",
         "@graph" => $nodes,
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);   // compact: pretty-printing doubled the size (51 KB on the homepage)
     echo "\n" . '</script>' . "\n";
 }
 
@@ -3149,7 +3301,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
     switch ($dimension) {
         case 'city':
             $city = getTnCityById((int) $locationValue);
-            if (empty($city)) return null;
+            if (tnEntityMissing($city)) return null;
             return [
                 'name' => $city['text']['name'] ?? '',
                 'region' => $city['stateProvince']['text']['abbr'] ?? '',
@@ -3157,7 +3309,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
             ];
         case 'state':
             $state = getTnStateById((int) $locationValue);
-            if (empty($state)) return null;
+            if (tnEntityMissing($state)) return null;
             return [
                 'name' => $state['text']['name'] ?? '',
                 'region' => $state['text']['abbr'] ?? '',
@@ -3165,7 +3317,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
             ];
         case 'venue':
             $venue = getTnVenueById((int) $locationValue);
-            if (empty($venue)) return null;
+            if (tnEntityMissing($venue)) return null;
             return [
                 'name' => $venue['text']['name'] ?? '',
                 'region' => trim(($venue['city']['text']['name'] ?? '') . ', ' . ($venue['stateProvince']['text']['abbr'] ?? ''), ', '),
@@ -3173,7 +3325,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
             ];
         case 'country':
             $country = getTnCountryByCode((string) $locationValue);
-            if (empty($country)) return null;
+            if (tnEntityMissing($country) || ($country['text']['name'] ?? 'n/a') === 'n/a') return null;
             return [
                 'name' => $country['text']['name'] ?? '',
                 'region' => $country['alphaCode'] ?? '',
@@ -3526,7 +3678,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
     <section class="section-featured-header text-sm-center text-md-start">
         <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-            style="background-image: url('<?php echo HOME_URL; ?>/assets/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+            style="background-image: url('<?php echo HOME_URL; ?>/images/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
             <div class="container mx-xl-5 mx-lg-5 mx-md-3">
                 <div class="row">
                     <div class="col-12 mb-4">
@@ -3647,7 +3799,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                             </div>
                                             <div class="ms-3">
                                                 <?php renderEventPriceTag($event); ?>
-                                                <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+                                                <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                                     <span class="d-none d-md-inline">Find Tickets</span>
                                                     <i class="bi bi-chevron-right"></i>
                                                 </a>
@@ -3860,7 +4012,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
 
     <section class="section-featured-header text-sm-center text-md-start">
         <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-            style="background-image: url('<?php echo HOME_URL; ?>/assets/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+            style="background-image: url('<?php echo HOME_URL; ?>/images/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
             <div class="container mx-xl-5 mx-lg-5 mx-md-3">
                 <div class="row">
                     <div class="col-12 mb-4">
@@ -3943,7 +4095,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                             </div>
                                             <div class="ms-3">
                                                 <?php renderEventPriceTag($event); ?>
-                                                <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+                                                <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                                     <span class="d-none d-md-inline">Find Tickets</span>
                                                     <i class="bi bi-chevron-right"></i>
                                                 </a>

@@ -11,21 +11,15 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
-	include 'header.php';
-	echo '<div class="container"><p>Invalid performer.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('Performer');
 }
 
 // Performer and its first page of events are independent: fetch together.
 tnRequestMulti([['/catalog/v2/performers/' . $id, []], performerPageEventsSpec($id, $perPage)]);
 $performer = getTnPerformerById($id);
 
-if (empty($performer) || empty($performer['defaultCategory'])) {
-	include 'header.php';
-	echo '<div class="container"><p>Performer not found.</p></div>';
-	include 'footer.php';
-	exit;
+if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
+	renderNotFoundPage('Performer');
 }
 
 $today = date('Y-m-d');
@@ -74,6 +68,7 @@ if ($priceSnapshot['from'] !== '' && $total_count > 0) {
 // site-wide Organization/WebSite graph before).
 $pageJsonLdNodes = buildPerformerPageJsonLd($artistName, (int) $id, $events, $breadcrumbs, $pageOgImage ?? '');
 
+$pagePreloadImage = ($performerImg['status'] ?? '') !== 'fallback' ? $performer_image : '/images/event-so.webp';
 include 'header.php';
 ?>
 
@@ -283,7 +278,7 @@ include 'header.php';
 													data-venue="<?php echo $event['venue']['text']['name']; ?>"
 													data-venueSlug="<?php echo $venueSlug; ?>"
 													data-location="<?php echo $event['city']['text']['name'] . ', ' . $event['stateProvince']['text']['abbr']; ?>"
-													data-title="<?php echo $event['text']['name']; ?>"
+													data-title="<?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
 													data-performers="<?php echo htmlspecialchars($dataPerformers); ?>"
 													data-performer-slugs="<?php echo htmlspecialchars($dataPerformerSlugs); ?>"
 												></i>
@@ -294,13 +289,13 @@ include 'header.php';
 												<a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a>
 											</div>
 											<div class="text-muted small">
-												<a href="/event/<?php echo $slug; ?>"><?php echo $event['text']['name']; ?></a>
+												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
 											</div>
 										</div>
 										<div class="ms-3">
 											<?php if (!empty($cheapestEventId) && (int) ($event['id'] ?? 0) === $cheapestEventId) { ?><span class="event-cheapest-badge">Cheapest date</span><?php } ?>
 											<?php renderEventPriceTag($event); ?>
-											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2">
+											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 												<span class="d-none d-md-inline">
 													Find Tickets
 												</span>

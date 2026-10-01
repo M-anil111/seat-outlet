@@ -31,6 +31,33 @@ include_once 'functions.php';
     // rule row (or null, the default - unchanged behavior) for the <head>
     // block below to use in place of the hardcoded/per-page-type SEO tags.
     $pageRule = resolvePageRule();
+
+    // Static pages that never set their own title/description get theirs from
+    // inc/page-meta.php (title, description, canonical, og:/twitter: tags and
+    // baseline schema all come from the $pageMeta* branch below).
+    $soReqPath = rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/') ?: '/';
+    if (empty($pageMetaTitle)) {
+        $soStaticMeta = require __DIR__ . '/inc/page-meta.php';
+        if (isset($soStaticMeta[$soReqPath])) {
+            $pageMetaTitle       = $soStaticMeta[$soReqPath][0] . ' | Seat Outlet';
+            $pageMetaDescription = $soStaticMeta[$soReqPath][1];
+            $pageCanonicalUrl    = rtrim(HOME_URL, '/') . $soReqPath;
+        }
+    }
+    // Unknown event ids must answer 404 (they used to be a 200 page with a junk title). The status has
+    // to be sent before any output; the event is cached by tnRequest, so inc/seo-event.php reuses it.
+    if (strpos($soReqPath, '/event/') === 0) {
+        $soEvId = (int) ($_GET['id'] ?? 0);
+        if ($soEvId <= 0) { $soEvParts = explode('-', (string) ($_GET['slug'] ?? '')); $soEvId = (int) end($soEvParts); }
+        $soEvCheck = $soEvId > 0 ? getTnEventById($soEvId) : null;
+        if ($soEvCheck === null || tnEntityMissing($soEvCheck) || empty($soEvCheck['text']['name'])) {
+            http_response_code(404);
+            $pageRobots = 'noindex, follow';
+        }
+    }
+    // Keep titles and descriptions inside what a search result shows.
+    if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
+    if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription($pageMetaDescription); }
 ?>
 
 <!DOCTYPE html>
@@ -46,28 +73,44 @@ include_once 'functions.php';
     <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" type="image/png" href="/images/favicon-new.webp">
     
+        <?php if (strpos($soReqPath, '/event/') === 0) { ?>
+    <!-- The seat-map widget (loaded at the end of the page) and its static assets: start those connections now. -->
+    <link rel="preconnect" href="https://mapwidget3.seatics.com" crossorigin>
+    <link rel="preconnect" href="https://d1s8091zjpj5vh.cloudfront.net" crossorigin>
+    <?php } ?>
+    <?php if (!empty($pagePreloadImage)) { ?>
+    <!-- LCP image that is only referenced from CSS (hero backgrounds): fetch it early. -->
+    <link rel="preload" as="image" href="<?php echo htmlspecialchars($pagePreloadImage, ENT_QUOTES, 'UTF-8'); ?>" fetchpriority="high">
+    <?php } ?>
     <!-- Critical CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
-    <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/skeleton.css?v=<?php echo filemtime(__DIR__ . '/css/skeleton.css'); ?>">
+    <link rel="stylesheet" href="/lib/bootstrap/5.3.8/bootstrap.min.css">
+    <?php if (is_file(__DIR__ . '/css/style.min.css')) { ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
+    <?php } else { ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/skeleton.css'), ENT_QUOTES, 'UTF-8'); ?>">
+    <?php } ?>
     
 
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/fonts/bootstrap-icons-subset.woff2?v=1.13.1" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/lib/flatpickr/4.6.13/flatpickr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <?php $soNeedsSlick = in_array($soReqPath, ['/', '/index.php', '/search', '/about-us'], true) || strpos($soReqPath, '/event/') === 0; // carousel CSS: pages with a carousel, plus event pages (the Seatics seat-map widget uses slick classes) ?>
+    <?php if ($soNeedsSlick) { ?>
+    <link rel="preload" href="/lib/slick-carousel/1.8.1/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/lib/slick-carousel/1.8.1/slick-theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <?php } ?>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Inter is self-hosted (css/fonts.css, folded into style.min.css). Deliberately NOT preloaded: on a slow connection the 47 KB preload
+         competes with the render-blocking CSS and delays first paint (measured: artist LCP 2.8 s -> 4.1 s); the metric-matched fallback font
+         means the swap does not move anything. -->
     
 
     <noscript>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+        <link rel="stylesheet" href="/lib/flatpickr/4.6.13/flatpickr.min.css">
+        <?php if ($soNeedsSlick) { ?>
+        <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick.css">
+        <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick-theme.css">
+        <?php } ?>
     </noscript>
     <?php if ($pageRule && !empty($pageRule['meta_title'])) { ?>
         <title><?php echo htmlspecialchars($pageRule['meta_title'], ENT_QUOTES, 'UTF-8'); ?></title>
@@ -120,11 +163,11 @@ include_once 'functions.php';
         // baseline here; merge in page-specific nodes when present.
         outputJsonLdGraph(array_merge([buildOrganizationSchema(), buildWebsiteSchema()], $pageJsonLdNodes ?? []));
         ?>
-    <?php } elseif ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>
+    <?php } elseif ($soReqPath === '/' || $soReqPath === '/index.php') { ?>
         <?php include 'inc/seo.php'; ?>
-    <?php }elseif ($_SERVER['REQUEST_URI'] == '/tickets' || $_SERVER['REQUEST_URI'] == '/tickets.php') { ?>
+    <?php }elseif ($soReqPath === '/tickets' || $soReqPath === '/tickets.php') { ?>
         <?php include 'inc/seo-tickets.php'; ?>
-    <?php }elseif (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>
+    <?php }elseif (strpos($soReqPath, '/event/') === 0) { ?>
         <?php include 'inc/seo-event.php'; ?>
     <?php } else { ?>
         <?php

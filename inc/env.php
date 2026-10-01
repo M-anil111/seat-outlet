@@ -19,6 +19,9 @@
  *   3. <code root>/inc/env.local.php
  *                                  legacy location, written by the SFTP deploy
  *                                  workflow; gitignored.
+ *   4. <parent of code root>/inc/env.local.php
+ *                                  the old web root's file, used while the code
+ *                                  lives in .../beta.seatoutlet.com/seat-outlet.
  *
  * Variables already present in the real environment (PHP-FPM env[], a
  * crontab, the shell) are not overridden by the file.
@@ -40,6 +43,12 @@ function seatoutletEnvCandidates() {
         $candidates[] = $m[1] . '/.seatoutlet/env.local.php';
     }
     $candidates[] = __DIR__ . '/env.local.php';
+    // The file the old SFTP deploy left in the previous web root, one level
+    // above the code root (.../beta.seatoutlet.com/inc/env.local.php when the
+    // code lives in .../beta.seatoutlet.com/seat-outlet). Outside the current
+    // CloudPanel site root, so not web-served; kept so beta keeps working
+    // until the file is moved to ~/.seatoutlet/.
+    $candidates[] = dirname(__DIR__, 2) . '/inc/env.local.php';
     return $candidates;
 }
 

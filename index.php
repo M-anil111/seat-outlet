@@ -55,11 +55,11 @@ foreach ($fallbackCategories as $key => $list) {
 
     <!-- Slide 1 – Concert / Event -->
     <div class="slide">
-      <img src="/images/home-slider.webp" alt="Ticket Marketplace - Live Concert Event" loading="eager" fetchpriority="high" />
+      <img src="/images/home-slider-1024.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w, /images/home-slider.webp 1920w" sizes="100vw" width="1920" height="1100" alt="Ticket Marketplace - Live Concert Event" loading="eager" fetchpriority="high" />
       <div class="slide-overlay"></div>
       <div class="slide-caption">
         <span class="tag">Live Events</span>
-        <h2>Experience Live Events<br>Like Never Before</h2>
+        <h1>Experience Live Events<br>Like Never Before</h1>
         <p>From sold-out concerts to must-see sports and theater shows discover verified tickets at competitive prices across our trusted ticket marketplace network.</p>
         <a href="/tickets" class="btn-slide">Explore Events</a>
       </div>
@@ -615,7 +615,7 @@ foreach ($fallbackCategories as $key => $list) {
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://mindshare.consulting/" target="_blank" rel="noopener">
-      <img src="/images/mindshare-logo.webp" class="img-fluid partner-network-img" alt="mindshare.consulting" width="115" height="115" loading="lazy">
+      <img src="/images/mindshare-logo-230.webp" class="img-fluid partner-network-img" alt="mindshare.consulting" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>

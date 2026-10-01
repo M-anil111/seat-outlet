@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../inc/cli-guard.php';
 /**
  * CI/local check: flags calls to project-defined functions that pass fewer
  * arguments than the function's required (non-default) parameter count.

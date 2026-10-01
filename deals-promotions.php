@@ -107,7 +107,7 @@ include 'header.php';
 
                 <!-- 1 -->
                 <div class="policy-section" id="section-1">
-                    <img src="/images/cta-banner.webp" class="img-fluid rounded mb-3" alt="Seat Outlet promo codes for concerts, sports and events" loading="lazy">
+                    <img src="/images/cta-banner.webp" class="img-fluid rounded mb-3" alt="Seat Outlet promo codes for concerts, sports and events" loading="lazy" width="1920" height="600" decoding="async">
                     <h2> Exclusive Promo Codes for Concerts, Sports & Events</h2>
                     <p>
                     <p>Save more on every event you love with our exclusive <strong>ticket promo codes</strong>. Whether you're booking tickets for <strong>concerts, sports games, or theater shows, our deals</strong> help you get the best seats at the best prices - see our full
@@ -201,9 +201,9 @@ include 'header.php';
                 <!-- 4 -->
                 <div class="policy-section" id="section-4">
                     <div class="d-flex flex-wrap gap-3 mb-3">
-                        <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Concert tickets available with our promo codes" loading="lazy">
-                        <img src="/images/event-basketball.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Sports tickets available with our promo codes" loading="lazy">
-                        <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Theater and live show tickets with our promo codes" loading="lazy">
+                        <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Concert tickets available with our promo codes" loading="lazy" width="800" height="512" decoding="async">
+                        <img src="/images/event-basketball.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Sports tickets available with our promo codes" loading="lazy" width="800" height="512" decoding="async">
+                        <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Theater and live show tickets with our promo codes" loading="lazy" width="750" height="843" decoding="async">
                     </div>
                     <h2>Tips to Maximize Your Savings</h2>
                     <p>To get the most out of our deals, keep these tips in mind:</p>
