@@ -11,19 +11,13 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
-	include 'header.php';
-	echo '<div class="container"><p>Invalid city.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('City');
 }
 
 $city = getTnCityById($id);
 
-if (empty($city)) {
-	include 'header.php';
-	echo '<div class="container"><p>City not found.</p></div>';
-	include 'footer.php';
-	exit;
+if (tnEntityMissing($city)) {
+	renderNotFoundPage('City');
 }
 
 $today = date('Y-m-d');

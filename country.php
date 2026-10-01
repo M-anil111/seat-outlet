@@ -9,19 +9,13 @@ $slug = $_GET['slug'] ?? '';
 $code = parseLocationSlug('country', $slug);
 
 if ($code === null) {
-	include 'header.php';
-	echo '<div class="container"><p>Invalid country.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('Country');
 }
 
 $country = getLocationDisplayInfo('country', $code);
 
 if (empty($country)) {
-	include 'header.php';
-	echo '<div class="container"><p>Country not found.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('Country');
 }
 
 $today = date('Y-m-d');

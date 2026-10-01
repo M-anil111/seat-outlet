@@ -1,10 +1,21 @@
+/* Fallback font tuned to Inter's metrics (Arial scaled to match), so the page does not shift when
+   the web font arrives after first paint (the Google Fonts stylesheet no longer blocks rendering). */
+@font-face {
+    font-family: 'Inter Fallback';
+    src: local('Arial'), local('Helvetica Neue'), local('Helvetica'), local('Liberation Sans');
+    size-adjust: 107.4%;
+    ascent-override: 90.2%;
+    descent-override: 22.5%;
+    line-gap-override: 0%;
+}
+
 /* RESET */
 * {
     outline: none;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+    font-family: 'Inter', 'Inter Fallback', system-ui, -apple-system, BlinkMacSystemFont,
                  'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -17,7 +28,7 @@
 body {
     margin: 0;
     background: #f2f2f2;
-	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+	font-family: 'Inter', 'Inter Fallback', system-ui, -apple-system, BlinkMacSystemFont,
                  'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 img {
@@ -871,7 +882,7 @@ h3,
 .section-performer-content .performer-event-footer .pagination > li > a{
 	font-size:14px;
 	color:#6f6f6f;
-	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+	font-family: 'Inter', 'Inter Fallback', system-ui, -apple-system, BlinkMacSystemFont,
                  'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	padding:0;
 	border:none;
@@ -2137,7 +2148,7 @@ h3,
   }
   
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', 'Inter Fallback', sans-serif;
     margin: 0;
     padding: 0;
     min-height: 100vh;
@@ -2593,7 +2604,7 @@ h3,
     --space-8: 6rem;
   
     /* Typography */
-    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family: 'Inter', 'Inter Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --fs-xs: 0.75rem;
     --fs-sm: 0.875rem;
     --fs-base: 1rem;
@@ -5271,3 +5282,11 @@ a.common-btn:hover{
 .event-detail .common-btn { color: #0a58ca; }
 .event-detail .common-btn.btn-primary { color: #fff; }
 .listing-links a, .links-wrapper a { display: inline-block; min-height: 24px; line-height: 24px; }
+
+/* Reserve the icon box before the (async) icon font loads so rows and buttons do not jump when it arrives. */
+.bi { display: inline-block; width: 1em; height: 1em; vertical-align: -.125em; }
+
+/* No sideways scroll: g-5 row gutters (-1.5rem) are wider than the 15px container padding below the container's max width,
+   and the newsletter fields are fixed-percent columns inside a no-wrap flex row. */
+@media (max-width: 1263.98px) { .container .row.g-5, .container-fluid .row.g-5 { --bs-gutter-x: 1.875rem; } }
+@media (min-width: 992px) { .newsletter-icontact > [class*="col-"] { flex: 1 1 0; min-width: 0; width: auto; } }

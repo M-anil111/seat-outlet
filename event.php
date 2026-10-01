@@ -133,7 +133,7 @@ if ($id <= 0) {
   $parts = explode('-', (string) $slug);
   $id    = (int) end($parts);
   if ($id <= 0) {
-    echo '<div class="container"><p>Invalid event.</p></div>';
+    echo notFoundBlockHtml('Event');
     include 'footer.php';
     exit;
   }
@@ -141,8 +141,8 @@ if ($id <= 0) {
 
 $event = getTnEventById($id);
 
-if (empty($event) || empty($event['text']['name'])) {
-  echo '<div class="container"><p>Event not found.</p></div>';
+if (tnEntityMissing($event) || empty($event['text']['name'])) {
+  echo notFoundBlockHtml('Event');
   include 'footer.php';
   exit;
 }

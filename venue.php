@@ -11,19 +11,13 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
-	include 'header.php';
-	echo '<div class="container"><p>Invalid venue.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('Venue');
 }
 
 $venue = getTnVenueById($id);
 
-if (empty($venue)) {
-	include 'header.php';
-	echo '<div class="container"><p>Venue not found.</p></div>';
-	include 'footer.php';
-	exit;
+if (tnEntityMissing($venue)) {
+	renderNotFoundPage('Venue');
 }
 
 $today = date('Y-m-d');

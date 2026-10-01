@@ -28,7 +28,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h1>
-									EVENTS <span class="dot">·</span>
+									SPORTS TICKETS <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $total_count; ?>
 										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>

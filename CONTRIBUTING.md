@@ -272,6 +272,25 @@ the provenance columns.
 Google Knowledge Graph is no longer used for images and `GKGSAPI_KEY` is
 optional.
 
+## Front-end assets, SEO and page speed
+
+- **Minified assets.** Edit `css/style.css`, `css/skeleton.css` and `js/*.js` as usual, then run
+  `tools/build-assets.sh` and commit the generated `css/style.min.css` and `js/*.min.js`. The pages load
+  the `.min` files through `soAsset()` (functions.php), falling back to the source if a `.min` is missing.
+  CI runs `tools/build-assets.sh --check` and fails when a minified file is stale. Needs Node (`npx`).
+- **Fonts.** The Google Fonts stylesheet loads without blocking first paint. `css/style.css` defines an
+  `Inter Fallback` font (Arial scaled to Inter's metrics) and reserves icon boxes (`.bi`), which is what keeps
+  layout shift near zero while the web fonts arrive. Keep both when changing typography.
+- **Titles and descriptions.** A page sets `$pageMetaTitle` / `$pageMetaDescription` / `$pageCanonicalUrl`
+  before `include 'header.php'`; static pages without their own get theirs from `inc/page-meta.php`.
+  `header.php` trims titles to about 60 characters and descriptions to about 155. Never hard-code the
+  domain: use `HOME_URL`.
+- **One `<h1>` per page.** Listing pages use the `.results-title h1`; keep it descriptive.
+- **Structured data.** `seoOffer()` builds an Offer only from a real price; never default a missing price.
+- **Which scripts load.** footer.php decides from the URL path (not the query string). New listing-style pages
+  need their path pattern added to `$soHasEventList` or "More Events" will not work.
+- **Maintenance scripts** (`cron/*`, `db/migrate.php`, `tools/*`) include `inc/cli-guard.php`: command line only.
+
 ## Optional performance layer: APCu
 
 Several hot paths (`page_rules` lookups, TicketNetwork's OAuth token,

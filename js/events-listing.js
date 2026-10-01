@@ -45,8 +45,16 @@ function getActiveLocation() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (input) {
-        await loadGoogleMapsApi();
-        initLocationSearch('locationInput', 'event');
+        // Google Maps (about 380 KB) is only needed for place autocomplete, so load it when the
+        // visitor first touches the location field instead of on every page view.
+        let autocompleteReady = null;
+        const ensureAutocomplete = () => autocompleteReady || (autocompleteReady = loadGoogleMapsApi().then(() => {
+            initLocationSearch('locationInput', 'event');
+            if (input.value.trim() && document.activeElement === input) {
+                input.dispatchEvent(new Event('input', { bubbles: true }));   // replay what was typed while Maps loaded
+            }
+        }));
+        ['focus', 'pointerdown', 'touchstart'].forEach((evt) => input.addEventListener(evt, ensureAutocomplete, { once: true, passive: true }));
 
         const savedLat = getCookie('so_lat');
         const savedLng = getCookie('so_lng');

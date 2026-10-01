@@ -581,13 +581,4 @@
         </section>
     </main>
 
-    <script>
-        // Optional jQuery hook for future custom accordion behaviors
-        $(function () {
-            $('#faqAccordion').on('shown.bs.collapse hidden.bs.collapse', function () {
-                // Keeps animation smooth and layout consistent across screen sizes.
-            });
-        });
-    </script>
-
 <?php include 'footer.php'; ?>

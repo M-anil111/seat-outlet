@@ -1902,6 +1902,42 @@ function seoClampDescription($desc, $max = 158) {
 }
 
 /**
+ * True when a TicketNetwork "get one" call found nothing. A missing id does not return an
+ * empty body: the API answers {"Message":"The requested resource was not found."}, which is
+ * non-empty and used to pass every `empty($x)` check, so invalid URLs rendered as 200 pages.
+ */
+function tnEntityMissing($r) {
+    if (empty($r) || !is_array($r)) return true;
+    return isset($r['Message']) && !isset($r['id']) && !isset($r['alphaCode']);
+}
+
+/** Friendly "not found" content with ways back to inventory (no header/footer). */
+function notFoundBlockHtml($what) {
+    $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
+    return '<div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' not found</h1>'
+        . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place.</p>'
+        . '<div class="d-flex flex-wrap justify-content-center gap-2">'
+        . '<a class="btn btn-primary" href="/tickets">Browse all events</a>'
+        . '<a class="btn btn-outline-secondary" href="/concerts">Concerts</a>'
+        . '<a class="btn btn-outline-secondary" href="/sports">Sports</a>'
+        . '<a class="btn btn-outline-secondary" href="/theater">Theater</a>'
+        . '<a class="btn btn-outline-secondary" href="/cities">Cities</a>'
+        . '</div></div>';
+}
+
+/** Whole "not found" page: HTTP 404, noindex, branded. Call before any output. */
+function renderNotFoundPage($what) {
+    http_response_code(404);
+    $pageRobots = 'noindex, follow';
+    $pageMetaTitle = $what . ' not found | Seat Outlet';
+    $pageMetaDescription = 'The page you were looking for could not be found. Browse concerts, sports, theater and festival tickets on Seat Outlet.';
+    include 'header.php';
+    echo notFoundBlockHtml($what);
+    include 'footer.php';
+    exit;
+}
+
+/**
  * URL of a front-end asset, preferring its minified build.
  *
  * `soAsset('js/main.js')` returns /js/main.min.js?v=<mtime> when
@@ -2095,7 +2131,7 @@ function getTnCatEventsCount($catId = 0, $params = []) {
 }
 
 function getTnCatById($catId) {
-    $params['filter'] = "contains(path, '$catId') and depth eq 2";
+    $params['filter'] = "contains(path, '." . (int) $catId . ".') and depth eq 2";
     $params['perPage'] = 1;
     return tnRequest("/catalog/v2/categories/", $params);
 }
@@ -3232,7 +3268,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
     switch ($dimension) {
         case 'city':
             $city = getTnCityById((int) $locationValue);
-            if (empty($city)) return null;
+            if (tnEntityMissing($city)) return null;
             return [
                 'name' => $city['text']['name'] ?? '',
                 'region' => $city['stateProvince']['text']['abbr'] ?? '',
@@ -3240,7 +3276,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
             ];
         case 'state':
             $state = getTnStateById((int) $locationValue);
-            if (empty($state)) return null;
+            if (tnEntityMissing($state)) return null;
             return [
                 'name' => $state['text']['name'] ?? '',
                 'region' => $state['text']['abbr'] ?? '',
@@ -3248,7 +3284,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
             ];
         case 'venue':
             $venue = getTnVenueById((int) $locationValue);
-            if (empty($venue)) return null;
+            if (tnEntityMissing($venue)) return null;
             return [
                 'name' => $venue['text']['name'] ?? '',
                 'region' => trim(($venue['city']['text']['name'] ?? '') . ', ' . ($venue['stateProvince']['text']['abbr'] ?? ''), ', '),
@@ -3256,7 +3292,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
             ];
         case 'country':
             $country = getTnCountryByCode((string) $locationValue);
-            if (empty($country)) return null;
+            if (tnEntityMissing($country) || ($country['text']['name'] ?? 'n/a') === 'n/a') return null;
             return [
                 'name' => $country['text']['name'] ?? '',
                 'region' => $country['alphaCode'] ?? '',
@@ -3609,7 +3645,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
     <section class="section-featured-header text-sm-center text-md-start">
         <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-            style="background-image: url('<?php echo HOME_URL; ?>/assets/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+            style="background-image: url('<?php echo HOME_URL; ?>/images/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
             <div class="container mx-xl-5 mx-lg-5 mx-md-3">
                 <div class="row">
                     <div class="col-12 mb-4">
@@ -3943,7 +3979,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
 
     <section class="section-featured-header text-sm-center text-md-start">
         <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-            style="background-image: url('<?php echo HOME_URL; ?>/assets/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+            style="background-image: url('<?php echo HOME_URL; ?>/images/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
             <div class="container mx-xl-5 mx-lg-5 mx-md-3">
                 <div class="row">
                     <div class="col-12 mb-4">

@@ -11,21 +11,15 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
-	include 'header.php';
-	echo '<div class="container"><p>Invalid performer.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('Performer');
 }
 
 // Performer and its first page of events are independent: fetch together.
 tnRequestMulti([['/catalog/v2/performers/' . $id, []], performerPageEventsSpec($id, $perPage)]);
 $performer = getTnPerformerById($id);
 
-if (empty($performer) || empty($performer['defaultCategory'])) {
-	include 'header.php';
-	echo '<div class="container"><p>Performer not found.</p></div>';
-	include 'footer.php';
-	exit;
+if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
+	renderNotFoundPage('Performer');
 }
 
 $today = date('Y-m-d');
@@ -74,6 +68,7 @@ if ($priceSnapshot['from'] !== '' && $total_count > 0) {
 // site-wide Organization/WebSite graph before).
 $pageJsonLdNodes = buildPerformerPageJsonLd($artistName, (int) $id, $events, $breadcrumbs, $pageOgImage ?? '');
 
+$pagePreloadImage = ($performerImg['status'] ?? '') !== 'fallback' ? $performer_image : '/images/event-so.webp';
 include 'header.php';
 ?>
 

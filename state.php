@@ -9,19 +9,13 @@ $slug = $_GET['slug'] ?? '';
 $id   = parseLocationSlug('state', $slug);
 
 if ($id === null) {
-	include 'header.php';
-	echo '<div class="container"><p>Invalid state.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('State');
 }
 
 $state = getLocationDisplayInfo('state', $id);
 
 if (empty($state)) {
-	include 'header.php';
-	echo '<div class="container"><p>State not found.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('State');
 }
 
 $today = date('Y-m-d');

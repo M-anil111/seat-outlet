@@ -126,7 +126,7 @@
         <div class="space-between d-flex">
           Developed & Maintained by 
           <a class="px-2 footer-bottom-logo" title="Mindshare Consulting" href="https://www.mindshare.consulting/" target="_blank" > 
-            <img src="/images/mindshare-logo.webp" alt="Mindshare Consulting" style="max-width:100px;" width="100" height="22">
+            <img src="/images/mindshare-logo-230.webp" alt="Mindshare Consulting" style="max-width:100px;" width="100" height="22" loading="lazy">
           </a>
         </div>
       </div>
@@ -156,7 +156,7 @@ $soHasEventList = (bool) preg_match('#^/(search|tickets|concerts|sports|theater|
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13" defer></script>
-<?php if ($soIsHome || $soIsSearch) { ?>
+<?php if ($soIsHome || $soIsSearch || $soPath === '/about-us') { ?>
   <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js" defer></script>
 <?php } ?>
 <script src="<?php echo htmlspecialchars(soAsset('js/main.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
@@ -201,7 +201,7 @@ $soHasEventList = (bool) preg_match('#^/(search|tickets|concerts|sports|theater|
 		return mapsPromise;
 	}        
   <?php if (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>
-    Seatics.config.checkoutUrl = 'https://checkout.seatoutlet.com';
+    Seatics.config.checkoutUrl = <?php echo json_encode(TN_CHECKOUT_URL); ?>;
     Seatics.config.enableLegalDisclosureMobile = true;
     Seatics.config.preCheckoutButtonHtml = 'Continue to Payment';
     Seatics.config.buyButtonContentHtml = '<div class="buy-btn">' + 'Buy Now' + '</div>';

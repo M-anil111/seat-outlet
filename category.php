@@ -11,20 +11,14 @@ $parts = explode('-', (string) $slug);
 $id    = (int) end($parts);
 
 if ($id <= 0) {
-	include 'header.php';
-	echo '<div class="container"><p>Invalid category.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('Category');
 }
 
 $cat = getTnCatById($id);
 $catName = ucwords(strtolower(trim($cat['results'][0]['text']['name'] ?? '')));
 
 if ($catName === '') {
-	include 'header.php';
-	echo '<div class="container"><p>Category not found.</p></div>';
-	include 'footer.php';
-	exit;
+	renderNotFoundPage('Category');
 }
 
 // --- SEO: computed before including header.php, same convention as the

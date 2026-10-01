@@ -44,6 +44,17 @@ include_once 'functions.php';
             $pageCanonicalUrl    = rtrim(HOME_URL, '/') . $soReqPath;
         }
     }
+    // Unknown event ids must answer 404 (they used to be a 200 page with a junk title). The status has
+    // to be sent before any output; the event is cached by tnRequest, so inc/seo-event.php reuses it.
+    if (strpos($soReqPath, '/event/') === 0) {
+        $soEvId = (int) ($_GET['id'] ?? 0);
+        if ($soEvId <= 0) { $soEvParts = explode('-', (string) ($_GET['slug'] ?? '')); $soEvId = (int) end($soEvParts); }
+        $soEvCheck = $soEvId > 0 ? getTnEventById($soEvId) : null;
+        if ($soEvCheck === null || tnEntityMissing($soEvCheck) || empty($soEvCheck['text']['name'])) {
+            http_response_code(404);
+            $pageRobots = 'noindex, follow';
+        }
+    }
     // Keep titles and descriptions inside what a search result shows.
     if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
     if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription($pageMetaDescription); }
@@ -65,6 +76,10 @@ include_once 'functions.php';
     <!-- Open the CDN connections before the first stylesheet is requested. -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://code.jquery.com" crossorigin>
+    <?php if (!empty($pagePreloadImage)) { ?>
+    <!-- LCP image that is only referenced from CSS (hero backgrounds): fetch it early. -->
+    <link rel="preload" as="image" href="<?php echo htmlspecialchars($pagePreloadImage, ENT_QUOTES, 'UTF-8'); ?>" fetchpriority="high">
+    <?php } ?>
     <!-- Critical CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
     <?php if (is_file(__DIR__ . '/css/style.min.css')) { ?>
@@ -75,10 +90,13 @@ include_once 'functions.php';
     <?php } ?>
     
 
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/fonts/bootstrap-icons-subset.woff2?v=1.13.1" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <?php $soNeedsSlick = in_array($soReqPath, ['/', '/index.php', '/search', '/about-us'], true) || strpos($soReqPath, '/event/') === 0; // carousel CSS: pages with a carousel, plus event pages (the Seatics seat-map widget uses slick classes) ?>
+    <?php if ($soNeedsSlick) { ?>
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <?php } ?>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,10 +105,11 @@ include_once 'functions.php';
     
 
     <noscript>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+        <?php if ($soNeedsSlick) { ?>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
+        <?php } ?>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     </noscript>
     <?php if ($pageRule && !empty($pageRule['meta_title'])) { ?>
