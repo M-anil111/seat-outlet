@@ -435,4 +435,5 @@
 
 </main>
 
+<?php soSeoCopy('terms-and-conditions'); ?>
 <?php include 'footer.php'; ?>

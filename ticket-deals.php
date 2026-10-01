@@ -220,4 +220,5 @@ include 'header.php';
 
 </main>
 
+<?php soSeoCopy('ticket-deals'); ?>
 <?php include 'footer.php'; ?>

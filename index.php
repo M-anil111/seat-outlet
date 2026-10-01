@@ -60,8 +60,8 @@ foreach ($fallbackCategories as $key => $list) {
       <div class="slide-caption">
         <span class="tag">Live Events</span>
         <h1>Experience Live Events<br>Like Never Before</h1>
-        <p>From sold-out concerts to must-see sports and theater shows discover verified tickets at competitive prices across our trusted ticket marketplace network.</p>
-        <a href="/tickets" class="btn-slide">Explore Events</a>
+        <p>Buy event tickets for sold-out concerts, must-see sports and theater shows from verified sellers, with competitive prices across our trusted ticket marketplace network.</p>
+        <a href="/buy-tickets-online" class="btn-slide">Explore Events</a>
       </div>
     </div>
 
@@ -213,19 +213,19 @@ foreach ($fallbackCategories as $key => $list) {
       <div class="categories__col">
         <h3 class="categories__heading">Top Concert Performers</h3>
         <ul class="categories__list" id="concerts-list"></ul>
-        <a href="/concerts" class="common-btn">View All Concerts</a>
+        <a href="/concert-tickets-for-sale" class="common-btn">View All Concerts</a>
       </div>
 
       <div class="categories__col">
         <h3 class="categories__heading">Top Sports Performers</h3>
         <ul class="categories__list" id="sports-list"></ul>
-        <a href="/sports" class="common-btn">View All Sports</a>
+        <a href="/game-day-tickets" class="common-btn">View All Sports</a>
       </div>
 
       <div class="categories__col">
         <h3 class="categories__heading">Top Theater Performers</h3>
         <ul class="categories__list" id="theater-list"></ul>
-        <a href="/theater" class="common-btn">View All Theatre</a>
+        <a href="/buy-broadway-tickets" class="common-btn">View All Theatre</a>
       </div>
 
     </div>
@@ -251,7 +251,7 @@ foreach ($fallbackCategories as $key => $list) {
             <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
           <?php } ?>
         </ul>
-        <a href="/concerts" class="common-btn">View All Concerts</a>
+        <a href="/concert-tickets-for-sale" class="common-btn">View All Concerts</a>
         
       </div>
       <div class="categories__col">
@@ -261,7 +261,7 @@ foreach ($fallbackCategories as $key => $list) {
             <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
           <?php } ?>
         </ul>
-        <a href="/sports" class="common-btn">View All Sports</a>
+        <a href="/game-day-tickets" class="common-btn">View All Sports</a>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Theatre</h3>
@@ -270,7 +270,7 @@ foreach ($fallbackCategories as $key => $list) {
             <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
           <?php } ?>
         </ul>
-        <a href="/theater" class="common-btn">View All Theatre</a>
+        <a href="/buy-broadway-tickets" class="common-btn">View All Theatre</a>
       </div>
       <div class="categories__col">
         <h3 class="categories__heading">Festivals</h3>
@@ -281,7 +281,7 @@ foreach ($fallbackCategories as $key => $list) {
             <?php } ?>
           </ul>   
         <?php } ?>  
-        <a href="/festival" class="common-btn">View All Festivals</a>
+        <a href="/upcoming-music-festivals" class="common-btn">View All Festivals</a>
       </div>
     </div>
   </div>
@@ -363,7 +363,7 @@ foreach ($fallbackCategories as $key => $list) {
         <div class="section-divider"></div>
         <p class="text-muted">Trusted sources, better prices, zero stress.
         Everything you need for a smooth ticket buying experience.</p>
-        <a href="/why-us" class="btn common-btn mt-3">Get Your Tickets</a>
+        <a href="/ticket-partner-program" class="btn common-btn mt-3">Get Your Tickets</a>
       </div>
       <div class="col-lg-8">
         <div class="row g-4">
@@ -665,4 +665,5 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
+<?php soSeoCopy('home'); ?>
 <?php include 'footer.php'; ?>

@@ -343,4 +343,5 @@
 
 </main>
 
+<?php soSeoCopy('cookie-policy'); ?>
 <?php include 'footer.php'; ?>

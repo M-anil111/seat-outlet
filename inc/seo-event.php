@@ -95,7 +95,7 @@ $webPageSchema = [
 
 $breadcrumbSchema = buildBreadcrumbListSchema([
     ["label" => "Home", "url" => HOME_URL],
-    ["label" => "Events", "url" => HOME_URL . "/tickets"],
+    ["label" => "Events", "url" => HOME_URL . "/buy-tickets-online"],
 ], $event['text']['name'] ?? null);
 ?>
 <!-- ============================

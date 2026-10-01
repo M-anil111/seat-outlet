@@ -46,7 +46,7 @@ $venueCityLabel = trim(($venue['city']['text']['name'] ?? '') . ', ' . ($venue['
 $pageMetaTitle       = "$venueName Tickets - $venueCityLabel | Seat Outlet";
 $pageMetaDescription = "Buy tickets to upcoming events at $venueName in $venueCityLabel. Compare prices and book securely on Seat Outlet.";
 $pageCanonicalUrl    = HOME_URL . '/venue/' . createSlug($venueName, $id);
-$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/tickets']], $venueName)];
+$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/buy-tickets-online']], $venueName)];
 
 include 'header.php';
 ?>

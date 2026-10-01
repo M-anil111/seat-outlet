@@ -2014,11 +2014,11 @@ function notFoundBlockHtml($what) {
     return '<div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' not found</h1>'
         . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place.</p>'
         . '<div class="d-flex flex-wrap justify-content-center gap-2">'
-        . '<a class="btn btn-primary" href="/tickets">Browse all events</a>'
-        . '<a class="btn btn-outline-secondary" href="/concerts">Concerts</a>'
-        . '<a class="btn btn-outline-secondary" href="/sports">Sports</a>'
-        . '<a class="btn btn-outline-secondary" href="/theater">Theater</a>'
-        . '<a class="btn btn-outline-secondary" href="/cities">Cities</a>'
+        . '<a class="btn btn-primary" href="/buy-tickets-online">Browse all events</a>'
+        . '<a class="btn btn-outline-secondary" href="/concert-tickets-for-sale">Concerts</a>'
+        . '<a class="btn btn-outline-secondary" href="/game-day-tickets">Sports</a>'
+        . '<a class="btn btn-outline-secondary" href="/buy-broadway-tickets">Theater</a>'
+        . '<a class="btn btn-outline-secondary" href="/city-events">Cities</a>'
         . '</div></div>';
 }
 
@@ -2029,10 +2029,10 @@ function unavailableBlockHtml($what) {
         . '<p class="text-muted mb-4">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
         . '<div class="d-flex flex-wrap justify-content-center gap-2">'
         . '<a class="btn btn-primary" href="">Try again</a>'
-        . '<a class="btn btn-outline-secondary" href="/tickets">Browse all events</a>'
-        . '<a class="btn btn-outline-secondary" href="/concerts">Concerts</a>'
-        . '<a class="btn btn-outline-secondary" href="/sports">Sports</a>'
-        . '<a class="btn btn-outline-secondary" href="/theater">Theater</a>'
+        . '<a class="btn btn-outline-secondary" href="/buy-tickets-online">Browse all events</a>'
+        . '<a class="btn btn-outline-secondary" href="/concert-tickets-for-sale">Concerts</a>'
+        . '<a class="btn btn-outline-secondary" href="/game-day-tickets">Sports</a>'
+        . '<a class="btn btn-outline-secondary" href="/buy-broadway-tickets">Theater</a>'
         . '</div></div>';
 }
 
@@ -2154,6 +2154,53 @@ function sendPageCacheHeaders() {
  * bottom of the footer. Order: a keyword the page sets itself ($pageFocusKeyword), the admin's focus keyword
  * for this URL (page_rules), then for entity pages the "<name> Tickets" part of the meta title, then a default.
  */
+/**
+ * Prints the page's search-focused copy block (inc/seo-copy/<key>.php) just above the footer: a short guide, images, links
+ * and an FAQ written around the page's focus keyword. A page with no file for its key prints nothing.
+ * The copy files are plain HTML (headings, paragraphs, figures, <details> FAQ); $year is available to them.
+ */
+function soSeoCopy($key) {
+    $file = __DIR__ . '/inc/seo-copy/' . preg_replace('/[^a-z0-9-]/', '', (string) $key) . '.php';
+    if (!is_file($file)) { return; }
+    $year = date('Y');
+    echo "\n<section class=\"so-seo-copy\" data-so-copy=\"" . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . "\"><div class=\"container\"><div class=\"so-seo-copy__inner\">\n";
+    include $file;
+    echo "\n</div></div></section>\n";
+}
+
+/** Headline form of a focus keyword for the strip: "how to buy tickets online" -> "How to Buy Tickets Online". */
+function soKeywordLabel($kw) {
+    $small = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'vs'];
+    $caps  = ['bbb', 'faq', 'faqs', 'nfl', 'nba', 'mlb', 'nhl', 'mls', 'edm', 'usa'];
+    $words = preg_split('/\s+/', trim((string) $kw));
+    foreach ($words as $i => $w) {
+        $lw = mb_strtolower($w);
+        if (in_array($lw, $caps, true)) { $words[$i] = mb_strtoupper($w); continue; }
+        if ($i > 0 && in_array($lw, $small, true)) { $words[$i] = $lw; continue; }
+        $words[$i] = $w === $lw ? mb_strtoupper(mb_substr($w, 0, 1)) . mb_substr($w, 1) : $w;   // keep names already capitalised
+    }
+    return implode(' ', $words);
+}
+
+/**
+ * The SEO plan for a URL path (inc/seo-keywords.php): focus keyword, title, description. Returns null for a path
+ * that has no entry. The title keeps the brand out (header.php appends it) and "{Y}" is the current year.
+ */
+function soSeoPlan($path = null) {
+    static $plan = null;
+    if ($plan === null) { $plan = (require __DIR__ . '/inc/seo-keywords.php')['plan']; }
+    if ($path === null) { return $plan; }
+    $path = rtrim((string) $path, '/') ?: '/';
+    if (!isset($plan[$path])) { return null; }
+    [$kw, $title, $desc, $vol, $kd, $scored] = $plan[$path];
+    return [
+        'keyword' => $kw,
+        'title' => $title !== null ? str_replace('{Y}', date('Y'), $title) : null,
+        'description' => $desc,
+        'volume' => $vol, 'difficulty' => $kd, 'scored' => $scored,
+    ];
+}
+
 function soFocusKeyword() {
     static $kw = null;
     if ($kw !== null) return $kw;
@@ -2167,6 +2214,8 @@ function soFocusKeyword() {
         $cand = $clean($cand);
         if ($cand !== '') return $kw = $cand;
     }
+    $planned = soSeoPlan(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
+    if ($planned !== null && $planned['keyword'] !== '') { return $kw = $clean($planned['keyword']); }
     $title = (string) ($GLOBALS['pageMetaTitle'] ?? '');
     if (preg_match('/^(.{2,60}?\bTickets)\b/u', $title, $m)) {
         $cand = preg_replace('/^Events (?:in|at) /i', '', $m[1]);                  // "Events in Nevada Tickets" -> "Nevada Tickets"
@@ -3900,6 +3949,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     }, $faqsRaw);
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
+    $pageFocusKeyword    = "$artistName Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
     $pageMetaTitle       = "$artistName {$noun['nounCap']} Tickets in $locationLabel | Seat Outlet";
     $pageMetaDescription = "Buy verified $artistName {$noun['noun']} tickets in $locationLabel. Compare prices across sellers and find upcoming $artistName {$noun['noun']}s near you on Seat Outlet.";
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($artistName, $performerId) . '/' . createSlug($locationLabel, $locationValue);
@@ -4234,6 +4284,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     }, $faqsRaw);
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
+    $pageFocusKeyword    = "$categoryLabel Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
     $pageMetaTitle       = "Buy $categoryLabel Tickets in $locationLabel | Seat Outlet";
     $pageMetaDescription = "Buy $categoryLabel tickets in $locationLabel. Compare prices across sellers, browse upcoming events, and find great seats on Seat Outlet.";
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($locationLabel, $locationValue);
@@ -4863,6 +4914,13 @@ function findOtherPagesUsingFocusKeyword($focusKeyword, $excludeUrlPath, $mysqli
         $matches[] = $row['url_path'];
     }
     $stmt->close();
+
+    // Keywords assigned in the code plan (inc/seo-keywords.php) count too, unless an admin page rule replaced them.
+    foreach (soSeoPlan() as $planPath => $planRow) {
+        if (strcasecmp($planRow[0], $focusKeyword) === 0 && $planPath !== $excludeUrlPath && !in_array($planPath, $matches, true)) {
+            $matches[] = $planPath;
+        }
+    }
 
     $stmt = $mysqli->prepare('SELECT slug FROM blog_posts WHERE focus_keyword = ? AND CONCAT(\'/blog/\', slug) != ?');
     $stmt->bind_param('ss', $focusKeyword, $excludeUrlPath);

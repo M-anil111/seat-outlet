@@ -229,4 +229,5 @@ include 'header.php';
 
 </main>
 
+<?php soSeoCopy('ticket-scanner'); ?>
 <?php include 'footer.php'; ?>

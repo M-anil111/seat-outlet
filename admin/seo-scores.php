@@ -10,10 +10,24 @@ require_once __DIR__ . '/../functions.php';
 $mysqli = MYSQLI;
 $pageRows = [];
 $result = $mysqli->query("SELECT * FROM page_rules WHERE focus_keyword IS NOT NULL AND focus_keyword != '' ORDER BY url_path");
+$ruleKeywords = [];
 while ($row = $result->fetch_assoc()) {
     $row['_score'] = scoreStaticPage($row['url_path'], $row['focus_keyword']);
+    $row['_source'] = 'Page rule';
     $pageRows[] = $row;
+    $ruleKeywords[$row['url_path']] = true;
 }
+// Keywords assigned in the code plan (inc/seo-keywords.php) that no page rule has replaced.
+foreach (soSeoPlan() as $planPath => $planRow) {
+    if (empty($planRow[5]) || isset($ruleKeywords[$planPath])) { continue; }
+    $planned = soSeoPlan($planPath);
+    $pageRows[] = [
+        'url_path' => $planPath, 'focus_keyword' => $planned['keyword'], 'meta_title' => $planned['title'],
+        '_score' => scoreStaticPage($planPath, $planned['keyword']), '_source' => 'Keyword plan',
+        '_volume' => $planned['volume'], '_difficulty' => $planned['difficulty'],
+    ];
+}
+usort($pageRows, fn($a, $b) => strcmp($a['url_path'], $b['url_path']));
 
 $blogRows = [];
 foreach (listBlogPosts() as $post) {
@@ -70,27 +84,38 @@ include __DIR__ . '/includes/app-header.php';
                         <tr>
                             <th>Page</th>
                             <th>Focus keyword</th>
+                            <th>Searches / mo</th>
+                            <th>Difficulty</th>
                             <th>Score</th>
                             <th class="w-1"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($pageRows)): ?>
-                            <tr><td colspan="4" class="text-center text-secondary py-4">
+                            <tr><td colspan="6" class="text-center text-secondary py-4">
                                 No static pages have a Focus Keyword set yet. Add one from
                                 <a href="page-rules">Page SEO &amp; Redirects</a>.
                             </td></tr>
                         <?php else: foreach ($pageRows as $row): $score = $row['_score']; ?>
                             <tr>
                                 <td><code><?php echo htmlspecialchars($row['url_path'], ENT_QUOTES, 'UTF-8'); ?></code></td>
-                                <td><?php echo htmlspecialchars($row['focus_keyword'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td>
+                                    <?php echo htmlspecialchars($row['focus_keyword'], ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php if (($row['_source'] ?? '') === 'Keyword plan'): ?><span class="badge bg-blue-lt ms-1" title="Set in inc/seo-keywords.php. Add a page rule for this path to override it.">plan</span><?php endif; ?>
+                                </td>
+                                <td><?php echo isset($row['_volume']) ? number_format((int) $row['_volume']) : '<span class="text-secondary">n/a</span>'; ?></td>
+                                <td><?php echo isset($row['_difficulty']) ? (int) $row['_difficulty'] : '<span class="text-secondary">n/a</span>'; ?></td>
                                 <td>
                                     <span class="badge <?php echo seoScoreBadgeClass($score['score']); ?>">
                                         <?php echo $score['score'] === null ? 'Unreachable' : $score['score'] . '/100'; ?>
                                     </span>
                                 </td>
                                 <td class="text-end">
+                                    <?php if (isset($row['ID'])): ?>
                                     <a href="seo-score-detail?mode=page&amp;id=<?php echo (int) $row['ID']; ?>" class="btn btn-sm btn-outline-secondary">View breakdown</a>
+                                    <?php else: ?>
+                                    <a href="seo-score-detail?mode=adhoc&amp;url=<?php echo urlencode($row['url_path']); ?>&amp;keyword=<?php echo urlencode($row['focus_keyword']); ?>" class="btn btn-sm btn-outline-secondary">View breakdown</a>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; endif; ?>

@@ -42,7 +42,7 @@ $stateLabel = $state['label'];
 $pageMetaTitle       = "Events in $stateLabel Tickets | Seat Outlet";
 $pageMetaDescription = "Find concert, sports, and event tickets in $stateLabel. Compare prices and book securely on Seat Outlet.";
 $pageCanonicalUrl    = HOME_URL . '/state/' . createSlug($stateLabel, $id);
-$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/tickets']], $stateLabel)];
+$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/buy-tickets-online']], $stateLabel)];
 
 include 'header.php';
 ?>

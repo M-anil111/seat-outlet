@@ -280,11 +280,22 @@ optional.
   the `.min` files through `soAsset()` (functions.php), falling back to the source if a `.min` is missing.
   CI runs `tools/build-assets.sh --check` and fails when a minified file is stale. Needs Node (`npx`).
 - **One H1 per page: the keyword strip.** The strip above the header is the page's only `<h1>` and shows its focus keyword
-  (admin > Page rules > Focus keyword; blog posts and entity pages set `$pageFocusKeyword`; entity pages fall back to
-  "<name> Tickets" from the meta title; everything else shows "Buy Concert Tickets"). The same keyword closes the footer.
+  (admin > Page rules > Focus keyword, else the plan in `inc/seo-keywords.php`; blog posts and entity pages set `$pageFocusKeyword`
+  ("<name> Tickets", "<category> Tickets in <city>"); anything else shows "Buy Concert Tickets"). The same keyword closes the footer.
   Page templates keep writing `<h1>`: `soSingleH1()` (functions.php, started in header.php) turns any other `<h1>` into
   `<h2 class="h1 ...">` on output, and `css/style.css` styles `.h1` like `h1`. A new CSS rule that styles a page title with the
   tag selector `h1` also needs `h2.h1` next to it. `KEYWORD_H1=0` in `inc/env.local.php` turns the whole thing off.
+- **Focus keyword plan.** `inc/seo-keywords.php` lists, for each static page, its focus keyword, SEO title, meta description,
+  and the search volume and keyword difficulty that justified the choice (SE Ranking, US, 30 Sep 2026). `header.php` applies them;
+  an admin page rule for the same path still wins. Titles omit the brand (added by `header.php`, total kept near 60 characters) and
+  `{Y}` becomes the current year. Admin > SEO Scores scores every plan page with the site's own engine. To change a keyword, edit that
+  file (or add a page rule in the admin) and re-run the score; to add a page, add a row and a copy file.
+- **Page copy blocks.** `soSeoCopy('<key>')` (called above each page's footer include) prints `inc/seo-copy/<key>.php`: the guide, images
+  and FAQ written around the page's keyword. Plain HTML; styles are `.so-seo-copy` in `css/style.css`. Keep paragraphs under 120 words,
+  put the exact keyword in a heading and in one image alt, and link out only to sources you checked.
+- **Renamed URLs.** The hub and info pages were renamed so the keyword is in the URL (`/concerts` is now `/concert-tickets-for-sale`,
+  and so on; the full list is `$LEGACY_URLS` in `inc/seo-keywords.php`). The old file names are 2-line stubs that 301 to the new URL
+  (`inc/legacy-redirect.php`), keeping the query string. The new names work through the same web-server rules as every other page.
 - **Old URL shapes.** `soRedirectLegacyUrl()` (header.php) sends `/name.php` to `/name` and `/event.php?id=N` or `/event?id=N`
   to `/event/<slug>-N` with a 301, and answers 404 for an id that does not exist.
 - **Bootstrap CSS.** Pages load `css/bootstrap.min.css`, which `tools/build-assets.sh` builds from `lib/bootstrap/5.3.8/bootstrap.min.css`

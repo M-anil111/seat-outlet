@@ -1,0 +1,411 @@
+<?php
+require_once 'functions.php';
+
+// Page name: this is the A-Z directory of every artist, team and show, so it is called "Artists, Teams & Shows" (nav label: "Artists & Teams").
+$pageMetaTitle       = 'Artists, Teams & Shows A-Z | Seat Outlet';
+$pageMetaDescription = 'Browse every artist, team and show on Seat Outlet, A to Z. Find upcoming events, compare prices and buy tickets with a 100% Worry-Free Guarantee.';
+$pageCanonicalUrl    = HOME_URL . '/all-artists-and-teams';
+$pageFocusKeyword    = 'Artist and Team Tickets';
+$pageSearchPlaceholder = 'Artists, teams or shows';
+include 'header.php';
+
+$perPage = 24;
+$initialParams = [
+	'page'              => 1,
+	'perPage'           => $perPage,
+	'includeTotalCount' => 'true',
+	'sort'              => 'text/name',
+];
+
+$performers  = [];
+$totalCount  = 0;
+$hasMore     = false;
+$apiError    = false;
+
+try {
+	$response   = getTnPerformers($initialParams);
+	$totalCount = (int) ($response['totalCount'] ?? 0);
+	$totalPages = $perPage > 0 ? (int) ceil($totalCount / $perPage) : 0;
+	$results    = $response['results'] ?? [];
+	$hasMore    = (1 < $totalPages);
+
+	foreach ($results as $performer) {
+		$name = $performer['text']['name'] ?? '';
+		$uriComponent = $performer['uriComponent'] ?? '';
+		if ($name === '' || $uriComponent === '') {
+			continue;
+		}
+		$defaultCategory = $performer['defaultCategory'] ?? [];
+		$image = getPerformerImage($name, $defaultCategory);
+		if (!$image) {
+			$image = getCategoryFallbackImage($defaultCategory, 'performer');
+		}
+		$performers[] = [
+			'name'         => $name,
+			'uriComponent' => rawurlencode($uriComponent),
+			'genre'        => getPerformerGenreLabel($defaultCategory),
+			'image'        => $image,
+		];
+	}
+} catch (Throwable $e) {
+	\Sentry\captureException($e);
+	$apiError = true;
+}
+?>
+
+<style>
+	.performers-hero-section {
+		position: relative;
+		overflow: hidden;
+		color: #ffffff;
+		background: linear-gradient(135deg, #2556e0 0%, #1b3fb3 100%);
+	}
+	.performers-hero-section::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(60% 130% at 88% 0%, rgba(255, 255, 255, .24) 0%, rgba(255, 255, 255, 0) 62%);
+		pointer-events: none;
+	}
+	.performers-hero-section .hero-bg-photo {
+		position: absolute;
+		inset: 0;
+		background-image: url('<?php echo HOME_URL; ?>/images/crowd-at-concert-or-event.webp');
+		background-size: cover;
+		background-position: center;
+		opacity: .07;
+		mix-blend-mode: luminosity;
+	}
+	.performers-hero-section .container { position: relative; z-index: 1; }
+	.performers-hero-section .hero-inner { padding: 56px 0 60px; max-width: 640px; }
+	.performers-hero-section .hero-eyebrow {
+		display: inline-block;
+		margin-bottom: 12px;
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: .14em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, .82);
+	}
+	.performers-hero-section .hero-title {
+		margin: 0 0 14px;
+		font-weight: 800;
+		font-size: clamp(34px, 5vw, 56px);
+		line-height: 1.08;
+		letter-spacing: -.02em;
+		color: #ffffff;
+	}
+	.performers-hero-section .hero-subtitle {
+		max-width: 520px;
+		margin: 0;
+		font-size: clamp(15px, 1.6vw, 18px);
+		line-height: 1.5;
+		color: rgba(255, 255, 255, .9);
+	}
+	@media (max-width: 767.98px) {
+		.performers-hero-section .hero-inner { padding: 36px 0 40px; }
+	}
+
+	/* A-Z bar: one soft rounded control. Swipes on a phone (edges fade where there is more), wraps on a larger screen. */
+	.performer-filter-row { display: block; padding: 0 0 26px; }
+	.performer-filter-wrap {
+		--fade-l: 0px;
+		--fade-r: 0px;
+		display: flex;
+		flex-wrap: nowrap;
+		gap: 4px;
+		padding: 6px;
+		overflow-x: auto;
+		background: #ffffff;
+		border: 1px solid #e6eaf3;
+		border-radius: 999px;
+		box-shadow: 0 6px 20px rgba(17, 24, 39, .06);
+		scroll-snap-type: x proximity;
+		-webkit-overflow-scrolling: touch;
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+		-webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+		mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+	}
+	.performer-filter-wrap::-webkit-scrollbar { display: none; }
+	.performer-filter-btn {
+		flex: 0 0 auto;
+		scroll-snap-align: center;
+		min-width: 44px;
+		height: 44px;
+		padding: 0 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: #374151;
+		font-weight: 600;
+		font-size: 15px;
+		cursor: pointer;
+		transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+	}
+	.performer-filter-btn.is-all { padding: 0 20px; }
+	.performer-filter-btn:hover { background: #eef3ff; color: #2556E0; }
+	.performer-filter-btn:focus-visible { outline: 3px solid #2556E0; outline-offset: 2px; }
+	.performer-filter-btn.active {
+		background: #2556E0;
+		color: #ffffff;
+		box-shadow: 0 4px 12px rgba(37, 86, 224, .35);
+	}
+	@media (min-width: 768px) {
+		.performer-filter-wrap {
+			flex-wrap: wrap;
+			justify-content: center;
+			overflow: visible;
+			border-radius: 26px;
+			-webkit-mask-image: none;
+			mask-image: none;
+		}
+		.performer-filter-btn { min-width: 40px; height: 40px; font-size: 14px; }
+	}
+
+	/* Performer cards */
+	.performer-card {
+		background: #ffffff;
+		border-radius: 14px;
+		overflow: hidden;
+		box-shadow: 0 4px 18px rgba(17, 24, 39, .07);
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+	.performer-card .performer-img-wrap {
+		aspect-ratio: 4/3;
+		overflow: hidden;
+	}
+	.performer-card .performer-img-wrap img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.performer-card .performer-body {
+		padding: 16px 18px 18px;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 14px;
+		flex: 1;
+	}
+	.performer-card .performer-name {
+		font-weight: 700;
+		color: #111827;
+		font-size: 16px;
+		margin-bottom: 2px;
+	}
+	.performer-card .performer-genre {
+		color: #6b7280;
+		font-size: 13.5px;
+	}
+	.btn-view-performer {
+		display: inline-block;
+		background: #ffffff;
+		color: #2556E0;
+		font-weight: 600;
+		font-size: 13.5px;
+		padding: 8px 18px;
+		border-radius: 999px;
+		border: 1.5px solid #2556E0;
+		text-decoration: none;
+		white-space: nowrap;
+		transition: background .2s, color .2s, transform .15s;
+	}
+	.btn-view-performer:hover,
+	.btn-view-performer:focus-visible { background: #2556e0; border-color: #2556e0; color: #fff; transform: translateY(-1px); }
+
+	.btn-load-more-performers {
+		background: #ffffff;
+		color: #2556E0;
+		border: 1.5px solid #2556E0;
+		font-weight: 600;
+		font-size: 15px;
+		padding: 12px 30px;
+		border-radius: 999px;
+		transition: background .2s, color .2s, transform .15s;
+	}
+	.btn-load-more-performers:hover { background: #2556E0; color: #fff; transform: translateY(-1px); }
+	.btn-load-more-performers:disabled { opacity: .6; cursor: default; transform: none; }
+
+	.performers-empty-state, .performers-error-state {
+		text-align: center;
+		padding: 40px 20px;
+		color: #6b7280;
+	}
+</style>
+
+<section class="performers-hero-section">
+	<div class="hero-bg-photo"></div>
+	<div class="container">
+		<div class="hero-inner">
+			<span class="hero-eyebrow">A to Z</span>
+			<h1 class="hero-title">Artists, Teams &amp; Shows</h1>
+			<p class="hero-subtitle">Browse every artist, team and show on Seat Outlet. Pick a letter to jump straight in.</p>
+		</div>
+	</div>
+</section>
+
+<section class="py-4 py-lg-5">
+	<div class="container">
+
+		<div class="performer-filter-row" id="performerFilterRow">
+			<div class="performer-filter-wrap" id="performerFilterBar" role="group" aria-label="Show artists, teams and shows starting with">
+				<button type="button" class="performer-filter-btn is-all active" data-letter="ALL" aria-pressed="true">All</button>
+				<?php foreach (range('A', 'Z') as $letter) { ?>
+					<button type="button" class="performer-filter-btn" data-letter="<?php echo $letter; ?>" aria-pressed="false"><?php echo $letter; ?></button>
+				<?php } ?>
+			</div>
+		</div>
+
+		<div class="performers-error-state<?php echo $apiError ? '' : ' d-none'; ?>" id="performersErrorState">
+			We couldn't load the list right now. Please try again shortly.
+		</div>
+		<div class="performers-empty-state<?php echo ($apiError || !empty($performers)) ? ' d-none' : ''; ?>" id="performersEmptyState">
+			Nothing starts with that letter yet.
+		</div>
+			<div class="row g-4" id="performerGrid">
+				<?php foreach ($performers as $performer) { ?>
+					<div class="col-12 col-sm-6 col-md-4 col-lg-3 performer-col">
+						<div class="performer-card">
+							<div class="performer-img-wrap">
+								<img src="<?php echo htmlspecialchars($performer['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" onerror="this.src='<?php echo HOME_URL; ?>/images/placeholder.webp'">
+							</div>
+							<div class="performer-body">
+								<div>
+									<div class="performer-name"><?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?></div>
+									<?php if ($performer['genre'] !== '') { ?>
+										<div class="performer-genre"><?php echo htmlspecialchars($performer['genre'], ENT_QUOTES, 'UTF-8'); ?></div>
+									<?php } ?>
+								</div>
+								<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" class="btn-view-performer">View tickets</a>
+							</div>
+						</div>
+					</div>
+				<?php } ?>
+			</div>
+
+		<div class="text-center mt-4 <?php echo (!$hasMore || $apiError) ? 'd-none' : ''; ?>" id="loadMorePerformersWrap">
+			<button type="button" class="btn-load-more-performers" id="loadMorePerformersBtn"
+				data-page="1" data-perpage="<?php echo (int) $perPage; ?>" data-letter="ALL">Show more</button>
+		</div>
+
+	</div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+	var filterBar    = document.getElementById('performerFilterBar');
+	var grid          = document.getElementById('performerGrid');
+	var emptyState    = document.getElementById('performersEmptyState');
+	var errorState    = document.getElementById('performersErrorState');
+	var loadMoreBtn   = document.getElementById('loadMorePerformersBtn');
+	var loadMoreWrap  = document.getElementById('loadMorePerformersWrap');
+
+	function performerCardHtml(p) {
+		var genreHtml = p.genre ? '<div class="performer-genre">' + escapeHtml(p.genre) + '</div>' : '';
+		return '' +
+			'<div class="col-12 col-sm-6 col-md-4 col-lg-3 performer-col">' +
+				'<div class="performer-card">' +
+					'<div class="performer-img-wrap">' +
+						'<img src="' + escapeHtml(p.image) + '" alt="' + escapeHtml(p.name) + '" loading="lazy" onerror="this.src=\'<?php echo HOME_URL; ?>/images/placeholder.webp\'">' +
+					'</div>' +
+					'<div class="performer-body">' +
+						'<div>' +
+							'<div class="performer-name">' + escapeHtml(p.name) + '</div>' +
+							genreHtml +
+						'</div>' +
+						'<a href="/artist/' + String(p.uriComponent).toLowerCase() + '" class="btn-view-performer">View tickets</a>' +
+					'</div>' +
+				'</div>' +
+			'</div>';
+	}
+
+	function escapeHtml(str) {
+		return String(str == null ? '' : str)
+			.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+	}
+
+	var requestSeq = 0;
+
+	function fetchPerformers(letter, page, append) {
+		var seq = ++requestSeq;
+		var perPage = loadMoreBtn.dataset.perpage || 24;
+		var url = '/ajax/get-performers.php?letter=' + encodeURIComponent(letter) + '&page=' + page + '&perPage=' + perPage;
+
+		return fetch(url).then(function (res) {
+			if (!res.ok) throw new Error('HTTP ' + res.status);
+			return res.json();
+		}).then(function (data) {
+			if (seq !== requestSeq) return data; // a newer letter was clicked meanwhile
+			errorState.classList.add('d-none');
+			if (!append) {
+				grid.innerHTML = '';
+			}
+			(data.performers || []).forEach(function (p) {
+				grid.insertAdjacentHTML('beforeend', performerCardHtml(p));
+			});
+
+			emptyState.classList.toggle('d-none', grid.children.length > 0);
+
+			loadMoreBtn.dataset.letter = letter;
+			if (data.hasMore) {
+				loadMoreBtn.dataset.page = data.nextPage;
+				loadMoreWrap.classList.remove('d-none');
+			} else {
+				loadMoreWrap.classList.add('d-none');
+			}
+			loadMoreBtn.disabled = false;
+			return data;
+		}).catch(function () {
+			if (seq !== requestSeq) return;
+			if (!append) {
+				grid.innerHTML = '';
+				errorState.classList.remove('d-none');
+				emptyState.classList.add('d-none');
+				loadMoreWrap.classList.add('d-none');
+			}
+			loadMoreBtn.disabled = false;
+		});
+	}
+
+	filterBar.addEventListener('click', function (e) {
+		var btn = e.target.closest('.performer-filter-btn');
+		if (!btn) return;
+
+		filterBar.querySelectorAll('.performer-filter-btn').forEach(function (b) { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
+		btn.classList.add('active');
+		btn.setAttribute('aria-pressed', 'true');
+		if (btn.scrollIntoView) { btn.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); }
+
+		var letter = btn.getAttribute('data-letter');
+		loadMoreBtn.disabled = true;
+		fetchPerformers(letter, 1, false);
+	});
+
+	loadMoreBtn.addEventListener('click', function () {
+		loadMoreBtn.disabled = true;
+		var letter = loadMoreBtn.dataset.letter || 'ALL';
+		var page = parseInt(loadMoreBtn.dataset.page, 10) || 2;
+		fetchPerformers(letter, page, true);
+	});
+
+	// Edge fades on the swipe row: only on a side that has more to scroll to.
+	function updateFilterFades() {
+		var maxScroll = filterBar.scrollWidth - filterBar.clientWidth;
+		filterBar.style.setProperty('--fade-l', filterBar.scrollLeft > 1 ? '22px' : '0px');
+		filterBar.style.setProperty('--fade-r', (maxScroll > 1 && filterBar.scrollLeft < maxScroll - 1) ? '22px' : '0px');
+	}
+	filterBar.addEventListener('scroll', updateFilterFades, { passive: true });
+	window.addEventListener('resize', updateFilterFades);
+	updateFilterFades();
+});
+</script>
+
+<?php soSeoCopy('all-artists-and-teams'); ?>
+<?php include 'footer.php'; ?>

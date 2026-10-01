@@ -6,7 +6,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 module.exports = {
   content: [
-    root + '/*.php', root + '/inc/*.php', root + '/admin/**/*.php',   // pages, includes, admin screens
+    root + '/*.php', root + '/inc/**/*.php', root + '/admin/**/*.php',   // pages, includes (incl. inc/seo-copy), admin screens
     root + '/js/!(*.min).js',                                         // classes written by our scripts
   ],
   css: [root + '/lib/bootstrap/5.3.8/bootstrap.min.css'],
