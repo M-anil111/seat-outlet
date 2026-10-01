@@ -5,7 +5,6 @@ require_once 'functions.php';
 $pageMetaTitle       = 'Artists, Teams & Shows A-Z | Seat Outlet';
 $pageMetaDescription = 'Browse every artist, team and show on Seat Outlet, A to Z. Find upcoming events, compare prices and buy tickets with a 100% Worry-Free Guarantee.';
 $pageCanonicalUrl    = HOME_URL . '/all-artists-and-teams';
-$pageFocusKeyword    = 'Artist and Team Tickets';
 $pageSearchPlaceholder = 'Artists, teams or shows';
 include 'header.php';
 
