@@ -89,7 +89,8 @@ include_once 'functions.php';
     <link rel="preload" as="image" href="<?php echo htmlspecialchars($pagePreloadImage, ENT_QUOTES, 'UTF-8'); ?>" fetchpriority="high">
     <?php } ?>
     <!-- Critical CSS -->
-    <link rel="stylesheet" href="/lib/bootstrap/5.3.8/bootstrap.min.css">
+    <?php /* css/bootstrap.min.css = Bootstrap trimmed to the classes this site uses (tools/build-assets.sh); the full file is the fallback. */ ?>
+    <link rel="stylesheet" href="<?php echo is_file(__DIR__ . '/css/bootstrap.min.css') ? htmlspecialchars(soAsset('css/bootstrap.css'), ENT_QUOTES, 'UTF-8') : '/lib/bootstrap/5.3.8/bootstrap.min.css'; ?>">
     <?php if (is_file(__DIR__ . '/css/style.min.css')) { ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
     <?php } else { ?>
