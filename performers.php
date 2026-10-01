@@ -270,7 +270,7 @@ try {
 		</div>
 			<div class="row g-4" id="performerGrid">
 				<?php foreach ($performers as $performer) { ?>
-					<div class="col-12 col-sm-6 col-lg-3 performer-col">
+					<div class="col-12 col-sm-6 col-md-4 col-lg-3 performer-col">
 						<div class="performer-card">
 							<div class="performer-img-wrap">
 								<img src="<?php echo htmlspecialchars($performer['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" onerror="this.src='<?php echo HOME_URL; ?>/images/placeholder.webp'">
@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	function performerCardHtml(p) {
 		var genreHtml = p.genre ? '<div class="performer-genre">' + escapeHtml(p.genre) + '</div>' : '';
 		return '' +
-			'<div class="col-12 col-sm-6 col-lg-3 performer-col">' +
+			'<div class="col-12 col-sm-6 col-md-4 col-lg-3 performer-col">' +
 				'<div class="performer-card">' +
 					'<div class="performer-img-wrap">' +
 						'<img src="' + escapeHtml(p.image) + '" alt="' + escapeHtml(p.name) + '" loading="lazy" onerror="this.src=\'<?php echo HOME_URL; ?>/images/placeholder.webp\'">' +
