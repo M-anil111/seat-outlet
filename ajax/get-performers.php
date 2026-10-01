@@ -1,6 +1,6 @@
 <?php
 
-require_once '../functions.php';
+require_once __DIR__ . '/../functions.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -58,6 +58,7 @@ try {
         'hasMore'     => $hasMore,
     ]);
 } catch (Throwable $e) {
+    \Sentry\captureException($e);
     http_response_code(500);
     echo json_encode([
         'performers'  => [],

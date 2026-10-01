@@ -693,6 +693,39 @@ function getTnPerformersByIds(array $ids) {
     return $out;
 }
 
+/**
+ * One page of the performer catalog (performers.php and
+ * ajax/get-performers.php). Only performers with tickets on sale, so the
+ * A-Z list has no dead clicks. Uses `filter`, not `eventFilter`, for the
+ * same reason as cron/build-search-vocab.php. tnRequest() answers [] when
+ * the API is down with nothing cached; this throws instead so callers can
+ * tell "API down" apart from "no performers for this letter".
+ */
+function getTnPerformers(array $params = []) {
+    $filter = '_metadata/hasTickets eq true';
+    if (!empty($params['filter'])) {
+        $filter .= ' and ' . $params['filter'];
+    }
+    $params['filter'] = $filter;
+
+    $data = tnRequest('/catalog/v2/performers', $params, 'GET', 6 * 3600);
+    if (!is_array($data) || !array_key_exists('results', $data)) {
+        throw new RuntimeException('TicketNetwork performers request failed');
+    }
+    return $data;
+}
+
+/** Card image for a performer list: serve-only, never blocks the page on a lookup. */
+function getPerformerImage($name, $defaultCategory) {
+    return getArtistImage($name, $defaultCategory ?: [], false);
+}
+
+/** Display label for a performer's default category, e.g. "Rock / Pop". */
+function getPerformerGenreLabel($defaultCategory) {
+    $name = trim((string) ($defaultCategory['text']['name'] ?? ''));
+    return $name === '' ? '' : ucwords(strtolower($name));
+}
+
 function getTnEventById($eventId) {
     $endpoint = "/catalog/v2/events/" . (int) $eventId;
     return tnRequest($endpoint);
