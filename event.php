@@ -114,11 +114,39 @@
   @media (min-width: 992px) {
     .seatics .event-info-ctn { display: none !important; }
   }
+  /* Phones and iPads (< 992px): the widget pins its own header bar to the
+     top of the screen (position: fixed, built for pages without a site
+     header), which covered this card and its date tile. Keep it in the page
+     flow under the card instead, as a slim bar with the widget's date line
+     and its "Important Event Information" link. Name and venue are already
+     in the card, so only those two are hidden. */
   @media (max-width: 991.98px) {
-    .seatics .event-info-ctn .event-info-date-ctn,
+    .seatics .event-info-ctn {
+      position: relative !important;
+      top: auto !important;
+      z-index: 2 !important;
+      padding: 10px 16px !important;
+      background: #fff;
+      border-bottom: 1px solid #e8ecf3;
+      box-shadow: none;
+    }
+    .seatics #event-info-area::before { display: none !important; }
     .seatics .event-info-ctn .event-info-name,
     .seatics .event-info-ctn .event-info-place,
     .seatics #event-info-right-col { display: none !important; }
+    .seatics .event-info-ctn .event-info-left-col:empty,
+    .seatics .event-info-ctn .mobile-event-info-right-col:empty { display: none !important; }
+    .seatics .event-info-ctn .event-info-details-ctn { float: none; width: 100%; text-align: center; }
+    .seatics .event-info-ctn .event-info-date-time-span {
+      display: block !important;
+      color: #0f1b3d;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: normal;
+    }
+    .seatics .event-info-ctn .event-info-date-time-span .cm-time { color: #2556e0; margin-right: 4px; }
+    .seatics .event-info-ctn .event-info-notes { margin: 4px 0 0; }
+    .seatics .event-info-ctn .event-note-popup-trigger { color: #2556e0; font-size: 13px; font-weight: 600; height: auto !important; }
   }
 </style>
 
