@@ -137,7 +137,7 @@
 </footer>
 
 <div class="backtotop">
-  <button id="backToTop" class="btn btn-primary backToTop rounded-circle">
+  <button id="backToTop" class="btn btn-primary backToTop rounded-circle" aria-label="Back to top" type="button">
 		<i class="bi bi-arrow-up"></i>
 	</button>
 </div>

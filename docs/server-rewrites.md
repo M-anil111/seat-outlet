@@ -32,3 +32,13 @@ location ~ \.(md|lock|example)$ { return 404; }
 ```
 
 Maintenance scripts (`cron/*`, `db/migrate.php`, `tools/*`) now refuse web requests in the code itself (`inc/cli-guard.php`): run them with `php`, not by URL.
+
+## robots.txt and sitemap
+
+`robots.php` generates robots.txt for the host it is served on (the static `robots.txt` hard-codes the beta sitemap URL, and on a live domain would point search engines at beta). To use it, serve `/robots.txt` from it:
+
+```nginx
+location = /robots.txt { rewrite ^ /robots.php last; }
+```
+
+Beta/staging/dev hosts then return `Disallow: /`; the production host returns the normal rules plus `Sitemap: https://<host>/sitemap.php`. `sitemap.php` now lists top performers, venues and categories as well as events, cities and static pages (about 3,500 URLs); submit it in Google Search Console and Bing Webmaster Tools after launch.

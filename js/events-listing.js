@@ -270,7 +270,14 @@ let performerSelectedDatesTemp = [];
 let selectStart = null;
 let selectEnd = null;
    
-let picker = flatpickr("#performerDatePicker", {
+let picker = null;
+// The calendar is built on first use (touch/focus of the field), not on every page view:
+// creating it up front cost a few hundred ms of main-thread time on mobile.
+function getPicker() {
+    if (picker) return picker;
+    const el = document.getElementById('performerDatePicker');
+    if (!el || typeof flatpickr === 'undefined') return null;
+    picker = flatpickr(el, {
     mode: "range",
     minDate: "today",
     dateFormat: "Y-m-d",
@@ -319,7 +326,17 @@ let picker = flatpickr("#performerDatePicker", {
         });
     }
 });
-    
+    return picker;
+}
+(function () {
+    const el = document.getElementById('performerDatePicker');
+    if (!el) return;
+    ['pointerdown', 'touchstart', 'focus'].forEach((evt) => el.addEventListener(evt, function first(e) {
+        const p = getPicker();
+        if (p && e.type === 'focus') p.open();   // keyboard focus: flatpickr's own handlers were attached too late to see this event
+    }, { once: true, passive: true }));
+})();
+
 window.addEventListener("resize", function () {
     const newMonthCount = getMonthCount();
     if (!picker || !picker.config) return;

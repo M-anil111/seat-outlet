@@ -278,6 +278,9 @@ optional.
   `tools/build-assets.sh` and commit the generated `css/style.min.css` and `js/*.min.js`. The pages load
   the `.min` files through `soAsset()` (functions.php), falling back to the source if a `.min` is missing.
   CI runs `tools/build-assets.sh --check` and fails when a minified file is stale. Needs Node (`npx`).
+- **Icons.** Only the Bootstrap Icons the code uses are shipped (`fonts/bootstrap-icons-subset.woff2` + `css/icons.css`, folded into
+  `style.min.css`). Using a new `bi-*` icon? Run `python3 tools/build-icons.py` (needs `pip install fonttools brotli`) then
+  `tools/build-assets.sh`. CI runs `python3 tools/build-icons.py --check`. The admin panel still uses the full CDN font.
 - **Fonts.** The Google Fonts stylesheet loads without blocking first paint. `css/style.css` defines an
   `Inter Fallback` font (Arial scaled to Inter's metrics) and reserves icon boxes (`.bi`), which is what keeps
   layout shift near zero while the web fonts arrive. Keep both when changing typography.
@@ -289,6 +292,9 @@ optional.
 - **Structured data.** `seoOffer()` builds an Offer only from a real price; never default a missing price.
 - **Which scripts load.** footer.php decides from the URL path (not the query string). New listing-style pages
   need their path pattern added to `$soHasEventList` or "More Events" will not work.
+- **Not-found pages.** `renderNotFoundPage('City')` answers 404 + noindex; use `tnEntityMissing($r)` (not `empty()`) on a
+  TicketNetwork get-one result, because a missing id returns `{"Message": ...}`.
+- **robots.txt.** `robots.php` builds it from the host (non-production hosts get `Disallow: /`); route `/robots.txt` to it, see docs/server-rewrites.md.
 - **Maintenance scripts** (`cron/*`, `db/migrate.php`, `tools/*`) include `inc/cli-guard.php`: command line only.
 
 ## Optional performance layer: APCu

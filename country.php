@@ -42,6 +42,7 @@ $countryLabel = $country['label'];
 $pageMetaTitle       = "Events in $countryLabel Tickets | Seat Outlet";
 $pageMetaDescription = "Find concert, sports, and event tickets in $countryLabel. Compare prices and book securely on Seat Outlet.";
 $pageCanonicalUrl    = HOME_URL . '/country/' . createSlug($countryLabel, $code);
+$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/tickets']], $countryLabel)];
 
 include 'header.php';
 ?>

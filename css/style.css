@@ -3551,7 +3551,7 @@ h3,
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
-    color: #767272;
+    color: #5a5656;
     transition: all 0.2s ease;
   }
   
@@ -5290,3 +5290,8 @@ a.common-btn:hover{
    and the newsletter fields are fixed-percent columns inside a no-wrap flex row. */
 @media (max-width: 1263.98px) { .container .row.g-5, .container-fluid .row.g-5 { --bs-gutter-x: 1.875rem; } }
 @media (min-width: 992px) { .newsletter-icontact > [class*="col-"] { flex: 1 1 0; min-width: 0; width: auto; } }
+
+/* Accessibility: default links meet AA contrast on white and the light grey panels (Bootstrap's #0d6efd is 4.0-4.3:1 there);
+   the header phone icon gets a 24px tap target. */
+:root { --bs-link-color: #0a58ca; --bs-link-color-rgb: 10, 88, 202; --bs-link-hover-color: #084298; --bs-link-hover-color-rgb: 8, 66, 152; }
+.tm-top-links .header-phone a { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; }
