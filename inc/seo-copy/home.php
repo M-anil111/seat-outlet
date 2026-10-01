@@ -71,6 +71,26 @@
 <p>Group nights are easiest to plan when one person handles the order. Decide the date, the budget and how close you all want to sit, then search the event and filter by the quantity you need. Seats listed together make sure nobody is stranded in another section. If you cannot find enough seats together for the date you want, try a nearby date or a different section, and compare the totals before you decide.</p>
 <p>Before you buy event tickets for a group, confirm everyone can make the date, check the venue rules for age limits, and read the delivery details so you know who will receive the tickets. After the order is placed, you can share the plans in your own message thread. If a date moves, event organizers decide how the new schedule works, and our support team can help you with questions about your order.</p>
 
+<h2>What to Know About Resale Before You Buy Event Tickets</h2>
+<p>A resale marketplace works differently from a box office. At a box office, one seller sets one price. On a marketplace, many sellers list tickets for the same event, and each sets a price based on the seat, the demand and the date. That is the reason two tickets in the same section can cost different amounts, and the reason comparison is worth a few minutes.</p>
+<p>Prices can change over time. For a high-demand show, listings may rise as the date gets closer. For an event with plenty of supply, you may see lower prices nearer the date. Neither pattern is guaranteed, so we do not promise that any ticket is the cheapest. What we do is put the listings in front of you with clear details and protect the order after you buy.</p>
+<p>This kind of changing price is often called dynamic pricing, and the Wikipedia page on <a href="https://en.wikipedia.org/wiki/Dynamic_pricing" target="_blank" rel="noopener">dynamic pricing</a> gives a neutral overview of how it works across industries.</p>
+
+<h2>Event Day Checklist After You Buy Event Tickets</h2>
+<p>Once your order is confirmed, a little preparation makes the night smoother. Use this short list as a starting point and check your own event page for anything specific to that venue.</p>
+<ol>
+  <li>Open your confirmation email and make sure the date, venue and number of seats are correct.</li>
+  <li>Find out how your tickets will be delivered, and save them to your phone or print them if the event page asks for that.</li>
+  <li>Read the venue rules on bag size, re-entry and age limits, since these vary by venue and organizer.</li>
+  <li>Bring a valid photo ID if the venue requires one.</li>
+  <li>Plan your travel and parking, and arrive early, because some venues limit late entry.</li>
+</ol>
+<p>If anything looks wrong with your order before the event, contact <a href="/ticket-customer-service">ticket customer service</a> as soon as you can so the team has time to help.</p>
+
+<h2>Find More Ways to Browse and Save</h2>
+<p>If you already know the performer or team you are after, the <a href="/all-artists-and-teams">all artists and teams directory</a> lists them from A to Z. If you are curious why some tours cost more than others, our explainer on <a href="/why-are-concert-tickets-so-expensive">why concert tickets are so expensive</a> breaks down the reasons in plain language.</p>
+<p>Our <a href="/blog">blog</a> also has guides and ideas for planning nights out, and our <a href="/customer-testimonials">customer testimonials</a> page shows customer feedback in one place.</p>
+
 <h2>Why Fans Buy Event Tickets From Seat Outlet</h2>
 <p>We built the marketplace around three things shoppers want when they buy event tickets: choice, clarity and protection. You see many listings for one event, the price and seat details are on the page, and your order is backed by our <a href="/worry-free-guarantee">worry-free guarantee</a>.</p>
 <p>Our <a href="/ticket-buyer-protection">ticket buyer protection</a> policy says tickets are guaranteed valid and authentic, and that we will work to provide replacement tickets of equal or better value or a full refund if there is a problem. If an event is canceled and not rescheduled, you receive a full refund for your ticket purchase.</p>
@@ -108,4 +128,12 @@
 <details class="so-faq">
   <summary>How far ahead should I buy event tickets?</summary>
   <p>There is no single rule. Popular events can be harder to find close to the date, while other listings change as the date approaches. Compare the options on the event page and buy when a seat and price work for you.</p>
+</details>
+<details class="so-faq">
+  <summary>Do I need an account to buy event tickets?</summary>
+  <p>Check the checkout screen for the current steps. Your confirmation email is sent after payment, and order details are available through your account when you have one.</p>
+</details>
+<details class="so-faq">
+  <summary>Where can I compare every upcoming date before I buy event tickets?</summary>
+  <p>The <a href="/buy-tickets-online">buy tickets online</a> page lists upcoming events you can filter by date, so you can scan the calendar first and then open the event you want. You can then review the seat options for that date.</p>
 </details>

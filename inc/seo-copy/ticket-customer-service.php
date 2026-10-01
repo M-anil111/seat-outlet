@@ -15,7 +15,7 @@
 <figure><img src="/images/event-ticket-buying-800.webp" alt="Mobile ticket on a phone next to a laptop order page" width="800" height="533" loading="lazy"><figcaption>Your confirmation email and account dashboard show your order status.</figcaption></figure>
 </div>
 
-<h2>What our support team can help with</h2>
+<h2>What ticket customer service can help with</h2>
 <h3>Orders and delivery</h3>
 <p>Check your delivery status in your account dashboard or your confirmation email first. If tickets have not arrived when you expect them, contact us and we will look into the order.</p>
 <h3>Refunds and event changes</h3>
@@ -36,6 +36,17 @@
 <figure><img src="/images/crowd-at-concert-or-event.webp" alt="Fans cheering at a live event" width="442" height="442" loading="lazy"><figcaption>We want you at the show, not stuck on an order problem.</figcaption></figure>
 <figure><img src="/images/venue.webp" alt="Arena seats facing the stage" width="1536" height="1024" loading="lazy"><figcaption>Tell us your section and row if your question is about seating.</figcaption></figure>
 </div>
+
+<h2>How ticket customer service fits into your order</h2>
+<p>Good ticket customer service starts before you buy. Read the event page, check the seat section and total price, and look at our <a href="/how-to-buy-tickets-online">guide to buying tickets online</a> if it is your first time. After you buy, ticket customer service is there for delivery questions, event changes and account help.</p>
+<p>Seat Outlet is a resale marketplace, so tickets come from sellers and prices can be above or below face value. If a price or a listing looks wrong to you, ask ticket customer service before you check out rather than after.</p>
+<h3>Quick answers you can find on your own</h3>
+<p>Many common questions have short answers in our <a href="/ticket-faq">ticket FAQ</a>, such as how to access tickets, whether you need to print them, and how promo codes work. Our <a href="/why-are-concert-tickets-so-expensive">guide to concert ticket pricing</a> explains fees and resale. If you still want a person, ticket customer service is a message away.</p>
+<h2>Staying safe when you need ticket customer service</h2>
+<p>Scammers sometimes pose as support teams. Contact us only through the email address, phone number or form shown on this page, and be cautious with any message that pushes you to pay outside the site or share a full card number. Our <a href="/ticket-buyer-protection">buyer protection</a> page explains how secure payments and valid tickets are handled.</p>
+<p>General advice on spotting problems before you pay is in the FTC guide to <a href="https://consumer.ftc.gov/articles/online-shopping" target="_blank" rel="noopener">online shopping</a>. When you want a second look at how other fans rate us, see <a href="/seat-outlet-reviews">Seat Outlet reviews</a>.</p>
+<h3>Partnership and business questions</h3>
+<p>The contact form includes a Partnership topic for business inquiries. Choose it and tell us what you have in mind.</p>
 
 <h2>Find an event or read more first</h2>
 <p>Ready to shop? Browse <a href="/concert-tickets-for-sale">concert tickets</a> or <a href="/game-day-tickets">game day tickets</a>. Curious about our standards? See <a href="/customer-testimonials">customer testimonials</a> or <a href="/about-seat-outlet">about Seat Outlet</a>.</p>

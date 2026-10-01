@@ -25,7 +25,7 @@ $faqs = getFaqs('events');
 					<span class="hero-title-white">Buy Tickets Online</span>
 				</h1>
 				<p class="hero-subtitle">
-					Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.
+					Buy tickets online for live events from our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.
 				</p>
 			</div>
 		</div>

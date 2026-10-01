@@ -245,7 +245,7 @@ try {
 		<div class="hero-inner">
 			<span class="hero-eyebrow">A to Z</span>
 			<h1 class="hero-title">Artists, Teams &amp; Shows</h1>
-			<p class="hero-subtitle">Browse every artist, team and show on Seat Outlet. Pick a letter to jump straight in.</p>
+			<p class="hero-subtitle">Browse all artists, teams and shows on Seat Outlet, from A to Z. Pick a letter to jump straight in.</p>
 		</div>
 	</div>
 </section>

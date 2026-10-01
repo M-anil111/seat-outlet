@@ -97,6 +97,8 @@
         <div class="container">
             <div class="content-wrapper">
 
+                <p><strong>Overview:</strong> this is the Seat Outlet privacy policy. It explains what personal information we collect when you browse, buy or sell tickets, how we use and share it, how long we keep it, and the choices and rights you may have. The full text below is the version that applies; the summary at the bottom of the page is only a plain-English guide.</p>
+
                 <!-- Intro paragraphs (unchanged) -->
                 <p>
                     Seat Outlet (“Seat Outlet”, “we”, “us”, or “our”) is an online marketplace that enables users to discover, buy, and sell tickets for live events (“Services”). This Privacy Policy explains how we collect, use, disclose, and protect your personal information when you access or use our websites, mobile applications, and related services (collectively, the “Platform”).

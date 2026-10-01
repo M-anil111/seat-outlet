@@ -517,7 +517,7 @@ include 'header.php';
                             <p class="section-body">
                             Event schedules and ticket release timelines are decided by event organizers, performers, and promoters. They determine when tickets become available and how they are distributed to the public.
                             Our <a href="/ticket-buyer-protection">buyer protection</a> policy covers every order regardless of price, and follows the same consumer-safety principles outlined by the
-                            <a href="https://www.ftc.gov/consumer-advice" target="_blank" rel="noopener">FTC's consumer advice</a> on online purchases.
+                            <a href="https://consumer.ftc.gov/" target="_blank" rel="noopener">FTC's consumer advice</a> on online purchases.
                             </p>
                         </div>
                     </div>

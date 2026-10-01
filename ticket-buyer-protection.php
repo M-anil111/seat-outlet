@@ -211,7 +211,7 @@
                     <h2>Buyer Protection: Trusted Purchase Protection</h2>
                     <p>
                     Our buyer protection guarantee is backed by the same
-                    <a href="https://www.ftc.gov/consumer-advice" target="_blank" rel="noopener">consumer-safety principles the FTC recommends</a>
+                    <a href="https://consumer.ftc.gov/" target="_blank" rel="noopener">consumer-safety principles the FTC recommends</a>
                     for online purchases.
                     </p>
                     <p>To help ensure a safe experience, orders placed through the marketplace typically include protections such as:</p>
