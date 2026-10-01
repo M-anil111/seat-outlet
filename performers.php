@@ -4,31 +4,46 @@ $pageTitle = "Performers | SeatOutlet";
 $metaDescription = "Browse your favorite artists and performers on SeatOutlet and find upcoming events near you.";
 include 'header.php';
 
-$performers = [
-	['name' => 'The Midnight Vows', 'genre' => 'Alternative Rock', 'image' => 'indie-rock-night.webp'],
-	['name' => 'Luna Harbor',       'genre' => 'Indie Pop',        'image' => 'festival-1.webp'],
-	['name' => 'The Broken Arrows', 'genre' => 'Alternative',      'image' => 'lollapalooza.webp'],
-	['name' => 'Neon Pines',        'genre' => 'Electronic',       'image' => 'stage.webp'],
-	['name' => 'Velvet Compass',    'genre' => 'Pop Rock',         'image' => 'bonnaroo.webp'],
-	['name' => 'The Northern Lights','genre' => 'Rock',            'image' => 'new-event.webp'],
-	['name' => 'Riverside Avenue',  'genre' => 'Folk / Americana', 'image' => 'venue.webp'],
-	['name' => 'Echo & The Nine',   'genre' => 'Alternative',      'image' => 'crowd-at-concert-or-event.webp'],
+$perPage = 24;
+$initialParams = [
+	'page'              => 1,
+	'perPage'           => $perPage,
+	'includeTotalCount' => 'true',
+	'sort'              => 'text/name',
 ];
 
-$morePerformers = [
-	['name' => 'Wildflower Radio',  'genre' => 'Indie Folk',       'image' => 'loews-theatre.webp'],
-	['name' => 'Static Parade',     'genre' => 'Punk Rock',        'image' => 'pru-hall.webp'],
-	['name' => 'Coastal Static',    'genre' => 'Dream Pop',        'image' => 'white-eagle-hall.webp'],
-	['name' => 'The Amber Room',    'genre' => 'Soul / R&B',       'image' => 'event-concert.jpg'],
-	['name' => 'Iron Horizon',      'genre' => 'Hard Rock',        'image' => 'home-slider-one.webp'],
-	['name' => 'Paper Moon Society','genre' => 'Jazz Fusion',      'image' => 'austin.webp'],
-	['name' => 'Gravity Well',      'genre' => 'Electronic',       'image' => 'home-slider.webp'],
-	['name' => 'Sable & Sons',      'genre' => 'Country',          'image' => 'city.webp'],
-];
+$performers  = [];
+$totalCount  = 0;
+$hasMore     = false;
+$apiError    = false;
 
-function firstLetter($name) {
-	$clean = preg_replace('/[^A-Za-z]/', '', $name);
-	return $clean !== '' ? strtoupper($clean[0]) : '#';
+try {
+	$response   = getTnPerformers($initialParams);
+	$totalCount = (int) ($response['totalCount'] ?? 0);
+	$totalPages = $perPage > 0 ? (int) ceil($totalCount / $perPage) : 0;
+	$results    = $response['results'] ?? [];
+	$hasMore    = (1 < $totalPages);
+
+	foreach ($results as $performer) {
+		$name = $performer['text']['name'] ?? '';
+		$uriComponent = $performer['uriComponent'] ?? '';
+		if ($name === '' || $uriComponent === '') {
+			continue;
+		}
+		$defaultCategory = $performer['defaultCategory'] ?? [];
+		$image = getPerformerImage($name, $defaultCategory);
+		if (!$image) {
+			$image = getCategoryFallbackImage($defaultCategory, 'performer');
+		}
+		$performers[] = [
+			'name'         => $name,
+			'uriComponent' => rawurlencode($uriComponent),
+			'genre'        => getPerformerGenreLabel($defaultCategory),
+			'image'        => $image,
+		];
+	}
+} catch (Throwable $e) {
+	$apiError = true;
 }
 ?>
 
@@ -86,12 +101,18 @@ function firstLetter($name) {
 	}
 
 	/* Alphabet filter */
+	.performer-filter-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 22px 0;
+	}
 	.performer-filter-wrap {
 		display: flex;
 		flex-wrap: nowrap;
 		overflow-x: auto;
 		gap: 10px;
-		padding: 22px 0;
+		scroll-behavior: smooth;
 		-ms-overflow-style: none;
 		scrollbar-width: none;
 	}
@@ -119,6 +140,23 @@ function firstLetter($name) {
 		background: #2556E0;
 		border-color: #2556E0;
 		color: #ffffff;
+	}
+	.performer-filter-nav {
+		flex: 0 0 auto;
+		width: 36px;
+		height: 36px;
+		border-radius: 999px;
+		background: #ffffff;
+		border: 1px solid #e5e9f2;
+		box-shadow: 0 2px 6px rgba(17, 24, 39, .06);
+		color: #2556E0;
+		display: none;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+	}
+	@media (max-width: 991px) {
+		.performer-filter-nav { display: flex; }
 	}
 
 	/* Performer cards */
@@ -184,6 +222,13 @@ function firstLetter($name) {
 		transition: background .2s, color .2s, transform .15s;
 	}
 	.btn-load-more-performers:hover { background: #2556E0; color: #fff; transform: translateY(-1px); }
+	.btn-load-more-performers:disabled { opacity: .6; cursor: default; transform: none; }
+
+	.performers-empty-state, .performers-error-state {
+		text-align: center;
+		padding: 40px 20px;
+		color: #6b7280;
+	}
 </style>
 
 <section class="performers-hero-section">
@@ -201,51 +246,52 @@ function firstLetter($name) {
 <section class="py-4">
 	<div class="container">
 
-		<div class="performer-filter-wrap" id="performerFilterBar">
-			<button type="button" class="performer-filter-btn is-all active" data-letter="ALL">All</button>
-			<?php foreach (range('A', 'Z') as $letter) { ?>
-				<button type="button" class="performer-filter-btn" data-letter="<?php echo $letter; ?>"><?php echo $letter; ?></button>
-			<?php } ?>
+		<div class="performer-filter-row">
+			<div class="performer-filter-nav" id="filterPrev"><i class="bi bi-chevron-left"></i></div>
+			<div class="performer-filter-wrap" id="performerFilterBar">
+				<button type="button" class="performer-filter-btn is-all active" data-letter="ALL">All</button>
+				<?php foreach (range('A', 'Z') as $letter) { ?>
+					<button type="button" class="performer-filter-btn" data-letter="<?php echo $letter; ?>"><?php echo $letter; ?></button>
+				<?php } ?>
+			</div>
+			<div class="performer-filter-nav" id="filterNext"><i class="bi bi-chevron-right"></i></div>
 		</div>
 
-		<div class="row g-4" id="performerGrid">
-			<?php foreach ($performers as $performer) { ?>
-				<div class="col-12 col-sm-6 col-lg-3 performer-col" data-letter="<?php echo firstLetter($performer['name']); ?>">
-					<div class="performer-card">
-						<div class="performer-img-wrap">
-							<img src="<?php echo HOME_URL; ?>/images/<?php echo $performer['image']; ?>" alt="<?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy">
-						</div>
-						<div class="performer-body">
-							<div>
-								<div class="performer-name"><?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?></div>
-								<div class="performer-genre"><?php echo htmlspecialchars($performer['genre'], ENT_QUOTES, 'UTF-8'); ?></div>
+		<?php if ($apiError) { ?>
+			<div class="performers-error-state">
+				We couldn't load performers right now. Please try again shortly.
+			</div>
+		<?php } elseif (empty($performers)) { ?>
+			<div class="performers-empty-state" id="performersEmptyState">
+				No performers found.
+			</div>
+			<div class="row g-4" id="performerGrid"></div>
+		<?php } else { ?>
+			<div class="row g-4" id="performerGrid">
+				<?php foreach ($performers as $performer) { ?>
+					<div class="col-12 col-sm-6 col-lg-3 performer-col">
+						<div class="performer-card">
+							<div class="performer-img-wrap">
+								<img src="<?php echo htmlspecialchars($performer['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" onerror="this.src='<?php echo HOME_URL; ?>/images/placeholder.webp'">
 							</div>
-							<a href="#" class="btn-view-performer">View Performer</a>
+							<div class="performer-body">
+								<div>
+									<div class="performer-name"><?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?></div>
+									<?php if ($performer['genre'] !== '') { ?>
+										<div class="performer-genre"><?php echo htmlspecialchars($performer['genre'], ENT_QUOTES, 'UTF-8'); ?></div>
+									<?php } ?>
+								</div>
+								<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" class="btn-view-performer">View Performer</a>
+							</div>
 						</div>
 					</div>
-				</div>
-			<?php } ?>
+				<?php } ?>
+			</div>
+		<?php } ?>
 
-			<?php foreach ($morePerformers as $performer) { ?>
-				<div class="col-12 col-sm-6 col-lg-3 performer-col performer-extra d-none" data-letter="<?php echo firstLetter($performer['name']); ?>">
-					<div class="performer-card">
-						<div class="performer-img-wrap">
-							<img src="<?php echo HOME_URL; ?>/images/<?php echo $performer['image']; ?>" alt="<?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy">
-						</div>
-						<div class="performer-body">
-							<div>
-								<div class="performer-name"><?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?></div>
-								<div class="performer-genre"><?php echo htmlspecialchars($performer['genre'], ENT_QUOTES, 'UTF-8'); ?></div>
-							</div>
-							<a href="#" class="btn-view-performer">View Performer</a>
-						</div>
-					</div>
-				</div>
-			<?php } ?>
-		</div>
-
-		<div class="text-center mt-4" id="loadMorePerformersWrap">
-			<button type="button" class="btn-load-more-performers" id="loadMorePerformersBtn">Load More Performers</button>
+		<div class="text-center mt-4 <?php echo (!$hasMore || $apiError) ? 'd-none' : ''; ?>" id="loadMorePerformersWrap">
+			<button type="button" class="btn-load-more-performers" id="loadMorePerformersBtn"
+				data-page="1" data-perpage="<?php echo (int) $perPage; ?>" data-letter="ALL">Load More Performers</button>
 		</div>
 
 	</div>
@@ -253,18 +299,67 @@ function firstLetter($name) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-	var filterBar   = document.getElementById('performerFilterBar');
-	var loadMoreBtn = document.getElementById('loadMorePerformersBtn');
-	var loadMoreWrap = document.getElementById('loadMorePerformersWrap');
-	var allCols = Array.prototype.slice.call(document.querySelectorAll('.performer-col'));
+	var filterBar    = document.getElementById('performerFilterBar');
+	var filterPrev    = document.getElementById('filterPrev');
+	var filterNext    = document.getElementById('filterNext');
+	var grid          = document.getElementById('performerGrid');
+	var emptyState    = document.getElementById('performersEmptyState');
+	var loadMoreBtn   = document.getElementById('loadMorePerformersBtn');
+	var loadMoreWrap  = document.getElementById('loadMorePerformersWrap');
 
-	function showAllDefault() {
-		allCols.forEach(function (col) {
-			col.classList.toggle('d-none', col.classList.contains('performer-extra'));
+	function performerCardHtml(p) {
+		var genreHtml = p.genre ? '<div class="performer-genre">' + escapeHtml(p.genre) + '</div>' : '';
+		return '' +
+			'<div class="col-12 col-sm-6 col-lg-3 performer-col">' +
+				'<div class="performer-card">' +
+					'<div class="performer-img-wrap">' +
+						'<img src="' + escapeHtml(p.image) + '" alt="' + escapeHtml(p.name) + '" loading="lazy" onerror="this.src=\'<?php echo HOME_URL; ?>/images/placeholder.webp\'">' +
+					'</div>' +
+					'<div class="performer-body">' +
+						'<div>' +
+							'<div class="performer-name">' + escapeHtml(p.name) + '</div>' +
+							genreHtml +
+						'</div>' +
+						'<a href="/artist/' + String(p.uriComponent).toLowerCase() + '" class="btn-view-performer">View Performer</a>' +
+					'</div>' +
+				'</div>' +
+			'</div>';
+	}
+
+	function escapeHtml(str) {
+		return String(str == null ? '' : str)
+			.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+	}
+
+	function fetchPerformers(letter, page, append) {
+		var perPage = loadMoreBtn.dataset.perpage || 24;
+		var url = '/ajax/get-performers.php?letter=' + encodeURIComponent(letter) + '&page=' + page + '&perPage=' + perPage;
+
+		return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+			if (!append) {
+				grid.innerHTML = '';
+			}
+			(data.performers || []).forEach(function (p) {
+				grid.insertAdjacentHTML('beforeend', performerCardHtml(p));
+			});
+
+			if (emptyState) {
+				emptyState.classList.toggle('d-none', grid.children.length > 0);
+			}
+
+			loadMoreBtn.dataset.letter = letter;
+			if (data.hasMore) {
+				loadMoreBtn.dataset.page = data.nextPage;
+				loadMoreWrap.classList.remove('d-none');
+			} else {
+				loadMoreWrap.classList.add('d-none');
+			}
+			loadMoreBtn.disabled = false;
+			return data;
+		}).catch(function () {
+			loadMoreBtn.disabled = false;
 		});
-		loadMoreWrap.classList.remove('d-none');
-		loadMoreBtn.setAttribute('data-expanded', 'false');
-		loadMoreBtn.textContent = 'Load More Performers';
 	}
 
 	filterBar.addEventListener('click', function (e) {
@@ -275,26 +370,23 @@ document.addEventListener('DOMContentLoaded', function () {
 		btn.classList.add('active');
 
 		var letter = btn.getAttribute('data-letter');
-
-		if (letter === 'ALL') {
-			showAllDefault();
-			return;
-		}
-
-		loadMoreWrap.classList.add('d-none');
-		allCols.forEach(function (col) {
-			col.classList.toggle('d-none', col.getAttribute('data-letter') !== letter);
-		});
+		loadMoreBtn.disabled = true;
+		fetchPerformers(letter, 1, false);
 	});
 
 	loadMoreBtn.addEventListener('click', function () {
-		var expanded = loadMoreBtn.getAttribute('data-expanded') === 'true';
-		document.querySelectorAll('.performer-extra').forEach(function (col) {
-			col.classList.toggle('d-none', expanded);
-		});
-		loadMoreBtn.setAttribute('data-expanded', expanded ? 'false' : 'true');
-		loadMoreBtn.textContent = expanded ? 'Load More Performers' : 'Show Less Performers';
+		loadMoreBtn.disabled = true;
+		var letter = loadMoreBtn.dataset.letter || 'ALL';
+		var page = parseInt(loadMoreBtn.dataset.page, 10) || 2;
+		fetchPerformers(letter, page, true);
 	});
+
+	if (filterPrev) {
+		filterPrev.addEventListener('click', function () { filterBar.scrollBy({ left: -180, behavior: 'smooth' }); });
+	}
+	if (filterNext) {
+		filterNext.addEventListener('click', function () { filterBar.scrollBy({ left: 180, behavior: 'smooth' }); });
+	}
 });
 </script>
 
