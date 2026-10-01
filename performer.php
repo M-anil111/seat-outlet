@@ -452,6 +452,7 @@ include 'header.php';
 			</div>
 		</div>
 		<?php if (!empty($faqs)) { ?>
+			<?php $faqVisible = 5; // FAQs shown before "Show More FAQs" ?>
 			<div class="tab-section content-section-detail" id="faqs">
 				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo $artistName; ?> Events</h2>
 				<div class="accordion" id="faqAccordion">
@@ -461,8 +462,9 @@ include 'header.php';
 						$question = str_replace('[artist_name]', $artistName, $faq['question']);
 						$answer   = str_replace('[artist_name]', $artistName, $faq['answer']);
 						$isFirst = ($index === 0);
+						$isExtra = ($index >= $faqVisible);
 					?>
-						<div class="accordion-item">
+						<div class="accordion-item<?php echo $isExtra ? ' faq-extra d-none' : ''; ?>">
 							<h2 class="accordion-header" id="<?php echo $headingId; ?>">
 								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>" 
 										type="button"
@@ -484,6 +486,34 @@ include 'header.php';
 						</div>
 					<?php } ?>
 				</div>
+				<?php if (count($faqs) > $faqVisible) { ?>
+					<div class="text-center mt-4">
+						<button type="button" class="btn more-events-btn d-inline-flex align-items-center gap-2" id="faqToggleBtn" aria-expanded="false" aria-controls="faqAccordion">
+							<span class="btn-text">Show More FAQs</span>
+							<i class="bi bi-chevron-down"></i>
+						</button>
+					</div>
+					<script>
+					(function () {
+						var btn = document.getElementById('faqToggleBtn');
+						var section = document.getElementById('faqs');
+						btn.addEventListener('click', function () {
+							var expand = btn.getAttribute('aria-expanded') !== 'true';
+							section.querySelectorAll('.faq-extra').forEach(function (item) {
+								item.classList.toggle('d-none', !expand);
+							});
+							btn.setAttribute('aria-expanded', expand ? 'true' : 'false');
+							btn.querySelector('.btn-text').textContent = expand ? 'Show Less FAQs' : 'Show More FAQs';
+							btn.querySelector('.bi').style.transform = expand ? 'rotate(180deg)' : '';
+							// After collapsing, keep the visitor at the FAQs instead of
+							// wherever the longer list had scrolled them to.
+							if (!expand && section.getBoundingClientRect().top < 0) {
+								section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+							}
+						});
+					})();
+					</script>
+				<?php } ?>
 			</div>
 		<?php } ?>
 		<?php

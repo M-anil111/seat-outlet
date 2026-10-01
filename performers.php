@@ -109,6 +109,8 @@ try {
 		padding: 22px 0;
 	}
 	.performer-filter-wrap {
+		flex: 1 1 auto;
+		min-width: 0;
 		display: flex;
 		flex-wrap: nowrap;
 		overflow-x: auto;
@@ -151,14 +153,15 @@ try {
 		border: 1px solid #e5e9f2;
 		box-shadow: 0 2px 6px rgba(17, 24, 39, .06);
 		color: #2556E0;
+		padding: 0;
+		line-height: 1;
 		display: none;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
 	}
-	@media (max-width: 991px) {
-		.performer-filter-nav { display: flex; }
-	}
+	.performer-filter-row.is-overflowing .performer-filter-nav { display: flex; }
+	.performer-filter-nav:disabled { opacity: .4; cursor: default; }
 
 	/* Performer cards */
 	.performer-card {
@@ -247,28 +250,23 @@ try {
 <section class="py-4">
 	<div class="container">
 
-		<div class="performer-filter-row">
-			<div class="performer-filter-nav" id="filterPrev"><i class="bi bi-chevron-left"></i></div>
+		<div class="performer-filter-row" id="performerFilterRow">
+			<button type="button" class="performer-filter-nav" id="filterPrev" aria-label="Previous letters"><i class="bi bi-chevron-left"></i></button>
 			<div class="performer-filter-wrap" id="performerFilterBar">
 				<button type="button" class="performer-filter-btn is-all active" data-letter="ALL">All</button>
 				<?php foreach (range('A', 'Z') as $letter) { ?>
 					<button type="button" class="performer-filter-btn" data-letter="<?php echo $letter; ?>"><?php echo $letter; ?></button>
 				<?php } ?>
 			</div>
-			<div class="performer-filter-nav" id="filterNext"><i class="bi bi-chevron-right"></i></div>
+			<button type="button" class="performer-filter-nav" id="filterNext" aria-label="Next letters"><i class="bi bi-chevron-right"></i></button>
 		</div>
 
-		<?php if ($apiError) { ?>
-			<div class="performers-error-state" id="performersErrorState">
-				We couldn't load performers right now. Please try again shortly.
-			</div>
-			<div class="row g-4" id="performerGrid"></div>
-		<?php } elseif (empty($performers)) { ?>
-			<div class="performers-empty-state" id="performersEmptyState">
-				No performers found.
-			</div>
-			<div class="row g-4" id="performerGrid"></div>
-		<?php } else { ?>
+		<div class="performers-error-state<?php echo $apiError ? '' : ' d-none'; ?>" id="performersErrorState">
+			We couldn't load performers right now. Please try again shortly.
+		</div>
+		<div class="performers-empty-state<?php echo ($apiError || !empty($performers)) ? ' d-none' : ''; ?>" id="performersEmptyState">
+			No performers found.
+		</div>
 			<div class="row g-4" id="performerGrid">
 				<?php foreach ($performers as $performer) { ?>
 					<div class="col-12 col-sm-6 col-lg-3 performer-col">
@@ -289,7 +287,6 @@ try {
 					</div>
 				<?php } ?>
 			</div>
-		<?php } ?>
 
 		<div class="text-center mt-4 <?php echo (!$hasMore || $apiError) ? 'd-none' : ''; ?>" id="loadMorePerformersWrap">
 			<button type="button" class="btn-load-more-performers" id="loadMorePerformersBtn"
@@ -335,7 +332,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 	}
 
+	var requestSeq = 0;
+
 	function fetchPerformers(letter, page, append) {
+		var seq = ++requestSeq;
 		var perPage = loadMoreBtn.dataset.perpage || 24;
 		var url = '/ajax/get-performers.php?letter=' + encodeURIComponent(letter) + '&page=' + page + '&perPage=' + perPage;
 
@@ -343,9 +343,8 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (!res.ok) throw new Error('HTTP ' + res.status);
 			return res.json();
 		}).then(function (data) {
-			if (errorState) {
-				errorState.classList.add('d-none');
-			}
+			if (seq !== requestSeq) return data; // a newer letter was clicked meanwhile
+			errorState.classList.add('d-none');
 			if (!append) {
 				grid.innerHTML = '';
 			}
@@ -353,9 +352,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				grid.insertAdjacentHTML('beforeend', performerCardHtml(p));
 			});
 
-			if (emptyState) {
-				emptyState.classList.toggle('d-none', grid.children.length > 0);
-			}
+			emptyState.classList.toggle('d-none', grid.children.length > 0);
 
 			loadMoreBtn.dataset.letter = letter;
 			if (data.hasMore) {
@@ -367,9 +364,12 @@ document.addEventListener('DOMContentLoaded', function () {
 			loadMoreBtn.disabled = false;
 			return data;
 		}).catch(function () {
-			if (errorState && !append) {
+			if (seq !== requestSeq) return;
+			if (!append) {
 				grid.innerHTML = '';
 				errorState.classList.remove('d-none');
+				emptyState.classList.add('d-none');
+				loadMoreWrap.classList.add('d-none');
 			}
 			loadMoreBtn.disabled = false;
 		});
@@ -394,12 +394,24 @@ document.addEventListener('DOMContentLoaded', function () {
 		fetchPerformers(letter, page, true);
 	});
 
-	if (filterPrev) {
-		filterPrev.addEventListener('click', function () { filterBar.scrollBy({ left: -180, behavior: 'smooth' }); });
+	var filterRow = document.getElementById('performerFilterRow');
+
+	function updateFilterNav() {
+		var maxScroll = filterBar.scrollWidth - filterBar.clientWidth;
+		filterRow.classList.toggle('is-overflowing', maxScroll > 1);
+		filterPrev.disabled = filterBar.scrollLeft <= 1;
+		filterNext.disabled = filterBar.scrollLeft >= maxScroll - 1;
 	}
-	if (filterNext) {
-		filterNext.addEventListener('click', function () { filterBar.scrollBy({ left: 180, behavior: 'smooth' }); });
+
+	function scrollFilter(direction) {
+		filterBar.scrollBy({ left: direction * Math.max(120, filterBar.clientWidth * 0.8), behavior: 'smooth' });
 	}
+
+	filterPrev.addEventListener('click', function () { scrollFilter(-1); });
+	filterNext.addEventListener('click', function () { scrollFilter(1); });
+	filterBar.addEventListener('scroll', updateFilterNav, { passive: true });
+	window.addEventListener('resize', updateFilterNav);
+	updateFilterNav();
 });
 </script>
 

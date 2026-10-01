@@ -1,126 +1,119 @@
 <?php include 'header.php'; ?>
 
 <style>
+  /* Event header card (reference design): date tile | name, venue, links | tickets CTA | guarantee */
   .event-detail {
-    background: #f8f9fa;
-    border-bottom: 1px solid #e2e2e2;
-    padding: 10px 0;
+    background: #f5f7fb;
+    padding: 28px 0;
   }
-
-  .event-detail .event-card {
-    background: none !important;
-    padding: 20px;
-    border-radius: 0px !important;
-    border: none !important;
-    flex-direction: row;
-    transition: none !important;
-    min-height: auto;
+  .event-detail > .container { max-width: 1640px; }
+  .ev-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1.5fr) auto minmax(0, 1fr);
+    grid-template-areas: "date info cta guarantee";
+    align-items: center;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(17, 24, 39, .06);
+    padding: 24px 28px;
   }
+  .ev-date, .ev-info, .ev-cta, .ev-guarantee { min-width: 0; }
+  .ev-date { grid-area: date; }
+  .ev-info { grid-area: info; padding: 0 32px; border-left: 1px solid #e8ecf3; align-self: stretch; display: flex; flex-direction: column; justify-content: center; margin-left: 24px; }
+  .ev-cta { grid-area: cta; padding: 0 32px; border-left: 1px solid #e8ecf3; align-self: stretch; display: flex; align-items: center; }
+  .ev-guarantee { grid-area: guarantee; padding-left: 32px; border-left: 1px solid #e8ecf3; align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
 
-  .event-detail .event-card:hover,
-  .event-detail .event-card:focus {
-    border-bottom: none !important;
-    box-shadow: none !important;
-    transition: none !important;
-    outline: none !important;
-    transform: none !important;
+  /* Date tile */
+  .ev-date {
+    background: #eef3fd;
+    border-radius: 12px;
+    text-align: center;
+    padding: 14px 18px 12px;
+    min-width: 132px;
   }
+  .ev-date-day { color: #2556e0; font-weight: 700; font-size: 22px; line-height: 1.2; text-transform: uppercase; }
+  .ev-date-num { color: #111827; font-weight: 800; font-size: 40px; line-height: 1.1; }
+  .ev-date-month { color: #374151; font-size: 15px; font-weight: 500; text-transform: uppercase; }
+  .ev-date-time { color: #4b5563; font-size: 15px; border-top: 1px solid #dbe3f3; margin-top: 10px; padding-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+  .ev-date-time svg { width: 16px; height: 16px; flex: 0 0 auto; }
 
-  .event-detail .event-card .common-btn:hover {
-    background: #0d6efd !important;
-    color: #fff !important;
-  }
+  /* Name, venue, links */
+  .event-detail h1.ev-title { font-size: 30px; font-weight: 800; color: #111827; line-height: 1.25; margin: 0 0 10px; font-family: inherit; overflow-wrap: anywhere; }
+  .ev-venue { display: flex; align-items: flex-start; gap: 8px; color: #4b5563; font-size: 18px; line-height: 1.4; margin: 0 0 14px; }
+  .ev-venue .bi { font-size: 18px; margin-top: 2px; }
+  .ev-venue a { color: inherit; text-decoration: none; }
+  .ev-venue a:hover { color: #2556e0; text-decoration: underline; }
+  .ev-link { color: #2556e0; font-size: 18px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: flex-start; gap: 8px; }
+  .ev-link:hover { color: #1a3fa8; text-decoration: underline; }
+  .ev-link .bi { font-size: 20px; line-height: 1.2; }
 
-  /* Date Box */
-  .event-detail .date-box {
-    background: #e4e9f8;
-    border-radius: 6px;
-    width: 60px;
-    padding: 8px 0;
-    line-height: 1.1;
-    border: 1px #c3bfbf solid;
-    box-shadow: rgba(18, 18, 18, 0.18) 0px 3px 12px 0px;
-
-  }
-
-  .event-detail .date-box .month {
-    font-size: 13px;
-    font-weight: 700;
-    color: #555;
-  }
-
-  .event-detail .date-box .date,
-  .event-detail .date-box .time {
-    font-size: 20px;
-    font-weight: 800;
-  }
-   .event-detail .day-weeks, .event-detail .time-clock {
-    font-size: 14px;
-    color: #646464;}
-
-    .event-detail .dot {
-    font-size: 22px;
-    color: #646464;
-    font-weight: bold;
-    line-height: 0px;
-}
-
-  /* Event Info */
-  .event-detail h1.event-title { margin: 0; line-height: 1.4; font-family: inherit; }
-  .event-detail .event-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #000;
-    background: rgba(37, 86, 224, 0.1);
-    padding: 2px 6px;
-    border-radius: 3px;
-  }
-
-  .event-detail .event-card .common-btn {
-    display: inline-block;
-    padding: 8px 14px;
-    background: transparent;
-    border-radius: 999px;
-    border: 1px #0d6efd solid;
-    margin-top: 10px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #0d6efd;
-    transition: all 0.2s ease;
-  }
-
-  .event-detail .event-card .common-btn:hover {
-    background: #0d6efd;
-    color: #fff;
-  }
-
-  .event-detail .event-location {
-    font-size: 14px;
-    color: #666;
-  }
+  /* Tickets CTA box */
+  .ev-cta-box { border: 1.5px solid #dbe3f3; border-radius: 12px; padding: 16px 20px; text-align: center; min-width: 200px; }
+  .ev-cta-box .bi { color: #2556e0; font-size: 32px; line-height: 1; display: inline-block; margin-bottom: 6px; }
+  .ev-cta-label { color: #374151; font-size: 15px; margin-bottom: 10px; }
+  .ev-cta-label strong { color: #111827; font-weight: 700; }
+  .ev-cta-btn { display: block; border: 2px solid #2556e0; border-radius: 8px; color: #2556e0; font-weight: 700; font-size: 16px; padding: 9px 18px; text-decoration: none; transition: background .2s, color .2s; }
+  .ev-cta-btn:hover, .ev-cta-btn:focus { background: #2556e0; color: #fff; }
 
   /* Guarantee */
-  .event-detail .guarantee h6 {
-    font-weight: 600;
-    font-size: 14px;
+  .ev-guarantee-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .ev-guarantee-head svg { width: 38px; height: 38px; color: #2556e0; flex: 0 0 auto; }
+  .ev-guarantee-head h2 { color: #2556e0; font-size: 22px; font-weight: 700; margin: 0; line-height: 1.25; font-family: inherit; }
+  .ev-guarantee p { color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0; }
+
+  /* Laptop: guarantee drops to its own row under the card's top row */
+  @media (max-width: 1299.98px) {
+    .ev-card {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: "date info cta" "guarantee guarantee guarantee";
+      row-gap: 20px;
+    }
+    .ev-guarantee { padding: 20px 0 0; border-left: 0; border-top: 1px solid #e8ecf3; }
+  }
+  /* Tablet: date + info, then CTA, then guarantee */
+  @media (max-width: 991.98px) {
+    .ev-card {
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas: "date info" "cta cta" "guarantee guarantee";
+      padding: 20px;
+    }
+    .ev-info { padding: 0 0 0 20px; margin-left: 20px; }
+    .ev-cta { padding: 20px 0 0; border-left: 0; border-top: 1px solid #e8ecf3; }
+    .ev-cta-box { width: 100%; display: flex; align-items: center; gap: 14px; text-align: left; padding: 12px 16px; }
+    .ev-cta-box .bi { margin: 0; }
+    .ev-cta-label { margin: 0; flex: 1 1 auto; }
+    .ev-cta-btn { flex: 0 0 auto; }
+  }
+  /* Mobile: everything stacked, date tile becomes a single row */
+  @media (max-width: 575.98px) {
+    .event-detail { padding: 16px 0; }
+    .ev-card { grid-template-columns: minmax(0, 1fr); grid-template-areas: "date" "info" "cta" "guarantee"; padding: 16px; row-gap: 16px; border-radius: 14px; }
+    .ev-date { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 4px 8px; padding: 10px 12px; }
+    .ev-date-day, .ev-date-month { font-size: 15px; }
+    .ev-date-num { font-size: 22px; }
+    .ev-date-time { border-top: 0; margin: 0; padding: 0 0 0 10px; border-left: 1px solid #dbe3f3; }
+    .ev-info { padding: 0; margin: 0; border-left: 0; }
+    .event-detail h1.ev-title { font-size: 22px; }
+    .ev-venue { font-size: 16px; }
+    .ev-link { font-size: 15px; }
+    .ev-cta { padding: 16px 0 0; }
+    .ev-cta-box { flex-wrap: wrap; }
+    .ev-cta-btn { width: 100%; text-align: center; }
+    .ev-guarantee { padding-top: 16px; }
+    .ev-guarantee-head h2 { font-size: 19px; }
+    .ev-guarantee-head svg { width: 32px; height: 32px; }
   }
 
-  .event-detail .guarantee p {
-    font-size: 12px;
-    color: #666;
-    max-width: 420px;
+  /* This card replaces the widget's own event header (same date, name and
+     venue), so it is not shown twice. */
+  @media (min-width: 992px) {
+    .seatics .event-info-ctn { display: none !important; }
   }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .event-detail .event-card {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .event-detail .guarantee {
-      text-align: left !important;
-    }
+  @media (max-width: 991.98px) {
+    .seatics .event-info-ctn .event-info-date-ctn,
+    .seatics .event-info-ctn .event-info-name,
+    .seatics .event-info-ctn .event-info-place,
+    .seatics #event-info-right-col { display: none !important; }
   }
 </style>
 
@@ -172,39 +165,80 @@ $primaryPerformer = $event['performers'][0] ?? null;
 $categoryCityPrefix = getCategoryCityLinkPrefix($eventCategoryPath);
 $eventTimestamp = !empty($event['date']['date']) ? strtotime($event['date']['date']) : false;
 ?>
+<?php
+$eventVenueParts = [];
+if ($eventVenueName !== '') {
+  $eventVenueParts[] = $eventVenueId ? ['/venue/' . createSlug($eventVenueName, $eventVenueId), $eventVenueName] : [null, $eventVenueName];
+}
+if ($eventCityName !== '') {
+  $eventVenueParts[] = $eventCityId ? ['/' . $categoryCityPrefix . '/' . createSlug($eventCityLabel, $eventCityId), $eventCityName] : [null, $eventCityName];
+}
+foreach ([$event['stateProvince']['text']['abbr'] ?? '', ($event['country']['alphaCode'] ?? '') !== 'US' ? ($event['country']['text']['name'] ?? '') : ''] as $part) {
+  if ($part !== '') $eventVenueParts[] = [null, $part];
+}
+$eventTimeText = trim((string) ($event['date']['text']['time'] ?? ''));
+if ($eventTimeText === '' && $eventTimestamp) {
+  $eventTimeText = date('g:i A', $eventTimestamp);
+}
+$eventLowPrice = $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '';
+$h = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); };
+// One related link under the venue: this performer in this city, else this city.
+$eventInfoLink = null;
+if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !empty($eventCityId)) {
+  $eventInfoLink = ['/artist-city/' . createSlug($primaryPerformer['name'], $primaryPerformer['id']) . '/' . createSlug($eventCityLabel, $eventCityId), 'More ' . $primaryPerformer['name'] . ' tickets in ' . $eventCityLabel];
+} elseif (!empty($eventCityId)) {
+  $eventInfoLink = ['/' . $categoryCityPrefix . '/' . createSlug($eventCityLabel, $eventCityId), 'More events in ' . $eventCityLabel];
+}
+?>
 <section class="event-detail">
   <div class="container">
-    <div class="event-card d-flex align-items-center gap-3 flex-wrap">
+    <div class="ev-card">
       <?php if ($eventTimestamp) { ?>
-        <div class="date-box text-center">
-          <div class="month"><?php echo htmlspecialchars(strtoupper(date('M', $eventTimestamp)), ENT_QUOTES, 'UTF-8'); ?></div>
-          <div class="date"><?php echo htmlspecialchars(date('d', $eventTimestamp), ENT_QUOTES, 'UTF-8'); ?></div>
+        <div class="ev-date">
+          <div class="ev-date-day"><?php echo $h(date('D', $eventTimestamp)); ?></div>
+          <div class="ev-date-num"><?php echo $h(date('j', $eventTimestamp)); ?></div>
+          <div class="ev-date-month"><?php echo $h(date('M Y', $eventTimestamp)); ?></div>
+          <?php if ($eventTimeText !== '') { ?>
+            <div class="ev-date-time">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/></svg>
+              <?php echo $h($eventTimeText); ?>
+            </div>
+          <?php } ?>
         </div>
       <?php } ?>
-      <div class="flex-grow-1">
-        <h1 class="event-title"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h1>
-        <div class="event-location mt-1">
-          <?php if (!empty($eventCityId)) { ?>
-            <a href="/<?php echo htmlspecialchars($categoryCityPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($eventCityLabel, $eventCityId), ENT_QUOTES, 'UTF-8'); ?>">
-              More events in <?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?>
-            </a>
-          <?php } ?>
-          <?php if (!empty($eventVenueId)) { ?>
-            <?php echo !empty($eventCityId) ? ' &middot; ' : ''; ?>
-            <a href="/venue/<?php echo htmlspecialchars(createSlug($eventVenueName, $eventVenueId), ENT_QUOTES, 'UTF-8'); ?>">
-              More at <?php echo htmlspecialchars($eventVenueName, ENT_QUOTES, 'UTF-8'); ?>
-            </a>
-          <?php } ?>
-        </div>
-        <?php if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !empty($eventCityId)) { ?>
-          <a class="common-btn mt-2" href="/artist-city/<?php echo htmlspecialchars(createSlug($primaryPerformer['name'], $primaryPerformer['id']), ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($eventCityLabel, $eventCityId), ENT_QUOTES, 'UTF-8'); ?>">
-            More <?php echo htmlspecialchars($primaryPerformer['name'], ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?>
-          </a>
+
+      <div class="ev-info"<?php echo $eventTimestamp ? '' : ' style="margin-left:0;padding-left:0;border-left:0"'; ?>>
+        <h1 class="ev-title"><?php echo $h($event['text']['name'] ?? ''); ?></h1>
+        <?php if ($eventVenueParts) { ?>
+          <p class="ev-venue"><i class="bi bi-geo-alt" aria-hidden="true"></i><span><?php
+            $out = [];
+            foreach ($eventVenueParts as [$href, $label]) {
+              $out[] = $href ? '<a href="' . $h($href) . '">' . $h($label) . '</a>' : $h($label);
+            }
+            echo implode(', ', $out);
+          ?></span></p>
+        <?php } ?>
+        <?php if ($eventInfoLink) { ?>
+          <a class="ev-link" href="<?php echo $h($eventInfoLink[0]); ?>"><i class="bi bi-info-circle" aria-hidden="true"></i><span><?php echo $h($eventInfoLink[1]); ?></span></a>
         <?php } ?>
       </div>
-      <div class="guarantee text-end">
-        <h6>Shop Tickets Worry Free</h6>
-        <p>Every order is backed by our Buyer Protection Guarantee.</p>
+
+      <div class="ev-cta">
+        <div class="ev-cta-box">
+          <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
+          <div class="ev-cta-label">
+            <?php if ($eventLowPrice !== '') { ?>Tickets from <strong><?php echo $h($eventLowPrice); ?></strong><?php } else { ?>Tickets<?php } ?>
+          </div>
+          <a class="ev-cta-btn" href="#tn-maps">View Tickets</a>
+        </div>
+      </div>
+
+      <div class="ev-guarantee">
+        <div class="ev-guarantee-head">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 0c-.69 0-1.843.265-2.928.56-1.11.3-2.229.655-2.887.87a1.54 1.54 0 0 0-1.044 1.262c-.596 4.477.787 7.795 2.465 9.99a11.8 11.8 0 0 0 2.517 2.453c.386.273.744.482 1.048.625.28.132.581.24.829.24s.548-.108.829-.24a7 7 0 0 0 1.048-.625 11.8 11.8 0 0 0 2.517-2.453c1.678-2.195 3.061-5.513 2.465-9.99a1.54 1.54 0 0 0-1.044-1.263 63 63 0 0 0-2.887-.87C9.843.266 8.69 0 8 0m2.146 5.146a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793z"/></svg>
+          <h2><a href="/guarantee" class="text-reset text-decoration-none">100% Worry-Free Guarantee</a></h2>
+        </div>
+        <p>We are a resale marketplace, not the ticket seller. Prices are set by third-party sellers and may be above or below face value. Your seats are together unless otherwise noted. All prices are in USD.</p>
       </div>
     </div>
   </div>
@@ -259,6 +293,8 @@ $eventTimestamp = !empty($event['date']['date']) ? strtotime($event['date']['dat
     if (text) document.getElementById('so-no-tickets-text').textContent = text;
     box.classList.remove('d-none');
     if (map) map.style.display = 'none';
+    var cta = document.querySelector('.ev-cta-btn');
+    if (cta) cta.setAttribute('href', '#so-no-tickets');
     push('no_inventory', { reason: title });
   }
   Seatics.config.noEventHandler = function () {
