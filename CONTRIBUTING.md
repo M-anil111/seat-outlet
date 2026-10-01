@@ -279,6 +279,12 @@ optional.
   `tools/build-assets.sh` and commit the generated `css/style.min.css` and `js/*.min.js`. The pages load
   the `.min` files through `soAsset()` (functions.php), falling back to the source if a `.min` is missing.
   CI runs `tools/build-assets.sh --check` and fails when a minified file is stale. Needs Node (`npx`).
+- **Bootstrap CSS.** Pages load `css/bootstrap.min.css`, which `tools/build-assets.sh` builds from `lib/bootstrap/5.3.8/bootstrap.min.css`
+  keeping only the classes found in the PHP and `js/*.js` (rules in `tools/purgecss.config.cjs`). Using a new Bootstrap class in a PHP
+  file or script? Just rebuild and commit the result (CI fails when it is stale). A class that is only assembled at runtime
+  (`'btn-' + name`) cannot be found: write it out in full somewhere, or add it to the safelist in that config. Classes typed into
+  blog posts or editable page blocks (stored in the database) also need to be in the safelist.
+- **Sentry check.** `php tools/sentry-test.php` on the server sends one test message and says whether delivery worked.
 - **Icons.** Only the Bootstrap Icons the code uses are shipped (`fonts/bootstrap-icons-subset.woff2` + `css/icons.css`, folded into
   `style.min.css`). Using a new `bi-*` icon? Run `python3 tools/build-icons.py` (needs `pip install fonttools brotli`) then
   `tools/build-assets.sh`. CI runs `python3 tools/build-icons.py --check`. The admin panel still uses the full CDN font.
