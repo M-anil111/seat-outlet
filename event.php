@@ -45,6 +45,11 @@
   .ev-venue a:hover { color: #2556e0; text-decoration: underline; }
   .ev-link { color: #2556e0; font-size: 18px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: flex-start; gap: 8px; }
   .ev-link:hover { color: #1a3fa8; text-decoration: underline; }
+  .ev-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .ev-action { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid #c9d3e6; border-radius: 999px; background: #fff; color: #1f3a8a; font-size: 14px; font-weight: 600; cursor: pointer; line-height: 1.2; }
+  .ev-action:hover { background: #eef3ff; border-color: #2556e0; }
+  .ev-action:focus-visible { outline: 3px solid #2556e0; outline-offset: 2px; }
+  .ev-action .bi { font-size: 16px; }
   .ev-link .bi { font-size: 20px; line-height: 1.2; }
 
   /* Tickets CTA box */
@@ -221,6 +226,13 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
         <?php if ($eventInfoLink) { ?>
           <a class="ev-link" href="<?php echo $h($eventInfoLink[0]); ?>"><i class="bi bi-info-circle" aria-hidden="true"></i><span><?php echo $h($eventInfoLink[1]); ?></span></a>
         <?php } ?>
+        <div class="ev-actions">
+          <?php if ($eventTimestamp) { ?>
+            <button type="button" class="ev-action" data-so-ics><i class="bi bi-calendar-plus" aria-hidden="true"></i><span>Add to calendar</span></button>
+          <?php } ?>
+          <button type="button" class="ev-action" data-so-share><i class="bi bi-share" aria-hidden="true"></i><span>Share</span></button>
+        </div>
+        <span class="visually-hidden" id="so-action-status" role="status" aria-live="polite"></span>
       </div>
 
       <div class="ev-cta">
@@ -262,6 +274,22 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
     </div>
   </div>
 </div>
+<?php
+// Facts for js/event-actions.js (calendar file, share, "recently viewed"). Everything here is already on the page.
+$soEventSlug = createSlug($event['text']['name'] ?? '', $id);
+$soEventData = [
+  'id'       => (int) $id,
+  'name'     => (string) ($event['text']['name'] ?? ''),
+  'slug'     => $soEventSlug,
+  'url'      => rtrim(HOME_URL, '/') . '/event/' . $soEventSlug,
+  'date'     => (string) ($event['date']['date'] ?? ''),
+  'start'    => (string) ($event['date']['datetimeOffset'] ?? ''),
+  'allDay'   => (($event['date']['time'] ?? '') === '' || ($event['date']['time'] ?? '') === '00:00:00'),
+  'venue'    => (string) $eventVenueName,
+  'city'     => (string) $eventCityLabel,
+];
+?>
+<script type="application/json" id="so-event-data"><?php echo json_encode($soEventData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES); ?></script>
 <script src="<?php echo htmlspecialchars($mapScriptUrl, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script>
 (function () {
