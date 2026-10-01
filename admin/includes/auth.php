@@ -1,4 +1,6 @@
 <?php
+// Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
+if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
 if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', '1');
     ini_set('session.use_strict_mode', '1');

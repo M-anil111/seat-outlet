@@ -1,4 +1,6 @@
 <?php
+// Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
+if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
 
 // Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
 // lose the visitor's own query string on the way, so ?when= / ?sort= / ?page=

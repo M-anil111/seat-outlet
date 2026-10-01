@@ -1,4 +1,6 @@
 <?php
+// Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
+if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
 // Was a plain include (not include_once). Harmless as long as every page
 // included header.php as its very first statement (the original,
 // universal pattern), but a real fatal "Cannot redeclare function" bug for
