@@ -4,12 +4,12 @@
 
 <div class="so-seo-figs">
   <figure>
-    <img src="/images/loews-theatre.webp" alt="Ornate theater interior with balconies, a typical setting when you buy Broadway tickets" width="600" height="600" loading="lazy">
-    <figcaption>Historic theaters often have several levels, each with a different view.</figcaption>
+    <img src="/images/pru-hall.webp" alt="Red-toned theater interior with orchestra seating and several balcony levels, a typical setting when you buy Broadway tickets" width="600" height="600" loading="lazy">
+    <figcaption>Large theaters have an orchestra level and several balconies, each with a different view.</figcaption>
   </figure>
   <figure>
-    <img src="/images/stage.webp" alt="Stage with dramatic lighting before a theater performance" width="750" height="843" loading="lazy">
-    <figcaption>Stage design, lighting and choreography are best seen from a centered seat.</figcaption>
+    <img src="/images/4.webp" alt="Cast in colorful costumes performing a large musical number on stage" width="600" height="600" loading="lazy">
+    <figcaption>Choreography and set design are easiest to take in from a centered seat.</figcaption>
   </figure>
 </div>
 
@@ -55,12 +55,12 @@
 
 <div class="so-seo-figs">
   <figure>
-    <img src="/images/pru-hall.webp" alt="Large performing arts hall used for touring musicals" width="600" height="600" loading="lazy">
-    <figcaption>Touring musicals often play big performing arts halls.</figcaption>
+    <img src="/images/loews-theatre.webp" alt="Historic theater building with a clock tower and lit marquee" width="600" height="600" loading="lazy">
+    <figcaption>Historic theaters have character, so check the seating chart for each one.</figcaption>
   </figure>
   <figure>
-    <img src="/images/city.webp" alt="City skyline at dusk, a popular place to buy Broadway tickets and plan a night out" width="700" height="700" loading="lazy">
-    <figcaption>Plan dinner and transportation around curtain time.</figcaption>
+    <img src="/images/2.webp" alt="Actors in period costume dancing on stage during a musical" width="600" height="600" loading="lazy">
+    <figcaption>Plan dinner and transportation around curtain time so you do not miss the opening number.</figcaption>
   </figure>
 </div>
 

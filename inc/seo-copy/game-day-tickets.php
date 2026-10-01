@@ -47,12 +47,12 @@
 
 <div class="so-seo-figs">
   <figure>
-    <img src="/images/team-event.webp" alt="Fans and team gear at a home game, one reason people look for game day tickets" width="250" height="250" loading="lazy">
-    <figcaption>Home games bring crowds, tailgates and team traditions.</figcaption>
+    <img src="/images/event-ticket-buying.webp" alt="Mobile ticket on a phone next to a laptop, showing how game day tickets can be delivered electronically" width="1536" height="1024" loading="lazy">
+    <figcaption>Electronic tickets can be kept on your phone for entry, depending on the event and seller.</figcaption>
   </figure>
   <figure>
-    <img src="/images/venue.webp" alt="Large venue interior with tiers of seating around the playing area" width="1536" height="1024" loading="lazy">
-    <figcaption>Check the venue map to see how sections wrap around the field or court.</figcaption>
+    <img src="/images/venue.webp" alt="Empty arena with several tiers of seating facing a stage" width="1536" height="1024" loading="lazy">
+    <figcaption>Check the venue map to see how levels and sections are laid out.</figcaption>
   </figure>
 </div>
 

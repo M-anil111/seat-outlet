@@ -4,12 +4,12 @@
 
 <div class="so-seo-figs">
   <figure>
-    <img src="/images/crowd-at-concert-or-event.webp" alt="Crowd at a live show with hands raised, a typical view when you buy concert tickets for sale on Seat Outlet" width="442" height="442" loading="lazy">
+    <img src="/images/crowd-at-concert-or-event.webp" alt="Smiling fans with hands raised in a crowd, a typical scene at shows with concert tickets for sale on Seat Outlet" width="442" height="442" loading="lazy">
     <figcaption>General admission floors put you close to the stage, but you stand for the whole night.</figcaption>
   </figure>
   <figure>
-    <img src="/images/indie-rock-night.webp" alt="Indie rock band performing on a small club stage" width="600" height="600" loading="lazy">
-    <figcaption>Clubs and small theaters give an intimate view from almost every spot.</figcaption>
+    <img src="/images/indie-rock-night.webp" alt="Aerial view of a standing crowd in a mid-size music venue with a balcony" width="600" height="600" loading="lazy">
+    <figcaption>Mid-size rooms with balconies give you a choice between the floor and a raised view.</figcaption>
   </figure>
 </div>
 
@@ -62,8 +62,8 @@
     <figcaption>Arena shows offer the widest range of sections and price tiers.</figcaption>
   </figure>
   <figure>
-    <img src="/images/pru-hall.webp" alt="Interior of a concert hall with tiered seating" width="600" height="600" loading="lazy">
-    <figcaption>Halls and theaters usually deliver clear sound from most seats.</figcaption>
+    <img src="/images/stage.webp" alt="Band performing on a lit stage with the audience in the foreground" width="750" height="843" loading="lazy">
+    <figcaption>Stage lighting and sound are at their best when you can see the whole production.</figcaption>
   </figure>
 </div>
 
