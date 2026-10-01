@@ -183,11 +183,11 @@ try {
 		object-fit: cover;
 	}
 	.performer-card .performer-body {
-		padding: 16px 18px;
+		padding: 16px 18px 18px;
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 14px;
 		flex: 1;
 	}
 	.performer-card .performer-name {
@@ -201,19 +201,20 @@ try {
 		font-size: 13.5px;
 	}
 	.btn-view-performer {
-		flex-shrink: 0;
-		background: #2556E0;
-		color: #ffffff;
+		display: inline-block;
+		background: #ffffff;
+		color: #2556E0;
 		font-weight: 600;
 		font-size: 13.5px;
-		padding: 9px 18px;
+		padding: 8px 18px;
 		border-radius: 999px;
-		border: none;
+		border: 1.5px solid #2556E0;
 		text-decoration: none;
 		white-space: nowrap;
-		transition: background .2s, transform .15s;
+		transition: background .2s, color .2s, transform .15s;
 	}
-	.btn-view-performer:hover { background: #1a4fd6; color: #fff; transform: translateY(-1px); }
+	.btn-view-performer:hover,
+	.btn-view-performer:focus-visible { background: #2556e0; border-color: #2556e0; color: #fff; transform: translateY(-1px); }
 
 	.btn-load-more-performers {
 		background: #ffffff;
@@ -247,7 +248,7 @@ try {
 	</div>
 </section>
 
-<section class="py-4">
+<section class="py-4 py-lg-5">
 	<div class="container">
 
 		<div class="performer-filter-row" id="performerFilterRow">
