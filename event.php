@@ -114,11 +114,39 @@
   @media (min-width: 992px) {
     .seatics .event-info-ctn { display: none !important; }
   }
+  /* Phones and iPads (< 992px): the widget pins its own header bar to the
+     top of the screen (position: fixed, built for pages without a site
+     header), which covered this card and its date tile. Keep it in the page
+     flow under the card instead, as a slim bar with the widget's date line
+     and its "Important Event Information" link. Name and venue are already
+     in the card, so only those two are hidden. */
   @media (max-width: 991.98px) {
-    .seatics .event-info-ctn .event-info-date-ctn,
+    .seatics .event-info-ctn {
+      position: relative !important;
+      top: auto !important;
+      z-index: 2 !important;
+      padding: 10px 16px !important;
+      background: #fff;
+      border-bottom: 1px solid #e8ecf3;
+      box-shadow: none;
+    }
+    .seatics #event-info-area::before { display: none !important; }
     .seatics .event-info-ctn .event-info-name,
     .seatics .event-info-ctn .event-info-place,
     .seatics #event-info-right-col { display: none !important; }
+    .seatics .event-info-ctn .event-info-left-col:empty,
+    .seatics .event-info-ctn .mobile-event-info-right-col:empty { display: none !important; }
+    .seatics .event-info-ctn .event-info-details-ctn { float: none; width: 100%; text-align: center; }
+    .seatics .event-info-ctn .event-info-date-time-span {
+      display: block !important;
+      color: #0f1b3d;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: normal;
+    }
+    .seatics .event-info-ctn .event-info-date-time-span .cm-time { color: #2556e0; margin-right: 4px; }
+    .seatics .event-info-ctn .event-info-notes { margin: 4px 0 0; }
+    .seatics .event-info-ctn .event-note-popup-trigger { color: #2556e0; font-size: 13px; font-weight: 600; height: auto !important; }
   }
 </style>
 
@@ -370,7 +398,7 @@ position:relative;
 display: none !important;
 }
 .pdp-blurbtext a {
-color: #0077ff;
+color: #2556e0;
 }
 .pdp-blurbtext a:hover {
 opacity: .8;
@@ -486,7 +514,7 @@ div#modal-overlay {
     color: white;
 }
 .modal-back-btn:hover {
-    color: #0077ff;
+    color: #2556e0;
 }
 }
 
@@ -555,19 +583,19 @@ div#modal-overlay {
 
     /* Qty Modal Filter Styling */
     #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option {
-        border: 2px solid #ff5566 !important;
+        border: 2px solid #3358e4 !important;
         background-color: #fff !important;
-        color: #ff5566 !important;
+        color: #3358e4 !important;
     }
 
         #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option.sea-active {
-            background-color: #ff5566 !important;
+            background-color: #3358e4 !important;
             color: #fff !important;
         }
 
         #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option:hover,
         #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option:focus {
-            background-color: #ff5566 !important;
+            background-color: #3358e4 !important;
             color: #fff !important;
             opacity: 0.6 !important;
         }
@@ -575,7 +603,7 @@ div#modal-overlay {
     /* Qty Modal Find Button */
     #sea-quantity-modal-skip.sea-quantity-modal-skip {
         border: 2px solid #fff !important;
-        background-color: #ff5566 !important;
+        background-color: #3358e4 !important;
         border-radius: 5px !important;
         color: #fff !important;
         font-weight: 700 !important;
@@ -635,12 +663,12 @@ div#modal-overlay {
 
     /* Filter Container */
     #sea-filterCard-parent {
-        border: 1px solid #0077ff;
+        border: 1px solid #2556e0;
     }
 
     /* Clear Filters */
     #sea-filterCardClearFilter {
-        color: #0077ff !important;
+        color: #2556e0 !important;
         /*font-family: 'TTNorms-Regular', sans-serif !important;*/
         font-size: 14px !important;
         font-weight: 600 !important;
@@ -648,7 +676,7 @@ div#modal-overlay {
 
     /* Filter styling */
     #sea-inventory-filtersBtncnt {
-        background-color: #ff5566 !important;
+        background-color: #3358e4 !important;
         color: #fff !important;
     }
 
@@ -658,29 +686,30 @@ div#modal-overlay {
 
     .btn.qty-filter-opt-label-js.active,
     .sea-qty-filter-any.btn.qty-filter-opt-label-js.active {
-        background-color: #ff5566 !important;
-        border: 1px solid #ff5566 !important;
+        background-color: #3358e4 !important;
+        border: 1px solid #3358e4 !important;
+        color: #fff !important;
     }
 
         .btn.qty-filter-opt-label-js:hover,
         .sea-qty-filter-any.btn.qty-filter-opt-label-js.active:hover {
-            background-color: #ff5566 !important;
-            border: 1px solid #ff5566 !important;
+            background-color: #3358e4 !important;
+            border: 1px solid #3358e4 !important;
             opacity: 0.7 !important;
         }
 
     .sea-filterCard-parent #sea-filterCard-submit-ctn #sea-filterCard-submit-btn {
-        background-color: #0077ff !important;
+        background-color: #2556e0 !important;
         color: white !important;
     }
 
         .sea-filterCard-parent #sea-filterCard-submit-ctn #sea-filterCard-submit-btn:hover {
-            background-color: #0077ff !important;
+            background-color: #2556e0 !important;
             opacity: 0.7 !important;
         }
 
     .sea-filterCard-parent #sea-filterCard-wrapper .switch.active .slider:before {
-        background-color: #ff5566 !important;
+        background-color: #3358e4 !important;
     }
 
     .sea-filterCard-parent #sea-filterCard-wrapper .switch .slider[disabled]:before {
@@ -690,16 +719,16 @@ div#modal-overlay {
 
     .sort-opt-label.btn.sort-option-js.active,
     .sort-cnt .btn.active .sort-opt-check:before {
-        color: #ff5566 !important;
+        color: #3358e4 !important;
     }
 
     .sort-cnt .btn.active .sort-opt-check {
-        border: 1px solid #ff5566 !important;
+        border: 1px solid #3358e4 !important;
     }
 
         .sort-cnt .btn.active .sort-opt-check:before {
-            background: #ff5566 !important;
-            color: #ff5566 !important;
+            background: #3358e4 !important;
+            color: #3358e4 !important;
         }
 
     #sort-type-label,
@@ -777,7 +806,7 @@ div#modal-overlay {
 
     /* Filter Container */
     #precheckout-parent {
-        border: 1px solid #0077ff;
+        border: 1px solid #2556e0;
     }
 
     /* Section and Row */
@@ -791,7 +820,7 @@ div#modal-overlay {
 
     /* Primary CTA */
     #pre-checkout-price-cta {
-        background: #0077ff !important;
+        background: #2556e0 !important;
         color: white !important;
     }
 
@@ -816,8 +845,8 @@ div#modal-overlay {
 
         #sea-precheckout-qty-select > .slick-list.draggable > .slick-track > .slick-slide:hover,
         #sea-precheckout-qty-select > .slick-list.draggable > .slick-track > .slick-slide.slick-active:hover {
-            background: #ff5566 !important;
-            border: solid 1px #ff5566 !important;
+            background: #3358e4 !important;
+            border: solid 1px #3358e4 !important;
             color: #fff !important;
             font-weight: 700 !important;
             opacity: 0.5 !important;
@@ -830,8 +859,8 @@ div#modal-overlay {
 
     #sea-precheckout-qty-select > .slick-list.draggable > .slick-track > .slick-slide.sea-selected,
     #sea-precheckout-qty-select > .slick-list.draggable > .slick-track > .slick-slide.slick-active.sea-selected {
-        background: #ff5566 !important;
-        border: solid 1px #ff5566 !important;
+        background: #3358e4 !important;
+        border: solid 1px #3358e4 !important;
         color: #fff !important;
         font-weight: 700 !important;
     }
@@ -844,7 +873,7 @@ div#modal-overlay {
     /* Quantity Slider Next/Previous */
     .sea-quantity-items > button.slick-prev:hover,
     .sea-quantity-items > button.slick-next:hover {
-        color: #ff5566 !important;
+        color: #3358e4 !important;
     }
 
     .sea-quantity-items > button.slick-prev.slick-disabled,
@@ -1119,14 +1148,14 @@ div#modal-overlay {
     .btn.btn-pink {
         border: 2px;
         border-style: solid;
-        border-color: #ff5566;
+        border-color: #3358e4;
         background-color: #ffffff;
-        color: #ff5566;
+        color: #3358e4;
     }
 
         .btn.btn-primary:not(.disabled):hover,
         .btn.btn-pink:not(.disabled):hover {
-            background-color: #ff5566;
+            background-color: #3358e4;
             color: #ffffff;
         }
 
@@ -1134,15 +1163,15 @@ div#modal-overlay {
     .btn.btn-blue {
         border: 2px;
         border-style: solid;
-        border-color: #0077ff;
-        background-color: #0077ff;
+        border-color: #2556e0;
+        background-color: #2556e0;
         color: #ffffff;
     }
 
         .btn.btn-secondary:not(.disabled):hover,
         .btn.btn-blue:not(.disabled):hover {
             background-color: #ffffff;
-            color: #0077ff;
+            color: #2556e0;
         }
 
     .btn.btn-white {
@@ -1364,11 +1393,11 @@ font-size: 18px;
     }
 
     #sea-filterCard-parent {
-        border: 1px solid #0077ff;
+        border: 1px solid #2556e0;
     }
 
     #sea-filterCardClearFilter {
-        color: #0077ff;
+        color: #2556e0;
         /*font-family: 'TTNorms-Regular', sans-serif;*/
         font-size: 14px;
         font-weight: 700;
@@ -1400,7 +1429,7 @@ font-size: 18px;
     .btn.qty-filter-opt-label-js.active,
     .sea-qty-filter-any.btn.qty-filter-opt-label-js.active,
     .sort-cnt > .btn.active > .sort-opt-check:before {
-        background: #29c142;
+        background: #3358e4;
     }
 
         #sea-filterCard-submit-btn:hover,
@@ -1411,11 +1440,11 @@ font-size: 18px;
 
     .sort-opt-label.btn.sort-option-js.active,
     .sort-cnt > .btn.active > .sort-opt-check:before {
-        color: #29c142;
+        color: #3358e4;
     }
 
     .sort-cnt > .btn.active > .sort-opt-check {
-        border: 1px solid #29c142;
+        border: 1px solid #3358e4;
     }
 
     #price-filter-min,
@@ -1445,7 +1474,7 @@ font-size: 18px;
     .sea-marketing-html-map {
         color: #808080;
         background-color: #ffffff;
-        border: solid 2px #0077ff;
+        border: solid 2px #2556e0;
         border-radius: 4px;
         cursor: pointer;
         display: none;
@@ -1471,7 +1500,7 @@ font-size: 18px;
             .sea-marketing-header .sea-marketing-header-label strong,
             .sea-marketing-html-map .sea-marketing-header-label strong {
                 display: block;
-                color: #0077ff;
+                color: #2556e0;
                 font-weight: normal !important;
                 /*font-family: 'TTNorms-Bold', sans-serif;*/
                 font-size: 14px;
@@ -1480,7 +1509,7 @@ font-size: 18px;
 
         .sea-marketing-header .sea-marketing-header-label-show,
         .sea-marketing-html-map .sea-marketing-header-label-show {
-            color: #0077ff;
+            color: #2556e0;
             display: block;
             text-align: center;
         }
