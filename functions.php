@@ -896,7 +896,10 @@ function s3ObjectExists($key) {
 
         $exists = true;
 
-    } catch (\Aws\Exception\AwsException $e) {
+    } catch (\Throwable $e) {
+        // AwsException (missing object) or a credentials/config problem:
+        // either way the object is not usable, and a page must never fatal
+        // because storage is unreachable or unconfigured.
         $exists = false;
     }
 
@@ -2006,6 +2009,44 @@ function sendSecurityHeaders() {
     }
 }
 
+
+/**
+ * Cache-Control for public pages, so a CDN can serve the HTML instead of PHP.
+ *
+ * Public pages are identical for every visitor: no cookies or sessions are read, nothing is personalised
+ * on the server (saved location, recently viewed and recent searches are applied by JavaScript in the
+ * browser). So a shared cache may keep a page briefly:
+ *   - browsers always revalidate (max-age=0); only shared caches (CDN) keep it, for s-maxage seconds;
+ *   - stale-while-revalidate lets the CDN answer instantly while it refreshes in the background;
+ *   - 404 pages are cached for a minute; checkout, confirmation, thank-you, admin and anything that is not
+ *     a plain GET are never stored.
+ * Takes effect only where a CDN cache rule honours origin headers (Cloudflare: "Cache Everything" with
+ * "Respect origin TTL"); on its own this changes nothing for visitors. Tune with HTML_EDGE_CACHE_SECONDS
+ * (default 120, 0 = send nothing). Prices and inventory shown in cached HTML can be that many seconds old;
+ * the hosted checkout always re-prices. Pages that must never be cached can set $pageNoCache = true first.
+ */
+function sendPageCacheHeaders() {
+    if (headers_sent()) return;
+    $path = rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/') ?: '/';
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    $never = ['/checkout', '/order-confirmation', '/thank-you'];
+    if (in_array($path, $never, true) || strpos($path, '/admin') === 0 || !empty($GLOBALS['pageNoCache'])
+        || !in_array($method, ['GET', 'HEAD'], true)) {
+        header('Cache-Control: private, no-store');
+        return;
+    }
+    $env = getenv('HTML_EDGE_CACHE_SECONDS');
+    $ttl = ($env === false || $env === '') ? 120 : max(0, (int) $env);
+    if ($ttl === 0) return;
+    $status = http_response_code() ?: 200;
+    if ($status === 404) {
+        header('Cache-Control: public, max-age=0, s-maxage=60');
+    } elseif ($status === 200) {
+        header('Cache-Control: public, max-age=0, s-maxage=' . $ttl . ', stale-while-revalidate=' . ($ttl * 5) . ', stale-if-error=3600');
+    } else {
+        header('Cache-Control: no-store');
+    }
+}
 
 function getTnCityEvents($cityId = 0, $params = []) {
 

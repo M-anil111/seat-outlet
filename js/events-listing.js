@@ -276,7 +276,7 @@ let picker = null;
 function getPicker() {
     if (picker) return picker;
     const el = document.getElementById('performerDatePicker');
-    if (!el || typeof flatpickr === 'undefined') return null;
+    if (!el || typeof flatpickr === 'undefined') return null;   // callers load the library first (soLoadFlatpickr)
     picker = flatpickr(el, {
     mode: "range",
     minDate: "today",
@@ -331,9 +331,11 @@ function getPicker() {
 (function () {
     const el = document.getElementById('performerDatePicker');
     if (!el) return;
-    ['pointerdown', 'touchstart', 'focus'].forEach((evt) => el.addEventListener(evt, function first(e) {
-        const p = getPicker();
-        if (p && e.type === 'focus') p.open();   // keyboard focus: flatpickr's own handlers were attached too late to see this event
+    ['pointerdown', 'touchstart', 'focus'].forEach((evt) => el.addEventListener(evt, function () {
+        soLoadFlatpickr().then(function () {
+            const p = getPicker();
+            if (p && document.activeElement === el) p.open();   // the calendar did not exist yet when the visitor tapped
+        }).catch(function () {});
     }, { once: true, passive: true }));
 })();
 

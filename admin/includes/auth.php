@@ -9,6 +9,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_name('admin_session');
     session_start();
 }
+// Admin pages are per-user: never let a browser, proxy or CDN store them.
+if (!headers_sent()) { header('Cache-Control: private, no-store'); }
 
 require_once __DIR__ . '/../../db/config.php';
 
