@@ -55,6 +55,7 @@ include_once 'functions.php';
             $pageRobots = 'noindex, follow';
         }
     }
+    sendPageCacheHeaders();   // after the 404 check above: the status decides the policy
     // Keep titles and descriptions inside what a search result shows.
     if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
     if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription($pageMetaDescription); }
@@ -93,7 +94,6 @@ include_once 'functions.php';
     
 
     <link rel="preload" href="/fonts/bootstrap-icons-subset.woff2?v=1.13.1" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/lib/flatpickr/4.6.13/flatpickr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <?php $soNeedsSlick = in_array($soReqPath, ['/', '/index.php', '/search', '/about-us'], true) || strpos($soReqPath, '/event/') === 0; // carousel CSS: pages with a carousel, plus event pages (the Seatics seat-map widget uses slick classes) ?>
     <?php if ($soNeedsSlick) { ?>
     <link rel="preload" href="/lib/slick-carousel/1.8.1/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -106,7 +106,6 @@ include_once 'functions.php';
     
 
     <noscript>
-        <link rel="stylesheet" href="/lib/flatpickr/4.6.13/flatpickr.min.css">
         <?php if ($soNeedsSlick) { ?>
         <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick.css">
         <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick-theme.css">

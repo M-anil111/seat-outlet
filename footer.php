@@ -155,11 +155,20 @@ $soHasEventList = (bool) preg_match('#^/(search|tickets|concerts|sports|theater|
 ?>
 <script src="/lib/jquery/3.7.1/jquery.min.js" defer></script>
 <script src="/lib/bootstrap/5.3.8/bootstrap.bundle.min.js" defer></script>
-<script src="/lib/flatpickr/4.6.13/flatpickr.min.js" defer></script>
+<script>window.SO_ASSETS = { flatpickrJs: "/lib/flatpickr/4.6.13/flatpickr.min.js", flatpickrCss: "/lib/flatpickr/4.6.13/flatpickr.min.css" };</script>
 <?php if ($soIsHome || $soIsSearch || $soPath === '/about-us') { ?>
   <script src="/lib/slick-carousel/1.8.1/slick.min.js" defer></script>
 <?php } ?>
 <script src="<?php echo htmlspecialchars(soAsset('js/main.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script>
+// Real-user speed measurement (js/vitals.js) is loaded after the page has finished loading and the browser is idle, so it can never
+// delay first paint or add blocking time (a deferred script in the <head> measurably did). The browser buffers the early entries
+// (paint, LCP, layout shifts), so nothing is lost. Visitors who leave before the load event are not measured.
+window.addEventListener('load', function () {
+    var go = function () { var s = document.createElement('script'); s.src = <?php echo json_encode(soAsset('js/vitals.js')); ?>; s.async = true; document.head.appendChild(s); };
+    if ('requestIdleCallback' in window) { requestIdleCallback(go, { timeout: 4000 }); } else { setTimeout(go, 2000); }
+});
+</script>
 <?php if ($soIsHome) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/home.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>

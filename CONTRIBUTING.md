@@ -164,6 +164,7 @@ Crons (all safe to run concurrently with traffic):
 | `cron/home-events.php`, `home-top-performers.php`, `home-venues.php`, `home-categories.php` | hourly | homepage feeds |
 | `cron/warm-listings.php` | every 5 min | keeps /tickets, /concerts, /sports, /theater, /festival, top category and top city feeds warm so no visitor waits on the API |
 | `cron/resolve-images.php` | every 10–15 min | entity image queue |
+| `cron/prune-vitals.php` | weekly | deletes real-user speed measurements older than 90 days |
 
 Card images on the homepage and search suggestions load through one
 batched `POST /ajax/get-images.php` per slider (was one GET per card,
@@ -298,6 +299,15 @@ optional.
 - **Not-found pages.** `renderNotFoundPage('City')` answers 404 + noindex; use `tnEntityMissing($r)` (not `empty()`) on a
   TicketNetwork get-one result, because a missing id returns `{"Message": ...}`.
 - **robots.txt.** `robots.php` builds it from the host (non-production hosts get `Disallow: /`); route `/robots.txt` to it, see docs/server-rewrites.md.
+- **Edge caching.** `sendPageCacheHeaders()` marks public pages cacheable by a CDN for 120 seconds and checkout, confirmation, thank-you
+  and admin pages `no-store`. Public pages must stay identical for every visitor: never read `$_COOKIE`/`$_SESSION` or print per-visitor
+  data in them (do that in JavaScript). Setup and Cloudflare rule: docs/server-rewrites.md.
+- **Date picker.** flatpickr is not on any page load. `soLoadFlatpickr()` (main.js) loads it on the first touch of a date field; header.php
+  prefetches it at idle priority. Initialise pickers inside `soLoadFlatpickr().then(...)`.
+- **Real-user speed (RUM).** `js/vitals.js` measures LCP, CLS, INP (approximated), FCP and TTFB, pushes `web_vitals` events to the dataLayer
+  (GA4 through GTM) and sends a 25% sample to `ajax/vitals.php`, which stores page type, metric, value, rating, device and connection type
+  (no IP, cookie or URL) in `web_vitals` (migration 0009). Read it with `php tools/vitals-report.php [--days=30]`; delete rows older
+  than 90 days with `php cron/prune-vitals.php` (weekly). Mention anonymous performance measurement in the privacy policy.
 - **Maintenance scripts** (`cron/*`, `db/migrate.php`, `tools/*`) include `inc/cli-guard.php`: command line only.
 
 ## Optional performance layer: APCu

@@ -346,12 +346,53 @@ function toApiDate(dateObj) {
     return `${year}-${month}-${day}`;
 }
  
+/* =====================================================
+    DATE PICKER LIBRARY (loaded on demand)
+===================================================== */
+// flatpickr (50 KB script + 16 KB CSS) is only needed once someone touches a date field, so it is not on every page load.
+// header.php prefetches both files at idle priority; this loads them (from the cache by then) and resolves when ready.
+// Warm the browser cache once the page has fully loaded and the browser is idle (not in the <head>: an early prefetch competes
+// with the render-blocking CSS and the hero image for bandwidth, which measurably delayed first paint on slow connections).
+window.addEventListener('load', function () {
+    var warm = function () {
+        var assets = window.SO_ASSETS || {};
+        [[assets.flatpickrJs, 'script'], [assets.flatpickrCss, 'style']].forEach(function (a) {
+            if (!a[0]) return;
+            var l = document.createElement('link');
+            l.rel = 'prefetch'; l.as = a[1]; l.href = a[0];
+            document.head.appendChild(l);
+        });
+    };
+    if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 5000 }); else setTimeout(warm, 3000);
+});
+window.soLoadFlatpickr = (function () {
+    var pending = null;
+    return function () {
+        if (window.flatpickr) return Promise.resolve(window.flatpickr);
+        if (pending) return pending;
+        var assets = window.SO_ASSETS || {};
+        pending = new Promise(function (resolve, reject) {
+            var css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = assets.flatpickrCss || '/lib/flatpickr/4.6.13/flatpickr.min.css';
+            document.head.appendChild(css);
+            var js = document.createElement('script');
+            js.src = assets.flatpickrJs || '/lib/flatpickr/4.6.13/flatpickr.min.js';
+            js.async = true;
+            js.onload = function () { resolve(window.flatpickr); };
+            js.onerror = function () { pending = null; reject(new Error('flatpickr failed to load')); };
+            document.head.appendChild(js);
+        });
+        return pending;
+    };
+})();
+
 document.addEventListener("DOMContentLoaded", function () {
     let selectedDatesTemp = [];  
     let selectedStart = null;
     let selectedEnd = null;
     const dateEl = document.getElementById('customDatePicker');
-    if (!dateEl || typeof flatpickr === 'undefined') return;
+    if (!dateEl) return;
     let fp = null;
     // Built on first touch/focus of the field rather than on every page view (it is in the header of every page).
     function getFp() {
@@ -395,9 +436,11 @@ document.addEventListener("DOMContentLoaded", function () {
       return fp;
     }
     ['pointerdown', 'touchstart', 'focus'].forEach(function (evt) {
-        dateEl.addEventListener(evt, function (e) {
-            const f = getFp();
-            if (f && e.type === 'focus') f.open();   // keyboard focus: flatpickr's own handlers were attached after this event
+        dateEl.addEventListener(evt, function () {
+            soLoadFlatpickr().then(function () {
+                const f = getFp();
+                if (f && document.activeElement === dateEl) f.open();   // the calendar did not exist yet when the visitor tapped
+            }).catch(function () {});
         }, { once: true, passive: true });
     });
   
