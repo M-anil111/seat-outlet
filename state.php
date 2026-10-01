@@ -61,13 +61,13 @@ include 'header.php';
 						<div class="d-flex justify-content-between align-items-center results-header">
 							<div class="results-title">
 								<span class="active-indicator"></span>
-								<h2>
+								<h1>
 									EVENTS in <?php echo htmlspecialchars($stateLabel, ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $total_count; ?>
 										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
 									</span>
-								</h2>
+								</h1>
 							</div>
 						</div>
 					</div>
@@ -125,7 +125,7 @@ include 'header.php';
 										</div>
 										<div class="ms-3">
 											<?php renderEventPriceTag($event); ?>
-											<a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+											<a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 												<span class="d-none d-md-inline">Find Tickets</span>
 												<i class="bi bi-chevron-right"></i>
 											</a>

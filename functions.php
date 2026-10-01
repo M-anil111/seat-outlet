@@ -792,7 +792,7 @@ function curlGet($url) {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 10,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_USERAGENT => 'SeatOutlet/1.0 (https://beta.seatoutlet.com)'
+        CURLOPT_USERAGENT => 'SeatOutlet/1.0 (' . HOME_URL . ')'
     ]);
     $response = curl_exec($ch);
     curl_close($ch);
@@ -1850,6 +1850,75 @@ function convertToFloat($value) {
     return $parts[0] . '.' . $parts[1];
 }
 
+
+/**
+ * schema.org Offer for an event, or null when there is no real price.
+ * The homepage and listing schemas used to default a missing price to "50"/"0"
+ * and wrote prices like "$10" with the currency symbol, which is invalid and
+ * claims prices the page does not show. $price may be 7350, "7350.00" or "$1,250".
+ */
+function seoOffer($url, $price) {
+    if ($price === null || $price === '') return null;
+    $num = (float) str_replace([',', '$', ' '], '', (string) $price);
+    if ($num <= 0) return null;
+    return [
+        "@type"         => "Offer",
+        "url"           => $url,
+        "price"         => number_format($num, 2, '.', ''),
+        "priceCurrency" => "USD",
+        "availability"  => "https://schema.org/InStock",
+    ];
+}
+
+/** Trim a <title> to ~60 characters at a word boundary, keeping the brand suffix when it fits. */
+function seoClampTitle($title, $max = 62) {
+    $title = trim(preg_replace('/\s+/', ' ', (string) $title));
+    if (mb_strlen($title) <= $max) return $title;
+    $brand = ' | Seat Outlet';
+    $base = $title;
+    if (mb_substr($title, -mb_strlen($brand)) === $brand) {
+        $base = mb_substr($title, 0, -mb_strlen($brand));
+        if (mb_strlen($base) + mb_strlen($brand) <= $max) return $title;
+    } else {
+        $brand = '';
+    }
+    $room = $max - mb_strlen($brand);
+    if (mb_strlen($base) > $room) {
+        $cut = mb_substr($base, 0, $room - 1);
+        $sp = mb_strrpos($cut, ' ');
+        $base = rtrim(($sp !== false && $sp > $room * 0.6) ? mb_substr($cut, 0, $sp) : $cut, " ,:;-\u{2013}") . "\u{2026}";
+    }
+    return $base . $brand;
+}
+
+/** Trim a meta description to ~155 characters at a word boundary. */
+function seoClampDescription($desc, $max = 158) {
+    $desc = trim(preg_replace('/\s+/', ' ', (string) $desc));
+    if (mb_strlen($desc) <= $max) return $desc;
+    $cut = mb_substr($desc, 0, $max - 1);
+    $sp = mb_strrpos($cut, ' ');
+    $cut = ($sp !== false && $sp > $max * 0.6) ? mb_substr($cut, 0, $sp) : $cut;
+    return rtrim($cut, " ,:;-\u{2013}") . "\u{2026}";
+}
+
+/**
+ * URL of a front-end asset, preferring its minified build.
+ *
+ * `soAsset('js/main.js')` returns /js/main.min.js?v=<mtime> when
+ * js/main.min.js exists (made by tools/build-assets.sh; CI fails when the
+ * minified file is out of date), otherwise the readable source. css/style.css
+ * is built together with css/skeleton.css into css/style.min.css.
+ */
+function soAsset($rel) {
+    $rel = ltrim((string) $rel, '/');
+    $min = preg_replace('/\.(css|js)$/', '.min.$1', $rel);
+    $file = __DIR__ . '/' . $min;
+    if ($min !== $rel && is_file($file)) {
+        return rtrim(HOME_URL, '/') . '/' . $min . '?v=' . filemtime($file);
+    }
+    $file = __DIR__ . '/' . $rel;
+    return rtrim(HOME_URL, '/') . '/' . $rel . (is_file($file) ? '?v=' . filemtime($file) : '');
+}
 
 /**
  * Baseline response headers for every HTML page (called from header.php
@@ -3661,7 +3730,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                             </div>
                                             <div class="ms-3">
                                                 <?php renderEventPriceTag($event); ?>
-                                                <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+                                                <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                                     <span class="d-none d-md-inline">Find Tickets</span>
                                                     <i class="bi bi-chevron-right"></i>
                                                 </a>
@@ -3957,7 +4026,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                             </div>
                                             <div class="ms-3">
                                                 <?php renderEventPriceTag($event); ?>
-                                                <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2">
+                                                <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                                     <span class="d-none d-md-inline">Find Tickets</span>
                                                     <i class="bi bi-chevron-right"></i>
                                                 </a>

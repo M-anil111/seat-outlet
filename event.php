@@ -66,6 +66,7 @@
 }
 
   /* Event Info */
+  .event-detail h1.event-title { margin: 0; line-height: 1.4; font-family: inherit; }
   .event-detail .event-title {
     font-size: 18px;
     font-weight: 600;
@@ -181,7 +182,7 @@ $eventTimestamp = !empty($event['date']['date']) ? strtotime($event['date']['dat
         </div>
       <?php } ?>
       <div class="flex-grow-1">
-        <div class="event-title"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+        <h1 class="event-title"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h1>
         <div class="event-location mt-1">
           <?php if (!empty($eventCityId)) { ?>
             <a href="/<?php echo htmlspecialchars($categoryCityPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($eventCityLabel, $eventCityId), ENT_QUOTES, 'UTF-8'); ?>">

@@ -1,30 +1,30 @@
-<title>Seat Outlet – Verified Ticket Marketplace Network for Concerts & Sports Tickets</title>
+<title>Seat Outlet: Verified Ticket Marketplace for Concerts &amp; Sports</title>
 <meta name="description" content="Seat Outlet is a verified ticket marketplace network to buy concert, sports, and event tickets online. Compare prices, find deals, and book securely.">
 <meta name="keywords" content="Verified Ticket Marketplace Network, buy event tickets online, concert tickets online, sports tickets marketplace, compare ticket prices online">
-<link rel="canonical" href="https://beta.seatoutlet.com/">
+<link rel="canonical" href="<?php echo HOME_URL; ?>/">
 
 <meta property="og:title" content="Verified Ticket Marketplace Network | Seat Outlet">
-<meta property="og:description" content="Compare ticket prices and buy event tickets online securely.">
-<meta property="og:url" content="https://beta.seatoutlet.com/">
+<meta property="og:description" content="Seat Outlet is a verified ticket marketplace network to buy concert, sports, and event tickets online. Compare prices, find deals, and book securely.">
+<meta property="og:url" content="<?php echo HOME_URL; ?>/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
+<meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Seat Outlet Ticket Marketplace">
-<meta name="twitter:description" content="Buy tickets for concerts, sports, and events online.">
-<meta name="twitter:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
+<meta name="twitter:description" content="Seat Outlet is a verified ticket marketplace network to buy concert, sports, and event tickets online. Compare prices, find deals, and book securely.">
+<meta name="twitter:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
 
 <?php
 $images = [
-  "https://beta.seatoutlet.com/images/home-slider.webp",
-  "https://beta.seatoutlet.com/images/hunt-tickets.webp",
-  "https://beta.seatoutlet.com/images/lite.webp",
-  "https://beta.seatoutlet.com/images/mindshare-logo.webp",
-  "https://beta.seatoutlet.com/images/viralpep.webp",
-  "https://beta.seatoutlet.com/images/jimbeam.webp",
-  "https://beta.seatoutlet.com/images/gtn.webp",
-  "https://beta.seatoutlet.com/images/ticket-scanner.webp",
-  "https://beta.seatoutlet.com/images/ticketnetwork.webp"
+  HOME_URL . "/images/home-slider.webp",
+  HOME_URL . "/images/hunt-tickets.webp",
+  HOME_URL . "/images/lite.webp",
+  HOME_URL . "/images/mindshare-logo.webp",
+  HOME_URL . "/images/viralpep.webp",
+  HOME_URL . "/images/jimbeam.webp",
+  HOME_URL . "/images/gtn.webp",
+  HOME_URL . "/images/ticket-scanner.webp",
+  HOME_URL . "/images/ticketnetwork.webp"
 ];
 
 $imageSchema = [];
@@ -47,14 +47,14 @@ foreach ($venues as $index => $venue) {
         "item" => [
             "@type" => "Place",
             "name" => $venue['name'],
-            "image" => "https://beta.seatoutlet.com" . $venue['image'],
+            "image" => HOME_URL . $venue['image'],
             "address" => [
                 "@type" => "PostalAddress",
                 "addressLocality" => $venue['city'],
                 "addressRegion" => $venue['state'],
                 "addressCountry" => "US"
             ],
-            "url" => "https://beta.seatoutlet.com/venue/" . $venue['slug']
+            "url" => HOME_URL . "/venue/" . $venue['slug']
         ]
     ];
 
@@ -103,7 +103,7 @@ foreach ($eventFiles as $file) {
       $state = trim($locParts[1] ?? '');
 
       $startDate = date('Y-m-d', $event['edate']);
-      $price = !empty($event['price']) ? $event['price'] : "50";
+      $price = $event['price'] ?? null;   // "$10" style text from the cached feed; seoOffer() parses it, no invented default
 
       $eventsSchema[] = [
           "@type" => "Event",
@@ -122,21 +122,17 @@ foreach ($eventFiles as $file) {
               ]
           ],
 
-          "image" => $event['placeholder'] ?? "",
 
           "performer" => [
               "@type" => "PerformingGroup",
               "name" => $event['performer'] ?? $event['name']
           ],
 
-          "offers" => [
-              "@type" => "Offer",
-              "url" => "https://beta.seatoutlet.com/event/" . $event['id'],
-              "price" => $price,
-              "priceCurrency" => "USD",
-              "availability" => "https://schema.org/InStock"
-          ]
       ];
+      $offer = seoOffer(HOME_URL . "/event/" . createSlug($event['name'], $event['id']), $price);
+      if ($offer) {
+          $eventsSchema[array_key_last($eventsSchema)]["offers"] = $offer;
+      }
 
       $imageCacheKey = 'so_img_' . md5($tab . '|' . $event['name'] . '|' . $event['performer']);
       $cachedImage = get_image($imageCacheKey);
@@ -145,12 +141,13 @@ foreach ($eventFiles as $file) {
               "@type" => "ImageObject",
               "url" => $cachedImage
           ];
+          $eventsSchema[array_key_last($eventsSchema)]["image"] = $cachedImage;
       }
   }
 }
 
 $topPerformersData = json_decode(file_get_contents('cache/top_performers.json'), true);
-$base = "https://beta.seatoutlet.com";
+$base = HOME_URL;
 
 function buildItemList($items, $title, $base) {
     $list = [];
@@ -192,22 +189,22 @@ $popularCities = [
     "@type" => "ItemList",
     "name" => "Popular Cities",
     "itemListElement" => [
-        ["@type" => "ListItem", "position" => 1, "item" => ["@type" => "Place", "name" => "New York, NY", "url" => "https://beta.seatoutlet.com/city/new-york-3027"]],
-        ["@type" => "ListItem", "position" => 2, "item" => ["@type" => "Place", "name" => "Los Angeles, CA", "url" => "https://beta.seatoutlet.com/city/los-angeles-2551"]],
-        ["@type" => "ListItem", "position" => 3, "item" => ["@type" => "Place", "name" => "Chicago, IL", "url" => "https://beta.seatoutlet.com/city/chicago-915"]],
-        ["@type" => "ListItem", "position" => 4, "item" => ["@type" => "Place", "name" => "Houston, TX", "url" => "https://beta.seatoutlet.com/city/houston-2013"]],
-        ["@type" => "ListItem", "position" => 5, "item" => ["@type" => "Place", "name" => "Phoenix, AZ", "url" => "https://beta.seatoutlet.com/city/phoenix-3396"]],
-        ["@type" => "ListItem", "position" => 6, "item" => ["@type" => "Place", "name" => "Philadelphia, PA", "url" => "https://beta.seatoutlet.com/city/philadelphia-3394"]],
-        ["@type" => "ListItem", "position" => 7, "item" => ["@type" => "Place", "name" => "San Antonio, TX", "url" => "https://beta.seatoutlet.com/city/san-antonio-3846"]],
-        ["@type" => "ListItem", "position" => 8, "item" => ["@type" => "Place", "name" => "San Diego, CA", "url" => "https://beta.seatoutlet.com/city/san-diego-3854"]],
-        ["@type" => "ListItem", "position" => 9, "item" => ["@type" => "Place", "name" => "Dallas, TX", "url" => "https://beta.seatoutlet.com/city/dallas-1121"]],
-        ["@type" => "ListItem", "position" => 10, "item" => ["@type" => "Place", "name" => "Jacksonville, FL", "url" => "https://beta.seatoutlet.com/city/jacksonville-2108"]],
-        ["@type" => "ListItem", "position" => 11, "item" => ["@type" => "Place", "name" => "Fort Worth, TX", "url" => "https://beta.seatoutlet.com/city/fort-worth-1558"]],
-        ["@type" => "ListItem", "position" => 12, "item" => ["@type" => "Place", "name" => "San Jose, CA", "url" => "https://beta.seatoutlet.com/city/san-jose-3862"]],
-        ["@type" => "ListItem", "position" => 13, "item" => ["@type" => "Place", "name" => "Austin, TX", "url" => "https://beta.seatoutlet.com/city/austin-247"]],
-        ["@type" => "ListItem", "position" => 14, "item" => ["@type" => "Place", "name" => "Charlotte, NC", "url" => "https://beta.seatoutlet.com/city/charlotte-880"]],
-        ["@type" => "ListItem", "position" => 15, "item" => ["@type" => "Place", "name" => "Columbus, OH", "url" => "https://beta.seatoutlet.com/city/columbus-1025"]],
-        ["@type" => "ListItem", "position" => 16, "item" => ["@type" => "Place", "name" => "Indianapolis, IN", "url" => "https://beta.seatoutlet.com/city/indianapolis-2061"]],
+        ["@type" => "ListItem", "position" => 1, "item" => ["@type" => "Place", "name" => "New York, NY", "url" => HOME_URL . "/city/new-york-3027"]],
+        ["@type" => "ListItem", "position" => 2, "item" => ["@type" => "Place", "name" => "Los Angeles, CA", "url" => HOME_URL . "/city/los-angeles-2551"]],
+        ["@type" => "ListItem", "position" => 3, "item" => ["@type" => "Place", "name" => "Chicago, IL", "url" => HOME_URL . "/city/chicago-915"]],
+        ["@type" => "ListItem", "position" => 4, "item" => ["@type" => "Place", "name" => "Houston, TX", "url" => HOME_URL . "/city/houston-2013"]],
+        ["@type" => "ListItem", "position" => 5, "item" => ["@type" => "Place", "name" => "Phoenix, AZ", "url" => HOME_URL . "/city/phoenix-3396"]],
+        ["@type" => "ListItem", "position" => 6, "item" => ["@type" => "Place", "name" => "Philadelphia, PA", "url" => HOME_URL . "/city/philadelphia-3394"]],
+        ["@type" => "ListItem", "position" => 7, "item" => ["@type" => "Place", "name" => "San Antonio, TX", "url" => HOME_URL . "/city/san-antonio-3846"]],
+        ["@type" => "ListItem", "position" => 8, "item" => ["@type" => "Place", "name" => "San Diego, CA", "url" => HOME_URL . "/city/san-diego-3854"]],
+        ["@type" => "ListItem", "position" => 9, "item" => ["@type" => "Place", "name" => "Dallas, TX", "url" => HOME_URL . "/city/dallas-1121"]],
+        ["@type" => "ListItem", "position" => 10, "item" => ["@type" => "Place", "name" => "Jacksonville, FL", "url" => HOME_URL . "/city/jacksonville-2108"]],
+        ["@type" => "ListItem", "position" => 11, "item" => ["@type" => "Place", "name" => "Fort Worth, TX", "url" => HOME_URL . "/city/fort-worth-1558"]],
+        ["@type" => "ListItem", "position" => 12, "item" => ["@type" => "Place", "name" => "San Jose, CA", "url" => HOME_URL . "/city/san-jose-3862"]],
+        ["@type" => "ListItem", "position" => 13, "item" => ["@type" => "Place", "name" => "Austin, TX", "url" => HOME_URL . "/city/austin-247"]],
+        ["@type" => "ListItem", "position" => 14, "item" => ["@type" => "Place", "name" => "Charlotte, NC", "url" => HOME_URL . "/city/charlotte-880"]],
+        ["@type" => "ListItem", "position" => 15, "item" => ["@type" => "Place", "name" => "Columbus, OH", "url" => HOME_URL . "/city/columbus-1025"]],
+        ["@type" => "ListItem", "position" => 16, "item" => ["@type" => "Place", "name" => "Indianapolis, IN", "url" => HOME_URL . "/city/indianapolis-2061"]],
     ],
 ];
 
@@ -244,14 +241,14 @@ $categoryLists = [
 
 $webPageSchema = [
     "@type" => "WebPage",
-    "@id" => "https://beta.seatoutlet.com/#webpage",
-    "url" => "https://beta.seatoutlet.com/",
+    "@id" => HOME_URL . "/#webpage",
+    "url" => HOME_URL . "/",
     "name" => "Verified Ticket Marketplace Network for Concerts & Sports Tickets",
-    "isPartOf" => ["@id" => "https://beta.seatoutlet.com/#website"],
-    "about" => ["@id" => "https://beta.seatoutlet.com/#organization"],
+    "isPartOf" => ["@id" => HOME_URL . "/#website"],
+    "about" => ["@id" => HOME_URL . "/#organization"],
     "primaryImageOfPage" => [
         "@type" => "ImageObject",
-        "url" => "https://beta.seatoutlet.com/images/seatoutlet-logo.webp"
+        "url" => HOME_URL . "/images/seatoutlet-logo.webp"
     ],
     "description" => "Buy event tickets online, explore concert tickets online, browse a sports tickets marketplace, and compare ticket prices online."
 ];

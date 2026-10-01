@@ -59,7 +59,7 @@ foreach ($fallbackCategories as $key => $list) {
       <div class="slide-overlay"></div>
       <div class="slide-caption">
         <span class="tag">Live Events</span>
-        <h2>Experience Live Events<br>Like Never Before</h2>
+        <h1>Experience Live Events<br>Like Never Before</h1>
         <p>From sold-out concerts to must-see sports and theater shows discover verified tickets at competitive prices across our trusted ticket marketplace network.</p>
         <a href="/tickets" class="btn-slide">Explore Events</a>
       </div>

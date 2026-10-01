@@ -1,22 +1,22 @@
 <title>Seat Outlet – Buy Verified Event Tickets Online</title>
-<meta name="description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
+<meta name="description" content="Discover deals on live events with our verified ticket marketplace network. Safe checkout, real tickets and instant access to unforgettable experiences.">
 <meta name="keywords" content="Buy verified event tickets online, concert tickets online, sports tickets online, live event tickets, secure ticket marketplace">
-<link rel="canonical" href="https://beta.seatoutlet.com/tickets">
+<link rel="canonical" href="<?php echo HOME_URL; ?>/tickets">
 
 <meta property="og:title" content="Buy Verified Event Tickets Online | Seat Outlet">
-<meta property="og:description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
-<meta property="og:url" content="https://beta.seatoutlet.com/tickets">
+<meta property="og:description" content="Discover deals on live events with our verified ticket marketplace network. Safe checkout, real tickets and instant access to unforgettable experiences.">
+<meta property="og:url" content="<?php echo HOME_URL; ?>/tickets">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
+<meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Buy Verified Event Tickets Online | Seat Outlet">
-<meta name="twitter:description" content="Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.">
-<meta name="twitter:image" content="https://beta.seatoutlet.com/images/seatoutlet-logo.webp">
+<meta name="twitter:description" content="Discover deals on live events with our verified ticket marketplace network. Safe checkout, real tickets and instant access to unforgettable experiences.">
+<meta name="twitter:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
 
 <?php
 $images = [
-  "https://beta.seatoutlet.com/images/event-ticket-buying.webp"
+  HOME_URL . "/images/event-ticket-buying.webp"
 ];
 
 $imageSchema = [];
@@ -36,7 +36,7 @@ if (!empty($results['results'])) {
 
       $city = $event['city']['text']['name'] ?? '';
       $state = $event['stateProvince']['text']['abbr'] ?? '';
-      $startDate = $event['date']['date'] ?? '';
+      $startDate = $event['date']['datetimeOffset'] ?? ($event['date']['date'] ?? '');
       $price = $event['pricingInfo']['lowPrice']['value'] ?? null;
 
       $eventsSchema[] = [
@@ -60,29 +60,25 @@ if (!empty($results['results'])) {
               ]
           ],
           "performer" => buildEventPerformerSchema($event),
-
-          "offers" => [
-              "@type" => "Offer",
-              "url" => "https://beta.seatoutlet.com/event/" . ($event['uriComponent'] ?? $event['id'] ?? ''),
-              "price" => $price ?? "0",
-              "priceCurrency" => "USD",
-              "availability" => "https://schema.org/InStock"
-          ]
       ];
+      $offer = !empty($event['_metadata']['hasTickets']) ? seoOffer(HOME_URL . "/event/" . ($event['uriComponent'] ?? $event['id'] ?? ''), $price) : null;
+      if ($offer) {
+          $eventsSchema[array_key_last($eventsSchema)]["offers"] = $offer;
+      }
   }
 }
 
 $webPageSchema = [
     "@type" => "WebPage",
-    "@id" => "https://beta.seatoutlet.com/tickets#webpage",
-    "url" => "https://beta.seatoutlet.com/tickets",
+    "@id" => HOME_URL . "/tickets#webpage",
+    "url" => HOME_URL . "/tickets",
     "name" => "Buy Verified Event Tickets Online",
-    "description" => "Discover the best deals on live events with our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.",
-    "isPartOf" => ["@id" => "https://beta.seatoutlet.com/#website"],
-    "about" => ["@id" => "https://beta.seatoutlet.com/#organization"],
+    "description" => "Discover deals on live events with our verified ticket marketplace network. Safe checkout, real tickets and instant access to unforgettable experiences.",
+    "isPartOf" => ["@id" => HOME_URL . "/#website"],
+    "about" => ["@id" => HOME_URL . "/#organization"],
     "primaryImageOfPage" => [
         "@type" => "ImageObject",
-        "url" => "https://beta.seatoutlet.com/images/seatoutlet-logo.webp"
+        "url" => HOME_URL . "/images/seatoutlet-logo.webp"
     ]
 ];
 ?>

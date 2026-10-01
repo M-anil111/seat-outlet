@@ -128,7 +128,7 @@ h3,
 .keyword-bottombar p{font-size: 14px; font-weight: 600; color: #e0e0e0;}
 .keyword-bottombar{background: transparent;}
 .tm-topbar {
-    background: #567ff9;
+    background: #3f66ea;
     color: #fff;
     padding: 0px 0;
 }
@@ -1065,6 +1065,7 @@ h3,
     background: #000;
 }
 
+.results-title h1,
 .results-title h2 {
     margin: 0;
     font-size: 18px;
@@ -1888,7 +1889,7 @@ h3,
   
   .category-pill:not(.active), .sport-cat:not(.active) {
     background-color: transparent;
-    color: #4265f3;
+    color: #3050d0;
   }
   
   .category-pill:not(.active):hover, .sport-cat:not(.active):hover {
@@ -4960,6 +4961,7 @@ a.common-btn:hover{
   margin-bottom: 18px;
 }
 
+.top-hero-slider .slide-caption h1,
 .top-hero-slider .slide-caption h2 {
   font-size: clamp(1.2rem, 2.5vw, 2.1rem);
   font-weight: 800;
@@ -4988,6 +4990,7 @@ a.common-btn:hover{
   .top-hero-slider .slide-caption .tag { margin-bottom: 6px; font-size: 0.6rem; }
   .top-hero-slider .slide-caption p { display: none; } /* hide paragraph on very small screens */
   .top-hero-slider .slide-caption .btn-slide { padding: 8px 20px !important; font-size: 10px; letter-spacing: 0.14em; }
+  .top-hero-slider .slide-caption h1,
   .top-hero-slider .slide-caption h2{line-height: 28px;}
  
 }
@@ -4995,8 +4998,8 @@ a.common-btn:hover{
 .top-hero-slider .slide-caption .btn-slide {
   display: inline-block;
   padding: 13px 34px;
-  background: #567ff9;
-  border: 2px solid #567ff9;
+  background: #3f66ea;
+  border: 2px solid #3f66ea;
   color: #fff;
   font-size: 0.8rem;
   font-weight: 700;
@@ -5247,7 +5250,7 @@ a.common-btn:hover{
 /* Listing filters, search recovery, price signals, recently viewed */
 .listing-filters{margin:0 0 14px}
 .listing-filter-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
-.listing-filter-label{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#6c757d;min-width:44px}
+.listing-filter-label{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#595f66;min-width:44px}
 .filter-chip{display:inline-block;padding:5px 12px;border:1px solid #d5d9de;border-radius:999px;font-size:13px;color:#333;background:#fff;text-decoration:none;line-height:1.3}
 .filter-chip:hover{border-color:#1a5cff;color:#1a5cff}
 .filter-chip.active{background:#1a5cff;border-color:#1a5cff;color:#fff}
@@ -5262,3 +5265,9 @@ a.common-btn:hover{
 .recent-card img{width:56px;height:56px;object-fit:cover;border-radius:8px;flex:0 0 56px;background:#f0f2f5}
 .recent-card span{font-weight:600;font-size:14px;line-height:1.3}
 .search-recents-label{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#6c757d;padding:8px 12px 2px}
+
+/* Accessibility: AA contrast for links on the light grey event panels, and tap targets of at least 24px for text links in listings. */
+.event-detail .event-location a,
+.event-detail .common-btn { color: #0a58ca; }
+.event-detail .common-btn.btn-primary { color: #fff; }
+.listing-links a, .links-wrapper a { display: inline-block; min-height: 24px; line-height: 24px; }

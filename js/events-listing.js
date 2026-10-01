@@ -426,6 +426,9 @@ function renderEvent(event) {
     const citySlug = normalizeKey(cityName) + '-' + event.city.id;
     const venueSlug = normalizeKey(event.venue.text.name) + '-' + event.venue.id;
     const priceTag = buildPriceTag(event);
+    // Everything from the API goes through escHtml before it is put into markup.
+    const escHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const evName = escHtml(event.text.name), evVenue = escHtml(event.venue.text.name), evCityName = escHtml(cityName);
     return `
     <div class="d-flex align-items-center justify-content-between performer-event-item">
         <div class="date-box text-center me-3">
@@ -437,21 +440,21 @@ function renderEvent(event) {
             <div class="d-flex align-items-center gap-2">
                 <span class="fw-semibold day-weeks">${eday}</span>
                 <span class="dot">·</span>
-                <span class="time-clock">${event.date.text.time}</span>
+                <span class="time-clock">${escHtml(event.date.text.time)}</span>
                 <i class="bi bi-info-circle text-muted icon-i" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight" 
-                    data-id="${event.id}" data-date="${formattedDate}" data-venue="${event.venue.text.name}" 
-                    data-location="${event.city.text.name}, ${event.stateProvince.text.abbr}" data-title="${event.text.name}" data-performers="${dataPerformers}"></i>
+                    data-id="${event.id}" data-date="${formattedDate}" data-venue="${evVenue}" 
+                    data-location="${evCityName}" data-title="${evName}" data-performers="${escHtml(dataPerformers)}"></i>
             </div>
             <div class="fw-semibold location-venue-name">
-                <a href="/city/${citySlug}">${cityName}</a> · <a href="/venue/${venueSlug}">${event.venue.text.name}</a>
+                <a href="/city/${citySlug}">${evCityName}</a> · <a href="/venue/${venueSlug}">${evVenue}</a>
             </div>
             <div class="text-muted small">
-                <a href="/event/${eSlug}">${event.text.name}</a>
+                <a href="/event/${eSlug}">${evName}</a>
             </div>
         </div>
         <div class="ms-3">
             ${priceTag}
-            <a href="/event/${eSlug}" class="btn btn-primary d-flex align-items-center gap-2">
+            <a href="/event/${eSlug}" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for ${evName}">
                 <span class="d-none d-md-inline">
                     Find Tickets
                 </span>

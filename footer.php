@@ -142,24 +142,35 @@
 	</button>
 </div>
 
+<?php
+// Decide which scripts a page needs from its PATH. These checks used to compare
+// the whole REQUEST_URI, so any query string (/search?q=adele, /tickets?when=week)
+// silently dropped search.js and events-listing.js, and /concerts, /sports,
+// /theater, /festival, /state/* and /country/* never loaded events-listing.js at
+// all, so their "More Events" button did nothing.
+$soPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$soIsHome = ($soPath === '/' || $soPath === '/index.php');
+$soIsSearch = ($soPath === '/search');
+$soHasEventList = (bool) preg_match('#^/(search|tickets|concerts|sports|theater|festival)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath);
+?>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13" defer></script>
-<?php if ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php' || $_SERVER['REQUEST_URI'] == '/search') { ?>
+<?php if ($soIsHome || $soIsSearch) { ?>
   <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js" defer></script>
 <?php } ?>
-<script src="<?php echo HOME_URL; ?>/js/main.js?v=<?php echo filemtime(__DIR__ . '/js/main.js'); ?>" defer></script>
-<?php if ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>  
-    <script src="<?php echo HOME_URL; ?>/js/home.js?v=<?php echo filemtime(__DIR__ . '/js/home.js'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(soAsset('js/main.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php if ($soIsHome) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/home.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
-<?php if($_SERVER['REQUEST_URI'] == '/search' || $_SERVER['REQUEST_URI'] == '/tickets' || strpos($_SERVER['REQUEST_URI'], '/artist/') === 0 || strpos($_SERVER['REQUEST_URI'], '/category/') === 0 || strpos($_SERVER['REQUEST_URI'], '/venue/') === 0 || strpos($_SERVER['REQUEST_URI'], '/city/') === 0) { ?>
-    <script src="<?php echo HOME_URL; ?>/js/events-listing.js?v=<?php echo filemtime(__DIR__ . '/js/events-listing.js'); ?>" defer></script>
+<?php if ($soHasEventList) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/events-listing.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
-<?php if($_SERVER['REQUEST_URI'] == '/search') { ?>
-    <script src="<?php echo HOME_URL; ?>/js/search.js?v=<?php echo filemtime(__DIR__ . '/js/search.js'); ?>" defer></script>
+<?php if ($soIsSearch) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/search.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
-<?php if (strpos($_SERVER['REQUEST_URI'], '/artist/') === 0) { ?>
-    <script src="<?php echo HOME_URL; ?>/js/performer.js?v=<?php echo filemtime(__DIR__ . '/js/performer.js'); ?>" defer></script>
+<?php if (strpos($soPath, '/artist/') === 0) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/performer.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
 
 <?php 

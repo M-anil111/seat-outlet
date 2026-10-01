@@ -31,6 +31,22 @@ include_once 'functions.php';
     // rule row (or null, the default - unchanged behavior) for the <head>
     // block below to use in place of the hardcoded/per-page-type SEO tags.
     $pageRule = resolvePageRule();
+
+    // Static pages that never set their own title/description get theirs from
+    // inc/page-meta.php (title, description, canonical, og:/twitter: tags and
+    // baseline schema all come from the $pageMeta* branch below).
+    $soReqPath = rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/') ?: '/';
+    if (empty($pageMetaTitle)) {
+        $soStaticMeta = require __DIR__ . '/inc/page-meta.php';
+        if (isset($soStaticMeta[$soReqPath])) {
+            $pageMetaTitle       = $soStaticMeta[$soReqPath][0] . ' | Seat Outlet';
+            $pageMetaDescription = $soStaticMeta[$soReqPath][1];
+            $pageCanonicalUrl    = rtrim(HOME_URL, '/') . $soReqPath;
+        }
+    }
+    // Keep titles and descriptions inside what a search result shows.
+    if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
+    if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription($pageMetaDescription); }
 ?>
 
 <!DOCTYPE html>
@@ -46,10 +62,17 @@ include_once 'functions.php';
     <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" type="image/png" href="/images/favicon-new.webp">
     
+    <!-- Open the CDN connections before the first stylesheet is requested. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://code.jquery.com" crossorigin>
     <!-- Critical CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
-    <link rel="stylesheet" href="<?php echo HOME_URL; ?>/css/skeleton.css?v=<?php echo filemtime(__DIR__ . '/css/skeleton.css'); ?>">
+    <?php if (is_file(__DIR__ . '/css/style.min.css')) { ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
+    <?php } else { ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/skeleton.css'), ENT_QUOTES, 'UTF-8'); ?>">
+    <?php } ?>
     
 
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -59,7 +82,8 @@ include_once 'functions.php';
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Fonts must not block first paint: load as print, switch to all when ready (noscript below covers no-JS). display=swap shows text immediately in the fallback font. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     
 
     <noscript>
@@ -120,11 +144,11 @@ include_once 'functions.php';
         // baseline here; merge in page-specific nodes when present.
         outputJsonLdGraph(array_merge([buildOrganizationSchema(), buildWebsiteSchema()], $pageJsonLdNodes ?? []));
         ?>
-    <?php } elseif ($_SERVER['REQUEST_URI'] == '/' || $_SERVER['REQUEST_URI'] == '/index.php') { ?>
+    <?php } elseif ($soReqPath === '/' || $soReqPath === '/index.php') { ?>
         <?php include 'inc/seo.php'; ?>
-    <?php }elseif ($_SERVER['REQUEST_URI'] == '/tickets' || $_SERVER['REQUEST_URI'] == '/tickets.php') { ?>
+    <?php }elseif ($soReqPath === '/tickets' || $soReqPath === '/tickets.php') { ?>
         <?php include 'inc/seo-tickets.php'; ?>
-    <?php }elseif (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>
+    <?php }elseif (strpos($soReqPath, '/event/') === 0) { ?>
         <?php include 'inc/seo-event.php'; ?>
     <?php } else { ?>
         <?php
