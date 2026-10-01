@@ -130,7 +130,7 @@ jobs:
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          REMOTE_ROOT="/home/seatoutlet-beta/htdocs/beta.seatoutlet.com"
+          REMOTE_ROOT="/home/seatoutlet-beta/htdocs/beta.seatoutlet.com/seat-outlet"
           find . -type f -not -path './.git/*' -print0 | \
             xargs -0 -P 4 -I{} bash -c '
               f="{}"

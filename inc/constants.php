@@ -6,7 +6,9 @@ define('BASE_URL', getenv('BASE_URL') ?: 'https://sandbox.tn-apis.com');
 define('BROKER_ID', getenv('BROKER_ID') ?: 9250);
 define('SITE_ID', getenv('SITE_ID') ?: 30);
 define('HOME_URL', getenv('HOME_URL') ?: 'https://beta.seatoutlet.com');
-define('HOME_PATH', getenv('HOME_PATH') ?: '/home/seatoutlet-beta/htdocs/beta.seatoutlet.com/');
+// The code root on this server, wherever the deploy put it (it moved to
+// .../beta.seatoutlet.com/seat-outlet); override with HOME_PATH if needed.
+define('HOME_PATH', getenv('HOME_PATH') ?: dirname(__DIR__) . '/');
 define('AWS_ACCOUNT_ID', getenv('AWS_ACCOUNT_ID') ?: '2f20a4f9aec4a1c3b457bc4a6165f503');
 define('AWS_BUCKET_NAME', getenv('AWS_BUCKET_NAME') ?: 'seat-outlet-assets');
 define('AWS_CDN_URL', getenv('AWS_CDN_URL') ?: 'https://cdn-beta.seatoutlet.com/');
@@ -52,9 +54,9 @@ define('GTM_ID', getenv('GTM_ID') ?: '');
 define('SENTRY_DSN', getenv('SENTRY_DSN') ?: '');
 define('SENTRY_ENVIRONMENT', getenv('SENTRY_ENVIRONMENT') ?: (BASE_URL === 'https://www.tn-apis.com' ? 'production' : 'sandbox'));
 
-// Real credentials: must come from the environment, no literal fallback. A deploy
-// generates inc/env.local.php from GitHub's encrypted repository secrets before
-// this file is included - see functions.php.
+// Real credentials: must come from the environment, no literal fallback. They are
+// loaded from the server's env file by inc/env.php (via db/config.php) before
+// this file is included.
 $requiredSecrets = [
     'CONSUMER_KEY',
     'CONSUMER_SECRET',
