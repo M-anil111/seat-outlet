@@ -958,8 +958,16 @@ function getArtistBio($artistName, $performerId) {
     if (empty($data['query']['pages'])) return '';
 
     $page = reset($data['query']['pages']);
-    set_bio($performerId, $page['extract']);
-    return trim($page['extract'] ?? '');
+    // A title with no Wikipedia article comes back without an 'extract' key.
+    // Store an empty string (not NULL) so the miss is cached even if the
+    // column is NOT NULL, and never let a cache write take the page down.
+    $extract = trim((string) ($page['extract'] ?? ''));
+    try {
+        set_bio($performerId, $extract);
+    } catch (\Throwable $e) {
+        error_log('Bio cache write failed (' . $performerId . '): ' . $e->getMessage());
+    }
+    return $extract;
 }
 
 function set_bio($performerId, $bio, $mysqli = MYSQLI) {
