@@ -64,6 +64,10 @@
 <p>For general guidance on safe online purchases, the Federal Trade Commission offers advice on <a href="https://consumer.ftc.gov/articles/online-shopping" target="_blank" rel="noopener">shopping online</a>. You can also read about how an <a href="https://en.wikipedia.org/wiki/Arena" target="_blank" rel="noopener">arena</a> is typically laid out if you want to understand seating levels before you choose.</p>
 <p>Looking for savings? Compare <a href="/ticket-deals">ticket deals</a> and our <a href="/tickets-promo-code">promo code page</a> for current offers before you check out.</p>
 
+<h2>Getting more out of city events</h2>
+<p>The best nights out often come from mixing categories. A weekend in a new town can pair an afternoon game with an evening concert, and browsing city events together makes that easy to see. Look at dates across all five groups, then build a plan that leaves time to travel between venues.</p>
+<p>If you travel often for live entertainment, keep a short list of the cities you visit and check their city events pages ahead of each trip. Listings change as sellers add new tickets, so a quick look a few days before you go can show options that were not available earlier. Group trips work best when everyone agrees on a budget and a section before searching.</p>
+
 <h2>Delivery and the guarantee for city events tickets</h2>
 <p>Your order is covered by our buyer protection. Tickets are guaranteed to be valid, and delivery may be electronic, by mobile transfer or by physical shipping depending on the event and seller. If an event is canceled and not rescheduled, you receive a full refund for your ticket purchase.</p>
 <p>Read the full policy on the <a href="/worry-free-guarantee">worry-free guarantee</a> and <a href="/ticket-buyer-protection">ticket buyer protection</a> pages. Questions about an order can go to <a href="/ticket-customer-service">customer service</a> at support@seatoutlet.com, and common answers are in the <a href="/ticket-faq">ticket FAQ</a>.</p>
