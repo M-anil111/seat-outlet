@@ -296,7 +296,7 @@ $faqs = getFaqs('events');
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-						<img src="/images/event-ticket-buying.webp" alt="About Live Events Across the United States" class="img-about img-fluid rounded" width="567" height="378" />
+						<img src="/images/event-ticket-buying-800.webp" srcset="/images/event-ticket-buying-800.webp 800w, /images/event-ticket-buying.webp 1536w" sizes="(min-width: 992px) 567px, 100vw" alt="About Live Events Across the United States" class="img-about img-fluid rounded" width="567" height="378" loading="lazy" decoding="async" />
 					</div>
 				</div>				
 			</div>

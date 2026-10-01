@@ -281,9 +281,12 @@ optional.
 - **Icons.** Only the Bootstrap Icons the code uses are shipped (`fonts/bootstrap-icons-subset.woff2` + `css/icons.css`, folded into
   `style.min.css`). Using a new `bi-*` icon? Run `python3 tools/build-icons.py` (needs `pip install fonttools brotli`) then
   `tools/build-assets.sh`. CI runs `python3 tools/build-icons.py --check`. The admin panel still uses the full CDN font.
-- **Fonts.** The Google Fonts stylesheet loads without blocking first paint. `css/style.css` defines an
-  `Inter Fallback` font (Arial scaled to Inter's metrics) and reserves icon boxes (`.bi`), which is what keeps
-  layout shift near zero while the web fonts arrive. Keep both when changing typography.
+- **Fonts.** Inter is self-hosted (`fonts/inter-latin*.woff2`, declared in `css/fonts.css`, folded into `style.min.css`) so the first
+  text paint does not wait on Google. It is deliberately not preloaded (the preload competed with the render-blocking CSS and delayed
+  first paint). `css/style.css` defines an `Inter Fallback` font (Arial scaled to Inter's metrics) and reserves icon boxes (`.bi`), which keeps
+  layout shift near zero while the font arrives. Keep both when changing typography.
+- **Third-party libraries** (Bootstrap, jQuery, flatpickr, slick) are served from `lib/` at pinned versions: no CDN connection on the critical
+  path. Change a version in `tools/vendor-assets.sh`, run it, update the paths in header.php/footer.php, commit the files.
 - **Titles and descriptions.** A page sets `$pageMetaTitle` / `$pageMetaDescription` / `$pageCanonicalUrl`
   before `include 'header.php'`; static pages without their own get theirs from `inc/page-meta.php`.
   `header.php` trims titles to about 60 characters and descriptions to about 155. Never hard-code the

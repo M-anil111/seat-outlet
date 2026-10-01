@@ -53,7 +53,7 @@
 
   </div>
   <div class="card-stat">
-    <img src="/images/team-event.webp" class="img-fluid rounded mb-3" alt="Seat Outlet ticket marketplace partner team" loading="lazy">
+    <img src="/images/team-event.webp" class="img-fluid rounded mb-3" alt="Seat Outlet ticket marketplace partner team" loading="lazy" width="250" height="250" decoding="async">
     <div class="stat-circle">
       <span class="stat-number text-primary">4.1</span>
       <span class="stat-label fw-bolder text-black">Trust Score<br>The most trusted brand in ticketing</span>
@@ -67,7 +67,7 @@
     
       <div class="stat-big">2017</div>
       <div class="stat-sublabel fw-bolder text-black">Year SeatOutlet Was Founded in Canada</div>
-      <img src="/images/stage.webp" class="img-fluid rounded mt-3" alt="Live event booked through your ticket marketplace partner" loading="lazy">
+      <img src="/images/stage.webp" class="img-fluid rounded mt-3" alt="Live event booked through your ticket marketplace partner" loading="lazy" width="750" height="843" decoding="async">
 
   </div>
   <div class="card-text dark">
@@ -76,7 +76,7 @@
       <?php echo getContentBlock('/why-us', 'founding-story', '
       <h3 class="mb-4">Founded in Canada in 2017, we\'re the partner that\'s investing in you and your fans, to keep you on the pulse of what\'s next.</h3>'); ?>
       <a href="/about-us">See Our Journey <span class="arrow">→</span></a>
-      <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded mt-3" alt="Fans supported by our ticket marketplace partner network" loading="lazy">
+      <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded mt-3" alt="Fans supported by our ticket marketplace partner network" loading="lazy" width="442" height="442" decoding="async">
     </div>
 
 

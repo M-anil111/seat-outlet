@@ -79,7 +79,7 @@ if(!empty($venues)) {
             'type' => 'venue',
             'name' => $venueItem['name'],
             'slug' => '/venue/' . createSlug($venueItem['name'], $venueItem['id']),
-            'image' => "/images/venue.webp",
+            'image' => "/images/venue-480.webp",
             'meta' => $venueItem['city'] . ', ' . $venueItem['state']
             //'category' => $defaultCategory
         ];

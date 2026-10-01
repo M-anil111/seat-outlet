@@ -16,7 +16,7 @@ if(!empty($nearbyVenues)) {
             'name'  => $venue['text']['name'] ?? '',
             'city'  => $venue['city']['text']['name'] ?? '',
             'state' => $venue['stateProvince']['text']['abbr'] ?? '',
-            'image' => "/images/venue.webp"
+            'image' => "/images/venue-480.webp"
         ]; 
     }
 }

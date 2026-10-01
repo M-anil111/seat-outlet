@@ -2134,7 +2134,6 @@ h3,
 
 
   /*home page css start*/
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
   :root {
     --stub-primary: #3664ef;
@@ -5295,3 +5294,13 @@ a.common-btn:hover{
    the header phone icon gets a 24px tap target. */
 :root { --bs-link-color: #0a58ca; --bs-link-color-rgb: 10, 88, 202; --bs-link-hover-color: #084298; --bs-link-hover-color-rgb: 8, 66, 152; }
 .tm-top-links .header-phone a { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; }
+
+/* Skip layout/paint work for rows and sections that are below the fold. The intrinsic sizes are close to the real
+   heights so the scrollbar does not jump; 'auto' remembers the real size once a row has been shown. Not applied to
+   anything that contains a carousel (slick measures its width on init). */
+
+/* Skip layout/paint work for rows and sections that are below the fold. The intrinsic sizes are close to the real
+   heights so the scrollbar does not jump; 'auto' remembers the real size once a row has been shown. Not applied to
+   anything that contains a carousel (slick measures its width on init). */
+.performer-event-item { content-visibility: auto; contain-intrinsic-size: auto 96px; }
+.tm-footer { content-visibility: auto; contain-intrinsic-size: auto 560px; }

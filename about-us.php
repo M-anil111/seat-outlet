@@ -492,7 +492,7 @@
           <!-- Left: Image -->
           <div class="col-md-5">
             <div class="about-image-wrapper">
-              <img src="/images/team-event.webp" class="img-fluid rounded" alt="The trusted ticket marketplace team at a live event" loading="lazy">
+              <img src="/images/team-event.webp" class="img-fluid rounded" alt="The trusted ticket marketplace team at a live event" loading="lazy" width="250" height="250" decoding="async">
             </div>
           </div>
 
@@ -538,9 +538,9 @@
                     </p>
                 </div>
         <div class="d-flex flex-wrap gap-3 px-4 px-xxl-5 mb-4">
-          <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Live stage performance at an event booked through our trusted ticket marketplace" loading="lazy">
-          <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Concert crowd, part of our trusted ticket marketplace network" loading="lazy">
-          <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Fans at a live event on our trusted ticket marketplace" loading="lazy">
+          <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Live stage performance at an event booked through our trusted ticket marketplace" loading="lazy" width="750" height="843" decoding="async">
+          <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Concert crowd, part of our trusted ticket marketplace network" loading="lazy" width="800" height="512" decoding="async">
+          <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Fans at a live event on our trusted ticket marketplace" loading="lazy" width="442" height="442" decoding="async">
         </div>
         <div class="industry-slider">
           <!-- 2022 -->
@@ -970,7 +970,6 @@
 <?php include 'footer.php'; ?>
 
 <!-- jQuery FIRST -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 
 

@@ -42,3 +42,13 @@ location = /robots.txt { rewrite ^ /robots.php last; }
 ```
 
 Beta/staging/dev hosts then return `Disallow: /`; the production host returns the normal rules plus `Sitemap: https://<host>/sitemap.php`. `sitemap.php` now lists top performers, venues and categories as well as events, cities and static pages (about 3,500 URLs); submit it in Google Search Console and Bing Webmaster Tools after launch.
+
+## Caching and compression (server settings the code cannot set)
+
+- Versioned, never-changing files can be cached for a year: `/lib/`, `/fonts/` (the file name or path changes when the content does), and `*.min.css` / `*.min.js` (they carry `?v=` stamps).
+
+  ```nginx
+  location ~ ^/(lib|fonts)/ { add_header Cache-Control "public, max-age=31536000, immutable"; }
+  ```
+- Turn on gzip or brotli for `text/html`, `text/css`, `application/javascript`, `application/json` and `image/svg+xml`. Local lab runs have no compression; with it the CSS, JS and HTML shrink by 70% or more. Cloudflare does this automatically when it proxies the site.
+- HTML is not edge-cacheable as it is: pages vary by cookie (saved location). Do not enable "Cache Everything" for HTML without bypassing on the `so_lat`/`so_lng` cookies.
