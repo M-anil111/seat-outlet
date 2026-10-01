@@ -346,12 +346,53 @@ function toApiDate(dateObj) {
     return `${year}-${month}-${day}`;
 }
  
+/* =====================================================
+    DATE PICKER LIBRARY (loaded on demand)
+===================================================== */
+// flatpickr (50 KB script + 16 KB CSS) is only needed once someone touches a date field, so it is not on every page load.
+// header.php prefetches both files at idle priority; this loads them (from the cache by then) and resolves when ready.
+// Warm the browser cache once the page has fully loaded and the browser is idle (not in the <head>: an early prefetch competes
+// with the render-blocking CSS and the hero image for bandwidth, which measurably delayed first paint on slow connections).
+window.addEventListener('load', function () {
+    var warm = function () {
+        var assets = window.SO_ASSETS || {};
+        [[assets.flatpickrJs, 'script'], [assets.flatpickrCss, 'style']].forEach(function (a) {
+            if (!a[0]) return;
+            var l = document.createElement('link');
+            l.rel = 'prefetch'; l.as = a[1]; l.href = a[0];
+            document.head.appendChild(l);
+        });
+    };
+    if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 5000 }); else setTimeout(warm, 3000);
+});
+window.soLoadFlatpickr = (function () {
+    var pending = null;
+    return function () {
+        if (window.flatpickr) return Promise.resolve(window.flatpickr);
+        if (pending) return pending;
+        var assets = window.SO_ASSETS || {};
+        pending = new Promise(function (resolve, reject) {
+            var css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = assets.flatpickrCss || '/lib/flatpickr/4.6.13/flatpickr.min.css';
+            document.head.appendChild(css);
+            var js = document.createElement('script');
+            js.src = assets.flatpickrJs || '/lib/flatpickr/4.6.13/flatpickr.min.js';
+            js.async = true;
+            js.onload = function () { resolve(window.flatpickr); };
+            js.onerror = function () { pending = null; reject(new Error('flatpickr failed to load')); };
+            document.head.appendChild(js);
+        });
+        return pending;
+    };
+})();
+
 document.addEventListener("DOMContentLoaded", function () {
     let selectedDatesTemp = [];  
     let selectedStart = null;
     let selectedEnd = null;
     const dateEl = document.getElementById('customDatePicker');
-    if (!dateEl || typeof flatpickr === 'undefined') return;
+    if (!dateEl) return;
     let fp = null;
     // Built on first touch/focus of the field rather than on every page view (it is in the header of every page).
     function getFp() {
@@ -395,9 +436,11 @@ document.addEventListener("DOMContentLoaded", function () {
       return fp;
     }
     ['pointerdown', 'touchstart', 'focus'].forEach(function (evt) {
-        dateEl.addEventListener(evt, function (e) {
-            const f = getFp();
-            if (f && e.type === 'focus') f.open();   // keyboard focus: flatpickr's own handlers were attached after this event
+        dateEl.addEventListener(evt, function () {
+            soLoadFlatpickr().then(function () {
+                const f = getFp();
+                if (f && document.activeElement === dateEl) f.open();   // the calendar did not exist yet when the visitor tapped
+            }).catch(function () {});
         }, { once: true, passive: true });
     });
   
@@ -813,6 +856,17 @@ window.soLocal = (function () {
       list.unshift(clean);
       write('so_recent_viewed', list.slice(0, 8));
     },
+    recentEvents: function () {
+      const today = new Date().toISOString().slice(0, 10);
+      return read('so_recent_events').filter(i => i && /^[0-9]+$/.test(String(i.id || '')) && SLUG.test(String(i.slug || '')) && typeof i.name === 'string' && (!i.date || String(i.date) >= today));
+    },
+    addEvent: function (item) {
+      if (!item || !/^[0-9]+$/.test(String(item.id || '')) || !SLUG.test(String(item.slug || '')) || !item.name) return;
+      const clean = { id: String(item.id), name: String(item.name).slice(0, 90), slug: item.slug, date: /^\d{4}-\d{2}-\d{2}$/.test(item.date || '') ? item.date : '', city: String(item.city || '').slice(0, 60), venue: String(item.venue || '').slice(0, 80) };
+      const list = read('so_recent_events').filter(i => i && String(i.id) !== clean.id);
+      list.unshift(clean);
+      write('so_recent_events', list.slice(0, 6));
+    },
     recentSearches: function () {
       return read('so_recent_searches').filter(t => typeof t === 'string' && t.length >= 2);
     },
@@ -831,7 +885,27 @@ document.addEventListener('DOMContentLoaded', function () {
   const box = document.getElementById('recentlyViewed');
   if (!box || !window.soLocal) return;
   const items = window.soLocal.recentPerformers().slice(0, 6);
-  if (!items.length) return;
+  const evs = window.soLocal.recentEvents().slice(0, 3);
+  if (!items.length && !evs.length) return;
+  const evRow = box.querySelector('.recent-events-row');
+  evs.forEach(function (ev) {
+    const col = document.createElement('div');
+    col.className = 'col-12 col-md-6 col-lg-4';
+    const a = document.createElement('a');
+    a.className = 'recent-card recent-event';
+    a.href = '/event/' + ev.slug;
+    const title = document.createElement('span');
+    title.textContent = ev.name;
+    const meta = document.createElement('small');
+    const when = ev.date ? new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    meta.textContent = [when, ev.city].filter(Boolean).join(' · ');
+    const wrap = document.createElement('div');
+    wrap.appendChild(title); wrap.appendChild(document.createElement('br')); wrap.appendChild(meta);
+    a.appendChild(wrap);
+    a.addEventListener('click', function () { (window.dataLayer = window.dataLayer || []).push({ event: 'recent_event_click', event_id: ev.id }); });
+    col.appendChild(a);
+    if (evRow) evRow.appendChild(col);
+  });
   const row = box.querySelector('.recent-row');
   items.forEach(function (it) {
     const col = document.createElement('div');

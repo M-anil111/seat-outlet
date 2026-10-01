@@ -7,6 +7,9 @@
  * Needs one server rule to be served at /robots.txt (see docs/server-rewrites.md);
  * robots.txt stays in place as the fallback.
  */
+// inc/constants.php insists on the server's secrets, which db/config.php normally loads for every
+// page; this file never touches the database, so load them here through the same loader.
+require_once __DIR__ . '/inc/env.php';
 require_once __DIR__ . '/inc/constants.php';
 header('Content-Type: text/plain; charset=UTF-8');
 header('Cache-Control: public, max-age=3600');

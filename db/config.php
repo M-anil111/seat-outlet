@@ -1,10 +1,38 @@
 <?php
 // Secrets (DB_PASS, API keys) come from the server's own env file, loaded by
-// inc/env.php from outside the deploy directory - never from git. Loaded here
-// (rather than in functions.php) so every entry point that needs the DB or
-// constants.php secrets gets them, whether it goes through functions.php or
-// includes this file directly (ajax/check-email.php, newsletter-email.php).
+// inc/env.php: ~/.seatoutlet/env.local.php (outside htdocs, recommended), then
+// inc/env.local.php inside the site folder, then the old web root's file one
+// level up - never from git. Loaded here (rather than in functions.php) so every
+// entry point that needs the DB or constants.php secrets gets them, whether it
+// goes through functions.php or includes this file directly
+// (ajax/check-email.php, newsletter-email.php).
 require_once __DIR__ . '/../inc/env.php';
+
+/**
+ * The database is unreachable or not configured. Visitors get a short "try again" page with a
+ * 503 (so search engines retry later instead of indexing an error as a normal page), never the
+ * raw error: it can name the database host and user. The detail goes to the server error log.
+ */
+function soDbUnavailable($detail) {
+    error_log('Database unavailable: ' . $detail);
+    if (PHP_SAPI === 'cli') {
+        fwrite(STDERR, 'Database unavailable: ' . $detail . "\n");
+        exit(1);
+    }
+    if (!headers_sent()) {
+        http_response_code(503);
+        header('Retry-After: 30');
+        header('Cache-Control: no-store');
+        header('X-Robots-Tag: noindex');
+        header('Content-Type: text/html; charset=UTF-8');
+    }
+    echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+       . '<meta name="robots" content="noindex"><title>Temporarily unavailable | Seat Outlet</title></head>'
+       . '<body style="font-family:system-ui,sans-serif;text-align:center;padding:12vh 16px;color:#1f2937">'
+       . '<h1 style="font-size:24px;margin:0 0 8px">We will be right back</h1>'
+       . '<p style="margin:0;color:#5b6573">Seat Outlet is temporarily unavailable. Please try again in a minute.</p></body></html>';
+    exit;
+}
 
 define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
 define('DB_PORT', getenv('DB_PORT') ?: 3306);
@@ -12,19 +40,22 @@ define('DB_NAME', getenv('DB_NAME') ?: 'seatoutlet-beta');
 define('DB_USER', getenv('DB_USER') ?: 'beta-seatoutlet');
 $dbPass = getenv('DB_PASS');
 if ($dbPass === false || $dbPass === '') {
-    error_log('DB_PASS is not set. Env file used: ' . (SEATOUTLET_ENV_FILE_USED ?: 'none found')
+    soDbUnavailable('DB_PASS environment variable is not set. Env file used: ' . (SEATOUTLET_ENV_FILE_USED ?: 'none found')
         . '; looked in: ' . implode(', ', seatoutletEnvCandidates()));
-    die('Database connection failed: DB_PASS environment variable is not set.');
 }
 define('DB_PASS', $dbPass);
 
-$mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
+try {
+    $mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
+} catch (Throwable $e) {   // PHP 8.1+ throws on a failed connection instead of setting connect_error
+    soDbUnavailable($e->getMessage());
+}
 
 if ($mysqli->connect_error) {
-    die('Database connection failed: ' . $mysqli->connect_error);
+    soDbUnavailable($mysqli->connect_error);
 }
 
 $mysqli->set_charset('utf8mb4');
 
 
-define('MYSQLI', getenv('MYSQLI') ?: $mysqli);
+define('MYSQLI', getenv('MYSQLI') ?: $mysqli);

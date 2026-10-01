@@ -202,6 +202,7 @@ foreach ($fallbackCategories as $key => $list) {
   <div class="container">
     <h2 id="recentlyViewedHeading" class="fw-bold mb-3">Pick up where you left off</h2>
     <div class="row g-3 recent-row"></div>
+    <div class="row g-3 recent-events-row mt-1"></div>
   </div>
 </section>
 

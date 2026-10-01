@@ -21,7 +21,7 @@
   $evTs     = !empty($event['date']['date']) ? strtotime($event['date']['date']) : false;
   $evDate   = $evTs ? date('M j, Y', $evTs) : '';
   // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
-  $metaTitle = $evName === '' ? 'Event not found | Seat Outlet' : seoClampTitle($evName . ' Tickets' . ($evPlace !== '' ? ' in ' . $evPlace : '') . ' | Seat Outlet');
+  $metaTitle = $evName === '' ? (tnEntityUnavailable($event) ? 'Event temporarily unavailable | Seat Outlet' : 'Event not found | Seat Outlet') : seoClampTitle($evName . ' Tickets' . ($evPlace !== '' ? ' in ' . $evPlace : '') . ' | Seat Outlet');
   $metaDescription = seoClampDescription(
       'Buy ' . $evName . ' tickets' . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
       . ($evDate !== '' ? ' on ' . $evDate : '') . '. Compare seats and prices, then check out securely at Seat Outlet.'

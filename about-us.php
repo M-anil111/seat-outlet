@@ -547,7 +547,7 @@
           <div class="industry-slide">
             <article
               class="industry-card"
-              style="background-image: url('https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=1200');"
+              style="background-image: url('/images/about-slide-1.webp');"
             >
               <div class="industry-overlay"></div>
               <div class="industry-content">
@@ -565,7 +565,7 @@
           <div class="industry-slide">
             <article
               class="industry-card"
-              style="background-image: url('https://images.pexels.com/photos/1047442/pexels-photo-1047442.jpeg?auto=compress&cs=tinysrgb&w=1200');"
+              style="background-image: url('/images/about-slide-2.webp');"
             >
               <div class="industry-overlay"></div>
               <div class="industry-content">
@@ -583,7 +583,7 @@
           <div class="industry-slide">
             <article
               class="industry-card"
-              style="background-image: url('https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=1200');"
+              style="background-image: url('/images/about-slide-3.webp');"
             >
               <div class="industry-overlay"></div>
               <div class="industry-content">
@@ -601,7 +601,7 @@
           <div class="industry-slide">
             <article
               class="industry-card"
-              style="background-image: url('https://images.pexels.com/photos/2102568/pexels-photo-2102568.jpeg?auto=compress&cs=tinysrgb&w=1200');"
+              style="background-image: url('/images/about-slide-4.webp');"
             >
               <div class="industry-overlay"></div>
               <div class="industry-content">

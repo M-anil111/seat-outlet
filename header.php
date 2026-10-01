@@ -50,11 +50,17 @@ include_once 'functions.php';
         $soEvId = (int) ($_GET['id'] ?? 0);
         if ($soEvId <= 0) { $soEvParts = explode('-', (string) ($_GET['slug'] ?? '')); $soEvId = (int) end($soEvParts); }
         $soEvCheck = $soEvId > 0 ? getTnEventById($soEvId) : null;
-        if ($soEvCheck === null || tnEntityMissing($soEvCheck) || empty($soEvCheck['text']['name'])) {
+        if ($soEvCheck !== null && tnEntityUnavailable($soEvCheck)) {
+            // The API failed (throttled, timeout, circuit open): a retryable 503, never a 404 that deindexes a live event.
+            http_response_code(503);
+            header('Retry-After: 30');
+            $pageRobots = 'noindex, follow';
+        } elseif ($soEvCheck === null || tnEntityMissing($soEvCheck) || empty($soEvCheck['text']['name'])) {
             http_response_code(404);
             $pageRobots = 'noindex, follow';
         }
     }
+    sendPageCacheHeaders();   // after the 404 check above: the status decides the policy
     // Keep titles and descriptions inside what a search result shows.
     if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
     if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription($pageMetaDescription); }
@@ -83,7 +89,8 @@ include_once 'functions.php';
     <link rel="preload" as="image" href="<?php echo htmlspecialchars($pagePreloadImage, ENT_QUOTES, 'UTF-8'); ?>" fetchpriority="high">
     <?php } ?>
     <!-- Critical CSS -->
-    <link rel="stylesheet" href="/lib/bootstrap/5.3.8/bootstrap.min.css">
+    <?php /* css/bootstrap.min.css = Bootstrap trimmed to the classes this site uses (tools/build-assets.sh); the full file is the fallback. */ ?>
+    <link rel="stylesheet" href="<?php echo is_file(__DIR__ . '/css/bootstrap.min.css') ? htmlspecialchars(soAsset('css/bootstrap.css'), ENT_QUOTES, 'UTF-8') : '/lib/bootstrap/5.3.8/bootstrap.min.css'; ?>">
     <?php if (is_file(__DIR__ . '/css/style.min.css')) { ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
     <?php } else { ?>
@@ -93,7 +100,6 @@ include_once 'functions.php';
     
 
     <link rel="preload" href="/fonts/bootstrap-icons-subset.woff2?v=1.13.1" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/lib/flatpickr/4.6.13/flatpickr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <?php $soNeedsSlick = in_array($soReqPath, ['/', '/index.php', '/search', '/about-us'], true) || strpos($soReqPath, '/event/') === 0; // carousel CSS: pages with a carousel, plus event pages (the Seatics seat-map widget uses slick classes) ?>
     <?php if ($soNeedsSlick) { ?>
     <link rel="preload" href="/lib/slick-carousel/1.8.1/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -106,7 +112,6 @@ include_once 'functions.php';
     
 
     <noscript>
-        <link rel="stylesheet" href="/lib/flatpickr/4.6.13/flatpickr.min.css">
         <?php if ($soNeedsSlick) { ?>
         <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick.css">
         <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick-theme.css">

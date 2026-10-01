@@ -51,4 +51,22 @@ Beta/staging/dev hosts then return `Disallow: /`; the production host returns th
   location ~ ^/(lib|fonts)/ { add_header Cache-Control "public, max-age=31536000, immutable"; }
   ```
 - Turn on gzip or brotli for `text/html`, `text/css`, `application/javascript`, `application/json` and `image/svg+xml`. Local lab runs have no compression; with it the CSS, JS and HTML shrink by 70% or more. Cloudflare does this automatically when it proxies the site.
-- HTML is not edge-cacheable as it is: pages vary by cookie (saved location). Do not enable "Cache Everything" for HTML without bypassing on the `so_lat`/`so_lng` cookies.
+
+## Caching the HTML at Cloudflare (the biggest remaining speed gain)
+
+Public pages are identical for every visitor: the PHP never reads cookies or sessions, and the saved location, recently viewed and recent searches are applied by JavaScript in the browser (checked: pages render byte-for-byte the same on repeat requests). So Cloudflare can serve the HTML itself and skip PHP, which removes the server wait (TTFB) from most page views.
+
+The code already sends the right headers (`sendPageCacheHeaders()` in functions.php):
+
+| Pages | Header |
+|---|---|
+| All public pages, 200 | `public, max-age=0, s-maxage=120, stale-while-revalidate=600, stale-if-error=3600` |
+| 404 pages | `public, max-age=0, s-maxage=60` |
+| `/checkout`, `/order-confirmation`, `/thank-you`, `/admin`, anything that is not GET | `private, no-store` |
+
+Cloudflare ignores these for HTML unless a cache rule says otherwise. Setup (Cloudflare dashboard, Caching, Cache Rules), one rule:
+
+- If hostname equals the site and URI path does **not** start with `/admin`, `/ajax`, `/cron`, `/checkout`, `/order-confirmation`, `/thank-you`:
+- Cache eligibility: **Eligible for cache**; Edge TTL: **Use cache-control header if present**; Browser TTL: **Respect origin**.
+
+Notes: shown prices and inventory can be up to 2 minutes old (the hosted checkout always re-prices); purge the cache after each deploy (Caching, Purge Everything) so new code shows at once; `HTML_EDGE_CACHE_SECONDS` in `inc/env.local.php` changes the 120 seconds (0 turns the headers off). Test with `curl -sI https://<host>/concerts` and look for `cf-cache-status: HIT` on the second request.

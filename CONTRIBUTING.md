@@ -164,6 +164,7 @@ Crons (all safe to run concurrently with traffic):
 | `cron/home-events.php`, `home-top-performers.php`, `home-venues.php`, `home-categories.php` | hourly | homepage feeds |
 | `cron/warm-listings.php` | every 5 min | keeps /tickets, /concerts, /sports, /theater, /festival, top category and top city feeds warm so no visitor waits on the API |
 | `cron/resolve-images.php` | every 10–15 min | entity image queue |
+| `cron/prune-vitals.php` | weekly | deletes real-user speed measurements older than 90 days |
 
 Card images on the homepage and search suggestions load through one
 batched `POST /ajax/get-images.php` per slider (was one GET per card,
@@ -278,6 +279,12 @@ optional.
   `tools/build-assets.sh` and commit the generated `css/style.min.css` and `js/*.min.js`. The pages load
   the `.min` files through `soAsset()` (functions.php), falling back to the source if a `.min` is missing.
   CI runs `tools/build-assets.sh --check` and fails when a minified file is stale. Needs Node (`npx`).
+- **Bootstrap CSS.** Pages load `css/bootstrap.min.css`, which `tools/build-assets.sh` builds from `lib/bootstrap/5.3.8/bootstrap.min.css`
+  keeping only the classes found in the PHP and `js/*.js` (rules in `tools/purgecss.config.cjs`). Using a new Bootstrap class in a PHP
+  file or script? Just rebuild and commit the result (CI fails when it is stale). A class that is only assembled at runtime
+  (`'btn-' + name`) cannot be found: write it out in full somewhere, or add it to the safelist in that config. Classes typed into
+  blog posts or editable page blocks (stored in the database) also need to be in the safelist.
+- **Sentry check.** `php tools/sentry-test.php` on the server sends one test message and says whether delivery worked.
 - **Icons.** Only the Bootstrap Icons the code uses are shipped (`fonts/bootstrap-icons-subset.woff2` + `css/icons.css`, folded into
   `style.min.css`). Using a new `bi-*` icon? Run `python3 tools/build-icons.py` (needs `pip install fonttools brotli`) then
   `tools/build-assets.sh`. CI runs `python3 tools/build-icons.py --check`. The admin panel still uses the full CDN font.
@@ -298,6 +305,15 @@ optional.
 - **Not-found pages.** `renderNotFoundPage('City')` answers 404 + noindex; use `tnEntityMissing($r)` (not `empty()`) on a
   TicketNetwork get-one result, because a missing id returns `{"Message": ...}`.
 - **robots.txt.** `robots.php` builds it from the host (non-production hosts get `Disallow: /`); route `/robots.txt` to it, see docs/server-rewrites.md.
+- **Edge caching.** `sendPageCacheHeaders()` marks public pages cacheable by a CDN for 120 seconds and checkout, confirmation, thank-you
+  and admin pages `no-store`. Public pages must stay identical for every visitor: never read `$_COOKIE`/`$_SESSION` or print per-visitor
+  data in them (do that in JavaScript). Setup and Cloudflare rule: docs/server-rewrites.md.
+- **Date picker.** flatpickr is not on any page load. `soLoadFlatpickr()` (main.js) loads it on the first touch of a date field; header.php
+  prefetches it at idle priority. Initialise pickers inside `soLoadFlatpickr().then(...)`.
+- **Real-user speed (RUM).** `js/vitals.js` measures LCP, CLS, INP (approximated), FCP and TTFB, pushes `web_vitals` events to the dataLayer
+  (GA4 through GTM) and sends a 25% sample to `ajax/vitals.php`, which stores page type, metric, value, rating, device and connection type
+  (no IP, cookie or URL) in `web_vitals` (migration 0009). Read it with `php tools/vitals-report.php [--days=30]`; delete rows older
+  than 90 days with `php cron/prune-vitals.php` (weekly). Mention anonymous performance measurement in the privacy policy.
 - **Maintenance scripts** (`cron/*`, `db/migrate.php`, `tools/*`) include `inc/cli-guard.php`: command line only.
 
 ## Optional performance layer: APCu
