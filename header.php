@@ -50,7 +50,12 @@ include_once 'functions.php';
         $soEvId = (int) ($_GET['id'] ?? 0);
         if ($soEvId <= 0) { $soEvParts = explode('-', (string) ($_GET['slug'] ?? '')); $soEvId = (int) end($soEvParts); }
         $soEvCheck = $soEvId > 0 ? getTnEventById($soEvId) : null;
-        if ($soEvCheck === null || tnEntityMissing($soEvCheck) || empty($soEvCheck['text']['name'])) {
+        if ($soEvCheck !== null && tnEntityUnavailable($soEvCheck)) {
+            // The API failed (throttled, timeout, circuit open): a retryable 503, never a 404 that deindexes a live event.
+            http_response_code(503);
+            header('Retry-After: 30');
+            $pageRobots = 'noindex, follow';
+        } elseif ($soEvCheck === null || tnEntityMissing($soEvCheck) || empty($soEvCheck['text']['name'])) {
             http_response_code(404);
             $pageRobots = 'noindex, follow';
         }

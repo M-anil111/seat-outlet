@@ -17,7 +17,7 @@ if ($id <= 0) {
 $city = getTnCityById($id);
 
 if (tnEntityMissing($city)) {
-	renderNotFoundPage('City');
+	renderNotFoundPage('City', $city);
 }
 
 $today = date('Y-m-d');

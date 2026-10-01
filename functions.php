@@ -1955,6 +1955,22 @@ function tnEntityMissing($r) {
     return isset($r['Message']) && !isset($r['id']) && !isset($r['alphaCode']);
 }
 
+/**
+ * True only when the API answered "not found" for this id. Anything else that
+ * lacks the entity (empty body, timeout, circuit open, throttling, 5xx) is a
+ * failure of ours or the API's, not proof the page is gone.
+ */
+function tnEntityDefinitelyMissing($r) {
+    return is_array($r) && isset($r['Message']) && !isset($r['id']) && !isset($r['alphaCode'])
+        && stripos((string) $r['Message'], 'not found') !== false;
+}
+
+/** The entity is missing because the API failed, not because it does not exist. */
+function tnEntityUnavailable($r) {
+    if (empty($r) || !is_array($r)) return true;
+    return !isset($r['id']) && !isset($r['alphaCode']) && !tnEntityDefinitelyMissing($r);
+}
+
 /** Friendly "not found" content with ways back to inventory (no header/footer). */
 function notFoundBlockHtml($what) {
     $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
@@ -1969,8 +1985,43 @@ function notFoundBlockHtml($what) {
         . '</div></div>';
 }
 
-/** Whole "not found" page: HTTP 404, noindex, branded. Call before any output. */
-function renderNotFoundPage($what) {
+/** "Try again in a moment" content for when the ticket feed failed (no header/footer). */
+function unavailableBlockHtml($what) {
+    $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
+    return '<div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' temporarily unavailable</h1>'
+        . '<p class="text-muted mb-4">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
+        . '<div class="d-flex flex-wrap justify-content-center gap-2">'
+        . '<a class="btn btn-primary" href="">Try again</a>'
+        . '<a class="btn btn-outline-secondary" href="/tickets">Browse all events</a>'
+        . '<a class="btn btn-outline-secondary" href="/concerts">Concerts</a>'
+        . '<a class="btn btn-outline-secondary" href="/sports">Sports</a>'
+        . '<a class="btn btn-outline-secondary" href="/theater">Theater</a>'
+        . '</div></div>';
+}
+
+/** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, noindex, never cached. */
+function renderUnavailablePage($what) {
+    http_response_code(503);
+    header('Retry-After: 30');
+    $pageRobots = 'noindex, follow';
+    $pageMetaTitle = $what . ' temporarily unavailable | Seat Outlet';
+    $pageMetaDescription = 'This page is temporarily unavailable. Please try again in a moment.';
+    include 'header.php';
+    echo unavailableBlockHtml($what);
+    include 'footer.php';
+    exit;
+}
+
+/**
+ * Whole "not found" page: HTTP 404, noindex, branded. Call before any output.
+ * Pass the API response that came back empty: if it was an API failure rather
+ * than a real "not found", answer 503 (retry) so a throttled or down API can
+ * never tell search engines that live pages are gone.
+ */
+function renderNotFoundPage($what, $apiResponse = null) {
+    if ($apiResponse !== null && tnEntityUnavailable($apiResponse)) {
+        renderUnavailablePage($what);
+    }
     http_response_code(404);
     $pageRobots = 'noindex, follow';
     $pageMetaTitle = $what . ' not found | Seat Outlet';
