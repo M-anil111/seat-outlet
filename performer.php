@@ -19,7 +19,7 @@ tnRequestMulti([['/catalog/v2/performers/' . $id, []], performerPageEventsSpec($
 $performer = getTnPerformerById($id);
 
 if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
-	renderNotFoundPage('Performer');
+	renderNotFoundPage('Performer', $performer);
 }
 
 $today = date('Y-m-d');

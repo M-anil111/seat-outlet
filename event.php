@@ -135,7 +135,7 @@ if ($id <= 0) {
 $event = getTnEventById($id);
 
 if (tnEntityMissing($event) || empty($event['text']['name'])) {
-  echo notFoundBlockHtml('Event');
+  echo tnEntityUnavailable($event) ? unavailableBlockHtml('Event') : notFoundBlockHtml('Event');
   include 'footer.php';
   exit;
 }

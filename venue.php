@@ -17,7 +17,7 @@ if ($id <= 0) {
 $venue = getTnVenueById($id);
 
 if (tnEntityMissing($venue)) {
-	renderNotFoundPage('Venue');
+	renderNotFoundPage('Venue', $venue);
 }
 
 $today = date('Y-m-d');
