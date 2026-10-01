@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the minified front-end assets that header.php / footer.php prefer
 # (see soAsset() in functions.php):
-#   css/style.min.css   = css/style.css + css/skeleton.css + css/icons.css (icon subset, tools/build-icons.py), minified
+#   css/style.min.css   = css/fonts.css + css/style.css + css/skeleton.css + css/icons.css (icon subset, tools/build-icons.py), minified
 #   js/<name>.min.js    = each js/<name>.js, compressed and mangled
 # Run after editing any source file, and commit the .min files.
 #
@@ -14,7 +14,7 @@ CHECK=0; [ "${1:-}" = "--check" ] && CHECK=1
 OUT="$(mktemp -d)"
 trap 'rm -rf "$OUT"' EXIT
 
-cat css/style.css css/skeleton.css css/icons.css | npx --yes clean-css-cli@5.6.3 -O1 -o "$OUT/style.min.css"
+cat css/fonts.css css/style.css css/skeleton.css css/icons.css | npx --yes clean-css-cli@5.6.3 -O1 -o "$OUT/style.min.css"
 for f in js/*.js; do
   case "$f" in *.min.js) continue;; esac
   name="$(basename "$f" .js)"

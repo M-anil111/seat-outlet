@@ -461,8 +461,7 @@ include 'header.php';
                     <div class="guarantee-image-frame">
                         <img
                             src="/images/ticket-trusted.webp"
-                            alt="Customers backed by our 30-day satisfaction guarantee"
-                        />
+                            alt="Customers backed by our 30-day satisfaction guarantee" width="750" height="875" decoding="async"/>
                         <div class="guarantee-sticker">
                             <span>Risk‑Free</span>
                             <small>30 Days</small>
@@ -481,9 +480,7 @@ include 'header.php';
                         <div class="section-image-wrapper img-left">
                             <img
                                 src="/images/stage.webp"
-                                alt="Stage performance"
-                               
-                            />
+                                alt="Stage performance" width="750" height="843" decoding="async"/>
                         </div>
                     </div>
 
@@ -530,9 +527,7 @@ include 'header.php';
                         <div class="section-image-wrapper">
                             <img
                                 src="/images/ticket-trusted.webp"
-                                alt="Box office staff"
-                               
-                            />
+                                alt="Box office staff" width="750" height="875" decoding="async"/>
                         </div>
                     </div>
                 </div>
@@ -543,7 +538,7 @@ include 'header.php';
         <section class="cta-section-last">
             <div class="container">
                <div class="cta-content">
-               <img src="/images/moneyback-p3.png" class="img-fluid mb-3" alt="Satisfaction guarantee money-back badge" loading="lazy" style="max-width:120px;">
+               <img src="/images/moneyback-p3.png" class="img-fluid mb-3" alt="Satisfaction guarantee money-back badge" loading="lazy" style="max-width:120px;" width="67" height="70" decoding="async">
                <h2 class="cta-title">Experience Our Satisfaction Guarantee Today</h2>
                 <p class="cta-text">
                 Shop with confidence knowing that your purchase is protected. If you

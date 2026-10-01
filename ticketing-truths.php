@@ -275,9 +275,7 @@
                         <div class="section-image-wrapper">
                             <img
                                 src="/images/ticket-trusted.webp"
-                                alt="Live event crowd"
-                               
-                            />
+                                alt="Live event crowd" width="750" height="875" decoding="async"/>
                         </div>
                     </div>
                 </div>
@@ -293,9 +291,7 @@
                         <div class="section-image-wrapper img-left">
                             <img
                                 src="/images/stage.webp"
-                                alt="Stage performance"
-                               
-                            />
+                                alt="Stage performance" width="750" height="843" decoding="async"/>
                         </div>
                     </div>
 
@@ -343,9 +339,7 @@
                         <div class="section-image-wrapper">
                             <img
                                 src="/images/ticket-trusted.webp"
-                                alt="Box office staff"
-                               
-                            />
+                                alt="Box office staff" width="750" height="875" decoding="async"/>
                         </div>
                     </div>
                 </div>
@@ -361,9 +355,7 @@
                         <div class="section-image-wrapper img-left">
                             <img
                                 src="/images/stage.webp"
-                                alt="Fans cheering"
-                               
-                            />
+                                alt="Fans cheering" width="750" height="843" decoding="async"/>
                         </div>
                     </div>
 
@@ -411,9 +403,7 @@
                         <div class="section-image-wrapper">
                             <img
                                 src="/images/ticket-trusted.webp"
-                                alt="Support staff"
-                               
-                            />
+                                alt="Support staff" width="750" height="875" decoding="async"/>
                         </div>
                     </div>
                 </div>

@@ -3177,7 +3177,7 @@ function outputJsonLdGraph(array $nodes) {
     echo json_encode([
         "@context" => "https://schema.org",
         "@graph" => $nodes,
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);   // compact: pretty-printing doubled the size (51 KB on the homepage)
     echo "\n" . '</script>' . "\n";
 }
 

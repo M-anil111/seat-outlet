@@ -153,11 +153,11 @@ $soIsHome = ($soPath === '/' || $soPath === '/index.php');
 $soIsSearch = ($soPath === '/search');
 $soHasEventList = (bool) preg_match('#^/(search|tickets|concerts|sports|theater|festival)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath);
 ?>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13" defer></script>
+<script src="/lib/jquery/3.7.1/jquery.min.js" defer></script>
+<script src="/lib/bootstrap/5.3.8/bootstrap.bundle.min.js" defer></script>
+<script src="/lib/flatpickr/4.6.13/flatpickr.min.js" defer></script>
 <?php if ($soIsHome || $soIsSearch || $soPath === '/about-us') { ?>
-  <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js" defer></script>
+  <script src="/lib/slick-carousel/1.8.1/slick.min.js" defer></script>
 <?php } ?>
 <script src="<?php echo htmlspecialchars(soAsset('js/main.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php if ($soIsHome) { ?>

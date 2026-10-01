@@ -73,15 +73,17 @@ include_once 'functions.php';
     <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" type="image/png" href="/images/favicon-new.webp">
     
-    <!-- Open the CDN connections before the first stylesheet is requested. -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="preconnect" href="https://code.jquery.com" crossorigin>
+        <?php if (strpos($soReqPath, '/event/') === 0) { ?>
+    <!-- The seat-map widget (loaded at the end of the page) and its static assets: start those connections now. -->
+    <link rel="preconnect" href="https://mapwidget3.seatics.com" crossorigin>
+    <link rel="preconnect" href="https://d1s8091zjpj5vh.cloudfront.net" crossorigin>
+    <?php } ?>
     <?php if (!empty($pagePreloadImage)) { ?>
     <!-- LCP image that is only referenced from CSS (hero backgrounds): fetch it early. -->
     <link rel="preload" as="image" href="<?php echo htmlspecialchars($pagePreloadImage, ENT_QUOTES, 'UTF-8'); ?>" fetchpriority="high">
     <?php } ?>
     <!-- Critical CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/lib/bootstrap/5.3.8/bootstrap.min.css">
     <?php if (is_file(__DIR__ . '/css/style.min.css')) { ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
     <?php } else { ?>
@@ -91,26 +93,24 @@ include_once 'functions.php';
     
 
     <link rel="preload" href="/fonts/bootstrap-icons-subset.woff2?v=1.13.1" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/lib/flatpickr/4.6.13/flatpickr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <?php $soNeedsSlick = in_array($soReqPath, ['/', '/index.php', '/search', '/about-us'], true) || strpos($soReqPath, '/event/') === 0; // carousel CSS: pages with a carousel, plus event pages (the Seatics seat-map widget uses slick classes) ?>
     <?php if ($soNeedsSlick) { ?>
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/lib/slick-carousel/1.8.1/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/lib/slick-carousel/1.8.1/slick-theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <?php } ?>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Fonts must not block first paint: load as print, switch to all when ready (noscript below covers no-JS). display=swap shows text immediately in the fallback font. -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <!-- Inter is self-hosted (css/fonts.css, folded into style.min.css). Deliberately NOT preloaded: on a slow connection the 47 KB preload
+         competes with the render-blocking CSS and delays first paint (measured: artist LCP 2.8 s -> 4.1 s); the metric-matched fallback font
+         means the swap does not move anything. -->
     
 
     <noscript>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+        <link rel="stylesheet" href="/lib/flatpickr/4.6.13/flatpickr.min.css">
         <?php if ($soNeedsSlick) { ?>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
+        <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick.css">
+        <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick-theme.css">
         <?php } ?>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     </noscript>
     <?php if ($pageRule && !empty($pageRule['meta_title'])) { ?>
         <title><?php echo htmlspecialchars($pageRule['meta_title'], ENT_QUOTES, 'UTF-8'); ?></title>

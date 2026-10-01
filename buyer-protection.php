@@ -207,7 +207,7 @@
 
                 <!-- 1 -->
                 <div class="policy-section" id="section-1">
-                    <img src="/images/secure-payment-p3.png" class="img-fluid rounded mb-3" alt="Buyer protection secures every ticket order" loading="lazy">
+                    <img src="/images/secure-payment-p3.png" class="img-fluid rounded mb-3" alt="Buyer protection secures every ticket order" loading="lazy" width="65" height="68" decoding="async">
                     <h2>Buyer Protection: Trusted Purchase Protection</h2>
                     <p>
                     Our buyer protection guarantee is backed by the same

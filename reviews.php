@@ -724,20 +724,20 @@ include 'header.php';
                 <div class="sidebar-sticky">
                     <!-- Crowd/Event Image -->
                     <div class="sidebar-image mb-4">
-                        <img src="/images/crowd-at-concert-or-event.webp" alt="Fans who left customer reviews at a live event" class="img-fluid rounded">
+                        <img src="/images/crowd-at-concert-or-event.webp" alt="Fans who left customer reviews at a live event" class="img-fluid rounded" width="442" height="442" decoding="async">
                     </div>
                     <!-- Trust Badges Panel -->
                     <div class="trust-panel mb-4 bg-white border-0">
                         <div class="trust-item">
-                            <img src="/images/moneyback-p3.png" alt="Money Back Guarantee" class="img-fluid">
+                            <img src="/images/moneyback-p3.png" alt="Money Back Guarantee" class="img-fluid" width="67" height="70" decoding="async">
                             <span class="fw-bold text-uppercase">Money Back Guarantee</span>
                         </div>
                         <div class="trust-item">
-                            <img src="/images/secure-payment-p3.png" alt="Secure Payment Gateway" class="img-fluid">
+                            <img src="/images/secure-payment-p3.png" alt="Secure Payment Gateway" class="img-fluid" width="65" height="68" decoding="async">
                             <span class="fw-bold text-uppercase">Secure Payment Gateway</span>
                         </div>
                         <div class="trust-item">
-                           <img src="/images/bbb-p3.png" alt="BBB Accredited Business" class="img-fluid">
+                           <img src="/images/bbb-p3.png" alt="BBB Accredited Business" class="img-fluid" width="68" height="67" decoding="async">
                             <span class="fw-bold text-uppercase">BBB Accredited Business</span>
                         </div>
                     </div>

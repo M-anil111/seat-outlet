@@ -397,7 +397,7 @@ include 'header.php';
             </div>
 
             <div class="stats-section">
-                <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded mb-3" alt="Fans who left customer testimonials for Seat Outlet at a live event" loading="lazy">
+                <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded mb-3" alt="Fans who left customer testimonials for Seat Outlet at a live event" loading="lazy" width="442" height="442" decoding="async">
                 <h2>Real Customer Testimonials, Trusted by Thousands</h2>
                 <p>Join the SeatOutlet community and discover amazing events near you. Read more about what drives genuine
                 <a href="https://en.wikipedia.org/wiki/Customer_satisfaction" target="_blank" rel="noopener">customer satisfaction</a>.</p>
@@ -420,9 +420,9 @@ include 'header.php';
                     </div>
                 </div>
                 <div class="d-flex justify-content-center flex-wrap gap-3 mt-4">
-                    <img src="/images/team-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Team behind real customer testimonials" loading="lazy">
-                    <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Live event featured in customer testimonials" loading="lazy">
-                    <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Concert fans sharing customer testimonials" loading="lazy">
+                    <img src="/images/team-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Team behind real customer testimonials" loading="lazy" width="250" height="250" decoding="async">
+                    <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Live event featured in customer testimonials" loading="lazy" width="750" height="843" decoding="async">
+                    <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Concert fans sharing customer testimonials" loading="lazy" width="800" height="512" decoding="async">
                 </div>
                 <p class="mt-4 text-center">
                   If you've booked with us before, we'd genuinely like to hear how it went - good or
