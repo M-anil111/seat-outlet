@@ -863,7 +863,10 @@ function s3ObjectExists($key) {
 
         $exists = true;
 
-    } catch (\Aws\Exception\AwsException $e) {
+    } catch (\Throwable $e) {
+        // AwsException (missing object) or a credentials/config problem:
+        // either way the object is not usable, and a page must never fatal
+        // because storage is unreachable or unconfigured.
         $exists = false;
     }
 

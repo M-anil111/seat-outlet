@@ -165,7 +165,13 @@ function getEntityImage($type, $name, array $opts = []) {
         return $out; // known miss, not due for retry yet
     }
     if (!empty($opts['resolve'])) {
-        $resolved = resolveEntityImage($type, $name, $opts['category'] ?? [], $fallback);
+        try {
+            $resolved = resolveEntityImage($type, $name, $opts['category'] ?? [], $fallback);
+        } catch (\Throwable $e) {
+            // Image lookup is decoration: never let it take the page down.
+            error_log('Image resolve failed (' . $type . '/' . $name . '): ' . $e->getMessage());
+            $resolved = null;
+        }
         return $resolved ? imageRowToResult($resolved) : $out;
     }
     if (!$row) {
