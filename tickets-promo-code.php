@@ -93,7 +93,7 @@ include 'header.php';
             <div class="row justify-content-center text-center">
                 <div class="col-lg-9 hero-inner">
                     <h1 class="hero-title">Deals & Promotions</h1>
-                    <p class="hero-subtitle">Discount Codes for Tickets
+                    <p class="hero-subtitle">Find a tickets promo code for concerts, sports and theater, plus tips on using it at checkout.
                     </p>
                 </div>
             </div>
