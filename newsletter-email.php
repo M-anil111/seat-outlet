@@ -14,6 +14,7 @@ require 'phpmailer/src/PHPMailer.php';
 require 'phpmailer/src/SMTP.php';
 require 'phpmailer/src/Exception.php';
 include 'db/config.php';
+if (!defined('HOME_URL')) { require_once __DIR__ . '/inc/constants.php'; }
 
 
 /* =========================
@@ -113,8 +114,8 @@ try {
     <!-- Logo -->
     <tr>
       <td align="center" bgcolor="#ffffff" style="padding:40px 20px 20px; border-bottom:1px #e1e1e1 solid;">
-        <a href="https://beta.seatoutlet.com" title="Seat Outlet">
-          <img src="https://beta.seatoutlet.com/images/seatoutlet.png" 
+        <a href="<?php echo HOME_URL; ?>" title="Seat Outlet">
+          <img src="<?php echo HOME_URL; ?>/images/seatoutlet.png" 
                alt="Seat Outlet" style="display:block; max-width:220px;">
         </a>
       </td>
@@ -169,7 +170,7 @@ try {
             </td>
             <td style="padding:0 3px;">
               <a href="https://www.jaymehta.co/" target="_blank" style="text-decoration:none;">
-                <img src="https://beta.seatoutlet.com/images/jm.png"
+                <img src="<?php echo HOME_URL; ?>/images/jm.png"
                     alt="Jay Mehta Digital"
                     style="display:inline-block; vertical-align:middle; max-width:90px;">
               </a>
@@ -179,7 +180,7 @@ try {
             </td>
             <td style="padding-left:5px;">
               <a href="https://www.mindshare.consulting/" target="_blank" style="text-decoration:none;">
-                <img src="https://beta.seatoutlet.com/images/mindshare-logo.webp"
+                <img src="<?php echo HOME_URL; ?>/images/mindshare-logo.webp"
                     alt="Mindshare Consulting Inc"
                     style="display:inline-block; vertical-align:middle; max-width:90px; margin-top:-2px;">
               </a>
@@ -223,8 +224,8 @@ EOD;
     <!-- Header -->
     <tr>
       <td align="center" bgcolor="#ffffff" style="padding:40px 20px 20px; border-bottom:1px #e1e1e1 solid;">
-        <a href="https://beta.seatoutlet.com/" title="Seat Outlet">
-            <img src="https://beta.seatoutlet.com/images/seatoutlet.png" 
+        <a href="<?php echo HOME_URL; ?>/" title="Seat Outlet">
+            <img src="<?php echo HOME_URL; ?>/images/seatoutlet.png" 
                 alt="Seat Outlet" style="display:block; max-width:220px;">
             </a>
       </td>
@@ -248,7 +249,7 @@ EOD;
     <!-- Call to Action -->
       <tr>
       <td align="center" style="padding:20px;">
-        <a href="https://beta.seatoutlet.com/" target="_blank" 
+        <a href="<?php echo HOME_URL; ?>/" target="_blank" 
            style="background:#1b3bb0; color:#ffffff; text-decoration:none; font-size:16px; 
                   padding:12px 24px; border-radius:5px; display:inline-block;">
            Visit Our Website
@@ -262,8 +263,8 @@ EOD;
         Best regards, <br>
         <strong>Seat Outlet</strong><br>
         Phone: <a href="tel:8505299455" style="color:#b5d3fb; text-decoration:none;">850-529-9455</a><br>
-        Website: <a href="https://beta.seatoutlet.com/" style="color:#b5d3fb; text-decoration:none;">
-          beta.seatoutlet.com/
+        Website: <a href="<?php echo HOME_URL; ?>/" style="color:#b5d3fb; text-decoration:none;">
+          <?php echo htmlspecialchars(preg_replace('#^https?://#', '', rtrim(HOME_URL, '/')), ENT_QUOTES, 'UTF-8'); ?>/
         </a>
       </td>
     </tr>
@@ -332,7 +333,7 @@ $stmt->close();
    REDIRECT
 ========================= */
 if ($sent) {
-    header('Location: https://beta.seatoutlet.com/thank-you');
+    header('Location: ' . HOME_URL . '/thank-you');
     exit;
 }
 

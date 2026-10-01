@@ -153,8 +153,32 @@ foreach ($eventPages as $response) {
             'loc' => HOME_URL . '/event/' . $slug,
             'changefreq' => 'daily',
             'priority' => '0.8',
-            'lastmod' => $event['date']['date'] ?? null,
+            // no <lastmod>: the event date is not a modification date, and a wrong lastmod teaches crawlers to ignore the field
         ];
+    }
+}
+
+// Evergreen pages with the most search value: performers and venues that currently have tickets on sale
+// (the names cron/build-search-vocab.php already ranks by sales, so this costs no API call) and the
+// category pages linked from the homepage. Capped to keep the file small; events above are the long tail.
+require_once __DIR__ . '/inc/smart.php';
+$seenLoc = [];
+$perfCount = 0;
+$venueCount = 0;
+foreach (smartVocab() as $item) {
+    if ($item['t'] === 'performer' && $perfCount < 1000) {
+        $perfCount++;
+        $urls[] = ['loc' => HOME_URL . $item['u'], 'changefreq' => 'daily', 'priority' => '0.7'];
+    } elseif ($item['t'] === 'venue' && $venueCount < 300) {
+        $venueCount++;
+        $urls[] = ['loc' => HOME_URL . $item['u'], 'changefreq' => 'daily', 'priority' => '0.6'];
+    }
+}
+foreach ((cache_get('top_categories', 30 * 86400) ?: []) as $bucket) {
+    foreach ((array) $bucket as $cat) {
+        if (!empty($cat['slug'])) {
+            $urls[] = ['loc' => HOME_URL . '/category/' . $cat['slug'], 'changefreq' => 'daily', 'priority' => '0.7'];
+        }
     }
 }
 

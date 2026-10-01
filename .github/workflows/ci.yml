@@ -41,6 +41,16 @@ jobs:
       - name: Check for calls to undefined functions
         run: php tools/check-undefined-functions.php .
 
+      - name: Icon subset covers every bi-* class used
+        run: python3 tools/build-icons.py --check
+
+      - name: Minified CSS/JS are up to date
+        run: |
+          # css/style.min.css and js/*.min.js are built from the readable sources
+          # (tools/build-assets.sh) and committed; fail when someone edited a source
+          # without rebuilding, so production never serves stale assets.
+          tools/build-assets.sh --check
+
       - name: Validate composer.lock is in sync
         run: |
           composer validate --no-check-publish --no-check-all

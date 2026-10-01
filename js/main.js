@@ -350,7 +350,13 @@ document.addEventListener("DOMContentLoaded", function () {
     let selectedDatesTemp = [];  
     let selectedStart = null;
     let selectedEnd = null;
-    let fp = flatpickr("#customDatePicker", {
+    const dateEl = document.getElementById('customDatePicker');
+    if (!dateEl || typeof flatpickr === 'undefined') return;
+    let fp = null;
+    // Built on first touch/focus of the field rather than on every page view (it is in the header of every page).
+    function getFp() {
+      if (fp) return fp;
+      fp = flatpickr(dateEl, {
         mode: "range",
         minDate: "today",
         dateFormat: "Y-m-d",
@@ -385,9 +391,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 instance.clear();
             });
         }
+      });
+      return fp;
+    }
+    ['pointerdown', 'touchstart', 'focus'].forEach(function (evt) {
+        dateEl.addEventListener(evt, function (e) {
+            const f = getFp();
+            if (f && e.type === 'focus') f.open();   // keyboard focus: flatpickr's own handlers were attached after this event
+        }, { once: true, passive: true });
     });
   
     window.addEventListener("resize", function () {
+        if (!fp) return;
         const newMonthCount = getMonthCount();
         if (fp.config.showMonths !== newMonthCount) {
             fp.set("showMonths", newMonthCount);
@@ -846,3 +861,30 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', function () { window.soLocal.addSearch(input.value); });
   }
 });
+
+
+/* Carousel accessibility: slick marks off-screen slides aria-hidden but leaves their links focusable.
+   Keep keyboard focus off hidden slides (re-applied whenever a slider initializes or moves). */
+(function () {
+    function fixSlickFocus(root) {
+        (root || document).querySelectorAll('.slick-slide').forEach(function (slide) {
+            var hidden = slide.getAttribute('aria-hidden') === 'true';
+            var controls = [slide].concat([].slice.call(slide.querySelectorAll('a, button, input, select, textarea')))
+                .filter(function (el) { return /^(A|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(el.tagName); });
+            controls.forEach(function (el) {
+                if (hidden) {
+                    if (!el.hasAttribute('data-so-tab')) { el.setAttribute('data-so-tab', el.getAttribute('tabindex') === null ? '' : el.getAttribute('tabindex')); }
+                    el.setAttribute('tabindex', '-1');
+                } else if (el.hasAttribute('data-so-tab')) {
+                    var v = el.getAttribute('data-so-tab');
+                    if (v === '') el.removeAttribute('tabindex'); else el.setAttribute('tabindex', v);
+                    el.removeAttribute('data-so-tab');
+                }
+            });
+        });
+    }
+    window.soFixSlickFocus = fixSlickFocus;
+    window.addEventListener('load', function () { fixSlickFocus(); setTimeout(fixSlickFocus, 600); });
+    function bind() { if (window.jQuery) { jQuery(document).on('init reInit afterChange setPosition', '.slick-slider', function () { fixSlickFocus(this); }); } }
+    if (window.jQuery) bind(); else document.addEventListener('DOMContentLoaded', bind);
+})();

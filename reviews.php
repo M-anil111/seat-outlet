@@ -760,7 +760,8 @@ include 'header.php';
 
 <?php include 'footer.php'; ?>
 <script>
-
+// jQuery is a deferred script: wait for it before running this block.
+document.addEventListener('DOMContentLoaded', function () {
 (function($) {
     'use strict';
 
@@ -906,6 +907,7 @@ include 'header.php';
     });
 
 })(jQuery);
+});
 
 
 

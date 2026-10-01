@@ -975,8 +975,8 @@
 
 
 <script>
-    // Initialize interactions once DOM is ready
-$(function () {
+    // Initialize interactions once DOM is ready (jQuery and slick are deferred scripts: wait for them)
+document.addEventListener('DOMContentLoaded', function () {
   // Dynamic year in footer
   const yearSpan = document.getElementById("year");
   if (yearSpan) {
