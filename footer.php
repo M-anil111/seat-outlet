@@ -1,3 +1,5 @@
+<?php // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
+if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; } ?>
 <footer class="tm-footer">
 
   <div class="tm-footer-top">
@@ -113,7 +115,7 @@
       </div>
       <div class="keyword-bottombar">
         <div class="text-white text-center">
-            <p>Buy Concert Tickets</p>
+            <p><?php echo htmlspecialchars($GLOBALS['soFocusKw'] ?? soFocusKeyword(), ENT_QUOTES, 'UTF-8'); ?></p>
         </div>
       </div>
       <div class="d-flex align-items-center flex-wrap creater">

@@ -1,4 +1,6 @@
 <?php
+// Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
+if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
 
 // Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
 // lose the visitor's own query string on the way, so ?when= / ?sort= / ?page=
@@ -2145,6 +2147,91 @@ function sendPageCacheHeaders() {
     } else {
         header('Cache-Control: no-store');
     }
+}
+
+/**
+ * The page's focus keyword, shown in the strip above the header (the page's one <h1>) and again at the
+ * bottom of the footer. Order: a keyword the page sets itself ($pageFocusKeyword), the admin's focus keyword
+ * for this URL (page_rules), then for entity pages the "<name> Tickets" part of the meta title, then a default.
+ */
+function soFocusKeyword() {
+    static $kw = null;
+    if ($kw !== null) return $kw;
+    $clean = function ($v) {
+        $v = trim(preg_replace('/\s+/', ' ', strip_tags((string) $v)));
+        if (function_exists('mb_substr') && mb_strlen($v) > 70) $v = rtrim(mb_substr($v, 0, 70), " ,.;:-|");
+        return $v;
+    };
+    $rule = $GLOBALS['pageRule'] ?? null;
+    foreach ([$GLOBALS['pageFocusKeyword'] ?? '', is_array($rule) ? ($rule['focus_keyword'] ?? '') : ''] as $cand) {
+        $cand = $clean($cand);
+        if ($cand !== '') return $kw = $cand;
+    }
+    $title = (string) ($GLOBALS['pageMetaTitle'] ?? '');
+    if (preg_match('/^(.{2,60}?\bTickets)\b/u', $title, $m)) {
+        $cand = preg_replace('/^Events (?:in|at) /i', '', $m[1]);                  // "Events in Nevada Tickets" -> "Nevada Tickets"
+        $cand = preg_replace('/,\s*[A-Z]{2}(\s+Tickets)$/', '$1', $cand);          // "Las Vegas, NV Tickets" -> "Las Vegas Tickets"
+        $cand = $clean($cand);
+        if ($cand !== '' && strlen($cand) <= 42 && !preg_match('/^(Search|Buy|Tickets)\b/i', $cand)) {   // generic or long page titles keep the default
+            return $kw = $cand;
+        }
+    }
+    return $kw = 'Buy Concert Tickets';
+}
+
+/**
+ * Output filter for the page body. The keyword strip is the page's one <h1>; any other <h1> a page template prints
+ * becomes an <h2 class="h1 ..."> so it keeps its look (css/style.css styles ".h1" like "h1") and the page has a
+ * single H1. Turn off with KEYWORD_H1=0 in the environment.
+ */
+function soSingleH1($html) {
+    $stripSeen = false; $demoted = false;
+    return preg_replace_callback('#<(/?)h1\b([^>]*)>#i', function ($m) use (&$stripSeen, &$demoted) {
+        if ($m[1] === '/') {
+            if ($demoted) { $demoted = false; return '</h2>'; }
+            return $m[0];
+        }
+        if (!$stripSeen && strpos($m[2], 'so-keyword-h1') !== false) { $stripSeen = true; return $m[0]; }
+        $demoted = true;
+        $attrs = $m[2];
+        if (preg_match('/\bclass\s*=\s*(["\'])(.*?)\1/i', $attrs)) {
+            $attrs = preg_replace('/\bclass\s*=\s*(["\'])(.*?)\1/i', 'class=$1$2 h1$1', $attrs, 1);
+        } else {
+            $attrs .= ' class="h1"';
+        }
+        return '<h2' . $attrs . '>';
+    }, $html);
+}
+
+/**
+ * Old URL shapes that serve the same page twice: /performers.php (and every other /name.php), and the
+ * /event.php?id=123 and /event?id=123 forms. Send visitors and crawlers to the one real address with a permanent
+ * redirect; before this they got a duplicate page titled "Performers.php" or "Event.php".
+ */
+function soRedirectLegacyUrl() {
+    if (PHP_SAPI === 'cli' || headers_sent()) return;
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
+    $uri  = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $path = (string) parse_url($uri, PHP_URL_PATH);
+    $qs   = (string) parse_url($uri, PHP_URL_QUERY);
+    $to   = null;
+    if (($path === '/event.php' || $path === '/event') && isset($_GET['id']) && ctype_digit((string) $_GET['id']) && (int) $_GET['id'] > 0) {
+        $ev = getTnEventById((int) $_GET['id']);
+        if (!tnEntityMissing($ev) && !empty($ev['text']['name'])) {
+            $to = '/event/' . createSlug($ev['text']['name'], (int) $_GET['id']);
+            $qs = '';   // the id is now in the path
+        } elseif (tnEntityDefinitelyMissing($ev)) {
+            http_response_code(404);   // an id that does not exist is a real 404, not a 200 page that says "not found"
+        }
+    } elseif (preg_match('#^/([a-z0-9-]+)\.php$#', $path, $m) && is_file(__DIR__ . '/' . $m[1] . '.php')
+              && !in_array($m[1], ['event', 'functions', 'header', 'footer', 'robots', 'sitemap'], true)) {
+        $to = $m[1] === 'index' ? '/' : '/' . $m[1];
+    }
+    if ($to === null) return;
+    http_response_code(301);
+    header('Location: ' . $to . ($qs !== '' ? '?' . $qs : ''));
+    header('Cache-Control: public, max-age=3600');
+    exit;
 }
 
 /** Output-buffer callback: a page that rendered without API data is never CDN-cached. */

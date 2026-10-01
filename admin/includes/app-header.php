@@ -1,4 +1,6 @@
 <?php
+// Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
+if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
 // Shared shell for every screen *inside* the admin panel (post-login), built
 // on Tabler (https://tabler.io - MIT licensed), matching the Bootstrap 5
 // stack already used on the public site. The stand-alone auth screens

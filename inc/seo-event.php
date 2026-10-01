@@ -1,4 +1,6 @@
 <?php
+// Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
+if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
   $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
   if ($id <= 0) {
     $slug  = $_GET['slug'] ?? '';
@@ -22,6 +24,7 @@
   $evDate   = $evTs ? date('M j, Y', $evTs) : '';
   // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
   $metaTitle = $evName === '' ? (tnEntityUnavailable($event) ? 'Event temporarily unavailable | Seat Outlet' : 'Event not found | Seat Outlet') : seoClampTitle($evName . ' Tickets' . ($evPlace !== '' ? ' in ' . $evPlace : '') . ' | Seat Outlet');
+  if ($evName !== '' && empty($pageFocusKeyword)) { $pageFocusKeyword = $evName . ' Tickets'; }   // shown in the strip above the header and the footer
   $metaDescription = seoClampDescription(
       'Buy ' . $evName . ' tickets' . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
       . ($evDate !== '' ? ' on ' . $evDate : '') . '. Compare seats and prices, then check out securely at Seat Outlet.'
