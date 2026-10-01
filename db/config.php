@@ -1,18 +1,12 @@
 <?php
-// Deploy-generated file holding real secret values as putenv() calls, sourced from
-// GitHub repository secrets at deploy time. Never committed to git - only exists
-// on a server after the "Deploy To Demo" pipeline step has run. Loaded here (rather
-// than in functions.php) so every entry point that needs the DB or constants.php
-// secrets gets them, whether it goes through functions.php or includes this file
-// directly (ajax/check-email.php, newsletter-email.php).
-// Looked up inside the site folder first (where inc/geoip.php, inc/cli-guard.php and
-// deploy/pull-deploy.sh expect it), then one level up (the older SFTP layout).
-foreach ([__DIR__ . '/../inc/env.local.php', __DIR__ . '/../../inc/env.local.php'] as $envLocalFile) {
-    if (file_exists($envLocalFile)) {
-        require $envLocalFile;
-        break;
-    }
-}
+// Secrets (DB_PASS, API keys) come from the server's own env file, loaded by
+// inc/env.php: ~/.seatoutlet/env.local.php (outside htdocs, recommended), then
+// inc/env.local.php inside the site folder, then the old web root's file one
+// level up - never from git. Loaded here (rather than in functions.php) so every
+// entry point that needs the DB or constants.php secrets gets them, whether it
+// goes through functions.php or includes this file directly
+// (ajax/check-email.php, newsletter-email.php).
+require_once __DIR__ . '/../inc/env.php';
 
 /**
  * The database is unreachable or not configured. Visitors get a short "try again" page with a
@@ -46,7 +40,8 @@ define('DB_NAME', getenv('DB_NAME') ?: 'seatoutlet-beta');
 define('DB_USER', getenv('DB_USER') ?: 'beta-seatoutlet');
 $dbPass = getenv('DB_PASS');
 if ($dbPass === false || $dbPass === '') {
-    soDbUnavailable('DB_PASS environment variable is not set (is inc/env.local.php missing?)');
+    soDbUnavailable('DB_PASS environment variable is not set. Env file used: ' . (SEATOUTLET_ENV_FILE_USED ?: 'none found')
+        . '; looked in: ' . implode(', ', seatoutletEnvCandidates()));
 }
 define('DB_PASS', $dbPass);
 

@@ -25,15 +25,13 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 // Callers that don't load functions.php (ajax/get_ip_details.php,
 // newsletter-email.php) still need the deploy-time env and the path default.
-if (is_file(__DIR__ . '/env.local.php')) {
-    require_once __DIR__ . '/env.local.php';
-}
+require_once __DIR__ . '/env.php';
 
 function geoIpDatabasePath() {
     if (defined('GEOIP_DB_PATH')) return GEOIP_DB_PATH;
     $env = getenv('GEOIP_DB_PATH');
     if ($env !== false && $env !== '') return $env;
-    $home = getenv('HOME_PATH') ?: '/home/seatoutlet-beta/htdocs/beta.seatoutlet.com/';
+    $home = getenv('HOME_PATH') ?: dirname(__DIR__) . '/';
     return dirname(rtrim($home, '/')) . '/geoip/GeoLite2-City.mmdb';
 }
 

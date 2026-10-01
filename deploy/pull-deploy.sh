@@ -13,19 +13,24 @@
 # Configuration (environment variables, all optional):
 #   DEPLOY_REPO      git URL         default git@github.com:M-anil111/seat-outlet.git
 #   DEPLOY_BRANCH    branch to ship  default main
-#   DEPLOY_WEBROOT   live site dir   default /home/seatoutlet-beta/htdocs/beta.seatoutlet.com
+#   DEPLOY_WEBROOT   live site dir   default /home/seatoutlet-beta/htdocs/beta.seatoutlet.com/seat-outlet
+#                                    (the CloudPanel site root)
 #   DEPLOY_WORKDIR   checkout dir    default /home/seatoutlet-beta/deploy/checkout
 #   DEPLOY_MIGRATE   1 = run php db/migrate.php after copying (default 1)
 #   DEPLOY_PHP       php binary      default php
 #
-# Never touched by a deploy: inc/env.local.php (the server's own secrets file)
-# and existing files under cache/ (runtime feed and image cache). Files are
-# only added or overwritten, never deleted.
+# Secrets are NOT in the web root: they live in ~/.seatoutlet/env.local.php
+# (outside htdocs; override with SEATOUTLET_ENV_FILE), which inc/env.php loads
+# at runtime, so a deploy can never overwrite or delete them. A legacy
+# inc/env.local.php in the web root is also left untouched. Existing files
+# under cache/ (runtime feed and image cache) are kept. Files are only added
+# or overwritten, never deleted.
 set -euo pipefail
 
 REPO="${DEPLOY_REPO:-git@github.com:M-anil111/seat-outlet.git}"
 BRANCH="${DEPLOY_BRANCH:-main}"
-WEBROOT="${DEPLOY_WEBROOT:-/home/seatoutlet-beta/htdocs/beta.seatoutlet.com}"
+WEBROOT="${DEPLOY_WEBROOT:-/home/seatoutlet-beta/htdocs/beta.seatoutlet.com/seat-outlet}"
+SECRETS="${SEATOUTLET_ENV_FILE:-$HOME/.seatoutlet/env.local.php}"
 WORKDIR="${DEPLOY_WORKDIR:-/home/seatoutlet-beta/deploy/checkout}"
 MIGRATE="${DEPLOY_MIGRATE:-1}"
 PHP_BIN="${DEPLOY_PHP:-php}"
@@ -65,11 +70,14 @@ if [ -d cache ]; then
   cp -a --update=none cache/. "$WEBROOT/cache/" 2>/dev/null || cp -an cache/. "$WEBROOT/cache/"
 fi
 
-if [ ! -f "$WEBROOT/inc/env.local.php" ]; then
-  log "WARNING: $WEBROOT/inc/env.local.php is missing - the site has no API keys or DB password until it is created (see deploy/env.local.php.example)"
+HAVE_SECRETS=0
+if [ -f "$SECRETS" ] || [ -f "$WEBROOT/inc/env.local.php" ]; then
+  HAVE_SECRETS=1
+else
+  log "WARNING: no secrets file ($SECRETS) - the site has no DB password or API keys until it is created (see deploy/env.local.php.example)"
 fi
 
-if [ "$MIGRATE" = "1" ] && [ -f "$WEBROOT/inc/env.local.php" ]; then
+if [ "$MIGRATE" = "1" ] && [ "$HAVE_SECRETS" = "1" ]; then
   log "applying database migrations"
   (cd "$WEBROOT" && "$PHP_BIN" db/migrate.php) || { log "MIGRATION FAILED - code is live, deployed marker NOT updated so the next run retries"; exit 1; }
 fi

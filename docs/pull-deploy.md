@@ -6,11 +6,21 @@ GitHub-hosted runners cannot reach the beta server's SFTP port (4124): the firew
 
 `deploy/pull-deploy.sh` runs from cron every 2 minutes on the server. If `main` has a new commit it copies the code into the web root, applies database migrations (`php db/migrate.php`) and records the commit in `.deployed-commit`. If nothing changed it exits in about a second.
 
-It never touches `inc/env.local.php` (the server's own secrets) and never overwrites files already in `cache/`. It only adds and overwrites files, never deletes. Tested locally with a bare repo: first deploy, no-op re-run, secrets and cache preserved, no `.git` in the web root.
+Secrets are not in the web root at all: they live in `~/.seatoutlet/env.local.php` (outside `htdocs`), which `inc/env.php` loads on every request and cron run, so no deploy can overwrite or delete them. The script also never touches a legacy `inc/env.local.php` and never overwrites files already in `cache/`. It only adds and overwrites files, never deletes. Tested locally with a bare repo: first deploy, no-op re-run, secrets and cache preserved, no `.git` in the web root.
 
 ## One-time server setup (about 10 minutes, by whoever has SSH to the beta site user)
 
-1. Create the secrets file `inc/env.local.php` in the web root from `deploy/env.local.php.example` (values are the ones stored as GitHub repository secrets).
+1. Create the secrets file **outside the web root** (GitHub Secrets are only visible inside Actions runs, never to PHP on the server):
+   ```
+   mkdir -p ~/.seatoutlet && chmod 700 ~/.seatoutlet
+   # If the old web root still has the file the SFTP deploy generated, reuse it:
+   cp /home/seatoutlet-beta/htdocs/beta.seatoutlet.com/inc/env.local.php ~/.seatoutlet/env.local.php \
+     || cp /home/seatoutlet-beta/htdocs/beta.seatoutlet.com/seat-outlet/deploy/env.local.php.example ~/.seatoutlet/env.local.php
+   chmod 600 ~/.seatoutlet/env.local.php
+   nano ~/.seatoutlet/env.local.php      # fill in / check the values
+   cd /home/seatoutlet-beta/htdocs/beta.seatoutlet.com/seat-outlet && php tools/env-check.php
+   ```
+   `tools/env-check.php` prints which file was loaded, which variables are missing (names only), whether the database connects and how many migrations are applied. The site root in CloudPanel is `beta.seatoutlet.com/seat-outlet`.
 2. Create a read-only deploy key and give the public half to the repo owner:
    ```
    ssh-keygen -t ed25519 -N "" -f ~/.ssh/seatoutlet_deploy -C "seatoutlet beta deploy"
@@ -37,4 +47,4 @@ After that, every merge to `main` reaches beta within about two minutes with no 
 
 - The deploy key is read-only, so a stolen server cannot push to the repo.
 - No inbound firewall change and no self-hosted runner.
-- `inc/env.local.php` lives only on the server.
+- `~/.seatoutlet/env.local.php` lives only on the server, outside `htdocs`, mode 600.
