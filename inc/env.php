@@ -13,9 +13,9 @@
  *                                  RECOMMENDED: outside htdocs, so no deploy
  *                                  (pull, rsync or a fresh directory) can
  *                                  overwrite or delete it, and it is never
- *                                  web-served. <site-user> is taken from this
- *                                  file's own path (CloudPanel puts every site
- *                                  under /home/<site-user>/htdocs/...).
+ *                                  web-served. The home is the directory that
+ *                                  contains htdocs/ in this file's own path
+ *                                  (CloudPanel: /home/<site-user>/htdocs/...).
  *   3. <code root>/inc/env.local.php
  *                                  legacy location, written by the SFTP deploy
  *                                  workflow; gitignored.
@@ -34,7 +34,9 @@ function seatoutletEnvCandidates() {
     if ($explicit !== false && $explicit !== '') {
         $candidates[] = $explicit;
     }
-    if (preg_match('#^(/home/[^/]+)/#', __DIR__, $m)) {
+    // The site user's home is the directory that holds htdocs/ (CloudPanel:
+    // /home/<site-user>/htdocs/<domain>/...); fall back to /home/<user>.
+    if (preg_match('#^(.+?)/htdocs/#', __DIR__, $m) || preg_match('#^(/home/[^/]+)/#', __DIR__, $m)) {
         $candidates[] = $m[1] . '/.seatoutlet/env.local.php';
     }
     $candidates[] = __DIR__ . '/env.local.php';
