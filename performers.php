@@ -43,6 +43,7 @@ try {
 		];
 	}
 } catch (Throwable $e) {
+	\Sentry\captureException($e);
 	$apiError = true;
 }
 ?>
@@ -258,9 +259,10 @@ try {
 		</div>
 
 		<?php if ($apiError) { ?>
-			<div class="performers-error-state">
+			<div class="performers-error-state" id="performersErrorState">
 				We couldn't load performers right now. Please try again shortly.
 			</div>
+			<div class="row g-4" id="performerGrid"></div>
 		<?php } elseif (empty($performers)) { ?>
 			<div class="performers-empty-state" id="performersEmptyState">
 				No performers found.
@@ -304,6 +306,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var filterNext    = document.getElementById('filterNext');
 	var grid          = document.getElementById('performerGrid');
 	var emptyState    = document.getElementById('performersEmptyState');
+	var errorState    = document.getElementById('performersErrorState');
 	var loadMoreBtn   = document.getElementById('loadMorePerformersBtn');
 	var loadMoreWrap  = document.getElementById('loadMorePerformersWrap');
 
@@ -336,7 +339,13 @@ document.addEventListener('DOMContentLoaded', function () {
 		var perPage = loadMoreBtn.dataset.perpage || 24;
 		var url = '/ajax/get-performers.php?letter=' + encodeURIComponent(letter) + '&page=' + page + '&perPage=' + perPage;
 
-		return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+		return fetch(url).then(function (res) {
+			if (!res.ok) throw new Error('HTTP ' + res.status);
+			return res.json();
+		}).then(function (data) {
+			if (errorState) {
+				errorState.classList.add('d-none');
+			}
 			if (!append) {
 				grid.innerHTML = '';
 			}
@@ -358,6 +367,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			loadMoreBtn.disabled = false;
 			return data;
 		}).catch(function () {
+			if (errorState && !append) {
+				grid.innerHTML = '';
+				errorState.classList.remove('d-none');
+			}
 			loadMoreBtn.disabled = false;
 		});
 	}
