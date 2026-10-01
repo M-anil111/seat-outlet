@@ -1470,6 +1470,229 @@ font-size: 18px;
         -webkit-text-decoration-line: line-throug;
         color: #f57777;
     }
+
+    /* ---------- FILTER & SORT DRAWER (Seat Outlet design) ----------
+       Restyles the Seatics drawer (#sea-filterCard-parent): white panel,
+       #2556E0 accents, navy headings, light dividers, rounded inputs.
+       Every selector starts with #tn-maps #sea-filterCard-parent so it
+       outranks the older red/green overrides above without editing them.
+       Markup and behaviour are the widget's own. */
+    #tn-maps #sea-filterCard-parent {
+        border: 0 !important;
+        border-left: 1px solid #e8ecf3 !important;
+        box-shadow: -12px 0 32px rgba(15, 27, 61, .08);
+        padding: 20px 24px 0;
+        font-family: inherit;
+        color: #0f1b3d;
+    }
+    /* The page-wide .btn rule forces font-weight: normal and a TTNorms font
+       the site does not load; drawer buttons use the site font instead. */
+    #tn-maps #sea-filterCard-parent .btn,
+    #tn-maps #sea-filterCard-parent button,
+    #tn-maps #sea-filterCard-parent input { font-family: inherit; }
+    #tn-maps #sea-filterCard-parent #sea-filters-back-to-list {
+        width: auto;
+        line-height: 1;
+        margin-bottom: 14px;
+    }
+    #tn-maps #sea-filterCard-parent #sea-filters-back-to-list .cm-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        background: #fff;
+        border: 1px solid #e8ecf3;
+        box-shadow: none;
+        color: #0f1b3d;
+        font-size: 15px;
+    }
+    #tn-maps #sea-filterCard-parent #sea-filters-back-to-list .cm-close:hover { border-color: #2556E0; color: #2556E0; }
+    #tn-maps #sea-filterCard-parent .sea-button-padding::after { content: ''; display: table; clear: both; }
+
+    /* Header: title + Clear Filters */
+    #tn-maps #sea-filterCard-parent .sea-filterCard-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #e8ecf3;
+        padding: 0 0 16px;
+        margin-bottom: 4px;
+    }
+    #tn-maps #sea-filterCard-parent .sea-filterCardTitle { font-size: 20px; font-weight: 700; color: #0f1b3d; line-height: 1.3; }
+    #tn-maps #sea-filterCard-parent #sea-filterCardClearFilter {
+        float: none;
+        color: #2556E0 !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        background: none;
+        border: 0;
+        padding: 0;
+    }
+    #tn-maps #sea-filterCard-parent #sea-filterCardClearFilter:hover { text-decoration: underline; }
+
+    /* Section labels */
+    #tn-maps #sea-filterCard-parent .filters-type-label,
+    #tn-maps #sea-filterCard-parent .filters-price-input-text {
+        color: #0f1b3d;
+        font-size: 15px;
+        font-weight: 600 !important;
+    }
+    #tn-maps #sea-filterCard-parent .filters-type-label { padding: 18px 0 12px !important; }
+    #tn-maps #sea-filterCard-parent .sea-filterCard-sortByCnt .filters-type-label { padding-top: 0 !important; }
+    #tn-maps #sea-filterCard-parent .filters-price-input-text { padding: 0 0 8px; }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-wrapper .sea-filterCardSection { margin-bottom: 18px; }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-wrapper .sea-filterCard-sortByCnt { margin-top: 0 !important; }
+    #tn-maps #sea-filterCard-parent .sea-filterCard-separator {
+        border: 0;
+        border-top: 1px solid #e8ecf3;
+        margin: 4px 0 18px;
+        opacity: 1;
+    }
+
+    /* Quantity: circular options, Any active in blue */
+    #tn-maps #sea-filterCard-parent .filters-qty-filter-cnt { display: flex; flex-wrap: wrap; gap: 10px; text-align: left; }
+    #tn-maps #sea-filterCard-parent .filters-qty-filter-cnt::after { display: none; }
+    #tn-maps #sea-filterCard-parent .filters-qty-filter .sea-btn,
+    #tn-maps #sea-filterCard-parent .btn.qty-filter-opt-label-js {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        margin: 0;
+        border-radius: 50%;
+        background: #fff !important;
+        border: 1px solid #d6dce8 !important;
+        color: #0f1b3d;
+        font-size: 15px;
+        font-weight: 600 !important;
+        opacity: 1 !important;
+        transition: border-color .2s, color .2s, background .2s;
+    }
+    #tn-maps #sea-filterCard-parent .btn.qty-filter-opt-label-js:hover { border-color: #2556E0 !important; color: #2556E0; }
+    #tn-maps #sea-filterCard-parent .btn.qty-filter-opt-label-js.active,
+    #tn-maps #sea-filterCard-parent .btn.qty-filter-opt-label-js.sea-active {
+        background: #2556E0 !important;
+        border-color: #2556E0 !important;
+        color: #fff;
+    }
+    #tn-maps #sea-filterCard-parent .filters-qty-filter .sea-btn.disabled { opacity: .4 !important; }
+
+    /* Min / Max price: rounded inputs with a $ prefix */
+    #tn-maps #sea-filterCard-parent .filters-price-input-cnt { display: flex; align-items: flex-end; gap: 12px; }
+    #tn-maps #sea-filterCard-parent .filters-price-input-min-cnt { position: relative; flex: 1 1 0; width: auto; }
+    #tn-maps #sea-filterCard-parent .filters-price-input-min-cnt::after {
+        content: '$';
+        position: absolute;
+        left: 14px;
+        bottom: 12px;
+        color: #6b7280;
+        font-size: 15px;
+        line-height: 20px;
+        pointer-events: none;
+    }
+    #tn-maps #sea-filterCard-parent .filters-price-input-min {
+        height: 44px;
+        border: 1px solid #d6dce8 !important;
+        border-radius: 10px;
+        color: #0f1b3d !important;
+        font-size: 15px;
+        text-align: left;
+        padding: 0 12px 0 26px;
+        transition: border-color .2s, box-shadow .2s;
+    }
+    #tn-maps #sea-filterCard-parent .filters-price-input-min:focus { border-color: #2556E0 !important; box-shadow: 0 0 0 3px rgba(37, 86, 224, .15); }
+    #tn-maps #sea-filterCard-parent .sea-filters-price-divider { flex: 0 0 12px; width: 12px; margin: 0 0 22px; background: #d6dce8; }
+
+    /* Toggles */
+    #tn-maps #sea-filterCard-parent #sea-filterCard-wrapper .switch {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 28px;
+        margin-bottom: 16px !important;
+    }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-wrapper .switch .filter-tg-type-text {
+        padding: 0 !important;
+        color: #0f1b3d;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+    }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-wrapper .switch .slider {
+        position: relative;
+        flex: 0 0 48px;
+        width: 48px;
+        height: 28px !important;
+        border: 0;
+        border-radius: 999px;
+        background: #d6dce8;
+        transition: background .2s;
+    }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-wrapper .switch .slider:before {
+        left: 3px !important;
+        bottom: 3px !important;
+        width: 22px !important;
+        height: 22px !important;
+        background: #fff !important;
+        box-shadow: 0 1px 3px rgba(15, 27, 61, .25);
+        transform: none;
+        transition: transform .2s;
+    }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-wrapper .switch.active .slider { background: #2556E0; }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-wrapper .switch.active .slider:before { transform: translateX(20px); }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-wrapper .switch .slider[disabled] { background: #eef1f6; cursor: not-allowed; }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-wrapper .switch .slider[disabled]:before { background: #f8f9fc !important; box-shadow: 0 1px 2px rgba(15, 27, 61, .12); transform: none; }
+    #tn-maps #sea-filterCard-parent .sea-ada-accessible-ctn .switch { margin-bottom: 6px !important; }
+    #tn-maps #sea-filterCard-parent .switch:has(.slider[disabled]) .filter-tg-type-text { color: #9aa3b5; }
+    #tn-maps #sea-filterCard-parent .sea-filter-no-results-text { color: #6b7280; font-size: 13px; line-height: 1.45; }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-deliveryTypeCnt > ul > li { margin-bottom: 16px !important; }
+
+    /* Sort by dropdown. Height is left non-!important so the widget can still open it. */
+    #tn-maps #sea-filterCard-parent .sort-cnt {
+        height: 44px;
+        border: 1px solid #d6dce8;
+        border-radius: 10px;
+        background: #fff;
+    }
+    #tn-maps #sea-filterCard-parent .sort-cnt-label { display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 0 14px; }
+    #tn-maps #sea-filterCard-parent #sort-type-label { color: #0f1b3d; font-size: 15px !important; font-weight: 500 !important; }
+    #tn-maps #sea-filterCard-parent .sort-label-arrow { color: #6b7280; }
+    #tn-maps #sea-filterCard-parent .sort-cnt .sea-btn { padding: 10px 14px; border-bottom-color: #eef1f6; color: #0f1b3d; font-size: 15px !important; font-weight: 400 !important; line-height: 1.4; }
+    #tn-maps #sea-filterCard-parent .sort-cnt .sea-btn:hover { background: #f5f7fb; }
+    #tn-maps #sea-filterCard-parent .sort-cnt .sea-btn.active,
+    #tn-maps #sea-filterCard-parent .sort-opt-label.btn.sort-option-js.active { color: #2556E0 !important; font-weight: 600 !important; }
+    #tn-maps #sea-filterCard-parent .sort-opt-check { border-color: #d6dce8; }
+    #tn-maps #sea-filterCard-parent .sort-cnt .btn.active .sort-opt-check { border: 1px solid #2556E0 !important; }
+    #tn-maps #sea-filterCard-parent .sort-cnt .btn.active .sort-opt-check:before { background: #2556E0 !important; color: #2556E0 !important; }
+
+    /* Done: full-width blue button pinned to the bottom of the drawer */
+    #tn-maps #sea-filterCard-parent #sea-filterCard-submit-ctn {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        padding: 12px 0 20px;
+        margin-top: 8px;
+        z-index: 2;
+    }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-submit-ctn #sea-filterCard-submit-btn {
+        float: none;
+        display: block;
+        width: 100%;
+        background: #2556E0 !important;
+        color: #fff !important;
+        border: 0;
+        border-radius: 10px;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: 700 !important;
+        opacity: 1 !important;
+        transition: background .2s;
+    }
+    #tn-maps #sea-filterCard-parent #sea-filterCard-submit-ctn #sea-filterCard-submit-btn:hover { background: #1a3fa8 !important; }
 </style>
 
 <?php include 'footer.php'; ?>
