@@ -298,17 +298,38 @@ function tnBreakerFile() {
     return rtrim(sys_get_temp_dir(), '/') . '/seatoutlet_tn_breaker_' . md5(BASE_URL) . '.txt';
 }
 
-/** True for 20s after a live failure: skip live calls, serve stale or empty. */
+/** Seconds the circuit stays open after an outage, and after the API throttles us (quota windows are longer). */
+const TN_BREAKER_SECONDS = 20;
+const TN_BREAKER_THROTTLE_SECONDS = 60;
+
+/** True while a recent live failure holds the circuit open: skip live calls, serve stale or empty. */
 function tnBreakerOpen() {
     $f = tnBreakerFile();
-    return is_file($f) && (time() - (int) @filemtime($f)) < 20;
+    if (!is_file($f)) return false;
+    $hold = (int) @file_get_contents($f);   // the file holds how long this trip lasts (empty = default)
+    if ($hold <= 0) $hold = TN_BREAKER_SECONDS;
+    return (time() - (int) @filemtime($f)) < $hold;
 }
 
-function tnBreakerTrip($why) {
+function tnBreakerTrip($why, $seconds = TN_BREAKER_SECONDS) {
+    // Never shorten a longer trip that is still running.
+    if (tnBreakerOpen() && (int) @file_get_contents(tnBreakerFile()) > $seconds) {
+        return;
+    }
+    @file_put_contents(tnBreakerFile(), (string) (int) $seconds);
     @touch(tnBreakerFile());
     if (function_exists('\Sentry\captureMessage')) {
-        \Sentry\captureMessage('TicketNetwork API unavailable, circuit opened for 20s: ' . $why);
+        \Sentry\captureMessage('TicketNetwork API unavailable, circuit opened for ' . (int) $seconds . 's: ' . $why);
     }
+}
+
+/**
+ * A page that had to go without API data (outage, throttling, circuit open and
+ * nothing stale to show) must not be kept by a CDN: sendPageCacheHeaders()
+ * reads this flag and answers no-store.
+ */
+function tnMarkDegraded() {
+    $GLOBALS['tn_degraded'] = true;
 }
 
 function tnBuildHandle($endpoint, array $params, $method, $token) {
@@ -344,6 +365,11 @@ function tnParseResult($ch, $response) {
     }
     if ($code >= 500) {
         return ['ok' => false, 'data' => $decoded, 'cacheable' => false, 'error' => 'HTTP ' . $code];
+    }
+    // Throttled ("Message throttled out", quota exceeded): a failure to retry later, not an answer.
+    // Treating it as data skipped the stale fallback and rendered empty listings as 200 pages.
+    if ($code === 429 || (isset($decoded['code']) && preg_match('/^9008\d\d$/', (string) $decoded['code']))) {
+        return ['ok' => false, 'data' => $decoded, 'cacheable' => false, 'error' => 'throttled (HTTP ' . $code . ')', 'throttled' => true];
     }
     $cacheable = $code === 200 && !isset($decoded['code']) && !isset($decoded['Message']);
     return ['ok' => true, 'data' => $decoded, 'cacheable' => $cacheable, 'error' => '', 'auth' => $code === 401];
@@ -391,7 +417,7 @@ function tnScheduleRefresh($endpoint, array $params, $method, $key) {
             if ($r['ok'] && $r['cacheable']) {
                 cache_set($key, $r['data']);
             } elseif (!$r['ok']) {
-                tnBreakerTrip($endpoint . ' ' . $r['error']);
+                tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
             }
             flock($lock, LOCK_UN);
             fclose($lock);
@@ -427,16 +453,20 @@ function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
 
     // Circuit open: do not queue more 20s timeouts behind a dead API.
     if (tnBreakerOpen()) {
-        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+        if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
+        tnMarkDegraded();
+        return [];
     }
 
     $r = tnFetchLive($endpoint, $params, $method);
 
     if (!$r['ok']) {
-        tnBreakerTrip($endpoint . ' ' . $r['error']);
+        tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
         \Sentry\captureMessage('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
-        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+        if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
+        tnMarkDegraded();
+        return [];
     }
 
     if ($key !== null && $r['cacheable']) {
@@ -473,7 +503,11 @@ function tnRequestMulti(array $requests) {
         $out[$i] = ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
         $todo[$i] = [$endpoint, $params, $ttl, $key];
     }
-    if (!$todo || tnBreakerOpen()) {
+    if (!$todo) {
+        return $out;
+    }
+    if (tnBreakerOpen()) {
+        foreach ($todo as $i => $_) { if (empty($out[$i])) tnMarkDegraded(); }
         return $out;
     }
 
@@ -502,7 +536,8 @@ function tnRequestMulti(array $requests) {
             $out[$i] = $r['data'];
             if ($ttl > 0 && $r['cacheable']) cache_set($key, $r['data']);
         } else {
-            tnBreakerTrip($endpoint . ' ' . $r['error']);
+            tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
+            if (empty($out[$i])) tnMarkDegraded();
         }
         curl_multi_remove_handle($mh, $ch);
         curl_close($ch);
@@ -2098,13 +2133,26 @@ function sendPageCacheHeaders() {
     $ttl = ($env === false || $env === '') ? 120 : max(0, (int) $env);
     if ($ttl === 0) return;
     $status = http_response_code() ?: 200;
-    if ($status === 404) {
-        header('Cache-Control: public, max-age=0, s-maxage=60');
-    } elseif ($status === 200) {
-        header('Cache-Control: public, max-age=0, s-maxage=' . $ttl . ', stale-while-revalidate=' . ($ttl * 5) . ', stale-if-error=3600');
+    if (!empty($GLOBALS['tn_degraded'])) {
+        header('Cache-Control: no-store');   // built without API data: never let a CDN keep it
+    } elseif ($status === 404 || $status === 200) {
+        header($status === 404
+            ? 'Cache-Control: public, max-age=0, s-maxage=60'
+            : 'Cache-Control: public, max-age=0, s-maxage=' . $ttl . ', stale-while-revalidate=' . ($ttl * 5) . ', stale-if-error=3600');
+        // Listing data is fetched while the page body renders, after this header is chosen.
+        // Hold the output so the header can be corrected at the end if an API call failed.
+        ob_start('soDegradedGuard');
     } else {
         header('Cache-Control: no-store');
     }
+}
+
+/** Output-buffer callback: a page that rendered without API data is never CDN-cached. */
+function soDegradedGuard($buffer) {
+    if (!empty($GLOBALS['tn_degraded']) && !headers_sent()) {
+        header('Cache-Control: no-store');
+    }
+    return $buffer;
 }
 
 function getTnCityEvents($cityId = 0, $params = []) {
