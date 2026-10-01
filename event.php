@@ -1750,6 +1750,65 @@ font-size: 18px;
         transition: background .2s;
     }
     #tn-maps #sea-filterCard-parent #sea-filterCard-submit-ctn #sea-filterCard-submit-btn:hover { background: #1a3fa8 !important; }
+
+    /* ---------- SEATICS DEFAULT ACCENTS -> SEAT OUTLET PALETTE ----------
+       The widget's own stylesheets (loaded from Seatics) colour these with
+       their default greens. Every such rule, as listed
+       from light-desktop(-delayed) and light-mobile(-delayed), is mapped to
+       the secondary #3358e4 (hover: primary #2556e0), with white text on
+       filled states. The older overrides above only matched some of them
+       (e.g. the pre-checkout quantity needed a .draggable class Seatics
+       does not add on phones), which is why green still showed. */
+
+    /* Filled buttons: Buy, pre-checkout CTA, legend / quantity / warning / feedback buttons */
+    .seatics .venue-ticket-list-cta-button,
+    .seatics .sea-sold-out-button,
+    .seatics .pre-checkout-price-cta,
+    .seatics .sea-quantity-modal-get,
+    .seatics .legendDriven .mobLegend .legend-submit-btn,
+    .seatics .sea-quantity-warning-modal-btn,
+    .seatics #sea-feedback-form .sea-feedback-form-wrapper button.sea-feedback-form-submit {
+        background-color: #3358e4 !important;
+        border-color: #3358e4 !important;
+        color: #fff !important;
+        font-family: inherit;
+    }
+    .seatics .venue-ticket-list-cta-button:hover,
+    .seatics .pre-checkout-price-cta:hover,
+    .seatics .sea-quantity-modal-get:hover,
+    .seatics .legendDriven .mobLegend .legend-submit-btn:hover,
+    .seatics .sea-quantity-warning-modal-btn:hover,
+    .seatics #sea-feedback-form .sea-feedback-form-wrapper button.sea-feedback-form-submit:hover {
+        background-color: #2556e0 !important;
+        border-color: #2556e0 !important;
+        opacity: 1 !important;
+    }
+    .seatics .pre-checkout-price-cta { border-radius: 10px; font-weight: 700 !important; }
+
+    /* Selected / hovered quantity choices (pre-checkout slider and filter circles) */
+    .seatics .sea-quantity-items .sea-selected,
+    .seatics .sea-quantity-items .sea-listItem:hover,
+    .seatics .filters-qty-filter .sea-btn.active,
+    .seatics .filters-qty-filter .sea-btn.sea-active {
+        background: #3358e4 !important;
+        border-color: #3358e4 !important;
+        color: #fff !important;
+        opacity: 1 !important;
+    }
+    .seatics .filters-qty-filter .sea-btn:hover { border-color: #3358e4 !important; color: #3358e4; }
+    .seatics .sea-quantity-items .slick-prev:hover,
+    .seatics .sea-quantity-items .slick-next:hover { color: #3358e4 !important; }
+
+    /* Sort list: active option text, ring and dot */
+    .seatics .sort-cnt .sea-btn.active,
+    .seatics .sea-btn.active .sort-opt-label { color: #3358e4 !important; }
+    .seatics .sea-btn.active .sort-opt-check { border-color: #3358e4 !important; }
+    .seatics .sea-btn.active .sort-opt-check:before { background: #3358e4 !important; }
+
+    /* Odds and ends */
+    .seatics .seller-rating .text-success { color: #3358e4 !important; }
+    .seatics .sea-feedback-success { background-color: #3358e4 !important; }
+    .seatics .sea-feedback-success:after { border-top-color: #3358e4 !important; }
 </style>
 
 <?php include 'footer.php'; ?>
