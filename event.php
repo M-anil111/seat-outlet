@@ -317,6 +317,7 @@ $soEventData = [
   'allDay'   => (($event['date']['time'] ?? '') === '' || ($event['date']['time'] ?? '') === '00:00:00'),
   'venue'    => (string) $eventVenueName,
   'city'     => (string) $eventCityLabel,
+  'tickets'  => (int) ($event['_metadata']['ticketCount'] ?? 0),
 ];
 ?>
 <script type="application/json" id="so-event-data"><?php echo json_encode($soEventData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES); ?></script>
@@ -361,6 +362,15 @@ $soEventData = [
   Seatics.config.noTicketsHandler = function () {
     showFallback();
   };
+  // TicketNetwork widget features, switched on from the page (verified against the live widget): the "How many tickets?"
+  // sheet that opens first, the per-listing value score (stars and a deal label from TicketNetwork's own data), and the
+  // widget's own "other customers" urgency messages. Nothing here is written by the site: if the widget has no figure,
+  // it shows nothing.
+  Seatics.config.enableQuantityModal = true;
+  Seatics.config.forceQuantityModalSelection = false;
+  Seatics.config.enableValueScore = true;
+  Seatics.config.showOtherCustomersUrgencyMessagingMobile = true;
+  Seatics.config.showOtherCustomersUrgencyMessagingDesktop = true;
   Seatics.config.onBuyButtonClicked = function () { push('begin_checkout'); };
   if (Seatics.TrackingEvents && Seatics.TrackingEvents.registerEventListener) {
     Seatics.TrackingEvents.registerEventListener(function (type, data) {
@@ -556,76 +566,7 @@ div#modal-overlay {
     #event-info-guarantee > div:nth-child(4) > ul {
         list-style-type: disc;
     }
-    /* ----------- QTY MODAL STYLING OVERRIDES ----------- */
-
-    /* Qty Modal & Content */
-    #sea-quantity-modal.sea-quantity-modal {
-        width: 350px !important;
-    }
-
-    #sea-quantity-modal > .sea-qty-modal-content {
-        padding: 13px 0 13px 0 !important;
-    }
-
-    /* Qty Modal Header */
-    #sea-quantity-modal.sea-qty-modal > .sea-qty-modal-content > span,
-    #sea-quantity-modal > div > span {
-        color: #4a4a4a !important;
-        content: 'How many tickets do you want?' !important;
-    }
-
-    /* Qty Modal Close Button */
-    #sea-quantity-modal-close:hover,
-    #sea-quantity-modal-close:focus,
-    #sea-quantity-modal-close > .cm-close:hover,
-    #sea-quantity-modal-close > .cm-close:focus {
-        opacity: 0.7 !important;
-        outline: none !important;
-    }
-
-    /* Qty Modal Filter Styling */
-    #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option {
-        border: 2px solid #3358e4 !important;
-        background-color: #fff !important;
-        color: #3358e4 !important;
-    }
-
-        #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option.sea-active {
-            background-color: #3358e4 !important;
-            color: #fff !important;
-        }
-
-        #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option:hover,
-        #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option:focus {
-            background-color: #3358e4 !important;
-            color: #fff !important;
-            opacity: 0.6 !important;
-        }
-
-    /* Qty Modal Find Button */
-    #sea-quantity-modal-skip.sea-quantity-modal-skip {
-        border: 2px solid #fff !important;
-        background-color: #3358e4 !important;
-        border-radius: 5px !important;
-        color: #fff !important;
-        font-weight: 700 !important;
-        padding: 5px 10px !important;
-        width: 100% !important;
-        margin-top: 25px !important;
-    }
-
-        #sea-quantity-modal-skip.sea-quantity-modal-skip:hover,
-        #sea-quantity-modal-skip.sea-quantity-modal-skip:focus {
-            opacity: 0.6 !important;
-        }
-
-    /* Qty Modal Media Queries */
-    @media screen and (max-aspect-ratio: 13/9) and (max-width: 991px) {
-        #sea-quantity-modal.sea-quantity-modal {
-            /* width: 300px !important; */
-            /*margin: -112.5px 0 0 -150px/* /*uncomment me if we go back to the old code*/
-        }
-    }
+    /* The quantity sheet ("How many tickets?") is skinned in css/style.css. */
 
     /* ----------- DISCLAIMER COLUMN OVERRIDES ----------- */
 
