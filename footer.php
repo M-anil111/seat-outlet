@@ -139,12 +139,6 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 
 </footer>
 
-<div class="backtotop">
-  <button id="backToTop" class="btn btn-primary backToTop rounded-circle" aria-label="Back to top" type="button">
-		<i class="bi bi-arrow-up"></i>
-	</button>
-</div>
-
 <?php
 // Decide which scripts a page needs from its PATH. These checks used to compare
 // the whole REQUEST_URI, so any query string (/search?q=adele, /tickets?when=week)

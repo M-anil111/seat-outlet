@@ -60,7 +60,7 @@ foreach ($fallbackCategories as $key => $list) {
       <div class="slide-caption">
         <span class="tag">Live Events</span>
         <h1>Experience Live Events<br>Like Never Before</h1>
-        <p>Buy event tickets for sold-out concerts, must-see sports and theater shows from verified sellers, with competitive prices across our trusted ticket marketplace network.</p>
+        <p>Buy event tickets for sold-out concerts, must-see sports and theater shows. Compare seats and prices from sellers across our ticket marketplace network.</p>
         <a href="/buy-tickets-online" class="btn-slide">Explore Events</a>
       </div>
     </div>
@@ -152,47 +152,27 @@ foreach ($fallbackCategories as $key => $list) {
 <section class="py-3">
   <div class="container my-lg-5 my-4">
     <div class="experience-section">
-      <div class="row align-items-center g-xxl-4 g-xl-3 g-lg-2 g-3">
-
-        <!-- Left Heading -->
-        <div class="col-lg-12">
-          <h3 class="fw-bold mb-lg-0 mb-3 so-experieance">Your Ticket Marketplace for Live Events, with Confidence</h3>
-        </div>
-        <div class="row g-3">
-        <!-- Feature 1 -->
-        <div class="col-lg-4 col-md-4 col-sm-6">
-          <div class="feature-box d-flex">
-            <i class="bi bi-star-fill text-white feature-icon"></i>
+      <h3 class="fw-bold mb-lg-4 mb-3 so-experieance">Your Ticket Marketplace for Live Events, with Confidence</h3>
+      <?php
+      $soPanelItems = [
+        ['bi-currency-exchange', 'Compare seats and prices', 'See listings from many sellers side by side before you buy.'],
+        ['bi-shield-check', 'Worry-free guarantee', 'Every order is backed by our guarantee. Read the terms before you buy.'],
+        ['bi-calendar-event', 'Live events in one place', 'Concerts, sports, theater and festivals across the country.'],
+        ['bi-telephone-fill', 'Real people to help', 'Reach our team by phone or email if plans change.'],
+      ];
+      ?>
+      <div class="so-marquee" role="region" aria-label="Why shop on Seat Outlet">
+        <div class="so-marquee__track">
+          <?php foreach ([false, true] as $soDup) { foreach ($soPanelItems as $soItem) { ?>
+          <div class="feature-box d-flex"<?php echo $soDup ? ' aria-hidden="true"' : ''; ?>>
+            <i class="bi <?php echo $soItem[0]; ?> text-white feature-icon" aria-hidden="true"></i>
             <div>
-              <div class="fw-bold">Rated Excellent by Fans</div>
-              <small>24K+ verified reviews from real ticket buyers</small>
+              <div class="fw-bold"><?php echo $soItem[1]; ?></div>
+              <small><?php echo $soItem[2]; ?></small>
             </div>
           </div>
+          <?php } } ?>
         </div>
-
-        <!-- Feature 2 -->
-        <div class="col-lg-4 col-md-4 col-sm-6">
-          <div class="feature-box d-flex">
-            <i class="bi bi-shield-check text-white feature-icon"></i>
-            <div>
-              <div class="fw-bold">Millions of Tickets Sold</div>
-              <small>Trusted ticket marketplace connecting fans since day one</small>
-            </div>
-          </div>
-        </div>
-
-        <!-- Feature 3 -->
-        <div class="col-lg-4 col-md-4 col-sm-6">
-          <div class="feature-box d-flex">
-            <i class="bi bi-gift-fill text-white feature-icon"></i>
-            <div>
-              <div class="fw-bold">Exclusive Deals & Rewards</div>
-              <small>Save more with special offers on event tickets</small>
-            </div>
-          </div>
-        </div>
-      </div>
-
       </div>
     </div>
   </div>
@@ -207,7 +187,7 @@ foreach ($fallbackCategories as $key => $list) {
 </section>
 
 <section class="section top_performers bg-white categories teams-nearby py-5" id="topPerformersSection">
-  <div class="container">
+  <div class="container so-tabs" data-so-tabs data-so-tab-labels="Concerts|Sports|Theater">
     <div class="categories__grid">
 
       <div class="categories__col">
@@ -233,15 +213,12 @@ foreach ($fallbackCategories as $key => $list) {
 </section>
 
 <section class="section categories teams-nearby py-5">
-  <div class="container">
-    <h2 class="section__title section__title--center fw-bold fs-4 mb-4">
+  <div class="container so-tabs" data-so-tabs data-so-tab-labels="Concerts|Sports|Theater|Festivals">
+    <h2 class="section__title section__title--center fw-bold fs-4 mb-3">
       Browse by Categories
     </h2>
-    <p class="text-center mb-4">
-      Our ticket marketplace covers concerts, sports, theater, and festivals across the country, so
-      whether you're after front-row seats for a stadium tour or last-minute tickets to a local show,
-      there's a category for it below. Every listing on our ticket marketplace is sourced from
-      verified sellers, so you can compare pricing and seating options with confidence before you buy.
+    <p class="text-center mb-4 so-section-intro">
+      Concerts, sports, theater and festivals across the country. Pick a category to compare seats and prices before you buy.
     </p>
     <div class="categories__grid">
       <div class="categories__col">
@@ -359,9 +336,9 @@ foreach ($fallbackCategories as $key => $list) {
     <div class="row g-5 align-items-start">
       <div class="col-lg-4">
         <span class="section-label">Why Choose Seat Outlet</span>
-        <h2 class="section-title fs-4">Your Tickets, Confidently Sourced.</h2>
+        <h2 class="section-title fs-4">Your Tickets, Confidently Bought.</h2>
         <div class="section-divider"></div>
-        <p class="text-muted">Trusted sources, better prices, zero stress.
+        <p class="text-muted">Compare prices, check out securely and shop with our worry-free guarantee.
         Everything you need for a smooth ticket buying experience.</p>
         <a href="/ticket-partner-program" class="btn common-btn mt-3">Get Your Tickets</a>
       </div>
@@ -371,7 +348,7 @@ foreach ($fallbackCategories as $key => $list) {
             <div class="feature-card">
               <div class="feature-icon"><i class="bi bi-patch-check-fill"></i></div>
               <h4>Trusted providers</h4>
-              <p>Every seller verified before listing a single ticket.</p>
+              <p>Listings come from our network of ticket partners.</p>
             </div>
           </div>
           <div class="col-sm-6">
@@ -385,14 +362,14 @@ foreach ($fallbackCategories as $key => $list) {
             <div class="feature-card">
               <div class="feature-icon"><i class="bi bi-currency-exchange"></i></div>
               <h4>Easy price compare</h4>
-              <p>Best deals across platforms, side by side.</p>
+              <p>Compare prices and seats side by side.</p>
             </div>
           </div>
           <div class="col-sm-6">
             <div class="feature-card">
               <div class="feature-icon"><i class="bi bi-calendar-event"></i></div>
               <h4>Wide event selection</h4>
-              <p>Sports, concerts, theatre all venues covered.</p>
+              <p>Sports, concerts, theater and festivals in one place.</p>
             </div>
           </div>
         </div>
@@ -421,8 +398,8 @@ foreach ($fallbackCategories as $key => $list) {
             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h3 class="reason-card__title">Guarantee seat</h3>
-        <p class="reason-card__desc">Your tickets are guaranteed, every order is confirmed and fulfilled on time via our secured delivery options.</p>
+        <h3 class="reason-card__title">Backed by our guarantee</h3>
+        <p class="reason-card__desc">Every order is covered by our worry-free guarantee, with delivery options shown at checkout.</p>
       </article>
       <article class="reason-card">
         <div class="reason-card__icon">
@@ -430,127 +407,12 @@ foreach ($fallbackCategories as $key => $list) {
             <path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2 2 2 0 010 4 2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 00-2-2 2 2 0 010-4 2 2 0 002-2V7a2 2 0 00-2-2H5z" />
           </svg>
         </div>
-        <h3 class="reason-card__title">VIP Ticket</h3>
-        <p class="reason-card__desc">VIP Ticket gives the owner to you with premium seating, exclusive access, and phenomenal hospitality at every event.</p>
+        <h3 class="reason-card__title">Premium seating</h3>
+        <p class="reason-card__desc">Browse premium and VIP listings for select events, where sellers offer them.</p>
       </article>
     </div>
   </div>
 </section>
-
-<div class="testimonial-page">
-  <section class="section-padding">
-    <div class="container">
-      <h2 id="testimonials-heading" class="section__title section__title--center fw-bold fs-4 mb-lg-5 mb-4">Trusted by Thousands of Fans</h2>
-      <!--
-          Same finding as testimonials.php/reviews.php: these are
-          illustrative sample testimonials, not real collected customer
-          feedback. Unlike those two (noindex by default), this is the
-          homepage - real visitors and crawlers see this content, so this
-          is the highest-priority one of the three to replace with real
-          testimonials.
-      -->
-      <div class="alert alert-warning mb-4" role="alert">
-          <strong>Note:</strong> The testimonials below are illustrative examples while we build out real customer review collection.
-      </div>
-      <div class="testimonials-grid">
-        <div class="testimonial-card">
-
-
-          <p class="testimonial-text">
-            <strong>Super easy and reliable experience</strong> I’ve used Seat Outlet multiple times for concert tickets, and the process is always smooth. I was able to compare prices and find the best deal quickly. <span class="highlight">Highly recommend!</span>
-          </p>
-          <div class="rating">★★★★★</div>
-          <div class="testimonial-author">
-            <div class="author-avatar">SM</div>
-            <div class="author-info">
-              <h3>Sarah Mitchell</h3>
-              <p>Music Enthusiast</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="testimonial-card">
-
-
-          <p class="testimonial-text">
-            <strong>Best place to compare ticket prices</strong> What I love most is being able to see different ticket options in one place. It saved me both time and money. Definitely my go-to ticket marketplace now.
-          </p>
-          <div class="rating">★★★★★</div>
-          <div class="testimonial-author">
-            <div class="author-avatar">JD</div>
-            <div class="author-info">
-              <h3>James Davidson</h3>
-              <p>Event Coordinator, TechCorp</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="testimonial-card">
-
-
-          <p class="testimonial-text">
-            <strong>Got great seats at a great price</strong>  I was looking for last-minute tickets and Seat Outlet helped me find amazing seats without overpaying. The checkout process was simple and secure.
-          </p>
-          <div class="rating">★★★★★</div>
-          <div class="testimonial-author">
-            <div class="author-avatar">EL</div>
-            <div class="author-info">
-              <h3>Emily Lopez</h3>
-              <p>Sports Fan</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="testimonial-card">
-
-
-          <p class="testimonial-text">
-            <strong>Perfect for sports fans like me</strong> I regularly attend games, and this platform makes it easy to find tickets across different sellers. The price comparison feature is a big plus.
-          </p>
-          <div class="rating">★★★★★</div>
-          <div class="testimonial-author">
-            <div class="author-avatar">MR</div>
-            <div class="author-info">
-              <h3>Michael Rodriguez</h3>
-              <p>Frequent Event Goer</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="testimonial-card">
-
-
-          <p class="testimonial-text">
-            <strong>Trusted and convenient ticket platform</strong> Everything from browsing to booking felt safe and straightforward. I like that it connects to trusted ticket providers instead of just one source.
-          </p>
-          <div class="rating">★★★★★</div>
-          <div class="testimonial-author">
-            <div class="author-avatar">AW</div>
-            <div class="author-info">
-              <h3>Amanda Wilson</h3>
-              <p>Non-Profit Director</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="testimonial-card">
-           <p class="testimonial-text">
-            <strong>Great experience for sports events</strong> As a regular sports fan, I use this platform often. It’s easy to find tickets across different sellers, and the pricing is very competitive.
-          </p>
-          <div class="rating">★★★★★</div>
-          <div class="testimonial-author">
-            <div class="author-avatar">RT</div>
-            <div class="author-info">
-              <h3>Robert Thompson</h3>
-              <p>Theater Enthusiast</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-</div>
 
 <section class="newsletter-section py-5">
     <div class="container"> 
