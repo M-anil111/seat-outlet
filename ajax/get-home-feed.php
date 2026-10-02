@@ -18,6 +18,8 @@ header('Content-Type: application/json; charset=UTF-8');
 // "Near" means within this many miles; the nearest-first search itself reaches across the country.
 define('SO_NEAR_MILES', 50);
 define('SO_NEAR_MAX_MILES', 3000);
+// Beyond this the nearest event is not "near": the grid becomes a nationwide popular list instead.
+define('SO_NEAR_FAR_MILES', 250);
 
 $kindIn = $_GET['kind'] ?? '';
 $kind = in_array($kindIn, ['lastminute', 'near'], true) ? $kindIn : 'trending';
@@ -41,14 +43,17 @@ if ($kind === 'near') {
     $when = isset(LISTING_WHEN[$whenIn]) ? $whenIn : '';
     $page = max(1, min(20, (int) ($_GET['page'] ?? 1)));
     $sortIn = $_GET['sort'] ?? 'distance';
-    $nearSort = in_array($sortIn, ['soonest', 'popular'], true) ? $sortIn : 'distance';
+    $nearSort = in_array($sortIn, ['soonest', 'popular', 'price'], true) ? $sortIn : 'distance';
     $radiusIn = (int) ($_GET['radius'] ?? 0);
     $radius = in_array($radiusIn, [25, 50, 100, 250], true) ? $radiusIn : 0;   // 0 = no limit: nearest anywhere
+    $maxIn = (int) ($_GET['max'] ?? 0);
+    $maxPrice = isset(LISTING_PRICE[$maxIn]) ? $maxIn : 0;                      // "under $X" on the lowest listed price
+    $nationwide = !empty($_GET['nw']);   // set by the page once page 1 said the closest event is too far to call "near"
     if (!$hasGeo) {
         echo json_encode(['scope' => 'none', 'events' => [], 'hasMore' => false]);
         exit;
     }
-    $nearKey = 'near_' . ($catId ?: $cat) . '_' . $when . '_' . $nearSort . '_' . $radius . '_' . $page . '_' . $lat . '_' . $lng;
+    $nearKey = 'near_' . ($catId ?: $cat) . '_' . $when . '_' . $nearSort . '_' . $radius . '_' . $maxPrice . '_' . ($nationwide ? 'nw' : 'geo') . '_' . $page . '_' . $lat . '_' . $lng;
     $cachedNear = cache_get('home_feed_' . $nearKey, 600);
     if ($cachedNear !== false) {
         header('Cache-Control: public, max-age=300');
@@ -58,22 +63,40 @@ if ($kind === 'near') {
     try {
         // Always nearest first. The search is not cut off at 50 miles: when nothing is close, the closest events anywhere
         // in the country come back (San Antonio, Houston, Dallas for a Hill Country visitor) and the page says so.
-        $params = $catId > 0
-            ? locationListingParams("country/alphaCode eq 'US' and contains(defaultCategory/path, '." . $catId . ".')", 12, $page, $when, 'popular')
-            : categoryListingParams($catPath, 12, $page, $when, 'popular');
-        $params['geoFilter'] = sprintf('nearby(%F,%F,%dmi)', $lat, $lng, $radius ?: SO_NEAR_MAX_MILES);
-        if ($nearSort === 'distance') $params['sort'] = 'distance';
-        elseif ($nearSort === 'soonest') $params['sort'] = 'date/date';
-        if (strpos((string) ($params['filter'] ?? ''), 'alphaCode') === false) {
-            $params['filter'] = trim(($params['filter'] ?? '') . " and country/alphaCode eq 'US'", ' and');
-        }
-        $data = tnRequest('/catalog/v2/events/', $params);
+        $buildParams = function ($useGeo) use ($catId, $catPath, $page, $when, $maxPrice, $nearSort, $radius, $lat, $lng) {
+            $params = $catId > 0
+                ? locationListingParams("country/alphaCode eq 'US' and contains(defaultCategory/path, '." . $catId . ".')", 12, $page, $when, 'popular', $maxPrice)
+                : categoryListingParams($catPath, 12, $page, $when, 'popular', $maxPrice);
+            if ($useGeo) {
+                $params['geoFilter'] = sprintf('nearby(%F,%F,%dmi)', $lat, $lng, $radius ?: SO_NEAR_MAX_MILES);
+                if ($nearSort === 'distance') $params['sort'] = 'distance';
+            }
+            if ($nearSort === 'soonest') { $params['sort'] = 'date/date'; unset($params['salesRankOptions']); }
+            elseif ($nearSort === 'price') { $params['sort'] = 'pricingInfo/lowPrice/value'; unset($params['salesRankOptions']); }
+            elseif (!$useGeo || $nearSort === 'popular') { $params['sort'] = '-salesRank'; $params['salesRankOptions'] = '{"interval":"day","metric":"orderVolume"}'; }
+            if (strpos((string) ($params['filter'] ?? ''), 'alphaCode') === false) {
+                $params['filter'] = trim(($params['filter'] ?? '') . " and country/alphaCode eq 'US'", ' and');
+            }
+            return $params;
+        };
+        $data = tnRequest('/catalog/v2/events/', $buildParams(!$nationwide));
         $total = (int) ($data['totalCount'] ?? 0);
         $events = soHomeFeedFormat($data['results'] ?? [], 12);
         $dists = array_filter(array_column($events, 'dist'), function ($d) { return $d !== null; });
         $closest = $dists ? min($dists) : null;
+        $scope = !$events ? ($radius ? 'empty' : 'near') : ($radius === 0 && $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near');
+        // Nothing within 250 miles: "closest" would mean a 1,000 mile trip, so show what is popular across the country instead.
+        if ($page === 1 && !$nationwide && $nearSort === 'distance' && $radius === 0 && $events && $closest !== null && $closest > SO_NEAR_FAR_MILES) {
+            $nw = tnRequest('/catalog/v2/events/', $buildParams(false));
+            $nwEvents = soHomeFeedFormat($nw['results'] ?? [], 12);
+            if ($nwEvents) {
+                $events = $nwEvents; $total = (int) ($nw['totalCount'] ?? 0); $scope = 'nationwide'; $nationwide = true;
+            }
+        } elseif ($nationwide) {
+            $scope = 'nationwide';
+        }
         $out = [
-            'scope' => !$events ? ($radius ? 'empty' : 'near') : ($radius === 0 && $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near'),
+            'scope' => $scope,
             'radius' => $radius ?: SO_NEAR_MILES,
             'limited' => $radius,
             'closest' => $closest,

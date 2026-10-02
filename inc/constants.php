@@ -1,6 +1,14 @@
 <?php
 // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
+// One explicit PHP timezone for the whole site. TicketNetwork event dates are the venue's local calendar day with no offset
+// ("2026-10-02", "2026-10-02T19:30:00"), and every listing asks the API for "date ge <today>". On a UTC server "today" rolled
+// over at 8pm Eastern / 5pm Pacific and dropped tonight's events from every list and from the "Today" filter while they were
+// still on sale. Los Angeles is the last major US timezone to reach midnight, so "today" here never drops an event that is
+// still tonight anywhere in the lower 48 (cost: for up to three hours after midnight Eastern, listings still show the evening
+// that just ended, which is still "tonight" on the west coast). Display formatting of event, blog and sitemap dates is not
+// shifted: those strings are parsed and printed in this same zone, so they round-trip unchanged.
+date_default_timezone_set(getenv('SITE_TIMEZONE') ?: 'America/Los_Angeles');
 // Non-sensitive config: safe to keep sane defaults if the env var isn't set.
 define('WEBSITE_CONFIG_ID', getenv('WEBSITE_CONFIG_ID') ?: 12498);
 define('WEBSITE_CONFIG_ID_LIVE', getenv('WEBSITE_CONFIG_ID_LIVE') ?: 27773);
