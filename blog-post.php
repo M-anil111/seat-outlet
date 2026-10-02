@@ -108,6 +108,5 @@ $live     = trim((string) ($post['live_search'] ?? ''));
         <p class="so-art__top"><a href="#top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">Back to top <span aria-hidden="true">&uarr;</span></a></p>
     </div>
 </article>
-<script src="<?php echo soBlogH(soAsset('js/blog-article.js')); ?>" defer></script>
 
 <?php include 'footer.php'; ?>
