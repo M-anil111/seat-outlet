@@ -6533,3 +6533,14 @@ a.so-live__row:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(
 .so-cf--card .subtitle { margin: 0 0 18px; color: #424245; }
 .so-cf--card .submit-btn { background: #0056d6; color: #fff; border: 0; border-radius: 980px; font-weight: 600; }
 @media (max-width: 575.98px) { .so-cf--card { padding: 18px; border-radius: 16px; } }
+
+/* WS5: HTML sitemap page */
+.so-sitemap__title { font-size: clamp(28px, 4vw, 40px); font-weight: 700; letter-spacing: -.02em; margin: 0 0 8px; }
+.so-sitemap__lead { margin: 0 0 28px; color: #424245; font-size: 17px; }
+.so-sitemap__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 28px 24px; }
+.so-sitemap__col h3 { font-size: 20px; font-weight: 700; margin: 0 0 8px; }
+.so-sitemap__col h3 a { color: #1d1d1f; text-decoration: none; }
+.so-sitemap__group { margin: 12px 0 4px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6e6e73; }
+.so-sitemap__col ul { list-style: none; margin: 0; padding: 0; }
+.so-sitemap__col li a { display: block; padding: 6px 0; min-height: 32px; color: #0056d6; text-decoration: none; font-size: 15px; }
+.so-sitemap__col li a:hover { text-decoration: underline; }

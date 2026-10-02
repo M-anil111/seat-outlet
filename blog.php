@@ -22,6 +22,13 @@ $blogUrl = function (int $p = 1) use ($catQuery) {
     return '/blog' . ($q ? '?' . implode('&', $q) : '');
 };
 
+// A page past the last one is not a page: send the visitor (and search engines) to the last real page, or to /blog when
+// there is nothing to show. A made-up ?page=99 must not become an indexable thin page.
+if ($page > 1 && $page > max(1, $total_pages)) {
+    header('Location: ' . $blogUrl(max(1, $total_pages)), true, 301);
+    exit;
+}
+
 // --- SEO: computed before including header.php, same convention used
 // throughout this app - see functions.php. ---
 $baseTitle           = $activeCat ? $activeCat['name'] . ' Guides' : 'Blog: Ticket Buying Tips & Event Guides';
@@ -37,7 +44,7 @@ include 'header.php';
 $soReadMins = function (array $p) { return max(1, (int) ceil(str_word_count(strip_tags((string) ($p['content'] ?? ''))) / 220)); };
 $soCardImg = function (array $p, int $w, int $h) {
     return !empty($p['featured_image'])
-        ? '<img src="' . htmlspecialchars($p['featured_image'], ENT_QUOTES, 'UTF-8') . '" alt="" width="' . $w . '" height="' . $h . '" loading="lazy" decoding="async">'
+        ? '<img src="' . htmlspecialchars($p['featured_image'], ENT_QUOTES, 'UTF-8') . '" alt="' . htmlspecialchars((string) ($p['featured_image_alt'] ?? ''), ENT_QUOTES, 'UTF-8') . '" width="' . $w . '" height="' . $h . '" loading="lazy" decoding="async">'
         : '<span class="so-np__ph" aria-hidden="true"></span>';
 };
 // Category label, headline, summary and author line. No posting dates are shown.
@@ -106,6 +113,8 @@ $featured = ($page === 1 && !empty($posts)) ? array_shift($posts) : null;
                 <p>In the meantime, <a href="/buy-tickets-online">browse upcoming events</a> or read how our <a href="/worry-free-guarantee">100% guarantee</a> works.</p>
             </div>
         <?php } ?>
+
+        <?php echo soLeadForm(['source' => 'blog-index', 'class' => 'so-nl--blog', 'id' => 'subscribe']); ?>
 
         <?php if ($total_pages > 1) { ?>
             <nav class="so-np__pager" aria-label="Blog pagination">

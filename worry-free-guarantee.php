@@ -448,7 +448,7 @@ include 'header.php';
                     <div class="guarantee-image-frame">
                         <img
                             src="/images/ticket-trusted.webp"
-                            alt="Customers backed by our 100% ticket guarantee" width="750" height="875" decoding="async"/>
+                            alt="Singer performing outdoors in front of a crowd" width="750" height="875" decoding="async"/>
                         <div class="guarantee-sticker">
                             <span>Backed by</span>
                             <small>100% Guarantee</small>
@@ -514,7 +514,7 @@ include 'header.php';
                         <div class="section-image-wrapper">
                             <img
                                 src="/images/ticket-trusted.webp"
-                                alt="Box office staff" width="750" height="875" decoding="async"/>
+                                alt="Singer performing outdoors in front of a crowd" width="750" height="875" decoding="async"/>
                         </div>
                     </div>
                 </div>

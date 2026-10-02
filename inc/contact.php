@@ -328,8 +328,8 @@ function soContactForm(array $o = []): string {
             . ($hint !== '' ? '<small class="so-cf__hint" id="' . $p . '-' . $name . '-hint">' . $hint . '</small>' : '')
             . '<small class="so-cf__err" id="' . $p . '-' . $name . '-err"' . ($has ? ' role="alert"' : ' hidden') . '>' . ($has ? soContactH($err[$name]) : '') . '</small></div>';
     };
-    $attrs = function (string $name, string $extra = '') use ($err, $p) {
-        $d = $p . '-' . $name . '-err';
+    $attrs = function (string $name, string $extra = '', bool $hint = false) use ($err, $p) {
+        $d = $p . '-' . $name . '-err' . ($hint ? ' ' . $p . '-' . $name . '-hint' : '');
         return ' id="' . $p . '-' . $name . '" name="' . $name . '" aria-describedby="' . $d . '"' . (isset($err[$name]) ? ' aria-invalid="true"' : '') . $extra;
     };
     $opts = '<option value="">Select a topic</option>';
@@ -346,7 +346,7 @@ function soContactForm(array $o = []): string {
     $h .= '<div class="row g-3 form-row mt-1"><div class="col-12 col-sm-6">' . $field('email', 'Email address', '<input type="email" inputmode="email"' . $attrs('email', ' class="form-control" required maxlength="190" autocomplete="email" value="' . $f('email') . '"') . '>') . '</div>';
     $h .= '<div class="col-12 col-sm-6">' . $field('phone', 'Phone number (optional)', '<input type="tel" inputmode="tel"' . $attrs('phone', ' class="form-control" maxlength="30" autocomplete="tel" value="' . $f('phone') . '"') . '>') . '</div></div>';
     if (!$fixed) {
-        $h .= '<div class="mt-2">' . $field('orderId', 'Order ID (optional)', '<input type="text"' . $attrs('orderId', ' class="form-control" maxlength="60" autocomplete="off" value="' . $f('order_ref') . '"'), 'It is in your order confirmation email.') . '</div>';
+        $h .= '<div class="mt-2">' . $field('orderId', 'Order ID (optional)', '<input type="text"' . $attrs('orderId', ' class="form-control" maxlength="60" autocomplete="off" value="' . $f('order_ref') . '"', true) . '>', 'It is in your order confirmation email.') . '</div>';
         $h .= $field('subject', 'Topic', '<select' . $attrs('subject', ' class="form-control" required') . '>' . $opts . '</select>');
     } else {
         $h .= '<input type="hidden" name="subject" value="' . soContactH($o['subject']) . '">';

@@ -80,7 +80,7 @@
 </details>
 <details class="so-faq">
   <summary>When will I receive the tickets once I buy tickets online?</summary>
-  <p>Tickets may be delivered immediately or closer to the event date, depending on the organizer's release timing. Your confirmation email and account show the status.</p>
+  <p>Tickets may be delivered immediately or closer to the event date, depending on the organizer's release timing. Your confirmation email shows the delivery details.</p>
 </details>
 <details class="so-faq">
   <summary>Do I need to print the tickets I buy online?</summary>

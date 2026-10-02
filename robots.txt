@@ -13,5 +13,10 @@ Disallow: /vendor/
 Disallow: /db/
 Disallow: /tools/
 Disallow: /search
+Disallow: /checkout
+Disallow: /order-confirmation
+Disallow: /thank-you
+Disallow: /newsletter
 
-Sitemap: https://beta.seatoutlet.com/sitemap.php
+# No Sitemap line here on purpose: a static file cannot know which domain it is served on. robots.php (see docs/server-rewrites.md)
+# prints the right one from HOME_URL; serve that at /robots.txt on every real host.

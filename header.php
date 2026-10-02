@@ -183,9 +183,10 @@ include_once 'functions.php';
         <?php if (!empty($pageCanonicalUrl)) { ?>
         <meta property="og:url" content="<?php echo htmlspecialchars($pageCanonicalUrl, ENT_QUOTES, 'UTF-8'); ?>">
         <?php } ?>
-        <meta property="og:type" content="website">
+        <meta property="og:type" content="<?php echo htmlspecialchars($pageOgType ?? 'website', ENT_QUOTES, 'UTF-8'); ?>">
         <meta property="og:image" content="<?php echo htmlspecialchars($pageOgImage ?? (HOME_URL . '/images/seatoutlet-logo.webp'), ENT_QUOTES, 'UTF-8'); ?>">
         <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="<?php echo htmlspecialchars($pageOgImage ?? (HOME_URL . '/images/seatoutlet-logo.webp'), ENT_QUOTES, 'UTF-8'); ?>">
         <meta name="twitter:title" content="<?php echo htmlspecialchars($pageMetaTitle, ENT_QUOTES, 'UTF-8'); ?>">
         <?php if (!empty($pageMetaDescription)) { ?>
         <meta name="twitter:description" content="<?php echo htmlspecialchars($pageMetaDescription, ENT_QUOTES, 'UTF-8'); ?>">
