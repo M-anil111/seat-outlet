@@ -35,6 +35,7 @@ include __DIR__ . '/includes/app-header.php';
                     <thead>
                         <tr>
                             <th>Title</th>
+                            <th>Category</th>
                             <th>Slug</th>
                             <th>Status</th>
                             <th>Published</th>
@@ -44,13 +45,14 @@ include __DIR__ . '/includes/app-header.php';
                     <tbody>
                         <?php if (empty($posts)): ?>
                             <tr>
-                                <td colspan="5" class="text-center text-secondary py-4">
+                                <td colspan="6" class="text-center text-secondary py-4">
                                     No blog posts yet. Add one to get started.
                                 </td>
                             </tr>
                         <?php else: foreach ($posts as $post): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($post['category'] ?? ''), ENT_QUOTES, 'UTF-8') ?: '<span class="text-secondary">&mdash;</span>'; ?></td>
                                 <td><code>/blog/<?php echo htmlspecialchars($post['slug'], ENT_QUOTES, 'UTF-8'); ?></code></td>
                                 <td>
                                     <?php if ($post['status'] === 'published'): ?>

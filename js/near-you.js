@@ -44,6 +44,7 @@
       ' data-event="' + encodeURIComponent(ev.name) + '" data-artist="' + encodeURIComponent(ev.performer || '') + '"' +
       ' data-venue="' + encodeURIComponent(ev.venue || '') + '" data-tab="' + encodeURIComponent(ev.tab) + '"' +
       " data-category='" + esc(JSON.stringify(ev.defaultCategory || {})) + "'>" +
+      (ev.dist != null ? '<span class="so-feed-card__dist">' + (ev.dist < 3 ? 'Nearby' : ev.dist + ' mi away') + '</span>' : '') +
       (badge ? '<span class="so-feed-card__badge' + (badge === 'Popular near you' ? ' so-feed-card__badge--hot' : '') + '">' + esc(badge) + '</span>' : '') +
       '</div>' +
       '<h3 class="so-feed-card__name">' + esc(ev.name) + '</h3>' +
@@ -59,8 +60,19 @@
     return h;
   }
 
-  function setTitle() {
-    title.textContent = 'Explore ' + noun + ' near ' + (state.label || 'you');
+  var notice = null;
+  function setTitle(data) {
+    var place = state.label || 'you';
+    var far = data && data.scope === 'nearest';
+    title.textContent = far ? 'Closest ' + noun + ' to ' + place : 'Explore ' + noun + ' near ' + place;
+    if (!notice) {
+      notice = document.createElement('p');
+      notice.className = 'so-near__notice';
+      title.insertAdjacentElement('afterend', notice);
+    }
+    // Honest about distance: say so when nothing is close, instead of quietly showing events from another region.
+    notice.hidden = !far;
+    notice.textContent = far ? 'No ' + noun + ' within ' + (data.radius || 50) + ' miles of ' + place + '. These are the closest, nearest first' + (data.closest ? ' (starting about ' + data.closest + ' miles away).' : '.') : '';
   }
 
   function load(page) {
@@ -76,7 +88,7 @@
       var events = (data && data.events) || [];
       if (page === 1) {
         if (!events.length) { near.hidden = true; return; }
-        setTitle();
+        setTitle(data);
         grid.innerHTML = '';
         events.forEach(function (e, i) { e.top = i < 3 && !state.when; });
       }

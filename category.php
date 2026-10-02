@@ -1,5 +1,7 @@
 <?php
 require_once 'functions.php';
+require_once __DIR__ . '/inc/genre-pages.php';
+require_once __DIR__ . '/inc/seo-category.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -21,15 +23,28 @@ if ($catName === '') {
 	renderNotFoundPage('Category');
 }
 
-// --- SEO: computed before including header.php, same convention as the
-// artist-city/concerts-city/etc. pages - see functions.php. This page was
-// previously rendering with no <title> and no canonical tag at all. Uses
-// the incoming slug as-is (rather than reconstructing it) since this
-// page's own slug format is a separate, pre-existing convention. ---
-$pageMetaTitle       = "$catName Tickets | Seat Outlet";
-$pageMetaDescription = "Buy $catName tickets. Compare prices and book securely on Seat Outlet.";
-$pageCanonicalUrl    = HOME_URL . '/category/' . $slug;
-$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/buy-tickets-online']], $catName)];
+// Clean URL for the big genres and leagues: /category/rap-hip-hop-1906 -> /hip-hop-tickets (301), and /hip-hop-tickets is served
+// by a small stub that includes this file.
+$soGenre = isset($soGenreSlug) ? soGenreBySlug($soGenreSlug) : soGenreById($id);
+$catBasePath = $soGenre ? '/' . $soGenre['slug'] : '/category/' . $slug;
+if ($soGenre && !isset($soGenreSlug)) {
+	$qs = $_SERVER['QUERY_STRING'] ?? '';
+	header('Location: ' . $catBasePath . ($qs !== '' ? '?' . $qs : ''), true, 301);
+	exit;
+}
+$catLabel = $soGenre['label'] ?? $catName;
+$soCatCfg = ['id' => $id, 'label' => $catLabel, 'long' => $soGenre['long'] ?? strtolower($catName), 'kind' => $soGenre['kind'] ?? 'other', 'profile' => $soGenre['profile'] ?? null];
+$soCatSeo = soCategorySeo($soCatCfg, soCategoryData($id));
+$year = date('Y');
+
+// --- SEO: computed before including header.php, same convention as the other listing pages - see functions.php. ---
+$pageMetaTitle       = "$catLabel Tickets $year | Dates & Prices | Seat Outlet";
+$pageMetaDescription = $soCatSeo['description'];
+$pageCanonicalUrl    = HOME_URL . $catBasePath;
+$pageJsonLdNodes     = array_values(array_filter([
+	buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/buy-tickets-online']], "$catLabel Tickets"),
+	buildFaqPageSchema($soCatSeo['faqs']),
+]));
 
 [$when, $sort, $isFiltered] = listingRequestState('popular');
 if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // canonical page stays the indexed one
@@ -49,7 +64,6 @@ $events = $eventsResponse['results'] ?? [];
 $count  = $eventsResponse['count'] ?? count($events);
 
 $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
-$year = date('Y');
 ?>
 
 <section>
@@ -62,7 +76,7 @@ $year = date('Y');
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h1>
-									<?php echo htmlspecialchars(strtoupper($catName), ENT_QUOTES, 'UTF-8'); ?> CATEGORY EVENTS <span class="dot">·</span>
+									<?php echo htmlspecialchars(strtoupper($catLabel), ENT_QUOTES, 'UTF-8'); ?> TICKETS <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $total_count; ?>
 										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
@@ -71,7 +85,7 @@ $year = date('Y');
 							</div>
 						</div>
 					</div>
-					<?php renderListingFilters('/category/' . $slug, $when, $sort, $total_count, 'popular', ['catId' => $id, 'noun' => strtolower($catName) . ' events']); ?>
+					<?php renderListingFilters($catBasePath, $when, $sort, $total_count, 'popular', ['catId' => $id, 'noun' => strtolower($catLabel) . ' events']); ?>
 					<div class="list-category-bg pb-3">
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">
@@ -262,6 +276,5 @@ $year = date('Y');
 		</div>
 	</div>
 </section>
-
-	
+<?php echo $soCatSeo['html']; ?>
 <?php include 'footer.php'; ?>

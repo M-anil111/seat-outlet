@@ -326,7 +326,7 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
   <div class="container py-5 text-center">
     <h2 class="fw-bold fs-4 mb-2" id="so-no-tickets-title">No tickets are listed for this event right now</h2>
     <p class="text-muted mb-4" id="so-no-tickets-text">Inventory changes hourly as sellers list seats. Try another date, or browse related tickets below.</p>
-    <div class="d-flex flex-wrap justify-content-center gap-2">
+    <div class="so-nt__actions">
       <?php if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name'])) { ?>
         <a class="btn btn-primary" href="/artist/<?php echo htmlspecialchars(createSlug($primaryPerformer['name'], $primaryPerformer['id']), ENT_QUOTES, 'UTF-8'); ?>">All <?php echo htmlspecialchars($primaryPerformer['name'], ENT_QUOTES, 'UTF-8'); ?> dates</a>
       <?php } ?>
@@ -388,9 +388,9 @@ $evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $
 
         <h2>How to buy <?php echo $h($evNm); ?> tickets</h2>
         <ol class="so-steps">
-          <li><strong>Choose how many.</strong> Tell us how many tickets you need and we only show listings that fit.</li>
-          <li><strong>Pick your seats.</strong> Use the map and the filters to compare sections, rows and prices.</li>
-          <li><strong>Check out and go.</strong> Pay securely and get your tickets before the event.</li>
+          <li><span><strong>Choose how many.</strong> Tell us how many tickets you need and we only show listings that fit.</span></li>
+          <li><span><strong>Pick your seats.</strong> Use the map and the filters to compare sections, rows and prices.</span></li>
+          <li><span><strong>Check out and go.</strong> Pay securely and get your tickets before the event.</span></li>
         </ol>
 
         <h2>Questions about <?php echo $h($evNm); ?> tickets</h2>

@@ -4,61 +4,115 @@ require_once 'functions.php';
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage = 10;
 
-$posts       = listPublishedBlogPosts($page, $perPage);
-$total_count = countPublishedBlogPosts();
+// Category filter: /blog?category=city-guides. Unknown values are ignored so the page never 404s or shows an empty list.
+$categories  = listBlogCategories();
+$activeCat   = null;
+$catIn       = isset($_GET['category']) ? sanitize_title((string) $_GET['category']) : '';
+foreach ($categories as $c) {
+    if ($c['slug'] === $catIn) { $activeCat = $c; break; }
+}
+$catQuery = $activeCat ? 'category=' . $activeCat['slug'] : '';
+
+$posts       = listPublishedBlogPosts($page, $perPage, $activeCat['name'] ?? null);
+$total_count = countPublishedBlogPosts($activeCat['name'] ?? null);
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
+
+$blogUrl = function (int $p = 1) use ($catQuery) {
+    $q = array_filter([$catQuery, $p > 1 ? 'page=' . $p : '']);
+    return '/blog' . ($q ? '?' . implode('&', $q) : '');
+};
 
 // --- SEO: computed before including header.php, same convention used
 // throughout this app - see functions.php. ---
-$pageMetaTitle       = $page > 1 ? "Blog - Page $page | Seat Outlet" : 'Blog: Ticket Buying Tips & Event Guides | Seat Outlet';
+$baseTitle           = $activeCat ? $activeCat['name'] . ' Guides' : 'Blog: Ticket Buying Tips & Event Guides';
+$pageMetaTitle       = $baseTitle . ($page > 1 ? " - Page $page" : '') . ' | Seat Outlet';
 $pageMetaDescription = 'News, guides, and updates from Seat Outlet - buying tips, event spotlights, and ticket marketplace insights.';
-$pageCanonicalUrl    = HOME_URL . '/blog' . ($page > 1 ? '?page=' . $page : '');
+$pageCanonicalUrl    = HOME_URL . $blogUrl($page);
 $pageJsonLdNodes = array_values(array_filter([
     buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL]], 'Blog'),
 ]));
 
 include 'header.php';
+
+$soReadMins = function (array $p) { return max(1, (int) ceil(str_word_count(strip_tags((string) ($p['content'] ?? ''))) / 220)); };
+$soCardImg = function (array $p, int $w, int $h) {
+    return !empty($p['featured_image'])
+        ? '<img src="' . htmlspecialchars($p['featured_image'], ENT_QUOTES, 'UTF-8') . '" alt="" width="' . $w . '" height="' . $h . '" loading="lazy" decoding="async">'
+        : '<span class="so-np__ph" aria-hidden="true"></span>';
+};
+// Category label, headline, summary and author line. No posting dates are shown.
+$soCardText = function (array $p) use ($soReadMins) {
+    $author = trim((string) ($p['author_name'] ?? '')) ?: 'Jay Mehta';
+    $parts = preg_split('/\s+/', $author);
+    $initials = strtoupper(substr($parts[0], 0, 1) . (count($parts) > 1 ? substr(end($parts), 0, 1) : ''));
+    $h = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); };
+    $html  = !empty($p['category']) ? '<span class="so-np__cat">' . $h($p['category']) . '</span>' : '';
+    $html .= '<h2>' . $h($p['title']) . '</h2>';
+    if (!empty($p['excerpt'])) $html .= '<span class="so-np__ex">' . $h($p['excerpt']) . '</span>';
+    $html .= '<span class="so-np__by"><span class="so-np__av" aria-hidden="true">' . $h($initials) . '</span><span class="so-np__who"><strong>' . $h($author) . '</strong><small>' . $soReadMins($p) . ' min read</small></span></span>';
+    return $html;
+};
+$featured = ($page === 1 && !empty($posts)) ? array_shift($posts) : null;
 ?>
-
-<section class="so-blog-hero">
+<section class="so-np">
     <div class="container">
-        <h1>Ticket Buying Tips &amp; Event Guides</h1>
-        <p>Plain-English guides to buying tickets safely, planning your night out and finding the right seats.</p>
-    </div>
-</section>
+        <header class="so-np__head">
+            <h1>Ticket Buying Tips &amp; Event Guides</h1>
+            <p class="so-np__sub">Plain-English guides to buying tickets safely, planning your night out and finding the right seats.</p>
+            <?php if ($categories) { ?>
+            <form class="so-np__pick" method="get" action="/blog">
+                <label class="visually-hidden" for="soBlogCat">Explore by category</label>
+                <select id="soBlogCat" name="category" onchange="this.form.submit()">
+                    <option value="">Explore by category</option>
+                    <?php foreach ($categories as $c) { ?>
+                    <option value="<?php echo htmlspecialchars($c['slug'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo $activeCat && $activeCat['slug'] === $c['slug'] ? ' selected' : ''; ?>><?php echo htmlspecialchars($c['name'], ENT_QUOTES, 'UTF-8'); ?> (<?php echo (int) $c['count']; ?>)</option>
+                    <?php } ?>
+                </select>
+                <noscript><button type="submit">Go</button></noscript>
+            </form>
+            <div class="so-np__pills">
+                <span class="so-np__pillslabel">Popular categories:</span>
+                <ul>
+                    <?php foreach ($categories as $c) { ?>
+                    <li><a href="/blog?category=<?php echo htmlspecialchars($c['slug'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo $activeCat && $activeCat['slug'] === $c['slug'] ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($c['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <?php } ?>
+                    <?php if ($activeCat) { ?><li><a class="so-np__clear" href="/blog">All guides</a></li><?php } ?>
+                </ul>
+            </div>
+            <?php } ?>
+        </header>
 
-<section class="so-blog-list">
-    <div class="container">
+        <?php if ($featured) { ?>
+        <a class="so-np__feature" href="/blog/<?php echo htmlspecialchars($featured['slug'], ENT_QUOTES, 'UTF-8'); ?>">
+            <span class="so-np__media"><?php echo $soCardImg($featured, 1200, 630); ?></span>
+            <span class="so-np__fbody"><?php echo $soCardText($featured); ?></span>
+        </a>
+        <?php } ?>
+
         <?php if (!empty($posts)) { ?>
-            <div class="so-blog-grid">
+            <div class="so-np__grid">
                 <?php foreach ($posts as $post) { ?>
-                    <a class="so-blog-card" href="/blog/<?php echo htmlspecialchars($post['slug'], ENT_QUOTES, 'UTF-8'); ?>">
-                        <?php if (!empty($post['featured_image'])) { ?>
-                            <img src="<?php echo htmlspecialchars($post['featured_image'], ENT_QUOTES, 'UTF-8'); ?>" alt="" width="600" height="315" loading="lazy" decoding="async">
-                        <?php } ?>
-                        <div class="so-blog-card__body">
-                            <?php if (!empty($post['published_at'])) { ?><span class="so-blog-card__date"><?php echo htmlspecialchars(date('F j, Y', strtotime($post['published_at'])), ENT_QUOTES, 'UTF-8'); ?></span><?php } ?>
-                            <h2><?php echo htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8'); ?></h2>
-                            <?php if (!empty($post['excerpt'])) { ?><p><?php echo htmlspecialchars($post['excerpt'], ENT_QUOTES, 'UTF-8'); ?></p><?php } ?>
-                            <span class="so-blog-card__more">Read the guide</span>
-                        </div>
-                    </a>
+                <a class="so-np__card" href="/blog/<?php echo htmlspecialchars($post['slug'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <span class="so-np__media"><?php echo $soCardImg($post, 600, 400); ?></span>
+                    <?php echo $soCardText($post); ?>
+                </a>
                 <?php } ?>
             </div>
+        <?php } ?>
 
-            <?php if ($total_pages > 1) { ?>
-                <nav class="mt-5" aria-label="Blog pagination">
-                    <ul class="pagination justify-content-center">
-                        <?php for ($p = 1; $p <= $total_pages; $p++) { ?>
-                            <li class="page-item <?php echo $p === $page ? 'active' : ''; ?>">
-                                <a class="page-link" href="/blog<?php echo $p > 1 ? '?page=' . $p : ''; ?>"><?php echo $p; ?></a>
-                            </li>
-                        <?php } ?>
-                    </ul>
-                </nav>
-            <?php } ?>
-        <?php } else { ?>
-            <h2 class="text-center py-5">No blog posts yet. Check back soon.</h2>
+        <?php if (!$featured && empty($posts)) { ?>
+            <div class="so-np__empty">
+                <h2>New guides are on the way</h2>
+                <p>In the meantime, <a href="/buy-tickets-online">browse upcoming events</a> or read how our <a href="/worry-free-guarantee">100% guarantee</a> works.</p>
+            </div>
+        <?php } ?>
+
+        <?php if ($total_pages > 1) { ?>
+            <nav class="so-np__pager" aria-label="Blog pagination">
+                <?php for ($p = 1; $p <= $total_pages; $p++) { ?>
+                    <a href="<?php echo htmlspecialchars($blogUrl($p), ENT_QUOTES, 'UTF-8'); ?>"<?php echo $p === $page ? ' aria-current="page"' : ''; ?>><?php echo $p; ?></a>
+                <?php } ?>
+            </nav>
         <?php } ?>
     </div>
 </section>

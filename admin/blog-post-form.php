@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 admin_require_login();
 require_once __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../inc/blog-render.php';
 
 $id = isset($_GET['id']) ? (int) $_GET['id'] : (isset($_POST['id']) ? (int) $_POST['id'] : 0);
 $existing = $id > 0 ? getBlogPostById($id) : null;
@@ -14,7 +15,7 @@ if ($id > 0 && !$existing) {
 $errors = [];
 $values = $existing ?: [
     'title' => '', 'focus_keyword' => '', 'slug' => '', 'excerpt' => '', 'content' => '', 'featured_image' => '',
-    'author_name' => '', 'meta_title' => '', 'meta_description' => '', 'status' => 'draft',
+    'category' => '', 'live_search' => '', 'author_name' => '', 'meta_title' => '', 'meta_description' => '', 'status' => 'draft',
     'published_at' => '',
 ];
 
@@ -87,14 +88,47 @@ include __DIR__ . '/includes/app-header.php';
                             value="<?php echo htmlspecialchars($values['featured_image'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <input type="text" name="category" class="form-control" maxlength="60" placeholder="e.g. Ticket Safety, City Guides"
+                            value="<?php echo htmlspecialchars($values['category'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                        <small class="form-hint">Shown as a label on the blog listing and used for the category filter.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Live tickets block (optional)</label>
+                        <input type="text" name="live_search" class="form-control" maxlength="120" placeholder="e.g. Taylor Swift"
+                            value="<?php echo htmlspecialchars($values['live_search'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                        <small class="form-hint">Type an exact performer name to show their upcoming events with live prices at the end of the post. Leave blank for none.</small>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Author name</label>
                         <input type="text" name="author_name" class="form-control"
                             value="<?php echo htmlspecialchars($values['author_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Content (HTML)</label>
+                        <div class="d-flex flex-wrap gap-2 mb-2" id="blogTools">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-snip="performer">+ Live events: performer</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-snip="category">+ Live events: category</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-snip="newsletter">+ Newsletter box</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-snip="cta">+ Ticket CTA box</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#blogImages">+ Image from library</button>
+                        </div>
+                        <div class="collapse mb-2" id="blogImages">
+                            <div class="border rounded p-2" style="max-height:260px;overflow:auto">
+                                <div class="row g-2">
+                                <?php foreach (blogImageLibrary() as $img) { ?>
+                                    <div class="col-4 col-md-3 col-lg-2">
+                                        <button type="button" class="btn p-0 border w-100" data-img="<?php echo htmlspecialchars($img['path'], ENT_QUOTES, 'UTF-8'); ?>" data-w="<?php echo (int) $img['w']; ?>" data-h="<?php echo (int) $img['h']; ?>" title="<?php echo htmlspecialchars($img['name'], ENT_QUOTES, 'UTF-8'); ?>">
+                                            <img src="<?php echo htmlspecialchars($img['path'], ENT_QUOTES, 'UTF-8'); ?>" alt="" loading="lazy" style="width:100%;height:70px;object-fit:cover">
+                                        </button>
+                                    </div>
+                                <?php } ?>
+                                </div>
+                            </div>
+                            <small class="form-hint">Pictures already licensed and used on the site. Click one to insert it with alt text and a caption you can edit.</small>
+                        </div>
                         <textarea name="content" class="form-control font-monospace" rows="16" required><?php echo htmlspecialchars($values['content'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
-                        <small class="form-hint">Rendered as raw HTML on the blog post page - write real HTML (paragraphs, headings, links), not Markdown.</small>
+                        <small class="form-hint">Rendered as raw HTML - write real HTML (paragraphs, headings, links), not Markdown. The <strong>table of contents is built automatically</strong> from your H2 and H3 headings (do not add one by hand). Use the buttons above for live ticket listings, newsletter and ticket call-to-action boxes. Shortcodes: <code>[events performer="Taylor Swift" limit="6"]</code>, <code>[events category="concerts"]</code>, <code>[newsletter]</code>, <code>[cta title="..." text="..." button="..." url="/concert-tickets-for-sale"]</code>.</small>
                     </div>
                 </div>
             </div>
@@ -136,4 +170,33 @@ include __DIR__ . '/includes/app-header.php';
             <button type="submit" class="btn btn-primary">Save</button>
             <a href="blog-posts" class="btn btn-link">Cancel</a>
         </form>
+
+<script>
+(function () {
+  var ta = document.querySelector('textarea[name=content]');
+  if (!ta) return;
+  function insert(text) {
+    var s = ta.selectionStart, e = ta.selectionEnd;
+    ta.value = ta.value.slice(0, s) + text + ta.value.slice(e);
+    ta.focus(); ta.selectionStart = ta.selectionEnd = s + text.length;
+  }
+  var snips = {
+    performer: function () { var n = prompt('Performer name (exactly as listed, e.g. Taylor Swift):'); return n ? '\n[events performer="' + n.replace(/"/g, '') + '" limit="6"]\n' : ''; },
+    category: function () { var c = prompt('Category: concerts, sports, theatre or festival', 'concerts'); return c ? '\n[events category="' + c.replace(/"/g, '') + '" limit="6"]\n' : ''; },
+    newsletter: function () { return '\n[newsletter]\n'; },
+    cta: function () { return '\n[cta title="Find tickets" text="Compare seats and prices." button="Browse tickets" url="/buy-tickets-online"]\n'; }
+  };
+  document.querySelectorAll('#blogTools [data-snip]').forEach(function (b) {
+    b.addEventListener('click', function () { var t = snips[b.dataset.snip](); if (t) insert(t); });
+  });
+  document.querySelectorAll('#blogImages [data-img]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var alt = prompt('Describe the picture for accessibility and SEO (alt text):', '');
+      if (alt === null) return;
+      var cap = prompt('Caption (optional):', '') || '';
+      insert('\n<figure><img src="' + b.dataset.img + '" alt="' + alt.replace(/"/g, '&quot;') + '" width="' + b.dataset.w + '" height="' + b.dataset.h + '" loading="lazy">' + (cap ? '<figcaption>' + cap + '</figcaption>' : '') + '</figure>\n');
+    });
+  });
+})();
+</script>
 <?php include __DIR__ . '/includes/app-footer.php'; ?>

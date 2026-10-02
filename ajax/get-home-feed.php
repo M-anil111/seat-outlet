@@ -15,6 +15,10 @@ require_once __DIR__ . '/../functions.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
+// "Near" means within this many miles; the nearest-first search itself reaches across the country.
+define('SO_NEAR_MILES', 50);
+define('SO_NEAR_MAX_MILES', 3000);
+
 $kindIn = $_GET['kind'] ?? '';
 $kind = in_array($kindIn, ['lastminute', 'near'], true) ? $kindIn : 'trending';
 $lat = isset($_GET['lat']) && is_numeric($_GET['lat']) ? (float) $_GET['lat'] : null;
@@ -48,13 +52,28 @@ if ($kind === 'near') {
         exit;
     }
     try {
+        // Always nearest first. The search is not cut off at 50 miles: when nothing is close, the closest events anywhere
+        // in the country come back (San Antonio, Houston, Dallas for a Hill Country visitor) and the page says so.
         $params = $catId > 0
             ? locationListingParams("country/alphaCode eq 'US' and contains(defaultCategory/path, '." . $catId . ".')", 12, $page, $when, 'popular')
             : categoryListingParams($catPath, 12, $page, $when, 'popular');
-        $params['geoFilter'] = sprintf('nearby(%F,%F,50mi)', $lat, $lng);
+        $params['geoFilter'] = sprintf('nearby(%F,%F,%dmi)', $lat, $lng, SO_NEAR_MAX_MILES);
+        $params['sort'] = 'distance';
+        if (strpos((string) ($params['filter'] ?? ''), 'alphaCode') === false) {
+            $params['filter'] = trim(($params['filter'] ?? '') . " and country/alphaCode eq 'US'", ' and');
+        }
         $data = tnRequest('/catalog/v2/events/', $params);
         $total = (int) ($data['totalCount'] ?? 0);
-        $out = ['scope' => 'near', 'events' => soHomeFeedFormat($data['results'] ?? [], 12), 'total' => $total, 'hasMore' => $page * 12 < $total];
+        $events = soHomeFeedFormat($data['results'] ?? [], 12);
+        $closest = $events ? ($events[0]['dist'] ?? null) : null;
+        $out = [
+            'scope' => $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near',
+            'radius' => SO_NEAR_MILES,
+            'closest' => $closest,
+            'events' => $events,
+            'total' => $total,
+            'hasMore' => $page * 12 < $total,
+        ];
         if ($out['events'] || $page > 1) cache_set('home_feed_' . $nearKey, $out);
         header('Cache-Control: public, max-age=300');
         echo json_encode($out);
@@ -124,6 +143,7 @@ function soHomeFeedFormat(array $events, int $max = 10): array {
             'date' => $ts ? date('D, M j', $ts) . (($event['date']['text']['time'] ?? '') !== '' ? ' - ' . $event['date']['text']['time'] : '') : '',
             'venue' => $event['venue']['text']['name'] ?? '',
             'loc' => trim($city . ', ' . $state, ', '),
+            'dist' => isset($event['geoLocation']['distance']['distance']) ? (int) round($event['geoLocation']['distance']['distance']) : null,
             'price' => $event['pricingInfo']['lowPrice']['text']['formatted'] ?? '',
             'performer' => $event['performers'][0]['name'] ?? '',
             'tab' => $tab,
