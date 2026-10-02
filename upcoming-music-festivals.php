@@ -111,7 +111,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 											<div class="ev-venue"><a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a></div>
 <div class="ev-place"><a href="/city/<?php echo $citySlug; ?>"><?php echo $city; ?></a></div>
 											<div class="ev-name">
-												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?><span class="visually-hidden"> tickets, <?php echo htmlspecialchars(date('M j', $timestamp) . ' at ' . ($event['venue']['text']['name'] ?? '') . ', ' . $city, ENT_QUOTES, 'UTF-8'); ?></span></a>
 											</div>
 										</div>
 										<div class="ms-3">

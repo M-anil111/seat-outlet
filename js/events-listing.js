@@ -475,7 +475,7 @@ function renderEvent(event) {
             </div>
             <div class="ev-venue"><a href="/venue/${venueSlug}">${evVenue}</a></div>
             <div class="ev-place"><a href="/city/${citySlug}">${evCityName}</a></div>
-            <div class="ev-name"><a href="/event/${eSlug}">${evName}</a></div>
+            <div class="ev-name"><a href="/event/${eSlug}">${evName}<span class="visually-hidden"> tickets, ${escHtml(emonth)} ${d} at ${evVenue}, ${evCityName}</span></a></div>
         </div>
         <div class="ms-3">
             ${priceTag}

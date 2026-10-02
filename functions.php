@@ -596,7 +596,7 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
  */
 function performerPageEventsSpec($performerId, $perPage = 20) {
     return ['/catalog/v2/events', [
-        'filter'            => 'date/date ge ' . date('Y-m-d'),
+        'filter'            => 'date/date ge ' . date('Y-m-d') . ' and date/date le ' . date('Y-m-d', strtotime('+3 years')),   // TicketNetwork parks date-TBA events decades out
         'performerFilter'   => 'id eq ' . (int) $performerId,
         'sort'              => 'date/date',
         'perPage'           => (int) $perPage,
