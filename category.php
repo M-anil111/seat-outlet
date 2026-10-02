@@ -34,7 +34,9 @@ if ($soGenre && !isset($soGenreSlug)) {
 }
 $catLabel = $soGenre['label'] ?? $catName;
 $soCatCfg = ['id' => $id, 'label' => $catLabel, 'long' => $soGenre['long'] ?? strtolower($catName), 'kind' => $soGenre['kind'] ?? 'other', 'profile' => $soGenre['profile'] ?? null];
-$soCatSeo = soCategorySeo($soCatCfg, soCategoryData($id));
+$soCatData = soCategoryData($id);
+$soCatSeo = soCategorySeo($soCatCfg, $soCatData);
+$soCatHero = soCategoryHero($id, $soCatData['path'] ?? '');
 $year = date('Y');
 
 // --- SEO: computed before including header.php, same convention as the other listing pages - see functions.php. ---
@@ -85,7 +87,7 @@ $percent = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
 							</div>
 						</div>
 					</div>
-					<?php renderListingFilters($catBasePath, $when, $sort, $total_count, 'popular', ['catId' => $id, 'noun' => strtolower($catLabel) . ' events']); ?>
+					<?php renderListingFilters($catBasePath, $when, $sort, $total_count, 'popular', ['catId' => $id, 'noun' => strtolower($catLabel) . ' events', 'hero' => $soCatHero]); ?>
 					<div class="list-category-bg pb-3">
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">

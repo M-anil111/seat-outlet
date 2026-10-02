@@ -39,3 +39,30 @@ function soGenreById($id) {
     }
     return null;
 }
+
+/**
+ * Banner picture for a single-category page, so a circus show does not get a concert-crowd photo.
+ *   1. Categories that are a named act or brand (Cirque du Soleil) use that name's real picture once the image job has
+ *      resolved it (the same one the event cards show).
+ *   2. Otherwise a site picture matching the family: basketball, football, theater, festival, concert stage.
+ *   3. Anything else keeps the generic crowd photo.
+ */
+const SO_HERO_ENTITY = [2031 => 'Cirque du Soleil'];
+const SO_HERO_BY_ID = [
+    1865 => '/images/event-basketball.jpg', 1971 => '/images/event-basketball.jpg',
+    1879 => '/images/event-football.jpg',
+    1877 => '/images/festival-1.webp',
+    2031 => '/images/loews-theatre.webp',
+];
+function soCategoryHero($id, $path = '') {
+    $id = (int) $id;
+    if (isset(SO_HERO_ENTITY[$id]) && function_exists('getEntityImage')) {
+        $im = getEntityImage('artist', SO_HERO_ENTITY[$id], ['resolve' => false]);
+        if (!empty($im['real']) && !empty($im['url'])) return $im['url'];
+    }
+    if (isset(SO_HERO_BY_ID[$id])) return SO_HERO_BY_ID[$id];
+    if (strpos($path, '.1989.') !== false) return '/images/loews-theatre.webp';      // theater family
+    if (strpos($path, '.1988.') !== false) return '/images/team-event.webp';          // other sports
+    if (strpos($path, '.1986.') !== false) return '/images/event-concert.jpg';       // concerts
+    return '/images/crowd-at-concert-or-event.webp';
+}

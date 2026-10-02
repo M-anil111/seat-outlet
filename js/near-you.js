@@ -19,7 +19,7 @@
   var locBtn = $('[data-so-loc]'), locLabel = $('[data-so-loc-label]'), locPop = $('[data-so-loc-pop]');
   var locInput = $('#soNearInput'), locHere = $('[data-so-loc-here]');
   var near = $('[data-so-near]'), grid = $('[data-so-near-grid]'), more = $('[data-so-near-more]'), title = $('[data-so-near-title]');
-  var state = { lat: '', lng: '', label: '', when: root.getAttribute('data-when') || '', page: 1, token: 0 };
+  var state = { lat: '', lng: '', label: '', when: root.getAttribute('data-when') || '', sort: 'distance', radius: '0', page: 1, token: 0 };
 
   var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
   var slug = function (v) { return String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
@@ -64,7 +64,7 @@
   function setTitle(data) {
     var place = state.label || 'you';
     var far = data && data.scope === 'nearest';
-    title.textContent = far ? 'Closest ' + noun + ' to ' + place : 'Explore ' + noun + ' near ' + place;
+    title.textContent = far ? (state.sort === 'distance' ? 'Closest ' + noun + ' to ' + place : noun.charAt(0).toUpperCase() + noun.slice(1) + ' beyond 50 miles of ' + place) : 'Explore ' + noun + ' near ' + place;
     if (!notice) {
       notice = document.createElement('p');
       notice.className = 'so-near__notice';
@@ -72,7 +72,16 @@
     }
     // Honest about distance: say so when nothing is close, instead of quietly showing events from another region.
     notice.hidden = !far;
-    notice.textContent = far ? 'No ' + noun + ' within ' + (data.radius || 50) + ' miles of ' + place + '. These are the closest, nearest first' + (data.closest ? ' (starting about ' + data.closest + ' miles away).' : '.') : '';
+    notice.textContent = far ? 'No ' + noun + ' within ' + (data.radius || 50) + ' miles of ' + place + '. ' + (state.sort === 'distance' ? 'These are the closest, nearest first' : 'These are farther away') + (data.closest ? ' (the nearest is about ' + data.closest + ' miles away).' : '.') : '';
+  }
+
+  // A distance limit with nothing inside it: say so and offer the nearest events anywhere.
+  function showEmpty(data) {
+    near.hidden = false; more.hidden = true;
+    title.textContent = 'Explore ' + noun + ' near ' + (state.label || 'you');
+    if (notice) notice.hidden = true;
+    grid.innerHTML = '<div class="so-near__empty"><p>No ' + esc(noun) + ' within ' + esc(data.limited) + ' miles of ' + esc(state.label || 'you') + (state.when ? ' for those dates' : '') + '.</p>' +
+      '<button type="button" class="so-near__any" data-so-any>Show the nearest anywhere</button></div>';
   }
 
   function load(page) {
@@ -81,13 +90,16 @@
     state.page = page;
     if (page === 1) { grid.innerHTML = skeleton(4); near.hidden = false; more.hidden = true; }
     more.disabled = true;
-    var qs = 'kind=near&cat=' + encodeURIComponent(cat) + (catId !== '0' ? '&catid=' + encodeURIComponent(catId) : '') + '&when=' + encodeURIComponent(state.when) + '&page=' + page +
+    var qs = 'kind=near&cat=' + encodeURIComponent(cat) + (catId !== '0' ? '&catid=' + encodeURIComponent(catId) : '') + '&when=' + encodeURIComponent(state.when) + '&sort=' + encodeURIComponent(state.sort) + '&radius=' + encodeURIComponent(state.radius) + '&page=' + page +
       '&lat=' + encodeURIComponent(state.lat) + '&lng=' + encodeURIComponent(state.lng);
     fetch('/ajax/get-home-feed.php?' + qs).then(function (r) { return r.json(); }).then(function (data) {
       if (my !== state.token) return;
       var events = (data && data.events) || [];
       if (page === 1) {
-        if (!events.length) { near.hidden = true; return; }
+        if (!events.length) {
+          if (data && data.scope === 'empty') { showEmpty(data); return; }
+          near.hidden = true; return;
+        }
         setTitle(data);
         grid.innerHTML = '';
         events.forEach(function (e, i) { e.top = i < 3 && !state.when; });
@@ -149,6 +161,33 @@
         closePops();
       });
     }).catch(function () { placesReady = false; });
+  });
+
+  // Date, distance and sort for the near-you grid.
+  var dds = root.querySelectorAll('[data-so-dd]');
+  dds.forEach(function (dd) {
+    var key = dd.getAttribute('data-so-dd');
+    dd.addEventListener('toggle', function () { if (dd.open) dds.forEach(function (o) { if (o !== dd) o.open = false; }); });
+    dd.querySelectorAll('[data-val]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        state[key] = b.getAttribute('data-val');
+        dd.querySelector('[data-so-dd-label]').textContent = b.textContent;
+        dd.querySelectorAll('[data-val]').forEach(function (o) { o.classList.toggle('is-active', o === b); });
+        dd.querySelector('summary').classList.toggle('so-chip--on', !!state[key] && state[key] !== '0' && state[key] !== 'distance');
+        dd.open = false;
+        load(1);
+      });
+    });
+  });
+  document.addEventListener('click', function (e) { if (!e.target.closest('[data-so-dd]')) dds.forEach(function (d) { d.open = false; }); });
+  grid.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-so-any]')) return;
+    var dd = root.querySelector('[data-so-dd="radius"]');
+    state.radius = '0';
+    dd.querySelector('[data-so-dd-label]').textContent = 'Any distance';
+    dd.querySelectorAll('[data-val]').forEach(function (o) { o.classList.toggle('is-active', o.getAttribute('data-val') === '0'); });
+    dd.querySelector('summary').classList.remove('so-chip--on');
+    load(1);
   });
 
   // Only this button opens the browser's location prompt.

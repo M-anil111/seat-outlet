@@ -40,11 +40,15 @@ if ($kind === 'near') {
     $whenIn = $_GET['when'] ?? '';
     $when = isset(LISTING_WHEN[$whenIn]) ? $whenIn : '';
     $page = max(1, min(20, (int) ($_GET['page'] ?? 1)));
+    $sortIn = $_GET['sort'] ?? 'distance';
+    $nearSort = in_array($sortIn, ['soonest', 'popular'], true) ? $sortIn : 'distance';
+    $radiusIn = (int) ($_GET['radius'] ?? 0);
+    $radius = in_array($radiusIn, [25, 50, 100, 250], true) ? $radiusIn : 0;   // 0 = no limit: nearest anywhere
     if (!$hasGeo) {
         echo json_encode(['scope' => 'none', 'events' => [], 'hasMore' => false]);
         exit;
     }
-    $nearKey = 'near_' . ($catId ?: $cat) . '_' . $when . '_' . $page . '_' . $lat . '_' . $lng;
+    $nearKey = 'near_' . ($catId ?: $cat) . '_' . $when . '_' . $nearSort . '_' . $radius . '_' . $page . '_' . $lat . '_' . $lng;
     $cachedNear = cache_get('home_feed_' . $nearKey, 600);
     if ($cachedNear !== false) {
         header('Cache-Control: public, max-age=300');
@@ -57,18 +61,21 @@ if ($kind === 'near') {
         $params = $catId > 0
             ? locationListingParams("country/alphaCode eq 'US' and contains(defaultCategory/path, '." . $catId . ".')", 12, $page, $when, 'popular')
             : categoryListingParams($catPath, 12, $page, $when, 'popular');
-        $params['geoFilter'] = sprintf('nearby(%F,%F,%dmi)', $lat, $lng, SO_NEAR_MAX_MILES);
-        $params['sort'] = 'distance';
+        $params['geoFilter'] = sprintf('nearby(%F,%F,%dmi)', $lat, $lng, $radius ?: SO_NEAR_MAX_MILES);
+        if ($nearSort === 'distance') $params['sort'] = 'distance';
+        elseif ($nearSort === 'soonest') $params['sort'] = 'date/date';
         if (strpos((string) ($params['filter'] ?? ''), 'alphaCode') === false) {
             $params['filter'] = trim(($params['filter'] ?? '') . " and country/alphaCode eq 'US'", ' and');
         }
         $data = tnRequest('/catalog/v2/events/', $params);
         $total = (int) ($data['totalCount'] ?? 0);
         $events = soHomeFeedFormat($data['results'] ?? [], 12);
-        $closest = $events ? ($events[0]['dist'] ?? null) : null;
+        $dists = array_filter(array_column($events, 'dist'), function ($d) { return $d !== null; });
+        $closest = $dists ? min($dists) : null;
         $out = [
-            'scope' => $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near',
-            'radius' => SO_NEAR_MILES,
+            'scope' => !$events ? ($radius ? 'empty' : 'near') : ($radius === 0 && $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near'),
+            'radius' => $radius ?: SO_NEAR_MILES,
+            'limited' => $radius,
             'closest' => $closest,
             'events' => $events,
             'total' => $total,
