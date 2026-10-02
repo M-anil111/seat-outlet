@@ -317,6 +317,7 @@ $soEventData = [
   'allDay'   => (($event['date']['time'] ?? '') === '' || ($event['date']['time'] ?? '') === '00:00:00'),
   'venue'    => (string) $eventVenueName,
   'city'     => (string) $eventCityLabel,
+  'tickets'  => (int) ($event['_metadata']['ticketCount'] ?? 0),
 ];
 ?>
 <script type="application/json" id="so-event-data"><?php echo json_encode($soEventData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES); ?></script>

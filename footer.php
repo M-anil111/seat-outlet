@@ -172,6 +172,9 @@ window.addEventListener('load', function () {
 <?php if (strpos($soPath, '/event/') === 0) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/event-actions.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
+<?php if (preg_match('#^/(event|artist)/#', $soPath)) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/idle-nudge.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php } ?>
 <?php if ($soHasEventList) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/events-listing.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/near-you.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
