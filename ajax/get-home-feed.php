@@ -22,8 +22,8 @@ $lng = isset($_GET['lng']) && is_numeric($_GET['lng']) ? (float) $_GET['lng'] : 
 if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;
 if ($lng !== null && ($lng < -180 || $lng > 180)) $lng = null;
 $hasGeo = $lat !== null && $lng !== null;
-// One decimal is about 7 miles: plenty for a 50-mile radius, and it lets nearby visitors share one cached answer.
-if ($hasGeo) { $lat = round($lat, 1); $lng = round($lng, 1); }
+// Two decimals is about 0.7 miles: keeps the 50-mile radius honest while letting neighbors share one cached answer.
+if ($hasGeo) { $lat = round($lat, 2); $lng = round($lng, 2); }
 
 
 /* ---- "Explore ... near you" on the listing hubs: one category, one date window, paged (See more) ---- */

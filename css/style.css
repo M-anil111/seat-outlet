@@ -5924,6 +5924,7 @@ main.terms-page .policy-section, main.cookie-page .policy-section { padding-top:
 #sea-quantity-modal .sea-quantity-modal-option:hover { border-color: #0056d6; }
 #sea-quantity-modal .sea-quantity-modal-option.sea-active, #sea-quantity-modal .sea-quantity-modal-option:has(input:checked) { border-color: #0056d6; background: #eaf1ff; color: #0056d6; box-shadow: 0 0 0 3px rgba(0,86,214,.15); }
 #sea-quantity-modal .sea-quantity-modal-option input { position: absolute; opacity: 0; pointer-events: none; }
+#sea-quantity-modal .sea-quantity-modal-option:focus-within { outline: 3px solid #0056d6; outline-offset: 2px; }
 #sea-quantity-modal .sea-quantity-modal-skip { margin-top: 14px; background: none; border: 0; color: #0056d6; font-weight: 600; }
 #sea-quantity-modal .sea-quantity-modal-option { width: 100% !important; min-width: 0; padding: 0; }
 @media (max-width: 767.98px) {

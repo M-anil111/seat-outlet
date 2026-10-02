@@ -566,76 +566,7 @@ div#modal-overlay {
     #event-info-guarantee > div:nth-child(4) > ul {
         list-style-type: disc;
     }
-    /* ----------- QTY MODAL STYLING OVERRIDES ----------- */
-
-    /* Qty Modal & Content */
-    #sea-quantity-modal.sea-quantity-modal {
-        width: 350px !important;
-    }
-
-    #sea-quantity-modal > .sea-qty-modal-content {
-        padding: 13px 0 13px 0 !important;
-    }
-
-    /* Qty Modal Header */
-    #sea-quantity-modal.sea-qty-modal > .sea-qty-modal-content > span,
-    #sea-quantity-modal > div > span {
-        color: #4a4a4a !important;
-        content: 'How many tickets do you want?' !important;
-    }
-
-    /* Qty Modal Close Button */
-    #sea-quantity-modal-close:hover,
-    #sea-quantity-modal-close:focus,
-    #sea-quantity-modal-close > .cm-close:hover,
-    #sea-quantity-modal-close > .cm-close:focus {
-        opacity: 0.7 !important;
-        outline: none !important;
-    }
-
-    /* Qty Modal Filter Styling */
-    #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option {
-        border: 2px solid #3358e4 !important;
-        background-color: #fff !important;
-        color: #3358e4 !important;
-    }
-
-        #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option.sea-active {
-            background-color: #3358e4 !important;
-            color: #fff !important;
-        }
-
-        #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option:hover,
-        #sea-quantity-modal-options > label.sea-btn.btn-default.sea-quantity-modal-option:focus {
-            background-color: #3358e4 !important;
-            color: #fff !important;
-            opacity: 0.6 !important;
-        }
-
-    /* Qty Modal Find Button */
-    #sea-quantity-modal-skip.sea-quantity-modal-skip {
-        border: 2px solid #fff !important;
-        background-color: #3358e4 !important;
-        border-radius: 5px !important;
-        color: #fff !important;
-        font-weight: 700 !important;
-        padding: 5px 10px !important;
-        width: 100% !important;
-        margin-top: 25px !important;
-    }
-
-        #sea-quantity-modal-skip.sea-quantity-modal-skip:hover,
-        #sea-quantity-modal-skip.sea-quantity-modal-skip:focus {
-            opacity: 0.6 !important;
-        }
-
-    /* Qty Modal Media Queries */
-    @media screen and (max-aspect-ratio: 13/9) and (max-width: 991px) {
-        #sea-quantity-modal.sea-quantity-modal {
-            /* width: 300px !important; */
-            /*margin: -112.5px 0 0 -150px/* /*uncomment me if we go back to the old code*/
-        }
-    }
+    /* The quantity sheet ("How many tickets?") is skinned in css/style.css. */
 
     /* ----------- DISCLAIMER COLUMN OVERRIDES ----------- */
 

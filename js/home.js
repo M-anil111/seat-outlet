@@ -782,11 +782,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const events = (data && data.events) || [];
     if (!events.length) { box.hidden = true; return; }
     box.hidden = false;
-    const near = data.scope === 'near' && label;
+    const near = data.scope === 'near';
+    const where = near && label ? ' near ' + label : (near ? ' near you' : '');
     if (title) {
       title.textContent = kind === 'lastminute'
-        ? (near ? 'Last-minute tickets near ' + label : 'Last-minute tickets')
-        : (near ? 'Trending events near ' + label : 'Trending events');
+        ? 'Last-minute tickets' + where
+        : 'Trending events' + where;
     }
     if (sub) {
       sub.textContent = kind === 'lastminute'
@@ -799,7 +800,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function load(lat, lng) {
-    const key = (lat && lng) ? (Number(lat).toFixed(1) + ',' + Number(lng).toFixed(1)) : 'us';
+    const key = (lat && lng) ? (Number(lat).toFixed(2) + ',' + Number(lng).toFixed(2)) : 'us';
     const label = (typeof getCookie === 'function' ? getCookie('so_label') : '') || '';
     const my = ++token;
     boxes.forEach(box => {
@@ -810,7 +811,7 @@ document.addEventListener('DOMContentLoaded', function () {
       fetch('/ajax/get-home-feed.php?' + qs)
         .then(r => r.json())
         .then(data => { if (my === token || loaded[kind] === key) render(box, kind, data, label); })
-        .catch(() => { loaded[kind] = ''; box.hidden = true; });
+        .catch(() => { if (loaded[kind] === key) { loaded[kind] = ''; box.hidden = true; } });
     });
   }
 
