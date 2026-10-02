@@ -3425,15 +3425,20 @@ function listPublishedBlogPosts(int $page = 1, int $perPage = 10, ?string $categ
 
 /** Categories that have at least one published post, largest first: [['name' => 'City Guides', 'slug' => 'city-guides', 'count' => 3], ...] */
 function listBlogCategories($mysqli = MYSQLI) {
-    $res = $mysqli->query(
-        'SELECT category, COUNT(*) AS c FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()
-         AND category IS NOT NULL AND category <> \'\' GROUP BY category ORDER BY c DESC, category ASC'
-    );
-    $out = [];
-    while ($res && ($r = $res->fetch_assoc())) {
-        $out[] = ['name' => $r['category'], 'slug' => sanitize_title($r['category']), 'count' => (int) $r['c']];
+    try {
+        $res = $mysqli->query(
+            'SELECT category, COUNT(*) AS c FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()
+             AND category IS NOT NULL AND category <> \'\' GROUP BY category ORDER BY c DESC, category ASC'
+        );
+        $out = [];
+        while ($res && ($r = $res->fetch_assoc())) {
+            $out[] = ['name' => $r['category'], 'slug' => sanitize_title($r['category']), 'count' => (int) $r['c']];
+        }
+        return $out;
+    } catch (Throwable $e) {   // the category column comes from a migration: a site where it has not run yet should still show the blog
+        error_log('listBlogCategories: ' . $e->getMessage());
+        return [];
     }
-    return $out;
 }
 
 function saveBlogPost(array $data, $mysqli = MYSQLI) {
