@@ -6,7 +6,7 @@
   var path = location.pathname;
   var isEvent = /^\/event\//.test(path), isArtist = /^\/artist\//.test(path);
   if (!isEvent && !isArtist) return;
-  var IDLE_MS = 45000;
+  var IDLE_MS = 35000;
   var KEY = 'so_nudge_shown';
   try { if (sessionStorage.getItem(KEY)) return; } catch (e) {}
 
@@ -23,19 +23,29 @@
     return !!(q && q.offsetParent !== null);
   }
 
+  function daysTo(iso) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return null;
+    var p = iso.split('-').map(Number), d = new Date(p[0], p[1] - 1, p[2]), n = new Date(); n.setHours(0, 0, 0, 0);
+    return Math.round((d - n) / 86400000);
+  }
+
+  /* Copy comes only from facts the page has: how many tickets are listed, whether the event is a top seller, how soon it is. */
   function content() {
     if (isEvent) {
       var data = {};
       try { data = JSON.parse(document.getElementById('so-event-data').textContent); } catch (e) {}
       var name = data.name || 'this event';
-      var where = data.city ? ' in ' + data.city : '';
-      var n = parseInt(data.tickets, 10);
-      var line = 'Tickets for ' + name + where + ' are on sale.' + (n > 0 && n <= 20 ? ' ' + n + ' tickets are listed right now.' : '') + ' Prices and availability can change.';
-      return { text: line, cta: 'Back to tickets', target: '#tn-maps' };
+      var n = parseInt(data.tickets, 10), rank = parseInt(data.rank, 10), days = daysTo(data.date);
+      var kicker = 'Still thinking?', head = 'Good seats do not wait', body = 'Prices move with demand. Take another look at ' + name + (data.city ? ' in ' + data.city : '') + '.', tag = '';
+      if (n > 0 && n <= 30) { kicker = 'Heads up'; head = 'Only ' + n + ' ticket' + (n === 1 ? '' : 's') + ' listed'; body = 'That is all we have for ' + name + ' right now. Lock your seats before they are gone.'; tag = 'Low stock'; }
+      else if (rank >= 1 && rank <= 3) { kicker = 'Everyone is looking'; head = 'This one is moving'; body = name + ' is one of our top sellers right now. Check the seat map while there is still a choice.'; tag = 'Top seller'; }
+      else if (days !== null && days >= 0 && days <= 7) { kicker = 'It is almost here'; head = days === 0 ? 'Showtime is today' : (days === 1 ? 'Showtime is tomorrow' : 'Only ' + days + ' days to go'); body = 'Tickets are delivered before the event. Grab yours for ' + name + '.'; tag = 'Happening soon'; }
+      if (data.price) { body += ' Tickets from ' + data.price + '.'; }
+      return { kicker: kicker, head: head, text: body, tag: tag, cta: 'Show me seats', target: '#tn-maps' };
     }
     var h1 = document.querySelector('h1, h2.h1');
     var who = h1 ? h1.textContent.trim().replace(/\s+tickets?$/i, '') : 'this artist';
-    return { text: 'Compare seats and prices for ' + who + ' dates. Every order is backed by our 100% guarantee.', cta: 'See dates', target: '#eventsSection, .performer-event-item' };
+    return { kicker: 'Still scrolling?', head: 'Catch ' + who + ' live', text: 'Compare seats and prices for every ' + who + ' date. Every order is backed by our 100% guarantee.', tag: '', cta: 'See dates', target: '#eventsSection, .performer-event-item' };
   }
 
   function close() {
@@ -57,10 +67,15 @@
     box.className = 'so-nudge';
     box.innerHTML = '<div class="so-nudge__card" role="dialog" aria-modal="true" aria-labelledby="soNudgeTitle">' +
       '<button type="button" class="so-nudge__x" aria-label="Close">&times;</button>' +
-      '<h2 id="soNudgeTitle" class="so-nudge__title">Still deciding?</h2>' +
+      '<p class="so-nudge__kicker"></p>' +
+      '<h2 id="soNudgeTitle" class="so-nudge__title"></h2>' +
+      '<span class="so-nudge__tag" hidden></span>' +
       '<p class="so-nudge__text"></p>' +
       '<button type="button" class="so-nudge__cta"></button>' +
-      '<button type="button" class="so-nudge__later">Not now</button></div>';
+      '<button type="button" class="so-nudge__later">Maybe later</button></div>';
+    box.querySelector('.so-nudge__kicker').textContent = c.kicker;
+    box.querySelector('#soNudgeTitle').textContent = c.head;
+    var tagEl = box.querySelector('.so-nudge__tag'); if (c.tag) { tagEl.textContent = c.tag; tagEl.hidden = false; }
     box.querySelector('.so-nudge__text').textContent = c.text;
     box.querySelector('.so-nudge__cta').textContent = c.cta;
     document.body.appendChild(box);
@@ -92,5 +107,10 @@
   ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touchstart', 'wheel'].forEach(function (ev) {
     window.addEventListener(ev, activity, { passive: true });
   });
+  // Desktop: the pointer leaves through the top of the window (heading for the tabs or the address bar).
+  document.addEventListener('mouseout', function (e) {
+    if (!e.relatedTarget && e.clientY <= 0 && !shown && Date.now() - startedAt > 8000) show();
+  });
+  var startedAt = Date.now();
   schedule();
 })();

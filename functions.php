@@ -596,7 +596,7 @@ function getTnPerformerEvents($performerId = 0, $params = []) {
  */
 function performerPageEventsSpec($performerId, $perPage = 20) {
     return ['/catalog/v2/events', [
-        'filter'            => 'date/date ge ' . date('Y-m-d'),
+        'filter'            => 'date/date ge ' . date('Y-m-d') . ' and date/date le ' . date('Y-m-d', strtotime('+3 years')),   // TicketNetwork parks date-TBA events decades out
         'performerFilter'   => 'id eq ' . (int) $performerId,
         'sort'              => 'date/date',
         'perPage'           => (int) $perPage,
@@ -761,6 +761,66 @@ function getPerformerImage($name, $defaultCategory) {
 function getPerformerGenreLabel($defaultCategory) {
     $name = trim((string) ($defaultCategory['text']['name'] ?? ''));
     return $name === '' ? '' : ucwords(strtolower($name));
+}
+
+
+/**
+ * Where an event page that is over (or no longer in the catalog) should send the visitor and search engines:
+ * the main performer's page when we know it, otherwise the matching category hub, otherwise all events.
+ * $event is the catalog record when it still exists, or null when only the remembered row can be used.
+ */
+function soEventRedirectTarget($event, int $eventId): string {
+    $perfId = (int) ($event['performers'][0]['id'] ?? 0);
+    $perfName = (string) ($event['performers'][0]['name'] ?? '');
+    $path = (string) ($event['defaultCategory']['path'] ?? '');
+    if ($perfId <= 0 && $eventId > 0) {
+        try {
+            $stmt = MYSQLI->prepare('SELECT performer_id, performer_name, category_path FROM event_redirects WHERE event_id = ?');
+            if ($stmt) {
+                $stmt->bind_param('i', $eventId);
+                $stmt->execute();
+                $row = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                if ($row) { $perfId = (int) $row['performer_id']; $perfName = (string) $row['performer_name']; $path = (string) $row['category_path']; }
+            }
+        } catch (\Throwable $e) {
+            // The table may not exist yet: carry on with the category data above.
+        }
+    }
+    if ($perfId > 0 && $perfName !== '') return '/artist/' . createSlug($perfName, $perfId);
+    if (strpos($path, '.1988.') !== false) return '/game-day-tickets';
+    if (strpos($path, '.1989.') !== false) return '/buy-broadway-tickets';
+    if (strpos($path, '.1877.') !== false || strpos($path, '.2065.') !== false) return '/upcoming-music-festivals';
+    if (strpos($path, '.1986.') !== false) return '/concert-tickets-for-sale';
+    return '/buy-tickets-online';
+}
+
+/** Remembers the performer and category of a live event page (one insert the first time, nothing afterwards). */
+function soEventRemember(array $event): void {
+    $id = (int) ($event['id'] ?? 0);
+    if ($id <= 0) return;
+    $perfId = (int) ($event['performers'][0]['id'] ?? 0);
+    $perfName = (string) ($event['performers'][0]['name'] ?? '');
+    $path = (string) ($event['defaultCategory']['path'] ?? '');
+    try {
+        $chk = MYSQLI->prepare('SELECT 1 FROM event_redirects WHERE event_id = ?');
+        if ($chk) { $chk->bind_param('i', $id); $chk->execute(); $has = $chk->get_result()->num_rows > 0; $chk->close(); if ($has) return; }
+        $stmt = MYSQLI->prepare('INSERT IGNORE INTO event_redirects (event_id, performer_id, performer_name, category_path, created_at) VALUES (?, ?, ?, ?, NOW())');
+        if (!$stmt) return;
+        $stmt->bind_param('iiss', $id, $perfId, $perfName, $path);
+        $stmt->execute();
+        $stmt->close();
+    } catch (\Throwable $e) {
+        // A missing table or a database hiccup must never break an event page.
+    }
+}
+
+/** True once the event has started more than 6 hours ago (the catalog time carries the venue's UTC offset). */
+function soEventIsOver(array $event): bool {
+    $when = (string) ($event['date']['datetimeOffset'] ?? '');
+    $ts = $when !== '' ? strtotime($when) : false;
+    if (!$ts) return false;
+    return $ts + 6 * 3600 < time();
 }
 
 function getTnEventById($eventId) {
@@ -1584,25 +1644,73 @@ function listingRequestState($defaultSort = 'popular') {
     return [$when, $sort, ($when !== '' || $sort !== $defaultSort)];
 }
 
+/**
+ * "Weekend 1 / Weekend 2" groups for a single multi-day festival (or other multi-day event) at one site.
+ * Returns [] unless the events are all at one venue, belong to a festival category (or are flagged multi-day), and fall
+ * into at least two separate runs of days (gap of more than 3 days between runs). Touring artists never qualify.
+ */
+function soWeekendGroups(array $events): array {
+    // Only the events that are themselves part of a festival (or flagged multi-day), at one venue, are grouped:
+    // an unrelated concert at the same venue is never put under a weekend chip.
+    $fest = [];
+    foreach ($events as $ev) {
+        $path = (string) ($ev['defaultCategory']['path'] ?? '');
+        $isFest = strpos($path, '.1877.') !== false || strpos($path, '.2065.') !== false || !empty($ev['isMultiDayEvent']);
+        if ($isFest) $fest[] = $ev;
+    }
+    if (count($fest) < 2) return [];
+    $venues = []; $dates = [];
+    foreach ($fest as $ev) {
+        $venues[(string) ($ev['venue']['id'] ?? '0')] = true;
+        $d = (string) ($ev['date']['date'] ?? '');
+        if ($d === '' || !strtotime($d)) return [];
+        $dates[(int) ($ev['id'] ?? 0)] = substr($d, 0, 10);
+    }
+    if (count($venues) !== 1) return [];
+    asort($dates);
+    $groups = []; $prev = null; $g = -1;
+    foreach ($dates as $id => $d) {
+        // Calendar days, so a daylight-saving change cannot turn a 3-day gap into 3.04 days.
+        if ($prev === null || (new DateTimeImmutable($d))->diff(new DateTimeImmutable($prev))->days > 3) { $g++; $groups[$g] = ['ids' => [], 'from' => $d, 'to' => $d]; }
+        $groups[$g]['ids'][] = $id; $groups[$g]['to'] = $d; $prev = $d;
+    }
+    if (count($groups) < 2 || count($groups) > 6) return [];
+    foreach ($groups as $i => &$grp) {
+        $grp['label'] = 'Weekend ' . ($i + 1);
+        $a = date('M d', strtotime($grp['from'])); $b = date('M d', strtotime($grp['to']));
+        $grp['range'] = $a === $b ? $a : $a . ' - ' . $b;
+    }
+    unset($grp);
+    return $groups;
+}
+
 /** Listing hubs that get the "Explore ... near you" block: base path => [feed category, plural noun]. */
 const SO_EXPLORE_HUBS = [
-    '/buy-tickets-online'        => ['all', 'events'],
-    '/concert-tickets-for-sale'  => ['concerts', 'concerts'],
-    '/game-day-tickets'          => ['sports', 'games'],
-    '/buy-broadway-tickets'      => ['theatre', 'shows'],
-    '/upcoming-music-festivals'  => ['festival', 'festivals'],
+    '/buy-tickets-online'        => ['all', 'events', '/images/crowd-at-concert-or-event.webp'],
+    '/concert-tickets-for-sale'  => ['concerts', 'concerts', '/images/event-concert.jpg'],
+    '/game-day-tickets'          => ['sports', 'games', '/images/event-basketball.jpg'],
+    '/buy-broadway-tickets'      => ['theatre', 'shows', '/images/loews-theatre.webp'],
+    '/upcoming-music-festivals'  => ['festival', 'festivals', '/images/festival-1.webp'],
 ];
 
 /**
  * Category tabs, location and date chips, and the "near you" grid (filled by js/near-you.js from the visitor's own
  * location; it stays hidden until a location is known), then the heading of the full national list below.
  */
-function renderExploreBar($basePath) {
-    if (!isset(SO_EXPLORE_HUBS[$basePath])) return;
-    [$cat, $noun] = SO_EXPLORE_HUBS[$basePath];
+function renderExploreBar($basePath, array $opts = []) {
+    if (isset($opts['catId'])) {
+        // A single category page: its own TicketNetwork category id and name.
+        $cat = 'all'; $noun = (string) ($opts['noun'] ?? 'events'); $heroImg = '/images/crowd-at-concert-or-event.webp';
+        $catId = (int) $opts['catId'];
+    } elseif (isset(SO_EXPLORE_HUBS[$basePath])) {
+        [$cat, $noun, $heroImg] = SO_EXPLORE_HUBS[$basePath];
+        $catId = 0;
+    } else {
+        return;
+    }
     $tabs = ['/buy-tickets-online' => 'All events', '/game-day-tickets' => 'Sports', '/concert-tickets-for-sale' => 'Concerts', '/buy-broadway-tickets' => 'Theater', '/upcoming-music-festivals' => 'Festivals'];
     ?>
-    <div class="so-explore" data-so-explore data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
+    <div class="so-explore" data-so-explore data-hero="<?php echo htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8'); ?>" data-when="<?php echo htmlspecialchars((string) ($opts['when'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-catid="<?php echo (int) $catId; ?>" data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
         <nav class="so-cattabs" aria-label="Event categories">
             <?php foreach ($tabs as $href => $label) { ?>
                 <a href="<?php echo $href; ?>" <?php echo $href === $basePath ? 'class="active" aria-current="page"' : ''; ?>><?php echo $label; ?></a>
@@ -1621,19 +1729,6 @@ function renderExploreBar($basePath) {
                     <button type="button" class="so-pop__row" data-so-loc-here>Use my current location</button>
                 </div>
             </div>
-            <div class="so-chip-wrap">
-                <button type="button" class="so-chip" data-so-date aria-haspopup="listbox" aria-expanded="false">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
-                    <span data-so-date-label>All dates</span>
-                    <svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                <div class="so-pop" data-so-date-pop role="listbox" hidden>
-                    <button type="button" class="so-pop__row is-active" role="option" data-when="">All dates</button>
-                    <?php foreach (LISTING_WHEN as $k => $label) { ?>
-                        <button type="button" class="so-pop__row" role="option" data-when="<?php echo $k; ?>"><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></button>
-                    <?php } ?>
-                </div>
-            </div>
         </div>
         <section class="so-near" data-so-near hidden aria-live="polite">
             <h2 class="so-near__title" data-so-near-title>Explore <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> near you</h2>
@@ -1645,27 +1740,41 @@ function renderExploreBar($basePath) {
     <?php
 }
 
-function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'popular') {
+function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'popular', array $explore = []) {
     $url = function ($w, $s) use ($basePath, $defaultSort) {
         $q = array_filter(['when' => $w, 'sort' => $s === $defaultSort ? '' : $s]);
         return htmlspecialchars($basePath . ($q ? '?' . http_build_query($q) : ''), ENT_QUOTES, 'UTF-8');
     };
-    renderExploreBar($basePath);
+    renderExploreBar($basePath, $explore + ['when' => $when]);
+    $whenLabel = $when !== '' ? LISTING_WHEN[$when] : 'All dates';
+    $sortLabel = LISTING_SORT[$sort] ?? 'Best sellers';
     ?>
-    <div class="listing-filters" role="group" aria-label="Filter and sort events">
-        <div class="listing-filter-row">
-            <span class="listing-filter-label">When</span>
-            <a class="filter-chip <?php echo $when === '' ? 'active' : ''; ?>" href="<?php echo $url('', $sort); ?>">Any time</a>
-            <?php foreach (LISTING_WHEN as $key => $label) { ?>
-                <a class="filter-chip <?php echo $when === $key ? 'active' : ''; ?>" href="<?php echo $url($key, $sort); ?>" <?php echo $when === $key ? 'aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
-            <?php } ?>
-        </div>
-        <div class="listing-filter-row">
-            <span class="listing-filter-label">Sort</span>
-            <?php foreach (LISTING_SORT as $key => $label) { ?>
-                <a class="filter-chip <?php echo $sort === $key ? 'active' : ''; ?>" href="<?php echo $url($when, $key); ?>" <?php echo $sort === $key ? 'aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
-            <?php } ?>
-        </div>
+    <div class="so-filterbar" role="group" aria-label="Filter and sort events">
+        <details class="so-dd">
+            <summary class="so-chip<?php echo $when !== '' ? ' so-chip--on' : ''; ?>">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+                <span><?php echo htmlspecialchars($whenLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+                <svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="so-dd__menu">
+                <a class="so-pop__row<?php echo $when === '' ? ' is-active' : ''; ?>" href="<?php echo $url('', $sort); ?>"<?php echo $when === '' ? ' aria-current="true"' : ''; ?>>All dates</a>
+                <?php foreach (LISTING_WHEN as $key => $label) { ?>
+                    <a class="so-pop__row<?php echo $when === $key ? ' is-active' : ''; ?>" href="<?php echo $url($key, $sort); ?>"<?php echo $when === $key ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+                <?php } ?>
+            </div>
+        </details>
+        <details class="so-dd">
+            <summary class="so-chip<?php echo $sort !== $defaultSort ? ' so-chip--on' : ''; ?>">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M4 12h7M4 17h4M17 5v14m0 0-3-3m3 3 3-3"/></svg>
+                <span><?php echo htmlspecialchars($sortLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+                <svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="so-dd__menu">
+                <?php foreach (LISTING_SORT as $key => $label) { ?>
+                    <a class="so-pop__row<?php echo $sort === $key ? ' is-active' : ''; ?>" href="<?php echo $url($when, $key); ?>"<?php echo $sort === $key ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+                <?php } ?>
+            </div>
+        </details>
         <?php if ((int) $total === 0 && $when !== '') { ?>
             <p class="listing-filter-empty">No events match <strong><?php echo htmlspecialchars(strtolower(LISTING_WHEN[$when]), ENT_QUOTES, 'UTF-8'); ?></strong>. <a href="<?php echo $url('', $sort); ?>">Show all dates</a>.</p>
         <?php } ?>

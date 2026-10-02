@@ -161,6 +161,8 @@ function updateEventsSection(location) {
         
         document.getElementById('location-no-results').innerHTML = '';
         eventsSection.innerHTML = '';
+        // Filtered results are a different set of rows: the weekend chips no longer apply.
+        document.querySelectorAll('[data-so-weekends]').forEach(function (b) { b.hidden = true; });
         
         data.events.forEach(event => {
             eventsSection.insertAdjacentHTML(
@@ -475,7 +477,7 @@ function renderEvent(event) {
             </div>
             <div class="ev-venue"><a href="/venue/${venueSlug}">${evVenue}</a></div>
             <div class="ev-place"><a href="/city/${citySlug}">${evCityName}</a></div>
-            <div class="ev-name"><a href="/event/${eSlug}">${evName}</a></div>
+            <div class="ev-name"><a href="/event/${eSlug}">${evName}<span class="visually-hidden"> tickets, ${escHtml(emonth)} ${d} at ${evVenue}, ${evCityName}</span></a></div>
         </div>
         <div class="ms-3">
             ${priceTag}
@@ -574,4 +576,39 @@ document.addEventListener('click', function (e) {
   enhanceAll();
   var list = document.getElementById('eventsSection');
   if (list && window.MutationObserver) new MutationObserver(function () { enhanceAll(list); }).observe(list, { childList: true });
+})();
+
+
+/* "Weekend 1 / Weekend 2" chips (multi-day festivals only; the server prints them): show one weekend's dates at a time.
+   Without JavaScript every date stays visible. */
+(function () {
+  var bar = document.querySelector('[data-so-weekends]');
+  var list = document.getElementById('eventsSection');
+  if (!bar || !list) return;
+  var buttons = bar.querySelectorAll('[data-wk]');
+  function show(wk) {
+    buttons.forEach(function (b) {
+      var on = b.getAttribute('data-wk') === wk;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    list.querySelectorAll('.performer-event-item').forEach(function (row) {
+      var rw = row.getAttribute('data-wk');
+      row.hidden = !!rw && rw !== wk;
+    });
+  }
+  buttons.forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-wk')); }); });
+  show('1');
+})();
+
+
+/* Filter dropdown chips (When, Sort): only one open at a time, closed by a click elsewhere or Escape. */
+(function () {
+  var all = document.querySelectorAll('.so-filterbar .so-dd');
+  if (!all.length) return;
+  all.forEach(function (d) {
+    d.addEventListener('toggle', function () { if (d.open) all.forEach(function (o) { if (o !== d) o.open = false; }); });
+  });
+  document.addEventListener('click', function (e) { all.forEach(function (d) { if (d.open && !d.contains(e.target)) d.open = false; }); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') all.forEach(function (d) { d.open = false; }); });
 })();

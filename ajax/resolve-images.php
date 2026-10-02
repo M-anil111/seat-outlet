@@ -19,7 +19,7 @@ if ($canResolve) { @file_put_contents($gate, (string) time()); }
 $out = []; $resolved = 0;
 foreach ($items as $item) {
     $name = trim((string) ($item['name'] ?? ''));
-    $type = in_array($item['type'] ?? '', ['artist', 'team', 'festival'], true) ? $item['type'] : 'artist';
+    $type = in_array($item['type'] ?? '', ['artist', 'team', 'festival', 'venue'], true) ? $item['type'] : 'artist';
     $url  = '';
     if ($name !== '') {
         $row = imageRecordGet(imageEntityKey($type, $name));

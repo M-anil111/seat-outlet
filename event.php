@@ -225,27 +225,42 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
   $eventInfoLink = ['/' . $categoryCityPrefix . '/' . createSlug($eventCityLabel, $eventCityId), 'More events in ' . $eventCityLabel];
 }
 ?>
-<section class="event-detail">
+<?php
+$evType = imageEntityTypeForPerformer($event['defaultCategory'] ?? []);
+$evWho  = (string) ($primaryPerformer['name'] ?? ($event['text']['name'] ?? ''));
+$evImg  = getEntityImage($evType, $evWho, ['category' => $event['defaultCategory'] ?? [], 'resolve' => false]);
+$evReal = in_array($evImg['status'] ?? '', ['ok', 'manual'], true) && ($evImg['url'] ?? '') !== '';
+$evHue  = hexdec(substr(md5($evWho), 0, 4)) % 360;
+$evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['name'] ?? '')));
+?>
+<section class="so-evhero">
   <div class="container">
-    <div class="ev-card">
-      <?php if ($eventTimestamp) { ?>
-        <div class="ev-date">
-          <div class="ev-date-day"><?php echo $h(date('D', $eventTimestamp)); ?></div>
-          <div class="ev-date-num"><?php echo $h(date('j', $eventTimestamp)); ?></div>
-          <div class="ev-date-month"><?php echo $h(date('M Y', $eventTimestamp)); ?></div>
-          <?php if ($eventTimeText !== '') { ?>
-            <div class="ev-date-time">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/></svg>
-              <?php echo $h($eventTimeText); ?>
-            </div>
-          <?php } ?>
-        </div>
-      <?php } ?>
-
-      <div class="ev-info"<?php echo $eventTimestamp ? '' : ' style="margin-left:0;padding-left:0;border-left:0"'; ?>>
-        <h1 class="ev-title"><?php echo $h($event['text']['name'] ?? ''); ?></h1>
+    <div class="so-evhero__card">
+      <div class="so-evhero__media" style="--so-hue:<?php echo (int) $evHue; ?>">
+        <?php if ($evReal) { ?>
+          <img src="<?php echo $h($evImg['url']); ?>" alt="<?php echo $h($evWho); ?>" width="480" height="480" fetchpriority="high" decoding="async">
+        <?php } else { ?>
+          <span class="so-evhero__initials" aria-hidden="true"><?php echo $h(soInitials($evWho)); ?></span>
+        <?php } ?>
+      </div>
+      <div class="so-evhero__main">
+        <?php if ($eventTimestamp) { ?>
+          <p class="so-evhero__when"><?php echo $h(date('l, F j, Y', $eventTimestamp)); ?><?php echo $eventTimeText !== '' ? ' &middot; ' . $h($eventTimeText) : ''; ?></p>
+        <?php } ?>
+        <h1 class="ev-title so-evhero__title"><?php echo $h($event['text']['name'] ?? ''); ?></h1>
+        <?php
+          $evChips = [];
+          $evTickets = (int) ($event['_metadata']['ticketCount'] ?? 0);
+          $evRank = (int) ($event['salesRank'] ?? 0);
+          $evDays = $eventTimestamp ? (int) floor(($eventTimestamp - strtotime('today')) / 86400) : null;
+          if ($evRank >= 1 && $evRank <= 3) { $evChips[] = ['hot', 'Top seller right now']; }
+          if ($evTickets > 0 && $evTickets <= 30) { $evChips[] = ['warn', 'Only ' . $evTickets . ' tickets listed']; }
+          if ($evDays !== null && $evDays >= 0 && $evDays <= 14) { $evChips[] = ['soon', $evDays === 0 ? 'Happening today' : ($evDays === 1 ? 'Tomorrow' : 'In ' . $evDays . ' days')]; }
+          if ($evChips) { ?>
+          <ul class="so-evhero__chips" aria-label="Event status"><?php foreach ($evChips as [$ck, $cl]) { ?><li class="so-chipx so-chipx--<?php echo $ck; ?>"><?php echo $h($cl); ?></li><?php } ?></ul>
+        <?php } ?>
         <?php if ($eventVenueParts) { ?>
-          <p class="ev-venue"><i class="bi bi-geo-alt" aria-hidden="true"></i><span><?php
+          <p class="so-evhero__venue"><i class="bi bi-geo-alt" aria-hidden="true"></i><span><?php
             $out = [];
             foreach ($eventVenueParts as [$href, $label]) {
               $out[] = $href ? '<a href="' . $h($href) . '">' . $h($label) . '</a>' : $h($label);
@@ -253,38 +268,58 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
             echo implode(', ', $out);
           ?></span></p>
         <?php } ?>
-        <?php if ($eventInfoLink) { ?>
-          <a class="ev-link" href="<?php echo $h($eventInfoLink[0]); ?>"><i class="bi bi-info-circle" aria-hidden="true"></i><span><?php echo $h($eventInfoLink[1]); ?></span></a>
-        <?php } ?>
-        <div class="ev-actions">
+        <div class="so-evhero__actions">
           <?php if ($eventTimestamp) { ?>
-            <button type="button" class="ev-action" data-so-ics><i class="bi bi-calendar-plus" aria-hidden="true"></i><span>Add to calendar</span></button>
+            <div class="so-cal" data-so-cal>
+              <button type="button" class="so-action" data-so-cal-toggle aria-expanded="false">
+                <i class="bi bi-calendar-plus" aria-hidden="true"></i><span>Add to calendar</span>
+              </button>
+              <div class="so-cal__menu" hidden>
+                <a data-cal="google" target="_blank" rel="noopener">Google Calendar</a>
+                <a data-cal="outlook" target="_blank" rel="noopener">Outlook.com</a>
+                <a data-cal="office" target="_blank" rel="noopener">Microsoft 365</a>
+                <a data-cal="yahoo" target="_blank" rel="noopener">Yahoo Calendar</a>
+                <button type="button" data-cal="ics">Apple Calendar or other (.ics file)</button>
+              </div>
+            </div>
           <?php } ?>
-          <button type="button" class="ev-action" data-so-share><i class="bi bi-share" aria-hidden="true"></i><span>Share</span></button>
+          <button type="button" class="so-action" data-so-share><i class="bi bi-share" aria-hidden="true"></i><span>Share</span></button>
+          <?php if ($eventInfoLink) { ?>
+            <a class="so-action" href="<?php echo $h($eventInfoLink[0]); ?>"><span>More dates</span></a>
+          <?php } ?>
         </div>
         <span class="visually-hidden" id="so-action-status" role="status" aria-live="polite"></span>
       </div>
-
-      <div class="ev-cta">
-        <div class="ev-cta-box">
-          <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
-          <div class="ev-cta-label">
-            <?php if ($eventLowPrice !== '') { ?>Tickets from <strong><?php echo $h($eventLowPrice); ?></strong><?php } else { ?>Tickets<?php } ?>
-          </div>
-          <a class="ev-cta-btn" href="#tn-maps">View Tickets</a>
-        </div>
-      </div>
-
-      <div class="ev-guarantee">
-        <div class="ev-guarantee-head">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 0c-.69 0-1.843.265-2.928.56-1.11.3-2.229.655-2.887.87a1.54 1.54 0 0 0-1.044 1.262c-.596 4.477.787 7.795 2.465 9.99a11.8 11.8 0 0 0 2.517 2.453c.386.273.744.482 1.048.625.28.132.581.24.829.24s.548-.108.829-.24a7 7 0 0 0 1.048-.625 11.8 11.8 0 0 0 2.517-2.453c1.678-2.195 3.061-5.513 2.465-9.99a1.54 1.54 0 0 0-1.044-1.263 63 63 0 0 0-2.887-.87C9.843.266 8.69 0 8 0m2.146 5.146a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793z"/></svg>
-          <h2><a href="/worry-free-guarantee" class="text-reset text-decoration-none">100% Worry-Free Guarantee</a></h2>
-        </div>
-        <p>We are a resale marketplace, not the ticket seller. Prices are set by third-party sellers and may be above or below face value. Your seats are together unless otherwise noted. All prices are in USD.</p>
+      <div class="so-evhero__buy">
+        <p class="so-evhero__price"><?php if ($eventLowPrice !== '') { ?><span>Tickets from</span> <strong><?php echo $h($eventLowPrice); ?></strong><?php } else { ?><span>Tickets</span><?php } ?></p>
+        <a class="so-evhero__cta ev-cta-btn" href="#tn-maps">View tickets</a>
+        <p class="so-evhero__assure"><i class="bi bi-shield-check" aria-hidden="true"></i><a href="/worry-free-guarantee">100% Worry-Free Guarantee</a></p>
+        <p class="so-evhero__note">Resale marketplace. Prices are set by sellers and may be above or below face value. All prices in USD.</p>
       </div>
     </div>
   </div>
 </section>
+<?php if (!$evReal) { ?>
+<script>
+// No picture stored yet: ask for it once (the server only looks up names it has queued), keep the initials tile otherwise.
+(function () {
+  var media = document.querySelector('.so-evhero__media');
+  if (!media) return;
+  setTimeout(function () {
+    fetch('/ajax/resolve-images.php', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: [{ name: <?php echo json_encode($evWho); ?>, type: <?php echo json_encode($evType); ?> }] }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var url = d && d.images && d.images[0];
+        if (!url) return;
+        var img = new Image(); img.alt = <?php echo json_encode($evWho); ?>; img.width = 480; img.height = 480;
+        img.onload = function () { media.innerHTML = ''; media.appendChild(img); };
+        img.src = url;
+      }).catch(function () {});
+  }, 1200);
+})();
+</script>
+<?php } ?>
 
 <div id="tn-maps" class="seatics" style="height: calc(100vh - 50px);width: 100%;"></div>
 <div id="so-no-tickets" class="so-no-tickets d-none">
@@ -317,9 +352,83 @@ $soEventData = [
   'allDay'   => (($event['date']['time'] ?? '') === '' || ($event['date']['time'] ?? '') === '00:00:00'),
   'venue'    => (string) $eventVenueName,
   'city'     => (string) $eventCityLabel,
+  'performer' => (string) ($event['performers'][0]['name'] ?? ''),
+  'cat'      => (string) ($event['defaultCategory']['path'] ?? ''),
   'tickets'  => (int) ($event['_metadata']['ticketCount'] ?? 0),
+  'rank'     => (int) ($event['salesRank'] ?? 0),
+  'price'    => (string) ($event['pricingInfo']['lowPrice']['text']['formatted'] ?? ''),
 ];
 ?>
+<?php
+$evNm   = (string) ($event['text']['name'] ?? '');
+$evPlaceFull = $eventCityLabel;
+$evWhenLong = $eventTimestamp ? date('l, F j, Y', $eventTimestamp) : '';
+$evCatName = ucwords(strtolower((string) ($event['defaultCategory']['text']['name'] ?? '')));
+$evOther = [];
+if (!empty($primaryPerformer['id'])) {
+  [, $evOtherResp] = getPerformerPageEvents((int) $primaryPerformer['id'], 8);
+  foreach (($evOtherResp['results'] ?? []) as $oe) { if ((int) ($oe['id'] ?? 0) !== (int) $id && count($evOther) < 6) { $evOther[] = $oe; } }
+}
+$evFaqs = [
+  ['q' => 'How much are ' . $evNm . ' tickets?', 'a' => $eventLowPrice !== '' ? $evNm . ' tickets start from ' . $eventLowPrice . ' today. Prices are set by sellers and change with demand, so compare sections and seats before you buy. They can be above or below face value.' : 'Prices for ' . $evNm . ' tickets are set by sellers and change with demand. Open the seat map above to compare sections and prices.'],
+  ['q' => 'When and where is ' . $evNm . '?', 'a' => $evNm . ($evWhenLong !== '' ? ' is on ' . $evWhenLong . ($eventTimeText !== '' ? ' at ' . $eventTimeText : '') : '') . ($eventVenueName !== '' ? ' at ' . $eventVenueName : '') . ($evPlaceFull !== '' ? ' in ' . $evPlaceFull : '') . '. Check the event page again before you travel in case details change.'],
+  ['q' => 'Will our seats be together?', 'a' => 'Your seats are together unless the listing says otherwise. Choose how many tickets you need and the seat map only shows listings that fit your group.'],
+  ['q' => 'Are ' . $evNm . ' tickets on Seat Outlet legit?', 'a' => 'Yes. Every order is covered by our 100% guarantee: valid tickets, delivery before the event, and a refund if the event is canceled and not rescheduled. Seat Outlet is a resale marketplace, not the venue box office.'],
+  ['q' => 'What if ' . $evNm . ' is canceled or postponed?', 'a' => 'If the event is canceled and not rescheduled you get a refund (delivery fees excluded). If it is rescheduled your tickets are normally valid for the new date. Read the full terms on our guarantee page.'],
+];
+$evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $f['q'], 'answer' => $f['a']]; }, $evFaqs));
+?>
+<section class="so-evinfo">
+  <div class="container">
+    <div class="so-evinfo__grid">
+      <div class="so-evinfo__main">
+        <h2><?php echo $h($evNm); ?> tickets<?php echo $eventVenueName !== '' ? ' at ' . $h($eventVenueName) : ''; ?></h2>
+        <p>Looking for <?php echo $h($evNm); ?> tickets<?php echo $evPlaceFull !== '' ? ' in ' . $h($evPlaceFull) : ''; ?>? Seat Outlet lets you compare seats and prices for this event in one place<?php echo $eventLowPrice !== '' ? ', with tickets listed from <strong>' . $h($eventLowPrice) . '</strong>' : ''; ?>. Pick your quantity, choose a section on the map and check out securely, backed by our <a href="/worry-free-guarantee">100% guarantee</a>.</p>
+        <p>This is a resale marketplace, so prices are set by sellers and may be above or below face value. Read how <a href="/ticket-buyer-protection">ticket buyer protection</a> works, or see <a href="/how-to-buy-tickets-online">how to buy tickets online</a>.</p>
+
+        <h2>How to buy <?php echo $h($evNm); ?> tickets</h2>
+        <ol class="so-steps">
+          <li><strong>Choose how many.</strong> Tell us how many tickets you need and we only show listings that fit.</li>
+          <li><strong>Pick your seats.</strong> Use the map and the filters to compare sections, rows and prices.</li>
+          <li><strong>Check out and go.</strong> Pay securely and get your tickets before the event.</li>
+        </ol>
+
+        <h2>Questions about <?php echo $h($evNm); ?> tickets</h2>
+        <div class="so-evfaq">
+          <?php foreach ($evFaqs as $fq) { ?>
+          <details class="so-faq"><summary><?php echo $h($fq['q']); ?></summary><p><?php echo $h($fq['a']); ?></p></details>
+          <?php } ?>
+        </div>
+      </div>
+      <aside class="so-evinfo__side">
+        <div class="so-evcard">
+          <h3>Event details</h3>
+          <dl>
+            <?php if ($evWhenLong !== '') { ?><dt>Date</dt><dd><?php echo $h($evWhenLong); ?></dd><?php } ?>
+            <?php if ($eventTimeText !== '') { ?><dt>Time</dt><dd><?php echo $h($eventTimeText); ?></dd><?php } ?>
+            <?php if ($eventVenueName !== '') { ?><dt>Venue</dt><dd><?php echo $eventVenueId ? '<a href="/venue/' . $h(createSlug($eventVenueName, $eventVenueId)) . '">' . $h($eventVenueName) . ' tickets</a>' : $h($eventVenueName); ?></dd><?php } ?>
+            <?php if ($evPlaceFull !== '') { ?><dt>City</dt><dd><?php echo $eventCityId ? '<a href="/' . $h($categoryCityPrefix) . '/' . $h(createSlug($eventCityLabel, $eventCityId)) . '">Events in ' . $h($evPlaceFull) . '</a>' : $h($evPlaceFull); ?></dd><?php } ?>
+            <?php if (!empty($primaryPerformer['id'])) { ?><dt>Performer</dt><dd><a href="/artist/<?php echo $h(createSlug($primaryPerformer['name'], $primaryPerformer['id'])); ?>"><?php echo $h($primaryPerformer['name']); ?> tickets</a></dd><?php } ?>
+            <?php if ($evCatName !== '') { ?><dt>Category</dt><dd><?php echo $h($evCatName); ?></dd><?php } ?>
+          </dl>
+        </div>
+        <?php if ($evOther) { ?>
+        <div class="so-evcard">
+          <h3>More <?php echo $h($primaryPerformer['name'] ?? 'dates'); ?> dates</h3>
+          <ul class="so-evother">
+            <?php foreach ($evOther as $oe) { $ots = strtotime($oe['date']['date'] ?? 'now'); ?>
+            <li><a href="/event/<?php echo $h(createSlug($oe['text']['name'] ?? '', $oe['id'])); ?>"><span class="so-evother__d"><?php echo $h(date('M j', $ots)); ?></span><span class="so-evother__t"><?php echo $h(($oe['city']['text']['name'] ?? '') . ', ' . ($oe['stateProvince']['text']['abbr'] ?? '')); ?><small><?php echo $h($oe['venue']['text']['name'] ?? ''); ?></small></span><span class="so-evother__p"><?php echo $h($oe['pricingInfo']['lowPrice']['text']['formatted'] ?? ''); ?></span></a></li>
+            <?php } ?>
+          </ul>
+          <?php if (!empty($primaryPerformer['id'])) { ?><a class="so-evcard__more" href="/artist/<?php echo $h(createSlug($primaryPerformer['name'], $primaryPerformer['id'])); ?>">See all <?php echo $h($primaryPerformer['name']); ?> tickets &rsaquo;</a><?php } ?>
+        </div>
+        <?php } ?>
+      </aside>
+    </div>
+  </div>
+</section>
+<?php if ($evJsonLd) { ?><script type="application/ld+json"><?php echo json_encode(['@context' => 'https://schema.org'] + $evJsonLd, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?></script><?php } ?>
+
 <script type="application/json" id="so-event-data"><?php echo json_encode($soEventData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES); ?></script>
 <script src="<?php echo htmlspecialchars($mapScriptUrl, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script>
@@ -357,7 +466,7 @@ $soEventData = [
     push('no_inventory', { reason: title });
   }
   Seatics.config.noEventHandler = function () {
-    showFallback('This event has already taken place', 'Browse upcoming dates for the same performer, city or venue below.');
+    showFallback('Tickets are not available to show right now', 'Please try again in a little while, or browse other dates for the same performer, city or venue below.');
   };
   Seatics.config.noTicketsHandler = function () {
     showFallback();

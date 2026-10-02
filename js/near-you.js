@@ -8,12 +8,18 @@
 
   var cat = root.getAttribute('data-cat') || 'all';
   var noun = root.getAttribute('data-noun') || 'events';
+  var catId = root.getAttribute('data-catid') || '0';
+  // Header card: the page title block becomes a dark card with a picture, like a ticket app's category header.
+  var heroBox = document.querySelector('.results-header');
+  if (heroBox && root.getAttribute('data-hero')) {
+    heroBox.classList.add('so-hero');
+    heroBox.style.setProperty('--so-hero-img', 'url(' + root.getAttribute('data-hero') + ')');
+  }
   var $ = function (sel) { return root.querySelector(sel); };
   var locBtn = $('[data-so-loc]'), locLabel = $('[data-so-loc-label]'), locPop = $('[data-so-loc-pop]');
   var locInput = $('#soNearInput'), locHere = $('[data-so-loc-here]');
-  var dateBtn = $('[data-so-date]'), dateLabel = $('[data-so-date-label]'), datePop = $('[data-so-date-pop]');
   var near = $('[data-so-near]'), grid = $('[data-so-near-grid]'), more = $('[data-so-near-more]'), title = $('[data-so-near-title]');
-  var state = { lat: '', lng: '', label: '', when: '', page: 1, token: 0 };
+  var state = { lat: '', lng: '', label: '', when: root.getAttribute('data-when') || '', page: 1, token: 0 };
 
   var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
   var slug = function (v) { return String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
@@ -63,7 +69,7 @@
     state.page = page;
     if (page === 1) { grid.innerHTML = skeleton(4); near.hidden = false; more.hidden = true; }
     more.disabled = true;
-    var qs = 'kind=near&cat=' + encodeURIComponent(cat) + '&when=' + encodeURIComponent(state.when) + '&page=' + page +
+    var qs = 'kind=near&cat=' + encodeURIComponent(cat) + (catId !== '0' ? '&catid=' + encodeURIComponent(catId) : '') + '&when=' + encodeURIComponent(state.when) + '&page=' + page +
       '&lat=' + encodeURIComponent(state.lat) + '&lng=' + encodeURIComponent(state.lng);
     fetch('/ajax/get-home-feed.php?' + qs).then(function (r) { return r.json(); }).then(function (data) {
       if (my !== state.token) return;
@@ -93,7 +99,7 @@
   }
 
   function closePops() {
-    [[locBtn, locPop], [dateBtn, datePop]].forEach(function (pair) { pair[1].hidden = true; pair[0].setAttribute('aria-expanded', 'false'); });
+    [[locBtn, locPop]].forEach(function (pair) { pair[1].hidden = true; pair[0].setAttribute('aria-expanded', 'false'); });
   }
   function toggle(btn, pop) {
     var open = pop.hidden;
@@ -105,20 +111,8 @@
     e.stopPropagation(); toggle(locBtn, locPop);
     if (!locPop.hidden) locInput.focus();
   });
-  dateBtn.addEventListener('click', function (e) { e.stopPropagation(); toggle(dateBtn, datePop); });
   document.addEventListener('click', function (e) { if (!root.contains(e.target)) closePops(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePops(); });
-
-  datePop.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-when]');
-    if (!b) return;
-    state.when = b.getAttribute('data-when') || '';
-    dateLabel.textContent = b.textContent.trim();
-    datePop.querySelectorAll('.so-pop__row').forEach(function (r) { r.classList.toggle('is-active', r === b); });
-    dateBtn.classList.toggle('so-chip--on', state.when !== '');
-    closePops();
-    load(1);
-  });
 
   more.addEventListener('click', function () { load(state.page + 1); });
 

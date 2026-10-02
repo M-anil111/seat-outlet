@@ -39,6 +39,10 @@ foreach ($events as $ev) {
 }
 if ($pricedDates < 2) { $cheapestEventId = 0; }
 $nextEvent = $events[0] ?? null;
+// Multi-day festival at one site: "Weekend 1 / Weekend 2" chips (only when every date is already on the page).
+$weekendGroups = ($total_count <= count($events)) ? soWeekendGroups($events) : [];
+$weekendOf = [];
+foreach ($weekendGroups as $wi => $wg) { foreach ($wg['ids'] as $wid) { $weekendOf[$wid] = $wi + 1; } }
 
 $sep = '<span class="separator"><strong> / </strong></span>';
 $breadcrumbs = buildCategoryBreadcrumb($performer['defaultCategory']);
@@ -58,15 +62,32 @@ $pageOgImage     = $performerImg['status'] !== 'fallback' ? $performer_image : n
 // --- SEO: computed before including header.php, same convention as the
 // artist-city/concerts-city/etc. pages - see functions.php. This page was
 // previously rendering with no <title> and no canonical tag at all. ---
-$pageMetaTitle       = "$artistName Tickets | Seat Outlet";
-$pageMetaDescription = "Buy verified $artistName tickets. Compare prices across sellers and find upcoming $artistName shows near you on Seat Outlet.";
+$soCatPath = (string) ($performer['defaultCategory']['path'] ?? '');
+$soNoun  = strpos($soCatPath, TN_CATEGORY_PATH_SPORTS) === 0 ? ['games', 'Game', 'schedule'] : (strpos($soCatPath, TN_CATEGORY_PATH_THEATER) === 0 ? ['shows', 'Show', 'dates'] : ['concerts', 'Concert', 'tour dates']);
+$pageMetaTitle       = "$artistName Tickets $year | {$soNoun[1]} Dates & Prices | Seat Outlet";
+$pageMetaDescription = "Buy $artistName tickets for sale. Compare seats and prices for every upcoming $artistName {$soNoun[0]}, then check out securely with our 100% guarantee.";
 $pageCanonicalUrl    = HOME_URL . '/artist/' . strtolower($performer['uriComponent'] ?? createSlug($artistName, $id));
 if ($priceSnapshot['from'] !== '' && $total_count > 0) {
-    $pageMetaDescription = "$artistName tickets from {$priceSnapshot['from']}. $total_count upcoming " . ($total_count === 1 ? 'event' : 'events') . ". Compare prices across sellers and find $artistName shows near you on Seat Outlet.";
+    $pageMetaDescription = "$artistName tickets for sale from {$priceSnapshot['from']}. $total_count upcoming " . ($total_count === 1 ? 'event' : 'events') . ". Compare prices across sellers and find $artistName shows near you on Seat Outlet.";
 }
 // BreadcrumbList + an Event node per listed date (the page emitted only the
 // site-wide Organization/WebSite graph before).
+$soFaqs = [];
+$soNext = $events[0] ?? null;
+if ($priceSnapshot['from'] !== '' && $total_count > 0) {
+    $soFaqs[] = ['question' => "How much are $artistName tickets?", 'answer' => "$artistName tickets start from {$priceSnapshot['from']} on Seat Outlet across $total_count upcoming " . ($total_count === 1 ? 'date' : 'dates') . ". Prices are set by sellers, change with demand and can be above or below face value, so compare seats and sections before you buy."];
+}
+if ($soNext) {
+    $soNextWhen = date('l, F j, Y', strtotime($soNext['date']['date'] ?? 'now'));
+    $soFaqs[] = ['question' => "When is the next $artistName {$soNoun[1]}?", 'answer' => "The next $artistName date listed is $soNextWhen at " . ($soNext['venue']['text']['name'] ?? 'the venue') . ' in ' . trim(($soNext['city']['text']['name'] ?? '') . ', ' . ($soNext['stateProvince']['text']['abbr'] ?? ''), ', ') . '. Dates can change, so check the event page before you travel.'];
+}
+$soFaqs[] = ['question' => "How do I buy $artistName tickets?", 'answer' => "Pick a $artistName date above, choose how many tickets you need, compare sections and prices on the seat map and check out securely. Your tickets are delivered before the event."];
+$soFaqs[] = ['question' => "Are $artistName tickets on Seat Outlet legit?", 'answer' => "Yes. Every order is covered by our 100% guarantee: valid tickets, delivery before the event, and a refund if the event is canceled and not rescheduled. Seat Outlet is a resale marketplace, so prices may be above or below face value."];
+$faqs = array_merge($soFaqs, array_map(function ($q) use ($artistName) {
+    return ['question' => str_replace('[artist_name]', $artistName, (string) $q['question']), 'answer' => str_replace('[artist_name]', $artistName, (string) $q['answer'])];
+}, is_array($faqs) ? $faqs : []));
 $pageJsonLdNodes = buildPerformerPageJsonLd($artistName, (int) $id, $events, $breadcrumbs, $pageOgImage ?? '');
+if ($faqNode = buildFaqPageSchema($faqs)) { $pageJsonLdNodes[] = $faqNode; }
 
 $pagePreloadImage = ($performerImg['status'] ?? '') !== 'fallback' ? $performer_image : '/images/event-so.webp';
 include 'header.php';
@@ -178,7 +199,7 @@ include 'header.php';
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h2>
-									<?php echo strtoupper($artistName); ?> <?php echo strtoupper($breadcrumbs[1]['label']); ?> IN US <span class="dot">·</span>
+									<?php echo htmlspecialchars(strtoupper($artistName), ENT_QUOTES, 'UTF-8'); ?> TICKETS FOR SALE <span class="dot">·</span>
 									<span class="count" id="results_count">
 										<?php echo (int) $total_count; ?>
 										<?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
@@ -222,6 +243,16 @@ include 'header.php';
 							<div id="location-no-results" class="text-center no-location"></div>
 						</div>
 						<?php if (!empty($events)) { ?>
+							<?php if ($weekendGroups) { ?>
+								<div class="so-weekends" data-so-weekends role="group" aria-label="Choose a weekend">
+									<?php foreach ($weekendGroups as $wi => $wg) { ?>
+										<button type="button" class="so-weekend<?php echo $wi === 0 ? ' is-active' : ''; ?>" data-wk="<?php echo $wi + 1; ?>" aria-pressed="<?php echo $wi === 0 ? 'true' : 'false'; ?>">
+											<span class="so-weekend__name"><?php echo htmlspecialchars($wg['label'], ENT_QUOTES, 'UTF-8'); ?></span>
+											<span class="so-weekend__range"><?php echo htmlspecialchars($wg['range'], ENT_QUOTES, 'UTF-8'); ?></span>
+										</button>
+									<?php } ?>
+								</div>
+							<?php } ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">
 								<?php foreach ($events as $event) { 
 									$eventDateRaw = $event['date']['date'];
@@ -247,7 +278,7 @@ include 'header.php';
 									$citySlug = createSlug($city, $event['city']['id']);
 									$venueSlug = createSlug($event['venue']['text']['name'], $event['venue']['id']);
 								?>
-									<div class="d-flex align-items-center justify-content-between performer-event-item">
+									<div class="d-flex align-items-center justify-content-between performer-event-item"<?php echo isset($weekendOf[(int) ($event['id'] ?? 0)]) ? ' data-wk="' . (int) $weekendOf[(int) $event['id']] . '"' : ''; ?>>
 										<div class="date-box text-center me-3">
 											<div class="month">
 												<?php echo strtoupper(date('M', $timestamp)); ?>
@@ -288,7 +319,7 @@ include 'header.php';
 											<div class="ev-venue"><a href="/venue/<?php echo $venueSlug; ?>"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></div>
 											<div class="ev-place"><a href="/city/<?php echo $citySlug; ?>"><?php echo htmlspecialchars($city, ENT_QUOTES, 'UTF-8'); ?></a></div>
 											<div class="ev-name">
-												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?><span class="visually-hidden"> tickets, <?php echo htmlspecialchars(date('M j', $timestamp) . ' at ' . ($event['venue']['text']['name'] ?? '') . ', ' . $city, ENT_QUOTES, 'UTF-8'); ?></span></a>
 											</div>
 										</div>
 										<div class="ms-3">
@@ -439,6 +470,34 @@ include 'header.php';
 				</div>
 			</div>
 		</div>
+		<?php if (!empty($events)) { ?>
+		<div class="tab-section content-section-detail so-tourtable" id="dates">
+			<h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars($soNoun[2], ENT_QUOTES, 'UTF-8'); ?> and ticket prices</h2>
+			<p class="so-tourtable__lead">Every upcoming <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars(strtolower($soNoun[1]), ENT_QUOTES, 'UTF-8'); ?> on Seat Outlet, with the lowest price listed today. Pick a date to compare seats.</p>
+			<div class="so-table-wrap">
+				<table>
+					<thead><tr><th>Date</th><th>City</th><th>Venue</th><th>From</th><th><span class="visually-hidden">Tickets</span></th></tr></thead>
+					<tbody>
+					<?php foreach (array_slice($events, 0, 12) as $te) {
+						$tts = strtotime($te['date']['date'] ?? 'now');
+						$tcity = trim(($te['city']['text']['name'] ?? '') . ', ' . ($te['stateProvince']['text']['abbr'] ?? ''), ', ');
+						$tven = (string) ($te['venue']['text']['name'] ?? '');
+						$tlow = $te['pricingInfo']['lowPrice']['text']['formatted'] ?? '';
+					?>
+						<tr>
+							<td><?php echo htmlspecialchars(date('D, M j, Y', $tts), ENT_QUOTES, 'UTF-8'); ?></td>
+							<td><?php echo htmlspecialchars($tcity, ENT_QUOTES, 'UTF-8'); ?></td>
+							<td><?php echo htmlspecialchars($tven, ENT_QUOTES, 'UTF-8'); ?></td>
+							<td><?php echo $tlow !== '' ? htmlspecialchars($tlow, ENT_QUOTES, 'UTF-8') : 'Not listed'; ?></td>
+							<td><a href="/event/<?php echo htmlspecialchars(createSlug($te['text']['name'] ?? '', $te['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets</a></td>
+						</tr>
+					<?php } ?>
+					</tbody>
+				</table>
+			</div>
+			<p class="so-tourtable__more">Looking for something else? Browse <a href="<?php echo htmlspecialchars($breadcrumbs[1]['url'] ?? '/buy-tickets-online', ENT_QUOTES, 'UTF-8'); ?>">more <?php echo htmlspecialchars(strtolower($breadcrumbs[1]['label'] ?? 'event'), ENT_QUOTES, 'UTF-8'); ?> tickets</a>, see <a href="/city-events">events by city</a>, or read how our <a href="/worry-free-guarantee">100% guarantee</a> and <a href="/ticket-buyer-protection">buyer protection</a> work.</p>
+		</div>
+		<?php } ?>
 		<div class="tab-section content-section-detail" id="about">
 			<div class="row">
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">

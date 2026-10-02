@@ -71,7 +71,7 @@ $year = date('Y');
 							</div>
 						</div>
 					</div>
-					<?php renderListingFilters('/category/' . $slug, $when, $sort, $total_count, 'popular'); ?>
+					<?php renderListingFilters('/category/' . $slug, $when, $sort, $total_count, 'popular', ['catId' => $id, 'noun' => strtolower($catName) . ' events']); ?>
 					<div class="list-category-bg pb-3">
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">
@@ -140,7 +140,7 @@ $year = date('Y');
 											<div class="ev-venue"><a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a></div>
 <div class="ev-place"><a href="/city/<?php echo $citySlug; ?>"><?php echo $city; ?></a></div>
 											<div class="ev-name">
-												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?><span class="visually-hidden"> tickets, <?php echo htmlspecialchars(date('M j', $timestamp) . ' at ' . ($event['venue']['text']['name'] ?? '') . ', ' . $city, ENT_QUOTES, 'UTF-8'); ?></span></a>
 											</div>
 										</div>
 										<div class="ms-3">

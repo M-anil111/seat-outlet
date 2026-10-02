@@ -22,14 +22,19 @@ foreach ($items as $item) {
     $tab    = trim((string) ($item['tab'] ?? ''));
     $category = is_array($item['category'] ?? null) ? $item['category'] : [];
 
-    if ($venue !== '') {
+    $type = 'artist';
+    if ($artist !== '') {
+        $type = imageEntityTypeForPerformer($category);
+        $img = getEntityImage($type, $artist, ['category' => $category, 'tab' => $tab]);
+    } elseif ($venue !== '') {
+        $type = 'venue';
         $img = getEntityImage('venue', $venue);
-    } elseif ($artist !== '') {
-        $img = getEntityImage(imageEntityTypeForPerformer($category), $artist, ['category' => $category, 'tab' => $tab]);
     } else {
-        $img = ['url' => $tab !== '' ? getCategoryFallbackImage($category, $tab) : '', 'credit' => ''];
+        $img = ['url' => $tab !== '' ? getCategoryFallbackImage($category, $tab) : '', 'credit' => '', 'status' => 'fallback'];
     }
-    $out[] = ['image' => $img['url'], 'credit' => $img['credit']];
+    // 'real' tells the page whether this is the entity's own picture or only the shared category stock photo; the page
+    // then shows an initials tile (never the same stock photo on every card) and asks for the real picture later.
+    $out[] = ['image' => $img['url'], 'credit' => $img['credit'], 'real' => in_array($img['status'] ?? '', ['ok', 'manual'], true) && $img['url'] !== '', 'type' => $type];
 }
 
 echo json_encode(['images' => $out]);
