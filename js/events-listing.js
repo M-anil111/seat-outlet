@@ -155,7 +155,12 @@ function updateEventsSection(location) {
         }  
 
         if (!data.events || data.events.length === 0) {
-            document.getElementById('location-no-results').innerHTML = '<strong>No events available in your selected area</strong><p>Try changing locations or browse through the available events below</p>';
+            var nrLabel = (input && input.value) ? input.value : 'that location';
+            var nrBox = document.getElementById('location-no-results');
+            nrBox.textContent = '';
+            var nrStrong = document.createElement('strong'); nrStrong.textContent = 'No dates near ' + nrLabel;
+            var nrP = document.createElement('p'); nrP.textContent = 'Nearest dates are shown below instead.';
+            nrBox.appendChild(nrStrong); nrBox.appendChild(nrP);
             return;
         }
         
@@ -172,7 +177,7 @@ function updateEventsSection(location) {
         });
         
         const loaded = data.totalCount;
-        const countmsg = loaded > 1 ? ' RESULTS' : ' RESULT';
+        const countmsg = loaded === 1 ? ' RESULT' : ' RESULTS';
         document.getElementById('results_count').innerHTML = loaded + countmsg;
         document.getElementById('totalCount').textContent = loaded;
 

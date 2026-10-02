@@ -24,22 +24,22 @@ $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
 $countStmt->close();
 
 $offset = ($page - 1) * $perPage;
-$stmt = $mysqli->prepare("SELECT * FROM images WHERE $whereSql ORDER BY updated_at DESC LIMIT $perPage OFFSET $offset");
+$orderBy = ($_GET['order'] ?? '') === 'misses' ? 'miss_hits DESC, updated_at DESC' : 'updated_at DESC';   // misses: the gaps visitors see most
+$stmt = $mysqli->prepare("SELECT * FROM images WHERE $whereSql ORDER BY $orderBy LIMIT $perPage OFFSET $offset");
 if ($types !== '') $stmt->bind_param($types, ...$args);
 $stmt->execute();
 $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-$summary = [];
-$sumRes = $mysqli->query("SELECT status, COUNT(*) AS c FROM images WHERE entity_type IS NOT NULL GROUP BY status");
-while ($sumRes && ($r = $sumRes->fetch_assoc())) { $summary[$r['status']] = (int) $r['c']; }
+$stats = imageQueueStats();
+$summary = ['ok' => $stats['ok'], 'manual' => $stats['manual'], 'fallback' => $stats['fallback'], 'pending' => $stats['pending']];
 
 $pageTitle = 'Images — Seat Outlet Admin';
 $currentPage = 'images';
 include __DIR__ . '/includes/app-header.php';
 $badge = ['ok' => 'bg-green-lt', 'manual' => 'bg-blue-lt', 'fallback' => 'bg-yellow-lt', 'pending' => 'bg-secondary-lt'];
 $qs = function (array $over) use ($search, $status, $type, $page) {
-    return htmlspecialchars(http_build_query(array_merge(['q' => $search, 'status' => $status, 'type' => $type, 'page' => $page], $over)), ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars(http_build_query(array_merge(['q' => $search, 'status' => $status, 'type' => $type, 'order' => (string) ($_GET['order'] ?? ''), 'page' => $page], $over)), ENT_QUOTES, 'UTF-8');
 };
 ?>
         <div class="row mb-3 align-items-center">
@@ -66,6 +66,36 @@ $qs = function (array $over) use ($search, $status, $type, $page) {
                 </a>
             </div>
             <?php endforeach; ?>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body d-flex flex-wrap align-items-center gap-3">
+                <div>
+                    <div><strong><?php echo (int) $stats['resolved_pct']; ?>%</strong> of <?php echo (int) $stats['total']; ?> entities have a picture</div>
+                    <div class="text-secondary small">
+                        <?php if ($stats['oldest_pending_age'] !== null): ?>
+                            Oldest queued item has waited <strong class="<?php echo $stats['oldest_pending_age'] > 86400 ? 'text-danger' : ''; ?>"><?php echo htmlspecialchars(imageHumanAge($stats['oldest_pending_age']), ENT_QUOTES, 'UTF-8'); ?></strong>.
+                            <?php if ($stats['oldest_pending_age'] > 86400): ?>The cron job is probably not running: schedule <code>php cron/resolve-images.php</code> every 10 minutes.<?php endif; ?>
+                        <?php else: ?>Nothing is waiting in the queue.<?php endif; ?>
+                        <?php if ($stats['legacy_ok'] > 0): ?> <?php echo (int) $stats['legacy_ok']; ?> older picture(s) have no recorded licence.<?php endif; ?>
+                    </div>
+                </div>
+                <div class="ms-auto d-flex flex-wrap gap-2">
+                    <form method="post" action="images-action">
+                        <input type="hidden" name="csrf_token" value="<?php echo admin_csrf_token(); ?>">
+                        <input type="hidden" name="do" value="resolve_now">
+                        <button class="btn btn-primary" type="submit" <?php echo ($stats['pending'] + $stats['fallback']) === 0 ? 'disabled' : ''; ?> title="Looks up 25 queued pictures right now (takes up to a minute)">Resolve 25 now</button>
+                    </form>
+                    <?php if ($stats['legacy_ok'] > 0): ?>
+                    <form method="post" action="images-action" onsubmit="return confirm('Queue <?php echo (int) $stats['legacy_ok']; ?> older pictures for re-verification? They show the initials tile until each is resolved again.');">
+                        <input type="hidden" name="csrf_token" value="<?php echo admin_csrf_token(); ?>">
+                        <input type="hidden" name="do" value="requeue_legacy">
+                        <button class="btn btn-outline-secondary" type="submit">Re-verify older pictures</button>
+                    </form>
+                    <?php endif; ?>
+                    <a class="btn btn-outline-secondary" href="images?<?php echo $qs(['status' => 'fallback', 'order' => 'misses', 'page' => 1]); ?>">Most-seen misses</a>
+                </div>
+            </div>
         </div>
 
         <div class="card">
@@ -120,7 +150,7 @@ $qs = function (array $over) use ($search, $status, $type, $page) {
                                 <td>
                                     <span class="badge <?php echo $badge[$row['status']] ?? ''; ?>"><?php echo htmlspecialchars($row['status'], ENT_QUOTES, 'UTF-8'); ?></span>
                                     <?php if ($row['status'] === 'fallback' && !empty($row['expires_at'])): ?>
-                                        <div class="text-secondary small">retry <?php echo htmlspecialchars(date('M j', strtotime($row['expires_at'])), ENT_QUOTES, 'UTF-8'); ?> · <?php echo (int) $row['attempts']; ?> attempt(s)</div>
+                                        <div class="text-secondary small">retry <?php echo htmlspecialchars(date('M j', strtotime($row['expires_at'])), ENT_QUOTES, 'UTF-8'); ?> · <?php echo (int) $row['attempts']; ?> attempt(s)<?php if ((int) $row['miss_hits'] > 0) echo ' · seen ~' . (int) $row['miss_hits'] . 'x without a picture'; ?></div>
                                     <?php endif; ?>
                                 </td>
                                 <td>

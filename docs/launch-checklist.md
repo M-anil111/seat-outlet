@@ -1,0 +1,15 @@
+# Launch checklist
+
+Items the code cannot do for itself. Each workstream appends a section: what, who, why.
+
+## WS4: entity pages and images
+
+- **TheSportsDB licence (owner / counsel).** Team art from TheSportsDB is user-contributed and the free test key is not licensed for commercial use. The code now uses TheSportsDB only when `THESPORTSDB_KEY` is set to a real paid key (never the test keys 1, 2, 3, 123), never uses the team badge/logo, and otherwise falls back to Wikidata, then the initials tile. Before setting a paid key, get their written terms for commercial display and for art that users uploaded. Without a key, sports pages show Wikimedia photos or tiles only.
+- **Cron for images (tech support).** Schedule `php cron/resolve-images.php` every 10 minutes. Admin > Images shows the oldest queued item; more than a day old means the cron is not running (the background worker is only a slow safety net).
+- **Wikimedia user agent (tech support).** Wikimedia answers 429 to anonymous-looking bots. The bot sends `SeatOutletBot/1.0 (+https://<site>/contact)`; register a contact email in that string (inc/images.php `imageUserAgent()`) per the Wikimedia User-Agent policy, and confirm the production server IP is not rate limited.
+- **Old stored pictures (owner / tech support).** Pictures stored before licences were recorded sit under slug-keyed objects (for example `artists/taylor-swift.webp`) with no licence. New files are written under `<folder>/<md5>.webp`. Use Admin > Images > "Re-verify older pictures" to queue them again (they show an initials tile until re-resolved), then delete the old slug-keyed objects from the bucket once no row points at them. Needs bucket access.
+- **Photo credits page (owner).** `/image-credits` lists every licensed photo with author, licence link and source. Cards link to it. Please add a "Photo credits" link to the site footer (footer.php is owned by another workstream).
+- **Wikidata matching is untestable here (tech support).** Wikidata and Commons answered 429 from the build network, so the city state check (P131) and the artist occupation check (P106) were tested with stubbed responses only. After the cron runs in production, spot-check 10 cities (Springfield, Columbus, Portland, Kansas City) and 10 artists in Admin > Images and fix any wrong picture with "Set image".
+- **Sitemap and zero-event pages (owner).** Zero-event pages are `noindex,follow` and are removed from the sitemap once they have been rendered once (pages record themselves in `cache/so_zero_pages`). A page nobody has visited yet can still be listed until its first visit. In Search Console compare "submitted" with "indexed" after a few weeks.
+- **Server rewrites (tech support).** `/theatre-*` now 301s to `/theater-*`, and non-canonical slugs 301 to the canonical slug. Both need the nginx rewrites in docs/server-rewrites.md to be in place, as before.
+- **Footer/menu headings (WS6).** On entity pages the H1 is followed by the menu's H3 items before the first H2; the menu markup lives in header/footer, outside this workstream.
