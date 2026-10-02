@@ -233,7 +233,7 @@
                                     </button>
                                     <div id="purchaseThree" class="accordion-collapse collapse" data-bs-parent="#purchaseFaq">
                                         <div class="accordion-body">
-                                            You can access tickets through your confirmation email or your account dashboard.
+                                            Use your order confirmation email. It has the delivery details for your order.
                                         </div>
                                     </div>
                                 </div>
@@ -330,7 +330,7 @@
                                     </button>
                                     <div id="refundOne" class="accordion-collapse collapse show" data-bs-parent="#refundFaq">
                                         <div class="accordion-body">
-                                            Tickets are not refundable for a change of plans. If an event is canceled, the order is refunded (delivery fees excluded). Postponed or rescheduled events are not refunded.
+                                            Tickets are not refundable for a change of plans. If an event is canceled, the order is refunded (delivery fees excluded) under the guarantee.
                                         </div>
                                     </div>
                                 </div>
@@ -341,7 +341,7 @@
                                     </button>
                                     <div id="refundTwo" class="accordion-collapse collapse" data-bs-parent="#refundFaq">
                                         <div class="accordion-body">
-                                            If an event is canceled, refunds are usually processed according to organizer policies.
+                                            Under the 100% guarantee, a canceled event is refunded in full, delivery fees excluded. Contact us with your order ID and we will help with the next steps.
                                         </div>
                                     </div>
                                 </div>
@@ -352,7 +352,7 @@
                                     </button>
                                     <div id="refundThree" class="accordion-collapse collapse" data-bs-parent="#refundFaq">
                                         <div class="accordion-body">
-                                            Tickets typically remain valid for the new date.
+                                            Tickets typically remain valid for the new date. Whether a refund is available for a rescheduled event depends on TicketNetwork's policies and the organizer.
                                         </div>
                                     </div>
                                 </div>
@@ -374,7 +374,7 @@
                                     </button>
                                     <div id="refundFive" class="accordion-collapse collapse" data-bs-parent="#refundFaq">
                                         <div class="accordion-body">
-                                            Refund timelines depend on payment providers and event policies.
+                                            Timing depends on the payment provider and on the event, so we cannot give a fixed number of days. Contact us with your order ID for an update.
                                         </div>
                                     </div>
                                 </div>
@@ -429,7 +429,7 @@
                                     </button>
                                     <div id="paymentFour" class="accordion-collapse collapse" data-bs-parent="#paymentFaq">
                                         <div class="accordion-body">
-                                            Invoices are available in your account order history.
+                                            Your order confirmation email is your record of the purchase. If you need something else for an expense report, contact us with your order ID.
                                         </div>
                                     </div>
                                 </div>
@@ -514,8 +514,8 @@
                     </div>
                     <div class="col-lg-6">
                         <div class="faq-card mb-4">
-                            <!-- 6. Account & Customer Support -->
-                            <h3 class="mb-0">Account & Customer Support</h3>
+                            <!-- 6. Orders & Customer Support -->
+                            <h3 class="mb-0">Orders & Customer Support</h3>
                             <div class="accordion mb-0" id="accountFaq">
 
                                 <div class="accordion-item border-0">
@@ -524,29 +524,29 @@
                                     </button>
                                     <div id="accountOne" class="accordion-collapse collapse show" data-bs-parent="#accountFaq">
                                         <div class="accordion-body">
-                                            Creating an account helps you manage orders, access tickets, and receive event updates. Some platforms may allow guest checkout.
+                                            No. Seat Outlet does not have customer accounts or logins. You continue to checkout from the event page, and your confirmation email is your record of the order.
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent collapsed" data-bs-toggle="collapse" data-bs-target="#accountTwo">
-                                        How can I view my order history?
+                                        How can I find my order?
                                     </button>
                                     <div id="accountTwo" class="accordion-collapse collapse" data-bs-parent="#accountFaq">
                                         <div class="accordion-body">
-                                            You can view your order history by logging into your account and visiting the orders section.
+                                            Search your inbox (and spam folder) for the order confirmation email. If you cannot find it, contact us with the event name and the email address you used.
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent collapsed" data-bs-toggle="collapse" data-bs-target="#accountThree">
-                                        What should I do if I forgot my password?
+                                        What if I did not get my confirmation email?
                                     </button>
                                     <div id="accountThree" class="accordion-collapse collapse" data-bs-parent="#accountFaq">
                                         <div class="accordion-body">
-                                            Use the "Forgot Password" option on the login page to reset your password via email.
+                                            Check your spam folder first, then contact us with the event name and the email address you used at checkout and we will look into it.
                                         </div>
                                     </div>
                                 </div>
@@ -557,7 +557,7 @@
                                     </button>
                                     <div id="accountFour" class="accordion-collapse collapse" data-bs-parent="#accountFaq">
                                         <div class="accordion-body">
-                                            Personal details can be updated from your account profile settings after logging in.
+                                            Contact us with your order ID and tell us what needs to change. Some changes depend on the seller and the event.
                                         </div>
                                     </div>
                                 </div>
@@ -568,7 +568,7 @@
                                     </button>
                                     <div id="accountFive" class="accordion-collapse collapse" data-bs-parent="#accountFaq">
                                         <div class="accordion-body">
-                                            You can contact customer support through the help center, contact form, or support email listed on the website.
+                                            Use the <a href="/ticket-customer-service">contact form</a> or email support@seatoutlet.com. Include your order ID if you have one.
                                         </div>
                                     </div>
                                 </div>

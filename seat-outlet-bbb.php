@@ -2,9 +2,10 @@
 require_once 'functions.php';
 // SEO: this page previously relied on header.php's generic fallback
 // title/canonical.
-$pageMetaTitle       = 'Seat Outlet BBB Profile & Customer Commitment | Seat Outlet';
-$pageMetaDescription = 'Learn about Seat Outlet\'s commitment to secure transactions, verified ticket listings, and transparent policies as a trusted ticket marketplace.';
+$pageMetaTitle       = 'Seat Outlet BBB: Our Customer Commitments | Seat Outlet';
+$pageMetaDescription = 'Looking for Seat Outlet on the Better Business Bureau? This page does not show a BBB rating. It explains the commitments we make to customers and how to reach us.';
 $pageCanonicalUrl    = HOME_URL . '/seat-outlet-bbb';
+require_once __DIR__ . '/inc/guarantee.php';
 include 'header.php';
 ?>
 <style>
@@ -82,13 +83,11 @@ include 'header.php';
     <div class="container">
         <div class="row align-items-center">
   <div class="hero-left col-lg-6 col-xl-6 col-xxl-6">
-    <h1 class="main-title mb-lg-4 mb-3 text-white">Seat Outlet BBB Profile & Customer Commitment</h1>
-    <p class="text-white mb-4">At Seat Outlet, we are committed to providing a secure, transparent, and reliable ticket-buying experience. Customer trust is our goal: we build it with every customer by delivering verified tickets, clear policies, and responsive support.</br> </br>
-    We understand that purchasing event tickets online requires confidence. That’s why we prioritize customer satisfaction, safe transactions, and honest communication in everything we do.
-    </p>
-    <!-- <a href="#" class="btn btn-primary h-auto px-3 py-2">Work With Us</a> -->
+    <h1 class="main-title mb-lg-4 mb-3 text-white">Seat Outlet BBB: Our Customer Commitments</h1>
+    <p class="text-white mb-4">People who search for Seat Outlet and the Better Business Bureau usually want to check that a ticket marketplace is legitimate before they pay. That is a smart habit.</p>
+    <p class="text-white mb-4"><strong>This page does not show a BBB rating, grade or accreditation.</strong> To check any business, search for it on <a href="https://www.bbb.org" target="_blank" rel="noopener">bbb.org</a> and read what is listed there. Below are the commitments we make, so you can judge them for yourself.</p>
   </div>
-  
+
   <div class="hero-right col-lg-6 col-xl-6 col-xxl-6">
     <div class="hero-visual position-relative mx-auto">
               <div class="hero-circle hero-circle-lg"></div>
@@ -98,225 +97,80 @@ include 'header.php';
   </div>
     </div>
 </section>
- 
-<!-- ════════════════════ STATS ════════════════════ -->
-<section class="py-5 bg-surface">
-  <div class="container experience-section">
-    <div class="stats-strip">
-      <div class="row g-4 align-items-center justify-content-center">
-        <div class="col-6 col-md-4">
-          <div class="stat-num">SSL</div>
-          <div class="stat-label">Encrypted Checkout</div>
-        </div>
-        <div class="col-6 col-md-4">
-          <div class="stat-num">Phone</div>
-          <div class="stat-label">And Email Support</div>
-        </div>
-        <div class="col-12 col-md-4">
-          <div class="stat-num">Clear</div>
-          <div class="stat-label">Written Policies</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
- 
-<!-- ════════════════════ COMMITMENT ════════════════════ -->
-<section id="commitment" class="bg-surface pb-5">
+
+<!-- COMMITMENTS -->
+<section id="commitment" class="bg-surface py-5">
   <div class="container">
-    <div class="row align-items-center g-2 g-md-4 g-lg-5">
+    <div class="row align-items-start g-2 g-md-4 g-lg-5">
       <div class="col-lg-5">
-        <span class="section-label">Customer First</span>
-        <h2 class="section-title">Our Commitment to Customer Trust</h2>
+        <span class="section-label">What we commit to</span>
+        <h2 class="section-title">Our customer commitments</h2>
         <div class="section-divider"></div>
-        <img src="/images/ticket-trusted.webp" class="img-fluid rounded mb-3" alt="Customer trust in Seat Outlet's ticket marketplace" loading="lazy" width="750" height="875" decoding="async">
-        <p class="text-muted mb-4">Seat Outlet operates with a customer-first approach. Every transaction is handled with care to ensure buyers receive valid tickets for their chosen events. Our team works continuously to improve service quality and ensure a smooth experience from browsing to checkout - the same kind of consumer trust the
-        <a href="https://www.bbb.org" target="_blank" rel="noopener">Better Business Bureau</a> encourages shoppers to look for online.</p>
-        <ul class="check-list">
-          <li><i class="bi bi-shield-lock-fill"></i> Secure and encrypted checkout process</li>
-          <li><i class="bi bi-patch-check-fill"></i> Verified ticket listings from trusted sources</li>
-          <li><i class="bi bi-tag-fill"></i> Transparent pricing with no hidden surprises</li>
-          <li><i class="bi bi-clock-fill"></i> Timely delivery of tickets before the event</li>
-        </ul>
+        <p class="text-muted mb-4">Seat Outlet is a resale marketplace. These are the things you can check for yourself before and after you order.</p>
       </div>
       <div class="col-lg-7">
-        <div class="commitment-band mt-3 mt-md-0 mt-lg-0">
-          <span class="section-label">Why It Matters</span>
-          <h2 class="mb-3" style="font-size:1.6rem;">Building Long-Term Trust with Every Customer</h2>
-          <p style="color:rgba(255,255,255,.75); font-size:.95rem;">We understand that purchasing event tickets online requires confidence. That's why we prioritize customer satisfaction, safe transactions, and honest communication in everything we do.</p>
-          <div class="row g-3 mt-2">
-            <div class="col-sm-6">
-              <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:1.1rem;">
-                <i class="bi bi-people-fill text-accent fs-4"></i>
-                <div style="color:#fff;font-weight:600;margin-top:.5rem;">Customer Satisfaction</div>
-                <div style="color:rgba(255,255,255,.6);font-size:.85rem;margin-top:.2rem;">Our priority in every interaction</div>
-              </div>
-            </div>
-            <div class="col-sm-6">
-              <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:1.1rem;">
-                <i class="bi bi-lock-fill text-accent fs-4"></i>
-                <div style="color:#fff;font-weight:600;margin-top:.5rem;">Secure Transactions</div>
-                <div style="color:rgba(255,255,255,.6);font-size:.85rem;margin-top:.2rem;">Safe payments, every time</div>
-              </div>
-            </div>
-            <div class="col-sm-6">
-              <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:1.1rem;">
-                <i class="bi bi-megaphone-fill text-accent fs-4"></i>
-                <div style="color:#fff;font-weight:600;margin-top:.5rem;">Honest Communication</div>
-                <div style="color:rgba(255,255,255,.6);font-size:.85rem;margin-top:.2rem;">Clear, straightforward policies</div>
-              </div>
-            </div>
-            <div class="col-sm-6">
-              <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:1.1rem;">
-                <i class="bi bi-arrow-repeat text-accent fs-4"></i>
-                <div style="color:#fff;font-weight:600;margin-top:.5rem;">Continuous Improvement</div>
-                <div style="color:rgba(255,255,255,.6);font-size:.85rem;margin-top:.2rem;">Always refining our service</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
- 
-
-<!-- ════════════════════ SUPPORT ════════════════════ -->
-<section id="support" style="background:#fff;">
-  <div class="container py-5">
-    <div class="text-center mb-5">
-      <span class="section-label">Help When You Need It</span>
-      <h2 class="section-title">Customer Support You Can Rely On</h2>
-      <div class="section-divider mx-auto"></div>
-      <p class="text-muted mx-auto" style="max-width:560px;">Whether you have questions before buying or need help after placing an order, our support team is available to resolve concerns quickly and professionally - built on the same customer trust that guides everything we do.</p>
-    </div>
-    <div class="d-flex justify-content-center flex-wrap gap-3 mb-4">
-      <img src="/images/team-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Support team that builds customer trust at Seat Outlet" loading="lazy" width="250" height="250" decoding="async">
-      <img src="/images/secure-payment-p3.png" class="img-fluid rounded" style="max-width:200px;" alt="Secure payment builds customer trust" loading="lazy" width="65" height="68" decoding="async">
-      <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Fans who rely on our customer trust commitment" loading="lazy" width="442" height="442" decoding="async">
-    </div>
-    <div class="row g-4">
-      <div class="col-md-6 col-lg-3">
-        <div class="support-item">
-          <i class="bi bi-receipt-cutoff"></i>
-          <div>
-            <strong>Order Status Updates</strong>
-            <p>Track your order in real time from confirmation to delivery.</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="support-item">
-          <i class="bi bi-ticket-perforated"></i>
-          <div>
-            <strong>Ticket Delivery Assistance</strong>
-            <p>Guidance on receiving and accessing your tickets before the event.</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="support-item">
-          <i class="bi bi-calendar-event"></i>
-          <div>
-            <strong>Event Information</strong>
-            <p>Accurate details about venues, dates, and entry requirements.</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="support-item">
-          <i class="bi bi-headset"></i>
-          <div>
-            <strong>Issue Resolution</strong>
-            <p>Prompt follow-ups to ensure every concern is fully resolved.</p>
-          </div>
+        <ul class="check-list">
+          <li><i class="bi bi-patch-check-fill"></i> Orders are covered by the TicketNetwork 100% guarantee, explained on our <a href="/worry-free-guarantee">guarantee page</a></li>
+          <li><i class="bi bi-tag-fill"></i> Prices are set by sellers and may be above or below face value, and the full cost is shown at checkout before you pay</li>
+          <li><i class="bi bi-file-text-fill"></i> Our <a href="/terms-and-conditions">terms</a>, <a href="/privacy-policy">privacy policy</a> and <a href="/cookie-policy">cookie policy</a> are public and dated</li>
+          <li><i class="bi bi-envelope-fill"></i> You can reach a person by <a href="/ticket-customer-service">email or the contact form</a></li>
+        </ul>
+        <div class="feature-card mt-4">
+          <h3 class="h5">What the guarantee covers</h3>
+          <?php echo soGuaranteeList(); ?>
+          <p class="text-muted small mb-0"><?php echo htmlspecialchars(soGuaranteeLimits(), ENT_QUOTES, 'UTF-8'); ?> <?php echo soGuaranteeLinks(); ?></p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-
-<!-- ════════════════════ POLICIES ════════════════════ -->
-<section id="policies" class="bg-surface py-5">
+<!-- CHECKLIST -->
+<section id="policies" class="py-5" style="background:#fff;">
   <div class="container">
     <div class="row g-2 g-md-4 g-lg-5 align-items-start">
-      <div class="col-lg-4">
-        <span class="section-label">Transparency First</span>
-        <h2 class="section-title">Transparent Policies &amp; Practices</h2>
+      <div class="col-lg-5">
+        <span class="section-label">Before you pay anyone</span>
+        <h2 class="section-title">How to check any ticket seller</h2>
         <div class="section-divider"></div>
-        <p class="text-muted">We believe in clear and straightforward policies so customers always know what to expect. We encourage customers to review all details before purchase to ensure a smooth experience.</p>
-        <a href="/terms-and-conditions" class="btn common-btn mt-4">Review Full Policies</a>
       </div>
-      <div class="col-lg-8">
-        <div class="row g-4 pt-4 pt-lg-0 pt-md-0">
-          <div class="col-sm-6">
-            <div class="feature-card">
-              <div class="feature-icon"><i class="bi bi-file-text-fill"></i></div>
-              <h4>Clear Terms &amp; Conditions</h4>
-              <p>Plain-language terms that are easy to understand before you buy.</p>
-            </div>
-          </div>
-          <div class="col-sm-6">
-            <div class="feature-card">
-              <div class="feature-icon"><i class="bi bi-arrow-counterclockwise"></i></div>
-              <h4>Refund &amp; Replacement Policy</h4>
-              <p>Defined processes for refunds and replacements, clearly communicated.</p>
-            </div>
-          </div>
-          <div class="col-sm-6">
-            <div class="feature-card">
-              <div class="feature-icon"><i class="bi bi-credit-card-2-front-fill"></i></div>
-              <h4>Secure Payment Processing</h4>
-              <p>Industry-standard encryption protects every transaction you make.</p>
-            </div>
-          </div>
-          <div class="col-sm-6">
-            <div class="feature-card">
-              <div class="feature-icon"><i class="bi bi-info-circle-fill"></i></div>
-              <h4>Accurate Event Details</h4>
-              <p>Up-to-date event and ticket information so there are no surprises.</p>
-            </div>
-          </div>
-        </div>
-        <p class="text-muted mt-4">
-          Customer trust isn't something a company can claim for itself - it's earned one order at a
-          time, through policies that are actually followed and support that actually helps. That's
-          the standard we hold ourselves to: if a policy sounds good in writing but falls apart the
-          moment a customer needs it, it isn't a real policy. We'd rather have fewer promises that we
-          keep than a long list of ones we don't, because customer trust built on real follow-through
-          is the only kind worth having.
-        </p>
+      <div class="col-lg-7">
+        <ul class="check-list">
+          <li><i class="bi bi-check-circle-fill"></i> Read the refund, delivery and cancellation policies before you enter payment details</li>
+          <li><i class="bi bi-check-circle-fill"></i> Confirm the full cost, including fees, is shown before you pay</li>
+          <li><i class="bi bi-check-circle-fill"></i> Look for a real way to contact the seller, and for independent feedback, including complaints</li>
+          <li><i class="bi bi-check-circle-fill"></i> Keep your confirmation email and order ID</li>
+        </ul>
+        <p class="text-muted mt-3">What we can and cannot show about feedback on our own site is explained on the <a href="/seat-outlet-reviews">reviews page</a> and the <a href="/customer-testimonials">testimonials page</a>. Our guide to <a href="/blog/how-to-avoid-ticket-scams">avoiding ticket scams</a> goes into more detail.</p>
       </div>
     </div>
   </div>
 </section>
+
 <section class="faq-section py-3 py-md-2 py-lg-2">
             <div class="container">
                 <div class="row justify-content-center">
                     <div class="col-lg-12">
                         <div class="faq-card mb-4">
-                            <!-- 1. Ticket Purchase & Delivery -->
-                            <h3 class="mb-0">Frequently Asked Questions</h3>
+                            <h2 class="h3 mb-0">Frequently Asked Questions</h2>
                             <div class="accordion mb-0" id="purchaseFaq">
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent" data-bs-toggle="collapse" data-bs-target="#purchaseOne">
-                                    Is Seat Outlet a trusted ticket platform?
+                                    Does Seat Outlet have a BBB rating?
                                     </button>
                                     <div id="purchaseOne" class="accordion-collapse collapse show" data-bs-parent="#purchaseFaq">
                                         <div class="accordion-body">
-                                        Yes, Seat Outlet uses secure payment systems and verified ticket sources to provide a safe buying experience.
-
+                                        This page does not show a BBB rating or accreditation. Please check the Better Business Bureau website directly for anything listed there.
                                         </div>
                                     </div>
                                 </div>
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent collapsed" data-bs-toggle="collapse" data-bs-target="#purchaseTwo">
-                                    How does Seat Outlet ensure ticket authenticity?
+                                    Who stands behind my order?
                                     </button>
                                     <div id="purchaseTwo" class="accordion-collapse collapse" data-bs-parent="#purchaseFaq">
                                         <div class="accordion-body">
-                                        We work with trusted partners and use verification processes to ensure tickets are valid for entry.
+                                        <?php echo htmlspecialchars(soGuaranteeSentence(), ENT_QUOTES, 'UTF-8'); ?>
                                         </div>
                                     </div>
                                 </div>
@@ -326,35 +180,33 @@ include 'header.php';
                                     </button>
                                     <div id="purchaseThree" class="accordion-collapse collapse" data-bs-parent="#purchaseFaq">
                                         <div class="accordion-body">
-                                        You can contact our support team for assistance with any order-related concerns.
-
+                                        Use the <a href="/ticket-customer-service">contact form</a> or email support@seatoutlet.com and include your order ID.
                                         </div>
                                     </div>
                                 </div>
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent collapsed" data-bs-toggle="collapse" data-bs-target="#purchaseFour">
-                                    Are ticket prices transparent?
+                                    Are tickets cheaper than face value?
                                     </button>
                                     <div id="purchaseFour" class="accordion-collapse collapse" data-bs-parent="#purchaseFaq">
                                         <div class="accordion-body">
-                                        Yes, we aim to provide clear pricing and avoid hidden charges.
+                                        Not necessarily. Prices are set by sellers and may be above or below face value. Review the full cost at checkout before you pay.
                                         </div>
                                     </div>
                                 </div>
-                              
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
-<!-- ── CTA ── -->
+<!-- CTA -->
 <section class="hero-so-why-bottom">
 <div class="container">
  <div class="text-center">
-    <h2 class="text-white"> A Ticket Platform You Can Trust</h2>
-    <p style="color:#fff;">Customer trust is at the center of everything we do - we maintain high standards of customer satisfaction, secure transactions, and transparent practices.</p>
-  <a href="/" class="btn btn-primary h-auto px-3 py-2 mt-4">Start Your Search Today</a>
+    <h2 class="text-white">Ready to look at tickets?</h2>
+    <p style="color:#fff;">Compare seats and prices, and review the full cost at checkout before you pay.</p>
+  <a href="/buy-tickets-online" class="btn btn-primary h-auto px-3 py-2 mt-4">Browse events</a>
 </div>
 </div>
 </section>

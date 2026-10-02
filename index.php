@@ -385,7 +385,7 @@ foreach ($fallbackCategories as $key => $list) {
             <div class="feature-card">
               <div class="feature-icon"> <i class="bi bi-shield-lock-fill"></i></div>
               <h4>Secure checkout</h4>
-              <p>Reliable payment options, no hidden surprises.</p>
+              <p>Review the full cost at checkout before you pay.</p>
             </div>
           </div>
           <div class="col-sm-6">
@@ -419,8 +419,8 @@ foreach ($fallbackCategories as $key => $list) {
             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
           </svg>
         </div>
-        <h3 class="reason-card__title">No Hidden Fees</h3>
-        <p class="reason-card__desc">See the total cost upfront, with no hidden fees added at checkout.</p>
+        <h3 class="reason-card__title">Clear Pricing</h3>
+        <p class="reason-card__desc">Prices are set by sellers and may be above or below face value. Review the full cost at checkout before you pay.</p>
       </article>
       <article class="reason-card">
         <div class="reason-card__icon">
