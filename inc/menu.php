@@ -16,7 +16,7 @@ return [
     ['key' => 'sports', 'label' => 'Sports', 'href' => '/game-day-tickets', 'tag' => 'Game day, every league',
      'icon' => '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
      'groups' => [
-        ['title' => 'Leagues', 'links' => [['NFL', '/category/football-1879'], ['NBA', '/category/nba-1971'], ['MLB', '/category/mlb-1969'], ['NHL', '/category/nhl-1972'], ['MLS', '/category/mls-1970'], ['College football', '/category/football-1879']]],
+        ['title' => 'Leagues', 'links' => [['NFL', '/category/football-1879'], ['NBA', '/category/nba-1971'], ['MLB', '/category/mlb-1969'], ['NHL', '/category/nhl-1972'], ['MLS', '/category/mls-1970'], ['Tennis', '/category/tennis-1916']]],
         ['title' => 'More sports', 'links' => [['Basketball', '/category/basketball-1865'], ['Baseball', '/category/baseball-1864'], ['Hockey', '/category/hockey-1883'], ['Soccer', '/category/soccer-1913'], ['Boxing', '/category/boxing-1867'], ['Racing', '/category/racing-1905']]],
      ], 'all' => 'All sports'],
     ['key' => 'theater', 'label' => 'Theater', 'href' => '/buy-broadway-tickets', 'tag' => 'Broadway, musicals and more',

@@ -161,6 +161,8 @@ function updateEventsSection(location) {
         
         document.getElementById('location-no-results').innerHTML = '';
         eventsSection.innerHTML = '';
+        // Filtered results are a different set of rows: the weekend chips no longer apply.
+        document.querySelectorAll('[data-so-weekends]').forEach(function (b) { b.hidden = true; });
         
         data.events.forEach(event => {
             eventsSection.insertAdjacentHTML(

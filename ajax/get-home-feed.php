@@ -49,7 +49,7 @@ if ($kind === 'near') {
     }
     try {
         $params = $catId > 0
-            ? locationListingParams("contains(defaultCategory/path, '." . $catId . ".')", 12, $page, $when, 'popular')
+            ? locationListingParams("country/alphaCode eq 'US' and contains(defaultCategory/path, '." . $catId . ".')", 12, $page, $when, 'popular')
             : categoryListingParams($catPath, 12, $page, $when, 'popular');
         $params['geoFilter'] = sprintf('nearby(%F,%F,50mi)', $lat, $lng);
         $data = tnRequest('/catalog/v2/events/', $params);

@@ -799,7 +799,7 @@ $(document).ready(function(){
 window.soTile = function (name) {
   var words = String(name || '').replace(/[^A-Za-z0-9 ]+/g, ' ').trim().split(/\s+/).filter(Boolean);
   var ini = ((words[0] || '?').charAt(0) + (words.length > 1 ? words[words.length - 1].charAt(0) : '')).toUpperCase();
-  var h = 0; for (var i = 0; i < name.length; i++) { h = (h * 31 + name.charCodeAt(i)) >>> 0; }
+  var nm = String(name || ''), h = 0; for (var i = 0; i < nm.length; i++) { h = (h * 31 + nm.charCodeAt(i)) >>> 0; }
   var hue = h % 360, hue2 = (hue + 40) % 360;
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(' + hue + ',62%,38%)"/><stop offset="1" stop-color="hsl(' + hue2 + ',70%,24%)"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><text x="200" y="228" text-anchor="middle" font-family="-apple-system,Segoe UI,Inter,Arial,sans-serif" font-size="150" font-weight="700" fill="rgba(255,255,255,.92)">' + ini.replace(/&/g, '&amp;') + '</text></svg>';
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
@@ -958,6 +958,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   track.innerHTML = html;
   box.classList.remove('d-none');
+  track.addEventListener('click', function (e) { var a = e.target.closest('[data-recent-event]'); if (a) (window.dataLayer = window.dataLayer || []).push({ event: 'recent_event_click', event_id: a.getAttribute('data-recent-event') }); });
   if (window.soBatchLoadImages) window.soBatchLoadImages(track, '.event-dynamic-image', function () { return true; });
   const clear = box.querySelector('[data-so-recent-clear]');
   if (clear) clear.addEventListener('click', function () {
@@ -1032,9 +1033,16 @@ document.addEventListener('DOMContentLoaded', function () {
         tabs.forEach(function (tab) {
             tab.addEventListener('click', function () {
                 var key = tab.getAttribute('data-tab');
-                tabs.forEach(function (t) { var on = t === tab; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
+                tabs.forEach(function (t) { var on = t === tab; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); t.tabIndex = on ? 0 : -1; });
                 panels.forEach(function (p) { p.hidden = p.getAttribute('data-panel') !== key; });
                 var pane = menu.querySelector('.so-menu__pane'); if (pane) pane.scrollTop = 0;
+            });
+            tab.addEventListener('keydown', function (e) {
+                var list = Array.prototype.slice.call(tabs), i = list.indexOf(tab), to = -1;
+                if (e.key === 'ArrowDown' || e.key === 'ArrowRight') to = (i + 1) % list.length;
+                else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') to = (i - 1 + list.length) % list.length;
+                else if (e.key === 'Home') to = 0; else if (e.key === 'End') to = list.length - 1;
+                if (to > -1) { e.preventDefault(); list[to].focus(); list[to].click(); }
             });
         });
     }

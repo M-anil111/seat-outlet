@@ -82,7 +82,7 @@
     var menu = wrap.querySelector('.so-cal__menu');
     var title = ev.name || 'Event';
     var where = [ev.venue, ev.city].filter(Boolean).join(', ');
-    var notes = 'Tickets: ' + ev.url;
+    var notes = 'Tickets: ' + ev.url + ((!ev.allDay && ev.start) ? '\nEnd time is an estimate; the event length is not published.' : '');
     var timed = !ev.allDay && ev.start && !isNaN(Date.parse(ev.start));
     var startD = timed ? new Date(ev.start) : null;
     var endD = timed ? new Date(startD.getTime() + 3 * 3600 * 1000) : null;   // length is not published: 3 hours

@@ -271,15 +271,15 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
         <div class="so-evhero__actions">
           <?php if ($eventTimestamp) { ?>
             <div class="so-cal" data-so-cal>
-              <button type="button" class="so-action" data-so-cal-toggle aria-haspopup="menu" aria-expanded="false">
+              <button type="button" class="so-action" data-so-cal-toggle aria-expanded="false">
                 <i class="bi bi-calendar-plus" aria-hidden="true"></i><span>Add to calendar</span>
               </button>
-              <div class="so-cal__menu" role="menu" hidden>
-                <a role="menuitem" data-cal="google" target="_blank" rel="noopener">Google Calendar</a>
-                <a role="menuitem" data-cal="outlook" target="_blank" rel="noopener">Outlook.com</a>
-                <a role="menuitem" data-cal="office" target="_blank" rel="noopener">Microsoft 365</a>
-                <a role="menuitem" data-cal="yahoo" target="_blank" rel="noopener">Yahoo Calendar</a>
-                <button type="button" role="menuitem" data-cal="ics">Apple Calendar or other (.ics file)</button>
+              <div class="so-cal__menu" hidden>
+                <a data-cal="google" target="_blank" rel="noopener">Google Calendar</a>
+                <a data-cal="outlook" target="_blank" rel="noopener">Outlook.com</a>
+                <a data-cal="office" target="_blank" rel="noopener">Microsoft 365</a>
+                <a data-cal="yahoo" target="_blank" rel="noopener">Yahoo Calendar</a>
+                <button type="button" data-cal="ics">Apple Calendar or other (.ics file)</button>
               </div>
             </div>
           <?php } ?>

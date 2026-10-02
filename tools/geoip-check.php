@@ -22,6 +22,10 @@ echo 'File: found, ' . number_format(filesize($path)) . ' bytes, updated ' . dat
 echo 'Readable by this user: ' . (is_readable($path) ? 'yes' : 'NO (fix the file permissions)') . "\n";
 $ip = $argv[1] ?? '';
 if ($ip !== '') {
-    $geo = geoIpLookup($ip);
-    echo $geo ? 'Lookup ' . $ip . ': ' . json_encode($geo) . "\n" : "Lookup $ip: no result\n";
+    if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+        echo "Lookup $ip: skipped (not a public IPv4/IPv6 address)\n";
+    } else {
+        $geo = geoIpLookup($ip);
+        echo $geo ? 'Lookup ' . $ip . ': ' . json_encode($geo) . "\n" : "Lookup $ip: no result\n";
+    }
 }

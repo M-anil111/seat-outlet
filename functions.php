@@ -774,18 +774,23 @@ function soEventRedirectTarget($event, int $eventId): string {
     $perfName = (string) ($event['performers'][0]['name'] ?? '');
     $path = (string) ($event['defaultCategory']['path'] ?? '');
     if ($perfId <= 0 && $eventId > 0) {
-        $stmt = MYSQLI->prepare('SELECT performer_id, performer_name, category_path FROM event_redirects WHERE event_id = ?');
-        if ($stmt) {
-            $stmt->bind_param('i', $eventId);
-            $stmt->execute();
-            $row = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
-            if ($row) { $perfId = (int) $row['performer_id']; $perfName = (string) $row['performer_name']; $path = (string) $row['category_path']; }
+        try {
+            $stmt = MYSQLI->prepare('SELECT performer_id, performer_name, category_path FROM event_redirects WHERE event_id = ?');
+            if ($stmt) {
+                $stmt->bind_param('i', $eventId);
+                $stmt->execute();
+                $row = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                if ($row) { $perfId = (int) $row['performer_id']; $perfName = (string) $row['performer_name']; $path = (string) $row['category_path']; }
+            }
+        } catch (\Throwable $e) {
+            // The table may not exist yet: carry on with the category data above.
         }
     }
     if ($perfId > 0 && $perfName !== '') return '/artist/' . createSlug($perfName, $perfId);
     if (strpos($path, '.1988.') !== false) return '/game-day-tickets';
     if (strpos($path, '.1989.') !== false) return '/buy-broadway-tickets';
+    if (strpos($path, '.1877.') !== false || strpos($path, '.2065.') !== false) return '/upcoming-music-festivals';
     if (strpos($path, '.1986.') !== false) return '/concert-tickets-for-sale';
     return '/buy-tickets-online';
 }
@@ -798,6 +803,8 @@ function soEventRemember(array $event): void {
     $perfName = (string) ($event['performers'][0]['name'] ?? '');
     $path = (string) ($event['defaultCategory']['path'] ?? '');
     try {
+        $chk = MYSQLI->prepare('SELECT 1 FROM event_redirects WHERE event_id = ?');
+        if ($chk) { $chk->bind_param('i', $id); $chk->execute(); $has = $chk->get_result()->num_rows > 0; $chk->close(); if ($has) return; }
         $stmt = MYSQLI->prepare('INSERT IGNORE INTO event_redirects (event_id, performer_id, performer_name, category_path, created_at) VALUES (?, ?, ?, ?, NOW())');
         if (!$stmt) return;
         $stmt->bind_param('iiss', $id, $perfId, $perfName, $path);
@@ -1643,22 +1650,28 @@ function listingRequestState($defaultSort = 'popular') {
  * into at least two separate runs of days (gap of more than 3 days between runs). Touring artists never qualify.
  */
 function soWeekendGroups(array $events): array {
-    if (count($events) < 2) return [];
-    $venues = []; $festival = false; $multi = false; $dates = [];
+    // Only the events that are themselves part of a festival (or flagged multi-day), at one venue, are grouped:
+    // an unrelated concert at the same venue is never put under a weekend chip.
+    $fest = [];
     foreach ($events as $ev) {
-        $venues[(string) ($ev['venue']['id'] ?? '0')] = true;
         $path = (string) ($ev['defaultCategory']['path'] ?? '');
-        if (strpos($path, '.1877.') !== false || strpos($path, '.2065.') !== false) $festival = true;
-        if (!empty($ev['isMultiDayEvent'])) $multi = true;
+        $isFest = strpos($path, '.1877.') !== false || strpos($path, '.2065.') !== false || !empty($ev['isMultiDayEvent']);
+        if ($isFest) $fest[] = $ev;
+    }
+    if (count($fest) < 2) return [];
+    $venues = []; $dates = [];
+    foreach ($fest as $ev) {
+        $venues[(string) ($ev['venue']['id'] ?? '0')] = true;
         $d = (string) ($ev['date']['date'] ?? '');
         if ($d === '' || !strtotime($d)) return [];
-        $dates[(int) ($ev['id'] ?? 0)] = $d;
+        $dates[(int) ($ev['id'] ?? 0)] = substr($d, 0, 10);
     }
-    if (count($venues) !== 1 || (!$festival && !$multi)) return [];
+    if (count($venues) !== 1) return [];
     asort($dates);
     $groups = []; $prev = null; $g = -1;
     foreach ($dates as $id => $d) {
-        if ($prev === null || (strtotime($d) - strtotime($prev)) / 86400 > 3) { $g++; $groups[$g] = ['ids' => [], 'from' => $d, 'to' => $d]; }
+        // Calendar days, so a daylight-saving change cannot turn a 3-day gap into 3.04 days.
+        if ($prev === null || (new DateTimeImmutable($d))->diff(new DateTimeImmutable($prev))->days > 3) { $g++; $groups[$g] = ['ids' => [], 'from' => $d, 'to' => $d]; }
         $groups[$g]['ids'][] = $id; $groups[$g]['to'] = $d; $prev = $d;
     }
     if (count($groups) < 2 || count($groups) > 6) return [];

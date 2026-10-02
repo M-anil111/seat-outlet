@@ -6277,3 +6277,4 @@ html.so-mega-open body::after { content: ""; position: fixed; inset: 0; backgrou
   .event-row-all .performer-event-item .btn.btn-outline-primary, .event-row-all .performer-event-item .btn.btn-primary { flex: 0 1 auto; min-width: 0; padding: 0 16px; }
 }
 .so-table-wrap { position: relative; }
+.tm-nav-wrapper { overflow: visible; }

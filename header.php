@@ -79,7 +79,8 @@ include_once 'functions.php';
             $pageRobots = 'noindex, follow';
         } elseif (soEventIsOver($soEvCheck)) {
             // Over: the performer's page lists what is still on sale.
-            header('Location: ' . soEventRedirectTarget($soEvCheck, $soEvId), true, 301);
+            $soTo = soEventRedirectTarget($soEvCheck, $soEvId);
+            header('Location: ' . $soTo, true, strpos($soTo, '/artist/') === 0 ? 301 : 302);
             exit;
         } else {
             soEventRemember($soEvCheck);
@@ -382,19 +383,19 @@ include_once 'functions.php';
         <div class="so-menu__body" data-so-menu>
             <div class="so-menu__rail" role="tablist" aria-label="Sections">
                 <?php foreach ($soMenu as $mi => $m) { ?>
-                <button type="button" class="so-menu__tab<?php echo $mi === 0 ? ' is-active' : ''; ?>" role="tab" data-tab="<?php echo $m['key']; ?>" aria-selected="<?php echo $mi === 0 ? 'true' : 'false'; ?>">
+                <button type="button" class="so-menu__tab<?php echo $mi === 0 ? ' is-active' : ''; ?>" role="tab" id="so-tab-<?php echo $m['key']; ?>" aria-controls="so-panel-<?php echo $m['key']; ?>" tabindex="<?php echo $mi === 0 ? '0' : '-1'; ?>" data-tab="<?php echo $m['key']; ?>" aria-selected="<?php echo $mi === 0 ? 'true' : 'false'; ?>">
                     <?php echo $soIc($m['icon']); ?>
                     <span><?php echo htmlspecialchars($m['label'], ENT_QUOTES, 'UTF-8'); ?></span>
                 </button>
                 <?php } ?>
-                <button type="button" class="so-menu__tab" role="tab" data-tab="help" aria-selected="false">
+                <button type="button" class="so-menu__tab" role="tab" id="so-tab-help" aria-controls="so-panel-help" tabindex="-1" data-tab="help" aria-selected="false">
                     <?php echo $soIc('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8M12 17h.01"/>'); ?>
                     <span>Help</span>
                 </button>
             </div>
             <div class="so-menu__pane">
                 <?php foreach ($soMenu as $mi => $m) { ?>
-                <div class="so-menu__panel" data-panel="<?php echo $m['key']; ?>"<?php echo $mi === 0 ? '' : ' hidden'; ?>>
+                <div class="so-menu__panel" role="tabpanel" id="so-panel-<?php echo $m['key']; ?>" aria-labelledby="so-tab-<?php echo $m['key']; ?>" data-panel="<?php echo $m['key']; ?>"<?php echo $mi === 0 ? '' : ' hidden'; ?>>
                     <a class="so-menu__all" href="<?php echo $m['href']; ?>"><?php echo htmlspecialchars($m['all'], ENT_QUOTES, 'UTF-8'); ?> <span aria-hidden="true">&rsaquo;</span></a>
                     <?php foreach ($m['groups'] as $g) { ?>
                     <h3><?php echo htmlspecialchars($g['title'], ENT_QUOTES, 'UTF-8'); ?></h3>
@@ -406,7 +407,7 @@ include_once 'functions.php';
                     <?php } ?>
                 </div>
                 <?php } ?>
-                <div class="so-menu__panel" data-panel="help" hidden>
+                <div class="so-menu__panel" role="tabpanel" id="so-panel-help" aria-labelledby="so-tab-help" data-panel="help" hidden>
                     <ul>
                         <li><a href="/how-to-buy-tickets-online">How to buy tickets</a></li>
                         <li><a href="/worry-free-guarantee">Our 100% guarantee</a></li>

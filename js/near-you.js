@@ -42,7 +42,7 @@
       '<div class="so-feed-card__img">' +
       '<img src="' + esc(ev.placeholder) + '" alt="' + esc(ev.name) + '" class="event-dynamic-image blur-image" width="260" height="260" loading="lazy"' +
       ' data-event="' + encodeURIComponent(ev.name) + '" data-artist="' + encodeURIComponent(ev.performer || '') + '"' +
-      ' data-tab="' + encodeURIComponent(ev.tab) + '"' +
+      ' data-venue="' + encodeURIComponent(ev.venue || '') + '" data-tab="' + encodeURIComponent(ev.tab) + '"' +
       " data-category='" + esc(JSON.stringify(ev.defaultCategory || {})) + "'>" +
       (badge ? '<span class="so-feed-card__badge' + (badge === 'Popular near you' ? ' so-feed-card__badge--hot' : '') + '">' + esc(badge) + '</span>' : '') +
       '</div>' +
