@@ -64,4 +64,5 @@ cache/tn_*.json
 *.mmdb
 cache/sitemap_xml.json
 cache/search_vocab.json
+cache/image_worker.*
 cache/home_feed_*.json

@@ -528,3 +528,79 @@ function renderImageCredit(array $img, $class = 'img-credit') {
     $credit = htmlspecialchars($img['credit'], ENT_QUOTES, 'UTF-8');
     echo '<div class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '">' . $credit . '</div>';
 }
+
+
+/* ------------------------------------------------------------------ the queue worker */
+
+/**
+ * Work the image queue: pending rows first, then fallbacks whose retry time has passed, oldest first. Stops early when a
+ * source rate-limits us, or when the deadline (unix time) is reached. Shared by cron/resolve-images.php and the
+ * self-scheduling web worker below.
+ *
+ * @return array ['processed' => n, 'resolved' => n, 'miss' => n, 'rateLimited' => n]
+ */
+function imageWorkQueue($batch, $pauseMicros = 1500000, $deadline = null, $mysqli = MYSQLI) {
+    $out = ['processed' => 0, 'resolved' => 0, 'miss' => 0, 'rateLimited' => 0];
+    $res = $mysqli->query("
+        SELECT imgkey, entity_type, entity_name, url, status
+          FROM images
+         WHERE entity_type IS NOT NULL AND entity_name IS NOT NULL
+           AND (status = 'pending' OR (status = 'fallback' AND (expires_at IS NULL OR expires_at <= NOW())))
+         ORDER BY (status = 'pending') DESC, updated_at ASC
+         LIMIT " . (int) $batch);
+    $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    foreach ($rows as $i => $row) {
+        if ($deadline !== null && time() >= $deadline) break;
+        if ($i > 0) usleep($pauseMicros);
+        $out['processed']++;
+        if (resolveEntityImage($row['entity_type'], $row['entity_name'], [], $row['url'] ?: imageFallbackUrl($row['entity_type']))) { $out['resolved']++; continue; }
+        $after = imageRecordGet($row['imgkey']);
+        // A short expiry means the chain saw a 429; stop hammering for this run.
+        if ($after && !empty($after['expires_at']) && strtotime($after['expires_at']) - time() < IMAGE_ERROR_TTL_MINUTES * 60 + 60) {
+            $out['rateLimited']++;
+            if ($out['rateLimited'] >= 3) break;
+        }
+        $out['miss']++;
+    }
+    return $out;
+}
+
+/**
+ * Self-scheduling worker, so pictures keep resolving even if nobody has set up the cron job.
+ *
+ * Runs as a shutdown function on public page requests, AFTER the page has been sent to the visitor (fastcgi_finish_request;
+ * without it, e.g. the PHP built-in server, it does nothing so no visitor is ever kept waiting). At most one run every
+ * IMAGE_WORKER_INTERVAL seconds across all requests (a stamp file, plus a lock so two requests never overlap), and only when
+ * the queue has work. The scheduled cron job stays the better option; this is the safety net. Turn it off with the
+ * environment variable IMAGE_WEB_WORKER=0.
+ */
+const IMAGE_WORKER_INTERVAL = 300;   // seconds between runs
+const IMAGE_WORKER_BATCH    = 10;
+const IMAGE_WORKER_BUDGET   = 40;    // seconds of work after the response has been sent
+
+function imageWorkerMaybeRun($forTest = false) {
+    if (!$forTest) {   // $forTest skips only the environment checks, so the scheduling rules below can be tested from the command line
+        if (PHP_SAPI === 'cli' || getenv('IMAGE_WEB_WORKER') === '0' || !function_exists('fastcgi_finish_request')) return;
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
+    }
+    $dir = __DIR__ . '/../cache';
+    if (!is_dir($dir) || !is_writable($dir)) return;
+    $stamp = $dir . '/image_worker.stamp';
+    if (is_file($stamp) && time() - (int) @filemtime($stamp) < IMAGE_WORKER_INTERVAL) return;
+    $lock = @fopen($dir . '/image_worker.lock', 'c');
+    if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) return;
+    clearstatcache(true, $stamp);
+    if (is_file($stamp) && time() - (int) @filemtime($stamp) < IMAGE_WORKER_INTERVAL) { flock($lock, LOCK_UN); return; }
+    @touch($stamp);   // even when the queue is empty: look again in a few minutes, not on every request
+    try {
+        $has = MYSQLI->query("SELECT 1 FROM images WHERE entity_type IS NOT NULL AND entity_name IS NOT NULL AND (status = 'pending' OR (status = 'fallback' AND (expires_at IS NULL OR expires_at <= NOW()))) LIMIT 1");
+        if (!$has || !$has->fetch_row()) { flock($lock, LOCK_UN); return; }
+        ignore_user_abort(true);
+        @set_time_limit(IMAGE_WORKER_BUDGET + 20);
+        fastcgi_finish_request();   // the visitor already has the whole page; everything below is background work
+        imageWorkQueue(IMAGE_WORKER_BATCH, 1200000, time() + IMAGE_WORKER_BUDGET);
+    } catch (Throwable $e) {
+        error_log('image worker: ' . $e->getMessage());
+    }
+    flock($lock, LOCK_UN);
+}

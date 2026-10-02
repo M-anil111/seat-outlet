@@ -5441,3 +5441,4 @@ function seoScoreBadgeClass($score) {
 
 // Entity image layer (performers, teams, venues, festivals, cities).
 require_once __DIR__ . '/inc/images.php';
+register_shutdown_function('imageWorkerMaybeRun');   // background image queue, see inc/images.php
