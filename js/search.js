@@ -1,3 +1,5 @@
+/* Escape a value for HTML text and attributes: names come from the ticket API and are put into innerHTML templates below. */
+function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 $('.suggestion-slider').on('setPosition', function(){
     equalHeightSlider('suggestion-slider', 'venue-card');
 });
@@ -84,12 +86,12 @@ window.loadTopSuggestions = function(keyword) {
                 const isVenue = item.type === 'venue';
 
                 html += `
-                    <a href="${item.slug}" class="team-link">
+                    <a href="${soEsc(item.slug)}" class="team-link">
                         <div class="card venue-card">
                             <div class="venue-img">
                                 <img 
-                                    src="${item.image}"
-                                    alt="${item.name}"
+                                    src="${soEsc(item.image)}"
+                                    alt="${soEsc(item.name)}"
                                     class="img-fluid venue-dynamic-image blur-image"
                                     ${isArtist ? `data-artist="${encodeURIComponent(item.name)}" data-category='${encodeURIComponent(JSON.stringify(item.category || {}))}'` : ''}
                                     ${isVenue ? `data-venue="${encodeURIComponent(item.name)}"` : ''}
@@ -100,8 +102,8 @@ window.loadTopSuggestions = function(keyword) {
                                 >
                             </div>
                             <div class="venue-content text-center">
-                                <h5 class="venue-title">${item.name}</h5>
-                                <p class="venue-location mb-0">${item.meta}</p>
+                                <h5 class="venue-title">${soEsc(item.name)}</h5>
+                                <p class="venue-location mb-0">${soEsc(item.meta)}</p>
                             </div>
                         </div>
                     </a>

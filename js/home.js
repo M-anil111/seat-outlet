@@ -1,3 +1,5 @@
+/* Escape a value for HTML text and attributes: names come from the ticket API and are put into innerHTML templates below. */
+function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 $('.custom-slider').on('setPosition', function(){
   	equalHeightSlider('custom-slider', 'event-card');
 });
@@ -407,12 +409,12 @@ $('.venue-slider').on('setPosition', function(){
             const fetchPriority = index === 0 ? 'high' : 'low';
         
             html += `
-              <a href="/venue/${venue.slug}" class="team-link">
+              <a href="/venue/${soEsc(venue.slug)}" class="team-link">
                 <div class="card venue-card">
                   <div class="venue-img">
                     <img
-                      src="${venue.image}"
-                      alt="${venue.name}"
+                      src="${soEsc(venue.image)}"
+                      alt="${soEsc(venue.name)}"
                       class="img-fluid venue-dynamic-image blur-image"
                       data-venue="${encodeURIComponent(venue.name)}"
                       loading="${loadingType}"
@@ -420,9 +422,9 @@ $('.venue-slider').on('setPosition', function(){
                     >
                   </div>
                   <div class="venue-content text-center">
-                    <h5 class="venue-title">${venue.name}</h5>
+                    <h5 class="venue-title">${soEsc(venue.name)}</h5>
                     <p class="venue-location mb-0">
-                      ${venue.city}, ${venue.state}
+                      ${soEsc(venue.city)}, ${soEsc(venue.state)}
                     </p>
                   </div>
                 </div>
@@ -570,8 +572,8 @@ document.addEventListener("DOMContentLoaded", function () {
   
     const html = list.map(item => `
       <li>
-        <a href="/artist/${item.slug}">
-          ${item.name}
+        <a href="/artist/${soEsc(item.slug)}">
+          ${soEsc(item.name)}
         </a>
       </li>
     `).join('');
