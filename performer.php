@@ -444,7 +444,7 @@ include 'header.php';
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="me-0 me-md-3 me-lg-3 me-xl-3 me-xxl-3">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">About <?php echo $artistName; ?></h2>
-						<p><?php echo $performer_bio; ?></p>
+						<?php renderBioBlock($performer_bio); ?>
 						<?php if (!empty($performer_bio)) { ?>
 						<p class="small text-muted mb-0 bio-source">Biography adapted from <a href="https://en.wikipedia.org/wiki/<?php echo rawurlencode(str_replace(' ', '_', $artistName)); ?>" rel="nofollow noopener" target="_blank">Wikipedia</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="nofollow noopener" target="_blank">CC BY-SA</a>.</p>
 						<?php } ?>

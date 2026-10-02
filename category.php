@@ -137,12 +137,9 @@ $year = date('Y');
 													data-performer-slugs="<?php echo htmlspecialchars($dataPerformerSlugs); ?>"
 												></i>
 											</div>
-											<div class="fw-semibold location-venue-name">
-												<a href="/city/<?php echo $citySlug; ?>"><?php echo $city; ?></a>
-												·
-												<a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a>
-											</div>
-											<div class="text-muted small">
+											<div class="ev-venue"><a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a></div>
+<div class="ev-place"><a href="/city/<?php echo $citySlug; ?>"><?php echo $city; ?></a></div>
+											<div class="ev-name">
 												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
 											</div>
 										</div>

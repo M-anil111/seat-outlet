@@ -5664,3 +5664,67 @@ a.next-event-name { display: block; margin-top: 8px; font-size: 18px; font-weigh
 }
 .event-row-all .performer-event-item .btn.btn-outline-primary { display: inline-flex !important; align-items: center; justify-content: center; gap: 6px; height: 42px; padding: 0 18px; border-radius: 12px; font-size: 15px; font-weight: 700; border: 1.5px solid #c7d6fb; color: var(--so-blue-2); background: #fff; }
 .event-row-all .performer-event-item .btn.btn-outline-primary:hover { background: #eef2ff; }
+
+/* SHARED COMPONENTS (one look everywhere): link chips, section headings, About text, spacing under result lists */
+.so-linkchips { display: flex; flex-wrap: wrap; gap: 10px; }
+a.so-linkchip { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 18px; border: 1px solid var(--so-line, #e8ebf0); border-radius: 999px; background: #f7f8fa; color: #111827; font-size: 15px; font-weight: 600; line-height: 1.25; text-decoration: none; transition: background .15s, border-color .15s; }
+a.so-linkchip:hover { background: #eef2ff; border-color: #c7d6fb; color: #111827; }
+.so-heading { font-size: clamp(21px, 4.8vw, 28px); line-height: 1.2; font-weight: 700; letter-spacing: -.01em; color: #111827; }
+.so-about-text { color: #374151; font-size: 16.5px; line-height: 1.7; max-width: 62ch; }
+.so-about-text p { margin-bottom: 14px; }
+.so-about { max-height: 360px; border-radius: 16px; }
+.so-about img { border-radius: 16px; }
+.list-category-bg.pb-3 { padding-bottom: 0 !important; }
+@media (max-width: 767.98px) {
+    #secondary.sidebar { margin-top: 16px; }
+    .tab-section.content-section-detail { padding: 24px 20px; margin: 16px auto; }
+}
+.so-bio__text { margin: 0; }
+.so-bio--ready:not(.so-bio--open) .so-bio__text { display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+.so-bio__toggle { margin-top: 10px; padding: 8px 18px; border: 0; border-radius: 999px; background: #f2f4f8; color: #0b46d8; font-size: 15px; font-weight: 600; }
+.so-bio__toggle:hover { background: #e8ecf3; }
+
+/* TABLETS AND FOLDABLES: four-column lists do not fit between 768 and 1199 px; use the tab layout there too */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    .so-tabs[data-so-tabs-ready] .so-tabs__bar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; padding: 4px; margin: 0 0 18px; background: #eef1f7; border-radius: 14px; max-width: 560px; }
+    .so-tabs__tab { border: 0; background: transparent; padding: 11px 6px; border-radius: 10px; font-size: 15px; font-weight: 600; color: #4b5260; line-height: 1.2; }
+    .so-tabs__tab[aria-selected="true"] { background: #fff; color: #1d4ed8; box-shadow: 0 1px 4px rgba(15, 23, 42, .15); }
+    .so-tabs[data-so-tabs-ready] .categories__grid { display: block; overflow: visible; padding: 0; }
+    .so-tabs[data-so-tabs-ready] .categories__col { display: none; min-width: 0 !important; width: 100%; padding: 4px 0 0; background: transparent; border-radius: 0; }
+    .so-tabs[data-so-tabs-ready] .categories__col.is-active { display: block; }
+    .so-tabs[data-so-tabs-ready] .categories__heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .so-tabs .categories__list { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; margin: 0 0 16px; }
+    .so-tabs .categories__list li, .so-tabs .categories__list li:nth-child(2n+1), .top_performers .categories__grid .categories__list li, .top_performers .categories__grid .categories__list li:nth-child(2n+1) { margin: 0; padding: 0; background: transparent; border-radius: 0; }
+    .so-tabs .categories__list a { display: inline-block; padding: 10px 16px; font-size: 15px; line-height: 1.2; color: #1f2937; background: #f3f5fa; border: 1px solid #e3e8f2; border-radius: 999px; }
+    .so-tabs .categories__list a:hover { background: #e8eefc; border-color: #c9d6f5; }
+}
+
+/* VERY NARROW SCREENS (280 to 359 px, folded foldables): nothing may be wider than the screen */
+@media (max-width: 359.98px) {
+    ul.category-scroll { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .tm-footer-bottom .d-flex, .tm-footer-bottom .tm-country { flex-wrap: wrap; max-width: 100%; }
+    .tm-country .btn { max-width: 100%; white-space: normal; }
+    .so-seg__btn { padding: 9px 4px; font-size: 13px; }
+    .so-list__name { font-size: 16px; }
+    .event-row-all .performer-event-item .btn.btn-primary, .event-row-all .performer-event-item .btn.btn-outline-primary { min-width: 0; padding: 0 12px; }
+    .next-event-price strong { font-size: 30px; }
+}
+@media (max-width: 359.98px) {
+    .so-tabs[data-so-tabs-ready] .so-tabs__bar { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .so-tabs__tab { min-width: 0; padding: 9px 4px; font-size: 13px; }
+}
+/* A 3rem row gutter inside a container with 12px padding sticks out by 12px between 992 and 1199 px */
+@media (min-width: 992px) and (max-width: 1199.98px) { .row.gx-lg-5 { --bs-gutter-x: 1.5rem; } }
+
+/* More narrow-screen and tablet guards found by the audit (about flags, partner cards, 3rem gutters) */
+.about-us-section .flag-card { min-width: 0; gap: 10px; }
+.about-us-section .flag-card svg { flex: 0 0 clamp(40px, 34%, 75px); height: auto; }
+.about-us-section .flag-name { min-width: 0; overflow-wrap: anywhere; }
+@media (min-width: 992px) and (max-width: 1199.98px) { .row.g-lg-5 { --bs-gutter-x: 1.5rem; } }
+@media (max-width: 767.98px) {
+    .grid-section { grid-template-columns: minmax(0, 1fr); }
+    .card-text, .card-stat { min-width: 0; padding: 40px 22px; overflow-wrap: anywhere; }
+    .stat-circle { width: min(200px, 60vw); height: min(200px, 60vw); }
+}
+@media (max-width: 359.98px) { .offer-pill { padding-left: 10px !important; padding-right: 10px !important; gap: 8px; } .offer-copy-btn { padding-left: 14px !important; padding-right: 14px !important; } }
+@media (max-width: 359.98px) { h1, .h1, h2.h1, .main-title { font-size: clamp(26px, 10vw, 44px) !important; overflow-wrap: anywhere; } h2, h3 { overflow-wrap: anywhere; } }
