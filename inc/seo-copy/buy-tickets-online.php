@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Buy Tickets Online With Confidence</h2>
 <p>When you buy tickets online, you want three answers fast: what is on, what does it cost, and is the order safe. This page is built around those answers. The event list above shows upcoming concerts, games, theater and festivals, and the filters let you sort by date or switch the order of the list.</p>
 <p>Seat Outlet is a resale marketplace. Sellers set the prices, so a ticket can be above or below face value, and you can compare listings for the same event before you pay. Every order goes through secure checkout and is covered by our guarantee.</p>

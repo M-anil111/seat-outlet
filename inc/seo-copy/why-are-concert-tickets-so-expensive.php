@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Why are concert tickets so expensive?</h2>
 <p>There is no single answer, because several groups influence what you pay. Event organizers, performers and promoters set ticket prices and release dates. Demand, seat location and event popularity then move those prices. Fees are added on top, and resale can push a price higher or lower than face value.</p>
 <p>This guide builds on the answers above and explains each piece in plain language, so you can judge a price instead of guessing. If you have ever asked why are concert tickets so expensive for one show but cheap for another, the sections below show how the same few factors play out differently each time.</p>

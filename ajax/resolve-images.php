@@ -18,7 +18,8 @@ if ($canResolve) { @file_put_contents($gate, (string) time()); }
 
 $out = []; $resolved = 0;
 foreach ($items as $item) {
-    $name = trim((string) ($item['name'] ?? ''));
+    if (!is_array($item)) { $out[] = ''; continue; }
+    $name = is_string($item['name'] ?? null) ? trim($item['name']) : '';
     $type = in_array($item['type'] ?? '', ['artist', 'team', 'festival', 'venue'], true) ? $item['type'] : 'artist';
     $url  = '';
     if ($name !== '') {

@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Buy Event Tickets for Concerts, Sports, Theater and Festivals</h2>
 <p>When you buy event tickets on Seat Outlet, you shop a marketplace where independent sellers list tickets and you compare them side by side. Search by artist, team, show, venue or city, open an event, and pick the section and price that suit you. It is a simple way to buy event tickets without hopping between sites. Checkout is secure, and every order is covered by our guarantee.</p>
 <p>Seat Outlet is a resale marketplace, so listed prices are set by sellers. A ticket can cost more or less than its original face value depending on the event, the seat and how close the date is. That is why we show the full list of options and let you decide, instead of sending you to a single price.</p>

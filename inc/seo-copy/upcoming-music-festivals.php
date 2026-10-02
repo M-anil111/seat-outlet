@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Upcoming music festivals: how to choose a pass and plan your weekend</h2>
 <p>The listings above show upcoming music festivals and festival tickets offered by sellers on the Seat Outlet marketplace. Sort by date to see which of the upcoming music festivals is coming soonest, then open an event to compare passes and prices. This guide explains the pass types you will see, what moves prices, and how to get ready before the gates open.</p>
 <p>Festivals are different from a single concert: you are buying a multi-act experience, often across several days, in one location. If you would rather see one headliner in a standard venue, browse <a href="/concert-tickets-for-sale">concert tickets for sale</a> instead.</p>

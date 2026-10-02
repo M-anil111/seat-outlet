@@ -7,10 +7,10 @@ header('Content-Type: application/json');
    VALIDATE INPUT
 ============================== */
 
-$tab  = $_GET['tab']  ?? '';
-$type = $_GET['type'] ?? '';
-$loc1 = $_GET['loc1'] ?? '';
-$loc2 = $_GET['loc2'] ?? '';
+$tab  = soQs('tab');
+$type = soQs('type');
+$loc1 = soQs('loc1');
+$loc2 = soQs('loc2');
 
 /* ==============================
    MAP TAB TO TN CATEGORY PATH

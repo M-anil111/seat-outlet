@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Cookie policy key points at a glance</h2>
 <p>The cookie policy above is the full text, and this cookie policy applies to our websites and apps. This guide summarizes it in plain English, using the policy's own wording. If anything here differs from the cookie policy above, the full text applies.</p>
 

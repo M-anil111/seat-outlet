@@ -15,6 +15,12 @@ if (!empty($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '?') !== 
     }
     unset($so_original_query);
 }
+// Array-typed parameters (?q[]=a) are never used by this site; handing one to a string function threw a TypeError and answered an
+// empty 500. Dropping them makes the page behave as if the parameter was not sent.
+foreach ($_GET as $so_key => $so_val) {
+    if (is_array($so_val)) { unset($_GET[$so_key], $_REQUEST[$so_key]); }
+}
+unset($so_key, $so_val);
 
 include_once __DIR__ . '/db/config.php';
 include 'inc/constants.php';
@@ -61,33 +67,62 @@ function getS3Client() {
     return $client;
 }
 
-function downloadImage($url) {
-    if (!preg_match('#^https?://#i', (string) $url)) return '';
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_MAXREDIRS      => 3,
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_SSL_VERIFYHOST => 2,
-        CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_USERAGENT      => imageUserAgent(),
-        // Was `die("cURL Error: ...")` on failure, which turned a JSON
-        // endpoint into plain text and killed whatever page called it.
-        CURLOPT_NOPROGRESS     => false,
-        CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
-            return ($dlTotal > IMAGE_MAX_DOWNLOAD_BYTES || $dlNow > IMAGE_MAX_DOWNLOAD_BYTES) ? 1 : 0;
-        },
-    ]);
-    $data = curl_exec($ch);
-    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $err  = curl_errno($ch);
-    curl_close($ch);
-    if ($err || $code !== 200 || $data === false || $data === '') {
-        return '';
+/**
+ * Resolve a URL's host and say whether it is a public internet address (https/http on port 80/443, no credentials, no private,
+ * loopback, link-local or metadata address). Returns the first public IP, or '' when the URL must not be fetched.
+ */
+function soPublicHostIp($url) {
+    $p = parse_url((string) $url);
+    if (!$p || empty($p['host']) || isset($p['user']) || isset($p['pass'])) return '';
+    if (!in_array(strtolower($p['scheme'] ?? ''), ['http', 'https'], true)) return '';
+    $port = $p['port'] ?? (strtolower($p['scheme']) === 'https' ? 443 : 80);
+    if (!in_array((int) $port, [80, 443], true)) return '';
+    $host = trim($p['host'], '[]');
+    $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
+    if (!$ips) return '';
+    foreach ($ips as $ip) {
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return '';
     }
-    return $data;
+    return $ips[0];
+}
+
+function downloadImage($url) {
+    // Admin-supplied URL fetched by the server: every hop (redirects are followed by hand) must be a public address, and the connection
+    // is pinned to the address that was checked, so a DNS answer cannot change between the check and the fetch.
+    $url = (string) $url;
+    for ($hop = 0; $hop <= 3; $hop++) {
+        $ip = soPublicHostIp($url);
+        if ($ip === '') return '';
+        $p = parse_url($url);
+        $port = $p['port'] ?? (strtolower($p['scheme']) === 'https' ? 443 : 80);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_RESOLVE        => [$p['host'] . ':' . $port . ':' . $ip],
+            CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_USERAGENT      => imageUserAgent(),
+            // Was `die("cURL Error: ...")` on failure, which turned a JSON
+            // endpoint into plain text and killed whatever page called it.
+            CURLOPT_NOPROGRESS     => false,
+            CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
+                return ($dlTotal > IMAGE_MAX_DOWNLOAD_BYTES || $dlNow > IMAGE_MAX_DOWNLOAD_BYTES) ? 1 : 0;
+            },
+        ]);
+        $data = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_errno($ch);
+        $next = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+        curl_close($ch);
+        if (!$err && in_array($code, [301, 302, 303, 307, 308], true) && $next !== '') { $url = $next; continue; }
+        if ($err || $code !== 200 || $data === false || $data === '') return '';
+        return $data;
+    }
+    return '';
 }
 
 // Nearly every page on the site calls this (indirectly, via tnRequest())
@@ -363,6 +398,12 @@ function tnParseResult($ch, $response) {
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $decoded = json_decode((string) $response, true);
     if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+        // A 4xx without a JSON body (for example a gateway answering 400/404 for a junk id) is an answer about THAT request,
+        // not an outage: it must not open the circuit for every visitor.
+        if ($code >= 400 && $code < 500 && $code !== 429) {
+            return ['ok' => true, 'data' => ['Message' => $code === 404 ? 'The requested resource was not found.' : 'The request was rejected (HTTP ' . $code . ').'],
+                    'cacheable' => false, 'error' => '', 'http' => $code];
+        }
         return ['ok' => false, 'data' => [], 'cacheable' => false, 'error' => 'invalid JSON (HTTP ' . $code . ')'];
     }
     if ($code >= 500) {
@@ -374,7 +415,7 @@ function tnParseResult($ch, $response) {
         return ['ok' => false, 'data' => $decoded, 'cacheable' => false, 'error' => 'throttled (HTTP ' . $code . ')', 'throttled' => true];
     }
     $cacheable = $code === 200 && !isset($decoded['code']) && !isset($decoded['Message']);
-    return ['ok' => true, 'data' => $decoded, 'cacheable' => $cacheable, 'error' => '', 'auth' => $code === 401];
+    return ['ok' => true, 'data' => $decoded, 'cacheable' => $cacheable, 'error' => '', 'auth' => $code === 401, 'http' => $code];
 }
 
 /** One live call, no caching. A 401 (rotated token) refreshes the token and retries once. */
@@ -428,8 +469,22 @@ function tnScheduleRefresh($endpoint, array $params, $method, $key) {
     });
 }
 
+/** How long an "it does not exist" answer is remembered, so junk ids and bots do not each cost a live API call. */
+const TN_NEGATIVE_TTL = 300;
+
+/** The largest id TicketNetwork's int32 ids can hold; anything above is a made-up id and never reaches the API. */
+const TN_MAX_ID = 2147483647;
+
+/** True when the endpoint ends in a numeric id the API cannot have (/catalog/v2/performers/99999999999). */
+function tnIdOutOfRange($endpoint) {
+    return preg_match('#/(\d{10,})/?$#', (string) $endpoint, $m) && (float) $m[1] > TN_MAX_ID;
+}
+
 function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
     $params = is_array($params) ? $params : [];
+    if (tnIdOutOfRange($endpoint)) {
+        return ['Message' => 'The requested resource was not found.'];
+    }
     $ttl = $ttl === null ? tnDefaultTtl($endpoint, $params) : (int) $ttl;
     $key = null;
     $entry = null;
@@ -453,6 +508,15 @@ function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
         }
     }
 
+    // Remembered "not found": answer from the short negative cache.
+    if ($key !== null && $entry === null) {
+        $neg = cache_get($key . '_nf', TN_NEGATIVE_TTL);
+        if ($neg !== false) {
+            tnProfile($endpoint, true, 0);
+            return $neg;
+        }
+    }
+
     // Circuit open: do not queue more 20s timeouts behind a dead API.
     if (tnBreakerOpen()) {
         if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
@@ -473,9 +537,11 @@ function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
 
     if ($key !== null && $r['cacheable']) {
         cache_set($key, $r['data']);
-        if (mt_rand(1, 200) === 1) {
-            tnCacheSweep();
-        }
+    } elseif ($key !== null && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) {
+        cache_set($key . '_nf', $r['data']);   // a definite "no such thing": remember it briefly
+    }
+    if ($key !== null && mt_rand(1, 200) === 1) {
+        tnCacheSweep();
     }
     return $r['data'];
 }
@@ -502,6 +568,8 @@ function tnRequestMulti(array $requests) {
             $out[$i] = $entry['data'];
             continue;
         }
+        if (tnIdOutOfRange($endpoint)) { $out[$i] = ['Message' => 'The requested resource was not found.']; continue; }
+        if ($entry === null && $ttl > 0 && ($neg = cache_get($key . '_nf', TN_NEGATIVE_TTL)) !== false) { $out[$i] = $neg; continue; }
         $out[$i] = ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
         $todo[$i] = [$endpoint, $params, $ttl, $key];
     }
@@ -537,6 +605,7 @@ function tnRequestMulti(array $requests) {
         if ($r['ok']) {
             $out[$i] = $r['data'];
             if ($ttl > 0 && $r['cacheable']) cache_set($key, $r['data']);
+            elseif ($ttl > 0 && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) cache_set($key . '_nf', $r['data']);
         } else {
             tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
             if (empty($out[$i])) tnMarkDegraded();
@@ -548,14 +617,28 @@ function tnRequestMulti(array $requests) {
     return $out;
 }
 
-/** Delete stale tn_*.json response files so cache/ doesn't grow unbounded. */
+/**
+ * Keep cache/ bounded. Visitor-driven families are swept by age (tn_ responses 2 days, home_feed_ 1 day), leftovers of
+ * interrupted writes (.tmp_, .lock) after an hour, and a family is also capped by file count (oldest first), because the
+ * key space comes from coordinates and filters that visitors choose. Fixed files (top_*.json, teams_*.json, bios) are untouched.
+ */
 function tnCacheSweep() {
-    $cutoff = time() - TN_CACHE_SWEEP_AGE;
-    foreach (glob(cache_dir() . 'tn_*.json') ?: [] as $file) {
-        if (@filemtime($file) < $cutoff) {
-            @unlink($file);
+    $dir = cache_dir();
+    $now = time();
+    foreach (['tn_' => [TN_CACHE_SWEEP_AGE, 20000], 'home_feed_' => [86400, 4000]] as $prefix => [$maxAge, $maxFiles]) {
+        $files = glob($dir . $prefix . '*.json') ?: [];
+        $alive = [];
+        foreach ($files as $file) {
+            $mt = (int) @filemtime($file);
+            if ($mt < $now - $maxAge) { @unlink($file); } else { $alive[$file] = $mt; }
+        }
+        if (count($alive) > $maxFiles) {
+            asort($alive);
+            foreach (array_slice(array_keys($alive), 0, count($alive) - $maxFiles) as $file) { @unlink($file); }
         }
     }
+    foreach ((glob($dir . '*.json.tmp_*') ?: []) as $file) { if ((int) @filemtime($file) < $now - 3600) @unlink($file); }
+    foreach ((glob($dir . '*.lock') ?: []) as $file) { if ((int) @filemtime($file) < $now - 3600) @unlink($file); }
 }
 
 /** Kept for existing callers; tnRequest() itself now caches. */
@@ -2470,7 +2553,9 @@ function soRedirectLegacyUrl() {
     if ($to === null) return;
     http_response_code(301);
     header('Location: ' . $to . ($qs !== '' ? '?' . $qs : ''));
-    header('Cache-Control: public, max-age=3600');
+    // A redirect that carries an email address, or leads to a private page, must not sit in a shared cache.
+    $privateTarget = in_array($to, ['/checkout', '/order-confirmation', '/thank-you', '/unsubscribe'], true) || stripos($qs, 'email') !== false;
+    header('Cache-Control: ' . ($privateTarget ? 'private, no-store' : 'public, max-age=3600'));
     exit;
 }
 
@@ -3786,7 +3871,9 @@ function parseLocationSlug(string $dimension, string $slug) {
         return preg_match('/^[A-Z]{2}$/', $code) ? $code : null;
     }
 
-    $id = (int) end($parts);
+    $last = end($parts);
+    if (!ctype_digit($last) || strlen($last) > 10 || (int) $last > TN_MAX_ID) return null;   // not an id TicketNetwork can have
+    $id = (int) $last;
     return $id > 0 ? $id : null;
 }
 
@@ -5447,4 +5534,5 @@ function seoScoreBadgeClass($score) {
 // Entity image layer (performers, teams, venues, festivals, cities).
 require_once __DIR__ . '/inc/images.php';
 require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-capture form
+require_once __DIR__ . '/inc/request-guard.php';   // soClientIp(), soRateHit(), soQs(): shared request helpers
 register_shutdown_function('imageWorkerMaybeRun');   // background image queue, see inc/images.php

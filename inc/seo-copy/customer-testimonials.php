@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Customer testimonials: how we collect and use them</h2>
 <p>Customer testimonials are most useful when you know where they came from. This page does not show testimonials yet, because we will not publish quotes or figures we cannot back up. This section explains how we plan to handle customer testimonials honestly and what you can rely on today.</p>
 <p>Instead of asking you to trust a wall of praise, we would rather show you the written policies behind our service. Those are the same policies your own order would be covered by.</p>

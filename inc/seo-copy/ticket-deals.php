@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Find Ticket Deals on Concerts, Sports and Shows</h2>
 <p>Good ticket deals come from comparing, not guessing. Seat Outlet is a resale marketplace, so independent sellers set their own prices. The same event can have listings at very different price points, and the gap between sections is often larger than people expect.</p>
 <p>This page explains how to look for ticket deals on Seat Outlet, what affects the price of a seat, and what to check before you pay. We do not promise the lowest price on any event, because prices move with demand. We do show you the options so you can choose.</p>

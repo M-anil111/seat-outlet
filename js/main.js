@@ -732,7 +732,7 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
             activeIndex = -1;
         };
         if (trendingCache) { build(trendingCache); return; }
-        fetch('/cache/top_performers.json', { cache: 'force-cache' })
+        fetch('/ajax/get-top-performers.php', { cache: 'force-cache' })
             .then(r => r.ok ? r.json() : {})
             .then(d => {
                 const pick = [];

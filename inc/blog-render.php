@@ -23,18 +23,13 @@ function soBlogSafeUrl($url) {
 }
 
 function soBlogNewsletterBox(array $a = []) {
-    $title = $a['title'] ?? 'Get ticket alerts and new guides in your inbox';
-    $text  = $a['text'] ?? 'Tour announcements, on-sale news and plain-English ticket advice. No spam.';
-    return '<aside class="so-nl"' . (!empty($a['id']) ? ' id="' . soBlogH($a['id']) . '"' : '') . '><p class="so-nl__title">' . soBlogH($title) . '</p><p class="so-nl__sub">' . soBlogH($text) . '</p>'
-        . '<form class="so-nl__form" method="POST" action="/newsletter-email.php">'
-        . '<input type="text" name="company" value="" class="so-nl__hp" autocomplete="off" tabindex="-1" aria-hidden="true">'
-        . '<input type="hidden" name="token" value="">'
-        . '<div class="so-nl__fields">'
-        . '<input name="fname" type="text" placeholder="First name" aria-label="First name" maxlength="70" autocomplete="given-name" required>'
-        . '<input name="lname" type="text" placeholder="Last name" aria-label="Last name" maxlength="70" autocomplete="family-name" required>'
-        . '<input name="email" type="email" placeholder="Email" aria-label="Email" maxlength="70" autocomplete="email" required>'
-        . '<button type="submit">Sign me up</button></div>'
-        . '<p class="so-nl__err" role="alert" hidden></p></form></aside>';
+    // The shared sign-up component (inc/leads.php + js/lead-capture.js) posts to /ajax/subscribe.php.
+    return soLeadForm([
+        'source' => preg_replace('/[^a-z0-9_-]/', '', strtolower((string) ($a['source'] ?? 'blog'))) ?: 'blog',
+        'title' => $a['title'] ?? 'Get ticket alerts and new guides in your inbox',
+        'text' => $a['text'] ?? 'Tour announcements, on-sale news and plain-English ticket advice. No spam.',
+        'id' => $a['id'] ?? '',
+    ]);
 }
 
 function soBlogCtaBox(array $a) {

@@ -16,10 +16,15 @@ require_once 'functions.php';
 | total), email (masked when shown), eid (event id, for the summary).
 */
 
-$orderNumber = trim((string) ($_GET['oid'] ?? $_GET['orderId'] ?? $_GET['order'] ?? ''));
+$orderIn = $_GET['oid'] ?? $_GET['orderId'] ?? $_GET['order'] ?? '';
+$orderNumber = is_string($orderIn) ? trim($orderIn) : '';
 $orderNumber = preg_replace('/[^A-Za-z0-9\-]/', '', $orderNumber);
-$total = is_numeric($_GET['total'] ?? null) ? round((float) $_GET['total'], 2) : null;
-$email = filter_var((string) ($_GET['email'] ?? ''), FILTER_VALIDATE_EMAIL) ? (string) $_GET['email'] : '';
+$total = is_string($_GET['total'] ?? null) && is_numeric($_GET['total']) ? round((float) $_GET['total'], 2) : null;
+// The URL can be typed by anyone, so it must not feed absurd values into revenue reporting: out-of-range totals and
+// implausible order numbers are ignored (the real fix is a server-confirmed purchase signal, see docs/launch-checklist.md).
+if ($total !== null && ($total <= 0 || $total > 25000)) $total = null;
+if (strlen($orderNumber) < 4 || strlen($orderNumber) > 40) { $orderNumber = ''; $total = null; }
+$email = is_string($_GET['email'] ?? null) && filter_var($_GET['email'], FILTER_VALIDATE_EMAIL) ? $_GET['email'] : '';
 $eventId = (int) ($_GET['eid'] ?? 0);
 $event = $eventId > 0 ? getTnEventById($eventId) : [];
 $hasEvent = !empty($event['text']['name']);

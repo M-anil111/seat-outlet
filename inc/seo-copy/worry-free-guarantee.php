@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>What the Worry Free Guarantee Means for Your Order</h2>
 <p>Buying tickets online should not feel like a gamble. Our worry free guarantee is the promise behind every Seat Outlet order: the tickets are valid, they arrive before the event, you receive what you ordered or better, and a canceled event is refunded. Orders are fulfilled through TicketNetwork and covered by its 100% guarantee.</p>
 <p>This page walks through what the worry free guarantee covers, how it works alongside our <a href="/ticket-buyer-protection">ticket buyer protection</a> policy, and what to do if something goes wrong.</p>

@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Ticket Buyer Protection on Every Seat Outlet Order</h2>
 <p>Ticket buyer protection is what stands between you and a bad surprise at the gate. On Seat Outlet, orders come with protections for ticket validity, delivery, payment security and event cancellations, plus a support team to turn to if anything goes wrong.</p>
 <p>This guide to ticket buyer protection explains each protection in everyday terms, shows what to check before you buy, and points you to the right place if you need help. It works hand in hand with our <a href="/worry-free-guarantee">worry free guarantee</a>.</p>
