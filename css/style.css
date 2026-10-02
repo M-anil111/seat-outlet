@@ -5490,3 +5490,6 @@ a.common-btn:hover{
     .so-marquee { overflow-x: auto; }
     .so-marquee__track > .feature-box[aria-hidden="true"] { display: none !important; }
 }
+
+/* The footer gradient has no plain colour under it, so accessibility checkers read the page grey behind white text: give it one. */
+.tm-footer { background-color: #0b0b0b; }
