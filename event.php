@@ -2083,11 +2083,44 @@ font-size: 18px;
         width: 5px !important;
         padding: 0;
     }
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-cta-col { display: flex !important; flex-direction: column; align-items: center; gap: 6px; }
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-tg-list-value-score { display: block; color: #5b6578; font-size: 12px; font-weight: 600; line-height: 1.2; text-align: center; white-space: nowrap; }
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-tg-list-value-score-inner { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-value-score-star:before { color: #f5a300 !important; font-size: 11px; }
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-cta-col { display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+    /* The widget pads the CTA cell with <br>s; the flex column does the spacing. */
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-cta-col > br { display: none; }
+    /* Whichever CTA the widget renders here (Buy Now link/button, or its
+       default price button before a quantity is picked) gets the blue pill. */
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-cta-col > :is(a, button):not(.sea-tg-list-value-score) {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        min-width: 0;
+        margin: 0;
+        padding: 8px 14px;
+        background: #2556e0 !important;
+        border: 0 !important;
+        border-radius: 8px;
+        color: #fff !important;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.2;
+        text-align: center;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-cta-col > :is(a, button):not(.sea-tg-list-value-score):hover { background: #1a3fa8 !important; }
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-cta-col > :is(a, button):not(.sea-tg-list-value-score) * { color: inherit !important; font-size: inherit; font-weight: inherit; }
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-cta-col > :is(a, button):not(.sea-tg-list-value-score) .cm-right-arrow { display: none; }
+    /* Deal score: five stars on one line, the label under them (the widget's
+       own <br> does the break). Its fixed 109px width squeezed the title. */
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-tg-list-value-score { display: block; width: auto !important; color: #5b6578; font-size: 12px; font-weight: 600; line-height: 1.3; text-align: center; white-space: nowrap; }
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-tg-list-value-score-inner { display: inline-block; padding: 0 !important; }
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-value-score-star { display: inline-block; }
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-value-score-star-rightmost { margin-right: 0 !important; }
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-value-score-star:before { color: #f5a300 !important; font-size: 11px; width: auto !important; margin: 0 !important; }
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-tg-list-value-score-text { margin-left: 0; color: #0f1b3d; }
+    /* Wrap long section names between words, never mid-word. */
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-section-row-text { word-break: normal; overflow-wrap: break-word; hyphens: none; }
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-segment-td::before {
         content: '!';
         position: absolute;
