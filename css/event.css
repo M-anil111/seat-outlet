@@ -1639,3 +1639,59 @@ font-size: 18px;
         height: 52px; padding: 14px 16px; border-radius: 12px;
         font-size: 17px; line-height: 1.2; white-space: normal;
     }
+
+/* ---------- TICKET-TYPE STRIP: Apple-style segmented control + Filters pill ---------- */
+#tn-maps #sea-inventory-slider-with-filterBtn {
+    display: flex !important; align-items: center; gap: 10px;
+    height: auto !important; padding: 10px 10px !important; box-sizing: border-box; background: #fff !important;
+    border: 0 !important; position: relative;
+}
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider { flex: 1 1 auto; min-width: 0; margin: 0 !important; width: auto !important; }
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-list { margin: 0 !important; overflow: visible; }
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track {
+    display: flex !important; width: 100% !important; transform: none !important; margin: 0 !important;
+    padding: 3px; gap: 2px; box-sizing: border-box; background: #f2f2f7; border-radius: 12px;
+}
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label.sea-ticket-type-option {
+    flex: 1 1 0; width: auto !important; min-width: 0; height: auto !important; min-height: 38px;
+    display: flex !important; align-items: center; justify-content: center; text-align: center;
+    margin: 0 !important; padding: 5px 6px !important; border: 0 !important; border-radius: 9px !important;
+    background: transparent !important; box-shadow: none; cursor: pointer; float: none !important;
+}
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label span.filter-tg-type-text {
+    font-size: 14px; line-height: 1.2; font-weight: 500; color: #3a3a3c; white-space: normal; overflow-wrap: normal; text-align: center; display: block; max-width: 100%;
+}
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label.active {
+    background: #fff !important; box-shadow: 0 1px 3px rgba(0,0,0,.14), 0 1px 1px rgba(0,0,0,.06);
+}
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label.active span.filter-tg-type-text { color: #1d1d1f; font-weight: 600 !important; }
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label:hover:not(.active) { background: rgba(0,0,0,.04) !important; }
+/* more than two tabs (parking, packages): the track scrolls sideways instead of squeezing the labels */
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track:has(label:nth-child(3)) { overflow-x: auto; scrollbar-width: none; }
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track:has(label:nth-child(3)) label.sea-ticket-type-option { flex: 0 0 auto; padding: 6px 14px !important; }
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track:has(label:nth-child(3))::-webkit-scrollbar { display: none; }
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider button.slick-prev,
+#tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider button.slick-next { display: none !important; }
+/* Filters: a quiet pill, not a heavy blue block */
+#tn-maps #sea-inventory-filtersBtncnt {
+    position: static !important; flex: 0 0 auto; width: auto !important; height: 44px !important; min-width: 44px;
+    display: flex; align-items: center; margin: 0 !important; padding: 0 12px !important;
+    background: #f2f2f7 !important; color: #1d1d1f !important; border-radius: 980px !important; border: 0 !important;
+}
+#tn-maps #sea-inventory-filtersBtncnt:hover { background: #e8e8ed !important; opacity: 1; }
+#tn-maps #sea-inventory-filtersBtncnt .sea-inventory-filterBtn, #tn-maps #sea-inventory-filtersBtncnt .sea-inventory-child {
+    position: static !important; display: flex; align-items: center; gap: 6px; height: auto !important; width: auto !important; padding: 0 !important; margin: 0 !important;
+    color: #1d1d1f !important; font-size: 14px; font-weight: 600; white-space: nowrap; line-height: 1;
+}
+#tn-maps #sea-inventory-filtersBtncnt .sea-totalFiltersApplied { color: #0071e3; font-weight: 700; }
+#tn-maps #sea-inventory-filtersBtncnt .cm-down-arrow.sea-angle { position: static !important; color: #6e6e73 !important; font-size: 12px; }
+#tn-maps #sea-inventory-filtersBtncnt:focus-visible { outline: 3px solid #0071e3; outline-offset: 2px; }
+@media (max-width: 359.98px) {
+    #tn-maps #sea-inventory-filtersBtncnt .cm-down-arrow.sea-angle { display: none !important; }
+    #tn-maps #sea-inventory-filtersBtncnt { padding: 0 11px !important; }
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label span.filter-tg-type-text { font-size: 13px; }
+}
+
+/* The widget's first-visit "Add up to 10 tickets to My List" popup lands on top of the Tickets / Filters strip and hides the
+   controls people need first. The My List checkboxes themselves stay. */
+#tn-maps #sea-my-list-popup.sea-first-msg { display: none !important; }

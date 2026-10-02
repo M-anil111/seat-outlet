@@ -6912,3 +6912,32 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [role="button"]:fo
 
 .so-cheapest-row { display: block; text-align: right; }
 @media (max-width: 575.98px) { .so-cheapest-row { text-align: left; } }
+
+/* Popular teams / artists / venues cards inside the SEO copy: the in-copy link rule (.so-seo-copy li a, inline-block) was winning and
+   left-aligned the circles and shrank the cards. These selectors are more specific, so the card layout holds. */
+.so-seo-copy .so-cseo__artists a { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; height: 100%; padding: 16px 10px; box-sizing: border-box; }
+.so-seo-copy .so-cseo__artists li { padding-left: 0; margin: 0; }
+.so-seo-copy .so-cseo__venues a { display: flex; flex-direction: column; padding: 14px 18px; }
+.so-seo-copy .so-cseo__venues li, .so-seo-copy .so-cseo__links li { padding-left: 0; }
+.so-seo-copy .so-cseo__links a { display: inline-block; padding: 8px 0; }
+.so-seo-copy ul.so-cseo__artists, .so-seo-copy ul.so-cseo__venues, .so-seo-copy ul.so-cseo__links { padding-left: 0; list-style: none; }
+.so-seo-copy .so-cseo__artists li, .so-seo-copy .so-cseo__venues li, .so-seo-copy .so-cseo__links li { list-style: none; }
+
+/* Tap feedback while the next page loads (js/nav-feedback.js) */
+.so-navbar { position: fixed; left: 0; top: 0; z-index: 2147483000; height: 3px; width: 0; background: #0071e3; box-shadow: 0 0 8px rgba(0,113,227,.5); pointer-events: none; opacity: 0; }
+.so-navbar.is-on { opacity: 1; width: 88%; transition: width 9s cubic-bezier(.08,.75,.2,1), opacity .15s; }
+a.so-link-busy { opacity: .6; }
+a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height: 14px; margin-left: 10px; vertical-align: -2px; border: 2px solid rgba(0,113,227,.25); border-top-color: #0071e3; border-radius: 50%; animation: so-spin .7s linear infinite; }
+.search-suggestions li.result-item:has(a.so-link-busy) { background: #f2f6ff; }
+@keyframes so-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .so-navbar.is-on { transition: opacity .15s; width: 88%; }
+  a.so-link-busy::after { animation: none; border-color: #0071e3; }
+}
+
+/* Date chips: one swipeable line on phones instead of three wrapped rows (artist pages) */
+@media (max-width: 575.98px) {
+  .so-when { flex-wrap: nowrap; overflow-x: auto; margin-right: -16px; padding-right: 16px; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+  .so-when::-webkit-scrollbar { display: none; }
+  .so-when__chip { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
+}

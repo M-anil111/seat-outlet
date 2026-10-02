@@ -141,7 +141,8 @@ include_once 'functions.php';
     <?php } ?>
     
 
-    <link rel="preload" href="/fonts/bootstrap-icons-subset.woff2?v=1.13.1" as="font" type="font/woff2" crossorigin>
+    <?php /* Same content hash tools/build-icons.py writes into css/icons.css, so the preload is the request the stylesheet uses. */ ?>
+    <link rel="preload" href="/fonts/bootstrap-icons-subset.woff2?v=<?php echo substr((string) @md5_file(__DIR__ . '/fonts/bootstrap-icons-subset.woff2'), 0, 10); ?>" as="font" type="font/woff2" crossorigin>
     <?php $soNeedsSlick = in_array($soReqPath, ['/', '/index.php', '/search', '/about-seat-outlet'], true) || strpos($soReqPath, '/event/') === 0; // carousel CSS: pages with a carousel, plus event pages (the Seatics seat-map widget uses slick classes) ?>
     <?php if ($soNeedsSlick) { ?>
     <link rel="preload" href="/lib/slick-carousel/1.8.1/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">

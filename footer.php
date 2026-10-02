@@ -177,6 +177,7 @@ window.addEventListener('load', function () {
     <script src="<?php echo htmlspecialchars(soAsset('js/saved-events.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/event-widget.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php } ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/nav-feedback.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/install-prompt.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/menu-near.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/analytics-events.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
