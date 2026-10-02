@@ -6,11 +6,16 @@
 // secrets gets them, whether it goes through functions.php or includes this file
 // directly (ajax/check-email.php, newsletter-email.php).
 // Looked up inside the site folder first (where inc/geoip.php, inc/cli-guard.php and
-// deploy/pull-deploy.sh expect it), then one level up (the older SFTP layout).
+// deploy/pull-deploy.sh expect it), then one level up (the older SFTP layout). The
+// second is still read when the first exists but does not set DB_PASS (an incomplete
+// copy in the site folder must not hide the complete file one level up).
 foreach ([__DIR__ . '/../inc/env.local.php', __DIR__ . '/../../inc/env.local.php'] as $envLocalFile) {
     if (file_exists($envLocalFile)) {
-        require $envLocalFile;
-        break;
+        require_once $envLocalFile;
+        $loadedPass = getenv('DB_PASS');
+        if ($loadedPass !== false && $loadedPass !== '') {
+            break;
+        }
     }
 }
 
