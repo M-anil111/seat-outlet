@@ -227,6 +227,12 @@ include_once 'functions.php';
     $soKeywordH1 = getenv('KEYWORD_H1') !== '0';
     if ($soKeywordH1) { ob_start('soSingleH1'); }
     ?>
+    <?php
+    // Phones: the search bar is folded away behind the search icon, except on the home page, the search page and
+    // when the visitor arrived with a search (filled fields). Wider screens always show it (CSS).
+    $soSearchOpen = in_array($soReqPath, ['/', '/index.php', '/search'], true)
+        || !empty($searchInput['locationInputHeader']) || !empty($searchInput['keywordHeader']) || !empty($searchInput['startInputHeader']);
+    ?>
     <div class="header-top-section">
         <!-- Top keyword strip -->
         <div class="keyword-topbar">
@@ -235,6 +241,7 @@ include_once 'functions.php';
             <?php } else { ?>
             <p class="so-keyword-h1"><?php echo htmlspecialchars(soKeywordLabel($soFocusKw), ENT_QUOTES, 'UTF-8'); ?></p>
             <?php } ?>
+            <a href="/worry-free-guarantee" class="so-strip-guarantee d-lg-none">100% Guarantee</a>
         </div>
         <!-- Trust bar: static (it used to scroll), keeps the resale disclosure in view -->
         <div class="tm-topbar">
@@ -266,14 +273,16 @@ include_once 'functions.php';
                             </ul>
                         </nav>
                         <div class="tm-top-links so-header-actions d-flex d-sm-flex d-md-flex align-items-center">
-                            <div class="header-phone d-lg-none"><a href="tel:+1512-621-8822" class="so-icon-btn" aria-label="Call us at (512) 621-8822"><i class="bi bi-telephone-fill" aria-hidden="true"></i></a></div>
+                            <button type="button" class="btn so-icon-btn so-search-toggle d-lg-none p-0" aria-label="Search" aria-expanded="<?php echo $soSearchOpen ? 'true' : 'false'; ?>" aria-controls="soSearch">
+                                <i class="bi bi-search" aria-hidden="true"></i>
+                            </button>
                             <button type="button" class="btn mobile-menu-btn so-icon-btn d-lg-none p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-label="Open menu">
                                 <i class="bi bi-list" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
                 </div>
-                <form method="get" action="/search" class="search-bar-form">
+                <form method="get" action="/search" class="search-bar-form" id="soSearch"<?php echo $soSearchOpen ? '' : ' data-so-collapsed'; ?>>
                     <div class="search-bar-container d-flex flex-md-row p-md-1">
                         <div class="city-location search-item d-flex align-items-center gap-md-2 gap-1 px-3 py-2 flex-fill header-location-close locationInputFieldWrapper">
                             <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -519,9 +528,6 @@ include_once 'functions.php';
                     <li>
                         <a href="/ticket-customer-service" title="Contact Us" class="mobile-menu">Contact Us</a>
                     </li>
-                    <li>
-                        <a href="tel:+1512-621-8822" title="Call Us (512)-621-8822" class="mobile-menu">Call Us (512)-621-8822</a>
-                    </li>                    
                     <li>
                         <a href="/about-seat-outlet" title="About Us" class="mobile-menu">About Us</a>
                     </li>                    
