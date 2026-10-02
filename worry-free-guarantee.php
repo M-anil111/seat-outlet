@@ -444,17 +444,6 @@ include 'header.php';
                             Clear policy, written in plain language
                         </li>
                     </ul>
-
-                    <div class="guarantee-meta">
-                        <div>
-                            <strong>4.9/5</strong>
-                            <span>Average customer rating</span>
-                        </div>
-                        <div>
-                            <strong>10k+</strong>
-                            <span>Customers backed by our guarantee</span>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="guarantee-modern-visual">
@@ -487,15 +476,15 @@ include 'header.php';
                     <!-- Text -->
                     <div class="col-md-6">
                         <div class="trusted-question">
-                            <h2 class="section-heading">Quality You Can Trust</h2>
+                            <h2 class="section-heading">How we help if something goes wrong</h2>
                             <p class="section-body">
-                                Every product goes through strict quality checks before it reaches you.
-                                Our team carefully inspects materials, workmanship, and performance so
-                                you can enjoy long‑lasting reliability.
+                                If tickets do not arrive, do not match your order, or an event is canceled, contact our
+                                support team. We review every case against the event details and our policies, and work
+                                with the seller to make it right.
                             </p>
                             <p class="section-body">
-                                If something doesn’t meet our standards, it never leaves our facility.
-                                That’s how we’re able to confidently offer our guarantee.
+                                Read the full <a href="/ticket-buyer-protection">ticket buyer protection</a> terms and our
+                                <a href="/ticket-faq">ticket FAQ</a> so you know what is covered before you order.
                             </p>
                         </div>
                     </div>

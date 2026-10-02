@@ -209,7 +209,7 @@ include 'header.php';
                     <p>To get the most out of our deals, keep these tips in mind:</p>
 <ul>
 <li>Book early for better <strong>availability and pricing</strong></li>
-<li><strong>Combine promo codes</strong> with already <strong>discounted tickets</strong></li>
+<li><strong>Check the terms</strong> on each promo code before you order</li>
 <li>Choose <strong>flexible dates</strong> when possible</li>
 <li>Check back <strong>frequently</strong> for new offers</li>
 <li>Subscribe to our newsletter for <strong>exclusive deals</strong></li>

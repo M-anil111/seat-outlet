@@ -89,7 +89,7 @@
 
 <h2>Find More Ways to Browse and Save</h2>
 <p>If you already know the performer or team you are after, the <a href="/all-artists-and-teams">all artists and teams directory</a> lists them from A to Z. If you are curious why some tours cost more than others, our explainer on <a href="/why-are-concert-tickets-so-expensive">why concert tickets are so expensive</a> breaks down the reasons in plain language.</p>
-<p>Our <a href="/blog">blog</a> also has guides and ideas for planning nights out, and our <a href="/customer-testimonials">customer testimonials</a> page shows customer feedback in one place.</p>
+<p>Our <a href="/blog">blog</a> also has guides and ideas for planning nights out, and our <a href="/ticket-faq">ticket FAQ</a> answers common questions about delivery and entry.</p>
 
 <h2>Why Fans Buy Event Tickets From Seat Outlet</h2>
 <p>We built the marketplace around three things shoppers want when they buy event tickets: choice, clarity and protection. You see many listings for one event, the price and seat details are on the page, and your order is backed by our <a href="/worry-free-guarantee">worry-free guarantee</a>.</p>

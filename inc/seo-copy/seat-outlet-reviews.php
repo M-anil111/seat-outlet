@@ -1,6 +1,6 @@
 <h2>Seat Outlet reviews: how feedback is handled</h2>
 <p>People searching for Seat Outlet reviews usually want one thing: proof that a ticket marketplace delivers what it promises. This section explains what you can and cannot learn from reviews on this site, how we treat feedback, and where to look when you want to check us out yourself.</p>
-<p>The ratings and quotes near the top of this page are labeled as illustrative examples while we build real review collection. We would rather say so plainly than let sample content pass for verified opinions. Until verified reviews replace it, treat that content as a preview of the format, not as a record of customer opinion.</p>
+<p>This page does not show customer ratings or quotes yet. We would rather publish nothing than let sample content pass for verified opinions, so reviews will appear here only after they are checked against a real order. This section explains how to read reviews of any ticket seller, including Seat Outlet reviews, and what you can rely on today.</p>
 
 <div class="so-seo-figs">
   <figure><img src="/images/crowd-at-concert-or-event.webp" alt="Fans at a live show, the kind of buyers behind Seat Outlet reviews" width="442" height="442" loading="lazy"><figcaption>Reviews matter most when they come from fans who actually attended.</figcaption></figure>
@@ -49,7 +49,7 @@
 <p>If you are still deciding after reading Seat Outlet reviews, the quickest check is to look at an event you care about, compare seats and read the policies. Our guide on <a href="/how-to-buy-tickets-online">how to buy tickets online</a> walks through each step, and you can browse by category with the links on the <a href="/buy-tickets-online">buy tickets online page</a>. For more about the company, see <a href="/about-seat-outlet">about Seat Outlet</a>.</p>
 
 <h2>Questions about Seat Outlet reviews</h2>
-<details class="so-faq"><summary>Are the reviews on this page real?</summary><p>The ratings and quotes shown near the top are labeled on the page as illustrative examples while real review collection is built. Please do not treat them as verified customer opinions.</p></details>
+<details class="so-faq"><summary>Are there Seat Outlet reviews on this page?</summary><p>Not yet. We have not published customer reviews here and we do not show sample ones. When verified reviews are added, they will be checked against a real order first.</p></details>
 <details class="so-faq"><summary>How can I leave Seat Outlet reviews or feedback?</summary><p>Use the contact form on our ticket customer service page or email support@seatoutlet.com. Add your order ID if you have it.</p></details>
 <details class="so-faq"><summary>Will you respond to negative Seat Outlet reviews?</summary><p>Yes. Critical feedback is welcome, and our support team follows up on order concerns. The contact form states a reply within 24 hours.</p></details>
 <details class="so-faq"><summary>What if my tickets are not valid?</summary><p>Our buyer protection page says we work to provide replacement tickets of equal or better value, or a full refund, if there is an issue with ticket validity.</p></details>

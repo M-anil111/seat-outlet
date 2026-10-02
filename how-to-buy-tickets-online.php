@@ -262,13 +262,13 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
         </div>
         <div class="d-flex flex-wrap hero-stat-row fade-up delay-4">
           <div class="hero-stat">
-            <strong>10K+</strong><br><span>Live Events</span>
+            <strong>Live</strong><br><span>Concerts, Sports, Theater</span>
           </div>
           <div class="hero-stat">
-            <strong>100%</strong><br><span>Verified Sources</span>
+            <strong>Compare</strong><br><span>Seats and Prices</span>
           </div>
           <div class="hero-stat">
-            <strong>24/7</strong><br><span>Customer Support</span>
+            <strong>Phone</strong><br><span>And Email Support</span>
           </div>
         </div>
       </div>
@@ -279,31 +279,31 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
             <!-- card 1 (back) -->
             <div class="ticket-card">
               <span class="ticket-badge">Sports</span>
-              <div class="ticket-event-name">NBA Finals – Game 5</div>
-              <div class="ticket-meta"><i class="bi bi-geo-alt me-1"></i>Los Angeles, CA &nbsp;|&nbsp; <i class="bi bi-calendar3 me-1"></i>Jun 18</div>
+              <div class="ticket-event-name">Find a game</div>
+              <div class="ticket-meta"><i class="bi bi-geo-alt me-1"></i>Search by team or city</div>
               <hr class="ticket-divider">
-              <div class="ticket-price">$189</div>
+              <div class="ticket-price">Sports</div>
             </div>
             <!-- card 2 (mid) -->
             <div class="ticket-card">
               <span class="ticket-badge">Theater</span>
-              <div class="ticket-event-name">Hamilton – Broadway</div>
-              <div class="ticket-meta"><i class="bi bi-geo-alt me-1"></i>New York, NY &nbsp;|&nbsp; <i class="bi bi-calendar3 me-1"></i>May 24</div>
+              <div class="ticket-event-name">Pick a show</div>
+              <div class="ticket-meta"><i class="bi bi-geo-alt me-1"></i>Search by title or city</div>
               <hr class="ticket-divider">
-              <div class="ticket-price">$145</div>
+              <div class="ticket-price">Theater</div>
             </div>
             <!-- card 3 (front) -->
             <div class="ticket-card">
               <span class="ticket-badge">Concert</span>
-              <div class="ticket-event-name">Taylor Swift – Eras Tour</div>
-              <div class="ticket-meta"><i class="bi bi-geo-alt me-1"></i>Chicago, IL &nbsp;|&nbsp; <i class="bi bi-calendar3 me-1"></i>May 30</div>
+              <div class="ticket-event-name">Choose a concert</div>
+              <div class="ticket-meta"><i class="bi bi-geo-alt me-1"></i>Search by artist or venue</div>
               <hr class="ticket-divider">
               <div class="d-flex justify-content-between align-items-end">
                 <div>
-                  <div class="ticket-price">$224</div>
-                  <div class="ticket-price-label">from / per ticket</div>
+                  <div class="ticket-price">Concerts</div>
+                  <div class="ticket-price-label">compare prices</div>
                 </div>
-                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 fw-normal">Available</span>
+                
               </div>
             </div>
           </div>
@@ -478,11 +478,11 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
         <div class="trust-item">
           <div class="trust-icon"><i class="bi bi-lightning-charge-fill"></i></div>
           <h5>Reliable Ticket Delivery</h5>
-          <p class="text-secondary small mb-3">Get your tickets on time, every time.</p>
+          <p class="text-secondary small mb-3">Delivery options are shown at checkout.</p>
           <ul>
             <li>Digital & mobile delivery</li>
-            <li>Instant confirmation</li>
-            <li>Tracking notifications</li>
+            <li>Order confirmation by email</li>
+            <li>Delivery details in your order</li>
           </ul>
         </div>
       </div>
@@ -493,9 +493,9 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
           <h5>Fast & Easy Experience</h5>
           <p class="text-secondary small mb-3">Speed and simplicity at every step of your journey.</p>
           <ul>
-            <li>One-page checkout</li>
+            <li>Secure hosted checkout</li>
             <li>Mobile-friendly platform</li>
-            <li>Saved payment options</li>
+            <li>Total shown before you pay</li>
           </ul>
         </div>
       </div>

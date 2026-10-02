@@ -104,21 +104,17 @@ include 'header.php';
   <div class="container experience-section">
     <div class="stats-strip">
       <div class="row g-4 align-items-center justify-content-center">
-        <div class="col-6 col-md-3">
-          <div class="stat-num">100%</div>
-          <div class="stat-label">Verified Tickets</div>
-        </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-4">
           <div class="stat-num">SSL</div>
           <div class="stat-label">Encrypted Checkout</div>
         </div>
-        <div class="col-6 col-md-3">
-          <div class="stat-num">24/7</div>
-          <div class="stat-label">Support Available</div>
+        <div class="col-6 col-md-4">
+          <div class="stat-num">Phone</div>
+          <div class="stat-label">And Email Support</div>
         </div>
-        <div class="col-6 col-md-3">
-          <div class="stat-num">0</div>
-          <div class="stat-label">Hidden Fees Policy</div>
+        <div class="col-12 col-md-4">
+          <div class="stat-num">Clear</div>
+          <div class="stat-label">Written Policies</div>
         </div>
       </div>
     </div>

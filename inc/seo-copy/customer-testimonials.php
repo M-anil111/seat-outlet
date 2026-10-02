@@ -1,5 +1,5 @@
 <h2>Customer testimonials: how we collect and use them</h2>
-<p>Customer testimonials are most useful when you know where they came from. The quotes and figures higher on this page are labeled as illustrative examples while we build real review collection, so this section explains how we plan to handle customer testimonials honestly and what you can rely on today.</p>
+<p>Customer testimonials are most useful when you know where they came from. This page does not show testimonials yet, because we will not publish quotes or figures we cannot back up. This section explains how we plan to handle customer testimonials honestly and what you can rely on today.</p>
 <p>Instead of asking you to trust a wall of praise, we would rather show you the written policies behind our service. Those are the same policies your own order would be covered by.</p>
 
 <div class="so-seo-figs">
@@ -18,7 +18,7 @@
 <p>The Federal Trade Commission also sets expectations for businesses that publish reviews and testimonials. Its <a href="https://www.ftc.gov/business-guidance/resources/consumer-reviews-testimonials-rule-questions-answers" target="_blank" rel="noopener">questions and answers on consumer reviews and testimonials</a> are a helpful reference for how honest endorsements should work.</p>
 
 <h3>Our approach to customer testimonials</h3>
-<p>Our stated plan is for each testimonial on this site to be checked against a real order before it is published, with critical feedback welcome. Until that system is live, please treat the examples on this page as a preview of the format, not as customer opinion we have verified. We will not add new quotes or statistics to this page until they can be backed up.</p>
+<p>Our stated plan is for each testimonial on this site to be checked against a real order before it is published, with critical feedback welcome. Until that system is live, this page stays free of quotes and statistics, and we will not add any until they can be backed up.</p>
 
 <h2>How to share your own feedback</h2>
 <p>If you have bought from Seat Outlet, your experience is the best addition to any set of customer testimonials. You can reach us today through the <a href="/ticket-customer-service">ticket customer service page</a>, using the message form or by emailing support@seatoutlet.com. The form states that we reply within 24 hours.</p>
@@ -53,7 +53,7 @@
 <p>Customer testimonials are one input among several. Our <a href="/seat-outlet-reviews">Seat Outlet reviews page</a> covers how reviews are handled, the <a href="/seat-outlet-bbb">Seat Outlet BBB page</a> lists our stated commitments, and the <a href="/about-seat-outlet">about Seat Outlet page</a> describes the marketplace. When you are ready to look at events, start with <a href="/buy-tickets-online">buy tickets online</a> or read <a href="/how-to-buy-tickets-online">how to buy tickets online</a> for a step-by-step walkthrough.</p>
 
 <h2>Questions about customer testimonials</h2>
-<details class="so-faq"><summary>Are the customer testimonials on this page verified?</summary><p>No. The page labels them as illustrative examples while real verified testimonials are being set up. Please do not treat them as confirmed customer opinions.</p></details>
+<details class="so-faq"><summary>Are there customer testimonials on this page?</summary><p>Not yet. We would rather show none than show testimonials we cannot verify. Verified customer testimonials will be added once they can be checked against a real order.</p></details>
 <details class="so-faq"><summary>How can I submit customer testimonials?</summary><p>Contact us through the form on the ticket customer service page or email support@seatoutlet.com, and include your order ID if you have it.</p></details>
 <details class="so-faq"><summary>Will you publish negative feedback?</summary><p>Our stated plan welcomes critical feedback, and our support team follows up on order concerns.</p></details>
 <details class="so-faq"><summary>What happens if my tickets are not valid?</summary><p>Our buyer protection page says we work to provide replacement tickets of equal or better value, or a full refund.</p></details>
