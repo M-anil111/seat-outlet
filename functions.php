@@ -16,7 +16,7 @@ if (!empty($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '?') !== 
     unset($so_original_query);
 }
 
-include 'db/config.php';
+include_once __DIR__ . '/db/config.php';
 include 'inc/constants.php';
 require 'vendor/autoload.php';
 
@@ -5446,4 +5446,5 @@ function seoScoreBadgeClass($score) {
 
 // Entity image layer (performers, teams, venues, festivals, cities).
 require_once __DIR__ . '/inc/images.php';
+require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-capture form
 register_shutdown_function('imageWorkerMaybeRun');   // background image queue, see inc/images.php
