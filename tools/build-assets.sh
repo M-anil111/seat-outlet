@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds the minified front-end assets that header.php / footer.php prefer
 # (see soAsset() in functions.php):
+#   css/event.min.css   = css/event.css, minified
 #   css/style.min.css   = css/fonts.css + css/style.css + css/skeleton.css + css/icons.css (icon subset, tools/build-icons.py), minified
 #   js/<name>.min.js    = each js/<name>.js, compressed and mangled
 #   css/bootstrap.min.css = lib/bootstrap/5.3.8/bootstrap.min.css reduced to the classes the site uses
@@ -17,6 +18,7 @@ OUT="$(mktemp -d)"
 trap 'rm -rf "$OUT"' EXIT
 
 cat css/fonts.css css/style.css css/skeleton.css css/icons.css | npx --yes clean-css-cli@5.6.3 -O1 -o "$OUT/style.min.css"
+npx --yes clean-css-cli@5.6.3 -O1 css/event.css -o "$OUT/event.min.css"   # event pages only (seat-map widget skin), linked by inc/seo-event.php
 for f in js/*.js; do
   case "$f" in *.min.js) continue;; esac
   name="$(basename "$f" .js)"
@@ -37,6 +39,7 @@ install_or_compare() {
   fi
 }
 install_or_compare "$OUT/style.min.css" css/style.min.css
+install_or_compare "$OUT/event.min.css" css/event.min.css
 install_or_compare "$OUT/bootstrap.purged.css" css/bootstrap.min.css
 for f in "$OUT"/*.min.js; do install_or_compare "$f" "js/$(basename "$f")"; done
 [ "$CHECK" = 1 ] && [ "$status" = 0 ] && echo "assets up to date"
