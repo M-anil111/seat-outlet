@@ -223,4 +223,5 @@ include 'header.php';
 
 </main>
 
+<?php soSeoCopy('grab-tickets-now'); ?>
 <?php include 'footer.php'; ?>

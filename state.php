@@ -42,7 +42,7 @@ $stateLabel = $state['label'];
 $pageMetaTitle       = "Events in $stateLabel Tickets | Seat Outlet";
 $pageMetaDescription = "Find concert, sports, and event tickets in $stateLabel. Compare prices and book securely on Seat Outlet.";
 $pageCanonicalUrl    = HOME_URL . '/state/' . createSlug($stateLabel, $id);
-$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/tickets']], $stateLabel)];
+$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/buy-tickets-online']], $stateLabel)];
 
 include 'header.php';
 ?>
@@ -121,7 +121,7 @@ include 'header.php';
 										<div class="ms-3">
 											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-												<span class="d-none d-md-inline">Find Tickets</span>
+												<span class="d-none d-md-inline">Buy Tickets</span>
 												<i class="bi bi-chevron-right"></i>
 											</a>
 										</div>

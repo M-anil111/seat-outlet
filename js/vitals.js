@@ -12,7 +12,12 @@
     var path = location.pathname.replace(/\/+$/, '') || '/';
     var type = 'static';
     if (path === '/' || path === '/index.php') type = 'home';
-    else if (/^\/(tickets|concerts|sports|theater|festival|search|checkout)$/.test(path)) type = path.slice(1);
+    else if (path === '/buy-tickets-online') type = 'tickets';
+    else if (path === '/concert-tickets-for-sale') type = 'concerts';
+    else if (path === '/game-day-tickets') type = 'sports';
+    else if (path === '/buy-broadway-tickets') type = 'theater';
+    else if (path === '/upcoming-music-festivals') type = 'festival';
+    else if (path === '/search' || path === '/checkout') type = path.slice(1);
     else if (path === '/order-confirmation') type = 'confirmation';
     else if (path.indexOf('/artist/') === 0) type = 'artist';
     else if (path.indexOf('/event/') === 0) type = 'event';

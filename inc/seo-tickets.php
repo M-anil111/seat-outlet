@@ -72,8 +72,8 @@ if (!empty($results['results'])) {
 
 $webPageSchema = [
     "@type" => "WebPage",
-    "@id" => HOME_URL . "/tickets#webpage",
-    "url" => HOME_URL . "/tickets",
+    "@id" => HOME_URL . "/buy-tickets-online#webpage",
+    "url" => HOME_URL . "/buy-tickets-online",
     "name" => "Buy Verified Event Tickets Online",
     "description" => "Discover deals on live events with our verified ticket marketplace network. Safe checkout, real tickets and instant access to unforgettable experiences.",
     "isPartOf" => ["@id" => HOME_URL . "/#website"],

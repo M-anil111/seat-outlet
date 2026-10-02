@@ -46,7 +46,7 @@ $venueCityLabel = trim(($venue['city']['text']['name'] ?? '') . ', ' . ($venue['
 $pageMetaTitle       = "$venueName Tickets - $venueCityLabel | Seat Outlet";
 $pageMetaDescription = "Buy tickets to upcoming events at $venueName in $venueCityLabel. Compare prices and book securely on Seat Outlet.";
 $pageCanonicalUrl    = HOME_URL . '/venue/' . createSlug($venueName, $id);
-$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/tickets']], $venueName)];
+$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/buy-tickets-online']], $venueName)];
 
 include 'header.php';
 ?>
@@ -149,7 +149,7 @@ include 'header.php';
 											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 												<span class="d-none d-md-inline">
-													Find Tickets
+													Buy Tickets
 												</span>
 												<i class="bi bi-chevron-right"></i>
 											</a>

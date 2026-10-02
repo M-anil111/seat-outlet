@@ -66,7 +66,7 @@ include 'header.php';
             <?php if ($hasEvent) { ?>
               <a class="btn btn-primary" href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>">Choose seats for <?php echo htmlspecialchars($eventName, ENT_QUOTES, 'UTF-8'); ?></a>
             <?php } else { ?>
-              <a class="btn btn-primary" href="/tickets">Browse events</a>
+              <a class="btn btn-primary" href="/buy-tickets-online">Browse events</a>
             <?php } ?>
           </div>
         <?php } else { ?>
@@ -115,7 +115,7 @@ include 'header.php';
         <div class="checkout-card mt-3">
           <h2 class="fs-6 fw-bold mb-2">Buyer Protection Guarantee</h2>
           <p class="mb-2">Every order is backed by our guarantee: valid tickets, delivered in time for the event, or your money back.</p>
-          <a href="/buyer-protection" class="small">Read the guarantee</a>
+          <a href="/ticket-buyer-protection" class="small">Read the guarantee</a>
         </div>
       </div>
     </div>

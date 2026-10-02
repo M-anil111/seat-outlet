@@ -33,11 +33,11 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   <h3 class="footer-heading">Trust</h3>
   <div class="section-divider"></div>
   <ul>
-    <li><a href="/guarantee">Guarantee</a></li>
-    <li><a href="/testimonials">Testimonials</a></li>
-    <li><a href="/reviews">Reviews</a></li>
-    <li><a href="/bbb">BBB</a></li>
-    <li><a href="/why-us">Why Us</a></li>
+    <li><a href="/worry-free-guarantee">Guarantee</a></li>
+    <li><a href="/customer-testimonials">Testimonials</a></li>
+    <li><a href="/seat-outlet-reviews">Reviews</a></li>
+    <li><a href="/seat-outlet-bbb">BBB</a></li>
+    <li><a href="/ticket-partner-program">Why Us</a></li>
   </ul>
 </div>
 
@@ -50,7 +50,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
     <li><a href="/ticket-deals">Ticket Deals</a></li>
     <li><a href="/hunt-tickets">Hunt Tickets</a></li>
     <li><a href="/ticket-scanner">Ticket Scanner</a></li>
-    <li><a href="/buyer-protection">Buyer Protection</a></li>
+    <li><a href="/ticket-buyer-protection">Buyer Protection</a></li>
   </ul>
 </div>
 
@@ -59,10 +59,10 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   <h3 class="footer-heading">About Us</h3>
   <div class="section-divider"></div>
   <ul>
-    <li><a href="/about-us">Who we are</a></li>
-    <li><a href="/what-we-do">What we do</a></li>
-    <li><a href="/faq">FAQ's</a></li>
-    <li><a href="/contact">Contact</a></li>
+    <li><a href="/about-seat-outlet">Who we are</a></li>
+    <li><a href="/how-to-buy-tickets-online">What we do</a></li>
+    <li><a href="/ticket-faq">FAQ's</a></li>
+    <li><a href="/ticket-customer-service">Contact</a></li>
     <li><a href="/blog">Blog</a></li>
   </ul>
 </div>
@@ -73,12 +73,13 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   <h3 class="footer-heading">Tickets</h3>
   <div class="section-divider"></div>
   <ul>
-    <li><a href="/sports">Sports</a></li>
-    <li><a href="/concerts">Concerts</a></li>
-    <li><a href="/theater">Theater</a></li>
-    <li><a href="/festival">Festivals</a></li>
-    <li><a href="/cities">Cities</a></li>
-    <li><a href="/deals-promotions">Deals & Promotions</a></li>
+    <li><a href="/game-day-tickets">Sports</a></li>
+    <li><a href="/concert-tickets-for-sale">Concerts</a></li>
+    <li><a href="/buy-broadway-tickets">Theater</a></li>
+    <li><a href="/upcoming-music-festivals">Festivals</a></li>
+    <li><a href="/all-artists-and-teams">Artists &amp; Teams</a></li>
+    <li><a href="/city-events">Cities</a></li>
+    <li><a href="/tickets-promo-code">Deals & Promotions</a></li>
     <li><a href="/our-network">Our Network</a></li>
   </ul>
 </div>
@@ -115,7 +116,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
       </div>
       <div class="keyword-bottombar">
         <div class="text-white text-center">
-            <p><?php echo htmlspecialchars($GLOBALS['soFocusKw'] ?? soFocusKeyword(), ENT_QUOTES, 'UTF-8'); ?></p>
+            <p><?php echo htmlspecialchars(soKeywordLabel($GLOBALS['soFocusKw'] ?? soFocusKeyword()), ENT_QUOTES, 'UTF-8'); ?></p>
         </div>
       </div>
       <div class="d-flex align-items-center flex-wrap creater">
@@ -138,12 +139,6 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 
 </footer>
 
-<div class="backtotop">
-  <button id="backToTop" class="btn btn-primary backToTop rounded-circle" aria-label="Back to top" type="button">
-		<i class="bi bi-arrow-up"></i>
-	</button>
-</div>
-
 <?php
 // Decide which scripts a page needs from its PATH. These checks used to compare
 // the whole REQUEST_URI, so any query string (/search?q=adele, /tickets?when=week)
@@ -153,12 +148,12 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 $soPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $soIsHome = ($soPath === '/' || $soPath === '/index.php');
 $soIsSearch = ($soPath === '/search');
-$soHasEventList = (bool) preg_match('#^/(search|tickets|concerts|sports|theater|festival)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath);
+$soHasEventList = (bool) preg_match('#^/(search|buy-tickets-online|concert-tickets-for-sale|game-day-tickets|buy-broadway-tickets|upcoming-music-festivals)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath);
 ?>
 <script src="/lib/jquery/3.7.1/jquery.min.js" defer></script>
 <script src="/lib/bootstrap/5.3.8/bootstrap.bundle.min.js" defer></script>
 <script>window.SO_ASSETS = { flatpickrJs: "/lib/flatpickr/4.6.13/flatpickr.min.js", flatpickrCss: "/lib/flatpickr/4.6.13/flatpickr.min.css" };</script>
-<?php if ($soIsHome || $soIsSearch || $soPath === '/about-us') { ?>
+<?php if ($soIsHome || $soIsSearch || $soPath === '/about-seat-outlet') { ?>
   <script src="/lib/slick-carousel/1.8.1/slick.min.js" defer></script>
 <?php } ?>
 <script src="<?php echo htmlspecialchars(soAsset('js/main.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>

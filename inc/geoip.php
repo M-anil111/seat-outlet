@@ -65,6 +65,14 @@ function geoIpLookup($ip) {
         return null;
     }
 
+    // Cloudflare already knows the visitor's city: with the "Add visitor location headers" managed transform on, it
+    // sends the city, region, latitude and longitude with every request. No database or account needed. Only trusted
+    // for the visitor's own request (the IP being looked up is the one Cloudflare says connected).
+    $viaCf = geoIpFromCloudflare($ip);
+    if ($viaCf !== null) {
+        return $viaCf;
+    }
+
     $reader = geoIpReader();
     if ($reader !== null) {
         try {
@@ -109,5 +117,29 @@ function geoIpLookupIpApi($ip) {
         'country' => (string) ($data['country'] ?? ''),
         'lat'     => (string) ($data['lat'] ?? ''),
         'lng'     => (string) ($data['lon'] ?? ''),
+    ];
+}
+
+/** @return array{city:string,state:string,country:string,lat:string,lng:string}|null */
+function geoIpFromCloudflare($ip) {
+    $connecting = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? '';
+    if ($connecting === '' || $connecting !== $ip) {
+        return null;
+    }
+    $city = trim(rawurldecode((string) ($_SERVER['HTTP_CF_IPCITY'] ?? '')));
+    $lat  = trim((string) ($_SERVER['HTTP_CF_IPLATITUDE'] ?? ''));
+    $lng  = trim((string) ($_SERVER['HTTP_CF_IPLONGITUDE'] ?? ''));
+    if ($city === '' || !is_numeric($lat) || !is_numeric($lng)) {
+        return null;
+    }
+    $region  = trim((string) ($_SERVER['HTTP_CF_REGION_CODE'] ?? ''));
+    $code    = strtoupper(trim((string) ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? '')));
+    $names   = ['US' => 'United States', 'CA' => 'Canada', 'GB' => 'United Kingdom', 'AU' => 'Australia', 'MX' => 'Mexico', 'IN' => 'India'];
+    return [
+        'city'    => $city,
+        'state'   => $region !== '' ? $region : (string) ($_SERVER['HTTP_CF_REGION'] ?? ''),
+        'country' => $names[$code] ?? $code,
+        'lat'     => (string) $lat,
+        'lng'     => (string) $lng,
     ];
 }

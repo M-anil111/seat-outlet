@@ -47,6 +47,15 @@ include_once 'functions.php';
             $pageCanonicalUrl    = rtrim(HOME_URL, '/') . $soReqPath;
         }
     }
+    // The focus keyword plan (inc/seo-keywords.php) sets the keyword, title, description and canonical of the pages it lists.
+    // An admin page rule for the same path (resolved above) still overrides the tags later in <head>.
+    $soPlan = soSeoPlan($soReqPath);
+    if ($soPlan !== null) {
+        if (empty($pageRule['focus_keyword'])) { $pageFocusKeyword = $soPlan['keyword']; }
+        if ($soPlan['title'] !== null)       { $pageMetaTitle       = $soPlan['title'] . ' | Seat Outlet'; }
+        if ($soPlan['description'] !== null) { $pageMetaDescription = $soPlan['description']; }
+        $pageCanonicalUrl = rtrim(HOME_URL, '/') . ($soReqPath === '/' ? '' : $soReqPath);
+    }
     // Unknown event ids must answer 404 (they used to be a 200 page with a junk title). The status has
     // to be sent before any output; the event is cached by tnRequest, so inc/seo-event.php reuses it.
     if (strpos($soReqPath, '/event/') === 0) {
@@ -103,7 +112,7 @@ include_once 'functions.php';
     
 
     <link rel="preload" href="/fonts/bootstrap-icons-subset.woff2?v=1.13.1" as="font" type="font/woff2" crossorigin>
-    <?php $soNeedsSlick = in_array($soReqPath, ['/', '/index.php', '/search', '/about-us'], true) || strpos($soReqPath, '/event/') === 0; // carousel CSS: pages with a carousel, plus event pages (the Seatics seat-map widget uses slick classes) ?>
+    <?php $soNeedsSlick = in_array($soReqPath, ['/', '/index.php', '/search', '/about-seat-outlet'], true) || strpos($soReqPath, '/event/') === 0; // carousel CSS: pages with a carousel, plus event pages (the Seatics seat-map widget uses slick classes) ?>
     <?php if ($soNeedsSlick) { ?>
     <link rel="preload" href="/lib/slick-carousel/1.8.1/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="preload" href="/lib/slick-carousel/1.8.1/slick-theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -173,7 +182,7 @@ include_once 'functions.php';
         ?>
     <?php } elseif ($soReqPath === '/' || $soReqPath === '/index.php') { ?>
         <?php include 'inc/seo.php'; ?>
-    <?php }elseif ($soReqPath === '/tickets' || $soReqPath === '/tickets.php') { ?>
+    <?php }elseif ($soReqPath === '/buy-tickets-online' || $soReqPath === '/buy-tickets-online.php') { ?>
         <?php include 'inc/seo-tickets.php'; ?>
     <?php }elseif (strpos($soReqPath, '/event/') === 0) { ?>
         <?php include 'inc/seo-event.php'; ?>
@@ -210,6 +219,10 @@ include_once 'functions.php';
     <?php
     // The strip above the header is the page's one <h1>: its focus keyword (admin > Page rules, or the page's own).
     // The same keyword closes the footer. Any other <h1> in a page template is turned into an <h2> that looks the same.
+    // Pages rendered from inside a function keep their SEO variables local: hand them to soFocusKeyword().
+    $GLOBALS['pageMetaTitle'] = $pageMetaTitle ?? ($GLOBALS['pageMetaTitle'] ?? '');
+    $GLOBALS['pageFocusKeyword'] = $pageFocusKeyword ?? ($GLOBALS['pageFocusKeyword'] ?? '');
+    $GLOBALS['pageRule'] = $pageRule ?? ($GLOBALS['pageRule'] ?? null);
     $soFocusKw = soFocusKeyword();
     $soKeywordH1 = getenv('KEYWORD_H1') !== '0';
     if ($soKeywordH1) { ob_start('soSingleH1'); }
@@ -218,9 +231,9 @@ include_once 'functions.php';
         <!-- Top keyword strip -->
         <div class="keyword-topbar">
             <?php if ($soKeywordH1) { ?>
-            <h1 class="so-keyword-h1"><?php echo htmlspecialchars($soFocusKw, ENT_QUOTES, 'UTF-8'); ?></h1>
+            <h1 class="so-keyword-h1"><?php echo htmlspecialchars(soKeywordLabel($soFocusKw), ENT_QUOTES, 'UTF-8'); ?></h1>
             <?php } else { ?>
-            <p class="so-keyword-h1"><?php echo htmlspecialchars($soFocusKw, ENT_QUOTES, 'UTF-8'); ?></p>
+            <p class="so-keyword-h1"><?php echo htmlspecialchars(soKeywordLabel($soFocusKw), ENT_QUOTES, 'UTF-8'); ?></p>
             <?php } ?>
         </div>
         <!-- Trust bar: static (it used to scroll), keeps the resale disclosure in view -->
@@ -228,7 +241,7 @@ include_once 'functions.php';
             <ul class="so-trustbar">
                 <li>Trusted resale marketplace</li>
                 <li>Prices may be above or below face value</li>
-                <li><a href="/guarantee">100% Worry-Free Guarantee</a></li>
+                <li><a href="/worry-free-guarantee">100% Worry-Free Guarantee</a></li>
             </ul>
         </div>
         <!-- MAIN BLUE HEADER -->
@@ -244,11 +257,12 @@ include_once 'functions.php';
                     <div class="d-flex align-items-center gap-3">
                         <nav class="tm-nav-wrapper d-none d-sm-none d-md-none d-lg-block d-xl-block d-xxl-block">
                             <ul class="tm-nav" id="mainMenu">
-                                <li class="menu-item"><a href="/concerts">Concerts</a></li>
-                                <li class="menu-item"><a href="/sports">Sports</a></li>
-                                <li class="menu-item"><a href="/theater">Theater</a></li>
-                                <li class="menu-item"><a href="/festival">Festivals</a></li>
-                                <li class="menu-item"><a href="/cities">Cities</a></li>
+                                <li class="menu-item"><a href="/concert-tickets-for-sale">Concerts</a></li>
+                                <li class="menu-item"><a href="/game-day-tickets">Sports</a></li>
+                                <li class="menu-item"><a href="/buy-broadway-tickets">Theater</a></li>
+                                <li class="menu-item"><a href="/upcoming-music-festivals">Festivals</a></li>
+                                <li class="menu-item"><a href="/all-artists-and-teams">Artists &amp; Teams</a></li>
+                                <li class="menu-item"><a href="/city-events">Cities</a></li>
                             </ul>
                         </nav>
                         <div class="tm-top-links so-header-actions d-flex d-sm-flex d-md-flex align-items-center">
@@ -330,7 +344,7 @@ include_once 'functions.php';
                     <li class="has-submenu">
 
                         <!-- ✅ ADD class + data-target -->
-                        <a href="/concerts" class="open-submenu" data-target="submenu-concerts">
+                        <a href="/concert-tickets-for-sale" class="open-submenu" data-target="submenu-concerts">
                             Concerts <span class="arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
                             </span>
@@ -359,7 +373,7 @@ include_once 'functions.php';
                                 <li>
                                     <h3 class="sub-menu-heading">Discover More</h3>
                                 </li>
-                                <li><a href="/concerts" class="view-all">All Concerts <i class="bi bi-arrow-right"></i></a></li>
+                                <li><a href="/concert-tickets-for-sale" class="view-all">All Concerts <i class="bi bi-arrow-right"></i></a></li>
                                 <li><a href="/category/50s-60s-era-1860">50s / 60s Era</a></li>
                                 <li><a href="/category/alternative-1862">Alternative</a></li>
                                 <li><a href="/category/bluegrass-1866">Bluegrass</a></li>
@@ -390,7 +404,7 @@ include_once 'functions.php';
                     <li class="has-submenu">
 
                         <!-- ✅ ADD class + data-target -->
-                        <a href="/sports" class="open-submenu" data-target="submenu-sports">
+                        <a href="/game-day-tickets" class="open-submenu" data-target="submenu-sports">
                         Sports <span class="arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
                             </span>
@@ -419,7 +433,7 @@ include_once 'functions.php';
                                 <li>
                                     <h3 class="sub-menu-heading">Discover More</h3>
                                 </li>
-                                <li><a href="/sports" class="view-all">All Sports <i class="bi bi-arrow-right"></i></a></li>
+                                <li><a href="/game-day-tickets" class="view-all">All Sports <i class="bi bi-arrow-right"></i></a></li>
                                 <li><a href="/category/baseball-1864">Baseball</a></li>
                                 <li><a href="/category/basketball-1865">Basketball</a></li>
                                 <li><a href="/category/boxing-1867">Boxing</a></li>
@@ -448,7 +462,7 @@ include_once 'functions.php';
                     <li class="has-submenu">
 
                         <!-- ✅ ADD class + data-target -->
-                        <a href="/theater" class="open-submenu" data-target="submenu-theater">
+                        <a href="/buy-broadway-tickets" class="open-submenu" data-target="submenu-theater">
                             Theater <span class="arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
                             </span>
@@ -474,7 +488,7 @@ include_once 'functions.php';
                                 <li>
                                     <h3 class="sub-menu-heading">Discover More</h3>
                                 </li>
-                                <li><a href="/theater" class="view-all">All Theater <i class="bi bi-arrow-right"></i></a></li>
+                                <li><a href="/buy-broadway-tickets" class="view-all">All Theater <i class="bi bi-arrow-right"></i></a></li>
                                 <li><a href="/category/ballet-1863">Ballet</a></li>
                                 <li><a href="/category/broadway-1868">Broadway</a></li>
                                 <li><a href="/category/children-family-1869">Children / Family</a></li>
@@ -492,24 +506,27 @@ include_once 'functions.php';
 
                     </li>
                     <li>
-                        <a href="/festival" title="Festivals" class="mobile-menu">Festivals</a>
+                        <a href="/upcoming-music-festivals" title="Festivals" class="mobile-menu">Festivals</a>
                     </li>
                     <li>
-                        <a href="/cities" title="Cities" class="mobile-menu">Cities</a>
+                        <a href="/all-artists-and-teams" title="All Artists, Teams &amp; Shows A-Z" class="mobile-menu">Artists &amp; Teams</a>
+                    </li>
+                    <li>
+                        <a href="/city-events" title="Cities" class="mobile-menu">Cities</a>
                     </li>
                 </ul>
                 <ul class="mobile-main-menu-new">
                     <li>
-                        <a href="/contact" title="Contact Us" class="mobile-menu">Contact Us</a>
+                        <a href="/ticket-customer-service" title="Contact Us" class="mobile-menu">Contact Us</a>
                     </li>
                     <li>
                         <a href="tel:+1512-621-8822" title="Call Us (512)-621-8822" class="mobile-menu">Call Us (512)-621-8822</a>
                     </li>                    
                     <li>
-                        <a href="/about-us" title="About Us" class="mobile-menu">About Us</a>
+                        <a href="/about-seat-outlet" title="About Us" class="mobile-menu">About Us</a>
                     </li>                    
                     <li>
-                        <a href="/faq" title="Faqs" class="mobile-menu">Faqs</a>
+                        <a href="/ticket-faq" title="Faqs" class="mobile-menu">Faqs</a>
                     </li>
                     <li>
                         <a href="/privacy-policy" title="Privacy Policy" class="mobile-menu">Privacy Policy</a>

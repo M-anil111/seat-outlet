@@ -483,7 +483,7 @@ function renderEvent(event) {
             ${priceTag}
             <a href="/event/${eSlug}" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for ${evName}">
                 <span class="d-none d-md-inline">
-                    Find Tickets
+                    Buy Tickets
                 </span>
                 <i class="bi bi-chevron-right"></i>
             </a>
