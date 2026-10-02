@@ -258,7 +258,7 @@ what is stored (or the category fallback) and queues the entity. Single
 entity pages (`performer.php`, `venue.php`) resolve synchronously with
 6-second timeouts so the first visitor gets a real image.
 
-Run `php cron/resolve-images.php` every 10–15 minutes. It pre-warms
+Run `php cron/resolve-images.php` every 10 minutes (default batch 60; `php cron/resolve-images.php 100` for a backlog). If the cron job is missing, the site works the queue itself: after a public page has been sent, at most every 5 minutes and only with work waiting, it resolves a batch of 10 (`imageWorkerMaybeRun`, needs PHP-FPM; turn off with `IMAGE_WEB_WORKER=0`). The cron job is still the right setup. It pre-warms
 everything in the homepage caches and works the queue in a bounded batch
 with a pause between entities (Wikimedia allows 200 req/min with a
 User-Agent that carries contact info; the agent string is
