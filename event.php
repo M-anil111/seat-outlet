@@ -361,6 +361,15 @@ $soEventData = [
   Seatics.config.noTicketsHandler = function () {
     showFallback();
   };
+  // TicketNetwork widget features, switched on from the page (verified against the live widget): the "How many tickets?"
+  // sheet that opens first, the per-listing value score (stars and a deal label from TicketNetwork's own data), and the
+  // widget's own "other customers" urgency messages. Nothing here is written by the site: if the widget has no figure,
+  // it shows nothing.
+  Seatics.config.enableQuantityModal = true;
+  Seatics.config.forceQuantityModalSelection = false;
+  Seatics.config.enableValueScore = true;
+  Seatics.config.showOtherCustomersUrgencyMessagingMobile = true;
+  Seatics.config.showOtherCustomersUrgencyMessagingDesktop = true;
   Seatics.config.onBuyButtonClicked = function () { push('begin_checkout'); };
   if (Seatics.TrackingEvents && Seatics.TrackingEvents.registerEventListener) {
     Seatics.TrackingEvents.registerEventListener(function (type, data) {

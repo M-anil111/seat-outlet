@@ -5912,3 +5912,21 @@ main.terms-page .policy-section, main.cookie-page .policy-section { padding-top:
 @keyframes so-news-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @media (max-width: 640px) { .so-news__fields { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .so-news__body { animation: none; } }
+
+/* ---- Ticket widget skin: quantity sheet, value score, urgency ---- */
+#sea-quantity-modal.sea-quantity-modal { font-family: inherit; }
+#sea-quantity-modal .sea-qty-modal-content { background: #fff; border-radius: 24px; padding: 28px 22px 26px; box-shadow: 0 24px 60px rgba(0,0,0,.25); max-width: 440px; margin: 0 auto; }
+#sea-quantity-modal legend { float: none; width: auto; font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; color: #1d1d1f; text-align: center; margin: 0 0 6px; padding: 0; border: 0; }
+#sea-quantity-modal .sea-qty-modal-content fieldset { border: 0; margin: 0; padding: 0; text-align: center; }
+#sea-quantity-modal .sea-qty-modal-content fieldset::after { content: "Seats are together unless noted"; display: block; color: #6e6e73; font-size: 15px; margin: 4px 0 18px; }
+#sea-quantity-modal #sea-quantity-modal-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+#sea-quantity-modal .sea-quantity-modal-option { display: flex; align-items: center; justify-content: center; height: 64px; margin: 0; border-radius: 16px; border: 1.5px solid rgba(0,0,0,.14); background: #fff; color: #1d1d1f; font-size: 20px; font-weight: 600; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+#sea-quantity-modal .sea-quantity-modal-option:hover { border-color: #0056d6; }
+#sea-quantity-modal .sea-quantity-modal-option.sea-active, #sea-quantity-modal .sea-quantity-modal-option:has(input:checked) { border-color: #0056d6; background: #eaf1ff; color: #0056d6; box-shadow: 0 0 0 3px rgba(0,86,214,.15); }
+#sea-quantity-modal .sea-quantity-modal-option input { position: absolute; opacity: 0; pointer-events: none; }
+#sea-quantity-modal .sea-quantity-modal-skip { margin-top: 14px; background: none; border: 0; color: #0056d6; font-weight: 600; }
+#sea-quantity-modal .sea-quantity-modal-option { width: 100% !important; min-width: 0; padding: 0; }
+@media (max-width: 767.98px) {
+  #sea-quantity-modal.sea-quantity-modal { position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important; transform: none !important; margin: 0 !important; width: 100% !important; max-width: none !important; }
+  #sea-quantity-modal .sea-qty-modal-content { max-width: none; border-radius: 24px 24px 0 0; padding-bottom: calc(26px + env(safe-area-inset-bottom)); }
+}
