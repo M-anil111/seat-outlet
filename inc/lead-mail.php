@@ -222,3 +222,34 @@ function soLeadAlertMessage(array $lead, array $groups) {
     $text .= "\nPrices are set by sellers, change often and are shown before fees. You will not hear from us about the same performer more than once a week.\n" . soMailTextFooter($unsub);
     return [$subject, soMailLayout($subject, $html, $unsub), $text];
 }
+
+/**
+ * Price-drop email: events the lead asked to watch whose lowest listed price is at least 10% below the price they saw.
+ * Each item: name, date, venue, place, was (formatted), now (formatted), url. No saving is promised: prices are the sellers'.
+ *
+ * @return array [subject, html, text]
+ */
+function soLeadPriceAlertMessage(array $lead, array $items) {
+    $unsub = soLeadUnsubscribeUrl($lead['token']);
+    $first = trim((string) ($lead['fname'] ?? ''));
+    $subject = count($items) === 1 ? 'Price drop: ' . $items[0]['name'] . ' is now from ' . $items[0]['now'] : 'Prices dropped on ' . count($items) . ' events you are watching';
+    $html = '<h1 style="margin:0 0 12px;font-size:22px;color:#111827">' . ($first !== '' ? 'Hi ' . soMailEsc($first) . ', a' : 'A') . ' price you were watching went down</h1>'
+        . '<p style="margin:0 0 10px">The lowest listed price for ' . (count($items) === 1 ? 'this event is' : 'these events is') . ' now lower than when you asked us to watch.</p>';
+    $text = ($first !== '' ? 'Hi ' . $first . ', a' : 'A') . " price you were watching went down\n";
+    foreach ($items as $e) {
+        $where = trim($e['venue'] . ($e['place'] !== '' ? ', ' . $e['place'] : ''), ', ');
+        $html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 10px;border:1px solid #e5e7eb;border-radius:6px"><tr>'
+            . '<td style="padding:12px 14px;font-size:14px;line-height:1.5"><strong style="font-size:15px;color:#111827">' . soMailEsc($e['name']) . '</strong><br>'
+            . soMailEsc($e['date']) . '<br>' . soMailEsc($where) . '</td>'
+            . '<td align="right" valign="middle" style="padding:12px 14px;white-space:nowrap">'
+            . '<span style="font-size:12px;color:#6b7280;text-decoration:line-through">' . soMailEsc($e['was']) . '</span> '
+            . '<strong style="font-size:18px;color:#111827">' . soMailEsc($e['now']) . '</strong><br>'
+            . '<a href="' . soMailEsc($e['url']) . '" style="display:inline-block;margin-top:6px;padding:8px 14px;background:#1b3bb0;color:#ffffff;text-decoration:none;border-radius:5px;font-size:14px;font-weight:bold">View tickets</a>'
+            . '</td></tr></table>';
+        $text .= "\n- " . $e['name'] . ', ' . $e['date'] . ', ' . $where . '. Was ' . $e['was'] . ', now from ' . $e['now'] . "\n  " . $e['url'] . "\n";
+    }
+    $note = 'Prices are set by sellers, change often and are shown before fees. We only email when the lowest price falls at least 10% below the last price we told you about.';
+    $html .= '<p style="margin:18px 0 0;font-size:12px;color:#6b7280">' . $note . '</p>';
+    $text .= "\n" . $note . "\n" . soMailTextFooter($unsub);
+    return [$subject, soMailLayout($subject, $html, $unsub), $text];
+}

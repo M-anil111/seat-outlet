@@ -118,11 +118,27 @@ function soLeadUnsubscribeUrl($token) {
     return rtrim(HOME_URL, '/') . '/unsubscribe?t=' . rawurlencode($token);
 }
 
-/** Add (or leave alone) one interest for a lead. */
-function soLeadAddInterest($leadId, $type, $id, $name, $source, $page) {
+/**
+ * Add (or leave alone) one interest for a lead. A price-drop alert ($alertKind 'price' with a baseline price) upgrades an existing
+ * interest in the same event. Databases that have not run migration 0039 yet fall back to the plain insert, so sign-ups never fail.
+ */
+function soLeadAddInterest($leadId, $type, $id, $name, $source, $page, $alertKind = '', $baseline = null) {
     if (!in_array($type, SO_LEAD_INTEREST_TYPES, true)) return;
-    $stmt = MYSQLI->prepare('INSERT IGNORE INTO lead_interests (lead_id, interest_type, interest_id, interest_name, source, page) VALUES (?, ?, ?, ?, ?, ?)');
     $leadId = (int) $leadId; $id = (int) $id;
+    if ($alertKind === 'price' && $type === 'event' && $baseline !== null && $baseline > 0) {
+        try {
+            $stmt = MYSQLI->prepare('INSERT INTO lead_interests (lead_id, interest_type, interest_id, interest_name, source, page, alert_kind, baseline_price) VALUES (?, ?, ?, ?, ?, ?, \'price\', ?)
+                ON DUPLICATE KEY UPDATE alert_kind = \'price\', baseline_price = VALUES(baseline_price), notified_at = NULL');
+            $b = round((float) $baseline, 2);
+            $stmt->bind_param('isisssd', $leadId, $type, $id, $name, $source, $page, $b);
+            $stmt->execute();
+            $stmt->close();
+            return;
+        } catch (\mysqli_sql_exception $e) {
+            if ((int) $e->getCode() !== 1054) throw $e;   // 1054: the columns are not there yet, fall through to the plain insert
+        }
+    }
+    $stmt = MYSQLI->prepare('INSERT IGNORE INTO lead_interests (lead_id, interest_type, interest_id, interest_name, source, page) VALUES (?, ?, ?, ?, ?, ?)');
     $stmt->bind_param('isisss', $leadId, $type, $id, $name, $source, $page);
     $stmt->execute();
     $stmt->close();
@@ -157,6 +173,8 @@ function soLeadSubmit(array $in) {
         $iid = $itype === '' ? 0 : max(0, min(2147483647, (int) ($in['interest_id'] ?? 0)));
         $iname = $itype === '' ? '' : soLeadText(strip_tags((string) ($in['interest_name'] ?? '')), 120);
         $page = soLeadPage($in['page'] ?? '');
+        $alertKind = ($in['alert_kind'] ?? '') === 'price' ? 'price' : '';
+        $baseline = isset($in['baseline_price']) && is_numeric($in['baseline_price']) && (float) $in['baseline_price'] > 0 && (float) $in['baseline_price'] < 100000 ? (float) $in['baseline_price'] : null;
         $ipHash = soIpHash($ip);
         $token = soLeadNewToken();
 
@@ -182,21 +200,21 @@ function soLeadSubmit(array $in) {
             $stmt->fetch();
             $stmt->close();
             $leadId = (int) $leadId;
-            if ($leadId > 0 && $itype !== '') soLeadAddInterest($leadId, $itype, $iid, $iname, $source, $page);
+            if ($leadId > 0 && $itype !== '') soLeadAddInterest($leadId, $itype, $iid, $iname, $source, $page, $alertKind, $baseline);
             if ($leadId > 0 && ($oldF === '' && $fname !== '' || $oldL === '' && $lname !== '')) {   // fill in a name we did not have
                 $stmt = $db->prepare('UPDATE leads SET fname = IF(fname = \'\', ?, fname), lname = IF(lname = \'\', ?, lname) WHERE id = ?');
                 $stmt->bind_param('ssi', $fname, $lname, $leadId);
                 $stmt->execute();
                 $stmt->close();
             }
-            return ['status' => 'duplicate', 'message' => 'You are already on the list. Thank you!', 'lead_id' => $leadId, 'new' => false, 'after' => null];
+            return ['status' => 'duplicate', 'message' => $alertKind === 'price' ? 'Done. We will email you if the price drops.' : 'You are already on the list. Thank you!', 'lead_id' => $leadId, 'new' => false, 'after' => null];
         }
 
-        if ($itype !== '') soLeadAddInterest($leadId, $itype, $iid, $iname, $source, $page);
+        if ($itype !== '') soLeadAddInterest($leadId, $itype, $iid, $iname, $source, $page, $alertKind, $baseline);
 
         $lead = ['id' => $leadId, 'email' => $email, 'fname' => $fname, 'lname' => $lname, 'token' => $token,
                  'interest_type' => $itype, 'interest_id' => $iid, 'interest_name' => $iname, 'source' => $source, 'page' => $page];
-        return ['status' => 'success', 'message' => 'You are in. Watch your inbox.', 'lead_id' => $leadId, 'new' => true,
+        return ['status' => 'success', 'message' => $alertKind === 'price' ? 'Done. We will email you if the price drops.' : 'You are in. Watch your inbox.', 'lead_id' => $leadId, 'new' => true,
                 'after' => function () use ($lead) { soLeadAfterSignup($lead); }];
     } catch (\Throwable $e) {
         error_log('lead signup failed: ' . get_class($e) . ': ' . $e->getMessage());

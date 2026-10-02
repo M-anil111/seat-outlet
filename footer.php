@@ -177,6 +177,12 @@ window.addEventListener('load', function () {
     <script src="<?php echo htmlspecialchars(soAsset('js/saved-events.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/event-widget.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php } ?>
+<script>
+// Offline fallback page (sw.js). Registered after the page has loaded so it never competes with first paint; not on admin pages.
+if ('serviceWorker' in navigator && location.pathname.indexOf('/admin') !== 0) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+}
+</script>
     <script src="<?php echo htmlspecialchars(soAsset('js/nav-feedback.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/install-prompt.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/menu-near.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>

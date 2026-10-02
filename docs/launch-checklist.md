@@ -95,3 +95,5 @@ For counsel (not drafted, deliberately)
 - Terms: add a guarantee clause and name TicketNetwork as fulfilment partner (terms say sales are final, the guarantee page is broader); governing law and disputes (section 19 keeps the existing Austin, Texas wording); arbitration/class waiver decision; registered postal address (placeholder line removed); replace "By continuing... you agree" browsewrap.
 - Affiliation disclaimer added to legal pages and key pages; counsel to confirm wording and decide on a footer line.
 - Photo/image licensing for stock pictures used on the site.
+
+See also: [Beta server runbook](beta-runbook.md) for the exact commands, cron schedule, backups and the private-repository steps.

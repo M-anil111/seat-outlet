@@ -13,11 +13,11 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  */
 function soLeadForm(array $o = []) {
     $o += ['source' => 'site', 'title' => 'Get ticket alerts and new guides in your inbox', 'text' => 'Tour announcements, on-sale news and plain-English ticket advice. No spam.',
-           'button' => 'Sign me up', 'interest_type' => '', 'interest_id' => 0, 'interest_name' => '', 'id' => '', 'names' => true, 'class' => ''];
+           'button' => 'Sign me up', 'interest_type' => '', 'interest_id' => 0, 'interest_name' => '', 'id' => '', 'names' => true, 'class' => '', 'alert_kind' => '', 'baseline_price' => 0];
     $h = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); };
     return '<aside class="so-nl ' . $h($o['class']) . '"' . ($o['id'] !== '' ? ' id="' . $h($o['id']) . '"' : '') . '>'
         . '<p class="so-nl__title">' . $h($o['title']) . '</p>' . ($o['text'] !== '' ? '<p class="so-nl__sub">' . $h($o['text']) . '</p>' : '')
-        . '<form class="so-nl__form so-lead-form" method="post" action="/ajax/subscribe.php" data-source="' . $h($o['source']) . '" data-interest-type="' . $h($o['interest_type']) . '" data-interest-id="' . (int) $o['interest_id'] . '" data-interest-name="' . $h($o['interest_name']) . '">'
+        . '<form class="so-nl__form so-lead-form" method="post" action="/ajax/subscribe.php" data-source="' . $h($o['source']) . '" data-interest-type="' . $h($o['interest_type']) . '" data-interest-id="' . (int) $o['interest_id'] . '" data-interest-name="' . $h($o['interest_name']) . '"' . ($o['alert_kind'] === 'price' && $o['baseline_price'] > 0 ? ' data-alert-kind="price" data-baseline-price="' . $h(round((float) $o['baseline_price'], 2)) . '"' : '') . '>'
         . '<input type="text" name="website" value="" class="so-nl__hp" autocomplete="off" tabindex="-1" aria-hidden="true">'
         . '<div class="so-nl__fields' . ($o['names'] ? '' : ' so-nl__fields--email') . '">'
         . ($o['names'] ? '<input name="fname" type="text" placeholder="First name" aria-label="First name" maxlength="70" autocomplete="given-name">'

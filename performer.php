@@ -243,6 +243,12 @@ include 'header.php';
 										<button type="button" class="so-when__chip is-active" data-so-when="" aria-pressed="true">All dates</button>
 										<?php foreach (LISTING_WHEN as $wk => $wl) { ?><button type="button" class="so-when__chip" data-so-when="<?php echo $wk; ?>" aria-pressed="false"><?php echo htmlspecialchars($wl, ENT_QUOTES, 'UTF-8'); ?></button><?php } ?>
 									</div>
+									<span class="filter-label so-sortlabel" id="soSortLabel">Sort by</span>
+									<div class="so-when" role="group" aria-labelledby="soSortLabel">
+										<button type="button" class="so-when__chip is-active" data-so-sort="" aria-pressed="true">Best match</button>
+										<button type="button" class="so-when__chip" data-so-sort="soonest" aria-pressed="false">Soonest</button>
+										<button type="button" class="so-when__chip" data-so-sort="price" aria-pressed="false">Lowest price</button>
+									</div>
 								</div>
 							</div>
 							<h3 id="locationHeading" class="mt-4 fs-5"></h3>

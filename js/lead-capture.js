@@ -31,6 +31,7 @@
         fd.append('interest_id', form.dataset.interestId || '0');
         fd.append('interest_name', form.dataset.interestName || '');
         fd.append('page', location.pathname);
+        if (form.dataset.alertKind) { fd.append('alert_kind', form.dataset.alertKind); fd.append('baseline_price', form.dataset.baselinePrice || ''); }
         fetch('/ajax/subscribe.php', { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } })
           .then(function (r) { return r.json(); })
           .then(function (d) {
