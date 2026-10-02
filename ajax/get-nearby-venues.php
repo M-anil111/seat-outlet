@@ -21,21 +21,25 @@ if(!empty($nearbyVenues)) {
     }
 }
 
+// Venues near the visitor: cache them. Nothing nearby: fall back to the saved top-venue list (said so in X-So-Venue-Scope, so the
+// page does not call them "near you"). Nothing at all: answer an empty list that is NEVER cached (the page hides the block),
+// so a missing top-venue cache or a failed lookup cannot be kept for a day by the browser or a CDN.
 if (empty($output)) {
-
-    $fallbackKey = "top_venues";
-    $fallbackCache = cache_get($fallbackKey);
-
-    if ($fallbackCache !== false) {
-        header('Cache-Control: public, max-age=86400');
+    $fallbackCache = cache_get("top_venues");
+    if (is_array($fallbackCache) && !empty($fallbackCache)) {
+        header('Cache-Control: public, max-age=3600');
+        header('X-So-Venue-Scope: top');
         header('X-Cache-Fallback: HIT');
         echo json_encode($fallbackCache);
         exit;
     }
-
+    header('Cache-Control: no-store');
+    header('X-So-Venue-Scope: none');
+    echo json_encode([]);
+    exit;
 }
 
 header('Cache-Control: public, max-age=86400');
-header('X-Cache-Status: HIT');
+header('X-So-Venue-Scope: near');
 echo json_encode($output);
 exit;

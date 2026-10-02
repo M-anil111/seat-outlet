@@ -29,7 +29,7 @@
       var sub = [e.date && e.date.split(' - ')[0], e.loc, e.dist != null ? (e.dist < 3 ? 'nearby' : e.dist + ' mi') : ''].filter(Boolean).join(' · ');
       return '<li><a class="so-near-item" href="/event/' + slug(e.name) + '-' + e.id + '"><strong>' + esc(e.name) + '</strong><span>' + esc(sub) + '</span></a></li>';
     }).join('');
-    return (phone ? '<h3>' : '<h3>') + esc(head) + '</h3><ul>' + items + '</ul>';
+    return '<p class="' + (phone ? 'so-menu__title' : 'so-mega__title') + '">' + esc(head) + '</p><ul>' + items + '</ul>';
   }
 
   function paint(key, data, w) {

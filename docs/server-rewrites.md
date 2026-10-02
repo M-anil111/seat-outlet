@@ -70,3 +70,14 @@ Cloudflare ignores these for HTML unless a cache rule says otherwise. Setup (Clo
 - Cache eligibility: **Eligible for cache**; Edge TTL: **Use cache-control header if present**; Browser TTL: **Respect origin**.
 
 Notes: shown prices and inventory can be up to 2 minutes old (the hosted checkout always re-prices); purge the cache after each deploy (Caching, Purge Everything) so new code shows at once; `HTML_EDGE_CACHE_SECONDS` in `inc/env.local.php` changes the 120 seconds (0 turns the headers off). Test with `curl -sI https://<host>/concerts` and look for `cf-cache-status: HIT` on the second request.
+
+## Branded 404 for unknown URLs
+
+Unknown URLs on the server currently print the bare web server "File not found." page. The app has a branded 404 page (`/404.php`: HTTP 404, noindex, search box and category links). Add inside the `server { }` block:
+
+```nginx
+error_page 404 /404.php;
+location = /404.php { internal; fastcgi_param REDIRECT_STATUS 404; include fastcgi_params; fastcgi_pass <same upstream as the other .php locations>; fastcgi_param SCRIPT_FILENAME $document_root/404.php; }
+```
+
+Also make sure `fastcgi_intercept_errors on;` is set if PHP answers 404 for a missing script. Test: `curl -I https://<host>/no-such-page` must return 404 with the branded body, and `curl -I https://<host>/404` must also return 404 (it no longer returns 200).

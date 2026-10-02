@@ -123,7 +123,7 @@ $faqs = getFaqs('search');
 ?>
 
 <!-- Hero Section -->
-<section class="search-hero-section section-padding">
+<section class="search-hero-section section-padding<?php echo ($keywordHeader !== '' || !empty($events)) ? ' search-hero-section--results' : ''; ?>">
 	<div class="container">		
 		<!-- Hero Content -->
 		<div class="row justify-content-center align-items-center">
@@ -137,7 +137,7 @@ $faqs = getFaqs('search');
 </section>
 
 <section>
-	<div class="container">
+	<div class="container so-search-main">
 		
 		<?php if(!empty($keywordHeader)) { ?>
 			<div class="section-suggestions new-slider py-md-5 py-4">

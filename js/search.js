@@ -84,12 +84,12 @@ window.loadTopSuggestions = function(keyword) {
                 const isVenue = item.type === 'venue';
 
                 html += `
-                    <a href="${item.slug}" class="team-link">
+                    <a href="${escapeHtml(item.slug)}" class="team-link">
                         <div class="card venue-card">
                             <div class="venue-img">
                                 <img 
-                                    src="${item.image}"
-                                    alt="${item.name}"
+                                    src="${escapeHtml(item.image)}"
+                                    alt="${escapeHtml(item.name)}"
                                     class="img-fluid venue-dynamic-image blur-image"
                                     ${isArtist ? `data-artist="${encodeURIComponent(item.name)}" data-category='${encodeURIComponent(JSON.stringify(item.category || {}))}'` : ''}
                                     ${isVenue ? `data-venue="${encodeURIComponent(item.name)}"` : ''}
@@ -100,8 +100,8 @@ window.loadTopSuggestions = function(keyword) {
                                 >
                             </div>
                             <div class="venue-content text-center">
-                                <h5 class="venue-title">${item.name}</h5>
-                                <p class="venue-location mb-0">${item.meta}</p>
+                                <h3 class="venue-title">${escapeHtml(item.name)}</h3>
+                                <p class="venue-location mb-0">${escapeHtml(item.meta)}</p>
                             </div>
                         </div>
                     </a>

@@ -34,14 +34,36 @@ function escapeHtml(str) {
 }
 
 function getCookie(name) {
-    const v = document.cookie.split('; ').find(row => row.startsWith(name + '='));
-    return v ? decodeURIComponent(v.split('=')[1]) : '';
+    // Cut at the FIRST "=" only: a value may contain "=" itself (split('=')[1] used to truncate it).
+    const prefix = name + '=';
+    const row = document.cookie.split('; ').find(r => r.startsWith(prefix));
+    if (!row) return '';
+    const raw = row.slice(prefix.length);
+    try { return decodeURIComponent(raw); } catch (e) { return raw; }
 }
 
 function setCookie(name, value) {
+    // Values are always stored URL-encoded, so text with ";" or "=" or a comma cannot corrupt the cookie. Callers that already
+    // encoded their value are fine: it is decoded once first, then encoded once, never twice.
+    let v = String(value == null ? '' : value);
+    try { v = decodeURIComponent(v); } catch (e) { /* a literal "%": keep as typed */ }
     // Lax + Secure (on https) + 30-day expiry; these were session cookies with no SameSite flag.
     const secure = location.protocol === 'https:' ? ';Secure' : '';
-    document.cookie = name + '=' + value + ';path=/;max-age=2592000;SameSite=Lax' + secure;
+    document.cookie = name + '=' + encodeURIComponent(v) + ';path=/;max-age=2592000;SameSite=Lax' + secure;
+}
+
+/* Paints the visitor's location on the home page "Top picks" heading and its location chip.
+   label: a place name, '' (nothing known: "Top picks across the US" + "Set location"), or null with state 'finding'. */
+function soSetLocText(label, state) {
+    const chip = document.getElementById('locationSelectorText');
+    const title = document.getElementById('topPicksTitle');
+    const caret = ' <i class="bi bi-chevron-down" aria-hidden="true"></i>';
+    if (chip) {
+        if (state === 'finding') chip.innerHTML = 'Finding your location...' + caret;
+        else if (label) chip.innerHTML = 'Near ' + escapeHtml(label) + caret;
+        else chip.innerHTML = 'Set location' + caret;
+    }
+    if (title) title.textContent = (label || state === 'finding') ? 'Top picks' : 'Top picks across the US';
 }
 
 function equalHeightSlider(sectionClass, cardClass) { 
@@ -103,9 +125,7 @@ function initLocationSearch(inputId, type = '') {
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();  
         if(type == 'home') {   
-            if (DOM.locationSelectorText.textContent !== input.value) {
-                DOM.locationSelectorText.textContent = input.value;
-            }
+            soSetLocText(input.value);
             if (DOM.locationPanel) DOM.locationPanel.classList.remove('show');  
             setCookie('so_label', input.value);
             setCookie('so_lat', lat);
@@ -179,7 +199,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const savedLng = getCookie('so_lng');
     const savedLabel = getCookie('so_label');  
     if (savedLabel) {
-        if (DOM.locationSelectorText) DOM.locationSelectorText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
+        soSetLocText(savedLabel);
+    }
+    // Header search: show the saved place as a hint in the location field (it is applied only when the visitor taps it).
+    if (savedLabel && DOM.inputHeader && !DOM.inputHeader.value) {
+        DOM.inputHeader.placeholder = 'Near ' + savedLabel;
     }
   
     if (savedLat && savedLng) {
@@ -194,12 +218,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   
     const locationLabel = DOM.locationSelectorText;
-    const showPrompt = () => { if (locationLabel) locationLabel.innerHTML = 'Select your location <i class="bi bi-chevron-down"></i>'; };
+    const showPrompt = () => { soSetLocText(''); };
     const applyLocation = (lat, lng, label, labelCookie) => {
         setCookie('so_lat', encodeURIComponent(lat));
         setCookie('so_lng', encodeURIComponent(lng));
         setCookie('so_label', labelCookie || label);
-        if (locationLabel) locationLabel.innerHTML = label + ' <i class="bi bi-chevron-down"></i>';
+        soSetLocText(label);
+        if (DOM.inputHeader && !DOM.inputHeader.value) DOM.inputHeader.placeholder = 'Near ' + label;
         window.locationReady = true;
         document.dispatchEvent(new CustomEvent('so:location', { detail: { lat: lat, lng: lng, label: label } }));
         if (typeof reloadActiveTab === 'function') {
@@ -226,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }).catch(showPrompt);
     };
 
-    if (locationLabel) locationLabel.innerHTML = 'Finding your location... <i class="bi bi-chevron-down"></i>';
+    soSetLocText(null, 'finding');
     // If nothing has answered after a few seconds (for example the permission prompt is still open), go back to the plain prompt.
     setTimeout(() => { if (locationLabel && /^Finding/.test(locationLabel.textContent.trim())) showPrompt(); }, 4000);
     fetch('/ajax/get_ip_details.php')
@@ -266,11 +291,17 @@ if (DOM.inputHeader) {
     DOM.inputHeader.addEventListener('click', function () {
         const q = this.value.trim();
         if (q.length === 0) {
-            DOM.resultsHeader.innerHTML = `
+            const savedPlace = getCookie('so_label'), sLat = getCookie('so_lat'), sLng = getCookie('so_lng');
+            DOM.resultsHeader.innerHTML = (savedPlace && sLat && sLng ? `
+                <div class="current-location">
+                    <i class="bi bi-geo-alt ms-1 me-2"></i> <span class="ms-4 ps-2" id="useSavedLocationHeader" role="button" tabindex="0"></span>
+                </div>` : '') + `
                 <div class="current-location">
                     <i class="bi bi-send ms-1 me-2"></i> <span class="ms-4 ps-2" id="useCurrentLocationHeader"> Current location </span>  
                 </div>
             `;
+            const sp = document.getElementById('useSavedLocationHeader');
+            if (sp) sp.textContent = 'Near ' + savedPlace;
             return;
         }
     });
@@ -280,6 +311,18 @@ if(DOM.resultsHeader) {
     DOM.resultsHeader.addEventListener('click', function (e) {  
         if (e.target.id === 'useCurrentLocationHeader') {
             getCurrentLocationHeader();
+            return;
+        }
+        if (e.target.id === 'useSavedLocationHeader') {
+            // One tap: use the place the site already knows (the clear button next to the field removes it again).
+            DOM.inputHeader.value = getCookie('so_label');
+            DOM.latHeader.value = getCookie('so_lat');
+            DOM.lngHeader.value = getCookie('so_lng');
+            DOM.resultsHeader.innerHTML = '';
+            if (DOM.resetLocHeader) {
+                DOM.resetLocHeader.classList.remove('d-none');
+                DOM.resetLocHeader.onclick = function () { DOM.inputHeader.value = ''; this.classList.add('d-none'); DOM.latHeader.value = ''; DOM.lngHeader.value = ''; };
+            }
             return;
         }
     });
@@ -667,12 +710,18 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
             return;
         }  
         if (!items.length) return;  
-        if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+        // Arrow keys move through the suggestions. Tab is NOT used for that: it moves on to the next control and closes the list
+        // (a keyboard user could not leave the field while any suggestion was showing).
+        if (e.key === 'Tab') {
+            closeSuggestions();
+            return;
+        }
+        if (e.key === 'ArrowDown') {
             e.preventDefault();
             activeIndex = (activeIndex + 1) % items.length;
             updateActive(items);
         }  
-        if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+        if (e.key === 'ArrowUp') {
             e.preventDefault();
             activeIndex = (activeIndex - 1 + items.length) % items.length;
             updateActive(items);
@@ -680,6 +729,12 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
         if (e.key === 'Enter') {
             if (activeIndex >= 0 && items[activeIndex]) {
             e.preventDefault();
+            if (window.soTrack) {
+                const row = items[activeIndex].parentElement;
+                let group = '', n = 0;
+                Array.prototype.forEach.call(row.parentElement.children, function (c, i) { if (c.classList.contains('suggestion-label') && i < Array.prototype.indexOf.call(row.parentElement.children, row)) group = c.textContent; if (c === row) n = i; });
+                window.soTrack('suggestion_click', { suggestion_group: group.toLowerCase().replace(/\s+/g, '_'), suggestion_position: n + 1, via: 'keyboard' });
+            }
             window.location.href = items[activeIndex].href;
             }
         }
@@ -974,6 +1029,16 @@ document.addEventListener('DOMContentLoaded', function () {
   if (form && input && window.soLocal) {
     form.addEventListener('submit', function () { window.soLocal.addSearch(input.value); });
   }
+  // Keep the results URL short and shareable: fields left empty are not sent (/search?keywordHeader=taylor instead of six parameters).
+  // The browser reads the form after this handler runs, so disabling is enough; the fields come back right after, for the back button.
+  if (form) {
+    form.addEventListener('submit', function () {
+      const off = [];
+      form.querySelectorAll('input[name]').forEach(function (el) { if (!el.disabled && String(el.value).trim() === '') { el.disabled = true; off.push(el); } });
+      setTimeout(function () { off.forEach(function (el) { el.disabled = false; }); }, 0);
+    });
+    window.addEventListener('pageshow', function () { form.querySelectorAll('input[name]').forEach(function (el) { el.disabled = false; }); });
+  }
 });
 
 
@@ -1048,7 +1113,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     var tops = document.querySelectorAll('.so-mega-top');
     if (!tops.length) return;
-    var openKey = null, timer = null;
+    var openKey = null, timer = null, skipFocusOpen = false;
     function panelOf(a) { return document.getElementById('so-mega-' + a.getAttribute('data-so-mega')); }
     function closeAll() {
         tops.forEach(function (a) { var p = panelOf(a); if (p) p.hidden = true; a.setAttribute('aria-expanded', 'false'); a.classList.remove('is-open'); });
@@ -1069,12 +1134,23 @@ document.addEventListener('DOMContentLoaded', function () {
         var item = a.closest('.so-mega-item');
         item.addEventListener('mouseenter', function () { later(function () { open(a); }, openKey ? 40 : 110); });
         item.addEventListener('mouseleave', function () { later(closeAll, 140); });
-        a.addEventListener('focus', function () { open(a); });
+        a.addEventListener('focus', function () { if (!skipFocusOpen) open(a); });
+        // Touch screens (no hover): the first tap opens the panel, the second tap follows the link.
+        a.addEventListener('click', function (e) {
+            if (window.matchMedia && matchMedia('(hover: none)').matches && openKey !== a.getAttribute('data-so-mega')) { e.preventDefault(); open(a); }
+        });
         a.addEventListener('keydown', function (e) {
             if (e.key === 'ArrowDown') { var first = panelOf(a).querySelector('a'); if (first) { e.preventDefault(); open(a); first.focus(); } }
         });
         item.addEventListener('focusout', function (e) { if (!item.contains(e.relatedTarget)) later(closeAll, 60); });
     });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || openKey === null) return;
+        // Focus inside the panel would be lost when it hides: put it back on the menu's top link.
+        var active = document.activeElement, owner = active && active.closest ? active.closest('.so-mega-item') : null;
+        var top = owner ? owner.querySelector('.so-mega-top') : null;
+        closeAll();
+        if (top && active !== top) { skipFocusOpen = true; try { top.focus({ preventScroll: true }); } catch (err) { top.focus(); } skipFocusOpen = false; }
+    });
     document.addEventListener('click', function (e) { if (!e.target.closest('.so-mega-item')) closeAll(); });
 })();
