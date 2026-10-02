@@ -61,3 +61,13 @@ Items the code cannot do for itself. Each workstream appends a section: what, wh
 - **Sitemap and zero-event pages (owner).** Zero-event pages are `noindex,follow` and are removed from the sitemap once they have been rendered once (pages record themselves in `cache/so_zero_pages`). A page nobody has visited yet can still be listed until its first visit. In Search Console compare "submitted" with "indexed" after a few weeks.
 - **Server rewrites (tech support).** `/theatre-*` now 301s to `/theater-*`, and non-canonical slugs 301 to the canonical slug. Both need the nginx rewrites in docs/server-rewrites.md to be in place, as before.
 - **Footer/menu headings (WS6).** On entity pages the H1 is followed by the menu's H3 items before the first H2; the menu markup lives in header/footer, outside this workstream.
+
+## WS6: home page, header/footer, privacy, 404
+
+- **Counsel review (owner to arrange):** the privacy bar copy ("We use cookies for analytics and ads ... Accept / Decline / Manage") and the "Your privacy choices" link are working defaults, not legal text. Counsel must review the wording, the US opt-out model (tags load unless Global Privacy Control or Decline), the cookie policy page, and whether California or other states need an extra "Do not sell or share" wording. The bar and footer link appear only when GTM_ID is set.
+- **Global Privacy Control:** honored in the browser (navigator.globalPrivacyControl, the same signal as the Sec-GPC header): GTM is not loaded. The server cannot vary the HTML (pages are CDN-cached). Optional, after counsel agrees: publish /.well-known/gpc.json {"gpc": true}.
+- **Third-party tags kept:** Google Maps loads only when a visitor uses a location field; reCAPTCHA only when a form is submitted. Both are treated as functional. Counsel to confirm.
+- **Pricing claim (B8):** the "No hidden fees" claim was removed from the home page. Someone should place a test order to confirm what checkout adds, then decide on all-in price wording (FTC rule for live-event tickets: counsel).
+- **404 for unknown URLs (tech support):** the web server prints a bare "File not found." Add the nginx rule in docs/server-rewrites.md (error_page 404 /404.php).
+- **Other findings not done here:** B1/B3/B4 (newsletter-email.php) are replaced on the home page by the shared lead form (WS1 owns the endpoint; newsletter-email.php can be retired). B17 (/blog 500 on beta) and B18 (composer.json and /cache files readable on beta): tech support, server config. S3/S4 (event price alerts, service worker) and S5 (idle nudge) not done.
+- **Slick:** already loaded only on home, search and about pages (deferred); jQuery and Bootstrap JS untouched.

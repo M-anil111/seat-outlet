@@ -12,6 +12,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 // instance, not by php -l or the static checkers, which don't catch
 // runtime double-inclusion.
 include_once 'functions.php';
+    include_once __DIR__ . '/inc/consent.php';
     soRedirectLegacyUrl();
     sendSecurityHeaders();
     // The header search form now submits via GET so a results page has a
@@ -108,9 +109,8 @@ include_once 'functions.php';
 
 <head>
     <script>window.dataLayer = window.dataLayer || [];</script>
-    <?php if (GTM_ID !== '') { ?>
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','<?php echo htmlspecialchars(GTM_ID, ENT_QUOTES, 'UTF-8'); ?>');</script>
-    <?php } ?>
+    <?php /* Google Tag Manager, gated on the visitor's privacy choice (Global Privacy Control, or Decline in the privacy bar): see inc/consent.php */ ?>
+    <?php if (GTM_ID !== '') { echo soConsentHeadScript() . "\n"; } ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); ?>">
@@ -257,6 +257,7 @@ include_once 'functions.php';
     $soKeywordH1 = getenv('KEYWORD_H1') !== '0';
     if ($soKeywordH1) { ob_start('soSingleH1'); }
     ?>
+    <a class="so-skip" href="#main">Skip to main content</a>
     <?php
     // Phones: the search bar is folded away behind the search icon, except on the search page and
     // when the visitor arrived with a search (filled fields). Wider screens always show it (CSS).
@@ -308,7 +309,7 @@ include_once 'functions.php';
                                             </a>
                                             <?php foreach ($m['groups'] as $g) { ?>
                                             <div class="so-mega__col">
-                                                <h3><?php echo htmlspecialchars($g['title'], ENT_QUOTES, 'UTF-8'); ?></h3>
+                                                <p class="so-mega__title"><?php echo htmlspecialchars($g['title'], ENT_QUOTES, 'UTF-8'); ?></p>
                                                 <ul>
                                                     <?php foreach ($g['links'] as [$label, $href]) { ?>
                                                     <li><a href="<?php echo $href; ?>"><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a></li>
@@ -339,7 +340,7 @@ include_once 'functions.php';
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
-                            <input type="text" placeholder="City or Zip Code" class="w-100" autocomplete="off" class="locationInputField" id="locationInputHeader" name="locationInputHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="location-suggestions" aria-activedescendant="" aria-label="Search by city or zip code" value="<?php echo !empty($searchInput['locationInputHeader']) ? htmlspecialchars($searchInput['locationInputHeader'], ENT_QUOTES, 'UTF-8') : ''; ?>" />
+                            <input type="text" placeholder="City or Zip Code" class="w-100 locationInputField" autocomplete="off" id="locationInputHeader" name="locationInputHeader" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="location-suggestions" aria-activedescendant="" aria-label="Search by city or zip code" value="<?php echo !empty($searchInput['locationInputHeader']) ? htmlspecialchars($searchInput['locationInputHeader'], ENT_QUOTES, 'UTF-8') : ''; ?>" />
                             <button type="button" id="locationHeaderReset" class="location-close<?php echo !empty($searchInput['locationInputHeader']) ? '' : ' d-none'; ?>" aria-label="Clear location">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
                                     <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
@@ -352,7 +353,7 @@ include_once 'functions.php';
                             <svg class="icon" style="color: rgb(50 85 223);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
-                            <input type="text" id="customDatePicker" placeholder="Select Date Range" autocomplete="off" readonly role="combobox" aria-haspopup="dialog" aria-expanded="false" aria-controls="date-picker-dialog" aria-label="Select date range" value="<?php echo !empty($dateTitle) ? htmlspecialchars($dateTitle) : ''; ?>"> 
+                            <input type="text" id="customDatePicker" placeholder="Select Date Range" autocomplete="off" readonly role="combobox" aria-haspopup="dialog" aria-expanded="false" aria-label="Select date range" value="<?php echo !empty($dateTitle) ? htmlspecialchars($dateTitle) : ''; ?>"> 
                             <div class="filter-arrow"><i id="dateArrowHeader" class="bi bi-chevron-down"></i></div>
                         </div>
                         <div class="performer-city-venue search-item d-flex align-items-center gap-md-2 gap-1 px-3 py-2 flex-fill border-start header-venus-close" style="border-color: rgba(0,0,0,0.1);">
@@ -415,7 +416,7 @@ include_once 'functions.php';
                 <div class="so-menu__panel" role="tabpanel" id="so-panel-<?php echo $m['key']; ?>" aria-labelledby="so-tab-<?php echo $m['key']; ?>" data-panel="<?php echo $m['key']; ?>"<?php echo $mi === 0 ? '' : ' hidden'; ?>>
                     <a class="so-menu__all" href="<?php echo $m['href']; ?>"><?php echo htmlspecialchars($m['all'], ENT_QUOTES, 'UTF-8'); ?> <span aria-hidden="true">&rsaquo;</span></a>
                     <?php foreach ($m['groups'] as $g) { ?>
-                    <h3><?php echo htmlspecialchars($g['title'], ENT_QUOTES, 'UTF-8'); ?></h3>
+                    <p class="so-menu__title"><?php echo htmlspecialchars($g['title'], ENT_QUOTES, 'UTF-8'); ?></p>
                     <ul>
                         <?php foreach ($g['links'] as [$label, $href]) { ?>
                         <li><a href="<?php echo $href; ?>"><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a></li>
@@ -441,3 +442,6 @@ include_once 'functions.php';
             <a class="so-menu__search" href="/search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg> Search events</a>
         </div>
     </div>
+    <?php // The page's one landmark: skip link target. Pages that print their own <main> get a <div> instead (soSingleMain in inc/consent.php); footer.php closes this one. ?>
+    <?php ob_start('soSingleMain'); ?>
+    <main id="main" tabindex="-1" data-so-main>

@@ -212,8 +212,8 @@ $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="c
 <?php } ?>
 
 <section>
-	<div class="container">
-
+	<div class="container so-search-main">
+		
 		<?php if(!empty($keywordHeader)) { ?>
 			<div class="section-suggestions new-slider py-md-5 py-4">
 				<h2 class="fw-bold fs-4 mb-4">Top Suggestions</h2>

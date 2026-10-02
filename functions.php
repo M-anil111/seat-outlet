@@ -2298,17 +2298,26 @@ function tnEntityUnavailable($r) {
     return !isset($r['id']) && !isset($r['alphaCode']) && !tnEntityDefinitelyMissing($r);
 }
 
-/** Friendly "not found" content with ways back to inventory (no header/footer). */
+/**
+ * Friendly "not found" content with a search box and ways back to inventory (no header/footer).
+ * Used by renderNotFoundPage() and 404.php, so every not-found answer on the site looks the same.
+ */
 function notFoundBlockHtml($what) {
     $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
-    return '<div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' not found</h1>'
-        . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place.</p>'
-        . '<div class="d-flex flex-wrap justify-content-center gap-2">'
-        . '<a class="btn btn-primary" href="/buy-tickets-online">Browse all events</a>'
-        . '<a class="so-linkchip" href="/concert-tickets-for-sale">Concerts</a>'
-        . '<a class="so-linkchip" href="/game-day-tickets">Sports</a>'
-        . '<a class="so-linkchip" href="/buy-broadway-tickets">Theater</a>'
-        . '<a class="so-linkchip" href="/city-events">Cities</a>'
+    $chips = [['/concert-tickets-for-sale', 'Concerts'], ['/game-day-tickets', 'Sports'], ['/buy-broadway-tickets', 'Theater'],
+              ['/upcoming-music-festivals', 'Festivals'], ['/city-events', 'Cities'], ['/all-artists-and-teams', 'Artists and teams']];
+    $links = '';
+    foreach ($chips as [$href, $label]) { $links .= '<a class="so-linkchip" href="' . $href . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>'; }
+    return '<div class="container py-5 text-center so-404">'
+        . '<p class="so-404__code" aria-hidden="true">404</p>'
+        . '<h1 class="fs-3 fw-bold mb-2">' . $w . ' not found</h1>'
+        . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place. Search for what you wanted, or pick a category below.</p>'
+        . '<form class="so-404__search" method="get" action="/search" role="search">'
+        . '<label class="visually-hidden" for="so404Q">Search for an artist, team, show or venue</label>'
+        . '<input id="so404Q" type="search" name="keywordHeader" placeholder="Artist, team, show or venue" autocomplete="off" maxlength="80">'
+        . '<button type="submit" class="btn btn-primary">Search</button></form>'
+        . '<div class="d-flex flex-wrap justify-content-center gap-2 mt-4">'
+        . '<a class="btn btn-primary" href="/buy-tickets-online">Browse all events</a>' . $links
         . '</div></div>';
 }
 
@@ -2346,7 +2355,10 @@ function renderUnavailablePage($what) {
  * never tell search engines that live pages are gone.
  */
 function renderNotFoundPage($what, $apiResponse = null) {
-    if ($apiResponse !== null && tnEntityUnavailable($apiResponse)) {
+    // Callers that do not hand over the API response (category, state, country pages): a request that already
+    // failed in this process (throttled, down, circuit open) marks the page degraded, and that is a retryable
+    // 503, never a 404 that would drop live menu pages from search engines.
+    if (($apiResponse !== null && tnEntityUnavailable($apiResponse)) || ($apiResponse === null && !empty($GLOBALS['tn_degraded']))) {
         renderUnavailablePage($what);
     }
     http_response_code(404);

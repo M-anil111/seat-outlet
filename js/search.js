@@ -102,7 +102,7 @@ window.loadTopSuggestions = function(keyword) {
                                 >
                             </div>
                             <div class="venue-content text-center">
-                                <h5 class="venue-title">${soEsc(item.name)}</h5>
+                                <h3 class="venue-title">${soEsc(item.name)}</h3>
                                 <p class="venue-location mb-0">${soEsc(item.meta)}</p>
                             </div>
                         </div>
