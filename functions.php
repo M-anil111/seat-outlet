@@ -16,7 +16,7 @@ if (!empty($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '?') !== 
     unset($so_original_query);
 }
 
-include 'db/config.php';
+include_once __DIR__ . '/db/config.php';
 include 'inc/constants.php';
 require 'vendor/autoload.php';
 
