@@ -4,9 +4,10 @@ require_once __DIR__ . '/../functions.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
-$page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-$perPage = isset($_GET['perPage']) ? max(1, min(100, (int) $_GET['perPage'])) : 24;
-$letter  = isset($_GET['letter']) ? strtoupper(trim($_GET['letter'])) : 'ALL';
+header('Cache-Control: public, max-age=600');   // the A-Z performer lists change slowly; the API answer is cached server-side too
+$page    = soQsInt('page', 1, 1, 500);
+$perPage = soQsInt('perPage', 24, 1, 100);
+$letter  = strtoupper(soQs('letter', 'ALL'));
 if ($letter !== 'ALL' && !preg_match('/^[A-Z]$/', $letter)) {
     $letter = 'ALL';
 }
@@ -60,6 +61,7 @@ try {
 } catch (Throwable $e) {
     \Sentry\captureException($e);
     http_response_code(500);
+    header('Cache-Control: no-store');
     echo json_encode([
         'performers'  => [],
         'totalCount'  => 0,

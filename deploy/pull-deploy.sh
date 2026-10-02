@@ -19,8 +19,10 @@
 #   DEPLOY_PHP       php binary      default php
 #
 # Never touched by a deploy: inc/env.local.php (the server's own secrets file)
-# and existing files under cache/ (runtime feed and image cache). Files are
-# only added or overwritten, never deleted.
+# and existing files under cache/ (runtime feed and image cache). Files that
+# were removed from git since the last deploy are removed from the web root too
+# (so a deleted vulnerable file cannot stay live); nothing else is deleted.
+# Repo-only files (.github, docs, CONTRIBUTING.md, composer.json/lock, .env.example) are not copied to the web root.
 set -euo pipefail
 
 REPO="${DEPLOY_REPO:-git@github.com:M-anil111/seat-outlet.git}"
@@ -53,11 +55,25 @@ if [ "$NEW" = "$OLD" ]; then
 fi
 
 log "deploying ${OLD:0:8} -> ${NEW:0:8}"
+# Files deleted in git since the last deploy (computed before the checkout moves; skipped on the first deploy).
+REMOVED=""
+if [ "$OLD" != "none" ] && git cat-file -e "$OLD^{commit}" 2>/dev/null; then
+  REMOVED="$(git diff --name-only --diff-filter=D "$OLD" "origin/$BRANCH" || true)"
+fi
 git reset --quiet --hard "origin/$BRANCH"
 
 # Code: everything except .git, the secrets file and the runtime cache.
 tar --exclude=./.git --exclude=./cache --exclude=./inc/env.local.php \
-    --exclude=./deploy -cf - . | tar -C "$WEBROOT" -xf -
+    --exclude=./deploy --exclude=./.github --exclude=./docs --exclude=./CONTRIBUTING.md \
+    --exclude=./composer.json --exclude=./composer.lock --exclude=./.env.example -cf - . | tar -C "$WEBROOT" -xf -
+
+# Remove what was deleted in git (never the secrets file or anything under cache/, and never outside the web root).
+if [ -n "$REMOVED" ]; then
+  while IFS= read -r f; do
+    case "$f" in ''|/*|*..*|cache/*|inc/env.local.php) continue ;; esac
+    [ -f "$WEBROOT/$f" ] && { rm -f -- "$WEBROOT/$f"; log "removed $f"; }
+  done <<< "$REMOVED"
+fi
 
 # Seed feeds: copy cache/ files only where the server does not have them yet.
 if [ -d cache ]; then

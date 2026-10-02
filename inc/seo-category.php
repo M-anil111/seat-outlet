@@ -36,14 +36,17 @@ function soCategoryData($id) {
                 $cities[$k] = $cities[$k] ?? ['id' => $k, 'label' => trim($c['text']['name'] . ', ' . ($e['stateProvince']['text']['abbr'] ?? ''), ', '), 'n' => 0];
                 $cities[$k]['n']++;
             }
-            $price = $e['pricingInfo']['lowPrice']['value'] ?? null;
-            if (is_numeric($price) && $price > 0 && ($out['min'] === null || $price < $out['min'])) $out['min'] = (float) $price;
         }
         $by = function ($a, $b) { return [$b['n'], $a['first'] ?? 0] <=> [$a['n'], $b['first'] ?? 0]; };
         uasort($artists, $by); uasort($venues, function ($a, $b) { return $b['n'] <=> $a['n']; }); uasort($cities, function ($a, $b) { return $b['n'] <=> $a['n']; });
         $out['artists'] = array_slice(array_values($artists), 0, 12);
         $out['venues']  = array_slice(array_values($venues), 0, 8);
         $out['cities']  = array_slice(array_values($cities), 0, 10);
+
+        // The cheapest listed price across the whole category (the 100-event sample above is only the popular ones).
+        $cheap = tnRequest('/catalog/v2/events/', locationListingParams($filter, 1, 1, '', 'price'), 'GET', 1800);
+        $cv = $cheap['results'][0]['pricingInfo']['lowPrice']['value'] ?? null;
+        if (is_numeric($cv) && $cv > 0) $out['min'] = (float) $cv;
 
         $soon = tnRequest('/catalog/v2/events/', locationListingParams($filter, 1, 1, '', 'soonest'), 'GET', 1800);
         $e = $soon['results'][0] ?? null;
@@ -111,7 +114,8 @@ function soCategorySeo(array $cfg, array $d) {
         if (strpos($d['path'] ?? '', '.1988.') !== false) $kind = 'sports';
         elseif (strpos($d['path'] ?? '', '.1986.') !== false) $kind = 'concerts';
     }
-    $kw = strtolower($label) . ' tickets';
+    $lbl = soListingInline($label);   // acronyms (NBA, MLB, R&B) keep their capitals inside sentences
+    $kw = $lbl . ' tickets';
     $unit = $kind === 'sports' ? 'games' : ($kind === 'concerts' ? 'concerts' : 'shows');
     $cityPrefix = $kind === 'sports' ? 'sports-city' : ($kind === 'concerts' ? 'concerts-city' : 'event-city');
     $hub = $kind === 'sports' ? ['/game-day-tickets', 'game day tickets'] : ($kind === 'concerts' ? ['/concert-tickets-for-sale', 'concert tickets for sale'] : ['/buy-tickets-online', 'tickets for every event']);
@@ -128,7 +132,7 @@ function soCategorySeo(array $cfg, array $d) {
 
     // 1. Artists with upcoming shows
     $o .= '<h2>' . $h($label) . ' tickets: ' . ($kind === 'sports' ? 'teams' : 'artists') . ' with upcoming ' . $h($unit) . '</h2>';
-    $o .= '<p>Looking for ' . $h($kw) . '? Seat Outlet lets you compare seats and prices for ' . ($total > 0 ? number_format($total) . ' upcoming ' . $h($long) . ' events' : 'upcoming ' . $h($long) . ' events')
+    $o .= '<p>Looking for ' . $h($kw) . '? Seat Outlet lets you compare seats and prices for ' . ($total > 0 ? number_format($total) . ' upcoming ' . $h($long) . ($total === 1 ? ' event' : ' events') : 'upcoming ' . $h($long) . ' events')
         . ($topCities !== '' ? ' in ' . $h($topCities) . ' and more' : '') . ($price !== '' ? ', with tickets listed from ' . $h($price) : '')
         . '. Choose ' . ($kind === 'sports' ? 'a team' : 'an artist') . ', venue or city, pick your seats on the map and check out securely with our <a href="/worry-free-guarantee">100% guarantee</a>.</p>';
     if ($d['artists']) {
@@ -139,27 +143,32 @@ function soCategorySeo(array $cfg, array $d) {
             $img = !empty($im['real']) ? $im['url'] : '';
             $initials = strtoupper(substr(preg_replace('/[^A-Za-z0-9 ]/', '', $a['name']), 0, 1) . (preg_match('/\s(\w)\S*$/', $a['name'], $m) ? $m[1] : ''));
             $o .= '<li><a href="/artist/' . $h(createSlug($a['name'], $a['id'])) . '">'
-                . ($img ? '<img src="' . $h($img) . '" alt="' . $h($a['name'] . ' ' . strtolower($label) . ' tickets') . '" width="96" height="96" loading="lazy" decoding="async">' : '<span class="so-cseo__tile" aria-hidden="true">' . $h($initials) . '</span>')
+                . ($img ? '<img src="' . $h($img) . '" alt="' . $h($a['name'] . ' ' . $lbl . ' tickets') . '" width="96" height="96" loading="lazy" decoding="async">' : '<span class="so-cseo__tile" aria-hidden="true">' . $h($initials) . '</span>')
                 . '<span>' . $h($a['name']) . ' tickets</span></a></li>';
         }
         $o .= '</ul>';
     }
 
-    // 2. Venues
+    // 2. Venues (from the popular events in the catalog; no per-venue counts are claimed)
     if ($d['venues']) {
+        $vCities = [];
+        foreach ($d['venues'] as $v) { if ($v['city'] !== '' && !in_array($v['city'], $vCities, true)) $vCities[] = $v['city']; }
+        $vWhere = soCatList($vCities, 3);
         $o .= '<h2>Best venues for ' . $h($long) . ' ' . $h($unit) . '</h2>';
-        $o .= '<p>These venues have the most ' . $h($long) . ' events on sale right now' . ($d['cities'] ? ', from ' . $h($d['venues'][0]['city']) . ' to ' . $h(end($d['venues'])['city']) : '') . '. Each venue page shows every upcoming date and seat options for that building.</p><ul class="so-cseo__venues">';
+        $o .= '<p>These venues are hosting some of the most popular ' . $h($long) . ' events right now' . ($vWhere !== '' ? ', including ' . ($vCities && count($vCities) > 1 ? 'venues in ' : 'a venue in ') . $h($vWhere) : '') . '. Each venue page shows every upcoming date and seat options for that building.</p><ul class="so-cseo__venues">';
         foreach ($d['venues'] as $v) {
-            $o .= '<li><a href="/venue/' . $h(createSlug($v['name'], $v['id'])) . '"><strong>' . $h($v['name']) . ' tickets</strong><span>' . $h($v['city']) . ' &middot; ' . (int) $v['n'] . ' upcoming ' . ($v['n'] === 1 ? 'event' : 'events') . '</span></a></li>';
+            $o .= '<li><a href="/venue/' . $h(createSlug($v['name'], $v['id'])) . '"><strong>' . $h($v['name']) . ' tickets</strong><span>' . $h($v['city']) . '</span></a></li>';
         }
         $o .= '</ul>';
     }
 
-    // 3. Cities
+    // 3. Cities. The city pages list every event of that family in the city (all concerts, all sports...), not only this genre,
+    //    so the link text says exactly that instead of promising a genre-filtered view.
     if ($d['cities']) {
-        $o .= '<h2>' . $h($label) . ' ' . $h($unit) . ' by city</h2><p>Browse ' . $h($kw) . ' in the cities with the most events. Each city page lists every upcoming event there, not only ' . $h($long) . '.</p><div class="so-cseo__chips">';
+        $cityWord = $kind === 'sports' ? 'Sports' : ($kind === 'concerts' ? 'Concerts' : 'Events');
+        $o .= '<h2>' . $h($label) . ' ' . $h($unit) . ' by city</h2><p>These cities have the most ' . $h($long) . ' events on sale right now. Each city page lists every upcoming ' . ($kind === 'sports' ? 'sporting event' : ($kind === 'concerts' ? 'concert' : 'event')) . ' there, not only ' . $h($long) . '.</p><div class="so-cseo__chips">';
         foreach ($d['cities'] as $c) {
-            $o .= '<a class="so-linkchip" href="/' . $cityPrefix . '/' . $h(createSlug($c['label'], $c['id'])) . '">' . $h($label) . ' in ' . $h($c['label']) . '</a>';
+            $o .= '<a class="so-linkchip" href="/' . $cityPrefix . '/' . $h(createSlug($c['label'], $c['id'])) . '">' . $h($cityWord) . ' in ' . $h($c['label']) . '</a>';
         }
         $o .= '</div>';
     }
@@ -169,7 +178,7 @@ function soCategorySeo(array $cfg, array $d) {
         $o .= '<h2>' . $h($profile['about_title']) . '</h2>';
         foreach ($profile['about'] as $p) $o .= '<p>' . $h($p) . '</p>';
     } elseif (($fact = soCategoryFact($cfg['id'] ?? 0)) !== null) {
-        $o .= '<h2>About ' . $h(strtolower($label)) . ' ' . $h($unit) . '</h2><p>' . $h($fact['text']) . '</p>'
+        $o .= '<h2>About ' . $h($lbl) . ' ' . $h($unit) . '</h2><p>' . $h($fact['text']) . '</p>'
             . '<p class="so-cseo__src">Source: <a href="' . $h($fact['url']) . '" target="_blank" rel="noopener">' . $h($fact['title']) . ' (Wikipedia)</a>, text available under CC BY-SA 4.0.</p>';
     }
     if (!$profile) {
@@ -185,19 +194,19 @@ function soCategorySeo(array $cfg, array $d) {
 
     // FAQs: built from real data, plain answers
     $faqs = [];
-    $faqs[] = ['question' => 'How much are ' . $kw . '?', 'answer' => ($price !== '' ? 'As of today, ' . $kw . ' on Seat Outlet start from ' . $price . ' for the lowest-priced listing across the events we checked. ' : '') . 'Prices are set by sellers and vary by ' . ($kind === 'sports' ? 'team, opponent' : 'artist') . ', venue, seat location and date, and they can be above or below face value. Compare sections on the seat map to find the price that fits.'];
+    $faqs[] = ['question' => 'How much are ' . $kw . '?', 'answer' => ($price !== '' ? 'As of today, ' . $kw . ' on Seat Outlet start from ' . $price . ' for the lowest-priced listing across all ' . ($total > 0 ? number_format($total) . ' ' : '') . 'events on sale. ' : '') . 'Prices are set by sellers and vary by ' . ($kind === 'sports' ? 'team, opponent' : 'artist') . ', venue, seat location and date, and they can be above or below face value. Compare sections on the seat map to find the price that fits.'];
     if ($d['next']) {
         $n = $d['next'];
-        $faqs[] = ['question' => 'When is the next ' . strtolower($label) . ' ' . rtrim($unit, 's') . '?', 'answer' => 'The soonest ' . $long . ' event listed right now is ' . $n['name'] . ' on ' . date('l, F j, Y', $n['ts']) . ($n['venue'] !== '' ? ' at ' . $n['venue'] : '') . ($n['city'] !== '' ? ' in ' . $n['city'] : '') . '. Dates and inventory change often, so check the event page for the latest.'];
+        $faqs[] = ['question' => 'When is the next ' . $lbl . ' ' . rtrim($unit, 's') . '?', 'answer' => 'The soonest ' . $long . ' event listed right now is ' . $n['name'] . ' on ' . date('l, F j, Y', $n['ts']) . ($n['venue'] !== '' ? ' at ' . $n['venue'] : '') . ($n['city'] !== '' ? ' in ' . $n['city'] : '') . '. Dates and inventory change often, so check the event page for the latest.'];
     }
     if ($artistNames) {
         $faqs[] = ['question' => 'Which ' . ($kind === 'sports' ? 'teams' : 'artists') . ' have ' . $kw . ' available?', 'answer' => 'Popular ' . $long . ' listings right now include ' . soCatList($artistNames, 6) . '. Open any name above to see every date and the seats on sale.'];
     }
     if ($venueNames) {
-        $faqs[] = ['question' => 'Where are the best places to see ' . $long . ' live?', 'answer' => 'The venues with the most ' . $long . ' events on sale right now are ' . soCatList($venueNames, 4) . '. Each venue page lists its upcoming dates.'];
+        $faqs[] = ['question' => 'Where are the best places to see ' . $long . ' live?', 'answer' => 'Venues hosting popular ' . $long . ' events right now include ' . soCatList($venueNames, 4) . '. Each venue page lists its upcoming dates.'];
     }
     if ($topCities !== '') {
-        $faqs[] = ['question' => 'How do I find ' . $long . ' ' . $unit . ' near me?', 'answer' => 'Set your location at the top of the listing to see the closest events first, nearest to farthest. Right now ' . $kw . ' are most available in ' . soCatList($cityNames, 5) . '.'];
+        $faqs[] = ['question' => 'How do I find ' . $long . ' ' . $unit . ' near me?', 'answer' => 'Set your location at the top of the listing to see the closest events first, nearest to farthest. Popular right now in ' . soCatList($cityNames, 5) . '.'];
     }
     $faqs[] = ['question' => 'Are ' . $kw . ' on Seat Outlet legit?', 'answer' => 'Yes. Every order is covered by our 100% guarantee: valid tickets, delivery before the event, and a refund if the event is canceled and not rescheduled. Seat Outlet is a resale marketplace, not the venue box office, so prices can be above or below face value.'];
     $faqs[] = ['question' => 'Can I buy ' . $kw . ' at the last minute?', 'answer' => 'Yes, as long as tickets are still listed. Listings change daily, and some events have tickets available right up to the start. Use the date filter to see events happening this week.'];
@@ -220,7 +229,7 @@ function soCategorySeo(array $cfg, array $d) {
     $o .= '</div></div></section>';
 
     $two = soCatList($cityNames, 2);
-    $desc = 'Compare ' . $kw . ($total > 0 ? ' for ' . number_format($total) . ' upcoming events' : '') . ($two !== '' ? ' in ' . $two . ' and more' : '') . '. See dates, venues and prices, backed by our 100% guarantee.';
-    if (strlen($desc) > 158) $desc = 'Compare ' . $kw . ($total > 0 ? ' for ' . number_format($total) . ' upcoming events' : '') . '. See dates, venues and prices, backed by our 100% guarantee.';
+    $desc = 'Compare ' . $kw . ($total > 0 ? ' for ' . number_format($total) . ($total === 1 ? ' upcoming event' : ' upcoming events') : '') . ($two !== '' ? ' in ' . $two . ' and more' : '') . '. See dates, venues and prices, backed by our 100% guarantee.';
+    if (strlen($desc) > 158) $desc = 'Compare ' . $kw . ($total > 0 ? ' for ' . number_format($total) . ($total === 1 ? ' upcoming event' : ' upcoming events') : '') . '. See dates, venues and prices, backed by our 100% guarantee.';
     return ['html' => $o, 'faqs' => $faqs, 'description' => $desc];
 }

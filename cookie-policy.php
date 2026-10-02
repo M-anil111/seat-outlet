@@ -129,8 +129,10 @@
 
                 <div class="policy-section">
                     <div class="policy-body">
-                        <p><strong>Overview:</strong> this is the Seat Outlet cookie policy, published under the title Cookies Policy. It explains the cookies and similar technologies we use on our websites and apps, why we use them, and how you can manage them. The full text below is the version that applies; the summary at the bottom of the page is only a plain-English guide.</p>
-                        <p>This Cookies Policy explains how Seat Outlet ("Seat Outlet", "we", "us", or "our") uses cookies and similar technologies when you access or use our websites, mobile applications, and related services (collectively, the "Platform"). It should be read together with our <a href="/privacy-policy.php" title="Privacy Policy" target="_blank">Privacy Policy</a> and our <a href="/terms-of-use.php" title="Terms of Use" target="_blank">Terms of Use</a>.</p>
+                        <p><strong>Last updated: October 2, 2026</strong></p>
+                        <p>Seat Outlet is an independent resale marketplace and is not affiliated with any venue, team or artist.</p>
+                        <p><strong>Overview:</strong> this is the Seat Outlet cookie policy, published under the title Cookies Policy. It explains the cookies and similar technologies we use on our website, why we use them, and how you can manage them. The full text below is the version that applies; the summary at the bottom of the page is only a plain-English guide.</p>
+                        <p>This Cookies Policy explains how Seat Outlet ("Seat Outlet", "we", "us", or "our") uses cookies and similar technologies when you access or use our website and related services (collectively, the "Platform"). It should be read together with our <a href="/privacy-policy.php" title="Privacy Policy" target="_blank">Privacy Policy</a> and our <a href="/terms-of-use.php" title="Terms of Use" target="_blank">Terms of Use</a>.</p>
                         <p>By using the Platform, you agree that we can use cookies and similar technologies as described in this Cookies Policy, subject to your choices and applicable law.</p>
                     </div>
                 </div>
@@ -139,11 +141,10 @@
                     
                     <h2 class="policy-heading"><span class="policy-num">1.</span> What are cookies and similar technologies?</h2>
                     <div class="policy-body">
-                        <p>Cookies are small text files that are downloaded to your browser or device when you visit a website or use an app. They are widely used to make websites work or work more efficiently, as well as to provide information to the owners of the site.</p>
+                        <p>Cookies are small text files that are downloaded to your browser or device when you visit a website. They are widely used to make websites work or work more efficiently, as well as to provide information to the owners of the site.</p>
                         <p>In addition to cookies, we may use other technologies, including:</p>
                         <ul>
                             <li>Pixels or web beacons (tiny graphics that track actions like opening emails or viewing pages)</li>
-                            <li>SDKs (software development kits) in our mobile apps</li>
                             <li>Local storage and similar technologies in your browser or device</li>
                         </ul>
                         <p>In this Cookies Policy, we refer to all of these technologies collectively as "cookies" unless we need to distinguish them.</p>
@@ -195,7 +196,7 @@
                         </ul>
                         <p>We use this data in aggregated or pseudonymized form to analyze trends, usage, and the effectiveness of features and campaigns.</p>
                         <p class="sub-heading">3.4 Advertising and targeting cookies</p>
-                        <p>Advertising cookies are used to deliver advertisements that are more relevant to you and your interests, both on the Platform and on third‑party websites and apps. They may:</p>
+                        <p>Advertising cookies are used to deliver advertisements that are more relevant to you and your interests, both on the Platform and on third‑party websites. They may:</p>
                         <ul>
                             <li>Record your visit to our Platform and your interactions with content</li>
                             <li>Limit how often you see a particular ad</li>
@@ -208,15 +209,9 @@
 
                 <div class="policy-section">
                     
-                    <h2 class="policy-heading"><span class="policy-num">4.</span> Cookies used in our mobile applications</h2>
+                    <h2 class="policy-heading"><span class="policy-num">4.</span> Mobile applications</h2>
                     <div class="policy-body">
-                        <p>When you use Seat Outlet mobile apps, we may use SDKs and similar technologies that perform functions comparable to cookies on websites, such as:</p>
-                        <ul>
-                            <li>Enabling core app functionality and login</li>
-                            <li>Measuring app performance and crashes</li>
-                            <li>Providing personalized content and marketing</li>
-                        </ul>
-                        <p>You can adjust certain tracking permissions for mobile apps via your device operating system settings (for example, "Allow apps to track" or advertising ID settings), in addition to any in‑app controls we provide.</p>
+                        <p>Seat Outlet does not currently offer a mobile app, so no app-based technologies are used.</p>
                     </div>
                 </div>
 
@@ -226,9 +221,9 @@
                     <div class="policy-body">
                         <p>We work with third‑party providers who may place cookies or similar technologies on your device when you visit the Platform. These third parties may include:</p>
                         <ul>
-                            <li>Analytics providers (for example, web and app analytics tools)</li>
+                            <li>Analytics providers (for example, web analytics tools)</li>
                             <li>Advertising networks and partners</li>
-                            <li>Social media platforms and social login providers</li>
+                            <li>Social media platforms</li>
                             <li>Payment processors and security/fraud prevention providers</li>
                         </ul>
                         <p>These third parties may use the information collected via their cookies for their own purposes, in accordance with their own privacy and cookie policies. We encourage you to review those policies for more details about their practices and how to opt out where available.</p>
@@ -241,7 +236,7 @@
                     <div class="policy-body">
                         <p>Where required by applicable law (for example, in the EU/EEA, UK, and certain other jurisdictions), we obtain your consent before setting non‑essential cookies (such as analytics, functional, and advertising cookies).</p>
                         <p>Strictly necessary cookies may be used without your consent because they are needed to provide the Platform and services you have requested.</p>
-                        <p>For other categories of cookies, you may be asked to provide consent via a cookie banner, pop‑up, or preferences center when you first visit the Platform.</p>
+                        <p>Seat Outlet does not currently show a cookie banner or preferences center. Until one is added, you can control cookies through your browser settings (Section 7).</p>
                         <p>You can change or withdraw your consent at any time as described in Section 7.</p>
                         <p>In some regions (such as certain U.S. states), we may rely on legitimate interests or other legal bases for certain cookies, while still honoring opt‑out and preference choices where required.</p>
                     </div>
@@ -253,13 +248,7 @@
                     <div class="policy-body">
                         <p>You have several options for managing cookies and similar technologies used on the Platform.</p>
                         <p class="sub-heading">7.1 Cookie banner and preferences tools</p>
-                        <p>Where available, you can manage your cookie preferences via the cookie banner or settings dialog that appears when you first visit the Platform, or via a permanent link (for example, "Cookie Settings" or similar) in the footer area of the Platform.</p>
-                        <p>Through this tool, you can:</p>
-                        <ul>
-                            <li>Accept or reject non‑essential cookies by category (for example, functional, analytics, advertising)</li>
-                            <li>Update your choices at any time</li>
-                        </ul>
-                        <p>Please note that your preferences are stored at the browser/device level and may need to be reset if you clear cookies or use a different browser or device.</p>
+                        <p>Seat Outlet does not currently have a cookie banner or settings dialog. Use the browser controls described below to accept, block or delete cookies.</p>
                         <p class="sub-heading">7.2 Browser settings</p>
                         <p>Most web browsers allow you to manage cookies through their settings, which may enable you to:</p>
                         <ul>
@@ -318,8 +307,7 @@
                         <ul>
                             <li>Updating the "Last updated" date at the top of this page</li>
                             <li>Displaying a prominent notice on the Platform</li>
-                            <li>Presenting an updated cookie banner or preferences tool</li>
-                        </ul>
+                                                    </ul>
                         <p>Where required by law, we will seek your consent to material changes that relate to non‑essential cookies.</p>
                     </div>
                 </div>

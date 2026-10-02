@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Grab Tickets Now: What to Know Before You Check Out</h2>
 <p>Grab Tickets Now is a partner platform in the Seat Outlet network, described as an online ticket marketplace for live events. This guide covers how to approach a purchase calmly, even when a show is about to sell out, and how to use Seat Outlet to follow through.</p>
 

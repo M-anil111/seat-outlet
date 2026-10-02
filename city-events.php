@@ -8,13 +8,18 @@ require_once 'functions.php';
 // in functions.php.
 $topCities = getTopCities(60);
 
-$citySections = [
-    'Events'    => 'event-city',
-    'Concerts'  => 'concerts-city',
-    'Theater'   => 'theater-city',
-    'Sports'    => 'sports-city',
-    'Festival'  => 'festivals-city',
-];
+// Cities grouped by state, biggest states (most events on sale) first, with the event counts the API reports.
+$soStates = ['AL'=>'Alabama','AK'=>'Alaska','AZ'=>'Arizona','AR'=>'Arkansas','CA'=>'California','CO'=>'Colorado','CT'=>'Connecticut','DE'=>'Delaware','DC'=>'District of Columbia','FL'=>'Florida','GA'=>'Georgia','HI'=>'Hawaii','ID'=>'Idaho','IL'=>'Illinois','IN'=>'Indiana','IA'=>'Iowa','KS'=>'Kansas','KY'=>'Kentucky','LA'=>'Louisiana','ME'=>'Maine','MD'=>'Maryland','MA'=>'Massachusetts','MI'=>'Michigan','MN'=>'Minnesota','MS'=>'Mississippi','MO'=>'Missouri','MT'=>'Montana','NE'=>'Nebraska','NV'=>'Nevada','NH'=>'New Hampshire','NJ'=>'New Jersey','NM'=>'New Mexico','NY'=>'New York','NC'=>'North Carolina','ND'=>'North Dakota','OH'=>'Ohio','OK'=>'Oklahoma','OR'=>'Oregon','PA'=>'Pennsylvania','RI'=>'Rhode Island','SC'=>'South Carolina','SD'=>'South Dakota','TN'=>'Tennessee','TX'=>'Texas','UT'=>'Utah','VT'=>'Vermont','VA'=>'Virginia','WA'=>'Washington','WV'=>'West Virginia','WI'=>'Wisconsin','WY'=>'Wyoming'];
+$byState = [];
+foreach ($topCities as $c) {
+    $st = (string) ($c['state'] ?? '');
+    $byState[$st]['cities'][] = $c;
+    $byState[$st]['events'] = ($byState[$st]['events'] ?? 0) + (int) ($c['eventCount'] ?? 0);
+}
+uasort($byState, function ($a, $b) { return $b['events'] <=> $a['events']; });
+
+$cityLinks = ['Concerts' => 'concerts-city', 'Sports' => 'sports-city', 'Theater' => 'theater-city', 'Festivals' => 'festivals-city'];
+$h = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); };
 
 include 'header.php';
 ?>
@@ -31,28 +36,61 @@ include 'header.php';
         </div>
     </section>
 
-    <?php foreach ($citySections as $sectionLabel => $urlPrefix) { ?>
-        <section class="events-section pt-5">
-            <div class="container">
-                <h2 class="section-heading"><?php echo htmlspecialchars($sectionLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
-
-                <div class="events-grid">
-                    <?php if (!empty($topCities)) { ?>
-                        <?php foreach ($topCities as $city) {
-                            $citySlug = createSlug($city['label'], $city['id']);
-                        ?>
-                            <a href="/<?php echo htmlspecialchars($urlPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars($citySlug, ENT_QUOTES, 'UTF-8'); ?>">
-                                <?php echo htmlspecialchars($sectionLabel, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
-                            </a>
-                        <?php } ?>
-                    <?php } else { ?>
-                        <p>No cities available right now.</p>
-                    <?php } ?>
+    <section class="events-section pt-4">
+        <div class="container">
+            <?php if (empty($byState)) { ?>
+                <p>No cities available right now.</p>
+            <?php } else { ?>
+                <div class="so-cities__near" id="soCitiesNear" hidden>
+                    <h2 class="section-heading">Near you: <span data-so-near-state></span></h2>
+                    <div class="so-cities__grid" data-so-near-grid></div>
                 </div>
-            </div>
-        </section>
-    <?php } ?>
+                <nav class="so-cities__jump" aria-label="Jump to a state">
+                    <?php foreach ($byState as $abbr => $info) { ?>
+                        <a href="#state-<?php echo $h(strtolower($abbr)); ?>"><?php echo $h($soStates[$abbr] ?? $abbr); ?></a>
+                    <?php } ?>
+                </nav>
+                <?php foreach ($byState as $abbr => $info) { ?>
+                    <div class="so-cities__state" id="state-<?php echo $h(strtolower($abbr)); ?>" data-state="<?php echo $h($abbr); ?>" data-state-name="<?php echo $h($soStates[$abbr] ?? $abbr); ?>">
+                        <h2 class="section-heading"><?php echo $h($soStates[$abbr] ?? $abbr); ?> <small><?php echo number_format($info['events']); ?> events in top cities</small></h2>
+                        <div class="so-cities__grid">
+                            <?php foreach ($info['cities'] as $city) {
+                                $citySlug = createSlug($city['label'], $city['id']); ?>
+                                <div class="so-citycard">
+                                    <a class="so-citycard__main" href="/event-city/<?php echo $h($citySlug); ?>">
+                                        <strong><?php echo $h($city['label']); ?></strong>
+                                        <span><?php echo number_format((int) $city['eventCount']); ?> events</span>
+                                    </a>
+                                    <div class="so-citycard__more">
+                                        <?php foreach ($cityLinks as $label => $prefix) { ?>
+                                            <a href="/<?php echo $h($prefix); ?>/<?php echo $h($citySlug); ?>"><?php echo $h($label); ?></a>
+                                        <?php } ?>
+                                    </div>
+                                </div>
+                            <?php } ?>
+                        </div>
+                    </div>
+                <?php } ?>
+            <?php } ?>
+        </div>
+    </section>
 </main>
+<script>
+// "Near you": the visitor's saved place (cookie so_label, for example "Bee Cave, TX") picks the state to show first.
+(function () {
+    var m = /(?:^|; )so_label=([^;]*)/.exec(document.cookie);
+    if (!m) return;
+    var label = ''; try { label = decodeURIComponent(m[1]); } catch (e) { return; }
+    var st = /,\s*([A-Z]{2})\s*$/.exec(label);
+    if (!st) return;
+    var src = document.querySelector('.so-cities__state[data-state="' + st[1] + '"]');
+    var box = document.getElementById('soCitiesNear');
+    if (!src || !box) return;
+    box.querySelector('[data-so-near-state]').textContent = src.getAttribute('data-state-name');
+    box.querySelector('[data-so-near-grid]').innerHTML = src.querySelector('.so-cities__grid').innerHTML;
+    box.hidden = false;
+})();
+</script>
 
 <?php soSeoCopy('city-events'); ?>
 <?php include 'footer.php'; ?>

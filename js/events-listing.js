@@ -33,8 +33,11 @@ const lngEvent = document.getElementById('lngEvent');
 const sdateEvent = document.getElementById('sdateEvent');
 const edateEvent = document.getElementById('edateEvent');
 const pidEvent = document.getElementById('pidEvent');
-const loadMoreBtn = document.getElementById('loadMoreBtn');
-const spinner = loadMoreBtn?.querySelector('.btnSpinner');
+// The list, its footer and its buttons can be replaced when a filter chip refreshes the page body, so they are looked up on use.
+const soById = (id) => document.getElementById(id);
+const soSpinner = () => soById('btnSpinner') || soById('loadMoreBtn')?.querySelector('.btnSpinner');
+// Today as the visitor's own calendar date (toISOString() is UTC and rolls over in the afternoon in the US).
+const soTodayIso = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 
 function getActiveLocation() {
     const lat = latEvent.value || getCookie('so_lat');
@@ -129,21 +132,23 @@ function updateEventsSection(location) {
     if (location.endDate)   params.append('endDate', location.endDate);
     if (location.pid)   params.append('pid', location.pid);
 
+    const noResults = soById('location-no-results');
     fetch(`/ajax/load-events.php?${params}`)
-    .then(res => res.json())
+    .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
     .then(data => {
-        
+        const spinner = soSpinner();
         if (spinner) {
             spinner.classList.add('d-none');
         }
 
-        if (input && input.value !== '') {
+        if (input && input.value !== '' && resetBtn) {
             resetBtn.classList.remove('d-none');
-            resetBtn.addEventListener('click', function () {
+            resetBtn.onclick = function () {
                 input.value = '';
-                this.classList.add('d-none');       
-                document.getElementById('location-no-results').innerHTML = '';
-                document.getElementById('locationHeading').innerHTML = '';
+                this.classList.add('d-none');
+                if (noResults) noResults.innerHTML = '';
+                const heading = soById('locationHeading');
+                if (heading) heading.innerHTML = '';
                 latEvent.value = '';
                 lngEvent.value = '';
                 updateEventsSection({
@@ -151,37 +156,43 @@ function updateEventsSection(location) {
                     endDate: edateEvent.value,
                     pid: pidEvent ? pidEvent.value : ''
                 });
-            }); 
-        }  
+            };
+        }
 
         if (!data.events || data.events.length === 0) {
-            document.getElementById('location-no-results').innerHTML = '<strong>No events available in your selected area</strong><p>Try changing locations or browse through the available events below</p>';
+            var nrLabel = (input && input.value) ? input.value : 'that location';
+            if (noResults) {
+                noResults.textContent = '';
+                var nrStrong = document.createElement('strong'); nrStrong.textContent = 'No dates near ' + nrLabel;
+                var nrP = document.createElement('p'); nrP.textContent = 'Nearest dates are shown below instead.';
+                noResults.appendChild(nrStrong); noResults.appendChild(nrP);
+            }
             return;
         }
-        
-        document.getElementById('location-no-results').innerHTML = '';
-        eventsSection.innerHTML = '';
+
+        if (noResults) noResults.innerHTML = '';
+        const list = soById('eventsSection');
+        if (!list) return;
+        list.innerHTML = '';
         // Filtered results are a different set of rows: the weekend chips no longer apply.
         document.querySelectorAll('[data-so-weekends]').forEach(function (b) { b.hidden = true; });
-        
-        data.events.forEach(event => {
-            eventsSection.insertAdjacentHTML(
-                'beforeend',
-                renderEvent(event)
-            );
-        });
-        
+
+        soAppendRows(list, data);
+
         const loaded = data.totalCount;
-        const countmsg = loaded > 1 ? ' RESULTS' : ' RESULT';
-        document.getElementById('results_count').innerHTML = loaded + countmsg;
-        document.getElementById('totalCount').textContent = loaded;
+        const countmsg = loaded === 1 ? ' RESULT' : ' RESULTS';
+        const rc = soById('results_count');
+        if (rc) rc.textContent = loaded + countmsg;
+        const tc = soById('totalCount');
+        if (tc) tc.textContent = loaded;
 
         // =========================
         // LOAD MORE BUTTON UPDATE
         // =========================
-        
+        const loadMoreBtn = soById('loadMoreBtn');
+        const backToTopBtn = soById('backToTopJs');
+        if (!loadMoreBtn) return;
         loadMoreBtn.dataset.page = 2;
-
         loadMoreBtn.dataset.total = data.totalCount;
 
         const savedParams = {};
@@ -193,40 +204,34 @@ function updateEventsSection(location) {
                 `date/date ge ${location.startDate} and date/date le ${location.endDate}`;
         } else {
             savedParams.filter =
-                `country/alphaCode eq 'US' and date/date ge ${new Date().toISOString().split('T')[0]}`;
+                `country/alphaCode eq 'US' and date/date ge ${soTodayIso()}`;
         }
         if(location.pid) {
             savedParams.performerFilter = `id eq ${location.pid}`;
         }
         loadMoreBtn.dataset.params = JSON.stringify(savedParams);
-        
+
         // show/hide load more
         if (data.hasMore) {
             loadMoreBtn.classList.remove('d-none');
-            backToTopBtn.classList.add('d-none');
+            loadMoreBtn.disabled = false;
+            if (backToTopBtn) backToTopBtn.classList.add('d-none');
         } else {
             loadMoreBtn.classList.add('d-none');
-            backToTopBtn.classList.remove('d-none');
+            if (backToTopBtn) backToTopBtn.classList.remove('d-none');
         }
-        
-        // progress
-        loadedCount.textContent = data.events.length;
-
-        const percent = data.totalCount > 0
-            ? ((data.events.length / data.totalCount) * 100)
-            : 0;
-
-        progressBar.style.width = percent + '%';
-   
+        soSetProgress(list, data.totalCount);
     })
     .catch(err => {
+        const spinner = soSpinner();
         if (spinner) {
             spinner.classList.add('d-none');
         }
+        if (noResults) noResults.innerHTML = '<strong>Could not load events right now</strong><p>Please check your connection and try again.</p>';
         console.error('Failed to load events', err);
-    }); 
+    });
 }
-    
+
 document.addEventListener('DOMContentLoaded', () => {
     updateHeading();
 });
@@ -358,60 +363,95 @@ window.addEventListener("resize", function () {
     ARTIST EVENTS LOADMORE
 ===================================================== */
   
-const backToTopBtn = document.getElementById('backToTopJs');
-if (backToTopBtn) { 
-    backToTopBtn.addEventListener('click', () => {
+// Number of events the rows in a list stand for (a festival card with three days counts three).
+function soLoadedEvents(list) {
+    let n = 0;
+    list.querySelectorAll('.performer-event-item').forEach((row) => { n += parseInt(row.getAttribute('data-so-count') || '1', 10) || 1; });
+    return n;
+}
+
+function soSetProgress(list, total) {
+    const loaded = Math.min(soLoadedEvents(list), total || soLoadedEvents(list));
+    const bar = soById('progressBar'), lc = soById('loadedCount'), tc = soById('totalCount');
+    if (bar) bar.style.width = (total > 0 ? Math.min(100, (loaded / total) * 100) : 0) + '%';
+    if (lc) lc.textContent = loaded;
+    if (tc) tc.textContent = total;
+}
+
+// Rows come back as ready-made HTML from the server (the same markup as the first page: grouping, escaping, data attributes);
+// the browser-side renderEvent() below is only the fallback when a response has no html.
+function soAppendRows(list, data) {
+    if (data && typeof data.html === 'string' && data.html.trim() !== '') {
+        list.insertAdjacentHTML('beforeend', data.html);
+    } else {
+        (data.events || []).forEach(event => list.insertAdjacentHTML('beforeend', renderEvent(event)));
+    }
+}
+
+function soLoadMoreError(show) {
+    const err = soById('loadMoreError');
+    if (err) err.hidden = !show;
+}
+
+function soLoadMore(btn) {
+    if (btn.disabled) return;
+    const list = soById('eventsSection');
+    if (!list) return;
+    const page = parseInt(btn.dataset.page, 10) || 1;
+    const perPage = btn.dataset.perpage;
+    const total = parseInt(btn.dataset.total, 10) || 0;
+    const type = btn.dataset.type;
+    let params = {};
+    try {
+        params = JSON.parse(btn.dataset.params || '{}');
+    } catch (e) {
+        params = {};
+    }
+
+    btn.disabled = true;
+    soLoadMoreError(false);
+    const spinner = soSpinner();
+    if (spinner) spinner.classList.remove('d-none');
+    const fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&params=${encodeURIComponent(JSON.stringify(params))}&type=${type || 'all'}`;
+    fetch(fetchUrl)
+    .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+    .then(data => {
+        if (spinner) spinner.classList.add('d-none');
+        const got = (data.events || []).length;
+        // An empty page while more events are still promised is a failed load (throttled or degraded API), not the end of the list.
+        if (got === 0 && soLoadedEvents(list) < total) throw new Error('empty page');
+        soAppendRows(list, data);
+        const back = soById('backToTopJs');
+        if (data.hasMore) {
+            btn.dataset.page = data.nextPage;
+            btn.disabled = false;
+        } else {
+            btn.classList.add('d-none');
+            if (back) back.classList.remove('d-none');
+        }
+        soSetProgress(list, total);
+    })
+    .catch(err => {
+        if (spinner) spinner.classList.add('d-none');
+        btn.disabled = false;
+        soLoadMoreError(true);
+        console.warn('More events failed', err);
+    });
+}
+
+document.addEventListener('click', function (e) {
+    if (e.target.closest('#backToTopJs')) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-}
+        return;
+    }
+    const more = e.target.closest('#loadMoreBtn');
+    if (more) { soLoadMore(more); return; }
+    if (e.target.closest('#loadMoreRetry')) {
+        const b = soById('loadMoreBtn');
+        if (b) soLoadMore(b);
+    }
+});
 
-const eventsSection = document.getElementById('eventsSection');
-const progressBar = document.getElementById('progressBar');
-const loadedCount = document.getElementById('loadedCount');
-if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', function () {
-        const page = parseInt(this.dataset.page, 10) || 1;
-        const perPage     = this.dataset.perpage;
-        const total     = this.dataset.total;
-        const type     = this.dataset.type;
-        let params = {};
-        try {
-            params = JSON.parse(this.dataset.params || '{}');
-        } catch (e) {
-            params = {};
-        }
-          
-        this.disabled = true;
-        if (spinner) {
-            spinner.classList.remove('d-none');
-        }
-        fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&params=${encodeURIComponent(JSON.stringify(params))}&type=${type || 'all'}`;
-        fetch(fetchUrl)
-        .then(res => res.json())
-        .then(data => {   
-            data.events.forEach(event => {
-                eventsSection.insertAdjacentHTML('beforeend', renderEvent(event));
-            });
-
-            let loaded = eventsSection.querySelectorAll('.performer-event-item').length;
-     
-            if (data.hasMore) { 
-                loadMoreBtn.dataset.page = data.nextPage;   
-                loadMoreBtn.disabled = false;                 
-                loadMoreBtn.classList.add('d-none');
-            } else {
-                loadMoreBtn.classList.add('d-none');
-                backToTopBtn.classList.remove('d-none');
-            }
-            loaded = Math.min(loaded, total);
-            const percent = (loaded / total) * 100;
-            progressBar.style.width = percent + '%';
-            loadedCount.textContent = loaded;
-            document.getElementById('totalCount').textContent = loadMoreBtn.dataset.total;
-        });
-    });
-}
-  
 // Mirrors renderEventPriceTag()/eventDealInfo() in functions.php so rows
 // appended by "More Events" look identical to the server-rendered ones.
 function buildPriceTag(event) {
@@ -429,8 +469,11 @@ function buildPriceTag(event) {
     return '<div class="event-price-tag">' + (isDeal ? '<span class="event-deal-badge">Deal</span> ' : '') + 'From <strong>' + safe + '</strong>' + inv + '</div>';
 }
 
+// Browser-side fallback for a row (the server normally sends the finished HTML, see soAppendRows). Same markup and data
+// attributes as inc/listing.php; every API string goes through escHtml.
 function renderEvent(event) {
-    const evtdate = new Date(event.date.date);
+    const escHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const evtdate = new Date(String(event.date.date).slice(0, 10) + 'T12:00:00');
     const emonth = evtdate.toLocaleString('en-US', { month: 'short' });
     const d = evtdate.getDate();
     const edate = d < 10 ? '0' + d : d;
@@ -445,19 +488,15 @@ function renderEvent(event) {
         month: 'short',
         day: '2-digit'
     });
-    const eperformers = event.performers;
-    let dataPerformers = [];
-    if(eperformers) {
-        let names = eperformers.map(performer => performer.name ?? null).filter(Boolean);
-        dataPerformers = names.join('|');
-    }
+    const performers = (event.performers || []).filter(p => p && p.name);
+    const dataPerformers = performers.map(p => p.name).join('|');
+    const dataPerformerSlugs = performers.map(p => p.id ? normalizeKey(p.name) + '-' + p.id : '').join('|');
     const eSlug = normalizeKey(event.text.name) + '-' + event.id;
     const cityName = event.city.text.name + ', ' + event.stateProvince.text.abbr;
     const citySlug = normalizeKey(cityName) + '-' + event.city.id;
     const venueSlug = normalizeKey(event.venue.text.name) + '-' + event.venue.id;
     const priceTag = buildPriceTag(event);
-    // Everything from the API goes through escHtml before it is put into markup.
-    const escHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const inStock = priceTag.indexOf('event-price-tag--none') === -1;
     const evName = escHtml(event.text.name), evVenue = escHtml(event.venue.text.name), evCityName = escHtml(cityName);
     return `
     <div class="d-flex align-items-center justify-content-between performer-event-item">
@@ -469,20 +508,20 @@ function renderEvent(event) {
         <div class="flex-grow-1 w-50">
             <div class="d-flex align-items-center gap-2">
                 <span class="fw-semibold day-weeks">${eday}</span>
-                <span class="dot">·</span>
+                <span class="dot">&middot;</span>
                 <span class="time-clock">${escHtml(event.date.text.time)}</span>
-                <i class="bi bi-info-circle text-muted icon-i" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight" 
-                    data-id="${event.id}" data-date="${formattedDate}" data-venue="${evVenue}" 
-                    data-location="${evCityName}" data-title="${evName}" data-performers="${escHtml(dataPerformers)}"></i>
+                <button type="button" class="bi bi-info-circle text-muted icon-i" aria-label="Details for ${evName}" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"
+                    data-id="${escHtml(event.id)}" data-date="${escHtml(formattedDate)}" data-venue="${evVenue}" data-venue-slug="${escHtml(venueSlug)}"
+                    data-location="${evCityName}" data-title="${evName}" data-performers="${escHtml(dataPerformers)}" data-performer-slugs="${escHtml(dataPerformerSlugs)}"></button>
             </div>
-            <div class="ev-venue"><a href="/venue/${venueSlug}">${evVenue}</a></div>
-            <div class="ev-place"><a href="/city/${citySlug}">${evCityName}</a></div>
-            <div class="ev-name"><a href="/event/${eSlug}">${evName}<span class="visually-hidden"> tickets, ${escHtml(emonth)} ${d} at ${evVenue}, ${evCityName}</span></a></div>
+            <div class="ev-venue"><a href="/venue/${escHtml(venueSlug)}">${evVenue}</a></div>
+            <div class="ev-place"><a href="/city/${escHtml(citySlug)}">${evCityName}</a></div>
+            <div class="ev-name"><a href="/event/${escHtml(eSlug)}">${evName}<span class="visually-hidden"> tickets, ${escHtml(emonth)} ${d} at ${evVenue}, ${evCityName}</span></a></div>
         </div>
         <div class="ms-3">
             ${priceTag}
-            <a href="/event/${eSlug}" class="btn ${priceTag.indexOf('event-price-tag--none') === -1 ? 'btn-primary' : 'btn-outline-primary'} d-flex align-items-center gap-2" aria-label="${priceTag.indexOf('event-price-tag--none') === -1 ? 'Buy tickets for' : 'View'} ${evName}">
-                <span>${priceTag.indexOf('event-price-tag--none') === -1 ? 'Buy Tickets' : 'View Event'}</span>
+            <a href="/event/${escHtml(eSlug)}" class="btn ${inStock ? 'btn-primary' : 'btn-outline-primary'} d-flex align-items-center gap-2" aria-label="${inStock ? 'Buy tickets for' : 'View'} ${evName}">
+                <span>${inStock ? 'Buy Tickets' : 'View Event'}</span>
                 <i class="bi bi-chevron-right"></i>
             </a>
         </div>
@@ -503,37 +542,47 @@ document.addEventListener('click', function (e) {
   
     const eid = icon.getAttribute('data-id');
     const edate = icon.getAttribute('data-date');
-    const evenue = icon.getAttribute('data-venue');
-    const elocation = icon.getAttribute('data-location');
-    const etitle = icon.getAttribute('data-title');
+    const evenue = icon.getAttribute('data-venue') || '';
+    const elocation = icon.getAttribute('data-location') || '';
+    const etitle = icon.getAttribute('data-title') || '';
     const eperformers = icon.getAttribute('data-performers');
     const performerSlugs = icon.getAttribute('data-performer-slugs');
     const names = eperformers ? eperformers.split('|') : [];
     const slugs = performerSlugs ? performerSlugs.split('|') : [];
-    const venueSlug = icon.getAttribute('data-venueSlug');
+    // Older rows spell the attribute data-venueSlug (HTML lower-cases it); the shared renderer uses data-venue-slug.
+    const venueSlug = icon.getAttribute('data-venue-slug') || icon.getAttribute('data-venueslug') || '';
     
-    document.getElementById('offcanvasDate').textContent = edate;
-    document.getElementById('offcanvasVenue').innerHTML = evenue;
-    document.getElementById('offcanvasLocation').innerHTML = elocation;
-    document.getElementById('offcanvasTitle').innerHTML = etitle;
+    // Everything from the catalog is placed with textContent, never as markup.
+    document.getElementById('offcanvasDate').textContent = edate || '';
+    document.getElementById('offcanvasVenue').textContent = evenue;
+    document.getElementById('offcanvasLocation').textContent = elocation;
+    document.getElementById('offcanvasTitle').textContent = etitle;
     document.getElementById('offcanvasId').href = '/event/' + normalizeKey(etitle) + '-' + eid;
     const eplist = document.getElementById('offcanvasPerformers');
-    eplist.innerHTML = '';
+    eplist.textContent = '';
     names.forEach((name, index) => {
         const slug = slugs[index] || '';
-    
+        if (!name.trim()) return;
         const li = document.createElement('li');
-    
-        li.innerHTML = `
-            <a href="/artist/${slug}">
-                ${name.trim()}
-            </a>
-        `;
-    
+        if (slug) {
+            const a = document.createElement('a');
+            a.href = '/artist/' + slug;
+            a.textContent = name.trim();
+            li.appendChild(a);
+        } else {
+            li.textContent = name.trim();
+        }
         eplist.appendChild(li);
     });
-    document.getElementById('venue-link').innerHTML = evenue;
-    document.getElementById('venue-link').href = '/venue/' + venueSlug;
+    const venueLink = document.getElementById('venue-link');
+    venueLink.textContent = evenue;
+    if (venueSlug) {
+        venueLink.href = '/venue/' + venueSlug;
+        venueLink.removeAttribute('aria-disabled');
+    } else {
+        venueLink.removeAttribute('href');
+        venueLink.setAttribute('aria-disabled', 'true');
+    }
 });
   
 /* =====================================================
@@ -574,8 +623,9 @@ document.addEventListener('click', function (e) {
 
   function enhanceAll(scope) { (scope || document).querySelectorAll('.performer-event-item').forEach(enhance); }
   enhanceAll();
-  var list = document.getElementById('eventsSection');
-  if (list && window.MutationObserver) new MutationObserver(function () { enhanceAll(list); }).observe(list, { childList: true });
+  // The list body is also swapped as a whole when a filter chip changes, so watch the container and its subtree.
+  var list = document.querySelector('.list-category-bg') || document.getElementById('eventsSection');
+  if (list && window.MutationObserver) new MutationObserver(function () { enhanceAll(list); }).observe(list, { childList: true, subtree: true });
 })();
 
 

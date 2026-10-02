@@ -7,6 +7,9 @@ name: CI
 # overlap between the two is fine; this one is the one that actually
 # blocks a PR.)
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches: [main]

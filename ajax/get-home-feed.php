@@ -18,62 +18,95 @@ header('Content-Type: application/json; charset=UTF-8');
 // "Near" means within this many miles; the nearest-first search itself reaches across the country.
 define('SO_NEAR_MILES', 50);
 define('SO_NEAR_MAX_MILES', 3000);
+// Beyond this the nearest event is not "near": the grid becomes a nationwide popular list instead.
+define('SO_NEAR_FAR_MILES', 250);
 
-$kindIn = $_GET['kind'] ?? '';
+$kindIn = soQs('kind');
 $kind = in_array($kindIn, ['lastminute', 'near'], true) ? $kindIn : 'trending';
-$lat = isset($_GET['lat']) && is_numeric($_GET['lat']) ? (float) $_GET['lat'] : null;
-$lng = isset($_GET['lng']) && is_numeric($_GET['lng']) ? (float) $_GET['lng'] : null;
-if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;
-if ($lng !== null && ($lng < -180 || $lng > 180)) $lng = null;
-$hasGeo = $lat !== null && $lng !== null;
-// Two decimals is about 0.7 miles: keeps the 50-mile radius honest while letting neighbors share one cached answer.
-if ($hasGeo) { $lat = round($lat, 2); $lng = round($lng, 2); }
+// Snapped to a 0.1 degree grid (about 7 miles) and limited to the area we sell in: every distinct coordinate used to create its own
+// cache file and its own live API call, so the key space was unbounded. A 50-mile search stays honest at this precision.
+$snap = soSnapGeo($_GET['lat'] ?? null, $_GET['lng'] ?? null);
+$lat = $snap ? $snap[0] : null;
+$lng = $snap ? $snap[1] : null;
+$hasGeo = $snap !== null;
+
+/** Live (uncached) feed builds are limited per visitor address, so one client cannot drive unlimited API calls. */
+function soHomeFeedLiveAllowed() {
+    if (soRateHit('feed-live', soIpHash(soClientIp()), 90, 600)) return true;
+    http_response_code(429);
+    header('Retry-After: 60');
+    header('Cache-Control: no-store');
+    echo json_encode(['scope' => 'none', 'events' => [], 'hasMore' => false, 'error' => 'Too many requests']);
+    exit;
+}
 
 
 /* ---- "Explore ... near you" on the listing hubs: one category, one date window, paged (See more) ---- */
 if ($kind === 'near') {
     $catMap = ['concerts' => TN_CATEGORY_PATH_CONCERTS, 'sports' => TN_CATEGORY_PATH_SPORTS, 'theatre' => TN_CATEGORY_PATH_THEATER, 'festival' => TN_CATEGORY_PATH_FESTIVAL, 'all' => ''];
-    $cat = $_GET['cat'] ?? 'all';
+    $cat = soQs('cat', 'all');
     $catPath = $catMap[$cat] ?? '';
     // A single category page (for example /category/basketball-1865) passes its own TicketNetwork category id.
-    $catId = isset($_GET['catid']) && ctype_digit((string) $_GET['catid']) ? (int) $_GET['catid'] : 0;
-    $whenIn = $_GET['when'] ?? '';
+    $catId = soQsInt('catid', 0, 0, 2147483647);
+    $whenIn = soQs('when');
     $when = isset(LISTING_WHEN[$whenIn]) ? $whenIn : '';
-    $page = max(1, min(20, (int) ($_GET['page'] ?? 1)));
-    $sortIn = $_GET['sort'] ?? 'distance';
-    $nearSort = in_array($sortIn, ['soonest', 'popular'], true) ? $sortIn : 'distance';
-    $radiusIn = (int) ($_GET['radius'] ?? 0);
+    $page = soQsInt('page', 1, 1, 20);
+    $sortIn = soQs('sort', 'distance');
+    $nearSort = in_array($sortIn, ['soonest', 'popular', 'price'], true) ? $sortIn : 'distance';
+    $radiusIn = soQsInt('radius');
     $radius = in_array($radiusIn, [25, 50, 100, 250], true) ? $radiusIn : 0;   // 0 = no limit: nearest anywhere
+    $maxIn = soQsInt('max');
+    $maxPrice = isset(LISTING_PRICE[$maxIn]) ? $maxIn : 0;                      // "under $X" on the lowest listed price
+    $nationwide = !empty($_GET['nw']);   // set by the page once page 1 said the closest event is too far to call "near"
     if (!$hasGeo) {
         echo json_encode(['scope' => 'none', 'events' => [], 'hasMore' => false]);
         exit;
     }
-    $nearKey = 'near_' . ($catId ?: $cat) . '_' . $when . '_' . $nearSort . '_' . $radius . '_' . $page . '_' . $lat . '_' . $lng;
+    $nearKey = 'near_' . ($catId ?: $cat) . '_' . $when . '_' . $nearSort . '_' . $radius . '_' . $maxPrice . '_' . ($nationwide ? 'nw' : 'geo') . '_' . $page . '_' . $lat . '_' . $lng;
     $cachedNear = cache_get('home_feed_' . $nearKey, 600);
     if ($cachedNear !== false) {
         header('Cache-Control: public, max-age=300');
         echo json_encode($cachedNear);
         exit;
     }
+    soHomeFeedLiveAllowed();
     try {
         // Always nearest first. The search is not cut off at 50 miles: when nothing is close, the closest events anywhere
         // in the country come back (San Antonio, Houston, Dallas for a Hill Country visitor) and the page says so.
-        $params = $catId > 0
-            ? locationListingParams("country/alphaCode eq 'US' and contains(defaultCategory/path, '." . $catId . ".')", 12, $page, $when, 'popular')
-            : categoryListingParams($catPath, 12, $page, $when, 'popular');
-        $params['geoFilter'] = sprintf('nearby(%F,%F,%dmi)', $lat, $lng, $radius ?: SO_NEAR_MAX_MILES);
-        if ($nearSort === 'distance') $params['sort'] = 'distance';
-        elseif ($nearSort === 'soonest') $params['sort'] = 'date/date';
-        if (strpos((string) ($params['filter'] ?? ''), 'alphaCode') === false) {
-            $params['filter'] = trim(($params['filter'] ?? '') . " and country/alphaCode eq 'US'", ' and');
-        }
-        $data = tnRequest('/catalog/v2/events/', $params);
+        $buildParams = function ($useGeo) use ($catId, $catPath, $page, $when, $maxPrice, $nearSort, $radius, $lat, $lng) {
+            $params = $catId > 0
+                ? locationListingParams("country/alphaCode eq 'US' and contains(defaultCategory/path, '." . $catId . ".')", 12, $page, $when, 'popular', $maxPrice)
+                : categoryListingParams($catPath, 12, $page, $when, 'popular', $maxPrice);
+            if ($useGeo) {
+                $params['geoFilter'] = sprintf('nearby(%F,%F,%dmi)', $lat, $lng, $radius ?: SO_NEAR_MAX_MILES);
+                if ($nearSort === 'distance') $params['sort'] = 'distance';
+            }
+            if ($nearSort === 'soonest') { $params['sort'] = 'date/date'; unset($params['salesRankOptions']); }
+            elseif ($nearSort === 'price') { $params['sort'] = 'pricingInfo/lowPrice/value'; unset($params['salesRankOptions']); }
+            elseif (!$useGeo || $nearSort === 'popular') { $params['sort'] = '-salesRank'; $params['salesRankOptions'] = '{"interval":"day","metric":"orderVolume"}'; }
+            if (strpos((string) ($params['filter'] ?? ''), 'alphaCode') === false) {
+                $params['filter'] = trim(($params['filter'] ?? '') . " and country/alphaCode eq 'US'", ' and');
+            }
+            return $params;
+        };
+        $data = tnRequest('/catalog/v2/events/', $buildParams(!$nationwide));
         $total = (int) ($data['totalCount'] ?? 0);
         $events = soHomeFeedFormat($data['results'] ?? [], 12);
         $dists = array_filter(array_column($events, 'dist'), function ($d) { return $d !== null; });
         $closest = $dists ? min($dists) : null;
+        $scope = !$events ? ($radius ? 'empty' : 'near') : ($radius === 0 && $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near');
+        // Nothing within 250 miles: "closest" would mean a 1,000 mile trip, so show what is popular across the country instead.
+        if ($page === 1 && !$nationwide && $nearSort === 'distance' && $radius === 0 && $events && $closest !== null && $closest > SO_NEAR_FAR_MILES) {
+            $nw = tnRequest('/catalog/v2/events/', $buildParams(false));
+            $nwEvents = soHomeFeedFormat($nw['results'] ?? [], 12);
+            if ($nwEvents) {
+                $events = $nwEvents; $total = (int) ($nw['totalCount'] ?? 0); $scope = 'nationwide'; $nationwide = true;
+            }
+        } elseif ($nationwide) {
+            $scope = 'nationwide';
+        }
         $out = [
-            'scope' => !$events ? ($radius ? 'empty' : 'near') : ($radius === 0 && $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near'),
+            'scope' => $scope,
             'radius' => $radius ?: SO_NEAR_MILES,
             'limited' => $radius,
             'closest' => $closest,
@@ -98,6 +131,8 @@ if ($cached !== false) {
     echo json_encode($cached);
     exit;
 }
+
+soHomeFeedLiveAllowed();
 
 function soHomeFeedFetch(string $kind, ?float $lat, ?float $lng): array {
     $today = date('Y-m-d');

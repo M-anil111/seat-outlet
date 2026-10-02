@@ -1,3 +1,5 @@
+/* Escape a value for HTML text and attributes: names come from the ticket API and are put into innerHTML templates below. */
+function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 $('.custom-slider').on('setPosition', function(){
   	equalHeightSlider('custom-slider', 'event-card');
 });
@@ -199,7 +201,7 @@ $('.venue-slider').on('setPosition', function(){
     (function init() {
       const savedLabel = getCookie('so_label');
       if (savedLabel && locationText) {
-        locationText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
+        soSetLocText(savedLabel);
         document.getElementById('cityLocationInput').value = savedLabel;
       }
 
@@ -251,7 +253,7 @@ $('.venue-slider').on('setPosition', function(){
             setCookie('so_label', so_cs);
         
             if (locationText) {
-              locationText.innerHTML = so_cs + ' <i class="bi bi-chevron-down"></i>';
+              soSetLocText(so_cs);
             }
     
             reloadActiveTab('ll', { lat, lng });
@@ -293,12 +295,11 @@ $('.venue-slider').on('setPosition', function(){
 
             setCookie('so_lat', encodeURIComponent(data.lat));
             setCookie('so_lng', encodeURIComponent(data.lng));
-            setCookie('so_label', encodeURIComponent(data.city + ', ' + data.state));
+            setCookie('so_label', data.city + ', ' + data.state);
             if (cityInput) cityInput.value = '';
             
             setTimeout(() => {
-              const locText = document.getElementById('locationSelectorText');
-              if (locText) locText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
+              soSetLocText(data.city + ', ' + data.state);
                           
               if (typeof reloadActiveTab === 'function') {
                 reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
@@ -364,6 +365,7 @@ $('.venue-slider').on('setPosition', function(){
       
       const container = document.querySelector('.venue-slider');
       if (!container) return;
+      const venueBlock = document.querySelector('.venue-section');
 
       const loadToken = ++venueLoadToken;
 
@@ -376,23 +378,31 @@ $('.venue-slider').on('setPosition', function(){
     container.innerHTML = buildVenueSkeleton(4);
     initVenueSlider('skeleton');
   
+      let scope = 'near';
       fetch(ajaxUrlVenue)
-      .then(res => res.json())
+      .then(res => { scope = res.headers.get('X-So-Venue-Scope') || 'near'; return res.json(); })
         .then(data => {
 
           if (loadToken !== venueLoadToken) return;
 
+          // Nothing to show (no venues near the visitor and no saved top-venue list): hide the whole block instead of
+          // leaving a heading over an empty box.
+          if (!data || !data.length) {
+            const $empty = $('.venue-slider');
+            if ($empty.hasClass('slick-initialized')) { $empty.slick('unslick'); }
+            container.innerHTML = '';
+            if (venueBlock) venueBlock.hidden = true;
+            return;
+          }
+          if (venueBlock) venueBlock.hidden = false;
+
+          // "Near <place>" only when these really are venues near the visitor; the fallback list is the top venues overall.
           const venueTitle = document.querySelector('.venue-section h2');  
           if (venueTitle) {
               const solabel = getCookie('so_label') || '';
-              venueTitle.textContent = solabel
+              venueTitle.textContent = (solabel && scope === 'near')
                 ? `Top Venues Near ${solabel}`
                 : 'Top Venues';
-          }
-          
-          if (!data || !data.length) {
-            container.innerHTML = '<p>No nearby venues found</p>';
-            return;
           }
 
           const $vslider = $('.venue-slider');
@@ -407,22 +417,24 @@ $('.venue-slider').on('setPosition', function(){
             const fetchPriority = index === 0 ? 'high' : 'low';
         
             html += `
-              <a href="/venue/${venue.slug}" class="team-link">
+              <a href="/venue/${encodeURI(String(venue.slug || ''))}" class="team-link">
                 <div class="card venue-card">
                   <div class="venue-img">
                     <img
-                      src="${venue.image}"
-                      alt="${venue.name}"
+                      src="${soEsc(venue.image)}"
+                      alt="${soEsc(venue.name)}"
                       class="img-fluid venue-dynamic-image blur-image"
                       data-venue="${encodeURIComponent(venue.name)}"
                       loading="${loadingType}"
                       fetchpriority="${fetchPriority}"
+                      width="278"
+                      height="200"
                     >
                   </div>
                   <div class="venue-content text-center">
-                    <h5 class="venue-title">${venue.name}</h5>
+                    <h3 class="venue-title">${soEsc(venue.name)}</h3>
                     <p class="venue-location mb-0">
-                      ${venue.city}, ${venue.state}
+                      ${soEsc(venue.city)}, ${soEsc(venue.state)}
                     </p>
                   </div>
                 </div>
@@ -538,7 +550,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Fetch JSON
   // -----------------------
   function loadPerformers() {
-    fetch('/cache/top_performers.json', { cache: "force-cache" })
+    fetch('/ajax/get-top-performers.php', { cache: "force-cache" })
       .then(res => {
         if (!res.ok) throw new Error('Failed to load JSON');
         return res.json();
@@ -570,8 +582,8 @@ document.addEventListener("DOMContentLoaded", function () {
   
     const html = list.map(item => `
       <li>
-        <a href="/artist/${item.slug}">
-          ${item.name}
+        <a href="/artist/${encodeURI(String(item.slug || ''))}">
+          ${soEsc(item.name)}
         </a>
       </li>
     `).join('');
@@ -595,91 +607,6 @@ document.addEventListener("DOMContentLoaded", function () {
 /* =====================================================
     Top Performers End
 ===================================================== */
-
-/* =====================================================
-    Newsletter Form Start
-===================================================== */
-
-let recaptchaLoaded = false;
-
-function loadRecaptcha(callback) {
-  if (recaptchaLoaded) {
-    callback();
-    return;
-  }
-
-  const script = document.createElement("script");
-  script.src = "https://www.google.com/recaptcha/api.js?render=" + RECAPTCHA_SITE_KEY;
-  script.async = true;
-  script.defer = true;
-
-  script.onload = function () {
-    recaptchaLoaded = true;
-    callback();
-  };
-
-  document.body.appendChild(script);
-}
-
-document.getElementById("newsletterForm").addEventListener("submit", function(e) {
-  e.preventDefault();
-
-  const form = this;
-  const msg = document.getElementById("form_error");
-  const btn = form.querySelector("button");
-
-  msg.classList.add("d-none");
-  btn.disabled = true;
-
-  loadRecaptcha(function () {
-
-    grecaptcha.ready(function() {
-      grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: "newsletter" })
-      .then(function(token) {
-
-        document.getElementById("recaptchaToken").value = token;
-
-        const formData = new FormData(form);
-
-        fetch("ajax/check-email.php", {
-          method: "POST",
-          body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-
-          btn.disabled = false;
-
-          if (data.status === "duplicate") {
-            msg.innerHTML = "This email is already subscribed.";
-            msg.classList.remove("d-none");
-          } 
-          else if (data.status === "recaptcha") {
-            msg.innerHTML = "reCAPTCHA failed. Try again.";
-            msg.classList.remove("d-none");
-          } 
-          else if (data.status === "success") {
-            msg.classList.add("d-none");
-            form.submit();
-          }
-
-        })
-        .catch(() => {
-          btn.disabled = false;
-          msg.innerHTML = "Server error.";
-          msg.classList.remove("d-none");
-        });
-
-      });
-    });
-
-  });
-
-});
-/* =====================================================
-    Newsletter Form End
-===================================================== */
-
 
 /* =====================================================
     Phone tabs for the category and performer lists
@@ -758,7 +685,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function card(ev, i, kind) {
-    const badge = kind === 'lastminute' ? whenBadge(ev.iso) : '';
+    const badge = (kind === 'lastminute' || kind === 'weekend') ? whenBadge(ev.iso) : '';
     const eager = i < 2 ? 'eager' : 'lazy';
     return '<a class="so-feed-card" href="/event/' + slug(ev.name) + '-' + ev.id + '">' +
       '<div class="so-feed-card__img">' +
@@ -781,18 +708,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const sub = box.querySelector('[data-so-feed-sub]');
     const events = (data && data.events) || [];
     if (!events.length) { box.hidden = true; return; }
+    // "This weekend near you" only makes sense for events really close by (not the "nearest anywhere" fallback).
+    if (kind === 'weekend' && data.scope !== 'near') { box.hidden = true; return; }
     box.hidden = false;
     const near = data.scope === 'near';
     const where = near && label ? ' near ' + label : (near ? ' near you' : '');
     if (title) {
-      title.textContent = kind === 'lastminute'
-        ? 'Last-minute tickets' + where
-        : 'Trending events' + where;
+      title.textContent = kind === 'weekend'
+        ? 'This weekend' + (label ? ' near ' + label : ' near you')
+        : (kind === 'lastminute'
+          ? 'Last-minute tickets' + where
+          : 'Trending events' + where);
     }
     if (sub) {
-      sub.textContent = kind === 'lastminute'
-        ? (near ? 'Happening in the next 7 days within 50 miles' : 'Happening in the next 7 days')
-        : (near ? 'Popular within 50 miles of you' : 'What fans are buying right now');
+      sub.textContent = kind === 'weekend'
+        ? 'Events within 50 miles, Friday to Sunday'
+        : (kind === 'lastminute'
+          ? (near ? 'Happening in the next 7 days within 50 miles' : 'Happening in the next 7 days')
+          : (near ? 'Popular within 50 miles of you' : 'What fans are buying right now'));
     }
     track.innerHTML = events.map((ev, i) => card(ev, i, kind)).join('');
     track.scrollLeft = 0;
@@ -807,7 +740,9 @@ document.addEventListener('DOMContentLoaded', function () {
       const kind = box.getAttribute('data-so-feed');
       if (loaded[kind] === key) return;
       loaded[kind] = key;
-      const qs = 'kind=' + kind + (key !== 'us' ? '&lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng) : '');
+      // The weekend row needs a location (it is the "near" search for this weekend); without one it stays hidden.
+      if (kind === 'weekend' && key === 'us') { box.hidden = true; return; }
+      const qs = (kind === 'weekend' ? 'kind=near&when=weekend&cat=all' : 'kind=' + kind) + (key !== 'us' ? '&lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng) : '');
       fetch('/ajax/get-home-feed.php?' + qs)
         .then(r => r.json())
         .then(data => { if (my === token || loaded[kind] === key) render(box, kind, data, label); })
@@ -825,4 +760,31 @@ document.addEventListener('DOMContentLoaded', function () {
   const lat = typeof getCookie === 'function' ? getCookie('so_lat') : '';
   const lng = typeof getCookie === 'function' ? getCookie('so_lng') : '';
   if (lat && lng) load(lat, lng); else load('', '');
+});
+
+
+/* =====================================================
+    "Read more": the long SEO text at the bottom of the page is clamped to a few lines until the visitor asks for the rest.
+    The full text stays in the HTML (crawlers and screen readers get all of it); without JavaScript nothing is clamped.
+===================================================== */
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-so-readmore]').forEach(function (box, i) {
+    const inner = box.querySelector('.so-seo-copy__inner');
+    if (!inner) return;
+    if (!inner.id) inner.id = 'soReadmoreBody' + i;
+    box.classList.add('is-clamped');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'so-readmore__btn';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-controls', inner.id);
+    btn.textContent = 'Read more';
+    btn.addEventListener('click', function () {
+      const open = box.classList.toggle('is-clamped') === false;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.textContent = open ? 'Show less' : 'Read more';
+      if (!open) box.scrollIntoView({ block: 'start' });
+    });
+    box.querySelector('.container').appendChild(btn);
+  });
 });

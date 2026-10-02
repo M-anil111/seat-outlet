@@ -1,5 +1,6 @@
 <?php // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; } ?>
+</main><!--so-main-end-->
 <footer class="tm-footer">
 
   <div class="tm-footer-top">
@@ -37,7 +38,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
     <li><a href="/customer-testimonials">Testimonials</a></li>
     <li><a href="/seat-outlet-reviews">Reviews</a></li>
     <li><a href="/seat-outlet-bbb">BBB</a></li>
-    <li><a href="/ticket-partner-program">Why Us</a></li>
+    <li><a href="/about-seat-outlet">Why Us</a></li>
   </ul>
 </div>
 
@@ -51,6 +52,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
     <li><a href="/hunt-tickets">Hunt Tickets</a></li>
     <li><a href="/ticket-scanner">Ticket Scanner</a></li>
     <li><a href="/ticket-buyer-protection">Buyer Protection</a></li>
+    <li><a href="/ticket-partner-program">Partner Program</a></li>
   </ul>
 </div>
 
@@ -91,6 +93,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
     <li><a href="/terms-and-conditions">Terms of Use</a></li>
     <li><a href="/cookie-policy">Cookie Policy</a></li>
     <li><a href="/sitemap.php">Sitemap</a></li>
+    <?php if (GTM_ID !== '') { ?><li><button type="button" class="so-privacy-link" data-so-privacy aria-haspopup="true">Your privacy choices</button></li><?php } ?>
   </ul>
   </div>
   <!-- Divider -->
@@ -171,9 +174,15 @@ window.addEventListener('load', function () {
 <?php } ?>
 <?php if (strpos($soPath, '/event/') === 0) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/event-actions.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/saved-events.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/event-widget.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php } ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/install-prompt.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/menu-near.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/analytics-events.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php if (GTM_ID !== '') { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/consent.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php } ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/lead-capture.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php if (preg_match('#^/(event|artist)/#', $soPath)) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/idle-nudge.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
@@ -216,21 +225,7 @@ window.addEventListener('load', function () {
 
 		return mapsPromise;
 	}        
-  <?php if (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>
-    Seatics.config.checkoutUrl = <?php echo json_encode(TN_CHECKOUT_URL); ?>;
-    Seatics.config.enableLegalDisclosureMobile = true;
-    Seatics.config.preCheckoutButtonHtml = 'Continue to Payment';
-    Seatics.config.buyButtonContentHtml = '<div class="buy-btn">' + 'Buy Now' + '</div>';
-    Seatics.config.defaultSort = Seatics.SortOptions.PriceAsc;
-    Seatics.config.tgMarkTooltipText = 'We recommend this seller&#039;s tickets.';
-    Seatics.config.enableMyList = true;
-    Seatics.config.showCents = false;
-    Seatics.config.skipPrecheckoutMobile = true;
-    Seatics.config.showZoomControls = true;
-    Seatics.config.ticketListOnRight = true;
-    Seatics.config.legendExpanded = true;
-    Seatics.config.skipPrecheckoutDesktop = true;
-  <?php } ?>
+  // Event pages: the widget settings (checkout address, quantity sheet, sort order, precheckout) live in js/event-widget.js, which loads the widget.
 </script>
     
   </body>

@@ -36,7 +36,7 @@
   function show() {
     if (card || pv < 2) return;
     if (!deferred && !isIOSSafari) return;                                   // nothing to offer on this browser
-    if (document.querySelector('.so-nudge, .modal.show, .offcanvas.show')) { return setTimeout(show, 6000); }
+    if (document.querySelector('.so-nudge, .so-consent, .modal.show, .offcanvas.show')) { return setTimeout(show, 6000); }
     card = document.createElement('div');
     card.className = 'so-install';
     card.setAttribute('role', 'dialog');

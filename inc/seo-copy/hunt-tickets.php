@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>How to Use Hunt Tickets to Find Your Seats</h2>
 <p>Hunt Tickets is a sister site in the Seat Outlet network, built around one job: helping you search for live event tickets and compare what is on offer. This page explains how to get the most out of a search, what to check before you buy, and where Seat Outlet fits in.</p>
 <p>If you already know the event you want, jump straight to the <a href="/all-artists-and-teams">list of artists and teams</a> or browse <a href="/concert-tickets-for-sale">concert tickets for sale</a> and <a href="/game-day-tickets">game day tickets</a> on Seat Outlet.</p>
@@ -43,7 +44,7 @@
   </figure>
   <figure>
     <img src="/images/event-ticket-buying.webp" alt="Buying event tickets on a laptop and phone" width="1536" height="1024" loading="lazy">
-    <figcaption>Digital tickets can be delivered to your account or phone, depending on the event.</figcaption>
+    <figcaption>Digital tickets can be delivered to your phone or email, depending on the event.</figcaption>
   </figure>
 </div>
 

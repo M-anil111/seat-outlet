@@ -1,6 +1,6 @@
 {
     "name": "seat-outlet/site",
-    "description": "Seat Outlet - vendor dependencies are committed directly to the repo rather than resolved at deploy time (see .gitignore / bitbucket-pipelines.yml), so this file exists to document and manage those dependencies going forward rather than to drive a build step.",
+    "description": "Seat Outlet - vendor dependencies are committed directly to the repo rather than resolved at deploy time (see docs/pull-deploy.md), so this file exists to document and manage those dependencies rather than to drive a build step.",
     "type": "project",
     "require": {
         "php": ">=8.1",

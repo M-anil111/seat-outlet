@@ -251,7 +251,7 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
     <div class="row align-items-center g-5">
       <!-- copy -->
       <div class="col-lg-6">
-        <div class="hero-tag fade-up"><i class="bi bi-ticket-perforated me-1"></i> Trusted Ticket Marketplace</div>
+        <div class="hero-tag fade-up"><i class="bi bi-ticket-perforated me-1"></i> Resale Ticket Marketplace</div>
         <h1 class="fade-up delay-1">How to Buy Tickets Online: Your Seat <em>Awaits</em></h1>
         <p class="hero-sub fade-up delay-2">
           <?php echo getContentBlock('/what-we-do', 'hero-sub', 'We make ticket buying simple: Seat Outlet connects fans with live events across concerts, sports, theater, and more. Find, compare, and book tickets securely in just a few clicks.'); ?>
@@ -268,7 +268,7 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
             <strong>Compare</strong><br><span>Seats and Prices</span>
           </div>
           <div class="hero-stat">
-            <strong>Phone</strong><br><span>And Email Support</span>
+            <strong>Email</strong><br><span>Support by form or email</span>
           </div>
         </div>
       </div>
@@ -331,8 +331,8 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
           <div class="process-step">
             <div class="step-num">01</div>
             <div>
-              <h5>Browse Thousands of Live Events</h5>
-              <p>Explore our vast catalog of concerts, sports, theater, and more all in one place.</p>
+              <h5>Browse Live Events</h5>
+              <p>Explore concerts, sports, theater and festivals listed on the TicketNetwork marketplace, all in one place.</p>
             </div>
           </div>
           <div class="process-step">
@@ -353,17 +353,13 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
             <div class="step-num">04</div>
             <div>
               <h5>Book in Just a Few Clicks</h5>
-              <p>Our streamlined checkout gets you confirmed quickly with zero frustration.</p>
+              <p>Pick your seats and continue to checkout, which is hosted by TicketNetwork.</p>
             </div>
           </div>
         </div>
         <p class="text-secondary mt-4">
-          We make ticket buying simple by removing the steps that don't need to be there - no account
-          required just to browse, no forced newsletter sign-up before checkout, and no last-minute fees
-          that weren't shown up front. If a step in the process doesn't help you get to your seat faster
-          or with more confidence, we work to remove it. Ticket buying simple isn't a slogan here - it's
-          a design constraint we hold every new feature to before it ships, and it's why we keep coming
-          back to the same question: does this make ticket buying simpler, or just different?
+          You can browse without signing up for anything, and there is no newsletter sign-up before checkout.
+          Prices are set by sellers and may be above or below face value. Review the full cost at checkout before you pay.
         </p>
       </div>
     </div>
@@ -425,12 +421,12 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
       <div class="col-md-6 col-lg-4">
         <div class="trust-item">
           <div class="trust-icon"><i class="bi bi-patch-check-fill"></i></div>
-          <h5>Verified Ticket Sources</h5>
-          <p class="text-secondary small mb-3">We work with trusted partners to ensure every ticket meets industry standards.</p>
+          <h5>Tickets From the TicketNetwork Marketplace</h5>
+          <p class="text-secondary small mb-3">Listings come from sellers on the TicketNetwork marketplace, and orders are covered by its guarantee.</p>
           <ul>
-            <li>Verified ticket sources</li>
-            <li>Industry-standard compliance</li>
-            <li>Reduced counterfeit risk</li>
+            <li>Listings from TicketNetwork sellers</li>
+            <li>Orders covered by the 100% guarantee</li>
+            <li><a href="/worry-free-guarantee">See what is covered</a></li>
           </ul>
         </div>
       </div>
@@ -439,11 +435,11 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
         <div class="trust-item">
           <div class="trust-icon"><i class="bi bi-shield-lock-fill"></i></div>
           <h5>Secure Booking Experience</h5>
-          <p class="text-secondary small mb-3">Every transaction is handled through encrypted, secure systems.</p>
+          <p class="text-secondary small mb-3">Checkout is hosted by TicketNetwork.</p>
           <ul>
-            <li>Safe checkout experience</li>
-            <li>Protected payment processing</li>
-            <li>Data privacy & security</li>
+            <li>Hosted checkout</li>
+            <li>Payment is entered on the checkout page</li>
+            <li><a href="/privacy-policy">How we handle data</a></li>
           </ul>
         </div>
       </div>
@@ -454,7 +450,7 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
           <h5>Full Transparency</h5>
           <p class="text-secondary small mb-3">Know exactly what to expect before you purchase.</p>
           <ul>
-            <li>Upfront pricing details</li>
+            <li>Seller-set prices, above or below face value</li>
             <li>Clear ticket information</li>
             <li>Easy-to-understand policies</li>
           </ul>
@@ -465,11 +461,11 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
         <div class="trust-item">
           <div class="trust-icon"><i class="bi bi-headset"></i></div>
           <h5>Customer Support</h5>
-          <p class="text-secondary small mb-3">We support you throughout your entire journey.</p>
+          <p class="text-secondary small mb-3">Email us before or after you buy.</p>
           <ul>
-            <li>Assistance before booking</li>
-            <li>Order tracking & delivery</li>
-            <li>Quick issue resolution</li>
+            <li>Questions before you book</li>
+            <li>Delivery details in your confirmation email</li>
+            <li><a href="/ticket-customer-service">Contact support</a></li>
           </ul>
         </div>
       </div>
@@ -495,7 +491,7 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
           <ul>
             <li>Secure hosted checkout</li>
             <li>Mobile-friendly platform</li>
-            <li>Total shown before you pay</li>
+            <li>Review the full cost at checkout</li>
           </ul>
         </div>
       </div>
@@ -519,28 +515,28 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
           <div class="standout-num">1</div>
           <div>
             <h5>Wide Selection of Event Tickets</h5>
-            <p>Thousands of events across every genre and sport, updated in real time.</p>
+            <p>Concerts, sports, theater and festivals, with listings that change as sellers add and remove tickets.</p>
           </div>
         </div>
         <div class="standout-item">
           <div class="standout-num">2</div>
           <div>
-            <h5>Trusted & Verified Sources</h5>
-            <p>Every listing comes from vetted partners so you can book with confidence.</p>
+            <h5>Backed by TicketNetwork</h5>
+            <p>Listings come from the TicketNetwork marketplace and orders are covered by its 100% guarantee.</p>
           </div>
         </div>
         <div class="standout-item">
           <div class="standout-num">3</div>
           <div>
             <h5>Secure & Reliable Booking Process</h5>
-            <p>End-to-end encryption and safe payment processing on every order.</p>
+            <p>Checkout is hosted by TicketNetwork, so you enter payment details on its checkout page.</p>
           </div>
         </div>
         <div class="standout-item">
           <div class="standout-num">4</div>
           <div>
-            <h5>Customer-Focused Support</h5>
-            <p>Real help, when you need it — before, during, and after your purchase.</p>
+            <h5>Email Support</h5>
+            <p>Write to us before or after your purchase and a member of our team will reply by email.</p>
           </div>
         </div>
         <div class="standout-item">
@@ -561,7 +557,7 @@ h2.h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; }
     <div class="row align-items-center g-4">
       <div class="col-lg-8">
         <h2 class="mb-2">Book Your Next Event with Confidence</h2>
-        <p class="mb-0">Ready to experience live events without the stress? We make ticket buying simple - Seat Outlet makes it easy to find and book tickets you can trust.</p>
+        <p class="mb-0">Ready to find your seats? Browse events, compare sections and prices, and review the full cost at checkout before you pay.</p>
         <div class="d-flex flex-wrap gap-3 mt-3">
           <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:180px;" alt="Concert tickets made ticket buying simple" loading="lazy" width="800" height="512" decoding="async">
           <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:180px;" alt="Fans who found ticket buying simple with Seat Outlet" loading="lazy" width="442" height="442" decoding="async">

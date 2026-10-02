@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Browse All Artists, Teams and Shows From A to Z</h2>
 <p>This directory lists all artists, teams and shows that have events on Seat Outlet, sorted alphabetically. Use the letter bar at the top to jump to a name, or scroll the list and load more. Each card opens a page with that performer's upcoming dates, venues and available seats.</p>
 <p>The list comes straight from our event feed, so it changes as tours are announced, seasons start and shows open. If a name is not here yet, it usually means no events are listed for it right now. Check back later, or try the search bar, which looks across events, venues and cities as well.</p>

@@ -1,12 +1,12 @@
 <?php 
 
-$pageTitle = "Thank You | SeatOutlet";
-
-$metaDescription = "Thank you for your submission. Discover upcoming concerts, sports games, theater shows, and live entertainment events on SeatOutlet.";
-
-$metaRobots = "noindex, follow";
-
-$canonicalURL = "https://www.seatoutlet.com/thank-you";
+require_once 'functions.php';
+// header.php reads these variable names (the old $pageTitle / $metaRobots / $canonicalURL were ignored: the page was indexable).
+$pageMetaTitle       = "Thank You | Seat Outlet";
+$pageMetaDescription = "Thank you for your message. Browse upcoming concerts, sports, theater and live events at Seat Outlet.";
+$pageRobots          = "noindex, follow";
+$pageFocusKeyword    = "Thank you";   // shown in the strip above the header, which is the page's H1 (it used to say "Buy Concert Tickets")
+$pageCanonicalUrl    = rtrim(HOME_URL, '/') . "/thank-you";
 include 'header.php'; 
 ?>
 
@@ -64,20 +64,22 @@ animation:draw .6s ease forwards;
 
 <div class="success-checkmark"></div>
 
-<h1 class="mb-3">Thank You!</h1>
+<h1 class="mb-3">Thank you</h1>
 
 <p class="lead">
-Your request has been successfully submitted.
+We have your details.
 </p>
 
 <p>
-Our team will review your message and get back to you shortly.<br>  
-Meanwhile, explore exciting upcoming events happening near you.
+If you signed up for email alerts, watch your inbox. If you sent us a message, a member of our team will reply by email.<br>
+While you are here, see what is on sale.
 </p>
 
-
-
-
+<div class="row g-3 justify-content-center mt-3">
+<div class="col-6 col-md-3"><a class="btn btn-outline-primary w-100" style="min-height:48px;display:flex;align-items:center;justify-content:center" href="/concert-tickets-for-sale">Concerts</a></div>
+<div class="col-6 col-md-3"><a class="btn btn-outline-primary w-100" style="min-height:48px;display:flex;align-items:center;justify-content:center" href="/game-day-tickets">Sports</a></div>
+<div class="col-6 col-md-3"><a class="btn btn-outline-primary w-100" style="min-height:48px;display:flex;align-items:center;justify-content:center" href="/buy-broadway-tickets">Theater</a></div>
+<div class="col-6 col-md-3"><a class="btn btn-outline-primary w-100" style="min-height:48px;display:flex;align-items:center;justify-content:center" href="/upcoming-music-festivals">Festivals</a></div>
 </div>
 
 </div>

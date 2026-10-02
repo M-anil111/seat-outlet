@@ -22,7 +22,8 @@ if (!SITE_INDEXABLE) {
     echo "Disallow: /\n";
     exit;
 }
-foreach (['/admin/', '/ajax/', '/cache/', '/vendor/', '/db/', '/tools/', '/cron/', '/deploy/', '/docs/', '/search'] as $path) {
+foreach (['/admin/', '/ajax/', '/cache/', '/vendor/', '/db/', '/tools/', '/cron/', '/deploy/', '/docs/', '/inc/', '/search', '/checkout', '/newsletter', '/unsubscribe', '/thank-you', '/order-confirmation'] as $path) {
     echo "Disallow: $path\n";
 }
+// Always the host this install is configured for (HOME_URL), never a hard-coded domain.
 echo "\nSitemap: " . rtrim(HOME_URL, '/') . "/sitemap.php\n";

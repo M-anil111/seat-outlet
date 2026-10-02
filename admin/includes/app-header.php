@@ -62,6 +62,12 @@ $currentPage = $currentPage ?? '';
                                 <span class="nav-link-title">Blog Posts</span>
                             </a>
                         </li>
+                        <li class="nav-item <?php echo $currentPage === 'contact-messages' ? 'active' : ''; ?>">
+                            <a class="nav-link" href="contact-messages">
+                                <span class="nav-link-icon"><i class="ti ti-mail"></i></span>
+                                <span class="nav-link-title">Contact Messages</span>
+                            </a>
+                        </li>
                         <li class="nav-item <?php echo $currentPage === 'page-content' ? 'active' : ''; ?>">
                             <a class="nav-link" href="page-content">
                                 <span class="nav-link-icon"><i class="ti ti-edit"></i></span>

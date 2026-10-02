@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Game day tickets: a buyer's guide to NFL, NBA, MLB, NHL and more</h2>
 <p>The listings above are game day tickets from sellers on the Seat Outlet marketplace, covering pro football, basketball, baseball, hockey, college sports and soccer. Use the date and sort filters to line up a schedule of game day tickets, then open a game to compare sections and prices. Below you will find advice on picking seats, timing your purchase and what to check before you pay.</p>
 <p>Looking for one team in particular? The <a href="/all-artists-and-teams">teams and artists directory</a> lists every name with upcoming dates, so you can jump straight to a home schedule.</p>
@@ -64,6 +65,6 @@
 <h2>Questions about game day tickets</h2>
 <details class="so-faq"><summary>Are game day tickets on Seat Outlet sold at face value?</summary><p>Not always. Sellers set their own prices on this resale marketplace, so a listing may be above or below face value.</p></details>
 <details class="so-faq"><summary>Which seats are best for game day tickets?</summary><p>It depends on the sport and what you value. Sideline seats work well for football, center-court or center-ice for basketball and hockey, behind home plate for baseball, and midfield for soccer.</p></details>
-<details class="so-faq"><summary>How do I receive my game day tickets?</summary><p>Delivery may be electronic, by mobile transfer or by physical shipping, depending on the event and seller. Your confirmation email and account dashboard show the details.</p></details>
+<details class="so-faq"><summary>How do I receive my game day tickets?</summary><p>Delivery may be electronic, by mobile transfer or by physical shipping, depending on the event and seller. Your confirmation email shows the details.</p></details>
 <details class="so-faq"><summary>What if a game on my game day tickets is postponed or canceled?</summary><p>If an event is canceled and not rescheduled, you receive a full refund. For postponed games, check the event page and contact customer service for the next steps.</p></details>
 <details class="so-faq"><summary>When should I buy game day tickets?</summary><p>For high-demand games, buying early gives the most seat choices. For lower-demand games, you may see prices change closer to the date, but there is no guarantee.</p></details>
