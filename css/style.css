@@ -6496,3 +6496,13 @@ a.so-live__row:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(
 .so-near__empty p { margin: 0 0 12px; color: #424245; font-size: 16px; }
 .so-near__any { height: 44px; padding: 0 20px; border: 0; border-radius: 980px; background: #0066cc; color: #fff; font-weight: 600; font-size: 15px; }
 .so-feed-card__dist { left: auto; right: 10px; bottom: auto; top: 10px; }
+
+/* Shared email capture (soLeadForm) */
+.so-nl__fields--email { grid-template-columns: minmax(0, 1fr) auto; }
+.so-nl__fields--email input[type=email] { grid-column: auto; }
+.so-nl__fields--email button { grid-column: auto; padding: 0 22px; white-space: nowrap; }
+.so-nl__legal { margin: 10px 0 0; font-size: 12px; line-height: 1.5; color: #6e6e73; }
+.so-nl__legal a { color: #0056d6; }
+.so-nl__msg { margin: 10px 0 0; font-size: 14px; color: #b3261e; }
+.so-nl__msg.is-ok { color: #1a7f37; font-weight: 600; }
+@media (max-width: 575.98px) { .so-nl__fields--email { grid-template-columns: minmax(0, 1fr); } }
