@@ -1937,9 +1937,8 @@ font-size: 18px;
 
     /* ---------- TICKET LISTS: Tickets, ADA, Packages, Parking, Access Passes, Hotels ----------
        Card rows: checkbox | car icon + title / row / quantity | notes icon |
-       price "each" | blue Buy Now. The widget's dark "Parking Passes (Not
-       valid for entry to event)" bar becomes an amber notice. Rows are the
-       widget's own table rows (.Sea-TicketRow); markup and behaviour unchanged. */
+       price "each" | blue Buy Now. Rows are the widget's own table rows
+       (.Sea-TicketRow); markup and behaviour unchanged. */
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) table:has(> tbody > tr.Sea-TicketRow),
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) table:has(> tbody > tr.Sea-TicketRow) > tbody {
         display: block;
@@ -1990,9 +1989,6 @@ font-size: 18px;
         column-gap: 8px;
     }
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) tr.Sea-TicketRow .venue-ticket-list-tbl td { display: block; padding: 0; width: auto !important; min-width: 0; }
-    /* segment header ("Not valid for entry") as a block above the cards */
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) tr.venue-ticket-list-segment-tr { display: block; height: auto; margin: 10px 0 0; }
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) tr.venue-ticket-list-segment-tr > td { display: block; }
 
     /* checkbox (My List) */
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .Sea-TicketRow .sea-my-list-toggle { width: 34px; }
@@ -2015,6 +2011,11 @@ font-size: 18px;
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .sea-ticket-list-quantity-sep { display: none; }
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .sea-deliv-type-icon { color: #8a93a6; margin-left: 4px; }
 
+    /* The widget's section header row ("Parking Passes (Not valid for entry
+       to event)" and the like), in the list and in its sticky copy, is not
+       shown: the cards alone. */
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) :is(.venue-ticket-list-segment-tr, #sea-list-sticky-hdr) { display: none !important; }
+
     /* notes icon, price, Buy Now */
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-info-col { text-align: center; }
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-info-child .cm-doc-text { color: #8a93a6; font-size: 22px; }
@@ -2035,40 +2036,6 @@ font-size: 18px;
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-cta-button:hover { background-color: #1a3fa8 !important; }
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .sea-ticket-list-default-cta { color: #2556e0; font-weight: 600; }
 
-    /* "Parking Passes (Not valid for entry to event)" -> amber notice */
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-segment-tr { height: auto; text-align: left; }
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-segment-td {
-        background: #fff7e8;
-        border: 1px solid #f3d6a4;
-        border-radius: 10px;
-        color: #9a5b00;
-        font-size: 14px;
-        font-weight: 600;
-        padding: 12px 14px 12px 46px;
-        position: relative;
-        font-size: 0; /* swap the widget's wording for the design's (below) */
-    }
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-segment-td::after {
-        content: 'Parking passes do not include event admission.';
-        font-size: 14px;
-    }
-    #tn-maps:has(.sea-ticket-type-option.active button[value="AccessPasses"]) .venue-ticket-list-segment-td::after {
-        content: 'Access passes do not include event admission.';
-    }
-    #tn-maps:has(.sea-ticket-type-option.active button[value="Hotels"]) .venue-ticket-list-segment-td::after {
-        content: 'Hotel deals do not include event admission.';
-    }
-    /* Tickets, ADA and Packages include admission: if the widget shows a section
-       header there, keep its own wording as a plain label, not the amber notice. */
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Packages"], button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-segment-td {
-        background: #f7f9fe;
-        border-color: #e3e8f0;
-        color: #0f1b3d;
-        font-size: 14px;
-        padding: 10px 14px !important;
-    }
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Packages"], button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-segment-td::before,
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Packages"], button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-segment-td::after { content: none; }
 
     /* Tickets / ADA: keep the widget's section colour (it matches the map) as a
        thin accent down the card's left edge, and stack the deal score
@@ -2121,22 +2088,6 @@ font-size: 18px;
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-tg-list-value-score-text { margin-left: 0; color: #0f1b3d; }
     /* Wrap long section names between words, never mid-word. */
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-section-row-text { word-break: normal; overflow-wrap: break-word; hyphens: none; }
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-segment-td::before {
-        content: '!';
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background: #e07b00;
-        color: #fff;
-        font-weight: 800;
-        font-size: 14px;
-        line-height: 22px;
-        text-align: center;
-    }
 
     /* Compact cards whenever the list itself is narrow (desktop side panel ~400px,
        phones, foldables): sized by the list's width, not the screen's. */
@@ -2152,8 +2103,6 @@ font-size: 18px;
         #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-info-child .cm-doc-text { font-size: 18px; }
         #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-price-col .venue-ticket-list-cta-amt { font-size: 15px; }
         #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-cta-button { font-size: 13px; padding: 8px 12px; }
-        #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-segment-td { padding: 10px 12px 10px 42px; }
-        #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"], button[value="Parking"], button[value="AccessPasses"], button[value="Hotels"], button[value="Packages"])) .venue-ticket-list-segment-td::after { font-size: 13px; }
     }
 
     /* ======================================================================
