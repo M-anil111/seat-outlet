@@ -3824,6 +3824,165 @@ function renderPerformerLocationLinks(string $artistName, int $performerId, arra
     }
 }
 
+/**
+ * Every date a performer has, for the "where they play" boxes. The page already holds the first 20 dates; only an
+ * artist with more than that costs one extra request (up to 200 dates, cached 10 minutes like the page's own list).
+ */
+function performerWhereEvents(int $performerId, array $events, int $totalCount): array {
+    if ($totalCount <= count($events)) {
+        return $events;
+    }
+    [$endpoint, $params] = performerPageEventsSpec($performerId, 200);
+    $all = tnRequest($endpoint, $params, 'GET', 600);
+    $rows = $all['results'] ?? [];
+    return count($rows) > count($events) ? $rows : $events;
+}
+
+/** Cities, venues and states a performer plays, with the number of dates in each (most dates first). */
+function performerWhereGroups(array $events): array {
+    $groups = ['city' => [], 'venue' => [], 'state' => []];
+    foreach ($events as $event) {
+        $abbr = $event['stateProvince']['text']['abbr'] ?? '';
+        $items = [
+            'city'  => [$event['city']['id'] ?? null, trim(($event['city']['text']['name'] ?? '') . ', ' . $abbr, ', ')],
+            'venue' => [$event['venue']['id'] ?? null, (string) ($event['venue']['text']['name'] ?? '')],
+            'state' => [$event['stateProvince']['id'] ?? null, (string) ($event['stateProvince']['text']['name'] ?? '')],
+        ];
+        foreach ($items as $dim => [$id, $label]) {
+            if (empty($id) || $label === '' || $label === ',') continue;
+            if (!isset($groups[$dim][$id])) { $groups[$dim][$id] = ['id' => $id, 'label' => $label, 'count' => 0]; }
+            $groups[$dim][$id]['count']++;
+        }
+    }
+    foreach ($groups as $dim => $rows) {
+        $rows = array_values($rows);
+        usort($rows, fn($a, $b) => [$b['count'], $a['label']] <=> [$a['count'], $b['label']]);
+        $groups[$dim] = array_slice($rows, 0, 60);
+    }
+    return $groups;
+}
+
+/** "Where <artist> is playing": one tidy card with a row each for cities, venues and states, built from the real dates. */
+function renderPerformerWhere(string $artistName, int $performerId, array $events, int $totalCount): void {
+    $groups = performerWhereGroups(performerWhereEvents($performerId, $events, $totalCount));
+    if (!$groups['city'] && !$groups['venue'] && !$groups['state']) return;
+    $slug = createSlug($artistName, $performerId);
+    $dims = [
+        'city'  => ['label' => 'Cities',  'prefix' => 'artist-city',  'word' => 'in'],
+        'venue' => ['label' => 'Venues',  'prefix' => 'artist-venue', 'word' => 'at'],
+        'state' => ['label' => 'States',  'prefix' => 'artist-state', 'word' => 'in'],
+    ];
+    $visible = 10;
+    $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    ?>
+    <div class="tab-section content-section-detail so-where" id="where">
+        <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Where <?php echo $e($artistName); ?> is playing</h2>
+        <p class="so-where__lead">Pick a place to see <?php echo $e($artistName); ?> tickets there.</p>
+        <?php foreach ($dims as $dim => $conf) { $rows = $groups[$dim]; if (!$rows) continue; ?>
+            <div class="so-where__row" id="performer-<?php echo $dim; ?>">
+                <h3 class="so-where__label"><?php echo $conf['label']; ?> <span><?php echo count($rows); ?></span></h3>
+                <div class="so-where__chips">
+                    <?php foreach ($rows as $i => $it) { ?>
+                        <a class="so-chip<?php echo $i >= $visible ? ' so-chip--extra' : ''; ?>"<?php echo $i >= $visible ? ' hidden' : ''; ?>
+                           href="/<?php echo $conf['prefix']; ?>/<?php echo $e($slug); ?>/<?php echo $e(createSlug($it['label'], $it['id'])); ?>"
+                           title="<?php echo $e($artistName . ' ' . $conf['word'] . ' ' . $it['label']); ?>">
+                            <span class="so-chip__name"><?php echo $e($it['label']); ?></span>
+                            <span class="so-chip__count"><?php echo (int) $it['count']; ?> <?php echo $it['count'] === 1 ? 'date' : 'dates'; ?></span>
+                        </a>
+                    <?php } ?>
+                    <?php if (count($rows) > $visible) { ?>
+                        <button type="button" class="so-chip so-chip--more" data-so-more="<?php echo count($rows) - $visible; ?>">Show all <?php echo count($rows); ?></button>
+                    <?php } ?>
+                </div>
+            </div>
+        <?php } ?>
+    </div>
+    <script>
+    (function () {
+        var box = document.getElementById('where');
+        if (!box) return;
+        box.querySelectorAll('[data-so-more]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                btn.parentNode.querySelectorAll('.so-chip--extra').forEach(function (c) { c.hidden = false; });
+                btn.remove();
+            });
+        });
+    })();
+    </script>
+    <?php
+}
+
+/** Two-letter initials for a name tile ("Paloma Morphy" -> "PM"). */
+function soInitials($name): string {
+    $words = preg_split('/[^\p{L}\p{N}]+/u', trim((string) $name), -1, PREG_SPLIT_NO_EMPTY);
+    $out = '';
+    foreach (array_slice($words, 0, 2) as $w) { $out .= mb_strtoupper(mb_substr($w, 0, 1)); }
+    return $out !== '' ? $out : '?';
+}
+
+/**
+ * "Fans also love": other performers from the same category, each with its own name and picture. A performer whose
+ * picture is not stored yet gets a clean initials tile (not the shared stock photo) and is queued for the image job;
+ * the page asks ajax/resolve-images.php for the real picture once the cards are on screen.
+ */
+function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
+    $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $n = 0;
+    ?>
+    <div class="so-related" data-so-related>
+        <?php foreach ($related as $rel) {
+            if ($n >= $limit) break;
+            $name = trim((string) ($rel['text']['name'] ?? ''));
+            $uri  = strtolower((string) ($rel['uriComponent'] ?? ''));
+            if ($name === '' || $uri === '') continue;
+            $n++;
+            $cat  = $rel['defaultCategory'] ?? [];
+            $type = imageEntityTypeForPerformer($cat);
+            $img  = getEntityImage($type, $name, ['category' => $cat, 'resolve' => false]);
+            $real = in_array($img['status'], ['ok', 'manual'], true) && $img['url'] !== '';
+            $hue  = hexdec(substr(md5($name), 0, 4)) % 360;
+            ?>
+            <a class="so-related__card" href="/artist/<?php echo $e($uri); ?>" data-name="<?php echo $e($name); ?>" data-type="<?php echo $e($type); ?>"<?php echo $real ? '' : ' data-pending="1"'; ?>>
+                <span class="so-related__media" style="--so-hue:<?php echo (int) $hue; ?>">
+                    <?php if ($real) { ?>
+                        <img src="<?php echo $e($img['url']); ?>" alt="<?php echo $e($name); ?>" loading="lazy" width="400" height="300">
+                    <?php } else { ?>
+                        <span class="so-related__initials" aria-hidden="true"><?php echo $e(soInitials($name)); ?></span>
+                    <?php } ?>
+                </span>
+                <span class="so-related__name"><?php echo $e($name); ?></span>
+                <span class="so-related__cta">View tickets</span>
+            </a>
+        <?php } ?>
+    </div>
+    <script>
+    (function () {
+        var grid = document.querySelector('[data-so-related]');
+        if (!grid || !('IntersectionObserver' in window)) return;
+        var pending = [].slice.call(grid.querySelectorAll('[data-pending]'));
+        if (!pending.length) return;
+        var io = new IntersectionObserver(function (entries) {
+            if (!entries.some(function (en) { return en.isIntersecting; })) return;
+            io.disconnect();
+            fetch('/ajax/resolve-images.php', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: pending.map(function (c) { return { name: c.dataset.name, type: c.dataset.type }; }) }) })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    (data.images || []).forEach(function (url, i) {
+                        if (!url) return;
+                        var media = pending[i].querySelector('.so-related__media');
+                        var img = new Image(); img.alt = pending[i].dataset.name; img.width = 400; img.height = 300;
+                        img.onload = function () { media.innerHTML = ''; media.appendChild(img); };
+                        img.src = url;
+                    });
+                }).catch(function () {});
+        }, { rootMargin: '200px' });
+        io.observe(grid);
+    })();
+    </script>
+    <?php
+}
+
 function renderCategoryCityLinksBlock(array $events, string $urlPrefix, string $categoryLabel): void {
     $cities = [];
     $seenCityIds = [];
@@ -4085,7 +4244,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                             <div class="ms-3">
                                                 <?php renderEventPriceTag($event); ?>
                                                 <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                                                    <span class="d-none d-md-inline">Find Tickets</span>
+                                                    <span class="d-none d-md-inline">Buy Tickets</span>
                                                     <i class="bi bi-chevron-right"></i>
                                                 </a>
                                             </div>
@@ -4382,7 +4541,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                             <div class="ms-3">
                                                 <?php renderEventPriceTag($event); ?>
                                                 <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                                                    <span class="d-none d-md-inline">Find Tickets</span>
+                                                    <span class="d-none d-md-inline">Buy Tickets</span>
                                                     <i class="bi bi-chevron-right"></i>
                                                 </a>
                                             </div>

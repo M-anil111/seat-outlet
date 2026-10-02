@@ -150,7 +150,7 @@ $year = date('Y');
 											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 												<span class="d-none d-md-inline">
-													Find Tickets
+													Buy Tickets
 												</span>
 												<i class="bi bi-chevron-right"></i>
 											</a>

@@ -30,7 +30,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
             <div class="fw-bold mb-1" id="offcanvasLocation"></div>
             <div class="text-muted mb-4" id="offcanvasTitle"></div>            
             <a href="#" class="btn btn-primary d-flex align-items-center justify-content-center gap-2" id="offcanvasId">
-                Find Tickets
+                Buy Tickets
                 <i class="bi bi-chevron-right"></i>
             </a>
         </div>
