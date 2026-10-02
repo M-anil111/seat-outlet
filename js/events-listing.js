@@ -537,3 +537,41 @@ document.addEventListener('click', function (e) {
 /* =====================================================
     ARTIST EVENTS POPUP End
 ===================================================== */
+/* Date tile + "Today / Tomorrow / This weekend" pill on every listing row (server rows and rows added by "load more").
+   Pure presentation: the date comes from the tile that is already printed (month, day, and the year when it is not this
+   year), so there is nothing to keep in sync with the server and nothing is claimed that is not on the row. */
+(function () {
+  var MONTHS = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
+
+  function enhance(row) {
+    if (row.getAttribute('data-so-date')) return;
+    var box = row.querySelector('.date-box');
+    if (!box) return;
+    var months = box.querySelectorAll('.month');
+    var dayEl = box.querySelector('.day');
+    if (!months.length || !dayEl) return;
+    var mon = MONTHS[months[0].textContent.trim().toUpperCase().slice(0, 3)];
+    var day = parseInt(dayEl.textContent, 10);
+    if (mon === undefined || isNaN(day)) return;
+    var shownYear = months.length > 1 ? parseInt(months[1].textContent, 10) : 0;
+    var now = new Date(); now.setHours(0, 0, 0, 0);
+    var year = shownYear || now.getFullYear();
+    var dt = new Date(year, mon, day);
+    if (!shownYear && dt < now) dt = new Date(year + 1, mon, day);
+    row.setAttribute('data-so-date', '1');
+    box.insertAdjacentHTML('beforeend', '<div class="wd">' + dt.toLocaleDateString('en-US', { weekday: 'short' }) + '</div>');
+    var days = Math.round((dt - now) / 86400000), label = '';
+    if (days === 0) label = 'Today';
+    else if (days === 1) label = 'Tomorrow';
+    else if (days > 1 && days <= 6 && (dt.getDay() === 6 || dt.getDay() === 0)) label = 'This weekend';
+    if (label) {
+      var host = row.querySelector('.flex-grow-1');
+      if (host) host.insertAdjacentHTML('beforeend', '<div class="so-when"><span class="so-when__pill">' + label + '</span></div>');
+    }
+  }
+
+  function enhanceAll(scope) { (scope || document).querySelectorAll('.performer-event-item').forEach(enhance); }
+  enhanceAll();
+  var list = document.getElementById('eventsSection');
+  if (list && window.MutationObserver) new MutationObserver(function () { enhanceAll(list); }).observe(list, { childList: true });
+})();

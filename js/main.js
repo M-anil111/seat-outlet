@@ -201,6 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setCookie('so_label', labelCookie || label);
         if (locationLabel) locationLabel.innerHTML = label + ' <i class="bi bi-chevron-down"></i>';
         window.locationReady = true;
+        document.dispatchEvent(new CustomEvent('so:location', { detail: { lat: lat, lng: lng, label: label } }));
         if (typeof reloadActiveTab === 'function') {
             reloadActiveTab('ll', { lat: lat, lng: lng });
         }

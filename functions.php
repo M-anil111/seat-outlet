@@ -1584,11 +1584,73 @@ function listingRequestState($defaultSort = 'popular') {
     return [$when, $sort, ($when !== '' || $sort !== $defaultSort)];
 }
 
+/** Listing hubs that get the "Explore ... near you" block: base path => [feed category, plural noun]. */
+const SO_EXPLORE_HUBS = [
+    '/buy-tickets-online'        => ['all', 'events'],
+    '/concert-tickets-for-sale'  => ['concerts', 'concerts'],
+    '/game-day-tickets'          => ['sports', 'games'],
+    '/buy-broadway-tickets'      => ['theatre', 'shows'],
+    '/upcoming-music-festivals'  => ['festival', 'festivals'],
+];
+
+/**
+ * Category tabs, location and date chips, and the "near you" grid (filled by js/near-you.js from the visitor's own
+ * location; it stays hidden until a location is known), then the heading of the full national list below.
+ */
+function renderExploreBar($basePath) {
+    if (!isset(SO_EXPLORE_HUBS[$basePath])) return;
+    [$cat, $noun] = SO_EXPLORE_HUBS[$basePath];
+    $tabs = ['/buy-tickets-online' => 'All events', '/game-day-tickets' => 'Sports', '/concert-tickets-for-sale' => 'Concerts', '/buy-broadway-tickets' => 'Theater', '/upcoming-music-festivals' => 'Festivals'];
+    ?>
+    <div class="so-explore" data-so-explore data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
+        <nav class="so-cattabs" aria-label="Event categories">
+            <?php foreach ($tabs as $href => $label) { ?>
+                <a href="<?php echo $href; ?>" <?php echo $href === $basePath ? 'class="active" aria-current="page"' : ''; ?>><?php echo $label; ?></a>
+            <?php } ?>
+        </nav>
+        <div class="so-chips">
+            <div class="so-chip-wrap">
+                <button type="button" class="so-chip so-chip--on" data-so-loc aria-haspopup="dialog" aria-expanded="false">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                    <span data-so-loc-label>Finding your location...</span>
+                    <svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="so-pop" data-so-loc-pop role="dialog" aria-label="Change location" hidden>
+                    <label class="so-pop__label" for="soNearInput">Change location</label>
+                    <input id="soNearInput" class="so-pop__input" type="text" placeholder="City or ZIP, for example Austin, TX" autocomplete="off">
+                    <button type="button" class="so-pop__row" data-so-loc-here>Use my current location</button>
+                </div>
+            </div>
+            <div class="so-chip-wrap">
+                <button type="button" class="so-chip" data-so-date aria-haspopup="listbox" aria-expanded="false">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+                    <span data-so-date-label>All dates</span>
+                    <svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="so-pop" data-so-date-pop role="listbox" hidden>
+                    <button type="button" class="so-pop__row is-active" role="option" data-when="">All dates</button>
+                    <?php foreach (LISTING_WHEN as $k => $label) { ?>
+                        <button type="button" class="so-pop__row" role="option" data-when="<?php echo $k; ?>"><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></button>
+                    <?php } ?>
+                </div>
+            </div>
+        </div>
+        <section class="so-near" data-so-near hidden aria-live="polite">
+            <h2 class="so-near__title" data-so-near-title>Explore <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> near you</h2>
+            <div class="so-near__grid" data-so-near-grid></div>
+            <button type="button" class="so-near__more" data-so-near-more hidden>See more</button>
+        </section>
+        <h2 class="so-allhead">All <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> in the USA</h2>
+    </div>
+    <?php
+}
+
 function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'popular') {
     $url = function ($w, $s) use ($basePath, $defaultSort) {
         $q = array_filter(['when' => $w, 'sort' => $s === $defaultSort ? '' : $s]);
         return htmlspecialchars($basePath . ($q ? '?' . http_build_query($q) : ''), ENT_QUOTES, 'UTF-8');
     };
+    renderExploreBar($basePath);
     ?>
     <div class="listing-filters" role="group" aria-label="Filter and sort events">
         <div class="listing-filter-row">

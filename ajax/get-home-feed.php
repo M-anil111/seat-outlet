@@ -15,7 +15,8 @@ require_once __DIR__ . '/../functions.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
-$kind = ($_GET['kind'] ?? '') === 'lastminute' ? 'lastminute' : 'trending';
+$kindIn = $_GET['kind'] ?? '';
+$kind = in_array($kindIn, ['lastminute', 'near'], true) ? $kindIn : 'trending';
 $lat = isset($_GET['lat']) && is_numeric($_GET['lat']) ? (float) $_GET['lat'] : null;
 $lng = isset($_GET['lng']) && is_numeric($_GET['lng']) ? (float) $_GET['lng'] : null;
 if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;
@@ -23,6 +24,42 @@ if ($lng !== null && ($lng < -180 || $lng > 180)) $lng = null;
 $hasGeo = $lat !== null && $lng !== null;
 // One decimal is about 7 miles: plenty for a 50-mile radius, and it lets nearby visitors share one cached answer.
 if ($hasGeo) { $lat = round($lat, 1); $lng = round($lng, 1); }
+
+
+/* ---- "Explore ... near you" on the listing hubs: one category, one date window, paged (See more) ---- */
+if ($kind === 'near') {
+    $catMap = ['concerts' => TN_CATEGORY_PATH_CONCERTS, 'sports' => TN_CATEGORY_PATH_SPORTS, 'theatre' => TN_CATEGORY_PATH_THEATER, 'festival' => TN_CATEGORY_PATH_FESTIVAL, 'all' => ''];
+    $cat = $_GET['cat'] ?? 'all';
+    $catPath = $catMap[$cat] ?? '';
+    $whenIn = $_GET['when'] ?? '';
+    $when = isset(LISTING_WHEN[$whenIn]) ? $whenIn : '';
+    $page = max(1, min(20, (int) ($_GET['page'] ?? 1)));
+    if (!$hasGeo) {
+        echo json_encode(['scope' => 'none', 'events' => [], 'hasMore' => false]);
+        exit;
+    }
+    $nearKey = 'near_' . ($cat) . '_' . $when . '_' . $page . '_' . $lat . '_' . $lng;
+    $cachedNear = cache_get('home_feed_' . $nearKey, 600);
+    if ($cachedNear !== false) {
+        header('Cache-Control: public, max-age=300');
+        echo json_encode($cachedNear);
+        exit;
+    }
+    try {
+        $params = categoryListingParams($catPath, 12, $page, $when, 'popular');
+        $params['geoFilter'] = sprintf('nearby(%F,%F,50mi)', $lat, $lng);
+        $data = tnRequest('/catalog/v2/events/', $params);
+        $total = (int) ($data['totalCount'] ?? 0);
+        $out = ['scope' => 'near', 'events' => soHomeFeedFormat($data['results'] ?? [], 12), 'total' => $total, 'hasMore' => $page * 12 < $total];
+        if ($out['events'] || $page > 1) cache_set('home_feed_' . $nearKey, $out);
+        header('Cache-Control: public, max-age=300');
+        echo json_encode($out);
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['scope' => 'near', 'events' => [], 'hasMore' => false, 'error' => 'Failed to load events']);
+    }
+    exit;
+}
 
 $cacheKey = 'home_feed_' . $kind . '_' . ($hasGeo ? $lat . '_' . $lng : 'us');
 $cached = cache_get($cacheKey, $kind === 'lastminute' ? 600 : 900);
@@ -62,7 +99,7 @@ function soHomeFeedCategory(array $c): array {
     return ['path' => $c['path'] ?? '', 'depth' => $c['depth'] ?? 0, 'text' => $c['text'] ?? [], 'ancestors' => $ancestors];
 }
 
-function soHomeFeedFormat(array $events): array {
+function soHomeFeedFormat(array $events, int $max = 10): array {
     $out = [];
     $seen = [];
     foreach ($events as $event) {
@@ -89,7 +126,7 @@ function soHomeFeedFormat(array $events): array {
             'defaultCategory' => soHomeFeedCategory($event['defaultCategory'] ?? []),
             'placeholder' => getCategoryFallbackImage($event['defaultCategory'] ?? [], $tab),
         ];
-        if (count($out) >= 10) break;
+        if (count($out) >= $max) break;
     }
     return $out;
 }

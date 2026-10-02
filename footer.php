@@ -174,6 +174,7 @@ window.addEventListener('load', function () {
 <?php } ?>
 <?php if ($soHasEventList) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/events-listing.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/near-you.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
 <?php if ($soIsSearch) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/search.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
