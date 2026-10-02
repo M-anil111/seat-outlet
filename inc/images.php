@@ -99,17 +99,41 @@ function imageFallbackUrl($type, $defaultCategory = [], $tab = '') {
 
 /* -------------------------------------------------------------- storage */
 
+/**
+ * Image storage is decoration: if the database is behind the code (a migration that did not run yet) or briefly unavailable,
+ * the page shows the initials tile instead of failing. Every helper below that touches the images table therefore
+ * catches the database error, logs it once per request and answers "nothing stored".
+ */
+function imageDbFailed(\Throwable $e) {
+    static $logged = false;
+    if (!$logged) { $logged = true; error_log('images table unavailable (run php db/migrate.php --status): ' . $e->getMessage()); }
+}
+
 function imageRecordGet($key, $mysqli = MYSQLI) {
-    $stmt = $mysqli->prepare('SELECT * FROM images WHERE imgkey = ? LIMIT 1');
-    if (!$stmt) return null;
-    $stmt->bind_param('s', $key);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-    return $row ?: null;
+    try {
+        $stmt = $mysqli->prepare('SELECT * FROM images WHERE imgkey = ? LIMIT 1');
+        if (!$stmt) return null;
+        $stmt->bind_param('s', $key);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row ?: null;
+    } catch (\Throwable $e) {
+        imageDbFailed($e);
+        return null;
+    }
 }
 
 function imageRecordUpsert(array $r, $mysqli = MYSQLI) {
+    try {
+        return imageRecordUpsertRun($r, $mysqli);
+    } catch (\Throwable $e) {
+        imageDbFailed($e);
+        return false;
+    }
+}
+
+function imageRecordUpsertRun(array $r, $mysqli) {
     $stmt = $mysqli->prepare('
         INSERT INTO images (imgkey, entity_type, entity_name, url, status, source, source_url, license, attribution, store_key, attempts, resolved_at, expires_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -136,12 +160,17 @@ function imageQueue($type, $name, $fallbackUrl = '', $mysqli = MYSQLI) {
     $name = trim((string) $name);
     if ($name === '') return false;
     $key = imageEntityKey($type, $name);
-    $stmt = $mysqli->prepare('INSERT IGNORE INTO images (imgkey, entity_type, entity_name, url, status) VALUES (?, ?, ?, ?, \'pending\')');
-    if (!$stmt) return false;
-    $stmt->bind_param('ssss', $key, $type, $name, $fallbackUrl);
-    $ok = $stmt->execute();
-    $stmt->close();
-    return $ok;
+    try {
+        $stmt = $mysqli->prepare('INSERT IGNORE INTO images (imgkey, entity_type, entity_name, url, status) VALUES (?, ?, ?, ?, \'pending\')');
+        if (!$stmt) return false;
+        $stmt->bind_param('ssss', $key, $type, $name, $fallbackUrl);
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
+    } catch (\Throwable $e) {
+        imageDbFailed($e);
+        return false;
+    }
 }
 
 /* --------------------------------------------------------------- public */
@@ -192,11 +221,15 @@ function getEntityImage($type, $name, array $opts = []) {
  */
 function imageNoteMiss($key, $mysqli = MYSQLI) {
     if (mt_rand(1, 10) !== 1) return;
-    $stmt = $mysqli->prepare('UPDATE images SET miss_hits = miss_hits + 10 WHERE imgkey = ? AND status IN (\'pending\', \'fallback\')');
-    if (!$stmt) return;
-    $stmt->bind_param('s', $key);
-    $stmt->execute();
-    $stmt->close();
+    try {
+        $stmt = $mysqli->prepare('UPDATE images SET miss_hits = miss_hits + 10 WHERE imgkey = ? AND status IN (\'pending\', \'fallback\')');
+        if (!$stmt) return;
+        $stmt->bind_param('s', $key);
+        $stmt->execute();
+        $stmt->close();
+    } catch (\Throwable $e) {
+        imageDbFailed($e);
+    }
 }
 
 function imageRowToResult(array $row) {
@@ -700,7 +733,7 @@ function imageWorkQueue($batch, $pauseMicros = 1500000, $deadline = null, $mysql
           FROM images
          WHERE entity_type IS NOT NULL AND entity_name IS NOT NULL
            AND (status = 'pending' OR (status = 'fallback' AND (expires_at IS NULL OR expires_at <= NOW())))
-         ORDER BY (status = 'pending') DESC, updated_at ASC
+         ORDER BY (status = 'pending') DESC, ID ASC
          LIMIT " . (int) $batch);
     $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     foreach ($rows as $i => $row) {
