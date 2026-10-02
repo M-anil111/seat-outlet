@@ -182,3 +182,43 @@ function soLeadNotifyOwner(array $lead) {
         error_log('owner notification failed: ' . $e->getMessage());
     }
 }
+
+/**
+ * Build the alert email for one lead.
+ * @param array $lead   email, fname, lname, token
+ * @param array $groups list of ['name' => performer name, 'url' => performer page url, 'events' => [['name','date','venue','place','from','url'], ...]]
+ * @return array{0:string,1:string,2:string} subject, html, text
+ */
+function soLeadAlertMessage(array $lead, array $groups) {
+    $unsub = soLeadUnsubscribeUrl($lead['token']);
+    $first = trim((string) ($lead['fname'] ?? ''));
+    $names = array_map(function ($g) { return $g['name']; }, $groups);
+    $subject = count($groups) === 1
+        ? $groups[0]['name'] . ' tickets: upcoming events on Seat Outlet'
+        : 'Upcoming events for ' . $names[0] . ' and ' . (count($names) - 1) . ' more on Seat Outlet';
+    $html = '<h1 style="margin:0 0 12px;font-size:22px;color:#111827">' . ($first !== '' ? 'Hi ' . soMailEsc($first) . ', here' : 'Here') . ' is what is on sale</h1>'
+        . '<p style="margin:0 0 6px">You asked us to watch for events. These have tickets listed right now.</p>';
+    $text = ($first !== '' ? 'Hi ' . $first . ', here' : 'Here') . " is what is on sale\n\nYou asked us to watch for events. These have tickets listed right now.\n";
+    foreach ($groups as $g) {
+        $html .= '<h2 style="margin:22px 0 8px;font-size:18px;color:#111827">' . soMailEsc($g['name']) . '</h2>';
+        $text .= "\n" . $g['name'] . "\n";
+        foreach ($g['events'] as $e) {
+            $where = trim($e['venue'] . ($e['place'] !== '' ? ', ' . $e['place'] : ''), ', ');
+            $html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 10px;border:1px solid #e5e7eb;border-radius:6px"><tr>'
+                . '<td style="padding:12px 14px;font-size:14px;line-height:1.5"><strong style="font-size:15px;color:#111827">' . soMailEsc($e['name']) . '</strong><br>'
+                . soMailEsc($e['date']) . '<br>' . soMailEsc($where) . '</td>'
+                . '<td align="right" valign="middle" style="padding:12px 14px;white-space:nowrap">'
+                . ($e['from'] !== '' ? '<span style="font-size:12px;color:#6b7280">From</span> <strong style="font-size:16px;color:#111827">' . soMailEsc($e['from']) . '</strong><br>' : '')
+                . '<a href="' . soMailEsc($e['url']) . '" style="display:inline-block;margin-top:6px;padding:8px 14px;background:#1b3bb0;color:#ffffff;text-decoration:none;border-radius:5px;font-size:14px;font-weight:bold">View tickets</a>'
+                . '</td></tr></table>';
+            $text .= '- ' . $e['name'] . ', ' . $e['date'] . ', ' . $where . ($e['from'] !== '' ? ', from ' . $e['from'] : '') . "\n  " . $e['url'] . "\n";
+        }
+        if (!empty($g['url'])) {
+            $html .= '<p style="margin:4px 0 0;font-size:14px"><a href="' . soMailEsc($g['url']) . '" style="color:#1b3bb0">See all ' . soMailEsc($g['name']) . ' events</a></p>';
+            $text .= 'All events: ' . $g['url'] . "\n";
+        }
+    }
+    $html .= '<p style="margin:22px 0 0;font-size:12px;color:#6b7280">Prices are set by sellers, change often and are shown before fees. You will not hear from us about the same performer more than once a week.</p>';
+    $text .= "\nPrices are set by sellers, change often and are shown before fees. You will not hear from us about the same performer more than once a week.\n" . soMailTextFooter($unsub);
+    return [$subject, soMailLayout($subject, $html, $unsub), $text];
+}
