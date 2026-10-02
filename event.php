@@ -2117,6 +2117,24 @@ font-size: 18px;
     .seatics .map-list-ctn,
     .seatics .map-ctn { max-width: 100% !important; box-sizing: border-box; }
 
+    /* Below 992px the widget switches to its full-screen app layout: the ticket list,
+       the map strip and the panels are position:fixed against the browser window, which
+       assumes the widget is the whole page. Here it sits under the site header and the
+       event card, so the fixed list covered the card and the map spilled over the page.
+       Make the widget box the containing block for those fixed parts (transform) and give
+       it the full screen height they are laid out for, so map and list stay inside it at
+       every phone, tablet and foldable size. The page's 3px side padding on the holder
+       also pushed the full-width map 3px past the right edge; drop it here. */
+    @media (max-width: 991px) {
+        #tn-maps.seatics {
+            height: 100vh !important;
+            height: 100dvh !important;
+            transform: translateZ(0);
+            overflow: hidden;
+        }
+        #tn-maps .map-list-ctn { padding-left: 0 !important; padding-right: 0 !important; }
+    }
+
     #precheckout-parent {
         --so-pc-inset: clamp(14px, 4.5vw, 24px);
         --so-pc-inset-r: max(var(--so-pc-inset), env(safe-area-inset-right, 0px));
