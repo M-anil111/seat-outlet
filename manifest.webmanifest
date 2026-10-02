@@ -1,0 +1,24 @@
+{
+  "name": "Seat Outlet",
+  "short_name": "Seat Outlet",
+  "description": "Compare seats and prices for concerts, sports and theater. Every order is covered by our 100% guarantee.",
+  "id": "/",
+  "start_url": "/?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2556e0",
+  "categories": ["entertainment", "shopping"],
+  "icons": [
+    { "src": "/images/app/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/images/app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/images/app/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Concerts", "url": "/concert-tickets-for-sale?source=app", "icons": [{ "src": "/images/app/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Sports", "url": "/game-day-tickets?source=app", "icons": [{ "src": "/images/app/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Theater", "url": "/buy-broadway-tickets?source=app", "icons": [{ "src": "/images/app/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Festivals", "url": "/upcoming-music-festivals?source=app", "icons": [{ "src": "/images/app/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

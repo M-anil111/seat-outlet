@@ -104,6 +104,11 @@ include_once 'functions.php';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" type="image/png" href="/images/favicon-new.webp">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/images/app/apple-touch-icon.png">
+    <meta name="theme-color" content="#2556e0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Seat Outlet">
     
         <?php if (strpos($soReqPath, '/event/') === 0) { ?>
     <!-- The seat-map widget (loaded at the end of the page) and its static assets: start those connections now. -->

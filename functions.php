@@ -3361,22 +3361,29 @@ function getBlogPostBySlug($slug, bool $onlyPublished = true, $mysqli = MYSQLI) 
     return $row ?: null;
 }
 
-function countPublishedBlogPosts($mysqli = MYSQLI) {
-    $result = $mysqli->query(
-        'SELECT COUNT(*) AS c FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()'
-    );
-    $row = $result->fetch_assoc();
+function countPublishedBlogPosts(?string $category = null, $mysqli = MYSQLI) {
+    $sql = 'SELECT COUNT(*) AS c FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()'
+         . ($category !== null ? ' AND category = ?' : '');
+    $stmt = $mysqli->prepare($sql);
+    if ($category !== null) $stmt->bind_param('s', $category);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
     return (int) ($row['c'] ?? 0);
 }
 
-function listPublishedBlogPosts(int $page = 1, int $perPage = 10, $mysqli = MYSQLI) {
+function listPublishedBlogPosts(int $page = 1, int $perPage = 10, ?string $category = null, $mysqli = MYSQLI) {
     $page = max(1, $page);
     $offset = ($page - 1) * $perPage;
     $stmt = $mysqli->prepare(
-        'SELECT * FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()
-         ORDER BY published_at DESC LIMIT ? OFFSET ?'
+        'SELECT * FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()'
+        . ($category !== null ? ' AND category = ?' : '') . ' ORDER BY published_at DESC LIMIT ? OFFSET ?'
     );
-    $stmt->bind_param('ii', $perPage, $offset);
+    if ($category !== null) {
+        $stmt->bind_param('sii', $category, $perPage, $offset);
+    } else {
+        $stmt->bind_param('ii', $perPage, $offset);
+    }
     $stmt->execute();
     $result = $stmt->get_result();
     $rows = [];
@@ -3387,6 +3394,19 @@ function listPublishedBlogPosts(int $page = 1, int $perPage = 10, $mysqli = MYSQ
     return $rows;
 }
 
+/** Categories that have at least one published post, largest first: [['name' => 'City Guides', 'slug' => 'city-guides', 'count' => 3], ...] */
+function listBlogCategories($mysqli = MYSQLI) {
+    $res = $mysqli->query(
+        'SELECT category, COUNT(*) AS c FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()
+         AND category IS NOT NULL AND category <> \'\' GROUP BY category ORDER BY c DESC, category ASC'
+    );
+    $out = [];
+    while ($res && ($r = $res->fetch_assoc())) {
+        $out[] = ['name' => $r['category'], 'slug' => sanitize_title($r['category']), 'count' => (int) $r['c']];
+    }
+    return $out;
+}
+
 function saveBlogPost(array $data, $mysqli = MYSQLI) {
     $id              = (int) ($data['id'] ?? 0);
     $title           = trim((string) ($data['title'] ?? ''));
@@ -3395,6 +3415,8 @@ function saveBlogPost(array $data, $mysqli = MYSQLI) {
     $content         = (string) ($data['content'] ?? '');
     $featuredImage   = trim((string) ($data['featured_image'] ?? '')) ?: null;
     $authorName      = trim((string) ($data['author_name'] ?? '')) ?: null;
+    $category        = mb_substr(trim((string) ($data['category'] ?? '')), 0, 60) ?: null;
+    $liveSearch      = mb_substr(trim((string) ($data['live_search'] ?? '')), 0, 120) ?: null;
     $metaTitle       = trim((string) ($data['meta_title'] ?? '')) ?: null;
     $metaDescription = trim((string) ($data['meta_description'] ?? '')) ?: null;
     $status          = ($data['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
@@ -3435,24 +3457,24 @@ function saveBlogPost(array $data, $mysqli = MYSQLI) {
     if ($id > 0) {
         $stmt = $mysqli->prepare(
             'UPDATE blog_posts SET title = ?, focus_keyword = ?, slug = ?, excerpt = ?, content = ?, featured_image = ?,
-             author_name = ?, meta_title = ?, meta_description = ?, status = ?, published_at = ?, updated_at = NOW()
+             category = ?, live_search = ?, author_name = ?, meta_title = ?, meta_description = ?, status = ?, published_at = ?, updated_at = NOW()
              WHERE ID = ?'
         );
         $stmt->bind_param(
-            'sssssssssssi',
+            'sssssssssssssi',
             $title, $focusKeyword, $slug, $excerpt, $content, $featuredImage,
-            $authorName, $metaTitle, $metaDescription, $status, $publishedAt, $id
+            $category, $liveSearch, $authorName, $metaTitle, $metaDescription, $status, $publishedAt, $id
         );
     } else {
         $stmt = $mysqli->prepare(
             'INSERT INTO blog_posts
-             (title, focus_keyword, slug, excerpt, content, featured_image, author_name, meta_title, meta_description, status, published_at, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+             (title, focus_keyword, slug, excerpt, content, featured_image, category, live_search, author_name, meta_title, meta_description, status, published_at, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
         );
         $stmt->bind_param(
-            'sssssssssss',
+            'sssssssssssss',
             $title, $focusKeyword, $slug, $excerpt, $content, $featuredImage,
-            $authorName, $metaTitle, $metaDescription, $status, $publishedAt
+            $category, $liveSearch, $authorName, $metaTitle, $metaDescription, $status, $publishedAt
         );
     }
     $ok = $stmt->execute();
