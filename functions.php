@@ -2641,7 +2641,18 @@ function getTnCatEventsCount($catId = 0, $params = []) {
 function getTnCatById($catId) {
     $params['filter'] = "contains(path, '." . (int) $catId . ".') and depth eq 2";
     $params['perPage'] = 1;
-    return tnRequest("/catalog/v2/categories/", $params);
+    $r = tnRequest("/catalog/v2/categories/", $params);
+    if (!empty($r['results'])) return $r;
+    // Deeper categories (the MLB, NBA, NHL and MLS ones sit under their sport, named "Professional (MLB)"): look at any depth
+    // and take the entry whose path ends with this id, so a descendant is never mistaken for it.
+    $r = tnRequest("/catalog/v2/categories/", ['filter' => "contains(path, '." . (int) $catId . ".')", 'perPage' => 10]);
+    foreach ($r['results'] ?? [] as $c) {
+        if (substr((string) ($c['path'] ?? ''), -strlen('.' . (int) $catId . '.')) === '.' . (int) $catId . '.') {
+            $r['results'] = [$c];
+            return $r;
+        }
+    }
+    return ['results' => []];
 }
 
 

@@ -24,6 +24,7 @@ const SO_GENRE_PAGES = [
     'nfl-tickets'             => [1879, 'NFL',              'NFL football',               'sports',   null],
     'mlb-tickets'             => [1969, 'MLB',              'MLB baseball',               'sports',   null],
     'nhl-tickets'             => [1972, 'NHL',              'NHL hockey',                 'sports',   null],
+    'mls-tickets'             => [1970, 'MLS',              'MLS soccer',                 'sports',   null],
 ];
 
 /** @return array|null [slug, id, label, long, kind, profile] for a clean slug */
