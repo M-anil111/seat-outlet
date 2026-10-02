@@ -98,11 +98,11 @@ include 'header.php';
 					</div>
 				</div>
 				<div class="col-12">
-					<div class="row align-items-center text-center text-md-start">
+					<div class="row align-items-center text-center text-md-start so-hero-row">
 						<div class="col-md-3">
 							<div class="img-artist">
 								<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" fetchpriority="high" width="300" height="300" />
-								<?php renderImageCredit($performerImg, 'img-credit'); ?>
+								<?php renderImageCredit($performerImg, 'img-credit d-none d-md-block'); ?>
 							</div>
 						</div>
 						<div class="col-md-9 text-white">
@@ -130,6 +130,8 @@ include 'header.php';
 									<?php } ?>
 								</p>
 								<?php } ?>
+								<p class="so-resale-note mb-0">Resale marketplace. Prices are set by sellers and may be above or below face value.</p>
+								<?php renderImageCredit($performerImg, 'img-credit so-hero-credit d-md-none'); ?>
 							</div>
 						</div>
 					</div>
@@ -291,9 +293,9 @@ include 'header.php';
 										</div>
 										<div class="ms-3">
 											<?php if (!empty($cheapestEventId) && (int) ($event['id'] ?? 0) === $cheapestEventId) { ?><span class="event-cheapest-badge">Cheapest date</span><?php } ?>
-											<?php renderEventPriceTag($event); ?>
-											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-												<span>Buy Tickets</span>
+											<?php renderEventPriceTag($event); $evHasPrice = eventFromPrice($event) !== ''; ?>
+											<a href="/event/<?php echo $slug; ?>" class="btn <?php echo $evHasPrice ? 'btn-primary' : 'btn-outline-primary'; ?> d-flex align-items-center gap-2" aria-label="<?php echo $evHasPrice ? 'Buy tickets for' : 'View'; ?> <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+												<span><?php echo $evHasPrice ? 'Buy Tickets' : 'View Event'; ?></span>
 												<i class="bi bi-chevron-right"></i>
 											</a>
 										</div>
@@ -409,10 +411,12 @@ include 'header.php';
 							<div class="next-event-when"><?php echo date('D, M j, Y', $nextTs); ?><span><?php echo htmlspecialchars($nextEvent['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></div>
 							<a class="next-event-name" href="/event/<?php echo htmlspecialchars($nextSlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($nextEvent['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
 							<div class="next-event-where"><?php echo $nvLink($nvVenueUrl, $nvVenue); ?><?php if ($nvVenue !== '' && $nvCity !== '') { ?><i aria-hidden="true">·</i><?php } ?><?php echo $nvLink($nvCityUrl, $nvCity); ?></div>
-							<?php if ($nextDeal['from'] !== '') { ?>
+							<?php if ($nextDeal['from'] === '') { ?>
+								<div class="next-event-price next-event-price--none">No tickets listed yet. Check the event page for updates.</div>
+							<?php } else { ?>
 								<div class="next-event-price"><span class="from">From</span><strong><?php echo htmlspecialchars($nextDeal['from'], ENT_QUOTES, 'UTF-8'); ?></strong><?php if ($nextDeal['tickets'] > 0) { ?><span class="listed"><?php echo (int) $nextDeal['tickets']; ?> tickets listed</span><?php } ?></div>
 							<?php } ?>
-							<a href="/event/<?php echo htmlspecialchars($nextSlug, ENT_QUOTES, 'UTF-8'); ?>" class="next-event-cta">Buy Tickets</a>
+							<a href="/event/<?php echo htmlspecialchars($nextSlug, ENT_QUOTES, 'UTF-8'); ?>" class="next-event-cta"><?php echo $nextDeal['from'] !== '' ? 'Buy Tickets' : 'View Event'; ?></a>
 						</div>
 						<?php } ?>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">

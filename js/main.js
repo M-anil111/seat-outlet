@@ -968,3 +968,22 @@ document.addEventListener('DOMContentLoaded', function () {
     function bind() { if (window.jQuery) { jQuery(document).on('init reInit afterChange setPosition', '.slick-slider', function () { fixSlickFocus(this); }); } }
     if (window.jQuery) bind(); else document.addEventListener('DOMContentLoaded', bind);
 })();
+
+/* =====================================================
+    PHONES: search icon folds the header search open and closed
+===================================================== */
+(function () {
+    var btn = document.querySelector('.so-search-toggle');
+    var form = document.getElementById('soSearch');
+    if (!btn || !form) return;
+    btn.addEventListener('click', function () {
+        var open = form.hasAttribute('data-so-collapsed');
+        if (open) { form.removeAttribute('data-so-collapsed'); } else { form.setAttribute('data-so-collapsed', ''); }
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.classList.toggle('is-open', open);
+        if (open) {
+            var field = document.getElementById('keywordHeader');
+            if (field) { try { field.focus({ preventScroll: true }); } catch (e) { field.focus(); } }
+        }
+    });
+})();

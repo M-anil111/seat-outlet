@@ -1677,6 +1677,8 @@ function eventDealInfo(array $event) {
 function renderEventPriceTag(array $event) {
     $deal = eventDealInfo($event);
     if ($deal['from'] === '') {
+        // Nothing on sale for this date right now: say so instead of leaving a blank next to the button.
+        echo '<div class="event-price-tag event-price-tag--none">No tickets listed yet</div>';
         return;
     }
     echo '<div class="event-price-tag">';
@@ -3862,38 +3864,44 @@ function performerWhereGroups(array $events): array {
     return $groups;
 }
 
-/** "Where <artist> is playing": one tidy card with a row each for cities, venues and states, built from the real dates. */
+/** "Where <artist> is playing": segmented control (Cities, Venues, States) over one grouped list, built from the real dates. */
 function renderPerformerWhere(string $artistName, int $performerId, array $events, int $totalCount): void {
     $groups = performerWhereGroups(performerWhereEvents($performerId, $events, $totalCount));
     if (!$groups['city'] && !$groups['venue'] && !$groups['state']) return;
     $slug = createSlug($artistName, $performerId);
     $dims = [
-        'city'  => ['label' => 'Cities',  'prefix' => 'artist-city',  'word' => 'in'],
-        'venue' => ['label' => 'Venues',  'prefix' => 'artist-venue', 'word' => 'at'],
-        'state' => ['label' => 'States',  'prefix' => 'artist-state', 'word' => 'in'],
+        'city'  => ['label' => 'Cities', 'prefix' => 'artist-city',  'word' => 'in'],
+        'venue' => ['label' => 'Venues', 'prefix' => 'artist-venue', 'word' => 'at'],
+        'state' => ['label' => 'States', 'prefix' => 'artist-state', 'word' => 'in'],
     ];
-    $visible = 10;
+    $visible = 6;
     $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $first = null;
     ?>
     <div class="tab-section content-section-detail so-where" id="where">
-        <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Where <?php echo $e($artistName); ?> is playing</h2>
-        <p class="so-where__lead">Pick a place to see <?php echo $e($artistName); ?> tickets there.</p>
+        <h2 class="so-heading fw-bold fs-4 mb-1 text-black">Where <?php echo $e($artistName); ?> is playing</h2>
+        <p class="so-where__lead">Pick a place to see every <?php echo $e($artistName); ?> date there.</p>
+        <div class="so-seg" role="tablist" aria-label="Browse by place">
+            <?php foreach ($dims as $dim => $conf) { if (!$groups[$dim]) continue; if ($first === null) $first = $dim; ?>
+                <button type="button" class="so-seg__btn" role="tab" id="so-seg-<?php echo $dim; ?>" aria-controls="so-where-<?php echo $dim; ?>" aria-selected="<?php echo $first === $dim ? 'true' : 'false'; ?>" data-so-seg="<?php echo $dim; ?>"><?php echo $conf['label']; ?> <span><?php echo count($groups[$dim]); ?></span></button>
+            <?php } ?>
+        </div>
         <?php foreach ($dims as $dim => $conf) { $rows = $groups[$dim]; if (!$rows) continue; ?>
-            <div class="so-where__row" id="performer-<?php echo $dim; ?>">
-                <h3 class="so-where__label"><?php echo $conf['label']; ?> <span><?php echo count($rows); ?></span></h3>
-                <div class="so-where__chips">
+            <div class="so-where__panel" id="so-where-<?php echo $dim; ?>" role="tabpanel" aria-labelledby="so-seg-<?php echo $dim; ?>"<?php echo $first === $dim ? '' : ' hidden'; ?>>
+                <ul class="so-list">
                     <?php foreach ($rows as $i => $it) { ?>
-                        <a class="so-chip<?php echo $i >= $visible ? ' so-chip--extra' : ''; ?>"<?php echo $i >= $visible ? ' hidden' : ''; ?>
-                           href="/<?php echo $conf['prefix']; ?>/<?php echo $e($slug); ?>/<?php echo $e(createSlug($it['label'], $it['id'])); ?>"
-                           title="<?php echo $e($artistName . ' ' . $conf['word'] . ' ' . $it['label']); ?>">
-                            <span class="so-chip__name"><?php echo $e($it['label']); ?></span>
-                            <span class="so-chip__count"><?php echo (int) $it['count']; ?> <?php echo $it['count'] === 1 ? 'date' : 'dates'; ?></span>
-                        </a>
+                        <li class="so-list__item<?php echo $i >= $visible ? ' so-list__item--extra' : ''; ?>"<?php echo $i >= $visible ? ' hidden' : ''; ?>>
+                            <a class="so-list__link" href="/<?php echo $conf['prefix']; ?>/<?php echo $e($slug); ?>/<?php echo $e(createSlug($it['label'], $it['id'])); ?>" title="<?php echo $e($artistName . ' ' . $conf['word'] . ' ' . $it['label']); ?>">
+                                <span class="so-list__name"><?php echo $e($it['label']); ?></span>
+                                <span class="so-list__meta"><?php echo (int) $it['count']; ?> <?php echo $it['count'] === 1 ? 'date' : 'dates'; ?></span>
+                                <i class="bi bi-chevron-right so-list__chev" aria-hidden="true"></i>
+                            </a>
+                        </li>
                     <?php } ?>
-                    <?php if (count($rows) > $visible) { ?>
-                        <button type="button" class="so-chip so-chip--more" data-so-more="<?php echo count($rows) - $visible; ?>">Show all <?php echo count($rows); ?></button>
-                    <?php } ?>
-                </div>
+                </ul>
+                <?php if (count($rows) > $visible) { ?>
+                    <button type="button" class="so-list__more" data-so-more>Show all <?php echo count($rows); ?></button>
+                <?php } ?>
             </div>
         <?php } ?>
     </div>
@@ -3901,9 +3909,15 @@ function renderPerformerWhere(string $artistName, int $performerId, array $event
     (function () {
         var box = document.getElementById('where');
         if (!box) return;
+        box.querySelectorAll('[data-so-seg]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                box.querySelectorAll('[data-so-seg]').forEach(function (b) { b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+                box.querySelectorAll('.so-where__panel').forEach(function (p) { p.hidden = p.id !== 'so-where-' + btn.dataset.soSeg; });
+            });
+        });
         box.querySelectorAll('[data-so-more]').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                btn.parentNode.querySelectorAll('.so-chip--extra').forEach(function (c) { c.hidden = false; });
+                btn.parentNode.querySelectorAll('.so-list__item--extra').forEach(function (li) { li.hidden = false; });
                 btn.remove();
             });
         });
