@@ -754,7 +754,7 @@ function buildPerformerPageJsonLd(string $artistName, int $performerId, array $e
                 'price'         => (string) $price,
                 'priceCurrency' => 'USD',
                 'availability'  => !empty($event['_metadata']['hasTickets']) ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
-                'validFrom'     => date('Y-m-d'),
+                // No validFrom: we do not know when the listing went live, and "today" on every render is not a fact.
             ];
         }
         $nodes[] = $node;
@@ -2106,17 +2106,13 @@ function getStoredImageUrl($name, $type) {
     return '';
 }
 
-function processAndStoreImage($imageUrl, $name, $type) {
+function processAndStoreImage($imageUrl, $name, $type, $storeKey = '') {
 
     if (!$imageUrl || !$name) return '';
 
-    $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
-    $clean = trim($slug, '-');
-    $key  = "{$type}/{$clean}.webp";
-
-    if (s3ObjectExists($key)) {
-        return getS3PublicUrl($key);
-    }
+    // Keyed by the imgkey hash (see imageStoreKey()), not by the entity slug. An object that already exists there is NOT
+    // adopted: the file is always the one the source just gave us, so the licence on the row is the licence of the file.
+    $key = $storeKey !== '' ? $storeKey : ($type . '/' . md5($type . '|' . trim((string) $name)) . '.webp');
 
     $imageContent = downloadImage($imageUrl);
     if (!$imageContent) return '';
@@ -2705,7 +2701,9 @@ function getTopFestivalPerformers() {
 }
 
 function createSlug($name, $id) {
-    $name = strtolower(trim($name));
+    // THE slug rule for every canonical, link and redirect: see inc/entity-pages.php.
+    if (is_string($id) && !ctype_digit($id)) { $id = strtolower($id); }   // country codes: "...-us", never mixed case
+    $name = strtolower(trim(soAsciiFold((string) $name)));
     $name = preg_replace('/[^a-z0-9\s-]/', '', $name);
     $name = preg_replace('/\s+/', '-', $name);
     $name = preg_replace('/-+/', '-', $name);
@@ -3857,8 +3855,7 @@ function outputJsonLdGraph(array $nodes) {
  * duplicated inline (explode('-') + end()) in every page that needed it.
  */
 function extractTrailingId(string $slug): int {
-    $parts = explode('-', trim($slug, '/'));
-    return (int) end($parts);
+    return soSlugTrailingId($slug) ?? 0;   // strict: digits only, 1..2147483647 (0 = not an id)
 }
 
 const LOCATION_CATEGORY_PATHS = [
@@ -3882,19 +3879,12 @@ const LOCATION_CATEGORY_PATHS = [
  *                          country, or null if the slug doesn't match.
  */
 function parseLocationSlug(string $dimension, string $slug) {
-    $slug = trim($slug, '/');
-    $parts = explode('-', $slug);
-    if (empty($parts)) return null;
-
     if ($dimension === 'country') {
-        $code = strtoupper(end($parts));
-        return preg_match('/^[A-Z]{2}$/', $code) ? $code : null;
+        return soSlugCountryCode($slug);
     }
 
-    $last = end($parts);
-    if (!ctype_digit($last) || strlen($last) > 10 || (int) $last > TN_MAX_ID) return null;   // not an id TicketNetwork can have
-    $id = (int) $last;
-    return $id > 0 ? $id : null;
+    // Strict id (digits only, at most 2147483647): a crafted id must never reach the API.
+    return soSlugTrailingId($slug);
 }
 
 /**
@@ -3917,10 +3907,11 @@ function getLocationFilterFragment(string $dimension, $locationValue): ?string {
  * country, whose display name comes back on the same countries/{code}
  * lookup used for the filter.
  */
-function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
+function getLocationDisplayInfo(string $dimension, $locationValue, &$raw = null): ?array {
+    // $raw receives the API answer, so callers can tell "not found" (404) from "API down" (503).
     switch ($dimension) {
         case 'city':
-            $city = getTnCityById((int) $locationValue);
+            $city = $raw = getTnCityById((int) $locationValue);
             if (tnEntityMissing($city)) return null;
             return [
                 'name' => $city['text']['name'] ?? '',
@@ -3928,7 +3919,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
                 'label' => trim(($city['text']['name'] ?? '') . ', ' . ($city['stateProvince']['text']['abbr'] ?? ''), ', '),
             ];
         case 'state':
-            $state = getTnStateById((int) $locationValue);
+            $state = $raw = getTnStateById((int) $locationValue);
             if (tnEntityMissing($state)) return null;
             return [
                 'name' => $state['text']['name'] ?? '',
@@ -3936,7 +3927,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
                 'label' => $state['text']['name'] ?? '',
             ];
         case 'venue':
-            $venue = getTnVenueById((int) $locationValue);
+            $venue = $raw = getTnVenueById((int) $locationValue);
             if (tnEntityMissing($venue)) return null;
             return [
                 'name' => $venue['text']['name'] ?? '',
@@ -3944,7 +3935,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
                 'label' => $venue['text']['name'] ?? '',
             ];
         case 'country':
-            $country = getTnCountryByCode((string) $locationValue);
+            $country = $raw = getTnCountryByCode((string) $locationValue);
             if (tnEntityMissing($country) || ($country['text']['name'] ?? 'n/a') === 'n/a') return null;
             return [
                 'name' => $country['text']['name'] ?? '',
@@ -4321,6 +4312,7 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
                 <span class="so-related__media" style="--so-hue:<?php echo (int) $hue; ?>">
                     <?php if ($real) { ?>
                         <img src="<?php echo $e($img['url']); ?>" alt="<?php echo $e($name); ?>" loading="lazy" width="400" height="300">
+                        <?php if (imageCreditShort($img) !== '') { ?><span class="so-related__credit" title="<?php echo $e($img['credit']); ?>"><?php echo $e(imageCreditShort($img)); ?></span><?php } ?>
                     <?php } else { ?>
                         <span class="so-related__initials" aria-hidden="true"><?php echo $e(soInitials($name)); ?></span>
                     <?php } ?>
@@ -4330,6 +4322,7 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
             </a>
         <?php } ?>
     </div>
+    <p class="so-related__credits"><a href="/image-credits">Photo credits</a></p>
     <script>
     (function () {
         var grid = document.querySelector('[data-so-related]');
@@ -4346,8 +4339,14 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
                     (data.images || []).forEach(function (url, i) {
                         if (!url) return;
                         var media = pending[i].querySelector('.so-related__media');
+                        var cr = (data.credits || [])[i];
                         var img = new Image(); img.alt = pending[i].dataset.name; img.width = 400; img.height = 300;
-                        img.onload = function () { media.innerHTML = ''; media.appendChild(img); };
+                        img.onload = function () {
+                            media.innerHTML = ''; media.appendChild(img);
+                            if (cr && cr.text) {   // late pictures carry their credit too
+                                var c = document.createElement('span'); c.className = 'so-related__credit'; c.title = cr.full || ''; c.textContent = cr.text; media.appendChild(c);
+                            }
+                        };
                         img.src = url;
                     });
                 }).catch(function () {});
@@ -4406,14 +4405,13 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
     $perPage = 20;
 
-    $performerId   = extractTrailingId($_GET['slug'] ?? '');
-    $locationValue = parseLocationSlug($dimension, $_GET['loc'] ?? '');
+    $requestedSlug = (string) ($_GET['slug'] ?? '');
+    $requestedLoc  = (string) ($_GET['loc'] ?? '');
+    $performerId   = extractTrailingId($requestedSlug);               // strict ids: junk never reaches the API
+    $locationValue = parseLocationSlug($dimension, $requestedLoc);
 
     if ($performerId <= 0 || $locationValue === null) {
-        include 'header.php';
-        echo '<div class="container py-5"><p>Invalid performer or location.</p></div>';
-        include 'footer.php';
-        return;
+        renderNotFoundPage('Page');
     }
 
     // Independent requests go out together; the normal calls below then hit
@@ -4428,17 +4426,19 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     tnRequestMulti($prefetch);
 
     $performer = getTnPerformerById($performerId);
-    $location  = getLocationDisplayInfo($dimension, $locationValue);
-
-    if (empty($performer) || empty($performer['defaultCategory']) || empty($location)) {
-        include 'header.php';
-        echo '<div class="container py-5"><p>Performer or location not found.</p></div>';
-        include 'footer.php';
-        return;
+    if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
+        renderNotFoundPage('Performer', $performer);   // 404 when the API says not found, 503 when it failed
+    }
+    $location  = getLocationDisplayInfo($dimension, $locationValue, $rawLocation);
+    if (empty($location)) {
+        renderNotFoundPage('Location', $rawLocation);
     }
 
     $artistName    = $performer['text']['name'];
     $locationLabel = $location['label'];
+    $canonArtistSlug = soEntitySlug($artistName, $performerId);
+    $canonLocSlug    = soEntitySlug($locationLabel, $locationValue);
+    soRedirectToCanonicalSlug($urlPrefix, $requestedSlug, $canonArtistSlug, $requestedLoc, $canonLocSlug);
 
     $eventsResponse = getPerformerEventsByLocation($performerId, $dimension, $locationValue, [
         'page'    => $page,
@@ -4446,7 +4446,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
         'includeTotalCount' => 'true',
     ]);
 
-    $total_count = $eventsResponse['totalCount'] ?? 0;
+    $total_count = (int) ($eventsResponse['totalCount'] ?? 0);
     $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
     $events      = $eventsResponse['results'] ?? [];
     $count       = $eventsResponse['count'] ?? count($events);
@@ -4462,7 +4462,16 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
     $relatedPerformers = getRelatedPerformers($performer['defaultCategory']['path'], $performerId);
     $performer_bio   = getArtistBio($artistName, $performerId);
-    $performer_image = getArtistImage($artistName, $performer['defaultCategory']);
+    // Serve-only: the stored licensed photo, or an initials tile. No lookup inside the page request.
+    $performerImg    = getEntityImage(imageEntityTypeForPerformer($performer['defaultCategory']), $artistName, ['category' => $performer['defaultCategory'], 'resolve' => false]);
+    $performer_image = $performerImg['url'];
+    $hasRealImage    = soImageIsReal($performerImg);
+
+    // A failed feed is a 503 (retry), never a thin 200. A page with no events is noindex,follow and kept out of the sitemap.
+    if ($total_count === 0 && !$events && soApiDegraded()) { renderUnavailablePage('Tickets'); }
+    $isZero = ($total_count === 0);
+    if ($isZero) { $pageRobots = 'noindex, follow'; }
+    soZeroPageNote('/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug, $isZero);
 
     // Same generic "tickets" wording read fine for a music artist ("Taylor
     // Swift tickets") but flat for other performer types - a sports team's
@@ -4486,7 +4495,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     $pageFocusKeyword    = "$artistName Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
     $pageMetaTitle       = "$artistName {$noun['nounCap']} Tickets in $locationLabel | Seat Outlet";
     $pageMetaDescription = "Buy verified $artistName {$noun['noun']} tickets in $locationLabel. Compare prices across sellers and find upcoming $artistName {$noun['noun']}s near you on Seat Outlet.";
-    $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($artistName, $performerId) . '/' . createSlug($locationLabel, $locationValue);
+    $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema(array_map(fn($c) => ['label' => $c['label'], 'url' => null], $breadcrumbs), "$artistName in $locationLabel"),
         buildFaqPageSchema($faqs),
@@ -4522,7 +4531,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                         <div class="row align-items-center text-center text-md-start">
                             <div class="col-md-3">
                                 <div class="img-artist">
-                                    <img src="<?php echo $performer_image; ?>" alt="<?php echo htmlspecialchars("$artistName $noun[nounCap] tickets in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" />
+                                    <?php if ($hasRealImage) { ?><img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars("$artistName $noun[nounCap] tickets in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" width="300" height="300" /><?php renderImageCredit($performerImg, 'img-credit'); } else { echo soTileHtml($artistName, 'so-tile so-tile--hero'); } ?>
                                 </div>
                             </div>
                             <div class="col-md-9 text-white">
@@ -4577,8 +4586,8 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                     <h2>
                                         <?php echo htmlspecialchars(strtoupper($artistName), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN <?php echo htmlspecialchars(strtoupper($locationLabel), ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
                                         <span class="count" id="results_count">
-                                            <?php echo (int) $count; ?>
-                                            <?php echo $count > 1 ? 'RESULTS' : 'RESULT'; ?>
+                                            <?php echo (int) $total_count; ?>
+                                            <?php echo $total_count === 1 ? 'RESULT' : 'RESULTS'; ?>
                                         </span>
                                     </h2>
                                 </div>
@@ -4647,9 +4656,14 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
-                                    No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets found in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now.
-                                </h3>
+                                <div class="so-empty" role="status">
+                                    <h3 class="so-empty__title">No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
+                                    <p>Dates are added as they are announced. Leave your email and we will tell you when <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> announces dates.</p>
+                                    <?php
+                                    echo soLeadForm(['source' => 'artist-empty', 'class' => 'so-nl--compact', 'title' => 'Get alerts when ' . $artistName . ' announces dates', 'text' => 'One email when new dates go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'performer', 'interest_id' => (int) $performerId, 'interest_name' => $artistName, 'names' => false]);
+                                    soRenderEntityAlternatives(['parent' => ['url' => '/artist/' . $canonArtistSlug, 'text' => 'All ' . $artistName . ' tickets']], []);
+                                    ?>
+                                </div>
                             <?php } ?>
                         </div>
                     <div id="secondary" class="sidebar col-sm-12 col-md-4">
@@ -4676,7 +4690,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                     </div>
                     <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
                         <div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-                            <img src="<?php echo $performer_image; ?>" alt="<?php echo htmlspecialchars("About $artistName in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" />
+                            <?php if ($hasRealImage) { ?><img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars("About $artistName in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" /><?php renderImageCredit($performerImg, 'img-credit'); } else { echo soTileHtml($artistName, 'so-tile so-tile--about'); } ?>
                         </div>
                     </div>
                 </div>
@@ -4751,23 +4765,24 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
     $perPage = 20;
 
-    $locationValue = parseLocationSlug($dimension, $_GET['slug'] ?? '');
+    // theatre-* is the same page as theater-* (the sitemap and menus use theater-*): one URL, one canonical.
+    if (strpos($urlPrefix, 'theatre-') === 0) {
+        soRedirect301('/theater-' . substr($urlPrefix, 8) . '/' . rawurlencode(trim((string) ($_GET['slug'] ?? ''), '/')));
+    }
+    $requestedSlug = (string) ($_GET['slug'] ?? '');
+    $locationValue = parseLocationSlug($dimension, $requestedSlug);   // strict: junk ids never reach the API
 
     if ($locationValue === null) {
-        include 'header.php';
-        echo '<div class="container py-5"><p>Invalid location.</p></div>';
-        include 'footer.php';
-        return;
+        renderNotFoundPage('Location');
     }
 
-    $location = getLocationDisplayInfo($dimension, $locationValue);
+    $location = getLocationDisplayInfo($dimension, $locationValue, $rawLocation);
 
     if (empty($location)) {
-        include 'header.php';
-        echo '<div class="container py-5"><p>Location not found.</p></div>';
-        include 'footer.php';
-        return;
+        renderNotFoundPage('Location', $rawLocation);   // 404 when the API says not found, 503 when it failed
     }
+
+    soRedirectToCanonicalSlug($urlPrefix, $requestedSlug, soEntitySlug($location['label'], $locationValue));
 
     $locationLabel = $location['label'];
 
@@ -4777,12 +4792,19 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
         'includeTotalCount' => 'true',
     ]);
 
-    $total_count = $eventsResponse['totalCount'] ?? 0;
+    $total_count = (int) ($eventsResponse['totalCount'] ?? 0);
     $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
     $events      = $eventsResponse['results'] ?? [];
     $count       = $eventsResponse['count'] ?? count($events);
     $percent     = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
     $year        = date('Y');
+
+    // A failed feed is a 503 (retry), never a thin 200. A page with no events is noindex,follow and kept out of the sitemap.
+    if ($total_count === 0 && !$events && soApiDegraded()) { renderUnavailablePage($categoryLabel . ' tickets'); }
+    $canonSlug = soEntitySlug($locationLabel, $locationValue);
+    $isZero = ($total_count === 0);
+    if ($isZero) { $pageRobots = 'noindex, follow'; }
+    soZeroPageNote('/' . $urlPrefix . '/' . $canonSlug, $isZero);
 
     $sep = '<span class="separator"><strong> / </strong></span>';
     $breadcrumbs = [
@@ -4802,7 +4824,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     $pageFocusKeyword    = "$categoryLabel Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
     $pageMetaTitle       = "Buy $categoryLabel Tickets in $locationLabel | Seat Outlet";
     $pageMetaDescription = "Buy $categoryLabel tickets in $locationLabel. Compare prices across sellers, browse upcoming events, and find great seats on Seat Outlet.";
-    $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($locationLabel, $locationValue);
+    $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema($breadcrumbs, "$categoryLabel in $locationLabel"),
         buildFaqPageSchema($faqs),
@@ -4854,7 +4876,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                         <?php echo htmlspecialchars(strtoupper($categoryLabel), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN <?php echo htmlspecialchars(strtoupper($locationLabel), ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
                                         <span class="count" id="results_count">
                                             <?php echo (int) $total_count; ?>
-                                            <?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
+                                            <?php echo $total_count === 1 ? 'RESULT' : 'RESULTS'; ?>
                                         </span>
                                     </h2>
                                 </div>
@@ -4924,9 +4946,16 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
-                                    No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets found in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now.
-                                </h3>
+                                <div class="so-empty" role="status">
+                                    <h3 class="so-empty__title">No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
+                                    <p>New dates are added all the time.<?php echo $dimension === 'city' ? ' Leave your email and we will tell you when tickets go on sale.' : ''; ?></p>
+                                    <?php
+                                    if ($dimension === 'city') {
+                                        echo soLeadForm(['source' => 'city-empty', 'class' => 'so-nl--compact', 'title' => 'Get an alert for new events in ' . $locationLabel, 'text' => 'One email when tickets go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'city', 'interest_id' => (int) $locationValue, 'interest_name' => $locationLabel, 'names' => false]);
+                                    }
+                                    soRenderEntityAlternatives(['parent' => ['url' => '/' . (LOCATION_CATEGORY_PAGES[$dimension]['plain'] ?? $dimension) . '/' . $canonSlug, 'text' => 'All events in ' . $locationLabel]], []);
+                                    ?>
+                                </div>
                             <?php } ?>
                         </div>
                         <?php renderLocationCategoryLinks($dimension, $locationValue, $locationLabel, $urlPrefix); ?>
@@ -5556,4 +5585,6 @@ require_once __DIR__ . '/inc/images.php';
 require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-capture form
 require_once __DIR__ . '/inc/request-guard.php';   // soClientIp(), soRateHit(), soQs(): shared request helpers
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
+require_once __DIR__ . '/inc/entity-pages.php';     // slug rule, strict ids, canonical redirects, zero-event bookkeeping
+require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages
 register_shutdown_function('imageWorkerMaybeRun');   // background image queue, see inc/images.php

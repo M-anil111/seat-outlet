@@ -10,6 +10,7 @@ $allRules = listPageRules();
 $totalRules = count($allRules);
 $redirectCount = count(array_filter($allRules, fn($r) => !empty($r['redirect_to'])));
 $activeCount = count(array_filter($allRules, fn($r) => (int) $r['is_active'] === 1));
+$imgStats = imageQueueStats();
 
 include __DIR__ . '/includes/app-header.php';
 ?>
@@ -47,6 +48,18 @@ include __DIR__ . '/includes/app-header.php';
                         <div class="text-secondary">301 / 302 rules configured</div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="row row-cards mt-3">
+            <div class="col-12">
+                <a class="card card-sm text-decoration-none" href="images">
+                    <div class="card-body d-flex flex-wrap align-items-center gap-3">
+                        <div class="subheader mb-0">Images</div>
+                        <div><strong><?php echo (int) $imgStats['resolved_pct']; ?>%</strong> have a picture (<?php echo (int) $imgStats['ok'] + (int) $imgStats['manual']; ?> of <?php echo (int) $imgStats['total']; ?>)</div>
+                        <div class="text-secondary"><?php echo (int) $imgStats['pending']; ?> queued, <?php echo (int) $imgStats['fallback']; ?> not found<?php if ($imgStats['oldest_pending_age'] !== null) { echo ', oldest queued ' . htmlspecialchars(imageHumanAge($imgStats['oldest_pending_age']), ENT_QUOTES, 'UTF-8') . ' ago'; } ?></div>
+                    </div>
+                </a>
             </div>
         </div>
 

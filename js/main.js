@@ -820,7 +820,11 @@ window.soResolveLater = function (pending, round) {
           var url = (data.images || [])[i];
           if (!url) { left.push(p); return; }
           var t = new Image();
-          t.onload = function () { p.img.src = url; p.img.classList.remove('so-img-tile'); };
+          var cr = (data.credits || [])[i];
+          t.onload = function () {
+            p.img.src = url; p.img.classList.remove('so-img-tile');
+            if (cr && cr.text) { p.img.title = cr.full || cr.text; p.img.setAttribute('data-credit', cr.text); }   // the licence notice travels with the picture
+          };
           t.src = url;
         });
         window.soResolveLater(left.concat(pending.slice(8)), round + 1);

@@ -199,6 +199,17 @@ foreach ((cache_get('top_categories', 30 * 86400) ?: []) as $bucket) {
     }
 }
 
+// Zero-event pages stay out of the sitemap. The sitemap never asks the API per URL: every entity page records "no events"
+// in a small cache file when it renders (soZeroPageNote), and this reads that list. LIMIT: a page nobody has opened yet
+// (or not within 14 days) is listed until its first render shows it empty; the pages themselves are noindex,follow either way.
+$zeroPages = array_flip(soZeroPages());
+if ($zeroPages) {
+    $urls = array_values(array_filter($urls, function ($u) use ($zeroPages) {
+        $path = parse_url($u['loc'], PHP_URL_PATH);
+        return !isset($zeroPages[$path]);
+    }));
+}
+
 ob_start();
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
