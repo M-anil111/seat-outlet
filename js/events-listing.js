@@ -598,3 +598,15 @@ document.addEventListener('click', function (e) {
   buttons.forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-wk')); }); });
   show('1');
 })();
+
+
+/* Filter dropdown chips (When, Sort): only one open at a time, closed by a click elsewhere or Escape. */
+(function () {
+  var all = document.querySelectorAll('.so-filterbar .so-dd');
+  if (!all.length) return;
+  all.forEach(function (d) {
+    d.addEventListener('toggle', function () { if (d.open) all.forEach(function (o) { if (o !== d) o.open = false; }); });
+  });
+  document.addEventListener('click', function (e) { all.forEach(function (d) { if (d.open && !d.contains(e.target)) d.open = false; }); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') all.forEach(function (d) { d.open = false; }); });
+})();

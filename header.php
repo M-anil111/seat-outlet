@@ -68,8 +68,21 @@ include_once 'functions.php';
             header('Retry-After: 30');
             $pageRobots = 'noindex, follow';
         } elseif ($soEvCheck === null || tnEntityMissing($soEvCheck) || empty($soEvCheck['text']['name'])) {
+            // The event is gone from the catalog: send the visitor (and search engines) to the performer's page we
+            // remembered for it, or the matching category, instead of a 404.
+            if ($soEvId > 0 && tnEntityDefinitelyMissing($soEvCheck)) {
+                $soTo = soEventRedirectTarget(null, $soEvId);
+                header('Location: ' . $soTo, true, strpos($soTo, '/artist/') === 0 ? 301 : 302);   // permanent only when we know the performer
+                exit;
+            }
             http_response_code(404);
             $pageRobots = 'noindex, follow';
+        } elseif (soEventIsOver($soEvCheck)) {
+            // Over: the performer's page lists what is still on sale.
+            header('Location: ' . soEventRedirectTarget($soEvCheck, $soEvId), true, 301);
+            exit;
+        } else {
+            soEventRemember($soEvCheck);
         }
     }
     sendPageCacheHeaders();   // after the 404 check above: the status decides the policy
@@ -228,9 +241,9 @@ include_once 'functions.php';
     if ($soKeywordH1) { ob_start('soSingleH1'); }
     ?>
     <?php
-    // Phones: the search bar is folded away behind the search icon, except on the home page, the search page and
+    // Phones: the search bar is folded away behind the search icon, except on the search page and
     // when the visitor arrived with a search (filled fields). Wider screens always show it (CSS).
-    $soSearchOpen = in_array($soReqPath, ['/', '/index.php', '/search'], true)
+    $soSearchOpen = in_array($soReqPath, ['/search'], true)
         || !empty($searchInput['locationInputHeader']) || !empty($searchInput['keywordHeader']) || !empty($searchInput['startInputHeader']);
     ?>
     <div class="header-top-section">
@@ -262,22 +275,42 @@ include_once 'functions.php';
                     </div>
                     <!-- RIGHT -->
                     <div class="d-flex align-items-center gap-3">
-                        <nav class="tm-nav-wrapper d-none d-sm-none d-md-none d-lg-block d-xl-block d-xxl-block">
-                            <ul class="tm-nav" id="mainMenu">
-                                <li class="menu-item"><a href="/concert-tickets-for-sale">Concerts</a></li>
-                                <li class="menu-item"><a href="/game-day-tickets">Sports</a></li>
-                                <li class="menu-item"><a href="/buy-broadway-tickets">Theater</a></li>
-                                <li class="menu-item"><a href="/upcoming-music-festivals">Festivals</a></li>
-                                <li class="menu-item"><a href="/all-artists-and-teams">Artists &amp; Teams</a></li>
-                                <li class="menu-item"><a href="/city-events">Cities</a></li>
+                        <nav class="tm-nav-wrapper d-none d-lg-block" aria-label="Main">
+                            <?php $soMenu = require __DIR__ . '/inc/menu.php'; $soIc = function ($path) { return '<svg class="so-ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>'; }; ?>
+                            <ul class="tm-nav so-mega-nav" id="mainMenu">
+                                <?php foreach ($soMenu as $mi => $m) { ?>
+                                <li class="menu-item so-mega-item">
+                                    <a href="<?php echo $m['href']; ?>" class="so-mega-top" data-so-mega="<?php echo $m['key']; ?>" aria-haspopup="true" aria-expanded="false"><?php echo htmlspecialchars($m['label'], ENT_QUOTES, 'UTF-8'); ?></a>
+                                    <div class="so-mega" id="so-mega-<?php echo $m['key']; ?>" hidden>
+                                        <div class="so-mega__inner">
+                                            <a class="so-mega__lead" href="<?php echo $m['href']; ?>">
+                                                <span class="so-mega__icon"><?php echo $soIc($m['icon']); ?></span>
+                                                <strong><?php echo htmlspecialchars($m['label'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                                <span><?php echo htmlspecialchars($m['tag'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                                <em><?php echo htmlspecialchars($m['all'], ENT_QUOTES, 'UTF-8'); ?> &rsaquo;</em>
+                                            </a>
+                                            <?php foreach ($m['groups'] as $g) { ?>
+                                            <div class="so-mega__col">
+                                                <h3><?php echo htmlspecialchars($g['title'], ENT_QUOTES, 'UTF-8'); ?></h3>
+                                                <ul>
+                                                    <?php foreach ($g['links'] as [$label, $href]) { ?>
+                                                    <li><a href="<?php echo $href; ?>"><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a></li>
+                                                    <?php } ?>
+                                                </ul>
+                                            </div>
+                                            <?php } ?>
+                                        </div>
+                                    </div>
+                                </li>
+                                <?php } ?>
                             </ul>
                         </nav>
                         <div class="tm-top-links so-header-actions d-flex d-sm-flex d-md-flex align-items-center">
                             <button type="button" class="btn so-icon-btn so-search-toggle d-lg-none p-0" aria-label="Search" aria-expanded="<?php echo $soSearchOpen ? 'true' : 'false'; ?>" aria-controls="soSearch">
-                                <i class="bi bi-search" aria-hidden="true"></i>
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
                             </button>
                             <button type="button" class="btn mobile-menu-btn so-icon-btn d-lg-none p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-label="Open menu">
-                                <i class="bi bi-list" aria-hidden="true"></i>
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg>
                             </button>
                         </div>
                     </div>
@@ -341,209 +374,52 @@ include_once 'functions.php';
     <!-- Mobile Header -->
 
 
-    <div class="offcanvas offcanvas-start header-menu-mobile-logo" tabindex="-1" id="mobileMenu">
-        <div class="offcanvas-header">
-            <a href="/" class="tm-logo" style="width:200px; height:auto;"><img src="/images/blue-logo.webp" alt="Seat Outlet" width="200" height="40"></a>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close menu"></button>
+    <div class="offcanvas offcanvas-start so-menu" tabindex="-1" id="mobileMenu" aria-label="Menu">
+        <div class="so-menu__head">
+            <a href="/" class="so-menu__logo"><img src="/images/seatoutlet-logo.webp" alt="Seat Outlet" width="180" height="27"></a>
+            <button type="button" class="so-menu__close" data-bs-dismiss="offcanvas" aria-label="Close menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
         </div>
-        
-        <div class="offcanvas-body header-menu-mobile">
-            <nav class="mobile-nav">
-                <ul class="mobile-main-menu">
-                    <li class="has-submenu">
-
-                        <!-- ✅ ADD class + data-target -->
-                        <a href="/concert-tickets-for-sale" class="open-submenu" data-target="submenu-concerts">
-                            Concerts <span class="arrow">
-                                <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
-                            </span>
-                        </a>
-                        
-                        <!-- Submenu Panel -->
-                        <div class="submenu-panel" id="submenu-concerts">
-                            <div class="submenu-header">
-                                <span class="back-btn me-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g transform="matrix(-1,1.2246467991473532e-16,-1.2246467991473532e-16,-1,497.00405883789074,492.0039672851562)"><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#ffffff" opacity="1" data-original="#000000" class=""></path></g></svg>
-                                </span>
-                                <span>Concerts</span>
-                                
-                            </div>
-
-                            <ul>
-                                <li>
-                                    <h3 class="sub-menu-heading">Popular</h3>
-                                </li>
-                                <li><a href="/category/rap-hip-hop-1906">Rap / Hip Hop</a></li>
-                                <li><a href="/category/country-folk-1873">Country / Folk</a></li>
-                                <li><a href="/category/latin-1890">Latin</a></li>
-                                <li><a href="/category/alternative-1862">Alternative</a></li>
-                                <!-- second -->
-                                <hr class="line">
-                                <li>
-                                    <h3 class="sub-menu-heading">Discover More</h3>
-                                </li>
-                                <li><a href="/concert-tickets-for-sale" class="view-all">All Concerts <i class="bi bi-arrow-right"></i></a></li>
-                                <li><a href="/category/50s-60s-era-1860">50s / 60s Era</a></li>
-                                <li><a href="/category/alternative-1862">Alternative</a></li>
-                                <li><a href="/category/bluegrass-1866">Bluegrass</a></li>
-                                <li><a href="/category/children-family-2094">Children / Family</a></li>
-                                <li><a href="/category/classical-1871">Classical</a></li>
-                                <li><a href="/category/comedy-1872">Comedy</a></li>
-                                <li><a href="/category/country-folk-1873">Country / Folk</a></li>                                
-                                <li><a href="/category/festival-tour-1877">Festival / Tour</a></li>
-                                <li><a href="/category/hard-rock-metal-1882">Hard Rock / Metal</a></li>
-                                <li><a href="/category/holiday-1884">Holiday</a></li>
-                                <li><a href="/category/jazz-blues-1885">Jazz / Blues</a></li>
-                                <li><a href="/category/las-vegas-shows-1888">Las Vegas Shows</a></li>
-                                <li><a href="/category/latin-1890">Latin</a></li>
-                                <li><a href="/category/new-age-1895">New Age</a></li>
-                                <li><a href="/category/other-1900">Other</a></li>
-                                <li><a href="/category/performance-series-2062">Performance Series</a></li>
-                                <li><a href="/category/pop-rock-1903">Pop / Rock</a></li>
-                                <li><a href="/category/rb-soul-1904">R&b / Soul</a></li>
-                                <li><a href="/category/rap-hip-hop-1906">Rap / Hip Hop</a></li>
-                                <li><a href="/category/reggae-reggaeton-1907">Reggae / Reggaeton</a></li>
-                                <li><a href="/category/religious-1908">Religious</a></li>
-                                <li><a href="/category/techno-electronic-1915">Techno / Electronic</a></li>
-                                <li><a href="/category/world-1918">World</a></li>
-                            </ul>
-                        </div>
-
-                    </li>
-                    <li class="has-submenu">
-
-                        <!-- ✅ ADD class + data-target -->
-                        <a href="/game-day-tickets" class="open-submenu" data-target="submenu-sports">
-                        Sports <span class="arrow">
-                                <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
-                            </span>
-                        </a>
-                        
-                        <!-- Submenu Panel -->
-                        <div class="submenu-panel" id="submenu-sports">
-                            <div class="submenu-header">
-                                <span class="back-btn me-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g transform="matrix(-1,1.2246467991473532e-16,-1.2246467991473532e-16,-1,497.00405883789074,492.0039672851562)"><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#ffffff" opacity="1" data-original="#000000" class=""></path></g></svg>
-                                </span>
-                                <span>Sports</span>
-                                
-                            </div>
-
-                            <ul>
-                                <li>
-                                    <h3 class="sub-menu-heading">Popular</h3>
-                                </li>
-                                <li><a href="/category/mlb-1969">MLB</a></li>
-                                <li><a href="/category/nba-1971">NBA</a></li>
-                                <li><a href="/category/nhl-1972">NHL</a></li>
-                                <li><a href="/category/mls-1970">MLS</a></li>
-                                <!-- second -->
-                                <hr class="line">
-                                <li>
-                                    <h3 class="sub-menu-heading">Discover More</h3>
-                                </li>
-                                <li><a href="/game-day-tickets" class="view-all">All Sports <i class="bi bi-arrow-right"></i></a></li>
-                                <li><a href="/category/baseball-1864">Baseball</a></li>
-                                <li><a href="/category/basketball-1865">Basketball</a></li>
-                                <li><a href="/category/boxing-1867">Boxing</a></li>
-                                <li><a href="/category/cricket-1874">Cricket</a></li>
-                                <li><a href="/category/football-1879">Football</a></li>
-                                <li><a href="/category/golf-1880">Golf</a></li>
-                                <li><a href="/category/gymnastics-1881">Gymnastics</a></li>
-                                <li><a href="/category/hockey-1883">Hockey</a></li>
-                                <li><a href="/category/lacrosse-1886">Lacrosse</a></li>
-                                <li><a href="/category/mixed-martial-arts-2027">Mixed Martial Arts</a></li>
-                                <li><a href="/category/olympics-1897">Olympics</a></li>
-                                <li><a href="/category/other-1901">Other</a></li>
-                                <li><a href="/category/racing-1905">Racing</a></li>
-                                <li><a href="/category/rodeo-1910">Rodeo</a></li>
-                                <li><a href="/category/rugby-1911">Rugby</a></li>
-                                <li><a href="/category/skating-1912">Skating</a></li>
-                                <li><a href="/category/soccer-1913">Soccer</a></li>
-                                <li><a href="/category/softball-2059">Softball</a></li>
-                                <li><a href="/category/tennis-1916">Tennis</a></li>
-                                <li><a href="/category/volleyball-1917">Volleyball</a></li>
-                                <li><a href="/category/wrestling-1919">Wrestling</a></li>
-                            </ul>
-                        </div>
-
-                    </li>
-                    <li class="has-submenu">
-
-                        <!-- ✅ ADD class + data-target -->
-                        <a href="/buy-broadway-tickets" class="open-submenu" data-target="submenu-theater">
-                            Theater <span class="arrow">
-                                <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#000000" opacity="1" data-original="#000000" class=""></path></g></svg>
-                            </span>
-                        </a>
-                        
-                        <!-- Submenu Panel -->
-                        <div class="submenu-panel" id="submenu-theater">
-                            <div class="submenu-header">
-                                <span class="back-btn me-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" x="0" y="0" viewBox="0 0 492.004 492.004" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g transform="matrix(-1,1.2246467991473532e-16,-1.2246467991473532e-16,-1,497.00405883789074,492.0039672851562)"><path d="M382.678 226.804 163.73 7.86C158.666 2.792 151.906 0 144.698 0s-13.968 2.792-19.032 7.86l-16.124 16.12c-10.492 10.504-10.492 27.576 0 38.064L293.398 245.9l-184.06 184.06c-5.064 5.068-7.86 11.824-7.86 19.028 0 7.212 2.796 13.968 7.86 19.04l16.124 16.116c5.068 5.068 11.824 7.86 19.032 7.86s13.968-2.792 19.032-7.86L382.678 265c5.076-5.084 7.864-11.872 7.848-19.088.016-7.244-2.772-14.028-7.848-19.108z" fill="#ffffff" opacity="1" data-original="#000000" class=""></path></g></svg>
-                                </span>
-                                <span>Theater</span>
-                                
-                            </div>
-
-                            <ul>
-                                <li>
-                                    <h3 class="sub-menu-heading">Popular</h3>
-                                </li>
-                                <li><a href="/category/broadway-1868">Broadway</a></li>
-                                <!-- second -->
-                                 <hr class="line">
-                                <li>
-                                    <h3 class="sub-menu-heading">Discover More</h3>
-                                </li>
-                                <li><a href="/buy-broadway-tickets" class="view-all">All Theater <i class="bi bi-arrow-right"></i></a></li>
-                                <li><a href="/category/ballet-1863">Ballet</a></li>
-                                <li><a href="/category/broadway-1868">Broadway</a></li>
-                                <li><a href="/category/children-family-1869">Children / Family</a></li>
-                                <li><a href="/category/cirque-du-soleil-2031">Cirque Du Soleil</a></li>
-                                <li><a href="/category/dance-1875">Dance</a></li>
-                                <li><a href="/category/festival-2065">Festival</a></li>
-                                <li><a href="/category/las-vegas-1887">Las Vegas</a></li>
-                                <li><a href="/category/musical-play-1894">Musical / Play</a></li>
-                                <li><a href="/category/off-broadway-1896">Off-broadway</a></li>
-                                <li><a href="/category/opera-1898">Opera</a></li>
-                                <li><a href="/category/other-1902">Other</a></li>
-                                <li><a href="/category/west-end-2060">West End</a></li>
-                            </ul>
-                        </div>
-
-                    </li>
-                    <li>
-                        <a href="/upcoming-music-festivals" title="Festivals" class="mobile-menu">Festivals</a>
-                    </li>
-                    <li>
-                        <a href="/all-artists-and-teams" title="All Artists, Teams &amp; Shows A-Z" class="mobile-menu">Artists &amp; Teams</a>
-                    </li>
-                    <li>
-                        <a href="/city-events" title="Cities" class="mobile-menu">Cities</a>
-                    </li>
-                </ul>
-                <ul class="mobile-main-menu-new">
-                    <li>
-                        <a href="/ticket-customer-service" title="Contact Us" class="mobile-menu">Contact Us</a>
-                    </li>
-                    <li>
-                        <a href="/about-seat-outlet" title="About Us" class="mobile-menu">About Us</a>
-                    </li>                    
-                    <li>
-                        <a href="/ticket-faq" title="Faqs" class="mobile-menu">Faqs</a>
-                    </li>
-                    <li>
-                        <a href="/privacy-policy" title="Privacy Policy" class="mobile-menu">Privacy Policy</a>
-                    </li>
-                    <li>
-                        <a href="/terms-and-conditions" title="Terms of Use" class="mobile-menu">Terms of Use</a>
-                    </li>
-                    <li>
-                        <a href="/cookie-policy" title="Cookie Policy" class="mobile-menu">Cookie Policy</a>
-                    </li>
-                </ul>     
-            </nav>
+        <div class="so-menu__body" data-so-menu>
+            <div class="so-menu__rail" role="tablist" aria-label="Sections">
+                <?php foreach ($soMenu as $mi => $m) { ?>
+                <button type="button" class="so-menu__tab<?php echo $mi === 0 ? ' is-active' : ''; ?>" role="tab" data-tab="<?php echo $m['key']; ?>" aria-selected="<?php echo $mi === 0 ? 'true' : 'false'; ?>">
+                    <?php echo $soIc($m['icon']); ?>
+                    <span><?php echo htmlspecialchars($m['label'], ENT_QUOTES, 'UTF-8'); ?></span>
+                </button>
+                <?php } ?>
+                <button type="button" class="so-menu__tab" role="tab" data-tab="help" aria-selected="false">
+                    <?php echo $soIc('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8M12 17h.01"/>'); ?>
+                    <span>Help</span>
+                </button>
+            </div>
+            <div class="so-menu__pane">
+                <?php foreach ($soMenu as $mi => $m) { ?>
+                <div class="so-menu__panel" data-panel="<?php echo $m['key']; ?>"<?php echo $mi === 0 ? '' : ' hidden'; ?>>
+                    <a class="so-menu__all" href="<?php echo $m['href']; ?>"><?php echo htmlspecialchars($m['all'], ENT_QUOTES, 'UTF-8'); ?> <span aria-hidden="true">&rsaquo;</span></a>
+                    <?php foreach ($m['groups'] as $g) { ?>
+                    <h3><?php echo htmlspecialchars($g['title'], ENT_QUOTES, 'UTF-8'); ?></h3>
+                    <ul>
+                        <?php foreach ($g['links'] as [$label, $href]) { ?>
+                        <li><a href="<?php echo $href; ?>"><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a></li>
+                        <?php } ?>
+                    </ul>
+                    <?php } ?>
+                </div>
+                <?php } ?>
+                <div class="so-menu__panel" data-panel="help" hidden>
+                    <ul>
+                        <li><a href="/how-to-buy-tickets-online">How to buy tickets</a></li>
+                        <li><a href="/worry-free-guarantee">Our 100% guarantee</a></li>
+                        <li><a href="/ticket-buyer-protection">Buyer protection</a></li>
+                        <li><a href="/ticket-faq">Ticket FAQ</a></li>
+                        <li><a href="/ticket-customer-service">Contact us</a></li>
+                        <li><a href="/about-seat-outlet">About Seat Outlet</a></li>
+                        <li><a href="/blog">Blog</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="so-menu__foot">
+            <a class="so-menu__search" href="/search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg> Search events</a>
         </div>
     </div>

@@ -794,6 +794,40 @@ $(document).ready(function(){
     instead of one GET per card fired sequentially. isCurrent() lets the
     caller cancel when the slider was re-rendered meanwhile.
 ===================================================== */
+/* An initials tile as a data URI: used where an artist, team or show has no picture yet, so no two cards share the same
+   stock photo. The colour comes from the name, so a name always gets the same tile. */
+window.soTile = function (name) {
+  var words = String(name || '').replace(/[^A-Za-z0-9 ]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+  var ini = ((words[0] || '?').charAt(0) + (words.length > 1 ? words[words.length - 1].charAt(0) : '')).toUpperCase();
+  var h = 0; for (var i = 0; i < name.length; i++) { h = (h * 31 + name.charCodeAt(i)) >>> 0; }
+  var hue = h % 360, hue2 = (hue + 40) % 360;
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(' + hue + ',62%,38%)"/><stop offset="1" stop-color="hsl(' + hue2 + ',70%,24%)"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><text x="200" y="228" text-anchor="middle" font-family="-apple-system,Segoe UI,Inter,Arial,sans-serif" font-size="150" font-weight="700" fill="rgba(255,255,255,.92)">' + ini.replace(/&/g, '&amp;') + '</text></svg>';
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+};
+
+/* Real pictures arrive later for names that were only queued: ask a few at a time (the server limits how many it
+   will look up per request), a couple of times, then keep the tile. */
+window.soResolveLater = function (pending, round) {
+  round = round || 0;
+  if (!pending.length || round > 3) return;
+  setTimeout(function () {
+    fetch('/ajax/resolve-images.php', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: pending.slice(0, 8).map(function (p) { return { name: p.name, type: p.type }; }) }) })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var left = [];
+        pending.slice(0, 8).forEach(function (p, i) {
+          var url = (data.images || [])[i];
+          if (!url) { left.push(p); return; }
+          var t = new Image();
+          t.onload = function () { p.img.src = url; p.img.classList.remove('so-img-tile'); };
+          t.src = url;
+        });
+        window.soResolveLater(left.concat(pending.slice(8)), round + 1);
+      }).catch(function () {});
+  }, round === 0 ? 800 : 3600);
+};
+
 window.soBatchLoadImages = async function (container, selector, isCurrent) {
   if (!container) return;
   const imgs = Array.from(container.querySelectorAll(selector));
@@ -817,8 +851,18 @@ window.soBatchLoadImages = async function (container, selector, isCurrent) {
     const data = await res.json();
     if (typeof isCurrent === 'function' && !isCurrent()) return;
     const results = (data && data.images) || [];
+    const pending = [];
     imgs.forEach((img, i) => {
       const r = results[i];
+      const label = items[i].artist || items[i].venue;
+      if (r && r.real === false && label) {
+        // No picture of its own yet: initials tile now, the real picture when it has been looked up.
+        img.src = window.soTile(label);
+        img.classList.add('loaded', 'so-img-tile');
+        img.style.opacity = '1';
+        pending.push({ img: img, name: label, type: r.type || 'artist' });
+        return;
+      }
       if (!r || !r.image) { img.classList.add('loaded'); return; }
       const tempImg = new Image();
       img.style.transition = 'opacity 0.3s ease';
@@ -832,6 +876,7 @@ window.soBatchLoadImages = async function (container, selector, isCurrent) {
       tempImg.onerror = () => { img.style.opacity = '1'; img.classList.add('loaded'); };
       tempImg.src = r.image;
     });
+    if (pending.length) window.soResolveLater(pending, 0);
   } catch (err) {
     console.error('Batch image load failed:', err);
     imgs.forEach(img => img.classList.add('loaded'));
@@ -868,7 +913,7 @@ window.soLocal = (function () {
     },
     addEvent: function (item) {
       if (!item || !/^[0-9]+$/.test(String(item.id || '')) || !SLUG.test(String(item.slug || '')) || !item.name) return;
-      const clean = { id: String(item.id), name: String(item.name).slice(0, 90), slug: item.slug, date: /^\d{4}-\d{2}-\d{2}$/.test(item.date || '') ? item.date : '', city: String(item.city || '').slice(0, 60), venue: String(item.venue || '').slice(0, 80) };
+      const clean = { id: String(item.id), name: String(item.name).slice(0, 90), slug: item.slug, date: /^\d{4}-\d{2}-\d{2}$/.test(item.date || '') ? item.date : '', city: String(item.city || '').slice(0, 60), venue: String(item.venue || '').slice(0, 80), performer: String(item.performer || '').slice(0, 80), cat: /^[.0-9]+$/.test(item.cat || '') ? item.cat : '' };
       const list = read('so_recent_events').filter(i => i && String(i.id) !== clean.id);
       list.unshift(clean);
       write('so_recent_events', list.slice(0, 6));
@@ -886,51 +931,39 @@ window.soLocal = (function () {
   };
 })();
 
-// Homepage: "Pick up where you left off" from the performers this browser viewed.
+// Homepage: "Pick up where you left off": the events and performers this browser viewed, as picture cards.
+// Every card shows a picture: the stored one, the artist's picture when it can be found, or an initials tile.
 document.addEventListener('DOMContentLoaded', function () {
   const box = document.getElementById('recentlyViewed');
   if (!box || !window.soLocal) return;
+  const track = box.querySelector('[data-so-recent-track]');
   const items = window.soLocal.recentPerformers().slice(0, 6);
-  const evs = window.soLocal.recentEvents().slice(0, 3);
-  if (!items.length && !evs.length) return;
-  const evRow = box.querySelector('.recent-events-row');
+  const evs = window.soLocal.recentEvents().slice(0, 4);
+  if (!track || (!items.length && !evs.length)) return;
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const catJson = cat => esc(JSON.stringify(cat ? { path: cat } : {}));
+  let html = '';
   evs.forEach(function (ev) {
-    const col = document.createElement('div');
-    col.className = 'col-12 col-md-6 col-lg-4';
-    const a = document.createElement('a');
-    a.className = 'recent-card recent-event';
-    a.href = '/event/' + ev.slug;
-    const title = document.createElement('span');
-    title.textContent = ev.name;
-    const meta = document.createElement('small');
-    const when = ev.date ? new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-    meta.textContent = [when, ev.city].filter(Boolean).join(' · ');
-    const wrap = document.createElement('div');
-    wrap.appendChild(title); wrap.appendChild(document.createElement('br')); wrap.appendChild(meta);
-    a.appendChild(wrap);
-    a.addEventListener('click', function () { (window.dataLayer = window.dataLayer || []).push({ event: 'recent_event_click', event_id: ev.id }); });
-    col.appendChild(a);
-    if (evRow) evRow.appendChild(col);
+    const when = ev.date ? new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
+    const who = ev.performer || ev.name;
+    html += '<a class="so-feed-card" href="/event/' + esc(ev.slug) + '" data-recent-event="' + esc(ev.id) + '">' +
+      '<div class="so-feed-card__img"><img class="event-dynamic-image blur-image" src="' + window.soTile(who) + '" alt="' + esc(ev.name) + '" width="260" height="260" loading="lazy" data-artist="' + encodeURIComponent(who) + '" data-category=\'' + catJson(ev.cat) + '\'><span class="so-feed-card__badge">Event</span></div>' +
+      '<h3 class="so-feed-card__name">' + esc(ev.name) + '</h3>' +
+      '<p class="so-feed-card__meta">' + esc([when, ev.city].filter(Boolean).join(' - ')) + '</p></a>';
   });
-  const row = box.querySelector('.recent-row');
   items.forEach(function (it) {
-    const col = document.createElement('div');
-    col.className = 'col-12 col-sm-6 col-lg-4';
-    const a = document.createElement('a');
-    a.className = 'recent-card';
-    a.href = '/artist/' + it.slug;
-    if (it.img) {
-      const img = document.createElement('img');
-      img.src = it.img; img.alt = ''; img.loading = 'lazy'; img.width = 56; img.height = 56;
-      a.appendChild(img);
-    }
-    const span = document.createElement('span');
-    span.textContent = it.name;
-    a.appendChild(span);
-    col.appendChild(a);
-    row.appendChild(col);
+    html += '<a class="so-feed-card" href="/artist/' + esc(it.slug) + '">' +
+      '<div class="so-feed-card__img"><img class="' + (it.img ? '' : 'event-dynamic-image blur-image') + '" src="' + (it.img ? esc(it.img) : window.soTile(it.name)) + '" alt="' + esc(it.name) + '" width="260" height="260" loading="lazy"' + (it.img ? '' : ' data-artist="' + encodeURIComponent(it.name) + '"') + '></div>' +
+      '<h3 class="so-feed-card__name">' + esc(it.name) + '</h3><p class="so-feed-card__meta">View tickets</p></a>';
   });
+  track.innerHTML = html;
   box.classList.remove('d-none');
+  if (window.soBatchLoadImages) window.soBatchLoadImages(track, '.event-dynamic-image', function () { return true; });
+  const clear = box.querySelector('[data-so-recent-clear]');
+  if (clear) clear.addEventListener('click', function () {
+    try { localStorage.removeItem('so_recent_viewed'); localStorage.removeItem('so_recent_events'); } catch (e) {}
+    box.classList.add('d-none');
+  });
 });
 
 // Remember what was searched (submit of the header search form).
@@ -986,4 +1019,54 @@ document.addEventListener('DOMContentLoaded', function () {
             if (field) { try { field.focus({ preventScroll: true }); } catch (e) { field.focus(); } }
         }
     });
+})();
+
+/* =====================================================
+    MENUS: phone rail menu (tabs) and desktop mega menu (hover with a short delay, focus and Escape)
+===================================================== */
+(function () {
+    var menu = document.querySelector('[data-so-menu]');
+    if (menu) {
+        var tabs = menu.querySelectorAll('.so-menu__tab');
+        var panels = menu.querySelectorAll('.so-menu__panel');
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                var key = tab.getAttribute('data-tab');
+                tabs.forEach(function (t) { var on = t === tab; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
+                panels.forEach(function (p) { p.hidden = p.getAttribute('data-panel') !== key; });
+                var pane = menu.querySelector('.so-menu__pane'); if (pane) pane.scrollTop = 0;
+            });
+        });
+    }
+    var tops = document.querySelectorAll('.so-mega-top');
+    if (!tops.length) return;
+    var openKey = null, timer = null;
+    function panelOf(a) { return document.getElementById('so-mega-' + a.getAttribute('data-so-mega')); }
+    function closeAll() {
+        tops.forEach(function (a) { var p = panelOf(a); if (p) p.hidden = true; a.setAttribute('aria-expanded', 'false'); a.classList.remove('is-open'); });
+        openKey = null;
+        document.documentElement.classList.remove('so-mega-open');
+    }
+    function open(a) {
+        clearTimeout(timer);
+        var key = a.getAttribute('data-so-mega');
+        if (openKey === key) return;
+        closeAll();
+        var p = panelOf(a); if (!p) return;
+        p.hidden = false; a.setAttribute('aria-expanded', 'true'); a.classList.add('is-open'); openKey = key;
+        document.documentElement.classList.add('so-mega-open');
+    }
+    function later(fn, ms) { clearTimeout(timer); timer = setTimeout(fn, ms); }
+    tops.forEach(function (a) {
+        var item = a.closest('.so-mega-item');
+        item.addEventListener('mouseenter', function () { later(function () { open(a); }, openKey ? 40 : 110); });
+        item.addEventListener('mouseleave', function () { later(closeAll, 140); });
+        a.addEventListener('focus', function () { open(a); });
+        a.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowDown') { var first = panelOf(a).querySelector('a'); if (first) { e.preventDefault(); open(a); first.focus(); } }
+        });
+        item.addEventListener('focusout', function (e) { if (!item.contains(e.relatedTarget)) later(closeAll, 60); });
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+    document.addEventListener('click', function (e) { if (!e.target.closest('.so-mega-item')) closeAll(); });
 })();

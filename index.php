@@ -58,10 +58,9 @@ foreach ($fallbackCategories as $key => $list) {
       <img src="/images/home-slider-1024.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w, /images/home-slider.webp 1920w" sizes="100vw" width="1920" height="1100" alt="Ticket Marketplace - Live Concert Event" loading="eager" fetchpriority="high" />
       <div class="slide-overlay"></div>
       <div class="slide-caption">
-        <span class="tag">Live Events</span>
-        <h1>Experience Live Events<br>Like Never Before</h1>
+        <h1>Live events,<br>made easy.</h1>
         <p>Buy event tickets for sold-out concerts, must-see sports and theater shows. Compare seats and prices from sellers across our ticket marketplace network.</p>
-        <a href="/buy-tickets-online" class="btn-slide">Explore Events</a>
+        <div class="so-hero-cta"><a href="/buy-tickets-online" class="btn-slide">Explore events</a><a href="/city-events" class="so-hero-link">Browse by city</a></div>
       </div>
     </div>
 
@@ -204,11 +203,16 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
-<section id="recentlyViewed" class="recently-viewed bg-white d-none" aria-labelledby="recentlyViewedHeading">
+<section id="recentlyViewed" class="so-feed so-recent d-none" aria-labelledby="recentlyViewedHeading">
   <div class="container">
-    <h2 id="recentlyViewedHeading" class="fw-bold mb-3">Pick up where you left off</h2>
-    <div class="row g-3 recent-row"></div>
-    <div class="row g-3 recent-events-row mt-1"></div>
+    <div class="so-feed__head">
+      <div>
+        <h2 id="recentlyViewedHeading" class="so-feed__title">Pick up where you left off</h2>
+        <p class="so-feed__sub">Artists and events you looked at on this device</p>
+      </div>
+      <button type="button" class="so-feed__all so-recent__clear" data-so-recent-clear>Clear</button>
+    </div>
+    <div class="so-feed__track" data-so-recent-track></div>
   </div>
 </section>
 
