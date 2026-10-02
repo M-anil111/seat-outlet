@@ -1,5 +1,5 @@
 <h2>What the Worry Free Guarantee Means for Your Order</h2>
-<p>Buying tickets online should not feel like a gamble. Our worry free guarantee is the promise behind every Seat Outlet order: you get the tickets you paid for, they arrive before the event, and your payment is handled securely. If you are not genuinely happy, our 30-day satisfaction promise says we will make it right.</p>
+<p>Buying tickets online should not feel like a gamble. Our worry free guarantee is the promise behind every Seat Outlet order: the tickets are valid, they arrive before the event, you receive what you ordered or better, and a canceled event is refunded. Orders are fulfilled through TicketNetwork and covered by its 100% guarantee.</p>
 <p>This page walks through what the worry free guarantee covers, how it works alongside our <a href="/ticket-buyer-protection">ticket buyer protection</a> policy, and what to do if something goes wrong.</p>
 
 <div class="so-seo-figs">
@@ -13,16 +13,17 @@
   </figure>
 </div>
 
-<h2>The Worry Free Guarantee: 30-Day Promise in Plain Language</h2>
-<p>Our guarantee page states that you can try us for 30 days, and that a full refund within 30 days is available if you are unsatisfied. It also says our support team will help before any refund is made, and that the policy is written in plain language.</p>
-<p>Because every ticket order depends on the event, the seller and the delivery method, we recommend you read the full <a href="/terms-and-conditions">terms and conditions</a> too. If you are not sure whether your situation qualifies, ask before the event date.</p>
+<h2>The Worry Free Guarantee: A 100% Guarantee in Plain Language</h2>
+<p>Our guarantee follows the terms of our ticket network partner. Tickets are guaranteed to be authentic and valid for entry, shipped in time for at least one delivery attempt before the event, and the ones you ordered or better. If the event is canceled, the order is refunded, excluding delivery fees. You can read the original wording in <a href="https://www.ticketnetwork.com/policies" target="_blank" rel="noopener">TicketNetwork's policies</a>.</p>
+<p>Because every order depends on the event, the seller and the delivery method, we recommend you read the full <a href="/terms-and-conditions">terms and conditions</a> too. If you are not sure whether your situation qualifies, ask before the event date.</p>
 
 <h3>What the worry free guarantee is designed to cover</h3>
 <ul>
   <li><strong>Valid tickets:</strong> tickets purchased through our platform are guaranteed to be valid and authentic.</li>
-  <li><strong>On-time delivery:</strong> your tickets will arrive before the event.</li>
+  <li><strong>On-time delivery:</strong> tickets are shipped in time for at least one delivery attempt before the event.</li>
+  <li><strong>The tickets you ordered:</strong> you receive the tickets you requested, or better.</li>
   <li><strong>Secure transactions:</strong> payments run through secure payment systems built to protect personal and financial information.</li>
-  <li><strong>Event cancellation:</strong> if an event is canceled and not rescheduled, you receive a full refund for your ticket purchase.</li>
+  <li><strong>Event cancellation:</strong> if an event is canceled, the order is refunded, excluding delivery fees.</li>
   <li><strong>Support:</strong> our team can help from purchase to event day.</li>
 </ul>
 
@@ -33,8 +34,8 @@
   <tbody>
     <tr><td>A ticket is not valid</td><td>We work to provide replacement tickets of equal or better value, or offer a full refund.</td></tr>
     <tr><td>Tickets do not arrive in time</td><td>Our support team helps resolve the issue quickly.</td></tr>
-    <tr><td>The event is canceled and not rescheduled</td><td>You receive a full refund for your ticket purchase.</td></tr>
-    <tr><td>You are unsatisfied within 30 days</td><td>Contact support; the guarantee page describes a full refund within 30 days.</td></tr>
+    <tr><td>The event is canceled</td><td>The order is refunded, excluding delivery fees. Postponed or rescheduled events are not covered by a refund.</td></tr>
+    <tr><td>You change your mind</td><td>Tickets are not refundable for a change of plans. Check the event and price before you order.</td></tr>
   </tbody>
 </table>
 
@@ -51,7 +52,7 @@
 
 <h2>Prices, Resale and What the Guarantee Does Not Change</h2>
 <p>Seat Outlet is a resale marketplace, so ticket prices are set by sellers and can be above or below face value. The worry free guarantee protects the order, not the price, so compare listings before you buy. Our <a href="/why-are-concert-tickets-so-expensive">guide to ticket prices</a> explains what moves them.</p>
-<p>Refund timing can depend on payment providers and event policies. Our customer service page says refunds are processed within 5-10 business days, and that event cancellations qualify for full refunds.</p>
+<p>Refund timing can depend on payment providers and event policies. When a refund applies, timing can depend on the seller and the payment provider.</p>
 
 <h2>How to Use the Worry Free Guarantee Step by Step</h2>
 <ol>
@@ -68,9 +69,9 @@
 </div>
 
 <h2>Questions About the Worry Free Guarantee</h2>
-<details class="so-faq"><summary>What is the worry free guarantee?</summary><p>It is Seat Outlet's promise on every order: valid tickets, on-time delivery, secure checkout and a 30-day satisfaction guarantee, as described on this page.</p></details>
-<details class="so-faq"><summary>How long does the worry free guarantee last?</summary><p>The satisfaction promise is described as a 30-day guarantee. Event cancellation and ticket validity protections apply to your order as described in our buyer protection policy.</p></details>
-<details class="so-faq"><summary>Does the guarantee cover event cancellations?</summary><p>Yes. If an event is canceled and not rescheduled, you receive a full refund for your ticket purchase.</p></details>
+<details class="so-faq"><summary>What is the worry free guarantee?</summary><p>It is Seat Outlet's promise on every order: valid tickets, delivery before the event, the tickets you ordered or better, and a refund if the event is canceled. It follows TicketNetwork's 100% guarantee.</p></details>
+<details class="so-faq"><summary>Is there a 30-day money-back guarantee?</summary><p>No. The worry free guarantee is a 100% guarantee on ticket validity, delivery and event cancellations. It is not a 30-day satisfaction refund. Read the details in our <a href="/ticket-buyer-protection">buyer protection</a> policy.</p></details>
+<details class="so-faq"><summary>Does the guarantee cover event cancellations?</summary><p>Yes, if the event is canceled. The order is refunded, excluding delivery fees. Postponed or rescheduled events are not refunded.</p></details>
 <details class="so-faq"><summary>What if my tickets are not valid?</summary><p>We work to provide replacement tickets of equal or better value, or offer a full refund.</p></details>
 <details class="so-faq"><summary>How do I make a claim?</summary><p>Contact <a href="/ticket-customer-service">customer service</a> with your order details. Doing so before the event gives us the most time to help.</p></details>
 <details class="so-faq"><summary>Does the guarantee lower ticket prices?</summary><p>No. Sellers set prices on the marketplace. The guarantee protects your order once you buy.</p></details>

@@ -52,4 +52,4 @@
 <details class="so-faq"><summary>Do I need to print tickets after I follow how to buy tickets online?</summary><p>Most events accept mobile tickets. Printing is only required if the event page says so.</p></details>
 <details class="so-faq"><summary>Which payment methods work?</summary><p>Most major credit cards, debit cards and online payment options are accepted. Payments can fail because of bank restrictions or other errors, so check with your bank if needed.</p></details>
 <details class="so-faq"><summary>What if the event is canceled?</summary><p>If an event is canceled and not rescheduled, you receive a full refund for your ticket purchase.</p></details>
-<details class="so-faq"><summary>Can I get a refund if I change my mind?</summary><p>Most tickets are non-refundable unless the event is canceled or postponed. Check the terms before you buy.</p></details>
+<details class="so-faq"><summary>Can I get a refund if I change my mind?</summary><p>Tickets are not refundable for a change of plans. If an event is canceled, the order is refunded (delivery fees excluded). Check the terms before you buy.</p></details>

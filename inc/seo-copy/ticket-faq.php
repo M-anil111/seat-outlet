@@ -24,7 +24,7 @@
 <div class="so-callout"><p><strong>Tip:</strong> save your confirmation email and open your tickets a day early. If something looks wrong, contact <a href="/ticket-customer-service">ticket customer service</a> well before doors open.</p></div>
 
 <h2>Ticket FAQ on refunds, cancellations and protection</h2>
-<p>Most tickets are non-refundable unless the event is canceled or postponed, and exchanges depend on the event and organizer rules. If an event is canceled and not rescheduled, our <a href="/ticket-buyer-protection">ticket buyer protection</a> page says you receive a full refund. If a ticket turns out to be invalid, we work to provide replacement tickets of equal or better value, or a full refund.</p>
+<p>Tickets are not refundable for a change of plans, and exchanges depend on the event and organizer rules. If an event is canceled and not rescheduled, our <a href="/ticket-buyer-protection">ticket buyer protection</a> page says you receive a full refund. If a ticket turns out to be invalid, we work to provide replacement tickets of equal or better value, or a full refund.</p>
 <p>You can read the <a href="/worry-free-guarantee">Worry Free Guarantee</a> for the full promise, and the <a href="/terms-and-conditions">terms and conditions</a> for the legal detail. For general tips on shopping safely online, the FTC publishes a helpful guide on <a href="https://consumer.ftc.gov/articles/online-shopping" target="_blank" rel="noopener">online shopping</a>.</p>
 
 <div class="so-seo-figs">

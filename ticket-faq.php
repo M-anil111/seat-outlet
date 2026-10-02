@@ -330,7 +330,7 @@
                                     </button>
                                     <div id="refundOne" class="accordion-collapse collapse show" data-bs-parent="#refundFaq">
                                         <div class="accordion-body">
-                                            Most tickets are non-refundable unless the event is canceled or postponed.
+                                            Tickets are not refundable for a change of plans. If an event is canceled, the order is refunded (delivery fees excluded). Postponed or rescheduled events are not refunded.
                                         </div>
                                     </div>
                                 </div>

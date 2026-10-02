@@ -413,47 +413,56 @@ include 'header.php';
                         <span class="hero-title-blue">Worry Free Guarantee</span>
                     </h1>
                     <p class="hero-subtitle">
-                    <?php echo getContentBlock('/guarantee', 'hero-subtitle', 'We stand firmly behind the quality of our products and services. Every purchase you make with us is backed by our satisfaction guarantee - clear, honest, and customer‑first.'); ?>
+                    <?php echo getContentBlock('/guarantee', 'hero-subtitle', 'Every Seat Outlet order is backed by a 100% guarantee: valid tickets, delivery before the event, the tickets you ordered or better, and a refund if the event is canceled.'); ?>
                     </p>
                 </div>
             </div>
         </div>
     </section>
-        <!-- Section 1: Modern 30‑Day Guarantee -->
+        <!-- Section 1: 100% Guarantee (same terms as our ticket network partner, TicketNetwork) -->
         <section class="section-padding guarantee-modern">
             <div class="container guarantee-modern-inner">
                 <div class="guarantee-modern-text">
-                    <span class="guarantee-badge">30‑Day Promise</span>
-                    <h2 class="section-heading">30‑Day Satisfaction Guarantee</h2>
+                    <span class="guarantee-badge">100% Guarantee</span>
+                    <h2 class="section-heading">Every Order Is Backed by a 100% Guarantee</h2>
                     <p class="guarantee-lead">
-                        Try us for 30 days. If you’re not genuinely happy, we’ll make it right —
-                        no confusing terms, no hidden conditions.
+                        Seat Outlet orders are fulfilled through the TicketNetwork marketplace and covered by its
+                        100% guarantee, in plain language:
                     </p>
 
                     <ul class="guarantee-bullets">
                         <li>
                             <span class="icon"></span>
-                            Full refund within 30 days if you’re unsatisfied
+                            Your tickets will be authentic and valid for entry
                         </li>
                         <li>
                             <span class="icon"></span>
-                            Friendly support team to help before any refund
+                            Your tickets will be shipped in time for at least one delivery attempt before the event
                         </li>
                         <li>
                             <span class="icon"></span>
-                            Clear policy, written in plain language
+                            You receive the tickets you ordered, or better
+                        </li>
+                        <li>
+                            <span class="icon"></span>
+                            A full refund (delivery fees excluded) if the event is canceled
                         </li>
                     </ul>
+                    <p class="small text-muted mt-3 mb-0">
+                        Resale ticket prices may be above or below face value. The guarantee covers your order, not the price.
+                        Read the full terms in <a href="https://www.ticketnetwork.com/policies" target="_blank" rel="noopener">TicketNetwork's policies</a>
+                        and our <a href="/ticket-buyer-protection">ticket buyer protection</a> page.
+                    </p>
                 </div>
 
                 <div class="guarantee-modern-visual">
                     <div class="guarantee-image-frame">
                         <img
                             src="/images/ticket-trusted.webp"
-                            alt="Customers backed by our 30-day satisfaction guarantee" width="750" height="875" decoding="async"/>
+                            alt="Customers backed by our 100% ticket guarantee" width="750" height="875" decoding="async"/>
                         <div class="guarantee-sticker">
-                            <span>Risk‑Free</span>
-                            <small>30 Days</small>
+                            <span>Backed by</span>
+                            <small>100% Guarantee</small>
                         </div>
                     </div>
                 </div>

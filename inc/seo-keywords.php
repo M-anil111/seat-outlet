@@ -56,8 +56,8 @@ $SEO_PLAN = [
         'Ticket Scanner is part of the Seat Outlet network, an online travel booking website for flights, hotels and car rentals to plan the trip around your event.', 720, 44, true],
 
     // Trust and service pages
-    '/worry-free-guarantee' => ['worry free guarantee', 'Worry Free Guarantee: Our Trusted 30-Day Promise',
-        'Our worry free guarantee backs every Seat Outlet order with a 30-day satisfaction promise: valid tickets, on-time delivery and secure checkout.', 90, 20, true],
+    '/worry-free-guarantee' => ['worry free guarantee', 'Worry Free Guarantee: Our Trusted 100% Promise',
+        'Our worry free guarantee backs every Seat Outlet order with a 100% guarantee: valid tickets, delivery before the event and a refund if the event is canceled.', 90, 20, true],
     '/ticket-buyer-protection' => ['ticket buyer protection', 'Ticket Buyer Protection: Complete {Y} Guide',
         'Ticket buyer protection on every Seat Outlet order: valid tickets, on-time delivery and secure payment. See what is covered and how to get help with an order.', 0, 24, true],
     '/customer-testimonials' => ['customer testimonials', 'Customer Testimonials: Discover Fan Stories {Y}',
