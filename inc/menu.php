@@ -10,13 +10,13 @@ return [
     ['key' => 'concerts', 'label' => 'Concerts', 'href' => '/concert-tickets-for-sale', 'tag' => 'Tours, shows and live music',
      'icon' => '<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
      'groups' => [
-        ['title' => 'Popular genres', 'links' => [['Pop / Rock', '/category/pop-rock-1903'], ['Country / Folk', '/category/country-folk-1873'], ['Rap / Hip Hop', '/category/rap-hip-hop-1906'], ['R&B / Soul', '/category/rb-soul-1904'], ['Latin', '/category/latin-1890'], ['Alternative', '/category/alternative-1862']]],
-        ['title' => 'More to explore', 'links' => [['Hard Rock / Metal', '/category/hard-rock-metal-1882'], ['Jazz / Blues', '/category/jazz-blues-1885'], ['Techno / Electronic', '/category/techno-electronic-1915'], ['Comedy', '/category/comedy-1872'], ['Classical', '/category/classical-1871'], ['Children / Family', '/category/children-family-2094']]],
+        ['title' => 'Popular genres', 'links' => [['Pop / Rock', '/pop-rock-concert-tickets'], ['Country / Folk', '/country-music-tickets'], ['Rap / Hip Hop', '/hip-hop-tickets'], ['R&B / Soul', '/rnb-soul-concert-tickets'], ['Latin', '/latin-music-tickets'], ['Alternative', '/alternative-concert-tickets']]],
+        ['title' => 'More to explore', 'links' => [['Hard Rock / Metal', '/metal-concert-tickets'], ['Jazz / Blues', '/jazz-and-blues-tickets'], ['Techno / Electronic', '/electronic-music-tickets'], ['Comedy', '/comedy-show-tickets'], ['Classical', '/classical-music-tickets'], ['Children / Family', '/category/children-family-2094']]],
      ], 'all' => 'All concerts'],
     ['key' => 'sports', 'label' => 'Sports', 'href' => '/game-day-tickets', 'tag' => 'Game day, every league',
      'icon' => '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
      'groups' => [
-        ['title' => 'Leagues', 'links' => [['NFL', '/category/football-1879'], ['NBA', '/category/nba-1971'], ['MLB', '/category/mlb-1969'], ['NHL', '/category/nhl-1972'], ['MLS', '/category/mls-1970'], ['Tennis', '/category/tennis-1916']]],
+        ['title' => 'Leagues', 'links' => [['NFL', '/nfl-tickets'], ['NBA', '/nba-tickets'], ['MLB', '/mlb-tickets'], ['NHL', '/nhl-tickets'], ['MLS', '/category/mls-1970'], ['Tennis', '/category/tennis-1916']]],
         ['title' => 'More sports', 'links' => [['Basketball', '/category/basketball-1865'], ['Baseball', '/category/baseball-1864'], ['Hockey', '/category/hockey-1883'], ['Soccer', '/category/soccer-1913'], ['Boxing', '/category/boxing-1867'], ['Racing', '/category/racing-1905']]],
      ], 'all' => 'All sports'],
     ['key' => 'theater', 'label' => 'Theater', 'href' => '/buy-broadway-tickets', 'tag' => 'Broadway, musicals and more',
