@@ -177,6 +177,31 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
 </script>
 <?php } ?>
 
+<?php $evLowValue = (float) ($event['pricingInfo']['lowPrice']['value'] ?? 0); ?>
+<?php if ($evLowValue > 0) { ?>
+<section class="so-pricealert" aria-label="Price alert">
+  <div class="container">
+    <details class="so-pricealert__box">
+      <summary><i class="bi bi-bell" aria-hidden="true"></i><span>Alert me if the price drops</span></summary>
+      <div class="so-pricealert__body">
+        <?php echo soLeadForm([
+          'source' => 'event-price',
+          'title' => 'We will email you if the lowest price drops',
+          'text' => 'Lowest listed price right now: ' . $h($eventLowPrice !== '' ? $eventLowPrice : '$' . number_format($evLowValue, 0)) . '. We only email when it falls at least 10% below that. Prices are set by sellers and can also go up.',
+          'button' => 'Alert me',
+          'interest_type' => 'event',
+          'interest_id' => (int) $id,
+          'interest_name' => $evNmForLead,
+          'names' => false,
+          'class' => 'so-nl--compact',
+          'alert_kind' => 'price',
+          'baseline_price' => $evLowValue,
+        ]); ?>
+      </div>
+    </details>
+  </div>
+</section>
+<?php } ?>
 <div id="tn-maps" class="seatics so-seatmap" aria-live="polite"></div>
 <noscript><p class="so-seatmap__nojs container py-4">The seat map needs JavaScript. Please turn it on, or <a href="/ticket-customer-service">contact us</a> and we will help you find tickets.</p></noscript>
 <div id="so-no-tickets" class="so-no-tickets d-none" role="region" aria-labelledby="so-no-tickets-title" tabindex="-1">

@@ -187,6 +187,7 @@
         if (type === 'FinishedLoading') {
           state.loaded = true;
           if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+          demoteWidgetH1();
           if (data && data.numTicketGroups === 0) { showEmpty(); return; }
           recover();
           var ec = { currency: CUR, items: [item({ price: ev.lowPrice })] };
@@ -199,6 +200,13 @@
         }
       });
     }
+  }
+
+  /* The seat-map widget prints the event name as a second <h1>. One page, one top heading: keep the markup and the widget's own
+     updates, and tell assistive technology (and the outline) it is a level-2 heading. */
+  function demoteWidgetH1() {
+    var hs = document.querySelectorAll('#tn-maps h1');
+    for (var i = 0; i < hs.length; i++) { hs[i].setAttribute('role', 'heading'); hs[i].setAttribute('aria-level', '2'); }
   }
 
   function load() {

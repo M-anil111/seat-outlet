@@ -133,6 +133,7 @@ function updateEventsSection(location) {
     if (location.pid)   params.append('pid', location.pid);
     if (location.when === undefined) location.when = soWhen;
     if (location.when && !location.startDate) params.append('when', location.when);
+    if (soSort) params.append('sort', soSort);
 
     const noResults = soById('location-no-results');
     fetch(`/ajax/load-events.php?${params}`)
@@ -227,6 +228,9 @@ function updateEventsSection(location) {
         if(location.pid) {
             savedParams.performerFilter = `id eq ${location.pid}`;
         }
+        // The order and the filter the server actually used (a chosen sort, the "has tickets" rule for price order) carry over.
+        if (data.params && data.params.sort) savedParams.sort = data.params.sort;
+        if (data.params && data.params.filter) savedParams.filter = data.params.filter;
         loadMoreBtn.dataset.params = JSON.stringify(savedParams);
 
         // show/hide load more
@@ -254,9 +258,21 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHeading();
 });
 
-/* Quick date chips (All dates, Today, This weekend, Next 7 days, Next 30 days) */
+/* Quick date chips (All dates, Today, This weekend, Next 7 days, Next 30 days) and sort chips (Best match, Soonest, Lowest price) */
 let soWhen = '';
+let soSort = '';
 document.addEventListener('click', function (e) {
+    const sortChip = e.target.closest && e.target.closest('[data-so-sort]');
+    if (sortChip && pidEvent) {
+        soSort = sortChip.getAttribute('data-so-sort') || '';
+        document.querySelectorAll('[data-so-sort]').forEach(function (c) {
+            const on = c === sortChip;
+            c.classList.toggle('is-active', on);
+            c.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        updateEventsSection({ lat: latEvent.value || getCookie('so_lat') || '', lng: lngEvent.value || getCookie('so_lng') || '', when: soWhen, pid: pidEvent.value });
+        return;
+    }
     const chip = e.target.closest && e.target.closest('[data-so-when]');
     if (!chip || !pidEvent) return;
     soWhen = chip.getAttribute('data-so-when') || '';

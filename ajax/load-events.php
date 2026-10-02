@@ -12,6 +12,7 @@ $startDate = soQs('startDate');
 $endDate   = soQs('endDate');
 $pid       = soQsInt('pid', 0, 0, 2147483647);
 $whenIn    = soQs('when');
+$sortIn    = soQs('sort');          // '' (nearest first with a location, else soonest) | 'soonest' | 'price'
 
 // Snapped to a 0.1 degree grid: visitors near each other share one cached answer and the cache key space stays small.
 $snap = soSnapGeo($lat, $lng);
@@ -50,6 +51,13 @@ define('SO_NEAR_MILES', 50);
 if ($latVal !== null && $lngVal !== null) {
     $params['geoFilter'] = sprintf('nearby(%F,%F,3000mi)', $latVal, $lngVal);
     $params['sort'] = 'distance';
+}
+// A visitor-chosen order wins over nearest-first. Price order only makes sense for dates that have tickets listed.
+if ($sortIn === 'soonest') {
+    $params['sort'] = 'date/date';
+} elseif ($sortIn === 'price') {
+    $params['sort'] = 'pricingInfo/lowPrice/value';
+    $filters[] = '_metadata/hasTickets eq true';
 }
 
 if($pid > 0) {

@@ -6941,3 +6941,19 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
   .so-when::-webkit-scrollbar { display: none; }
   .so-when__chip { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
 }
+
+/* Price-drop alert card on event pages */
+.so-pricealert { padding: 10px 0 4px; background: #fff; }
+.so-pricealert__box { border: 1px solid #e3e7ee; border-radius: 16px; background: #f7f9fc; }
+.so-pricealert__box > summary { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 18px; list-style: none; cursor: pointer; font-size: 16px; font-weight: 600; color: #1d1d1f; }
+.so-pricealert__box > summary::-webkit-details-marker { display: none; }
+.so-pricealert__box > summary::after { content: ""; margin-left: auto; width: 9px; height: 9px; border-right: 2px solid #6e6e73; border-bottom: 2px solid #6e6e73; transform: rotate(45deg); transition: transform .2s; }
+.so-pricealert__box[open] > summary::after { transform: rotate(-135deg); }
+.so-pricealert__box > summary .bi { color: #0071e3; font-size: 18px; }
+.so-pricealert__box > summary:focus-visible { outline: 3px solid #0071e3; outline-offset: 2px; border-radius: 16px; }
+.so-pricealert__body { padding: 0 14px 14px; }
+.so-pricealert__body .so-nl { margin: 0; background: transparent; padding: 4px; }
+@media (min-width: 768px) { .so-pricealert__box { max-width: 720px; } }
+.so-pricealert__body .so-nl__title { font-size: 17px; margin: 0 0 4px; }
+.so-pricealert__body .so-nl__sub { font-size: 14px; margin-bottom: 10px; }
+.so-sortlabel { display: block; margin-top: 12px; }

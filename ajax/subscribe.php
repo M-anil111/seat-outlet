@@ -21,6 +21,6 @@ if (soPost('website') !== '') {   // honeypot: look successful, store nothing
 $res = soLeadSubmit([
     'email' => soPost('email'), 'fname' => soPost('fname'), 'lname' => soPost('lname'), 'source' => soPost('source'),
     'interest_type' => soPost('interest_type'), 'interest_id' => soPost('interest_id'), 'interest_name' => soPost('interest_name'),
-    'page' => soPost('page'), 'token' => soPost('token'),
+    'page' => soPost('page'), 'token' => soPost('token'), 'alert_kind' => soPost('alert_kind'), 'baseline_price' => soPost('baseline_price'),
 ]);
 soLeadRespond($res);
