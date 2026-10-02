@@ -1833,6 +1833,57 @@ font-size: 18px;
     #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label.active span { color: #2556e0; font-weight: 600; }
     #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider button.slick-prev,
     #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider button.slick-next { color: #2556e0; }
+    /* The tab's hidden button keeps focus after a click, which drew the
+       widget's thick 3px focus box around the active tab. Show a ring only
+       for keyboard focus. */
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label { outline: none !important; }
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label:has(> .sea-visually-hidden-input:focus-visible) {
+        outline: 2px solid #2556e0 !important;
+        outline-offset: 2px;
+    }
+
+    /* ---------- EMPTY LIST ("No Matches", e.g. ADA Accessible with no seats) ---------- */
+    #tn-maps .sea-ticket-list-empty-results-message { padding: 24px 16px !important; text-align: center; }
+    #tn-maps .sea-ticket-list-empty-results-content {
+        max-width: 340px;
+        margin: 0 auto;
+        padding: 28px 24px 24px;
+        background: #f7f9fe;
+        border: 1px solid #e3e8f0;
+        border-radius: 12px;
+        font-family: inherit;
+    }
+    #tn-maps .sea-ticket-list-empty-results-content::before {
+        content: '';
+        display: block;
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        background: #eef3fd url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232556e0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") center / 22px no-repeat;
+    }
+    #tn-maps .sea-ticket-list-empty-results-header { color: #0f1b3d; font-size: 18px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+    #tn-maps .sea-ticket-list-empty-results-text { color: #5b6578; font-size: 14px; line-height: 1.5; margin-bottom: 18px; }
+    #tn-maps .sea-ticket-list-empty-results-content .sea-ticket-list-empty-results-action {
+        display: inline-block;
+        min-width: 0;
+        min-height: 0;
+        padding: 10px 22px;
+        background: #fff !important;
+        border: 1.5px solid #2556e0 !important;
+        border-radius: 999px;
+        color: #2556e0 !important;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600 !important;
+        line-height: 1.2;
+        transition: background-color .2s, color .2s;
+    }
+    #tn-maps .sea-ticket-list-empty-results-content .sea-ticket-list-empty-results-action:hover,
+    #tn-maps .sea-ticket-list-empty-results-content .sea-ticket-list-empty-results-action:focus-visible {
+        background: #2556e0 !important;
+        color: #fff !important;
+    }
 
     /* ---------- PARKING PASSES and ACCESS PASSES LISTS (only while one of those tabs is selected) ----------
        Card rows: checkbox | car icon + title / row / quantity | notes icon |
