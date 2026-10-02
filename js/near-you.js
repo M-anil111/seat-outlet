@@ -19,7 +19,10 @@
   var locBtn = $('[data-so-loc]'), locLabel = $('[data-so-loc-label]'), locPop = $('[data-so-loc-pop]');
   var locInput = $('#soNearInput'), locHere = $('[data-so-loc-here]');
   var near = $('[data-so-near]'), grid = $('[data-so-near-grid]'), more = $('[data-so-near-more]'), title = $('[data-so-near-title]');
-  var state = { lat: '', lng: '', label: '', when: root.getAttribute('data-when') || '', sort: 'distance', radius: '0', page: 1, token: 0 };
+  // One filter state for the whole page. It comes from the address (the server printed it into the data attributes), so a
+  // filtered view can be copied and shared; changing a chip updates the address and refreshes both the grid and the list.
+  var DEFAULTS = { when: '', sort: 'distance', radius: '0', max: '0' };
+  var state = { lat: '', lng: '', label: '', when: root.getAttribute('data-when') || '', sort: root.getAttribute('data-sort') || 'distance', radius: root.getAttribute('data-radius') || '0', max: root.getAttribute('data-max') || '0', page: 1, token: 0, nw: false, scope: '' };
 
   var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
   var slug = function (v) { return String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
@@ -37,7 +40,8 @@
   }
 
   function card(ev, i) {
-    var badge = whenBadge(ev.iso) || (ev.top ? 'Popular near you' : '');
+    // "Popular" is only claimed when the grid really is sorted by sales (or is the nationwide list), never for "nearest first".
+    var badge = whenBadge(ev.iso) || (ev.top ? (state.scope === 'nationwide' ? 'Popular nationwide' : 'Popular near you') : '');
     return '<a class="so-feed-card" href="/event/' + slug(ev.name) + '-' + ev.id + '">' +
       '<div class="so-feed-card__img">' +
       '<img src="' + esc(ev.placeholder) + '" alt="' + esc(ev.name) + '" class="event-dynamic-image blur-image" width="260" height="260" loading="lazy"' +
@@ -45,7 +49,7 @@
       ' data-venue="' + encodeURIComponent(ev.venue || '') + '" data-tab="' + encodeURIComponent(ev.tab) + '"' +
       " data-category='" + esc(JSON.stringify(ev.defaultCategory || {})) + "'>" +
       (ev.dist != null ? '<span class="so-feed-card__dist">' + (ev.dist < 3 ? 'Nearby' : ev.dist + ' mi away') + '</span>' : '') +
-      (badge ? '<span class="so-feed-card__badge' + (badge === 'Popular near you' ? ' so-feed-card__badge--hot' : '') + '">' + esc(badge) + '</span>' : '') +
+      (badge ? '<span class="so-feed-card__badge' + (/^Popular/.test(badge) ? ' so-feed-card__badge--hot' : '') + '">' + esc(badge) + '</span>' : '') +
       '</div>' +
       '<h3 class="so-feed-card__name">' + esc(ev.name) + '</h3>' +
       '<p class="so-feed-card__meta">' + esc(ev.date) + '</p>' +
@@ -61,15 +65,30 @@
   }
 
   var notice = null;
-  function setTitle(data) {
-    var place = state.label || 'you';
-    var far = data && data.scope === 'nearest';
-    title.textContent = far ? (state.sort === 'distance' ? 'Closest ' + noun + ' to ' + place : noun.charAt(0).toUpperCase() + noun.slice(1) + ' beyond 50 miles of ' + place) : 'Explore ' + noun + ' near ' + place;
+  var WHEN_TEXT = { today: 'today', weekend: 'this weekend', week: 'in the next 7 days', month: 'in the next 30 days' };
+  function ensureNotice() {
     if (!notice) {
       notice = document.createElement('p');
       notice.className = 'so-near__notice';
       title.insertAdjacentElement('afterend', notice);
     }
+    return notice;
+  }
+  function setTitle(data) {
+    var place = state.label || 'you';
+    var when = state.when && WHEN_TEXT[state.when] ? ' ' + WHEN_TEXT[state.when] : '';
+    var cap = noun.charAt(0).toUpperCase() + noun.slice(1);
+    var scope = data && data.scope;
+    var far = scope === 'nearest';
+    ensureNotice();
+    if (scope === 'nationwide') {
+      // The nearest event is more than 250 miles away: say what this is instead of calling it "near you".
+      title.textContent = 'Popular ' + noun + ' nationwide' + when;
+      notice.hidden = false;
+      notice.textContent = 'No ' + noun + ' within 250 miles of ' + place + (state.when ? ' for those dates' : '') + '. These are the most popular across the country' + (data.closest ? ' (the nearest is about ' + data.closest + ' miles away).' : '.');
+      return;
+    }
+    title.textContent = far ? (state.sort === 'distance' ? 'Closest ' + noun + ' to ' + place : cap + ' beyond 50 miles of ' + place) + when : 'Explore ' + noun + ' near ' + place + when;
     // Honest about distance: say so when nothing is close, instead of quietly showing events from another region.
     notice.hidden = !far;
     notice.textContent = far ? 'No ' + noun + ' within ' + (data.radius || 50) + ' miles of ' + place + '. ' + (state.sort === 'distance' ? 'These are the closest, nearest first' : 'These are farther away') + (data.closest ? ' (the nearest is about ' + data.closest + ' miles away).' : '.') : '';
@@ -80,19 +99,25 @@
     near.hidden = false; more.hidden = true;
     title.textContent = 'Explore ' + noun + ' near ' + (state.label || 'you');
     if (notice) notice.hidden = true;
-    grid.innerHTML = '<div class="so-near__empty"><p>No ' + esc(noun) + ' within ' + esc(data.limited) + ' miles of ' + esc(state.label || 'you') + (state.when ? ' for those dates' : '') + '.</p>' +
+    grid.innerHTML = '<div class="so-near__empty"><p>No ' + esc(noun) + ' within ' + esc(data.limited) + ' miles of ' + esc(state.label || 'you') + (state.when ? ' for those dates' : '') + (state.max !== '0' ? ' under $' + esc(state.max) : '') + '.</p>' +
       '<button type="button" class="so-near__any" data-so-any>Show the nearest anywhere</button></div>';
+  }
+
+  function showFailure() {
+    near.hidden = false; more.hidden = true;
+    if (notice) notice.hidden = true;
+    grid.innerHTML = '<div class="so-near__empty" role="alert"><p>Could not load events near you right now.</p><button type="button" class="so-near__any" data-so-retry>Try again</button></div>';
   }
 
   function load(page) {
     if (!state.lat || !state.lng) { near.hidden = true; return; }
     var my = ++state.token;
     state.page = page;
-    if (page === 1) { grid.innerHTML = skeleton(4); near.hidden = false; more.hidden = true; }
+    if (page === 1) { grid.innerHTML = skeleton(4); near.hidden = false; more.hidden = true; state.nw = false; }
     more.disabled = true;
-    var qs = 'kind=near&cat=' + encodeURIComponent(cat) + (catId !== '0' ? '&catid=' + encodeURIComponent(catId) : '') + '&when=' + encodeURIComponent(state.when) + '&sort=' + encodeURIComponent(state.sort) + '&radius=' + encodeURIComponent(state.radius) + '&page=' + page +
+    var qs = 'kind=near&cat=' + encodeURIComponent(cat) + (catId !== '0' ? '&catid=' + encodeURIComponent(catId) : '') + '&when=' + encodeURIComponent(state.when) + '&sort=' + encodeURIComponent(state.sort) + '&radius=' + encodeURIComponent(state.radius) + '&max=' + encodeURIComponent(state.max) + (state.nw ? '&nw=1' : '') + '&page=' + page +
       '&lat=' + encodeURIComponent(state.lat) + '&lng=' + encodeURIComponent(state.lng);
-    fetch('/ajax/get-home-feed.php?' + qs).then(function (r) { return r.json(); }).then(function (data) {
+    fetch('/ajax/get-home-feed.php?' + qs).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (data) {
       if (my !== state.token) return;
       var events = (data && data.events) || [];
       if (page === 1) {
@@ -100,22 +125,29 @@
           if (data && data.scope === 'empty') { showEmpty(data); return; }
           near.hidden = true; return;
         }
+        state.scope = data.scope || '';
+        state.nw = state.scope === 'nationwide';
         setTitle(data);
         grid.innerHTML = '';
-        events.forEach(function (e, i) { e.top = i < 3 && !state.when; });
       }
+      events.forEach(function (e, i) { e.top = (page === 1 && i < 3) && ((state.sort === 'popular' && state.scope === 'near') || state.scope === 'nationwide'); });
       var start = grid.querySelectorAll('.so-feed-card').length;
       var html = events.map(function (e, i) { return card(e, start + i); }).join('');
       if (page === 1) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
       more.hidden = !(data && data.hasMore);
       more.disabled = false;
       if (window.soBatchLoadImages) window.soBatchLoadImages(grid, '.event-dynamic-image:not(.loaded)', function () { return my === state.token; });
-    }).catch(function () { if (my === state.token && page === 1) near.hidden = true; more.disabled = false; });
+    }).catch(function () {
+      if (my !== state.token) return;
+      more.disabled = false;
+      if (page === 1) showFailure();
+    });
   }
 
   function setLocation(lat, lng, label, save) {
     state.lat = lat; state.lng = lng; state.label = label || '';
     locLabel.textContent = label || 'Near you';
+    syncUi();
     if (save) {
       if (typeof setCookie === 'function') { setCookie('so_lat', encodeURIComponent(lat)); setCookie('so_lng', encodeURIComponent(lng)); setCookie('so_label', label || ''); }
     }
@@ -163,32 +195,105 @@
     }).catch(function () { placesReady = false; });
   });
 
-  // Date, distance and sort for the near-you grid.
+  // Date, distance, price and sort chips. One state drives the near-you grid (ajax) and the national list below (the same page,
+  // fetched with the same query string), and is written to the address so the view can be shared.
   var dds = root.querySelectorAll('[data-so-dd]');
+  var quicks = root.querySelectorAll('[data-so-quick]');
+  var listBox = document.querySelector('.list-category-bg');
+  var listSeq = 0;
+
+  function syncUi() {
+    dds.forEach(function (dd) {
+      var key = dd.getAttribute('data-so-dd');
+      var cur = String(state[key]);
+      var label = dd.querySelector('[data-so-dd-label]');
+      dd.querySelectorAll('[data-val]').forEach(function (o) {
+        var on = o.getAttribute('data-val') === cur;
+        o.classList.toggle('is-active', on);
+        if (on) label.textContent = o.textContent;
+      });
+      dd.querySelector('summary').classList.toggle('so-chip--on', key !== 'sort' && cur !== '' && cur !== '0');
+    });
+    quicks.forEach(function (q) {
+      var on = state.when === q.getAttribute('data-so-quick');
+      q.classList.toggle('so-chip--on', on);
+      q.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var l = q.querySelector('[data-so-quick-label]');
+      var base = q.getAttribute('data-so-quick') === 'today' ? 'Tonight' : 'This weekend';
+      if (l) l.textContent = state.lat ? base + ' near me' : base;
+    });
+  }
+
+  function listQuery() {
+    // The national list knows when, price and (best sellers | soonest | lowest price); "nearest first" is the grid's own order.
+    var p = [];
+    if (state.when) p.push('when=' + encodeURIComponent(state.when));
+    if (state.sort !== 'distance') p.push('sort=' + encodeURIComponent(state.sort));
+    if (state.max !== '0') p.push('max=' + encodeURIComponent(state.max));
+    return p;
+  }
+  function pushUrl() {
+    var p = listQuery();
+    if (state.radius !== '0') p.push('radius=' + encodeURIComponent(state.radius));
+    var url = location.pathname + (p.length ? '?' + p.join('&') : '');
+    try { history.replaceState(null, '', url); } catch (e) {}
+  }
+
+  function refreshList() {
+    if (!listBox) return;
+    var q = listQuery();
+    var url = location.pathname + (q.length ? '?' + q.join('&') : '');
+    var my = ++listSeq;
+    listBox.classList.add('is-loading');
+    listBox.setAttribute('aria-busy', 'true');
+    fetch(url, { headers: { 'X-Requested-With': 'fetch' } }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(function (html) {
+      if (my !== listSeq) return;
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var fresh = doc.querySelector('.list-category-bg');
+      if (!fresh) throw new Error('no list');
+      listBox.innerHTML = fresh.innerHTML;
+      var c1 = document.getElementById('results_count'), c2 = doc.getElementById('results_count');
+      if (c1 && c2) c1.textContent = c2.textContent.trim();
+      listBox.classList.remove('is-loading');
+      listBox.removeAttribute('aria-busy');
+      document.dispatchEvent(new CustomEvent('so:list-refreshed'));
+    }).catch(function () {
+      if (my !== listSeq) return;
+      window.location.href = url;   // the plain page renders the same filter on the server
+    });
+  }
+
+  function change(key, val) {
+    if (state[key] === val) return;
+    state[key] = val;
+    syncUi();
+    pushUrl();
+    load(1);
+    if (key !== 'radius') refreshList();
+  }
+
   dds.forEach(function (dd) {
     var key = dd.getAttribute('data-so-dd');
     dd.addEventListener('toggle', function () { if (dd.open) dds.forEach(function (o) { if (o !== dd) o.open = false; }); });
     dd.querySelectorAll('[data-val]').forEach(function (b) {
       b.addEventListener('click', function () {
-        state[key] = b.getAttribute('data-val');
-        dd.querySelector('[data-so-dd-label]').textContent = b.textContent;
-        dd.querySelectorAll('[data-val]').forEach(function (o) { o.classList.toggle('is-active', o === b); });
-        dd.querySelector('summary').classList.toggle('so-chip--on', !!state[key] && state[key] !== '0' && state[key] !== 'distance');
         dd.open = false;
-        load(1);
+        change(key, b.getAttribute('data-val'));
       });
+    });
+  });
+  quicks.forEach(function (q) {
+    q.addEventListener('click', function () {
+      var v = q.getAttribute('data-so-quick');
+      change('when', state.when === v ? '' : v);
     });
   });
   document.addEventListener('click', function (e) { if (!e.target.closest('[data-so-dd]')) dds.forEach(function (d) { d.open = false; }); });
   grid.addEventListener('click', function (e) {
-    if (!e.target.closest('[data-so-any]')) return;
-    var dd = root.querySelector('[data-so-dd="radius"]');
-    state.radius = '0';
-    dd.querySelector('[data-so-dd-label]').textContent = 'Any distance';
-    dd.querySelectorAll('[data-val]').forEach(function (o) { o.classList.toggle('is-active', o.getAttribute('data-val') === '0'); });
-    dd.querySelector('summary').classList.remove('so-chip--on');
-    load(1);
+    if (e.target.closest('[data-so-any]')) { change('radius', '0'); return; }
+    if (e.target.closest('[data-so-retry]')) load(1);
   });
+  syncUi();
 
   // Only this button opens the browser's location prompt.
   locHere.addEventListener('click', function () {

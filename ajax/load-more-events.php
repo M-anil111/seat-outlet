@@ -64,9 +64,16 @@ try {
 
     $results = $response['results'] ?? [];   
     $hasMore = ($page < $total_pages);
+    // A page with no events (throttled or degraded API) must not be kept by a browser or CDN for five minutes.
+    if (empty($results)) { header('Cache-Control: no-store'); }
+
+    // Rows as finished HTML: the same renderer as the first page (escaping, data attributes, festival cards, button text).
+    $rankQuery = ($type === 'search' && !isset($params['sort']) && isset($params['q']) && $params['q'] !== '*') ? (string) $params['q'] : '';
+    $rows = $rankQuery !== '' ? soRankSearchEvents($results, $rankQuery) : $results;
 
     echo json_encode([
         'events'      => $results,
+        'html'        => soRenderListingRows($rows),
         'totalCount'  => $total_count,
         'currentPage' => $page,
         'nextPage'    => $hasMore ? ($page + 1) : null,

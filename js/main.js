@@ -1078,3 +1078,13 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
     document.addEventListener('click', function (e) { if (!e.target.closest('.so-mega-item')) closeAll(); });
 })();
+
+/* Header search: leave empty fields out of the address (/search?keywordHeader=adele instead of five empty parameters). */
+(function () {
+    var f = document.getElementById('soSearch');
+    if (!f) return;
+    f.addEventListener('submit', function () {
+        f.querySelectorAll('input[name]').forEach(function (i) { if (i.value.trim() === '') i.disabled = true; });
+        setTimeout(function () { f.querySelectorAll('input[name]').forEach(function (i) { i.disabled = false; }); }, 1500);
+    });
+})();

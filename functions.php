@@ -1694,10 +1694,12 @@ function listingSortParams($sort) {
 }
 
 /** Listing query for any OData location/category fragment, with when/sort applied. */
-function locationListingParams($fragment, $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
+function locationListingParams($fragment, $perPage = 20, $page = 1, $when = '', $sort = 'popular', $maxPrice = 0) {
     $range = listingDateRange($when);
     $from = $range ? $range[0] : date('Y-m-d');
     $filter = $fragment . " and date/date ge $from" . ($range ? " and date/date le {$range[1]}" : '') . ' and _metadata/hasTickets eq true';
+    // "Under $X": the events API filters on the event's lowest listed price (pricingInfo/lowPrice/value, verified in the sandbox).
+    if ((int) $maxPrice > 0) $filter .= ' and pricingInfo/lowPrice/value le ' . (int) $maxPrice;
     return ['filter' => $filter] + listingSortParams($sort) + [
         'perPage'           => (int) $perPage,
         'page'              => (int) $page,
@@ -1705,11 +1707,11 @@ function locationListingParams($fragment, $perPage = 20, $page = 1, $when = '', 
     ];
 }
 
-function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
+function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular', $maxPrice = 0) {
     $fragment = $categoryPath !== ''
         ? "startswith(defaultCategory/path, '" . tnEscapeFilterValue($categoryPath) . "')"
         : "country/alphaCode eq 'US'";
-    return locationListingParams($fragment, $perPage, $page, $when, $sort);
+    return locationListingParams($fragment, $perPage, $page, $when, $sort, $maxPrice);
 }
 
 function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
@@ -1789,17 +1791,26 @@ function renderExploreBar($basePath, array $opts = []) {
         [$cat, $noun, $heroImg] = SO_EXPLORE_HUBS[$basePath];
         $catId = 0;
     } else {
-        return;
+        return false;
     }
     $tabs = ['/buy-tickets-online' => 'All events', '/game-day-tickets' => 'Sports', '/concert-tickets-for-sale' => 'Concerts', '/buy-broadway-tickets' => 'Theater', '/upcoming-music-festivals' => 'Festivals'];
+    // One filter state for the whole page, read from the address so a filtered view can be shared: the chips below drive both
+    // the near-you grid and the national list. Labels are printed from it here, so they are right before any script runs.
+    $when = (string) ($opts['when'] ?? '');
+    $sortIn = (string) ($_GET['sort'] ?? '');
+    $nearSorts = ['distance' => 'Nearest first', 'popular' => 'Best sellers', 'soonest' => 'Soonest', 'price' => 'Lowest price'];
+    $sort = isset($nearSorts[$sortIn]) ? $sortIn : 'distance';
+    $radiusIn = (int) ($_GET['radius'] ?? 0);
+    $radius = in_array($radiusIn, [25, 50, 100, 250], true) ? $radiusIn : 0;
+    $max = (int) ($opts['max'] ?? soListingMaxPrice());
     ?>
-    <div class="so-explore" data-so-explore data-hero="<?php echo htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8'); ?>" data-when="<?php echo htmlspecialchars((string) ($opts['when'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-catid="<?php echo (int) $catId; ?>" data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
+    <div class="so-explore" data-so-explore data-hero="<?php echo htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8'); ?>" data-when="<?php echo htmlspecialchars($when, ENT_QUOTES, 'UTF-8'); ?>" data-sort="<?php echo htmlspecialchars($sort, ENT_QUOTES, 'UTF-8'); ?>" data-radius="<?php echo (int) $radius; ?>" data-max="<?php echo (int) $max; ?>" data-catid="<?php echo (int) $catId; ?>" data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
         <nav class="so-cattabs" aria-label="Event categories">
             <?php foreach ($tabs as $href => $label) { ?>
                 <a href="<?php echo $href; ?>" <?php echo $href === $basePath ? 'class="active" aria-current="page"' : ''; ?>><?php echo $label; ?></a>
             <?php } ?>
         </nav>
-        <div class="so-chips">
+        <div class="so-chips" role="group" aria-label="Filters">
             <div class="so-chip-wrap">
                 <button type="button" class="so-chip so-chip--on" data-so-loc aria-haspopup="dialog" aria-expanded="false">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
@@ -1812,23 +1823,26 @@ function renderExploreBar($basePath, array $opts = []) {
                     <button type="button" class="so-pop__row" data-so-loc-here>Use my current location</button>
                 </div>
             </div>
+            <button type="button" class="so-chip so-chip--quick<?php echo $when === 'today' ? ' so-chip--on' : ''; ?>" data-so-quick="today" aria-pressed="<?php echo $when === 'today' ? 'true' : 'false'; ?>"><span data-so-quick-label>Tonight</span></button>
+            <button type="button" class="so-chip so-chip--quick<?php echo $when === 'weekend' ? ' so-chip--on' : ''; ?>" data-so-quick="weekend" aria-pressed="<?php echo $when === 'weekend' ? 'true' : 'false'; ?>"><span data-so-quick-label>This weekend</span></button>
             <?php
-            $dd = function ($key, $icon, $label, array $opts) {
-                echo '<details class="so-dd so-dd--near" data-so-dd="' . $key . '"><summary class="so-chip" aria-label="' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '">' . $icon
-                    . '<span data-so-dd-label>' . htmlspecialchars(reset($opts), ENT_QUOTES, 'UTF-8') . '</span><svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="so-dd__menu">';
-                $first = true;
-                foreach ($opts as $v => $l) {
-                    echo '<button type="button" class="so-pop__row' . ($first ? ' is-active' : '') . '" data-val="' . htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($l, ENT_QUOTES, 'UTF-8') . '</button>';
-                    $first = false;
+            $dd = function ($key, $icon, $label, array $dopts, $current) {
+                $cur = isset($dopts[$current]) ? $current : (string) array_key_first($dopts);
+                echo '<details class="so-dd so-dd--near" data-so-dd="' . $key . '"><summary class="so-chip' . ($key !== 'sort' && (string) $cur !== '' && (string) $cur !== '0' ? ' so-chip--on' : '') . '" aria-label="' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '">' . $icon
+                    . '<span data-so-dd-label>' . htmlspecialchars($dopts[$cur], ENT_QUOTES, 'UTF-8') . '</span><svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="so-dd__menu">';
+                foreach ($dopts as $v => $l) {
+                    echo '<button type="button" class="so-pop__row' . ((string) $v === (string) $cur ? ' is-active' : '') . '" data-val="' . htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($l, ENT_QUOTES, 'UTF-8') . '</button>';
                 }
                 echo '</div></details>';
             };
             $icCal = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
             $icDist = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>';
             $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>';
-            $dd('when', $icCal, 'Dates', ['' => 'All dates'] + LISTING_WHEN);
-            $dd('radius', $icDist, 'Distance', ['0' => 'Any distance', '25' => 'Within 25 miles', '50' => 'Within 50 miles', '100' => 'Within 100 miles', '250' => 'Within 250 miles']);
-            $dd('sort', $icSort, 'Sort', ['distance' => 'Nearest first', 'soonest' => 'Soonest', 'popular' => 'Best sellers']);
+            $icPrice = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M16 7.5c0-1.7-1.8-3-4-3s-4 1.1-4 3 1.8 2.6 4 3.2 4 1.3 4 3.2-1.8 3-4 3-4-1.3-4-3"/></svg>';
+            $dd('when', $icCal, 'Dates', ['' => 'All dates'] + LISTING_WHEN, $when);
+            $dd('radius', $icDist, 'Distance', ['0' => 'Any distance', '25' => 'Within 25 miles', '50' => 'Within 50 miles', '100' => 'Within 100 miles', '250' => 'Within 250 miles'], (string) $radius);
+            $dd('max', $icPrice, 'Price', ['0' => 'Any price'] + array_map('strval', LISTING_PRICE), (string) $max);
+            $dd('sort', $icSort, 'Sort', $nearSorts, $sort);
             ?>
         </div>
         <section class="so-near" data-so-near hidden aria-live="polite">
@@ -1839,16 +1853,21 @@ function renderExploreBar($basePath, array $opts = []) {
         <h2 class="so-allhead">All <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> in the USA</h2>
     </div>
     <?php
+    return true;
 }
 
 function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'popular', array $explore = []) {
-    $url = function ($w, $s) use ($basePath, $defaultSort) {
-        $q = array_filter(['when' => $w, 'sort' => $s === $defaultSort ? '' : $s]);
+    $max = (int) ($explore['max'] ?? 0);
+    $url = function ($w, $s) use ($basePath, $defaultSort, $max) {
+        $q = array_filter(['when' => $w, 'sort' => $s === $defaultSort ? '' : $s, 'max' => $max ?: '']);
         return htmlspecialchars($basePath . ($q ? '?' . http_build_query($q) : ''), ENT_QUOTES, 'UTF-8');
     };
-    renderExploreBar($basePath, $explore + ['when' => $when]);
+    $explored = renderExploreBar($basePath, $explore + ['when' => $when]);
     $whenLabel = $when !== '' ? LISTING_WHEN[$when] : 'All dates';
     $sortLabel = LISTING_SORT[$sort] ?? 'Best sellers';
+    // With the explore bar present its chips are the one set of filters (they also drive this list); the plain links below stay
+    // as the no-JavaScript fallback.
+    if ($explored) echo '<noscript>';
     ?>
     <div class="so-filterbar" role="group" aria-label="Filter and sort events">
         <details class="so-dd">
@@ -1876,11 +1895,12 @@ function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'p
                 <?php } ?>
             </div>
         </details>
-        <?php if ((int) $total === 0 && $when !== '') { ?>
+        <?php if (!$explored && (int) $total === 0 && $when !== '') { ?>
             <p class="listing-filter-empty">No events match <strong><?php echo htmlspecialchars(strtolower(LISTING_WHEN[$when]), ENT_QUOTES, 'UTF-8'); ?></strong>. <a href="<?php echo $url('', $sort); ?>">Show all dates</a>.</p>
         <?php } ?>
     </div>
     <?php
+    if ($explored) echo '</noscript>';
 }
 
 function getAllEvents() {
@@ -5535,4 +5555,5 @@ function seoScoreBadgeClass($score) {
 require_once __DIR__ . '/inc/images.php';
 require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-capture form
 require_once __DIR__ . '/inc/request-guard.php';   // soClientIp(), soRateHit(), soQs(): shared request helpers
+require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
 register_shutdown_function('imageWorkerMaybeRun');   // background image queue, see inc/images.php

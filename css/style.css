@@ -6591,3 +6591,106 @@ a.so-live__row:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(
   .so-evhero__trust { grid-column: 1 / -1; }
 }
 /* ==== end WS2 ==== */
+/* ===== WS3: listings, categories, genres and search ===== */
+/* (i) details control: a real button with a 44px tap area that does not make the row taller */
+.performer-event-item button.icon-i { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: -14px -10px -14px -6px; padding: 0; border: 0; background: transparent; color: #8a8f98; line-height: 1; cursor: pointer; }
+.performer-event-item button.icon-i:hover::before { background-color: #807e7e; border-radius: 20px; color: #fff; }
+.performer-event-item button.icon-i:focus-visible { outline: 3px solid #0056d6; outline-offset: -4px; border-radius: 12px; }
+
+/* One filter state: list refresh, retry message, empty state */
+.list-category-bg.is-loading { opacity: .45; pointer-events: none; transition: opacity .15s ease; }
+.so-more-error { margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; background: #fdecea; color: #8a1c13; font-size: 15px; }
+.so-more-error[hidden] { display: none; }
+.so-more-retry { margin-left: 6px; padding: 0 12px; min-height: 44px; border: 0; border-radius: 980px; background: #8a1c13; color: #fff; font-weight: 600; }
+.so-empty { padding: 24px 20px 28px; }
+.so-empty__title { font-size: 1.25rem; font-weight: 700; color: #1d1d1f; margin: 0 0 8px; }
+.so-empty__next { font-size: 16px; color: #424245; margin: 0 0 10px; }
+.so-empty__next a, .so-empty__clear { color: #0056d6; font-weight: 600; }
+.so-empty__clear { display: inline-block; padding: 10px 0; }
+.so-empty__altlabel { margin: 14px 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #6e6e73; }
+.so-empty__alts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.so-empty .so-linkchip { display: inline-flex; align-items: center; min-height: 44px; }
+.so-nl--empty { margin-top: 12px; }
+.search-note { margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; background: #f5f5f7; color: #424245; font-size: 15px; }
+.so-filterbar--compact { margin-bottom: 12px; }
+
+/* Festival days on one card */
+.so-festgroup__title { font-size: 19px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; color: #1d1d1f; }
+.so-festdays { grid-area: pill; list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.so-festdays a { display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 4px 12px; border: 1.5px solid #c7d6fb; border-radius: 12px; background: #f5f8ff; color: #0b3c91; text-decoration: none; font-weight: 700; font-size: 14px; line-height: 1.2; }
+.so-festdays a:hover { background: #eaf1ff; border-color: #0056d6; }
+.so-festdays small { font-size: 12px; font-weight: 500; color: #6e6e73; }
+
+/* Quick chips (Tonight, This weekend) */
+.so-chip--quick { flex: none; }
+.so-chip--quick span { max-width: none; }
+.so-near__notice { margin: -6px 0 14px; font-size: 15px; color: #6e6e73; }
+.so-chips .so-chip, .so-filterbar .so-chip { min-height: 44px; }
+
+/* Mobile density: one scrollable chip row, a sliding near-you row, compact event rows, 44px targets */
+@media (max-width: 575.98px) {
+  .so-explore .so-cattabs { margin-bottom: 8px; }
+  .so-explore .so-cattabs a { padding: 10px 12px; }
+  .so-explore .so-chips, .so-filterbar--compact { flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin: 0 -12px 12px; padding: 2px 12px 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .so-explore .so-chips::-webkit-scrollbar, .so-filterbar--compact::-webkit-scrollbar { display: none; }
+  .so-explore .so-chips > *, .so-filterbar--compact > * { flex: none; }
+  .so-chips .so-chip, .so-filterbar .so-chip { height: 44px; padding: 0 14px; font-size: 15px; border-radius: 12px; }
+  .so-chips .so-chip span { max-width: 52vw; }
+  .so-near { margin: 0 0 14px; }
+  .so-near__title, .so-allhead { font-size: 20px; margin: 0 0 10px; }
+  .so-near__grid { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -12px; padding: 0 12px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .so-near__grid::-webkit-scrollbar { display: none; }
+  .so-near__grid .so-feed-card { flex: 0 0 152px; scroll-snap-align: start; }
+  .so-near__grid .so-feed-card__img { aspect-ratio: 4 / 3; margin-bottom: 8px; border-radius: 16px; }
+  .so-near__grid .so-feed-card__name { font-size: 15px; }
+  .so-near__grid .so-feed-card__meta, .so-near__grid .so-feed-card__price { font-size: 13px; }
+  .so-near__grid .so-feed-card__badge { font-size: 12px; padding: 4px 8px; left: 6px; bottom: 6px; }
+  .so-near__grid .so-feed-card__dist { font-size: 12px; padding: 3px 8px; }
+  .so-near__grid .so-near__empty { flex: 0 0 calc(100vw - 48px); }
+  .so-near__more { height: 44px; margin-top: 10px; }
+  .results-header.so-hero { min-height: 84px; padding: 12px 14px; margin-bottom: 10px; border-radius: 18px; gap: 12px; }
+  .results-header.so-hero::before { width: 60px; height: 60px; border-radius: 14px; }
+  .results-header.so-hero .count { margin-top: 4px; padding: 2px 10px; }
+  .event-row-all .performer-event-item { grid-template-columns: 52px minmax(0, 1fr); padding: 12px 2px; gap: 2px 12px; }
+  .event-row-all .performer-event-item .date-box { width: 52px; border-radius: 14px; }
+  .event-row-all .performer-event-item .date-box .day { font-size: 24px; padding-bottom: 4px; }
+  .event-row-all .performer-event-item .date-box .month:first-child { padding-top: 6px; font-size: 11px; }
+  .event-row-all .performer-event-item .date-box .wd { padding: 2px 0; font-size: 11px; }
+  .event-row-all .performer-event-item > .ms-3 { grid-column: 2; grid-row: 2; width: 100%; flex-direction: row; justify-content: space-between; align-items: center; gap: 8px; margin: 2px 0 0 !important; padding: 4px 0 0; border-top: 0; }
+  .event-row-all .performer-event-item .btn.btn-primary, .event-row-all .performer-event-item .btn.btn-outline-primary { flex: none; min-width: 0; max-width: none; height: 44px; padding: 0 14px; font-size: 15px; }
+  .event-row-all .ev-name a, .so-festgroup__title { font-size: 17px; }
+  .event-row-all .ev-venue a, .event-row-all .ev-place a { font-size: 14px; }
+  .event-row-all .event-price-tag { font-size: 12px; }
+  .event-row-all .event-price-tag strong { font-size: 18px; }
+  .event-row-all .performer-event-item.so-festgroup > .ms-3 { grid-row: auto; }
+  .so-empty { padding: 18px 4px 24px; }
+}
+
+/* Artist directory: real letter links, whole-card link, numbered pages */
+a.performer-filter-btn { text-decoration: none; }
+.so-dir__heading { font-size: 22px; font-weight: 700; margin: 0 0 18px; color: #1d1d1f; }
+.so-dir__heading span { display: block; font-size: 14px; font-weight: 500; color: #6e6e73; margin-top: 2px; }
+.so-dircard { position: relative; }
+.so-dircard__link { color: inherit; text-decoration: none; }
+.so-dircard__link::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.so-dircard:focus-within { outline: 3px solid #0056d6; outline-offset: 2px; border-radius: 16px; }
+.so-dircard:hover .btn-view-performer { background: #2556e0; border-color: #2556e0; color: #fff; }
+.so-dir__pager { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 32px 0 0; }
+.so-dir__pager a, .so-dir__pager span { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 14px; border-radius: 12px; font-weight: 600; text-decoration: none; color: #1d1d1f; }
+.so-dir__pager a { background: #f2f4f8; }
+.so-dir__pager a:hover { background: #eaf1ff; }
+.so-dir__pager a.is-current { background: #0056d6; color: #fff; }
+
+/* City events hub: grouped by state */
+.so-cities__jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 28px; }
+.so-cities__jump a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 980px; background: #f2f4f8; color: #1d1d1f; font-weight: 600; font-size: 15px; text-decoration: none; }
+.so-cities__jump a:hover { background: #eaf1ff; }
+.so-cities__state, .so-cities__near { margin: 0 0 32px; scroll-margin-top: 90px; }
+.so-cities__state .section-heading small, .so-cities__near .section-heading small { display: block; font-size: 14px; font-weight: 500; color: #6e6e73; margin-top: 2px; }
+.so-cities__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.so-citycard { border: 1px solid rgba(0,0,0,.09); border-radius: 16px; background: #fff; padding: 12px 14px; }
+.so-citycard__main { display: flex; flex-direction: column; min-height: 44px; justify-content: center; text-decoration: none; color: #1d1d1f; }
+.so-citycard__main span { font-size: 14px; color: #6e6e73; }
+.so-citycard__more { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 6px; }
+.so-citycard__more a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px; border-radius: 10px; font-size: 14px; color: #0056d6; text-decoration: none; }
+.so-citycard__more a:hover { background: #eaf1ff; }

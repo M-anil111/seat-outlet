@@ -58,6 +58,7 @@ try {
     $hasMore = ($page < $total_pages);
     echo json_encode([
         'events'      => $results,
+        'html'        => soRenderListingRows($results),
         'params'      => $params,
         'totalCount'  => $total_count,
         'currentPage' => $page,
