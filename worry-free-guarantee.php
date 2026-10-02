@@ -542,9 +542,7 @@ include 'header.php';
                 Shop with confidence knowing that your purchase is protected. If you
         have any questions about our satisfaction guarantee, our support team is here to help.
                 </p>
-                <button type="button" class="btn btn-cta">
-                Contact Support
-                </button>
+                <a class="btn btn-cta" href="/ticket-customer-service">Contact Support</a>
                </div>
             </div>
         </section>

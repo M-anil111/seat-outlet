@@ -418,9 +418,7 @@
                 <p class="cta-text">
                 Explore thousands of verified tickets and discover unforgettable live experiences with SeatOutlet.
                 </p>
-                <button type="button" class="btn btn-cta">
-                    Learn More
-                </button>
+                <a class="btn btn-cta" href="/concert-tickets-for-sale">Browse Tickets</a>
                </div>
             </div>
         </section>
