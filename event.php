@@ -1809,6 +1809,162 @@ font-size: 18px;
     .seatics .seller-rating .text-success { color: #3358e4 !important; }
     .seatics .sea-feedback-success { background-color: #3358e4 !important; }
     .seatics .sea-feedback-success:after { border-top-color: #3358e4 !important; }
+
+    /* ---------- TICKET-TYPE TABS (Tickets / Packages / ADA / Parking Passes ...) ----------
+       Seatics pins the Filters button over the right end of the tab strip
+       (position:absolute; right:0; width:105px) and lets the tabs run under
+       it, so whichever tab slid to the end (Parking Passes here) could not be
+       clicked. End the strip's visible area before the button instead; the
+       widget's own next-arrow (right:103px) then sits in the gap. */
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-list { margin-right: 120px; }
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label {
+        border-radius: 8px;
+        padding: 4px 12px;
+        font-family: inherit;
+    }
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label span { color: #0f1b3d; font-size: 14px; }
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label.active,
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label:hover {
+        background-color: #eef3fd;
+        border-color: #2556e0;
+    }
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label.active span { color: #2556e0; font-weight: 600; }
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider button.slick-prev,
+    #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider button.slick-next { color: #2556e0; }
+
+    /* ---------- PARKING PASSES LIST (only while that tab is selected) ----------
+       Card rows: checkbox | car icon + title / row / quantity | notes icon |
+       price "each" | blue Buy Now. The widget's dark "Parking Passes (Not
+       valid for entry to event)" bar becomes an amber notice. Rows are the
+       widget's own table rows (.Sea-TicketRow); markup and behaviour unchanged. */
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) table:has(> tbody > tr.Sea-TicketRow) {
+        border-collapse: separate;
+        border-spacing: 0 10px;
+        padding: 0 12px;
+        width: 100%;
+    }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list { background: #fff; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow {
+        background: transparent;
+        border-bottom: 0;
+        height: auto;
+        max-height: none;
+        font-family: inherit;
+    }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow > td {
+        background: #fff;
+        border-top: 1px solid #e3e8f0;
+        border-bottom: 1px solid #e3e8f0;
+        padding: 14px 0;
+        vertical-align: middle;
+        height: auto;
+        max-height: none;
+        transition: background .2s, border-color .2s;
+    }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow > td:first-child { border-left: 1px solid #e3e8f0; border-radius: 12px 0 0 12px; padding-left: 14px; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow > td:last-child { border-right: 1px solid #e3e8f0; border-radius: 0 12px 12px 0; padding-right: 14px; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow:hover > td { background: #f7f9fe; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow.venue-ticket-list-highlighted > td,
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow:has(.sea-checked) > td {
+        background: #eef3fd;
+        border-color: #2556e0;
+    }
+    /* colour bar column: not part of this design */
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow .tickets-table-second-col-table-mark { width: 0; padding: 0; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow .venue-ticket-list-section-color-arrow { display: none !important; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-tbl { table-layout: fixed; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-tbl td { padding: 0; vertical-align: middle; }
+
+    /* checkbox (My List) */
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .Sea-TicketRow .sea-my-list-toggle { width: 34px; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .Sea-TicketRow .sea-my-list-check {
+        width: 22px;
+        height: 22px;
+        border: 1.5px solid #c5ccd9;
+        border-radius: 6px;
+        background: #fff;
+    }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .Sea-TicketRow .sea-checked .sea-my-list-check { background: #2556e0; border-color: #2556e0; color: #fff; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .Sea-TicketRow .sea-my-list-check-icon:before { color: #fff; font-size: 16px; margin: 2px 0 0 2px; }
+
+    /* title / row / quantity */
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-section-qty-col { padding-left: 6px; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-section-row-text { color: #0f1b3d; font-size: 16px; font-weight: 700; line-height: 1.3; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .sea-tg-list-section-tg-type-icon { color: #0f1b3d; font-size: 16px; margin-right: 8px; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-tg-row { display: block; color: #5b6578; font-size: 14px; line-height: 1.4; margin-top: 2px; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-quantity { display: inline; color: #5b6578; font-size: 14px; line-height: 1.4; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .sea-ticket-list-quantity-sep { display: none; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .sea-deliv-type-icon { color: #8a93a6; margin-left: 4px; }
+
+    /* notes icon, price, Buy Now */
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-info-col { width: 56px; text-align: center; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-info-child .cm-doc-text { color: #8a93a6; font-size: 22px; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-price-col { width: 90px; text-align: center; padding: 0 8px; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-price-col .venue-ticket-list-cta-amt { color: #0f1b3d; font-size: 17px; font-weight: 800; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-price-col .venue-ticket-list-cta-amt-suffix { color: #5b6578; font-size: 13px; margin-top: 2px; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-cta-col { width: 118px; padding: 0 0 0 8px; text-align: right; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-cta-button {
+        background-color: #2556e0 !important;
+        border: 0 !important;
+        border-radius: 8px;
+        color: #fff !important;
+        font-size: 15px;
+        font-weight: 600;
+        padding: 10px 20px;
+        min-width: 0;
+    }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-cta-button:hover { background-color: #1a3fa8 !important; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .sea-ticket-list-default-cta { color: #2556e0; font-weight: 600; }
+
+    /* "Parking Passes (Not valid for entry to event)" -> amber notice */
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-segment-tr { height: auto; text-align: left; }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-segment-td {
+        background: #fff7e8;
+        border: 1px solid #f3d6a4;
+        border-radius: 10px;
+        color: #9a5b00;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 12px 14px 12px 46px;
+        position: relative;
+        font-size: 0; /* swap the widget's wording for the design's (below) */
+    }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-segment-td::after {
+        content: 'Parking passes do not include event admission.';
+        font-size: 14px;
+    }
+    #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-segment-td::before {
+        content: '!';
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #e07b00;
+        color: #fff;
+        font-weight: 800;
+        font-size: 14px;
+        line-height: 22px;
+        text-align: center;
+    }
+
+    @media (max-width: 575.98px) {
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) table:has(> tbody > tr.Sea-TicketRow) { border-spacing: 0 8px; padding: 0 8px; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow > td { padding: 12px 0; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow > td:first-child { padding-left: 10px; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) tr.Sea-TicketRow > td:last-child { padding-right: 10px; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-section-row-text { font-size: 15px; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-tg-row,
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-quantity { font-size: 13px; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-info-col { width: 30px; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-price-col { width: 64px; padding: 0 4px; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-cta-col { width: 92px; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-cta-button { font-size: 13px; padding: 8px 12px; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-segment-td { padding: 10px 12px 10px 42px; }
+        #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-segment-td::after { font-size: 13px; }
+    }
 </style>
 
 <?php include 'footer.php'; ?>
