@@ -6506,3 +6506,30 @@ a.so-live__row:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(
 .so-nl__msg { margin: 10px 0 0; font-size: 14px; color: #b3261e; }
 .so-nl__msg.is-ok { color: #1a7f37; font-weight: 600; }
 @media (max-width: 575.98px) { .so-nl__fields--email { grid-template-columns: minmax(0, 1fr); } }
+
+/* ===== WS5: contact form, partner enquiry, HTML sitemap, blog extras ===== */
+.so-cf { position: relative; }
+.so-cf__hp { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; overflow: hidden; }
+.so-cf__field { margin-bottom: 14px; }
+.so-cf__field label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+.so-cf__field .form-control { width: 100%; min-height: 48px; font-size: 16px; }
+.so-cf__field textarea.form-control { min-height: 140px; }
+.so-cf__hint { display: block; margin-top: 4px; font-size: 13px; color: #6e6e73; }
+.so-cf__err { display: block; margin-top: 4px; font-size: 13px; color: #b3261e; font-weight: 600; }
+.so-cf__err[hidden] { display: none; }
+.so-cf__field.has-error .form-control { border-color: #b3261e !important; }
+.so-cf__alert { margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; background: #fdecea; color: #8c1d18; font-size: 15px; font-weight: 600; }
+.so-cf__alert[hidden] { display: none; }
+.so-cf__alert:focus, .so-cf__ok:focus { outline: 2px solid #0056d6; outline-offset: 2px; }
+.so-cf__ok { padding: 8px 0; }
+.so-cf__ok h2 { font-size: 26px; margin: 0 0 10px; }
+.so-cf__ok p { margin: 0 0 8px; font-size: 16px; line-height: 1.55; }
+.so-cf__btn { min-height: 48px; }
+.so-cf__btn[disabled] { opacity: .7; cursor: progress; }
+.so-cf__legal { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: #6e6e73; }
+.so-cf__legal a { color: #0056d6; }
+.so-cf--card { max-width: 640px; margin: 0 auto; padding: 24px; background: #fff; color: #1d1d1f; border-radius: 20px; box-shadow: 0 10px 40px rgba(0, 0, 0, .18); text-align: left; }
+.so-cf--card h2 { font-size: 26px; margin: 0 0 6px; color: #1d1d1f; }
+.so-cf--card .subtitle { margin: 0 0 18px; color: #424245; }
+.so-cf--card .submit-btn { background: #0056d6; color: #fff; border: 0; border-radius: 980px; font-weight: 600; }
+@media (max-width: 575.98px) { .so-cf--card { padding: 18px; border-radius: 16px; } }
