@@ -310,6 +310,7 @@ $evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $
 <?php if ($evJsonLd) { ?><script type="application/ld+json"><?php echo json_encode(['@context' => 'https://schema.org'] + $evJsonLd, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?></script><?php } ?>
 
 <script type="application/json" id="so-event-data"><?php echo json_encode($soEventData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES); ?></script>
-<?php /* The seat-map widget is loaded by js/event-widget.js (async, after jQuery) so a slow third party cannot block the page; the address is in the JSON above. */ ?>
+<?php /* The seat-map widget script is loaded synchronously right here, exactly as before, and js/event-widget.js (a plain script in the footer, no defer) applies the settings immediately after it, before the page finishes loading, so the settings are in place when the widget starts. If the script is blocked (ad blocker, network), event-widget.js tries once more asynchronously and shows a visible message when that fails too. */ ?>
+<script src="<?php echo htmlspecialchars($mapScriptUrl, ENT_QUOTES, 'UTF-8'); ?>"></script>
 
 <?php include 'footer.php'; ?>
