@@ -24,7 +24,8 @@
       overflow-x: hidden;
     }
 
-    .asm-page h1, .asm-page h2, .asm-page h3 { letter-spacing: .01em; color: var(--asm-dark); }
+    .asm-page h1, .asm-page h2, .asm-page h3,
+.asm-page h2.h1 { letter-spacing: .01em; color: var(--asm-dark); }
 
     .asm-breadcrumb { font-size: .85rem; color: var(--asm-muted); padding: 18px 0 0; }
     .asm-breadcrumb a { color: var(--asm-muted); text-decoration: none; }
@@ -36,7 +37,8 @@
       font-size: .78rem; font-weight: 700; letter-spacing: .12em;
       text-transform: uppercase; color: var(--asm-blue); margin-bottom: .6rem; display: block;
     }
-    .asm-hero h1 { font-size: clamp(2.2rem, 4.5vw, 3.2rem); font-weight: 700; line-height: 1.15; margin-bottom: .75rem; }
+    .asm-hero h1,
+.asm-hero h2.h1 { font-size: clamp(2.2rem, 4.5vw, 3.2rem); font-weight: 700; line-height: 1.15; margin-bottom: .75rem; }
     .asm-hero p.lead { color: var(--asm-muted); font-size: 1.05rem; max-width: 480px; }
     .asm-hero-visual {
       aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; position: relative;

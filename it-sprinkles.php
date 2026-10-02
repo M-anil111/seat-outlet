@@ -24,7 +24,8 @@
       overflow-x: hidden;
     }
 
-    .it-sprinkles-page h1, .it-sprinkles-page h2, .it-sprinkles-page h3 { letter-spacing: .01em; color: var(--is-dark); }
+    .it-sprinkles-page h1, .it-sprinkles-page h2, .it-sprinkles-page h3,
+.it-sprinkles-page h2.h1 { letter-spacing: .01em; color: var(--is-dark); }
 
     /* breadcrumb */
     .is-breadcrumb { font-size: .85rem; color: var(--is-muted); padding: 18px 0 0; }
@@ -38,7 +39,8 @@
       font-size: .78rem; font-weight: 700; letter-spacing: .12em;
       text-transform: uppercase; color: var(--is-blue); margin-bottom: .6rem; display: block;
     }
-    .is-hero h1 { font-size: clamp(2.2rem, 4.5vw, 3.2rem); font-weight: 700; line-height: 1.15; margin-bottom: .75rem; }
+    .is-hero h1,
+.is-hero h2.h1 { font-size: clamp(2.2rem, 4.5vw, 3.2rem); font-weight: 700; line-height: 1.15; margin-bottom: .75rem; }
     .is-hero p.lead { color: var(--is-muted); font-size: 1.05rem; max-width: 480px; }
     .is-hero-visual {
       aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; position: relative;

@@ -38,7 +38,8 @@
   .ev-date-time svg { width: 16px; height: 16px; flex: 0 0 auto; }
 
   /* Name, venue, links */
-  .event-detail h1.ev-title { font-size: 30px; font-weight: 800; color: #111827; line-height: 1.25; margin: 0 0 10px; font-family: inherit; overflow-wrap: anywhere; }
+  .event-detail h1.ev-title,
+.event-detail h2.h1.ev-title { font-size: 30px; font-weight: 800; color: #111827; line-height: 1.25; margin: 0 0 10px; font-family: inherit; overflow-wrap: anywhere; }
   .ev-venue { display: flex; align-items: flex-start; gap: 8px; color: #4b5563; font-size: 18px; line-height: 1.4; margin: 0 0 14px; }
   .ev-venue .bi { font-size: 18px; margin-top: 2px; }
   .ev-venue a { color: inherit; text-decoration: none; }
@@ -98,7 +99,8 @@
     .ev-date-num { font-size: 22px; }
     .ev-date-time { border-top: 0; margin: 0; padding: 0 0 0 10px; border-left: 1px solid #dbe3f3; }
     .ev-info { padding: 0; margin: 0; border-left: 0; }
-    .event-detail h1.ev-title { font-size: 22px; }
+    .event-detail h1.ev-title,
+.event-detail h2.h1.ev-title { font-size: 22px; }
     .ev-venue { font-size: 16px; }
     .ev-link { font-size: 15px; }
     .ev-cta { padding: 16px 0 0; }
@@ -276,7 +278,7 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
       <div class="ev-guarantee">
         <div class="ev-guarantee-head">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 0c-.69 0-1.843.265-2.928.56-1.11.3-2.229.655-2.887.87a1.54 1.54 0 0 0-1.044 1.262c-.596 4.477.787 7.795 2.465 9.99a11.8 11.8 0 0 0 2.517 2.453c.386.273.744.482 1.048.625.28.132.581.24.829.24s.548-.108.829-.24a7 7 0 0 0 1.048-.625 11.8 11.8 0 0 0 2.517-2.453c1.678-2.195 3.061-5.513 2.465-9.99a1.54 1.54 0 0 0-1.044-1.263 63 63 0 0 0-2.887-.87C9.843.266 8.69 0 8 0m2.146 5.146a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793z"/></svg>
-          <h2><a href="/guarantee" class="text-reset text-decoration-none">100% Worry-Free Guarantee</a></h2>
+          <h2><a href="/worry-free-guarantee" class="text-reset text-decoration-none">100% Worry-Free Guarantee</a></h2>
         </div>
         <p>We are a resale marketplace, not the ticket seller. Prices are set by third-party sellers and may be above or below face value. Your seats are together unless otherwise noted. All prices are in USD.</p>
       </div>
@@ -1965,6 +1967,48 @@ font-size: 18px;
         #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-segment-td { padding: 10px 12px 10px 42px; }
         #tn-maps:has(.sea-ticket-type-option.active button[value="Parking"]) .venue-ticket-list-segment-td::after { font-size: 13px; }
     }
-</style>
+
+    /* ======================================================================
+       Phone and foldable fit for the seat map and the ticket details panel.
+       Seatics ships fixed pixel layouts (a 3 px side padding, 10 to 21 px insets that do not
+       match each other). These rules keep the widget inside the screen and give the panel one
+       comfortable inset that scales with the screen width (14 px on a 280 px cover screen,
+       up to 24 px on an unfolded one) and respects display cutouts.
+       ====================================================================== */
+    #tn-maps { max-width: 100%; }
+    @supports (overflow: clip) { #tn-maps { overflow-x: clip; } }   /* nothing inside the widget can widen the page */
+    .seatics .map-list-ctn,
+    .seatics .map-ctn { max-width: 100% !important; box-sizing: border-box; }
+
+    #precheckout-parent {
+        --so-pc-inset: clamp(14px, 4.5vw, 24px);
+        --so-pc-inset-r: max(var(--so-pc-inset), env(safe-area-inset-right, 0px));
+        box-sizing: border-box;
+        max-width: 100vw;
+        overscroll-behavior: contain;
+    }
+    #precheckout-parent .sea-quantity-container fieldset { margin: 0; padding: 0 var(--so-pc-inset-r) 0 var(--so-pc-inset); min-width: 0; }
+    #precheckout-parent .sea-quantity-container fieldset legend { margin: 18px 0 12px; padding: 0; }
+    #precheckout-parent #sea-precheckout-qty-select { padding: 0 !important; margin: 0 !important; }
+    #precheckout-parent #sea-precheckout-qty-select .slick-list { margin: 0 !important; }
+    #precheckout-parent #sea-precheckout-qty-select .slick-track { margin-left: 0 !important; margin-right: 0 !important; }
+    #precheckout-parent .pre-checkout-price-text-ctn,
+    #precheckout-parent .sea-precheckout-fees-parent,
+    #precheckout-parent #sea-pre-checkout-disclaimer-ctn,
+    #precheckout-parent .pre-checkout-delivery-note,
+    #precheckout-parent .sea-pre-checkout-delivery-note-hdr { padding-left: var(--so-pc-inset) !important; padding-right: var(--so-pc-inset-r) !important; }
+    #precheckout-parent .pre-checkout-delivery-ctn { padding-left: var(--so-pc-inset) !important; padding-right: var(--so-pc-inset-r) !important; box-sizing: border-box; }
+    #precheckout-parent .pre-checkout-price-ctn {
+        box-sizing: border-box; height: auto !important; margin: 10px 0 18px;
+        padding: 0 var(--so-pc-inset-r) 0 var(--so-pc-inset) !important;
+    }
+    /* No "display" here on purpose: Seatics shows only one of these two buttons (sold out or not) and hides the other with it. */
+    #precheckout-parent #pre-checkout-price-cta,
+    #precheckout-parent #pre-checkout-sold-cta {
+        float: none; width: 100%; box-sizing: border-box;
+        height: 52px; padding: 14px 16px; border-radius: 12px;
+        font-size: 17px; line-height: 1.2; white-space: normal;
+    }
+  </style>
 
 <?php include 'footer.php'; ?>

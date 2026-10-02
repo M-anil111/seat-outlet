@@ -80,6 +80,7 @@ $params['sort'] = 'date/date';
 
 // Search results are user-specific, near-infinite URL variants; keep them
 // out of the index but give the tab a real title (there was none).
+if ($keywordHeader !== '') { $pageFocusKeyword = ucwords(strtolower($keywordHeader)) . ' Tickets'; }
 $pageMetaTitle       = ($keywordHeader !== '' ? ucwords(strtolower($keywordHeader)) . ' Tickets - Search Results' : 'Search Tickets') . ' | Seat Outlet';
 $pageMetaDescription = 'Search concert, sports, theater and festival tickets by performer, city or venue on Seat Outlet.';
 $pageCanonicalUrl    = HOME_URL . '/search';
@@ -243,7 +244,7 @@ $faqs = getFaqs('search');
 											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 												<span class="d-none d-md-inline">
-													Find Tickets
+													Buy Tickets
 												</span>
 												<i class="bi bi-chevron-right"></i>
 											</a>
@@ -306,7 +307,7 @@ $faqs = getFaqs('search');
 												</li>
 											<?php } ?>
 										</ul>
-										<p class="mt-3 mb-0"><a href="/tickets">Browse all tickets</a> · <a href="/concerts">Concerts</a> · <a href="/sports">Sports</a> · <a href="/theater">Theater</a></p>
+										<p class="mt-3 mb-0"><a href="/buy-tickets-online">Browse all tickets</a> · <a href="/concert-tickets-for-sale">Concerts</a> · <a href="/game-day-tickets">Sports</a> · <a href="/buy-broadway-tickets">Theater</a></p>
 									</div>
 								<?php } ?>
 							</div>

@@ -29,7 +29,7 @@ if ($catName === '') {
 $pageMetaTitle       = "$catName Tickets | Seat Outlet";
 $pageMetaDescription = "Buy $catName tickets. Compare prices and book securely on Seat Outlet.";
 $pageCanonicalUrl    = HOME_URL . '/category/' . $slug;
-$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/tickets']], $catName)];
+$pageJsonLdNodes     = [buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/buy-tickets-online']], $catName)];
 
 [$when, $sort, $isFiltered] = listingRequestState('popular');
 if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // canonical page stays the indexed one
@@ -150,7 +150,7 @@ $year = date('Y');
 											<?php renderEventPriceTag($event); ?>
 											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 												<span class="d-none d-md-inline">
-													Find Tickets
+													Buy Tickets
 												</span>
 												<i class="bi bi-chevron-right"></i>
 											</a>

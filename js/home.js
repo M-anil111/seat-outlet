@@ -680,3 +680,54 @@ document.getElementById("newsletterForm").addEventListener("submit", function(e)
     Newsletter Form End
 ===================================================== */
 
+
+/* =====================================================
+    Phone tabs for the category and performer lists
+    ([data-so-tabs]: a tab bar is built from data-so-tab-labels, one column shows at a time; wider screens show all columns
+    and CSS hides the bar. Without JavaScript every column simply stays visible.)
+===================================================== */
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-so-tabs]').forEach(function (box, boxIndex) {
+    var cols = box.querySelectorAll('.categories__grid > .categories__col');
+    var labels = (box.getAttribute('data-so-tab-labels') || '').split('|');
+    if (!cols.length || cols.length !== labels.length) return;
+
+    var bar = document.createElement('div');
+    bar.className = 'so-tabs__bar';
+    bar.setAttribute('role', 'tablist');
+    var tabs = [];
+
+    function select(index) {
+      tabs.forEach(function (tab, i) {
+        var on = i === index;
+        tab.setAttribute('aria-selected', on ? 'true' : 'false');
+        tab.tabIndex = on ? 0 : -1;
+        cols[i].classList.toggle('is-active', on);
+      });
+    }
+
+    labels.forEach(function (label, i) {
+      var tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'so-tabs__tab';
+      tab.setAttribute('role', 'tab');
+      tab.id = 'so-tab-' + boxIndex + '-' + i;
+      tab.textContent = label;
+      cols[i].setAttribute('role', 'tabpanel');
+      cols[i].setAttribute('aria-labelledby', tab.id);
+      tab.addEventListener('click', function () { select(i); });
+      tab.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        var next = (i + (e.key === 'ArrowRight' ? 1 : labels.length - 1)) % labels.length;
+        select(next);
+        tabs[next].focus();
+      });
+      tabs.push(tab);
+      bar.appendChild(tab);
+    });
+
+    box.insertBefore(bar, box.querySelector('.categories__grid'));
+    select(0);
+    box.setAttribute('data-so-tabs-ready', '');
+  });
+});

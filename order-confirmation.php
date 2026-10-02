@@ -85,9 +85,9 @@ include 'header.php';
         <div class="checkout-card">
           <h2 class="fs-6 fw-bold mb-2">Need help with this order?</h2>
           <p class="mb-2">Quote your order number so we can find it quickly.</p>
-          <a href="/contact" class="btn btn-outline-secondary w-100">Contact support</a>
-          <a href="/buyer-protection" class="d-block small mt-3">Buyer Protection Guarantee</a>
-          <a href="/faq" class="d-block small mt-1">Delivery and refund FAQs</a>
+          <a href="/ticket-customer-service" class="btn btn-outline-secondary w-100">Contact support</a>
+          <a href="/ticket-buyer-protection" class="d-block small mt-3">Buyer Protection Guarantee</a>
+          <a href="/ticket-faq" class="d-block small mt-1">Delivery and refund FAQs</a>
         </div>
 
         <?php if (!empty($moreEvents)) { ?>

@@ -115,6 +115,7 @@
 
                 <div class="policy-section">
                     <div class="policy-body">
+                        <p><strong>Overview:</strong> these are the Seat Outlet terms and conditions, published under the title Terms of Use. They explain what you agree to when you browse events or buy, sell, transfer and use tickets on our websites and apps. The full text below is the version that applies; the summary at the bottom of the page is only a plain-English guide.</p>
                         <p>These Terms of Use ("Terms") govern your access to and use of the Seat Outlet websites, mobile applications, and related services (collectively, the "Platform"), including your purchase, sale, transfer, and use of tickets and related products or services (together, the "Services").</p>
                         <p>By accessing or using the Platform, you agree to be bound by these Terms and our Privacy Policy and Cookies Policy, which are incorporated by reference. If you do not agree to these Terms, do not use the Platform.</p>
                     </div>
@@ -435,4 +436,5 @@
 
 </main>
 
+<?php soSeoCopy('terms-and-conditions'); ?>
 <?php include 'footer.php'; ?>

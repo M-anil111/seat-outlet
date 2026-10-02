@@ -129,6 +129,7 @@
 
                 <div class="policy-section">
                     <div class="policy-body">
+                        <p><strong>Overview:</strong> this is the Seat Outlet cookie policy, published under the title Cookies Policy. It explains the cookies and similar technologies we use on our websites and apps, why we use them, and how you can manage them. The full text below is the version that applies; the summary at the bottom of the page is only a plain-English guide.</p>
                         <p>This Cookies Policy explains how Seat Outlet ("Seat Outlet", "we", "us", or "our") uses cookies and similar technologies when you access or use our websites, mobile applications, and related services (collectively, the "Platform"). It should be read together with our <a href="/privacy-policy.php" title="Privacy Policy" target="_blank">Privacy Policy</a> and our <a href="/terms-of-use.php" title="Terms of Use" target="_blank">Terms of Use</a>.</p>
                         <p>By using the Platform, you agree that we can use cookies and similar technologies as described in this Cookies Policy, subject to your choices and applicable law.</p>
                     </div>
@@ -343,4 +344,5 @@
 
 </main>
 
+<?php soSeoCopy('cookie-policy'); ?>
 <?php include 'footer.php'; ?>

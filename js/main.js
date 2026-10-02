@@ -2,7 +2,6 @@ const DOM = {
     locationSelectorText: document.getElementById('locationSelectorText'),
     keywordResultsHeader: document.getElementById('keywordResultsHeader'),
     keywordHeader: document.getElementById('keywordHeader'),
-    backToTop: document.getElementById('backToTop'),
     locationPanel: document.getElementById('locationPanel'),
     inputHeader: document.getElementById('locationInputHeader'),
     resultsHeader: document.getElementById('locationResultsHeader'),
@@ -14,21 +13,6 @@ const DOM = {
     searchLoader: document.getElementById('search-loader')
 };
 
-let ticking = false;
-window.addEventListener('scroll', () => {
-    if (!ticking) {
-        requestAnimationFrame(() => {
-            DOM.backToTop.classList.toggle('show', window.scrollY > 400);
-            ticking = false;
-        });
-        ticking = true;
-    }
-});
-
-DOM.backToTop.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-  
 function getMonthCount() {
     return window.innerWidth <= 689 ? 1 : 2;
 }
@@ -209,31 +193,53 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
   
-    fetch('/ajax/get_ip_details.php')
-    .then(res => res.json())
-    .then(data => {
-        // The IP geolocation lookup can legitimately come back empty (rate
-        // limited, IP not in its database, timed out server-side) - without
-        // this check, the UI showed a literal "undefined, undefined" as the
-        // detected location, and that broken value got saved to the
-        // so_label cookie, so it stuck around on every later page load too.
-        if (!data || !data.city || !data.state) {
-            return;
-        }
-        setCookie('so_lat', encodeURIComponent(data.lat));
-        setCookie('so_lng', encodeURIComponent(data.lng));
-        setCookie('so_label', data.city + ', ' + data.state);
-        if (DOM.locationSelectorText) DOM.locationSelectorText.innerHTML = data.city + ', ' + data.state + ' <i class="bi bi-chevron-down"></i>';
+    const locationLabel = DOM.locationSelectorText;
+    const showPrompt = () => { if (locationLabel) locationLabel.innerHTML = 'Select your location <i class="bi bi-chevron-down"></i>'; };
+    const applyLocation = (lat, lng, label, labelCookie) => {
+        setCookie('so_lat', encodeURIComponent(lat));
+        setCookie('so_lng', encodeURIComponent(lng));
+        setCookie('so_label', labelCookie || label);
+        if (locationLabel) locationLabel.innerHTML = label + ' <i class="bi bi-chevron-down"></i>';
         window.locationReady = true;
         if (typeof reloadActiveTab === 'function') {
-            reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
+            reloadActiveTab('ll', { lat: lat, lng: lng });
         }
         if (typeof loadNearbyVenues === 'function') {
             loadNearbyVenues();
         }
-    }).catch(() => {
-        
-    });
+    };
+    // Second chance when the network lookup has no answer: use the device location, but only if the visitor already
+    // allowed it, or ask once if they have not been asked yet.
+    const tryAllowedDeviceLocation = () => {
+        if (!navigator.geolocation || !navigator.permissions || !navigator.permissions.query) { showPrompt(); return; }
+        navigator.permissions.query({ name: 'geolocation' }).then(state => {
+            // 'prompt': ask once per visitor (remembered in a cookie), after the page has settled; 'denied': never nag.
+            if (state.state === 'prompt' && !getCookie('so_geo_asked')) { setCookie('so_geo_asked', '1'); }
+            else if (state.state !== 'granted') { showPrompt(); return; }
+            navigator.geolocation.getCurrentPosition(async position => {
+                const lat = position.coords.latitude, lng = position.coords.longitude;
+                try {
+                    await loadGoogleMapsApi();
+                    getCityState(lat, lng, label => applyLocation(lat, lng, label));
+                } catch (e) { showPrompt(); }
+            }, showPrompt, { timeout: 8000, maximumAge: 600000 });
+        }).catch(showPrompt);
+    };
+
+    if (locationLabel) locationLabel.innerHTML = 'Finding your location... <i class="bi bi-chevron-down"></i>';
+    // If nothing has answered after a few seconds (for example the permission prompt is still open), go back to the plain prompt.
+    setTimeout(() => { if (locationLabel && /^Finding/.test(locationLabel.textContent.trim())) showPrompt(); }, 4000);
+    fetch('/ajax/get_ip_details.php')
+    .then(res => res.json())
+    .then(data => {
+        // The lookup can legitimately come back empty (visitor's address not in the database, no location headers from
+        // the CDN): never save or show a half-empty "undefined, undefined" label, try the allowed device location instead.
+        if (!data || !data.city || !data.state) {
+            tryAllowedDeviceLocation();
+            return;
+        }
+        applyLocation(data.lat, data.lng, data.city + ', ' + data.state);
+    }).catch(tryAllowedDeviceLocation);
 });
 
 /* =====================================================
@@ -961,4 +967,23 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('load', function () { fixSlickFocus(); setTimeout(fixSlickFocus, 600); });
     function bind() { if (window.jQuery) { jQuery(document).on('init reInit afterChange setPosition', '.slick-slider', function () { fixSlickFocus(this); }); } }
     if (window.jQuery) bind(); else document.addEventListener('DOMContentLoaded', bind);
+})();
+
+/* =====================================================
+    PHONES: search icon folds the header search open and closed
+===================================================== */
+(function () {
+    var btn = document.querySelector('.so-search-toggle');
+    var form = document.getElementById('soSearch');
+    if (!btn || !form) return;
+    btn.addEventListener('click', function () {
+        var open = form.hasAttribute('data-so-collapsed');
+        if (open) { form.removeAttribute('data-so-collapsed'); } else { form.setAttribute('data-so-collapsed', ''); }
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.classList.toggle('is-open', open);
+        if (open) {
+            var field = document.getElementById('keywordHeader');
+            if (field) { try { field.focus({ preventScroll: true }); } catch (e) { field.focus(); } }
+        }
+    });
 })();

@@ -3,6 +3,8 @@
 # (see soAsset() in functions.php):
 #   css/style.min.css   = css/fonts.css + css/style.css + css/skeleton.css + css/icons.css (icon subset, tools/build-icons.py), minified
 #   js/<name>.min.js    = each js/<name>.js, compressed and mangled
+#   css/bootstrap.min.css = lib/bootstrap/5.3.8/bootstrap.min.css reduced to the classes the site uses
+#                         (tools/purgecss.config.cjs; a class that is only built at runtime must be safelisted there)
 # Run after editing any source file, and commit the .min files.
 #
 #   tools/build-assets.sh           rebuild
@@ -21,6 +23,10 @@ for f in js/*.js; do
   npx --yes terser@5.51.2 "$f" --compress --mangle -o "$OUT/$name.min.js"
 done
 
+mkdir -p "$OUT/purged"
+npx --yes purgecss@6.0.0 --config tools/purgecss.config.cjs --output "$OUT/purged/" >/dev/null
+cp "$OUT/purged/bootstrap.min.css" "$OUT/bootstrap.purged.css"
+
 status=0
 install_or_compare() {
   src="$1"; dest="$2"
@@ -31,6 +37,7 @@ install_or_compare() {
   fi
 }
 install_or_compare "$OUT/style.min.css" css/style.min.css
+install_or_compare "$OUT/bootstrap.purged.css" css/bootstrap.min.css
 for f in "$OUT"/*.min.js; do install_or_compare "$f" "js/$(basename "$f")"; done
 [ "$CHECK" = 1 ] && [ "$status" = 0 ] && echo "assets up to date"
 exit $status

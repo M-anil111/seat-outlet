@@ -1,4 +1,6 @@
 <?php
+// Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
+if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
 
 // Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
 // lose the visitor's own query string on the way, so ?when= / ?sort= / ?page=
@@ -1675,6 +1677,8 @@ function eventDealInfo(array $event) {
 function renderEventPriceTag(array $event) {
     $deal = eventDealInfo($event);
     if ($deal['from'] === '') {
+        // Nothing on sale for this date right now: say so instead of leaving a blank next to the button.
+        echo '<div class="event-price-tag event-price-tag--none">No tickets listed yet</div>';
         return;
     }
     echo '<div class="event-price-tag">';
@@ -2012,11 +2016,11 @@ function notFoundBlockHtml($what) {
     return '<div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' not found</h1>'
         . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place.</p>'
         . '<div class="d-flex flex-wrap justify-content-center gap-2">'
-        . '<a class="btn btn-primary" href="/tickets">Browse all events</a>'
-        . '<a class="btn btn-outline-secondary" href="/concerts">Concerts</a>'
-        . '<a class="btn btn-outline-secondary" href="/sports">Sports</a>'
-        . '<a class="btn btn-outline-secondary" href="/theater">Theater</a>'
-        . '<a class="btn btn-outline-secondary" href="/cities">Cities</a>'
+        . '<a class="btn btn-primary" href="/buy-tickets-online">Browse all events</a>'
+        . '<a class="btn btn-outline-secondary" href="/concert-tickets-for-sale">Concerts</a>'
+        . '<a class="btn btn-outline-secondary" href="/game-day-tickets">Sports</a>'
+        . '<a class="btn btn-outline-secondary" href="/buy-broadway-tickets">Theater</a>'
+        . '<a class="btn btn-outline-secondary" href="/city-events">Cities</a>'
         . '</div></div>';
 }
 
@@ -2027,10 +2031,10 @@ function unavailableBlockHtml($what) {
         . '<p class="text-muted mb-4">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
         . '<div class="d-flex flex-wrap justify-content-center gap-2">'
         . '<a class="btn btn-primary" href="">Try again</a>'
-        . '<a class="btn btn-outline-secondary" href="/tickets">Browse all events</a>'
-        . '<a class="btn btn-outline-secondary" href="/concerts">Concerts</a>'
-        . '<a class="btn btn-outline-secondary" href="/sports">Sports</a>'
-        . '<a class="btn btn-outline-secondary" href="/theater">Theater</a>'
+        . '<a class="btn btn-outline-secondary" href="/buy-tickets-online">Browse all events</a>'
+        . '<a class="btn btn-outline-secondary" href="/concert-tickets-for-sale">Concerts</a>'
+        . '<a class="btn btn-outline-secondary" href="/game-day-tickets">Sports</a>'
+        . '<a class="btn btn-outline-secondary" href="/buy-broadway-tickets">Theater</a>'
         . '</div></div>';
 }
 
@@ -2145,6 +2149,140 @@ function sendPageCacheHeaders() {
     } else {
         header('Cache-Control: no-store');
     }
+}
+
+/**
+ * The page's focus keyword, shown in the strip above the header (the page's one <h1>) and again at the
+ * bottom of the footer. Order: a keyword the page sets itself ($pageFocusKeyword), the admin's focus keyword
+ * for this URL (page_rules), then for entity pages the "<name> Tickets" part of the meta title, then a default.
+ */
+/**
+ * Prints the page's search-focused copy block (inc/seo-copy/<key>.php) just above the footer: a short guide, images, links
+ * and an FAQ written around the page's focus keyword. A page with no file for its key prints nothing.
+ * The copy files are plain HTML (headings, paragraphs, figures, <details> FAQ); $year is available to them.
+ */
+function soSeoCopy($key) {
+    $file = __DIR__ . '/inc/seo-copy/' . preg_replace('/[^a-z0-9-]/', '', (string) $key) . '.php';
+    if (!is_file($file)) { return; }
+    $year = date('Y');
+    echo "\n<section class=\"so-seo-copy\" data-so-copy=\"" . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . "\"><div class=\"container\"><div class=\"so-seo-copy__inner\">\n";
+    include $file;
+    echo "\n</div></div></section>\n";
+}
+
+/** Headline form of a focus keyword for the strip: "how to buy tickets online" -> "How to Buy Tickets Online". */
+function soKeywordLabel($kw) {
+    $small = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'vs'];
+    $caps  = ['bbb', 'faq', 'faqs', 'nfl', 'nba', 'mlb', 'nhl', 'mls', 'edm', 'usa'];
+    $words = preg_split('/\s+/', trim((string) $kw));
+    foreach ($words as $i => $w) {
+        $lw = mb_strtolower($w);
+        if (in_array($lw, $caps, true)) { $words[$i] = mb_strtoupper($w); continue; }
+        if ($i > 0 && in_array($lw, $small, true)) { $words[$i] = $lw; continue; }
+        $words[$i] = $w === $lw ? mb_strtoupper(mb_substr($w, 0, 1)) . mb_substr($w, 1) : $w;   // keep names already capitalised
+    }
+    return implode(' ', $words);
+}
+
+/**
+ * The SEO plan for a URL path (inc/seo-keywords.php): focus keyword, title, description. Returns null for a path
+ * that has no entry. The title keeps the brand out (header.php appends it) and "{Y}" is the current year.
+ */
+function soSeoPlan($path = null) {
+    static $plan = null;
+    if ($plan === null) { $plan = (require __DIR__ . '/inc/seo-keywords.php')['plan']; }
+    if ($path === null) { return $plan; }
+    $path = rtrim((string) $path, '/') ?: '/';
+    if (!isset($plan[$path])) { return null; }
+    [$kw, $title, $desc, $vol, $kd, $scored] = $plan[$path];
+    return [
+        'keyword' => $kw,
+        'title' => $title !== null ? str_replace('{Y}', date('Y'), $title) : null,
+        'description' => $desc,
+        'volume' => $vol, 'difficulty' => $kd, 'scored' => $scored,
+    ];
+}
+
+function soFocusKeyword() {
+    static $kw = null;
+    if ($kw !== null) return $kw;
+    $clean = function ($v) {
+        $v = trim(preg_replace('/\s+/', ' ', strip_tags((string) $v)));
+        if (function_exists('mb_substr') && mb_strlen($v) > 70) $v = rtrim(mb_substr($v, 0, 70), " ,.;:-|");
+        return $v;
+    };
+    $rule = $GLOBALS['pageRule'] ?? null;
+    foreach ([$GLOBALS['pageFocusKeyword'] ?? '', is_array($rule) ? ($rule['focus_keyword'] ?? '') : ''] as $cand) {
+        $cand = $clean($cand);
+        if ($cand !== '') return $kw = $cand;
+    }
+    $planned = soSeoPlan(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
+    if ($planned !== null && $planned['keyword'] !== '') { return $kw = $clean($planned['keyword']); }
+    $title = (string) ($GLOBALS['pageMetaTitle'] ?? '');
+    if (preg_match('/^(.{2,60}?\bTickets)\b/u', $title, $m)) {
+        $cand = preg_replace('/^Events (?:in|at) /i', '', $m[1]);                  // "Events in Nevada Tickets" -> "Nevada Tickets"
+        $cand = preg_replace('/,\s*[A-Z]{2}(\s+Tickets)$/', '$1', $cand);          // "Las Vegas, NV Tickets" -> "Las Vegas Tickets"
+        $cand = $clean($cand);
+        if ($cand !== '' && strlen($cand) <= 42 && !preg_match('/^(Search|Buy|Tickets)\b/i', $cand)) {   // generic or long page titles keep the default
+            return $kw = $cand;
+        }
+    }
+    return $kw = 'Buy Concert Tickets';
+}
+
+/**
+ * Output filter for the page body. The keyword strip is the page's one <h1>; any other <h1> a page template prints
+ * becomes an <h2 class="h1 ..."> so it keeps its look (css/style.css styles ".h1" like "h1") and the page has a
+ * single H1. Turn off with KEYWORD_H1=0 in the environment.
+ */
+function soSingleH1($html) {
+    $stripSeen = false; $demoted = false;
+    return preg_replace_callback('#<(/?)h1\b([^>]*)>#i', function ($m) use (&$stripSeen, &$demoted) {
+        if ($m[1] === '/') {
+            if ($demoted) { $demoted = false; return '</h2>'; }
+            return $m[0];
+        }
+        if (!$stripSeen && strpos($m[2], 'so-keyword-h1') !== false) { $stripSeen = true; return $m[0]; }
+        $demoted = true;
+        $attrs = $m[2];
+        if (preg_match('/\bclass\s*=\s*(["\'])(.*?)\1/i', $attrs)) {
+            $attrs = preg_replace('/\bclass\s*=\s*(["\'])(.*?)\1/i', 'class=$1$2 h1$1', $attrs, 1);
+        } else {
+            $attrs .= ' class="h1"';
+        }
+        return '<h2' . $attrs . '>';
+    }, $html);
+}
+
+/**
+ * Old URL shapes that serve the same page twice: /performers.php (and every other /name.php), and the
+ * /event.php?id=123 and /event?id=123 forms. Send visitors and crawlers to the one real address with a permanent
+ * redirect; before this they got a duplicate page titled "Performers.php" or "Event.php".
+ */
+function soRedirectLegacyUrl() {
+    if (PHP_SAPI === 'cli' || headers_sent()) return;
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
+    $uri  = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $path = (string) parse_url($uri, PHP_URL_PATH);
+    $qs   = (string) parse_url($uri, PHP_URL_QUERY);
+    $to   = null;
+    if (($path === '/event.php' || $path === '/event') && isset($_GET['id']) && ctype_digit((string) $_GET['id']) && (int) $_GET['id'] > 0) {
+        $ev = getTnEventById((int) $_GET['id']);
+        if (!tnEntityMissing($ev) && !empty($ev['text']['name'])) {
+            $to = '/event/' . createSlug($ev['text']['name'], (int) $_GET['id']);
+            $qs = '';   // the id is now in the path
+        } elseif (tnEntityDefinitelyMissing($ev)) {
+            http_response_code(404);   // an id that does not exist is a real 404, not a 200 page that says "not found"
+        }
+    } elseif (preg_match('#^/([a-z0-9-]+)\.php$#', $path, $m) && is_file(__DIR__ . '/' . $m[1] . '.php')
+              && !in_array($m[1], ['event', 'functions', 'header', 'footer', 'robots', 'sitemap'], true)) {
+        $to = $m[1] === 'index' ? '/' : '/' . $m[1];
+    }
+    if ($to === null) return;
+    http_response_code(301);
+    header('Location: ' . $to . ($qs !== '' ? '?' . $qs : ''));
+    header('Cache-Control: public, max-age=3600');
+    exit;
 }
 
 /** Output-buffer callback: a page that rendered without API data is never CDN-cached. */
@@ -3688,6 +3826,177 @@ function renderPerformerLocationLinks(string $artistName, int $performerId, arra
     }
 }
 
+/**
+ * Every date a performer has, for the "where they play" boxes. The page already holds the first 20 dates; only an
+ * artist with more than that costs one extra request (up to 200 dates, cached 10 minutes like the page's own list).
+ */
+function performerWhereEvents(int $performerId, array $events, int $totalCount): array {
+    if ($totalCount <= count($events)) {
+        return $events;
+    }
+    [$endpoint, $params] = performerPageEventsSpec($performerId, 200);
+    $all = tnRequest($endpoint, $params, 'GET', 600);
+    $rows = $all['results'] ?? [];
+    return count($rows) > count($events) ? $rows : $events;
+}
+
+/** Cities, venues and states a performer plays, with the number of dates in each (most dates first). */
+function performerWhereGroups(array $events): array {
+    $groups = ['city' => [], 'venue' => [], 'state' => []];
+    foreach ($events as $event) {
+        $abbr = $event['stateProvince']['text']['abbr'] ?? '';
+        $items = [
+            'city'  => [$event['city']['id'] ?? null, trim(($event['city']['text']['name'] ?? '') . ', ' . $abbr, ', ')],
+            'venue' => [$event['venue']['id'] ?? null, (string) ($event['venue']['text']['name'] ?? '')],
+            'state' => [$event['stateProvince']['id'] ?? null, (string) ($event['stateProvince']['text']['name'] ?? '')],
+        ];
+        foreach ($items as $dim => [$id, $label]) {
+            if (empty($id) || $label === '' || $label === ',') continue;
+            if (!isset($groups[$dim][$id])) { $groups[$dim][$id] = ['id' => $id, 'label' => $label, 'count' => 0]; }
+            $groups[$dim][$id]['count']++;
+        }
+    }
+    foreach ($groups as $dim => $rows) {
+        $rows = array_values($rows);
+        usort($rows, fn($a, $b) => [$b['count'], $a['label']] <=> [$a['count'], $b['label']]);
+        $groups[$dim] = array_slice($rows, 0, 60);
+    }
+    return $groups;
+}
+
+/** "Where <artist> is playing": segmented control (Cities, Venues, States) over one grouped list, built from the real dates. */
+function renderPerformerWhere(string $artistName, int $performerId, array $events, int $totalCount): void {
+    $groups = performerWhereGroups(performerWhereEvents($performerId, $events, $totalCount));
+    if (!$groups['city'] && !$groups['venue'] && !$groups['state']) return;
+    $slug = createSlug($artistName, $performerId);
+    $dims = [
+        'city'  => ['label' => 'Cities', 'prefix' => 'artist-city',  'word' => 'in'],
+        'venue' => ['label' => 'Venues', 'prefix' => 'artist-venue', 'word' => 'at'],
+        'state' => ['label' => 'States', 'prefix' => 'artist-state', 'word' => 'in'],
+    ];
+    $visible = 6;
+    $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $first = null;
+    ?>
+    <div class="tab-section content-section-detail so-where" id="where">
+        <h2 class="so-heading fw-bold fs-4 mb-1 text-black">Where <?php echo $e($artistName); ?> is playing</h2>
+        <p class="so-where__lead">Pick a place to see every <?php echo $e($artistName); ?> date there.</p>
+        <div class="so-seg" role="tablist" aria-label="Browse by place">
+            <?php foreach ($dims as $dim => $conf) { if (!$groups[$dim]) continue; if ($first === null) $first = $dim; ?>
+                <button type="button" class="so-seg__btn" role="tab" id="so-seg-<?php echo $dim; ?>" aria-controls="so-where-<?php echo $dim; ?>" aria-selected="<?php echo $first === $dim ? 'true' : 'false'; ?>" data-so-seg="<?php echo $dim; ?>"><?php echo $conf['label']; ?> <span><?php echo count($groups[$dim]); ?></span></button>
+            <?php } ?>
+        </div>
+        <?php foreach ($dims as $dim => $conf) { $rows = $groups[$dim]; if (!$rows) continue; ?>
+            <div class="so-where__panel" id="so-where-<?php echo $dim; ?>" role="tabpanel" aria-labelledby="so-seg-<?php echo $dim; ?>"<?php echo $first === $dim ? '' : ' hidden'; ?>>
+                <ul class="so-list">
+                    <?php foreach ($rows as $i => $it) { ?>
+                        <li class="so-list__item<?php echo $i >= $visible ? ' so-list__item--extra' : ''; ?>"<?php echo $i >= $visible ? ' hidden' : ''; ?>>
+                            <a class="so-list__link" href="/<?php echo $conf['prefix']; ?>/<?php echo $e($slug); ?>/<?php echo $e(createSlug($it['label'], $it['id'])); ?>" title="<?php echo $e($artistName . ' ' . $conf['word'] . ' ' . $it['label']); ?>">
+                                <span class="so-list__name"><?php echo $e($it['label']); ?></span>
+                                <span class="so-list__meta"><?php echo (int) $it['count']; ?> <?php echo $it['count'] === 1 ? 'date' : 'dates'; ?></span>
+                                <i class="bi bi-chevron-right so-list__chev" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                    <?php } ?>
+                </ul>
+                <?php if (count($rows) > $visible) { ?>
+                    <button type="button" class="so-list__more" data-so-more>Show all <?php echo count($rows); ?></button>
+                <?php } ?>
+            </div>
+        <?php } ?>
+    </div>
+    <script>
+    (function () {
+        var box = document.getElementById('where');
+        if (!box) return;
+        box.querySelectorAll('[data-so-seg]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                box.querySelectorAll('[data-so-seg]').forEach(function (b) { b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+                box.querySelectorAll('.so-where__panel').forEach(function (p) { p.hidden = p.id !== 'so-where-' + btn.dataset.soSeg; });
+            });
+        });
+        box.querySelectorAll('[data-so-more]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                btn.parentNode.querySelectorAll('.so-list__item--extra').forEach(function (li) { li.hidden = false; });
+                btn.remove();
+            });
+        });
+    })();
+    </script>
+    <?php
+}
+
+/** Two-letter initials for a name tile ("Paloma Morphy" -> "PM"). */
+function soInitials($name): string {
+    $words = preg_split('/[^\p{L}\p{N}]+/u', trim((string) $name), -1, PREG_SPLIT_NO_EMPTY);
+    $out = '';
+    foreach (array_slice($words, 0, 2) as $w) { $out .= mb_strtoupper(mb_substr($w, 0, 1)); }
+    return $out !== '' ? $out : '?';
+}
+
+/**
+ * "Fans also love": other performers from the same category, each with its own name and picture. A performer whose
+ * picture is not stored yet gets a clean initials tile (not the shared stock photo) and is queued for the image job;
+ * the page asks ajax/resolve-images.php for the real picture once the cards are on screen.
+ */
+function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
+    $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $n = 0;
+    ?>
+    <div class="so-related" data-so-related>
+        <?php foreach ($related as $rel) {
+            if ($n >= $limit) break;
+            $name = trim((string) ($rel['text']['name'] ?? ''));
+            $uri  = strtolower((string) ($rel['uriComponent'] ?? ''));
+            if ($name === '' || $uri === '') continue;
+            $n++;
+            $cat  = $rel['defaultCategory'] ?? [];
+            $type = imageEntityTypeForPerformer($cat);
+            $img  = getEntityImage($type, $name, ['category' => $cat, 'resolve' => false]);
+            $real = in_array($img['status'], ['ok', 'manual'], true) && $img['url'] !== '';
+            $hue  = hexdec(substr(md5($name), 0, 4)) % 360;
+            ?>
+            <a class="so-related__card" href="/artist/<?php echo $e($uri); ?>" data-name="<?php echo $e($name); ?>" data-type="<?php echo $e($type); ?>"<?php echo $real ? '' : ' data-pending="1"'; ?>>
+                <span class="so-related__media" style="--so-hue:<?php echo (int) $hue; ?>">
+                    <?php if ($real) { ?>
+                        <img src="<?php echo $e($img['url']); ?>" alt="<?php echo $e($name); ?>" loading="lazy" width="400" height="300">
+                    <?php } else { ?>
+                        <span class="so-related__initials" aria-hidden="true"><?php echo $e(soInitials($name)); ?></span>
+                    <?php } ?>
+                </span>
+                <span class="so-related__name"><?php echo $e($name); ?></span>
+                <span class="so-related__cta">View tickets</span>
+            </a>
+        <?php } ?>
+    </div>
+    <script>
+    (function () {
+        var grid = document.querySelector('[data-so-related]');
+        if (!grid || !('IntersectionObserver' in window)) return;
+        var pending = [].slice.call(grid.querySelectorAll('[data-pending]'));
+        if (!pending.length) return;
+        var io = new IntersectionObserver(function (entries) {
+            if (!entries.some(function (en) { return en.isIntersecting; })) return;
+            io.disconnect();
+            fetch('/ajax/resolve-images.php', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: pending.map(function (c) { return { name: c.dataset.name, type: c.dataset.type }; }) }) })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    (data.images || []).forEach(function (url, i) {
+                        if (!url) return;
+                        var media = pending[i].querySelector('.so-related__media');
+                        var img = new Image(); img.alt = pending[i].dataset.name; img.width = 400; img.height = 300;
+                        img.onload = function () { media.innerHTML = ''; media.appendChild(img); };
+                        img.src = url;
+                    });
+                }).catch(function () {});
+        }, { rootMargin: '200px' });
+        io.observe(grid);
+    })();
+    </script>
+    <?php
+}
+
 function renderCategoryCityLinksBlock(array $events, string $urlPrefix, string $categoryLabel): void {
     $cities = [];
     $seenCityIds = [];
@@ -3813,6 +4122,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     }, $faqsRaw);
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
+    $pageFocusKeyword    = "$artistName Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
     $pageMetaTitle       = "$artistName {$noun['nounCap']} Tickets in $locationLabel | Seat Outlet";
     $pageMetaDescription = "Buy verified $artistName {$noun['noun']} tickets in $locationLabel. Compare prices across sellers and find upcoming $artistName {$noun['noun']}s near you on Seat Outlet.";
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($artistName, $performerId) . '/' . createSlug($locationLabel, $locationValue);
@@ -3948,7 +4258,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                             <div class="ms-3">
                                                 <?php renderEventPriceTag($event); ?>
                                                 <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                                                    <span class="d-none d-md-inline">Find Tickets</span>
+                                                    <span class="d-none d-md-inline">Buy Tickets</span>
                                                     <i class="bi bi-chevron-right"></i>
                                                 </a>
                                             </div>
@@ -4147,6 +4457,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     }, $faqsRaw);
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
+    $pageFocusKeyword    = "$categoryLabel Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
     $pageMetaTitle       = "Buy $categoryLabel Tickets in $locationLabel | Seat Outlet";
     $pageMetaDescription = "Buy $categoryLabel tickets in $locationLabel. Compare prices across sellers, browse upcoming events, and find great seats on Seat Outlet.";
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($locationLabel, $locationValue);
@@ -4244,7 +4555,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                             <div class="ms-3">
                                                 <?php renderEventPriceTag($event); ?>
                                                 <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                                                    <span class="d-none d-md-inline">Find Tickets</span>
+                                                    <span class="d-none d-md-inline">Buy Tickets</span>
                                                     <i class="bi bi-chevron-right"></i>
                                                 </a>
                                             </div>
@@ -4776,6 +5087,13 @@ function findOtherPagesUsingFocusKeyword($focusKeyword, $excludeUrlPath, $mysqli
         $matches[] = $row['url_path'];
     }
     $stmt->close();
+
+    // Keywords assigned in the code plan (inc/seo-keywords.php) count too, unless an admin page rule replaced them.
+    foreach (soSeoPlan() as $planPath => $planRow) {
+        if (strcasecmp($planRow[0], $focusKeyword) === 0 && $planPath !== $excludeUrlPath && !in_array($planPath, $matches, true)) {
+            $matches[] = $planPath;
+        }
+    }
 
     $stmt = $mysqli->prepare('SELECT slug FROM blog_posts WHERE focus_keyword = ? AND CONCAT(\'/blog/\', slug) != ?');
     $stmt->bind_param('ss', $focusKeyword, $excludeUrlPath);

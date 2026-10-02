@@ -98,11 +98,11 @@ include 'header.php';
 					</div>
 				</div>
 				<div class="col-12">
-					<div class="row align-items-center text-center text-md-start">
+					<div class="row align-items-center text-center text-md-start so-hero-row">
 						<div class="col-md-3">
 							<div class="img-artist">
 								<img src="<?php echo $performer_image; ?>" alt="<?php echo $artistName; ?>" class="img-fluid rounded artist-img" fetchpriority="high" width="300" height="300" />
-								<?php renderImageCredit($performerImg, 'img-credit'); ?>
+								<?php renderImageCredit($performerImg, 'img-credit d-none d-md-block'); ?>
 							</div>
 						</div>
 						<div class="col-md-9 text-white">
@@ -130,6 +130,8 @@ include 'header.php';
 									<?php } ?>
 								</p>
 								<?php } ?>
+								<p class="so-resale-note mb-0">Resale marketplace. Prices are set by sellers and may be above or below face value.</p>
+								<?php renderImageCredit($performerImg, 'img-credit so-hero-credit d-md-none'); ?>
 							</div>
 						</div>
 					</div>
@@ -283,22 +285,17 @@ include 'header.php';
 													data-performer-slugs="<?php echo htmlspecialchars($dataPerformerSlugs); ?>"
 												></i>
 											</div>
-											<div class="fw-semibold location-venue-name">
-												<a href="/city/<?php echo $citySlug; ?>"><?php echo $city; ?></a>
-												·
-												<a href="/venue/<?php echo $venueSlug; ?>"><?php echo $event['venue']['text']['name']; ?></a>
-											</div>
-											<div class="text-muted small">
+											<div class="ev-venue"><a href="/venue/<?php echo $venueSlug; ?>"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></div>
+											<div class="ev-place"><a href="/city/<?php echo $citySlug; ?>"><?php echo htmlspecialchars($city, ENT_QUOTES, 'UTF-8'); ?></a></div>
+											<div class="ev-name">
 												<a href="/event/<?php echo $slug; ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
 											</div>
 										</div>
 										<div class="ms-3">
 											<?php if (!empty($cheapestEventId) && (int) ($event['id'] ?? 0) === $cheapestEventId) { ?><span class="event-cheapest-badge">Cheapest date</span><?php } ?>
-											<?php renderEventPriceTag($event); ?>
-											<a href="/event/<?php echo $slug; ?>" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-												<span class="d-none d-md-inline">
-													Find Tickets
-												</span>
+											<?php renderEventPriceTag($event); $evHasPrice = eventFromPrice($event) !== ''; ?>
+											<a href="/event/<?php echo $slug; ?>" class="btn <?php echo $evHasPrice ? 'btn-primary' : 'btn-outline-primary'; ?> d-flex align-items-center gap-2" aria-label="<?php echo $evHasPrice ? 'Buy tickets for' : 'View'; ?> <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+												<span><?php echo $evHasPrice ? 'Buy Tickets' : 'View Event'; ?></span>
 												<i class="bi bi-chevron-right"></i>
 											</a>
 										</div>
@@ -402,15 +399,24 @@ include 'header.php';
 							$nextTs   = strtotime($nextEvent['date']['date'] ?? 'now');
 							$nextDeal = eventDealInfo($nextEvent);
 						?>
+						<?php
+							$nvCity  = trim(($nextEvent['city']['text']['name'] ?? '') . ', ' . ($nextEvent['stateProvince']['text']['abbr'] ?? ''), ', ');
+							$nvVenue = (string) ($nextEvent['venue']['text']['name'] ?? '');
+							$nvCityUrl  = !empty($nextEvent['city']['id'])  && $nvCity  !== '' ? '/city/'  . createSlug($nvCity,  $nextEvent['city']['id'])  : '';
+							$nvVenueUrl = !empty($nextEvent['venue']['id']) && $nvVenue !== '' ? '/venue/' . createSlug($nvVenue, $nextEvent['venue']['id']) : '';
+							$nvLink = function ($url, $text) { $t = htmlspecialchars($text, ENT_QUOTES, 'UTF-8'); return $url !== '' ? '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">' . $t . '</a>' : $t; };
+						?>
 						<div class="next-event-card mb-3">
 							<div class="next-event-label">Next event</div>
-							<div class="next-event-date"><?php echo date('D, M j, Y', $nextTs); ?> · <?php echo htmlspecialchars($nextEvent['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
-							<div class="next-event-name"><?php echo htmlspecialchars($nextEvent['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
-							<div class="next-event-venue"><?php echo htmlspecialchars(($nextEvent['venue']['text']['name'] ?? '') . ' · ' . ($nextEvent['city']['text']['name'] ?? '') . ', ' . ($nextEvent['stateProvince']['text']['abbr'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-							<?php if ($nextDeal['from'] !== '') { ?>
-								<div class="next-event-price">From <strong><?php echo htmlspecialchars($nextDeal['from'], ENT_QUOTES, 'UTF-8'); ?></strong><?php if ($nextDeal['tickets'] > 0) { ?> · <?php echo (int) $nextDeal['tickets']; ?> tickets listed<?php } ?></div>
+							<div class="next-event-when"><?php echo date('D, M j, Y', $nextTs); ?><span><?php echo htmlspecialchars($nextEvent['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></div>
+							<a class="next-event-name" href="/event/<?php echo htmlspecialchars($nextSlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($nextEvent['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+							<div class="next-event-where"><?php echo $nvLink($nvVenueUrl, $nvVenue); ?><?php if ($nvVenue !== '' && $nvCity !== '') { ?><i aria-hidden="true">·</i><?php } ?><?php echo $nvLink($nvCityUrl, $nvCity); ?></div>
+							<?php if ($nextDeal['from'] === '') { ?>
+								<div class="next-event-price next-event-price--none">No tickets listed yet. Check the event page for updates.</div>
+							<?php } else { ?>
+								<div class="next-event-price"><span class="from">From</span><strong><?php echo htmlspecialchars($nextDeal['from'], ENT_QUOTES, 'UTF-8'); ?></strong><?php if ($nextDeal['tickets'] > 0) { ?><span class="listed"><?php echo (int) $nextDeal['tickets']; ?> tickets listed</span><?php } ?></div>
 							<?php } ?>
-							<a href="/event/<?php echo htmlspecialchars($nextSlug, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary w-100 mt-2">Find Tickets</a>
+							<a href="/event/<?php echo htmlspecialchars($nextSlug, ENT_QUOTES, 'UTF-8'); ?>" class="next-event-cta"><?php echo $nextDeal['from'] !== '' ? 'Buy Tickets' : 'View Event'; ?></a>
 						</div>
 						<?php } ?>
 						<div class="guarantee-card d-flex align-items-center justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
@@ -452,7 +458,7 @@ include 'header.php';
 			</div>
 		</div>
 		<?php if (!empty($faqs)) { ?>
-			<?php $faqVisible = 5; // FAQs shown before "Show More FAQs" ?>
+			<?php $faqVisible = 5; // FAQs shown before "Show more" ?>
 			<div class="tab-section content-section-detail" id="faqs">
 				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo $artistName; ?> Events</h2>
 				<div class="accordion" id="faqAccordion">
@@ -489,7 +495,7 @@ include 'header.php';
 				<?php if (count($faqs) > $faqVisible) { ?>
 					<div class="text-center mt-4">
 						<button type="button" class="btn more-events-btn d-inline-flex align-items-center gap-2" id="faqToggleBtn" aria-expanded="false" aria-controls="faqAccordion">
-							<span class="btn-text">Show More FAQs</span>
+							<span class="btn-text">Show more</span>
 							<i class="bi bi-chevron-down"></i>
 						</button>
 					</div>
@@ -503,7 +509,7 @@ include 'header.php';
 								item.classList.toggle('d-none', !expand);
 							});
 							btn.setAttribute('aria-expanded', expand ? 'true' : 'false');
-							btn.querySelector('.btn-text').textContent = expand ? 'Show Less FAQs' : 'Show More FAQs';
+							btn.querySelector('.btn-text').textContent = expand ? 'Show less' : 'Show more';
 							btn.querySelector('.bi').style.transform = expand ? 'rotate(180deg)' : '';
 							// After collapsing, keep the visitor at the FAQs instead of
 							// wherever the longer list had scrolled them to.
@@ -516,67 +522,11 @@ include 'header.php';
 				<?php } ?>
 			</div>
 		<?php } ?>
-		<?php
-		// Real internal links into the artist-city location pages (see
-		// functions.php's renderArtistLocationPage()) for the cities this
-		// artist actually has upcoming events in on this page - built from
-		// $events above, not a fabricated/guessed city list. Capped to the
-		// first several distinct cities so this doesn't turn into a wall of
-		// links when an artist has dozens of tour stops.
-		$performerCities = [];
-		$seenCityIds = [];
-		foreach ($events as $event) {
-			$cityId = $event['city']['id'] ?? null;
-			$cityName = $event['city']['text']['name'] ?? '';
-			if (empty($cityId) || $cityName === '' || isset($seenCityIds[$cityId])) {
-				continue;
-			}
-			$seenCityIds[$cityId] = true;
-			$performerCities[] = [
-				'id'    => $cityId,
-				'label' => trim($cityName . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', '),
-			];
-			if (count($performerCities) >= 8) {
-				break;
-			}
-		}
-		?>
-		<?php if (!empty($performerCities)) { ?>
-			<div class="tab-section content-section-detail" id="cities">
-				<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets by City</h2>
-				<div class="d-flex flex-wrap gap-2">
-					<?php foreach ($performerCities as $city) { ?>
-						<a href="/artist-city/<?php echo htmlspecialchars(createSlug($artistName, $id), ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">
-							<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
-						</a>
-					<?php } ?>
-				</div>
-			</div>
-		<?php } ?>
-		<?php renderPerformerLocationLinks($artistName, (int) $id, $events ?? [], 'city'); ?>
+		<?php renderPerformerWhere($artistName, (int) $id, $events ?? [], (int) $total_count); ?>
 		<?php if (!empty($relatedPerformers)) { $i = 0; ?>
 			<div class="tab-section content-section-detail" id="fans">
-				<div class="row g-4">
-					<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo $artistName; ?> Fans Also Love</h2>
-					<?php foreach (array_slice($relatedPerformers, 0, 8) as $related) { 
-						// Was: image lookups for *every* related performer (not
-						// just the 8 shown) with live third-party calls each.
-						$relatedName  = $related['text']['name'] ?? '';
-						$relatedImage = getArtistImage($relatedName, $related['defaultCategory'] ?? [], false);
-					?>
-						<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-							<a href="/artist/<?php echo strtolower($related['uriComponent'] ?? ''); ?>" class="band-card-bootstrap text-decoration-none">
-								<div class="position-relative overflow-hidden rounded">
-									<img src="<?php echo htmlspecialchars($relatedImage, ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid w-100 h-100 band-img" loading="lazy" alt="<?php echo htmlspecialchars($relatedName, ENT_QUOTES, 'UTF-8'); ?>">
-									<div class="band-content d-flex justify-content-between align-items-center">
-										<span class="band-name"></span>								
-									</div>
-								</div>
-								<div class="band-name-title text-black mt-2"><?php echo $artistName; ?></div>
-							</a>
-						</div>
-					<?php } ?>
-				</div>
+				<h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Fans Also Love</h2>
+				<?php renderRelatedPerformersGrid($relatedPerformers, 8); ?>
 			</div>
 		<?php } ?>
 	</div>

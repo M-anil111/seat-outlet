@@ -1,3 +1,5 @@
+<?php // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
+if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; } ?>
 <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
 		<div class="modal-content pb-4">
@@ -28,7 +30,7 @@
             <div class="fw-bold mb-1" id="offcanvasLocation"></div>
             <div class="text-muted mb-4" id="offcanvasTitle"></div>            
             <a href="#" class="btn btn-primary d-flex align-items-center justify-content-center gap-2" id="offcanvasId">
-                Find Tickets
+                Buy Tickets
                 <i class="bi bi-chevron-right"></i>
             </a>
         </div>

@@ -414,10 +414,11 @@ if (loadMoreBtn) {
 // appended by "More Events" look identical to the server-rendered ones.
 function buildPriceTag(event) {
     const info = event && event.pricingInfo ? event.pricingInfo : null;
-    if (!info || !info.lowPrice) return '';
+    const none = '<div class="event-price-tag event-price-tag--none">No tickets listed yet</div>';
+    if (!info || !info.lowPrice) return none;
     const low = Number(info.lowPrice.value || 0);
     const formatted = info.lowPrice.text && info.lowPrice.text.formatted ? info.lowPrice.text.formatted : '';
-    if (!formatted || low <= 0) return '';
+    if (!formatted || low <= 0) return none;
     const avg = info.averagePrice ? Number(info.averagePrice.value || 0) : 0;
     const isDeal = avg > 0 && low <= avg * 0.6;
     const safe = String(formatted).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -472,19 +473,14 @@ function renderEvent(event) {
                     data-id="${event.id}" data-date="${formattedDate}" data-venue="${evVenue}" 
                     data-location="${evCityName}" data-title="${evName}" data-performers="${escHtml(dataPerformers)}"></i>
             </div>
-            <div class="fw-semibold location-venue-name">
-                <a href="/city/${citySlug}">${evCityName}</a> · <a href="/venue/${venueSlug}">${evVenue}</a>
-            </div>
-            <div class="text-muted small">
-                <a href="/event/${eSlug}">${evName}</a>
-            </div>
+            <div class="ev-venue"><a href="/venue/${venueSlug}">${evVenue}</a></div>
+            <div class="ev-place"><a href="/city/${citySlug}">${evCityName}</a></div>
+            <div class="ev-name"><a href="/event/${eSlug}">${evName}</a></div>
         </div>
         <div class="ms-3">
             ${priceTag}
-            <a href="/event/${eSlug}" class="btn btn-primary d-flex align-items-center gap-2" aria-label="Find tickets for ${evName}">
-                <span class="d-none d-md-inline">
-                    Find Tickets
-                </span>
+            <a href="/event/${eSlug}" class="btn ${priceTag.indexOf('event-price-tag--none') === -1 ? 'btn-primary' : 'btn-outline-primary'} d-flex align-items-center gap-2" aria-label="${priceTag.indexOf('event-price-tag--none') === -1 ? 'Buy tickets for' : 'View'} ${evName}">
+                <span>${priceTag.indexOf('event-price-tag--none') === -1 ? 'Buy Tickets' : 'View Event'}</span>
                 <i class="bi bi-chevron-right"></i>
             </a>
         </div>

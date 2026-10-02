@@ -1,3 +1,5 @@
+<?php // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
+if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; } ?>
 <title>Seat Outlet – Buy Verified Event Tickets Online</title>
 <meta name="description" content="Discover deals on live events with our verified ticket marketplace network. Safe checkout, real tickets and instant access to unforgettable experiences.">
 <meta name="keywords" content="Buy verified event tickets online, concert tickets online, sports tickets online, live event tickets, secure ticket marketplace">
@@ -70,8 +72,8 @@ if (!empty($results['results'])) {
 
 $webPageSchema = [
     "@type" => "WebPage",
-    "@id" => HOME_URL . "/tickets#webpage",
-    "url" => HOME_URL . "/tickets",
+    "@id" => HOME_URL . "/buy-tickets-online#webpage",
+    "url" => HOME_URL . "/buy-tickets-online",
     "name" => "Buy Verified Event Tickets Online",
     "description" => "Discover deals on live events with our verified ticket marketplace network. Safe checkout, real tickets and instant access to unforgettable experiences.",
     "isPartOf" => ["@id" => HOME_URL . "/#website"],
