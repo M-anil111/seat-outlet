@@ -39,6 +39,10 @@ foreach ($events as $ev) {
 }
 if ($pricedDates < 2) { $cheapestEventId = 0; }
 $nextEvent = $events[0] ?? null;
+// Multi-day festival at one site: "Weekend 1 / Weekend 2" chips (only when every date is already on the page).
+$weekendGroups = ($total_count <= count($events)) ? soWeekendGroups($events) : [];
+$weekendOf = [];
+foreach ($weekendGroups as $wi => $wg) { foreach ($wg['ids'] as $wid) { $weekendOf[$wid] = $wi + 1; } }
 
 $sep = '<span class="separator"><strong> / </strong></span>';
 $breadcrumbs = buildCategoryBreadcrumb($performer['defaultCategory']);
@@ -222,6 +226,16 @@ include 'header.php';
 							<div id="location-no-results" class="text-center no-location"></div>
 						</div>
 						<?php if (!empty($events)) { ?>
+							<?php if ($weekendGroups) { ?>
+								<div class="so-weekends" data-so-weekends role="group" aria-label="Choose a weekend">
+									<?php foreach ($weekendGroups as $wi => $wg) { ?>
+										<button type="button" class="so-weekend<?php echo $wi === 0 ? ' is-active' : ''; ?>" data-wk="<?php echo $wi + 1; ?>" aria-pressed="<?php echo $wi === 0 ? 'true' : 'false'; ?>">
+											<span class="so-weekend__name"><?php echo htmlspecialchars($wg['label'], ENT_QUOTES, 'UTF-8'); ?></span>
+											<span class="so-weekend__range"><?php echo htmlspecialchars($wg['range'], ENT_QUOTES, 'UTF-8'); ?></span>
+										</button>
+									<?php } ?>
+								</div>
+							<?php } ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">
 								<?php foreach ($events as $event) { 
 									$eventDateRaw = $event['date']['date'];
@@ -247,7 +261,7 @@ include 'header.php';
 									$citySlug = createSlug($city, $event['city']['id']);
 									$venueSlug = createSlug($event['venue']['text']['name'], $event['venue']['id']);
 								?>
-									<div class="d-flex align-items-center justify-content-between performer-event-item">
+									<div class="d-flex align-items-center justify-content-between performer-event-item"<?php echo isset($weekendOf[(int) ($event['id'] ?? 0)]) ? ' data-wk="' . (int) $weekendOf[(int) $event['id']] . '"' : ''; ?>>
 										<div class="date-box text-center me-3">
 											<div class="month">
 												<?php echo strtoupper(date('M', $timestamp)); ?>

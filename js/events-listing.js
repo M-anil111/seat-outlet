@@ -575,3 +575,26 @@ document.addEventListener('click', function (e) {
   var list = document.getElementById('eventsSection');
   if (list && window.MutationObserver) new MutationObserver(function () { enhanceAll(list); }).observe(list, { childList: true });
 })();
+
+
+/* "Weekend 1 / Weekend 2" chips (multi-day festivals only; the server prints them): show one weekend's dates at a time.
+   Without JavaScript every date stays visible. */
+(function () {
+  var bar = document.querySelector('[data-so-weekends]');
+  var list = document.getElementById('eventsSection');
+  if (!bar || !list) return;
+  var buttons = bar.querySelectorAll('[data-wk]');
+  function show(wk) {
+    buttons.forEach(function (b) {
+      var on = b.getAttribute('data-wk') === wk;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    list.querySelectorAll('.performer-event-item').forEach(function (row) {
+      var rw = row.getAttribute('data-wk');
+      row.hidden = !!rw && rw !== wk;
+    });
+  }
+  buttons.forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-wk')); }); });
+  show('1');
+})();

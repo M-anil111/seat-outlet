@@ -1584,25 +1584,67 @@ function listingRequestState($defaultSort = 'popular') {
     return [$when, $sort, ($when !== '' || $sort !== $defaultSort)];
 }
 
+/**
+ * "Weekend 1 / Weekend 2" groups for a single multi-day festival (or other multi-day event) at one site.
+ * Returns [] unless the events are all at one venue, belong to a festival category (or are flagged multi-day), and fall
+ * into at least two separate runs of days (gap of more than 3 days between runs). Touring artists never qualify.
+ */
+function soWeekendGroups(array $events): array {
+    if (count($events) < 2) return [];
+    $venues = []; $festival = false; $multi = false; $dates = [];
+    foreach ($events as $ev) {
+        $venues[(string) ($ev['venue']['id'] ?? '0')] = true;
+        $path = (string) ($ev['defaultCategory']['path'] ?? '');
+        if (strpos($path, '.1877.') !== false || strpos($path, '.2065.') !== false) $festival = true;
+        if (!empty($ev['isMultiDayEvent'])) $multi = true;
+        $d = (string) ($ev['date']['date'] ?? '');
+        if ($d === '' || !strtotime($d)) return [];
+        $dates[(int) ($ev['id'] ?? 0)] = $d;
+    }
+    if (count($venues) !== 1 || (!$festival && !$multi)) return [];
+    asort($dates);
+    $groups = []; $prev = null; $g = -1;
+    foreach ($dates as $id => $d) {
+        if ($prev === null || (strtotime($d) - strtotime($prev)) / 86400 > 3) { $g++; $groups[$g] = ['ids' => [], 'from' => $d, 'to' => $d]; }
+        $groups[$g]['ids'][] = $id; $groups[$g]['to'] = $d; $prev = $d;
+    }
+    if (count($groups) < 2 || count($groups) > 6) return [];
+    foreach ($groups as $i => &$grp) {
+        $grp['label'] = 'Weekend ' . ($i + 1);
+        $a = date('M d', strtotime($grp['from'])); $b = date('M d', strtotime($grp['to']));
+        $grp['range'] = $a === $b ? $a : $a . ' - ' . $b;
+    }
+    unset($grp);
+    return $groups;
+}
+
 /** Listing hubs that get the "Explore ... near you" block: base path => [feed category, plural noun]. */
 const SO_EXPLORE_HUBS = [
-    '/buy-tickets-online'        => ['all', 'events'],
-    '/concert-tickets-for-sale'  => ['concerts', 'concerts'],
-    '/game-day-tickets'          => ['sports', 'games'],
-    '/buy-broadway-tickets'      => ['theatre', 'shows'],
-    '/upcoming-music-festivals'  => ['festival', 'festivals'],
+    '/buy-tickets-online'        => ['all', 'events', '/images/crowd-at-concert-or-event.webp'],
+    '/concert-tickets-for-sale'  => ['concerts', 'concerts', '/images/event-concert.jpg'],
+    '/game-day-tickets'          => ['sports', 'games', '/images/event-basketball.jpg'],
+    '/buy-broadway-tickets'      => ['theatre', 'shows', '/images/loews-theatre.webp'],
+    '/upcoming-music-festivals'  => ['festival', 'festivals', '/images/festival-1.webp'],
 ];
 
 /**
  * Category tabs, location and date chips, and the "near you" grid (filled by js/near-you.js from the visitor's own
  * location; it stays hidden until a location is known), then the heading of the full national list below.
  */
-function renderExploreBar($basePath) {
-    if (!isset(SO_EXPLORE_HUBS[$basePath])) return;
-    [$cat, $noun] = SO_EXPLORE_HUBS[$basePath];
+function renderExploreBar($basePath, array $opts = []) {
+    if (isset($opts['catId'])) {
+        // A single category page: its own TicketNetwork category id and name.
+        $cat = 'all'; $noun = (string) ($opts['noun'] ?? 'events'); $heroImg = '/images/crowd-at-concert-or-event.webp';
+        $catId = (int) $opts['catId'];
+    } elseif (isset(SO_EXPLORE_HUBS[$basePath])) {
+        [$cat, $noun, $heroImg] = SO_EXPLORE_HUBS[$basePath];
+        $catId = 0;
+    } else {
+        return;
+    }
     $tabs = ['/buy-tickets-online' => 'All events', '/game-day-tickets' => 'Sports', '/concert-tickets-for-sale' => 'Concerts', '/buy-broadway-tickets' => 'Theater', '/upcoming-music-festivals' => 'Festivals'];
     ?>
-    <div class="so-explore" data-so-explore data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
+    <div class="so-explore" data-so-explore data-hero="<?php echo htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8'); ?>" data-catid="<?php echo (int) $catId; ?>" data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
         <nav class="so-cattabs" aria-label="Event categories">
             <?php foreach ($tabs as $href => $label) { ?>
                 <a href="<?php echo $href; ?>" <?php echo $href === $basePath ? 'class="active" aria-current="page"' : ''; ?>><?php echo $label; ?></a>
@@ -1645,12 +1687,12 @@ function renderExploreBar($basePath) {
     <?php
 }
 
-function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'popular') {
+function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'popular', array $explore = []) {
     $url = function ($w, $s) use ($basePath, $defaultSort) {
         $q = array_filter(['when' => $w, 'sort' => $s === $defaultSort ? '' : $s]);
         return htmlspecialchars($basePath . ($q ? '?' . http_build_query($q) : ''), ENT_QUOTES, 'UTF-8');
     };
-    renderExploreBar($basePath);
+    renderExploreBar($basePath, $explore);
     ?>
     <div class="listing-filters" role="group" aria-label="Filter and sort events">
         <div class="listing-filter-row">

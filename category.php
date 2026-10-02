@@ -71,7 +71,7 @@ $year = date('Y');
 							</div>
 						</div>
 					</div>
-					<?php renderListingFilters('/category/' . $slug, $when, $sort, $total_count, 'popular'); ?>
+					<?php renderListingFilters('/category/' . $slug, $when, $sort, $total_count, 'popular', ['catId' => $id, 'noun' => strtolower($catName) . ' events']); ?>
 					<div class="list-category-bg pb-3">
 						<?php if (!empty($events)) { ?>
 							<div id="eventsSection" class="section-artist-content event-row-all">

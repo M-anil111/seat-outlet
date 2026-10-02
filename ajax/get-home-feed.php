@@ -31,6 +31,8 @@ if ($kind === 'near') {
     $catMap = ['concerts' => TN_CATEGORY_PATH_CONCERTS, 'sports' => TN_CATEGORY_PATH_SPORTS, 'theatre' => TN_CATEGORY_PATH_THEATER, 'festival' => TN_CATEGORY_PATH_FESTIVAL, 'all' => ''];
     $cat = $_GET['cat'] ?? 'all';
     $catPath = $catMap[$cat] ?? '';
+    // A single category page (for example /category/basketball-1865) passes its own TicketNetwork category id.
+    $catId = isset($_GET['catid']) && ctype_digit((string) $_GET['catid']) ? (int) $_GET['catid'] : 0;
     $whenIn = $_GET['when'] ?? '';
     $when = isset(LISTING_WHEN[$whenIn]) ? $whenIn : '';
     $page = max(1, min(20, (int) ($_GET['page'] ?? 1)));
@@ -38,7 +40,7 @@ if ($kind === 'near') {
         echo json_encode(['scope' => 'none', 'events' => [], 'hasMore' => false]);
         exit;
     }
-    $nearKey = 'near_' . ($cat) . '_' . $when . '_' . $page . '_' . $lat . '_' . $lng;
+    $nearKey = 'near_' . ($catId ?: $cat) . '_' . $when . '_' . $page . '_' . $lat . '_' . $lng;
     $cachedNear = cache_get('home_feed_' . $nearKey, 600);
     if ($cachedNear !== false) {
         header('Cache-Control: public, max-age=300');
@@ -46,7 +48,9 @@ if ($kind === 'near') {
         exit;
     }
     try {
-        $params = categoryListingParams($catPath, 12, $page, $when, 'popular');
+        $params = $catId > 0
+            ? locationListingParams("contains(defaultCategory/path, '." . $catId . ".')", 12, $page, $when, 'popular')
+            : categoryListingParams($catPath, 12, $page, $when, 'popular');
         $params['geoFilter'] = sprintf('nearby(%F,%F,50mi)', $lat, $lng);
         $data = tnRequest('/catalog/v2/events/', $params);
         $total = (int) ($data['totalCount'] ?? 0);

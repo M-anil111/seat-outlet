@@ -8,6 +8,13 @@
 
   var cat = root.getAttribute('data-cat') || 'all';
   var noun = root.getAttribute('data-noun') || 'events';
+  var catId = root.getAttribute('data-catid') || '0';
+  // Header card: the page title block becomes a dark card with a picture, like a ticket app's category header.
+  var heroBox = document.querySelector('.results-header');
+  if (heroBox && root.getAttribute('data-hero')) {
+    heroBox.classList.add('so-hero');
+    heroBox.style.setProperty('--so-hero-img', 'url(' + root.getAttribute('data-hero') + ')');
+  }
   var $ = function (sel) { return root.querySelector(sel); };
   var locBtn = $('[data-so-loc]'), locLabel = $('[data-so-loc-label]'), locPop = $('[data-so-loc-pop]');
   var locInput = $('#soNearInput'), locHere = $('[data-so-loc-here]');
@@ -63,7 +70,7 @@
     state.page = page;
     if (page === 1) { grid.innerHTML = skeleton(4); near.hidden = false; more.hidden = true; }
     more.disabled = true;
-    var qs = 'kind=near&cat=' + encodeURIComponent(cat) + '&when=' + encodeURIComponent(state.when) + '&page=' + page +
+    var qs = 'kind=near&cat=' + encodeURIComponent(cat) + (catId !== '0' ? '&catid=' + encodeURIComponent(catId) : '') + '&when=' + encodeURIComponent(state.when) + '&page=' + page +
       '&lat=' + encodeURIComponent(state.lat) + '&lng=' + encodeURIComponent(state.lng);
     fetch('/ajax/get-home-feed.php?' + qs).then(function (r) { return r.json(); }).then(function (data) {
       if (my !== state.token) return;
