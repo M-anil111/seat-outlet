@@ -2017,10 +2017,10 @@ function notFoundBlockHtml($what) {
         . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place.</p>'
         . '<div class="d-flex flex-wrap justify-content-center gap-2">'
         . '<a class="btn btn-primary" href="/buy-tickets-online">Browse all events</a>'
-        . '<a class="btn btn-outline-secondary" href="/concert-tickets-for-sale">Concerts</a>'
-        . '<a class="btn btn-outline-secondary" href="/game-day-tickets">Sports</a>'
-        . '<a class="btn btn-outline-secondary" href="/buy-broadway-tickets">Theater</a>'
-        . '<a class="btn btn-outline-secondary" href="/city-events">Cities</a>'
+        . '<a class="so-linkchip" href="/concert-tickets-for-sale">Concerts</a>'
+        . '<a class="so-linkchip" href="/game-day-tickets">Sports</a>'
+        . '<a class="so-linkchip" href="/buy-broadway-tickets">Theater</a>'
+        . '<a class="so-linkchip" href="/city-events">Cities</a>'
         . '</div></div>';
 }
 
@@ -2031,10 +2031,10 @@ function unavailableBlockHtml($what) {
         . '<p class="text-muted mb-4">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
         . '<div class="d-flex flex-wrap justify-content-center gap-2">'
         . '<a class="btn btn-primary" href="">Try again</a>'
-        . '<a class="btn btn-outline-secondary" href="/buy-tickets-online">Browse all events</a>'
-        . '<a class="btn btn-outline-secondary" href="/concert-tickets-for-sale">Concerts</a>'
-        . '<a class="btn btn-outline-secondary" href="/game-day-tickets">Sports</a>'
-        . '<a class="btn btn-outline-secondary" href="/buy-broadway-tickets">Theater</a>'
+        . '<a class="so-linkchip" href="/buy-tickets-online">Browse all events</a>'
+        . '<a class="so-linkchip" href="/concert-tickets-for-sale">Concerts</a>'
+        . '<a class="so-linkchip" href="/game-day-tickets">Sports</a>'
+        . '<a class="so-linkchip" href="/buy-broadway-tickets">Theater</a>'
         . '</div></div>';
 }
 
@@ -3767,9 +3767,9 @@ function renderLocationCategoryLinks(string $dimension, $locationValue, string $
     ?>
     <div class="tab-section content-section-detail" id="browse-<?php echo htmlspecialchars($dimension, ENT_QUOTES, 'UTF-8'); ?>">
         <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="so-linkchips">
             <?php foreach ($links as $l) { ?>
-                <a href="<?php echo htmlspecialchars($l['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm"><?php echo htmlspecialchars($l['text'], ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($l['href'], ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip"><?php echo htmlspecialchars($l['text'], ENT_QUOTES, 'UTF-8'); ?></a>
             <?php } ?>
         </div>
     </div>
@@ -3814,9 +3814,9 @@ function renderPerformerLocationLinks(string $artistName, int $performerId, arra
         ?>
         <div class="tab-section content-section-detail" id="performer-<?php echo $dim; ?>">
             <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets <?php echo $conf['heading']; ?></h2>
-            <div class="d-flex flex-wrap gap-2">
+            <div class="so-linkchips">
                 <?php foreach ($items as $it) { ?>
-                    <a href="/<?php echo $conf['prefix']; ?>/<?php echo htmlspecialchars($performerSlug, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($it['label'], $it['id']), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">
+                    <a href="/<?php echo $conf['prefix']; ?>/<?php echo htmlspecialchars($performerSlug, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($it['label'], $it['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
                         <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo $dim === 'venue' ? 'at' : 'in'; ?> <?php echo htmlspecialchars($it['label'], ENT_QUOTES, 'UTF-8'); ?>
                     </a>
                 <?php } ?>
@@ -3926,6 +3926,33 @@ function renderPerformerWhere(string $artistName, int $performerId, array $event
     <?php
 }
 
+/** Artist biography: first lines, then "Read more" (the full text stays in the page for search engines and no-JS visitors). */
+function renderBioBlock($bio): void {
+    $bio = (string) $bio;
+    if (trim($bio) === '') return;
+    $long = mb_strlen(strip_tags($bio)) > 420;
+    ?>
+    <div class="so-bio<?php echo $long ? ' so-bio--long' : ''; ?>" data-so-bio>
+        <p class="so-bio__text"><?php echo $bio; ?></p>
+        <?php if ($long) { ?>
+            <button type="button" class="so-bio__toggle" hidden aria-expanded="false">Read more</button>
+            <script>
+            (function () {
+                var box = document.currentScript.parentNode, btn = box.querySelector('.so-bio__toggle');
+                if (!btn) return;
+                box.classList.add('so-bio--ready'); btn.hidden = false;
+                btn.addEventListener('click', function () {
+                    var open = box.classList.toggle('so-bio--open');
+                    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    btn.textContent = open ? 'Show less' : 'Read more';
+                });
+            })();
+            </script>
+        <?php } ?>
+    </div>
+    <?php
+}
+
 /** Two-letter initials for a name tile ("Paloma Morphy" -> "PM"). */
 function soInitials($name): string {
     $words = preg_split('/[^\p{L}\p{N}]+/u', trim((string) $name), -1, PREG_SPLIT_NO_EMPTY);
@@ -4022,9 +4049,9 @@ function renderCategoryCityLinksBlock(array $events, string $urlPrefix, string $
     ?>
     <div class="tab-section content-section-detail" id="cities">
         <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> Tickets by City</h2>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="so-linkchips">
             <?php foreach ($cities as $city) { ?>
-                <a href="/<?php echo htmlspecialchars($urlPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">
+                <a href="/<?php echo htmlspecialchars($urlPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
                     <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             <?php } ?>
@@ -4248,12 +4275,9 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                                     <span class="dot">·</span>
                                                     <span class="time-clock"><?php echo htmlspecialchars($event['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
                                                 </div>
-                                                <div class="fw-semibold location-venue-name">
-                                                    <a href="<?php echo $evtCitySlug ? '/city/' . htmlspecialchars($evtCitySlug, ENT_QUOTES, 'UTF-8') : '#'; ?>"><?php echo htmlspecialchars($event['city']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars($event['stateProvince']['text']['abbr'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                                                    ·
-                                                    <a href="<?php echo $evtVenueSlug ? '/venue/' . htmlspecialchars($evtVenueSlug, ENT_QUOTES, 'UTF-8') : '#'; ?>"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                                                </div>
-                                                <div class="text-muted small"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                                                <div class="ev-venue"><a href="<?php echo $evtVenueSlug ? '/venue/' . htmlspecialchars($evtVenueSlug, ENT_QUOTES, 'UTF-8') : '#'; ?>"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></div>
+<div class="ev-place"><a href="<?php echo $evtCitySlug ? '/city/' . htmlspecialchars($evtCitySlug, ENT_QUOTES, 'UTF-8') : '#'; ?>"><?php echo htmlspecialchars($event['city']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars($event['stateProvince']['text']['abbr'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></div>
+<div class="ev-name"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
                                             </div>
                                             <div class="ms-3">
                                                 <?php renderEventPriceTag($event); ?>
@@ -4311,9 +4335,9 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             <div class="tab-section content-section-detail" id="about">
                 <div class="row">
                     <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
-                        <div class="so-about me-3">
+                        <div class="so-about-text me-md-3">
                             <h2 class="so-heading mb-3">About <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
-                            <p><?php echo $performer_bio; ?></p>
+                            <?php renderBioBlock($performer_bio); ?>
                         </div>
                     </div>
                     <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
@@ -4360,32 +4384,16 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
             <div class="tab-section content-section-detail" id="more-tickets">
                 <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets</h2>
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="/artist/<?php echo htmlspecialchars(createSlug($artistName, $performerId), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">All <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets</a>
-                    <a href="/<?php echo htmlspecialchars(LOCATION_CATEGORY_PAGES[$dimension]['plain'] ?? $dimension, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($locationLabel, $locationValue), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary btn-sm">All events in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+                <div class="so-linkchips">
+                    <a href="/artist/<?php echo htmlspecialchars(createSlug($artistName, $performerId), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">All <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets</a>
+                    <a href="/<?php echo htmlspecialchars(LOCATION_CATEGORY_PAGES[$dimension]['plain'] ?? $dimension, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($locationLabel, $locationValue), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">All events in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>
             </div>
-            <?php renderPerformerLocationLinks($artistName, (int) $performerId, $allPerformerEvents ?? $events, $dimension); ?>
+            <?php $whereEvents = $allPerformerEvents ?? $events; renderPerformerWhere($artistName, (int) $performerId, $whereEvents, count($whereEvents)); ?>
             <?php if (!empty($relatedPerformers)) { ?>
                 <div class="tab-section content-section-detail" id="fans">
-                    <div class="row g-4">
-                        <h2 class="so-heading">Fans Also Viewed</h2>
-                        <?php foreach (array_slice($relatedPerformers, 0, 8) as $related) {
-                            $relatedName = $related['text']['name'] ?? '';
-                            $relatedImage = getArtistImage($relatedName, $related['defaultCategory'] ?? [], false);
-                        ?>
-                            <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-                                <a href="/artist/<?php echo htmlspecialchars(strtolower($related['uriComponent'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" class="band-card-bootstrap text-decoration-none">
-                                    <div class="position-relative overflow-hidden rounded">
-                                        <img src="<?php echo $relatedImage ?: (HOME_URL . '/assets/placeholder.webp'); ?>" class="img-fluid w-100 h-100 band-img" alt="<?php echo htmlspecialchars($relatedName, ENT_QUOTES, 'UTF-8'); ?>">
-                                        <div class="band-content d-flex justify-content-between align-items-center">
-                                            <span class="band-name"><?php echo htmlspecialchars($relatedName, ENT_QUOTES, 'UTF-8'); ?></span>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                        <?php } ?>
-                    </div>
+                    <h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Fans Also Love</h2>
+                    <?php renderRelatedPerformersGrid($relatedPerformers, 8); ?>
                 </div>
             <?php } ?>
         </div>
@@ -4543,12 +4551,9 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                                     <span class="dot">·</span>
                                                     <span class="time-clock"><?php echo htmlspecialchars($event['date']['text']['time'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
                                                 </div>
-                                                <div class="fw-semibold location-venue-name">
-                                                    <a href="/city/<?php echo htmlspecialchars($eventCitySlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?></a>
-                                                    ·
-                                                    <a href="/venue/<?php echo htmlspecialchars($eventVenueSlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                                                </div>
-                                                <div class="text-muted small">
+                                                <div class="ev-venue"><a href="/venue/<?php echo htmlspecialchars($eventVenueSlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></div>
+<div class="ev-place"><a href="/city/<?php echo htmlspecialchars($eventCitySlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?></a></div>
+                                                <div class="ev-name">
                                                     <a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                                                 </div>
                                             </div>

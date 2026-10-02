@@ -114,7 +114,7 @@ include 'header.php';
 												·
 												<a href="<?php echo $evtVenueSlug ? '/venue/' . htmlspecialchars($evtVenueSlug, ENT_QUOTES, 'UTF-8') : '#'; ?>"><?php echo htmlspecialchars($event['venue']['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
 											</div>
-											<div class="text-muted small">
+											<div class="ev-name">
 												<a href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
 											</div>
 										</div>
