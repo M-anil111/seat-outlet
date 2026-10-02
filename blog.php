@@ -20,42 +20,29 @@ $pageJsonLdNodes = array_values(array_filter([
 include 'header.php';
 ?>
 
-<section class="section-featured-header text-sm-center text-md-start">
-    <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-        style="background-image: url('<?php echo HOME_URL; ?>/assets/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-        <div class="container mx-xl-5 mx-lg-5 mx-md-3">
-            <div class="row">
-                <div class="col-12">
-                    <h1 class="artist-title">Seat Outlet Blog</h1>
-                </div>
-            </div>
-        </div>
+<section class="so-blog-hero">
+    <div class="container">
+        <h1>Ticket Buying Tips &amp; Event Guides</h1>
+        <p>Plain-English guides to buying tickets safely, planning your night out and finding the right seats.</p>
     </div>
 </section>
 
-<section>
-    <div class="container py-4">
+<section class="so-blog-list">
+    <div class="container">
         <?php if (!empty($posts)) { ?>
-            <div class="row g-4">
+            <div class="so-blog-grid">
                 <?php foreach ($posts as $post) { ?>
-                    <div class="col-md-6 col-lg-4">
-                        <a href="/blog/<?php echo htmlspecialchars($post['slug'], ENT_QUOTES, 'UTF-8'); ?>" class="text-decoration-none text-reset">
-                            <div class="card h-100">
-                                <?php if (!empty($post['featured_image'])) { ?>
-                                    <img src="<?php echo htmlspecialchars($post['featured_image'], ENT_QUOTES, 'UTF-8'); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8'); ?>">
-                                <?php } ?>
-                                <div class="card-body">
-                                    <h2 class="h5 card-title"><?php echo htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8'); ?></h2>
-                                    <?php if (!empty($post['excerpt'])) { ?>
-                                        <p class="card-text text-muted"><?php echo htmlspecialchars($post['excerpt'], ENT_QUOTES, 'UTF-8'); ?></p>
-                                    <?php } ?>
-                                    <?php if (!empty($post['published_at'])) { ?>
-                                        <div class="small text-muted"><?php echo htmlspecialchars(date('F j, Y', strtotime($post['published_at'])), ENT_QUOTES, 'UTF-8'); ?></div>
-                                    <?php } ?>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
+                    <a class="so-blog-card" href="/blog/<?php echo htmlspecialchars($post['slug'], ENT_QUOTES, 'UTF-8'); ?>">
+                        <?php if (!empty($post['featured_image'])) { ?>
+                            <img src="<?php echo htmlspecialchars($post['featured_image'], ENT_QUOTES, 'UTF-8'); ?>" alt="" width="600" height="315" loading="lazy" decoding="async">
+                        <?php } ?>
+                        <div class="so-blog-card__body">
+                            <?php if (!empty($post['published_at'])) { ?><span class="so-blog-card__date"><?php echo htmlspecialchars(date('F j, Y', strtotime($post['published_at'])), ENT_QUOTES, 'UTF-8'); ?></span><?php } ?>
+                            <h2><?php echo htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <?php if (!empty($post['excerpt'])) { ?><p><?php echo htmlspecialchars($post['excerpt'], ENT_QUOTES, 'UTF-8'); ?></p><?php } ?>
+                            <span class="so-blog-card__more">Read the guide</span>
+                        </div>
+                    </a>
                 <?php } ?>
             </div>
 
@@ -71,7 +58,7 @@ include 'header.php';
                 </nav>
             <?php } ?>
         <?php } else { ?>
-            <h4 class="text-center py-5">No blog posts yet - check back soon.</h4>
+            <h2 class="text-center py-5">No blog posts yet. Check back soon.</h2>
         <?php } ?>
     </div>
 </section>
