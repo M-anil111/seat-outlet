@@ -67,19 +67,19 @@ animation:draw .6s ease forwards;
 <h1 class="mb-3">Thank you</h1>
 
 <p class="lead">
-We received your message.
+We have your details.
 </p>
 
 <p>
-Our team will review it and get back to you.<br>
-Meanwhile, browse upcoming events happening near you.
+If you signed up for email alerts, watch your inbox. If you sent us a message, a member of our team will reply by email.<br>
+While you are here, see what is on sale.
 </p>
 
-<p><a class="btn btn-primary" href="/buy-tickets-online">Browse events</a></p>
-
-
-
-
+<div class="row g-3 justify-content-center mt-3">
+<div class="col-6 col-md-3"><a class="btn btn-outline-primary w-100" style="min-height:48px;display:flex;align-items:center;justify-content:center" href="/concert-tickets-for-sale">Concerts</a></div>
+<div class="col-6 col-md-3"><a class="btn btn-outline-primary w-100" style="min-height:48px;display:flex;align-items:center;justify-content:center" href="/game-day-tickets">Sports</a></div>
+<div class="col-6 col-md-3"><a class="btn btn-outline-primary w-100" style="min-height:48px;display:flex;align-items:center;justify-content:center" href="/buy-broadway-tickets">Theater</a></div>
+<div class="col-6 col-md-3"><a class="btn btn-outline-primary w-100" style="min-height:48px;display:flex;align-items:center;justify-content:center" href="/upcoming-music-festivals">Festivals</a></div>
 </div>
 
 </div>

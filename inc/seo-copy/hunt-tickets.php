@@ -44,7 +44,7 @@
   </figure>
   <figure>
     <img src="/images/event-ticket-buying.webp" alt="Buying event tickets on a laptop and phone" width="1536" height="1024" loading="lazy">
-    <figcaption>Digital tickets can be delivered to your account or phone, depending on the event.</figcaption>
+    <figcaption>Digital tickets can be delivered to your phone or email, depending on the event.</figcaption>
   </figure>
 </div>
 

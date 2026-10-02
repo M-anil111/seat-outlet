@@ -97,11 +97,13 @@
         <div class="container">
             <div class="content-wrapper">
 
-                <p><strong>Overview:</strong> this is the Seat Outlet privacy policy. It explains what personal information we collect when you browse, buy or sell tickets, how we use and share it, how long we keep it, and the choices and rights you may have. The full text below is the version that applies; the summary at the bottom of the page is only a plain-English guide.</p>
+                <p><strong>Last updated: October 2, 2026</strong></p>
+                <p>Seat Outlet is an independent resale marketplace and is not affiliated with any venue, team or artist.</p>
+                <p><strong>Overview:</strong> this is the Seat Outlet privacy policy. It explains what personal information we collect when you browse or buy tickets, how we use and share it, how long we keep it, and the choices and rights you may have. The full text below is the version that applies; the summary at the bottom of the page is only a plain-English guide.</p>
 
                 <!-- Intro paragraphs (unchanged) -->
                 <p>
-                    Seat Outlet (“Seat Outlet”, “we”, “us”, or “our”) is an online marketplace that enables users to discover, buy, and sell tickets for live events (“Services”). This Privacy Policy explains how we collect, use, disclose, and protect your personal information when you access or use our websites, mobile applications, and related services (collectively, the “Platform”).
+                    Seat Outlet (“Seat Outlet”, “we”, “us”, or “our”) is an online marketplace that enables users to discover and buy tickets for live events (“Services”). This Privacy Policy explains how we collect, use, disclose, and protect your personal information when you access or use our website and related services (collectively, the “Platform”).
                 </p>
                 <p>
                     If you do not agree with this Privacy Policy, you should not use the Platform or provide us with your personal information.​
@@ -142,11 +144,9 @@
                     </p>
                     <ul>
                         <li>Visit or use the Platform (including browsing events and viewing content)</li>
-                        <li>Create an account or profile with Seat Outlet</li>
-                        <li>Buy or sell tickets, or otherwise transact on the Platform</li>
+                        <li>Buy tickets or otherwise transact on the Platform</li>
                         <li>Subscribe to newsletters, marketing communications, or alerts</li>
-                        <li>Contact customer support or interact with us via email, phone, social media, or other channels</li>
-                        <li>Participate in contests, surveys, or promotions we run</li>
+                        <li>Contact customer support or interact with us via email, the contact form, social media, or other channels</li>
                     </ul>
                     <p>
                         This Privacy Policy does not apply to:​
@@ -172,17 +172,12 @@
                     <ul>
                         <li>
                         <p>
-                        Account and profile data: Name, username, password, date of birth, gender (where provided), profile photo, language preference, country, and account settings.
-                    </p>
-                        </li>
-                        <li>
-                        <p>
                         Contact details: Email address, mobile number, postal address, billing address, and delivery address.​
                     </p>
                         </li>
                         <li>
                         <p>
-                        Transaction and booking data: Details of tickets you buy or sell, event and seat selections, booking references, transaction history, and any associated communications.
+                        Transaction and booking data: Details of tickets you buy, event and seat selections, booking references, transaction history, and any associated communications.
                     </p>
                         </li>
                         <li>
@@ -202,7 +197,7 @@
                         </li>
                         <li>
                         <p>
-                        User‑generated content: Reviews, ratings, photos, comments, and any other content you post on the Platform.​
+                        Messages and feedback: the content of messages you send us through the contact form or by email.​
                     </p>
                         </li>
                     </ul>
@@ -237,7 +232,7 @@
                         </li>
                         <li>
                         <p>
-                        Cookies and similar technologies: Cookies, pixels, SDKs, and local storage used for authentication, security, preferences, analytics, and advertising. For more details, see our <a href="/cookie-policy" title="Cookie Policy" target="_blank">Cookie Policy</a>.
+                        Cookies and similar technologies: Cookies, pixels, and local storage used for security, preferences, analytics, and advertising. For more details, see our <a href="/cookie-policy" title="Cookie Policy" target="_blank">Cookie Policy</a>.
                     </p>
                         </li>
                     </ul>
@@ -269,11 +264,6 @@
                         </li>
                         <li>
                         <p>
-                        Social media and single sign‑on providers: if you choose to sign in using third‑party services (e.g., Google, Facebook, Apple), we may receive profile and contact information as permitted by your settings
-                    </p>
-                        </li>
-                        <li>
-                        <p>
                         Publicly available sources and data providers: to enhance accuracy of contact and demographic information, subject to applicable law
                     </p>
                         </li>
@@ -297,11 +287,6 @@
 
                     <h3>4.1 Providing the Platform and Services</h3>
                     <ul>
-                        <li>
-                        <p>
-                        Creating and managing your Seat Outlet account
-                    </p>
-                        </li>
                         <li>
                         <p>
                         Processing your ticket purchases and sales, including payments and refunds
@@ -380,11 +365,6 @@
                         <li>
                         <p>
                         Delivering targeted advertising on and off the Platform, including retargeting and audience measurement
-                    </p>
-                        </li>
-                        <li>
-                        <p>
-                        Running contests, surveys, and promotions
                     </p>
                         </li>
                         <li>
@@ -649,11 +629,6 @@
                         Click the “unsubscribe” or similar link in any marketing email, or
                     </p>
                     </li>
-                    <li>
-                    <p>
-                        Adjust your communication preferences in your account settings (where available)
-                    </p>
-                    </li>
                     </ul>
                     <p>
                         Even if you opt out of marketing, we may still send you service‑related messages (e.g., booking confirmations, important event information, or security alerts).
@@ -664,7 +639,7 @@
                 <div class="policy-section" id="section-9">
                     <h2><span class="policy-num">9.</span> Cookies and similar technologies</h2>
                     <p>
-                        We use cookies and similar technologies (such as pixels and SDKs) for authentication, security, preferences, analytics, and advertising. These technologies help us:
+                        We use cookies and similar technologies (such as pixels) for security, preferences, analytics, and advertising. These technologies help us:
                     </p>
                     <ul>
     <li>
@@ -716,7 +691,7 @@
 </ul>
 
                     <p>
-                        However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security. You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.
+                        However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security.
                     </p>
                 </div>
 

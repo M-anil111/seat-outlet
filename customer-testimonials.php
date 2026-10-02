@@ -249,8 +249,8 @@ include 'header.php';
         <div class="container">
             <div class="row justify-content-center text-center">
                 <div class="col-lg-9 hero-inner">
-                    <h1 class="hero-title">Customer Testimonials: What Our Customers Say</h1>
-                    <p class="hero-subtitle">Real customer testimonials will live here. Until our verified feedback collection is ready, read how our <a href="/worry-free-guarantee">worry-free guarantee</a> and <a href="/ticket-buyer-protection">buyer protection</a> work, and tell us about your own order.</p>
+                    <h1 class="hero-title">Customer Testimonials</h1>
+                    <p class="hero-subtitle">There are no customer testimonials here yet, and we will not write any ourselves. Meanwhile, read how our <a href="/worry-free-guarantee">worry-free guarantee</a> and <a href="/ticket-buyer-protection">buyer protection</a> work, and tell us about your own order.</p>
                 </div>
             </div>
         </div>
@@ -258,9 +258,8 @@ include 'header.php';
 
     <div class="container mt-4">
         <p class="mt-3">
-          Customer testimonials matter because they are one of the few signals a new visitor has to judge whether a
-          marketplace delivers on its promises. We would rather show nothing than show quotes we wrote ourselves, so this page
-          stays free of sample reviews. Once verified feedback is collected, each testimonial will link back to a real order.
+          We would rather show nothing than show quotes we wrote ourselves, so this page stays free of sample reviews.
+          For how feedback is handled and how to judge any ticket seller, see our <a href="/seat-outlet-reviews">reviews page</a>.
         </p>
     </div>
 
@@ -268,7 +267,7 @@ include 'header.php';
     <section class="section-padding">
         <div class="container">
             <div class="stats-section">
-                <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded mb-3" alt="Fans at a live event who can share customer testimonials with Seat Outlet" loading="lazy" width="442" height="442" decoding="async">
+                <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded mb-3" alt="Fans cheering at a live event" loading="lazy" width="442" height="442" decoding="async">
                 <h2>Share your customer testimonial</h2>
                 <p>If you have booked with us, we would like to hear how it went, good or bad. Write to
                 <a href="/ticket-customer-service">our customer service team</a> and tell us about your order. Read more about what drives

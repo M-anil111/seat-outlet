@@ -108,7 +108,7 @@
 </details>
 <details class="so-faq">
   <summary>How will I receive the tickets after I buy event tickets?</summary>
-  <p>Delivery may be electronic, mobile transfer or physical shipping, depending on the event and the seller. Your confirmation email and account show the delivery status.</p>
+  <p>Delivery may be electronic, mobile transfer or physical shipping, depending on the event and the seller. Your confirmation email shows the delivery details.</p>
 </details>
 <details class="so-faq">
   <summary>What if an event is canceled after I buy event tickets?</summary>
@@ -132,7 +132,7 @@
 </details>
 <details class="so-faq">
   <summary>Do I need an account to buy event tickets?</summary>
-  <p>Check the checkout screen for the current steps. Your confirmation email is sent after payment, and order details are available through your account when you have one.</p>
+  <p>No. Seat Outlet does not have customer accounts. Your confirmation email is sent after payment and has your order details.</p>
 </details>
 <details class="so-faq">
   <summary>Where can I compare every upcoming date before I buy event tickets?</summary>

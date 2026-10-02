@@ -3633,6 +3633,19 @@ function saveBlogPost(array $data, $mysqli = MYSQLI) {
         throw new RuntimeException($error ?: 'Could not save this post.');
     }
 
+    // Featured image alt text lives in a column added by migration 0036; a site where it has not run yet still saves.
+    if (array_key_exists('featured_image_alt', $data)) {
+        try {
+            $alt = mb_substr(trim((string) $data['featured_image_alt']), 0, 255) ?: null;
+            $st = $mysqli->prepare('UPDATE blog_posts SET featured_image_alt = ? WHERE slug = ?');
+            $st->bind_param('ss', $alt, $slug);
+            $st->execute();
+            $st->close();
+        } catch (Throwable $e) {
+            error_log('saveBlogPost: featured_image_alt not saved (run db/migrate.php): ' . $e->getMessage());
+        }
+    }
+
     return true;
 }
 
@@ -3806,10 +3819,16 @@ function buildFaqPageSchema(array $faqs) {
  *                     and $url its real, canonical public URL.
  */
 function buildArticleSchema(array $post, string $url) {
+    // Absolute image URL: structured data and link previews need one, and the featured image is stored as a site path.
+    $img = trim((string) ($post['featured_image'] ?? ''));
+    if ($img !== '' && !preg_match('#^https?://#i', $img)) {
+        $img = rtrim(HOME_URL, '/') . '/' . ltrim($img, '/');
+    }
     $node = [
         "@type" => "Article",
         "@id" => $url . '#article',
-        "mainEntityOfPage" => ["@id" => $url . '#webpage'],
+        // The page itself is described right here, so the reference does not point at a node that is not in the graph.
+        "mainEntityOfPage" => ["@type" => "WebPage", "@id" => $url],
         "headline" => $post['title'] ?? '',
         "description" => $post['meta_description'] ?? ($post['excerpt'] ?? ''),
         "datePublished" => !empty($post['published_at']) ? date('c', strtotime($post['published_at'])) : null,
@@ -3819,8 +3838,8 @@ function buildArticleSchema(array $post, string $url) {
     if (!empty($post['author_name'])) {
         $node['author'] = ["@type" => "Person", "name" => $post['author_name']];
     }
-    if (!empty($post['featured_image'])) {
-        $node['image'] = $post['featured_image'];
+    if ($img !== '') {
+        $node['image'] = [$img];
     }
     return $node;
 }
@@ -5059,23 +5078,61 @@ const SEO_POWER_WORDS = [
  * with real TicketNetwork data where applicable, exactly like Rank Math
  * analyzes the rendered post rather than the raw editor markup.
  */
+/**
+ * The admin SEO tool fetches a page of this site by path. The path must be a plain site path: a full URL is accepted only
+ * for this site's own host, and anything that could change the host the request goes to (userinfo or "@", backslashes,
+ * "//" at the start, control characters, a colon in the first segment) is refused. Returns the path or null.
+ */
+function soSafeLocalPagePath($input) {
+    $input = trim((string) $input);
+    if ($input === '' || preg_match('/[\x00-\x20\x7F\\\\]/', $input)) return null;
+    $own = strtolower((string) parse_url(HOME_URL, PHP_URL_HOST));
+    if (preg_match('#^[a-z][a-z0-9+.-]*://#i', $input) || substr($input, 0, 2) === '//') {
+        $parts = parse_url(substr($input, 0, 2) === '//' ? 'https:' . $input : $input);
+        if (!$parts || isset($parts['user']) || isset($parts['pass']) || strtolower((string) ($parts['host'] ?? '')) !== $own) return null;
+        $input = ($parts['path'] ?? '/') . (isset($parts['query']) ? '?' . $parts['query'] : '');
+    }
+    if ($input[0] !== '/' || substr($input, 0, 2) === '//' || strpos($input, '@') !== false) return null;
+    $path = normalizePagePath($input);
+    if ($path === '' || $path[0] !== '/' || strpos($path, '..') !== false || strpos($path, '@') !== false) return null;
+    return $path;
+}
+
+/** True when an IP address is loopback, private, link-local or otherwise not a public address. */
+function soIsPrivateIp($ip) {
+    return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+}
+
 function fetchRenderedPageHtml($pagePath) {
-    $pagePath = normalizePagePath($pagePath);
+    $pagePath = soSafeLocalPagePath($pagePath);
+    if ($pagePath === null) return null;
+    $ownHost = strtolower((string) parse_url(HOME_URL, PHP_URL_HOST));
     $url = rtrim(HOME_URL, '/') . $pagePath;
 
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_MAXREDIRS => 3,
-        CURLOPT_TIMEOUT => 10,
-        CURLOPT_HTTPHEADER => ['User-Agent: SeatOutletSeoScorer/1.0'],
-    ]);
-    $html = curl_exec($ch);
-    $ok = $html !== false && curl_getinfo($ch, CURLINFO_HTTP_CODE) === 200;
-    curl_close($ch);
-
-    return $ok ? $html : null;
+    // Redirects are followed by hand so each hop can be checked: a page of this site must never be able to send the
+    // scorer to another host or to a private address.
+    $ownIsPrivate = soIsPrivateIp((string) gethostbyname($ownHost));
+    for ($hop = 0; $hop <= 3; $hop++) {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        if ($host !== $ownHost || parse_url($url, PHP_URL_USER) !== null) return null;
+        if (!$ownIsPrivate && soIsPrivateIp((string) gethostbyname($host))) return null;
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_HTTPHEADER => ['User-Agent: SeatOutletSeoScorer/1.0'],
+        ]);
+        $html = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $loc = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+        curl_close($ch);
+        if ($html === false) return null;
+        if ($code >= 300 && $code < 400 && $loc !== '') { $url = $loc; continue; }
+        return $code === 200 ? $html : null;
+    }
+    return null;
 }
 
 /**
@@ -5373,6 +5430,8 @@ function computeSeoScore(array $signals, $focusKeyword, $urlPath) {
             $longestParagraph <= 120,
             'No paragraph is longer than 120 words.',
             "The longest paragraph is $longestParagraph words - break it up for readability.");
+
+        foreach (seoReadabilityChecks($bodyText, $keywordLower) as $info) { $checks[] = $info; }
     }
 
     // --- Cross-page: keyword reuse (informational, not scored) ---
@@ -5403,21 +5462,95 @@ function keywordInFirstPercentOfContent($bodyTextLower, $keywordLower) {
     return str_contains(implode(' ', $words), $keywordLower);
 }
 
-/** Same boundaries as Rank Math's keywordDensity.js: fail <0.5% or >2.5%, fair 0.5-0.75%, good 0.76-1.0%, best otherwise. */
+/**
+ * Keyword density. Rank Math's boundaries (fail below 0.5% or above 2.5%) with the reward capped near 1%: it used to
+ * give full marks all the way up to 2.5%, which taught writers to repeat the phrase in every other sentence. Now the
+ * full 6 points are for 0.76-1.2%, and anything above that loses points step by step.
+ */
 function scoreKeywordDensity($density, $occurrences) {
     if ($density < 0.5) {
         return [0, 'fail', "Keyword density is {$density}% (appears $occurrences time(s)), which is low - aim for around 1%."];
     }
     if ($density > 2.5) {
-        return [0, 'fail', "Keyword density is {$density}% (appears $occurrences time(s)), which is high - this can look like keyword stuffing."];
+        return [0, 'fail', "Keyword density is {$density}% (appears $occurrences time(s)), which is high - this reads as keyword stuffing. Use the phrase less often and vary the wording."];
     }
-    if ($density >= 0.5 && $density <= 0.75) {
+    if ($density <= 0.75) {
         return [2, 'warning', "Keyword density is {$density}% (appears $occurrences time(s)) - fair, could be a bit higher."];
     }
-    if ($density >= 0.76 && $density <= 1.0) {
-        return [3, 'pass', "Keyword density is {$density}% (appears $occurrences time(s)) - good."];
+    if ($density <= 1.2) {
+        return [6, 'pass', "Keyword density is {$density}% (appears $occurrences time(s)) - good, natural-sounding."];
     }
-    return [6, 'pass', "Keyword density is {$density}% (appears $occurrences time(s)) - best."];
+    if ($density <= 2.0) {
+        return [4, 'warning', "Keyword density is {$density}% (appears $occurrences time(s)) - a little high. Aim for about 1% and use synonyms or pronouns instead."];
+    }
+    return [2, 'warning', "Keyword density is {$density}% (appears $occurrences time(s)) - too high. Readers notice repeated phrases; cut some of them."];
+}
+
+/**
+ * Informational (zero-weight) checks about how the text reads: how many sentences carry the focus keyword, the most
+ * repeated phrase, and a readability hint. They never change the score, so the admin screens' contract (checks,
+ * weights, SEO_SCORE_MAX_RAW) is untouched.
+ */
+function seoReadabilityChecks($bodyText, $keywordLower) {
+    $checks = [];
+    $text = trim(preg_replace('/\s+/', ' ', (string) $bodyText));
+    $sentences = array_values(array_filter(array_map('trim', preg_split('/(?<=[.!?])\s+/', $text)), function ($x) { return str_word_count($x) >= 3; }));
+    $n = count($sentences);
+    if ($n < 5) return $checks;
+
+    // Keyword spread: share of sentences that contain it, and sentences that repeat it.
+    if ($keywordLower !== '') {
+        $with = 0; $twice = 0;
+        foreach ($sentences as $sen) {
+            $c = substr_count(mb_strtolower($sen), $keywordLower);
+            if ($c >= 1) $with++;
+            if ($c >= 2) $twice++;
+        }
+        $share = round($with / $n * 100);
+        $bad = $share > 15 || $twice > 0;
+        $checks[] = [
+            'key' => 'keyword_repetition', 'label' => 'Focus Keyword repetition', 'weight' => 0, 'earned' => 0,
+            'status' => $bad ? 'warning' : 'pass',
+            'message' => "The Focus Keyword is in $with of $n sentences ($share%)" . ($twice > 0 ? " and repeats inside $twice sentence(s)" : '')
+                . ($bad ? ' - too repetitive. Aim for under about 15% of sentences, and never twice in one sentence.' : ' - natural.'),
+        ];
+    }
+
+    // Most repeated four-word phrase.
+    $words = preg_split('/[^\p{L}\p{N}\']+/u', mb_strtolower($text), -1, PREG_SPLIT_NO_EMPTY);
+    $total = count($words);
+    if ($total >= 200) {
+        $grams = [];
+        for ($i = 0; $i + 3 < $total; $i++) { $g = $words[$i] . ' ' . $words[$i + 1] . ' ' . $words[$i + 2] . ' ' . $words[$i + 3]; $grams[$g] = ($grams[$g] ?? 0) + 1; }
+        arsort($grams);
+        $top = key($grams); $topN = (int) current($grams);
+        $limit = max(8, (int) round($total / 250));
+        $checks[] = [
+            'key' => 'repeated_phrases', 'label' => 'Repeated phrases', 'weight' => 0, 'earned' => 0,
+            'status' => $topN > $limit ? 'warning' : 'pass',
+            'message' => $topN > $limit ? "The phrase \"$top\" appears $topN times. Vary the wording; repeated phrases read as filler."
+                                        : "No phrase is repeated more than $topN time(s) - good variety.",
+        ];
+    }
+
+    // Readability: average sentence length and a Flesch reading-ease estimate.
+    $syll = 0; $wc = 0;
+    foreach ($words as $w) {
+        $wc++;
+        $syll += max(1, preg_match_all('/[aeiouy]+/', preg_replace('/(?:[^laeiouy]es|ed|[^laeiouy]e)$/', '', $w), $m));
+    }
+    if ($wc >= 100) {
+        $avg = round($wc / $n, 1);
+        $flesch = round(206.835 - 1.015 * ($wc / $n) - 84.6 * ($syll / $wc));
+        $hard = $avg > 22 || $flesch < 50;
+        $checks[] = [
+            'key' => 'readability', 'label' => 'Readability', 'weight' => 0, 'earned' => 0,
+            'status' => $hard ? 'warning' : 'pass',
+            'message' => "Average sentence length is $avg words; Flesch reading ease is about $flesch (60-70 is plain English)."
+                . ($hard ? ' Shorter sentences and everyday words will make this easier to read.' : ' Easy to read.'),
+        ];
+    }
+    return $checks;
 }
 
 /** Same boundaries as Rank Math's lengthContent.js. */

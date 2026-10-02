@@ -1,9 +1,10 @@
 <?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Terms and conditions at a glance</h2>
+<p><strong>Last updated: October 2, 2026.</strong> Seat Outlet is an independent resale marketplace and is not affiliated with any venue, team or artist.</p>
 <p>The terms and conditions above are the full legal text, and these terms and conditions apply whenever you use the platform. This guide pulls out the points shoppers ask about most, using the policy's own wording. If anything here differs from the terms and conditions above, the full text applies.</p>
 
 <div class="so-seo-figs">
-<figure><img src="/images/event-ticket-buying-800.webp" alt="Mobile ticket and laptop checkout covered by the Seat Outlet terms and conditions" width="800" height="533" loading="lazy"><figcaption>The terms cover buying, selling, transferring and using tickets.</figcaption></figure>
+<figure><img src="/images/event-ticket-buying-800.webp" alt="Mobile ticket and laptop checkout covered by the Seat Outlet terms and conditions" width="800" height="533" loading="lazy"><figcaption>The terms cover buying and using tickets.</figcaption></figure>
 <figure><img src="/images/venue.webp" alt="Arena seating before a live event" width="1536" height="1024" loading="lazy"><figcaption>Seat Outlet is a marketplace, not the venue or event organizer.</figcaption></figure>
 </div>
 
@@ -18,7 +19,7 @@
 
 <h2>Your responsibilities under the terms and conditions</h2>
 <ul>
-<li>Under the terms and conditions, give accurate account and contact details and keep your login credentials confidential.</li>
+<li>Under the terms and conditions, give accurate contact details when you order.</li>
 <li>Meet venue entry rules, such as ID checks, age limits and security screening.</li>
 <li>Use tickets for personal use unless resale is allowed on the platform or by the organizer.</li>
 <li>Do not use bots, spiders or scrapers, including for bulk ticket purchasing.</li>
