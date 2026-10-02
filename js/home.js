@@ -538,7 +538,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Fetch JSON
   // -----------------------
   function loadPerformers() {
-    fetch('/cache/top_performers.json', { cache: "force-cache" })
+    fetch('/ajax/get-top-performers.php', { cache: "force-cache" })
       .then(res => {
         if (!res.ok) throw new Error('Failed to load JSON');
         return res.json();

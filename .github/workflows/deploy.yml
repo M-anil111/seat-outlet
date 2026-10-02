@@ -7,6 +7,9 @@ name: Build & Deploy
 # "Repository variables" (Bitbucket) to "Repository secrets" (GitHub:
 # Settings -> Secrets and variables -> Actions).
 
+permissions:
+  contents: read
+
 on:
   # Beta is deployed by deploy/pull-deploy.sh, which runs on the server and
   # pulls from GitHub (see docs/pull-deploy.md). This SFTP push is kept as a
@@ -73,12 +76,16 @@ jobs:
               "AWS_ACCESS_KEY", "AWS_SECRET_KEY", "RECAPTCHA_SECRET_KEY", "SMTP_USER", "SMTP_PASS",
               "SENTRY_DSN", "SENTRY_ENVIRONMENT",
               "THESPORTSDB_KEY", "PEXELS_API_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID", "TN_TOKEN_DIR",
+              "HOME_URL", "BASE_URL", "WEBSITE_CONFIG_ID", "WEBSITE_CONFIG_ID_LIVE", "HOME_PATH", "DB_HOST", "DB_NAME", "DB_USER", "SITE_INDEXABLE", "CRON_TOKEN",
+              "BREVO_API_KEY", "BREVO_LIST_ID", "SO_MAIL_ADDRESS", "SO_LEAD_NOTIFY_TO",
           ];
           // Optional: Sentry, the image-source keys, the Knowledge Graph key
           // (no longer used for images; kept so an existing secret still flows through),
           // and Brevo SMTP (newsletter and admin password-reset emails are skipped
           // when unset; newsletter signups are still saved to the database).
-          $optional = ["SMTP_USER", "SMTP_PASS", "SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID", "TN_TOKEN_DIR"];
+          $optional = ["SMTP_USER", "SMTP_PASS", "SENTRY_DSN", "SENTRY_ENVIRONMENT", "THESPORTSDB_KEY", "PEXELS_API_KEY", "GKGSAPI_KEY", "MAXMIND_ACCOUNT_ID", "MAXMIND_LICENSE_KEY", "GEOIP_DB_PATH", "TN_CHECKOUT_URL", "GTM_ID", "TN_TOKEN_DIR",
+              "HOME_URL", "BASE_URL", "WEBSITE_CONFIG_ID", "WEBSITE_CONFIG_ID_LIVE", "HOME_PATH", "DB_HOST", "DB_NAME", "DB_USER", "SITE_INDEXABLE", "CRON_TOKEN",
+              "BREVO_API_KEY", "BREVO_LIST_ID", "SO_MAIL_ADDRESS", "SO_LEAD_NOTIFY_TO"];
           $lines = ["<?php"];
           foreach ($vars as $v) {
               $val = getenv($v);
@@ -115,6 +122,20 @@ jobs:
           TN_CHECKOUT_URL: ${{ vars.TN_CHECKOUT_URL }}
           GTM_ID: ${{ vars.GTM_ID }}
           TN_TOKEN_DIR: ${{ vars.TN_TOKEN_DIR }}
+          HOME_URL: ${{ vars.HOME_URL }}
+          BASE_URL: ${{ vars.BASE_URL }}
+          WEBSITE_CONFIG_ID: ${{ vars.WEBSITE_CONFIG_ID }}
+          WEBSITE_CONFIG_ID_LIVE: ${{ vars.WEBSITE_CONFIG_ID_LIVE }}
+          HOME_PATH: ${{ vars.HOME_PATH }}
+          DB_HOST: ${{ vars.DB_HOST }}
+          DB_NAME: ${{ vars.DB_NAME }}
+          DB_USER: ${{ vars.DB_USER }}
+          SITE_INDEXABLE: ${{ vars.SITE_INDEXABLE }}
+          CRON_TOKEN: ${{ secrets.CRON_TOKEN }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          BREVO_LIST_ID: ${{ vars.BREVO_LIST_ID }}
+          SO_MAIL_ADDRESS: ${{ vars.SO_MAIL_ADDRESS }}
+          SO_LEAD_NOTIFY_TO: ${{ vars.SO_LEAD_NOTIFY_TO }}
 
       # Upload the whole tree over SFTP with plain curl, one file at a time -
       # git-ftp's bundled curl/libssh2 attempts SSH public-key auth first and

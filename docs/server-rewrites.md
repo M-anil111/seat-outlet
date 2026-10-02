@@ -24,14 +24,42 @@ Test after reloading nginx: `/event-city/las-vegas-nv-2355`, `/concerts-city/new
 
 ## Keep repo files out of the web root
 
-The whole repository was copied into the web root, so `docs/`, `deploy/`, `composer.lock`, `.env.example` and `CONTRIBUTING.md` are downloadable. None contain secrets, but they are not meant to be public. Preferred fix: in nginx, add
+The deploy used to copy the whole repository into the web root, so `docs/`, `deploy/`, `composer.json`, `composer.lock`, `.github/`, `db/migrations/*.sql`, `vendor/composer/installed.json`, `cache/*.json` and `CONTRIBUTING.md` were downloadable (they show exact dependency versions, the schema and CI details; none holds a password). `deploy/pull-deploy.sh` now stops copying `.github`, `docs`, `CONTRIBUTING.md`, `composer.json/lock` and `.env.example`, but copies already on the server stay until removed once by hand. Block everything below in nginx either way (add inside the `server { }` block, before the `location ~ \.php$` block):
 
 ```nginx
-location ~ ^/(docs|deploy|tools|db/migrations|db/seeds|\.github)/ { return 404; }
-location ~ \.(md|lock|example)$ { return 404; }
+# Folders that are never meant to be requested by a browser.
+location ~ ^/(docs|deploy|tools|db|cron|cache|vendor|phpmailer|\.git|\.github|inc)(/|$) { return 404; }
+# Dependency and config files at the top level, and anything that looks like a secrets or backup file.
+location ~* ^/(composer\.(json|lock)|\.env.*|CONTRIBUTING\.md|README.*)$ { return 404; }
+location ~* \.(md|lock|example|sql|bak|old|orig|swp|log)$ { return 404; }
 ```
 
-Maintenance scripts (`cron/*`, `db/migrate.php`, `tools/*`) now refuse web requests in the code itself (`inc/cli-guard.php`): run them with `php`, not by URL.
+Notes: `inc/` holds include-only PHP files that already answer 404 when requested directly, and `inc/env.local.php` holds every secret; if PHP-FPM stops or a vhost edit makes nginx serve `.php` as text, that file would be readable, so also move it one level above the web root (`db/config.php` already looks there, as `../../inc/env.local.php`) or keep the `inc` block above. `ajax/` and the page files must stay reachable. `cron/*`, `db/migrate.php` and `tools/*` also refuse web requests in the code itself (`inc/cli-guard.php`): run them with `php`, not by URL.
+
+If the hosting panel allows it, set the web root to a `public/` subfolder in a later restructure: that removes this whole class of problem.
+
+## Unsubscribe, sign-up and other clean URLs
+
+`/unsubscribe` (file `unsubscribe.php`) is a normal clean URL like `/thank-you`: it needs the same `try_files $uri $uri.php` style rule that the other top-level pages already use. Test with `curl -sI https://<host>/unsubscribe?t=x` (expect 200 and `X-Robots-Tag`/`noindex` in the page). The sign-up endpoint is `/ajax/subscribe.php` (POST only).
+
+## Rate limit /ajax/ (the quickest protection for the ticket API quota)
+
+The app limits sign-ups, image requests and live feed builds per visitor itself, but a server-level limit stops floods before PHP starts. In `http { }` (CloudPanel: global nginx settings) add the zone, then use it in the site:
+
+```nginx
+limit_req_zone $binary_remote_addr zone=so_ajax:10m rate=10r/s;
+```
+
+```nginx
+location ^~ /ajax/ {
+    limit_req zone=so_ajax burst=30 nodelay;
+    limit_req_status 429;
+    try_files $uri =404;
+    # then the same fastcgi/PHP handling as the site's `location ~ \.php$` block
+}
+```
+
+Behind Cloudflare, `$binary_remote_addr` is Cloudflare's address unless the real client address is restored first (`set_real_ip_from` for each Cloudflare range plus `real_ip_header CF-Connecting-IP;`), otherwise everyone shares one bucket. Cloudflare can also do this without nginx: Security, WAF, Rate limiting rules, path starts with `/ajax/`, for example 120 requests per minute per IP. Not tested against your server: apply on a copy first.
 
 ## robots.txt and sitemap
 
@@ -45,12 +73,21 @@ Beta/staging/dev hosts then return `Disallow: /`; the production host returns th
 
 ## Caching and compression (server settings the code cannot set)
 
-- Versioned, never-changing files can be cached for a year: `/lib/`, `/fonts/` (the file name or path changes when the content does), and `*.min.css` / `*.min.js` (they carry `?v=` stamps).
+- Versioned, never-changing files can be cached for a year: `/lib/`, `/fonts/` (the file name or path changes when the content does), the minified bundles `*.min.css` / `*.min.js` (they carry `?v=` stamps) and `/images/`:
 
   ```nginx
   location ~ ^/(lib|fonts)/ { add_header Cache-Control "public, max-age=31536000, immutable"; }
+  location ~* \.min\.(css|js)$ { add_header Cache-Control "public, max-age=31536000, immutable"; }
+  location ~* ^/images/.*\.(webp|png|jpg|jpeg|svg|gif|ico)$ { add_header Cache-Control "public, max-age=2592000"; }
   ```
-- Turn on gzip or brotli for `text/html`, `text/css`, `application/javascript`, `application/json` and `image/svg+xml`. Local lab runs have no compression; with it the CSS, JS and HTML shrink by 70% or more. Cloudflare does this automatically when it proxies the site.
+  (an `add_header` inside a `location` replaces the ones set outside it, so repeat any security headers you add at server level.)
+- The web app manifest must be served as `application/manifest+json` (today it is typically `application/octet-stream`):
+
+  ```nginx
+  types { application/manifest+json webmanifest; }
+  ```
+- Turn on gzip or brotli for `text/html`, `text/css`, `application/javascript`, `application/json`, `application/manifest+json` and `image/svg+xml`. Local lab runs have no compression; with it the CSS, JS and HTML shrink by 70% or more. Cloudflare does this automatically when it proxies the site. Verify: `curl -sI -H 'Accept-Encoding: br, gzip' https://<host>/css/style.min.css` shows `content-encoding`.
+- Branded 404 for files nginx cannot find (the app already shows its own 404 for page URLs): `error_page 404 /404.php;` inside the `server { }` block. Test with `curl -si https://<host>/missing.png` (expect status 404 with the site layout).
 
 ## Caching the HTML at Cloudflare (the biggest remaining speed gain)
 

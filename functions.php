@@ -67,33 +67,62 @@ function getS3Client() {
     return $client;
 }
 
-function downloadImage($url) {
-    if (!preg_match('#^https?://#i', (string) $url)) return '';
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_MAXREDIRS      => 3,
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_SSL_VERIFYHOST => 2,
-        CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_USERAGENT      => imageUserAgent(),
-        // Was `die("cURL Error: ...")` on failure, which turned a JSON
-        // endpoint into plain text and killed whatever page called it.
-        CURLOPT_NOPROGRESS     => false,
-        CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
-            return ($dlTotal > IMAGE_MAX_DOWNLOAD_BYTES || $dlNow > IMAGE_MAX_DOWNLOAD_BYTES) ? 1 : 0;
-        },
-    ]);
-    $data = curl_exec($ch);
-    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $err  = curl_errno($ch);
-    curl_close($ch);
-    if ($err || $code !== 200 || $data === false || $data === '') {
-        return '';
+/**
+ * Resolve a URL's host and say whether it is a public internet address (https/http on port 80/443, no credentials, no private,
+ * loopback, link-local or metadata address). Returns the first public IP, or '' when the URL must not be fetched.
+ */
+function soPublicHostIp($url) {
+    $p = parse_url((string) $url);
+    if (!$p || empty($p['host']) || isset($p['user']) || isset($p['pass'])) return '';
+    if (!in_array(strtolower($p['scheme'] ?? ''), ['http', 'https'], true)) return '';
+    $port = $p['port'] ?? (strtolower($p['scheme']) === 'https' ? 443 : 80);
+    if (!in_array((int) $port, [80, 443], true)) return '';
+    $host = trim($p['host'], '[]');
+    $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
+    if (!$ips) return '';
+    foreach ($ips as $ip) {
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return '';
     }
-    return $data;
+    return $ips[0];
+}
+
+function downloadImage($url) {
+    // Admin-supplied URL fetched by the server: every hop (redirects are followed by hand) must be a public address, and the connection
+    // is pinned to the address that was checked, so a DNS answer cannot change between the check and the fetch.
+    $url = (string) $url;
+    for ($hop = 0; $hop <= 3; $hop++) {
+        $ip = soPublicHostIp($url);
+        if ($ip === '') return '';
+        $p = parse_url($url);
+        $port = $p['port'] ?? (strtolower($p['scheme']) === 'https' ? 443 : 80);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_RESOLVE        => [$p['host'] . ':' . $port . ':' . $ip],
+            CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_USERAGENT      => imageUserAgent(),
+            // Was `die("cURL Error: ...")` on failure, which turned a JSON
+            // endpoint into plain text and killed whatever page called it.
+            CURLOPT_NOPROGRESS     => false,
+            CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
+                return ($dlTotal > IMAGE_MAX_DOWNLOAD_BYTES || $dlNow > IMAGE_MAX_DOWNLOAD_BYTES) ? 1 : 0;
+            },
+        ]);
+        $data = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_errno($ch);
+        $next = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+        curl_close($ch);
+        if (!$err && in_array($code, [301, 302, 303, 307, 308], true) && $next !== '') { $url = $next; continue; }
+        if ($err || $code !== 200 || $data === false || $data === '') return '';
+        return $data;
+    }
+    return '';
 }
 
 // Nearly every page on the site calls this (indirectly, via tnRequest())
@@ -2524,7 +2553,9 @@ function soRedirectLegacyUrl() {
     if ($to === null) return;
     http_response_code(301);
     header('Location: ' . $to . ($qs !== '' ? '?' . $qs : ''));
-    header('Cache-Control: public, max-age=3600');
+    // A redirect that carries an email address, or leads to a private page, must not sit in a shared cache.
+    $privateTarget = in_array($to, ['/checkout', '/order-confirmation', '/thank-you', '/unsubscribe'], true) || stripos($qs, 'email') !== false;
+    header('Cache-Control: ' . ($privateTarget ? 'private, no-store' : 'public, max-age=3600'));
     exit;
 }
 

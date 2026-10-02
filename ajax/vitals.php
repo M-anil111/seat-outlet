@@ -32,7 +32,11 @@ if (!is_array($data) || empty($data['m']) || !is_array($data['m'])) {
 }
 
 // Per-visitor throttle without storing the address: a counter file keyed by a salted hash that changes every minute.
-$ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+require_once __DIR__ . '/../inc/request-guard.php';
+$ip = soClientIp();   // CF-Connecting-IP only when the request came from Cloudflare, so the files below cannot be multiplied by forged headers
+if (mt_rand(1, 100) === 1) {   // counters only matter for the current minute: drop the old ones
+    foreach (glob(sys_get_temp_dir() . '/so_vitals_*') ?: [] as $oldBucket) { if (time() - (int) @filemtime($oldBucket) > 180) @unlink($oldBucket); }
+}
 $bucket = sys_get_temp_dir() . '/so_vitals_' . substr(hash('sha256', $ip . '|' . gmdate('YmdHi') . '|' . DB_NAME), 0, 24);
 $count = is_file($bucket) ? (int) @file_get_contents($bucket) : 0;
 if ($count >= VITALS_MAX_PER_MINUTE) {
