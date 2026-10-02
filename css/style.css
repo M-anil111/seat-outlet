@@ -5728,3 +5728,50 @@ a.so-linkchip:hover { background: #eef2ff; border-color: #c7d6fb; color: #111827
 }
 @media (max-width: 359.98px) { .offer-pill { padding-left: 10px !important; padding-right: 10px !important; gap: 8px; } .offer-copy-btn { padding-left: 14px !important; padding-right: 14px !important; } }
 @media (max-width: 359.98px) { h1, .h1, h2.h1, .main-title { font-size: clamp(26px, 10vw, 44px) !important; overflow-wrap: anywhere; } h2, h3 { overflow-wrap: anywhere; } }
+
+/* ---- Apple-style inner page hero (all CMS/static pages): light, centered, large type ---- */
+main.privacy-page .hero-section, main.ticketingtruths-page .hero-section, main.faq-page .hero-section,
+main.contact-us-page .hero-section, main.testimonial-page .hero-section, main.terms-page .hero-section,
+main.cookie-page .hero-section {
+  background: linear-gradient(180deg, #f5f5f7 0%, #fff 100%);
+  color: #1d1d1f;
+  padding: clamp(48px, 8vw, 96px) 0 clamp(32px, 5vw, 56px);
+  border-bottom: 0;
+}
+main.privacy-page .hero-section::before, main.ticketingtruths-page .hero-section::before, main.faq-page .hero-section::before,
+main.contact-us-page .hero-section::before, main.testimonial-page .hero-section::before, main.terms-page .hero-section::before,
+main.cookie-page .hero-section::before { display: none; }
+main.privacy-page .hero-title, main.ticketingtruths-page .hero-title, main.faq-page .hero-title,
+main.contact-us-page .hero-title, main.testimonial-page .hero-title, main.terms-page .hero-title, main.cookie-page .hero-title {
+  color: #1d1d1f;
+  font-size: clamp(32px, 6vw, 60px);
+  font-weight: 700;
+  letter-spacing: -.025em;
+  line-height: 1.08;
+  margin-bottom: 14px;
+}
+main.privacy-page .hero-title span, main.ticketingtruths-page .hero-title span, main.faq-page .hero-title span,
+main.contact-us-page .hero-title span, main.testimonial-page .hero-title span, main.terms-page .hero-title span,
+main.cookie-page .hero-title span { color: #0056d6; }
+main.privacy-page .hero-subtitle, main.ticketingtruths-page .hero-subtitle, main.faq-page .hero-subtitle,
+main.contact-us-page .hero-subtitle, main.testimonial-page .hero-subtitle, main.terms-page .hero-subtitle, main.cookie-page .hero-subtitle,
+main.privacy-page .hero-section p, main.faq-page .hero-section p, main.contact-us-page .hero-section p,
+main.ticketingtruths-page .hero-section p, main.testimonial-page .hero-section p, main.terms-page .hero-section p, main.cookie-page .hero-section p {
+  color: #6e6e73;
+  font-size: clamp(16px, 2vw, 20px);
+  line-height: 1.45;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+main.ticketingtruths-page .hero-title .hero-title-white, main.faq-page .hero-title .hero-title-white,
+main.contact-us-page .hero-title .hero-title-white, main.testimonial-page .hero-title .hero-title-white { color: #1d1d1f; }
+main.ticketingtruths-page .hero-title .hero-title-blue, main.contact-us-page .hero-title span.blue { color: #0056d6; }
+
+/* Legal and long-form text: comfortable reading size and measure */
+main.privacy-page .content-wrapper, main.terms-page .content-wrapper, main.cookie-page .content-wrapper { max-width: 780px; }
+main.privacy-page .policy-section p, main.privacy-page .policy-section li,
+main.terms-page .policy-section p, main.terms-page .policy-section li,
+main.cookie-page .policy-section p, main.cookie-page .policy-section li { font-size: 16px; line-height: 1.7; color: #424245; }
+main.terms-page .policy-section h2, main.cookie-page .policy-section h2, main.privacy-page .policy-section h2 { font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -.015em; color: #1d1d1f; }
+main.terms-page .policy-section, main.cookie-page .policy-section { padding-top: 34px; margin-top: 34px; }
