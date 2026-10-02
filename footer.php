@@ -171,6 +171,8 @@ window.addEventListener('load', function () {
 <?php } ?>
 <?php if (strpos($soPath, '/event/') === 0) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/event-actions.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/saved-events.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/event-widget.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/install-prompt.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/menu-near.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
@@ -216,21 +218,7 @@ window.addEventListener('load', function () {
 
 		return mapsPromise;
 	}        
-  <?php if (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>
-    Seatics.config.checkoutUrl = <?php echo json_encode(TN_CHECKOUT_URL); ?>;
-    Seatics.config.enableLegalDisclosureMobile = true;
-    Seatics.config.preCheckoutButtonHtml = 'Continue to Payment';
-    Seatics.config.buyButtonContentHtml = '<div class="buy-btn">' + 'Buy Now' + '</div>';
-    Seatics.config.defaultSort = Seatics.SortOptions.PriceAsc;
-    Seatics.config.tgMarkTooltipText = 'We recommend this seller&#039;s tickets.';
-    Seatics.config.enableMyList = true;
-    Seatics.config.showCents = false;
-    Seatics.config.skipPrecheckoutMobile = true;
-    Seatics.config.showZoomControls = true;
-    Seatics.config.ticketListOnRight = true;
-    Seatics.config.legendExpanded = true;
-    Seatics.config.skipPrecheckoutDesktop = true;
-  <?php } ?>
+  // Event pages: the widget settings (checkout address, quantity sheet, sort order, precheckout) live in js/event-widget.js, which loads the widget.
 </script>
     
   </body>

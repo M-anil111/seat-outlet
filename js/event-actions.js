@@ -27,7 +27,7 @@
   }
 
   // Remember this event on this device (home page "Pick up where you left off").
-  if (window.soLocal && window.soLocal.addEvent) window.soLocal.addEvent(ev);
+  if (!ev.noRemember && window.soLocal && window.soLocal.addEvent) window.soLocal.addEvent(ev);
 
   /* ---- Calendar file (RFC 5545) ---- */
   function esc(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1'); }
@@ -42,11 +42,14 @@
     return out.join('\r\n');
   }
   function utc(d) { return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
+  var EST_HOURS = 3;   // the event length is not published: the calendar links and the .ics file all assume the same 3 hours
   function buildIcs() {
     var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Seat Outlet//Event//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
       'UID:event-' + ev.id + '@seatoutlet.com', 'DTSTAMP:' + utc(new Date())];
-    if (!ev.allDay && ev.start && !isNaN(Date.parse(ev.start))) {
-      lines.push('DTSTART:' + utc(new Date(ev.start)));
+    var timedIcs = !ev.allDay && ev.start && !isNaN(Date.parse(ev.start));
+    if (timedIcs) {
+      var st = new Date(ev.start);
+      lines.push('DTSTART:' + utc(st), 'DTEND:' + utc(new Date(st.getTime() + EST_HOURS * 3600 * 1000)));
     } else if (/^\d{4}-\d{2}-\d{2}$/.test(ev.date || '')) {
       var d = ev.date.replace(/-/g, '');
       var next = new Date(ev.date + 'T00:00:00Z'); next.setUTCDate(next.getUTCDate() + 1);
@@ -57,8 +60,11 @@
     lines.push('SUMMARY:' + esc(ev.name));
     var where = [ev.venue, ev.city].filter(Boolean).join(', ');
     if (where) lines.push('LOCATION:' + esc(where));
-    lines.push('DESCRIPTION:' + esc('Tickets: ' + ev.url + (ev.allDay ? '\nStart time to be announced.' : '')));
-    lines.push('URL:' + ev.url, 'END:VEVENT', 'END:VCALENDAR');
+    lines.push('DESCRIPTION:' + esc('Tickets: ' + ev.url + (ev.allDay ? '\nStart time to be announced.' : '\nEnd time is an estimate; the event length is not published.')));
+    lines.push('STATUS:CONFIRMED', 'TRANSP:OPAQUE', 'URL:' + ev.url);
+    // A reminder the day before.
+    lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + esc(ev.name + ' is tomorrow'), 'TRIGGER:-P1D', 'END:VALARM');
+    lines.push('END:VEVENT', 'END:VCALENDAR');
     return lines.map(fold).join('\r\n') + '\r\n';
   }
   function downloadIcs(btn) {
@@ -85,7 +91,7 @@
     var notes = 'Tickets: ' + ev.url + ((!ev.allDay && ev.start) ? '\nEnd time is an estimate; the event length is not published.' : '');
     var timed = !ev.allDay && ev.start && !isNaN(Date.parse(ev.start));
     var startD = timed ? new Date(ev.start) : null;
-    var endD = timed ? new Date(startD.getTime() + 3 * 3600 * 1000) : null;   // length is not published: 3 hours
+    var endD = timed ? new Date(startD.getTime() + EST_HOURS * 3600 * 1000) : null;
     var day = /^\d{4}-\d{2}-\d{2}$/.test(ev.date || '') ? ev.date : '';
     function compact(d) { return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
     function nextDay(s) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); }

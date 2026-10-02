@@ -19,11 +19,24 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $evCity   = (string) ($event['city']['text']['name'] ?? '');
   $evState  = (string) ($event['stateProvince']['text']['abbr'] ?? '');
   $evPlace  = trim($evCity . ($evState !== '' ? ', ' . $evState : ''));
-  $evUrl    = HOME_URL . '/event/' . ($event['uriComponent'] ?? '');
+  // Lowercase "name-id" slug, the same one the sitemap and every internal link use (header.php 301s any other spelling to it).
+  $evUrl    = rtrim(HOME_URL, '/') . '/event/' . createSlug($evName, (int) ($event['id'] ?? $id));
   $evTs     = !empty($event['date']['date']) ? strtotime($event['date']['date']) : false;
   $evDate   = $evTs ? date('M j, Y', $evTs) : '';
   // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
-  $metaTitle = $evName === '' ? (tnEntityUnavailable($event) ? 'Event temporarily unavailable | Seat Outlet' : 'Event not found | Seat Outlet') : seoClampTitle($evName . ' Tickets' . ($evPlace !== '' ? ' in ' . $evPlace : '') . ($evTs ? ' - ' . date('M j, Y', $evTs) : '') . ' | Seat Outlet');
+  // The date is the first thing to go when the title is too long, so a result never ends in a half word: name + place + date, else name + place, else name.
+  $metaTitle = 'Event not found | Seat Outlet';
+  if (tnEntityUnavailable($event) && $evName === '') {
+      $metaTitle = 'Event temporarily unavailable | Seat Outlet';
+  } elseif ($evName !== '') {
+      $tryTitles = [];
+      if ($evPlace !== '' && $evTs) $tryTitles[] = $evName . ' Tickets in ' . $evPlace . ' - ' . $evDate . ' | Seat Outlet';
+      if ($evPlace !== '') $tryTitles[] = $evName . ' Tickets in ' . $evPlace . ' | Seat Outlet';
+      $tryTitles[] = $evName . ' Tickets | Seat Outlet';
+      $metaTitle = null;
+      foreach ($tryTitles as $tt) { if (mb_strlen($tt) <= 62) { $metaTitle = $tt; break; } }
+      if ($metaTitle === null) $metaTitle = seoClampTitle($evName . ' Tickets | Seat Outlet');
+  }
   if ($evName !== '' && empty($pageFocusKeyword)) { $pageFocusKeyword = $evName . ' Tickets'; }   // shown in the strip above the header and the footer
   $metaDescription = seoClampDescription(
       'Buy ' . $evName . ' tickets for sale' . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
@@ -40,17 +53,30 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 <meta name="description" content="<?php echo $e($metaDescription); ?>">
 <meta name="keywords" content="<?php echo $e($metaKeywords); ?>">
 <link rel="canonical" href="<?php echo $e($evUrl); ?>">
+<link rel="stylesheet" href="<?php echo $e(soAsset('css/event.css')); ?>">
 
+<?php
+  // Share image: the performer's picture when we hold a real one, else the logo.
+  $evOgImg = rtrim(HOME_URL, '/') . '/images/seatoutlet-logo.webp';
+  if ($evName !== '' && !empty($event['text']['name'])) {
+      $evOgType = imageEntityTypeForPerformer($event['defaultCategory'] ?? []);
+      $evOgWho  = (string) ($event['performers'][0]['name'] ?? $evName);
+      $evOgInfo = getEntityImage($evOgType, $evOgWho, ['category' => $event['defaultCategory'] ?? [], 'resolve' => false]);
+      if (in_array($evOgInfo['status'] ?? '', ['ok', 'manual'], true) && ($evOgInfo['url'] ?? '') !== '') {
+          $evOgImg = preg_match('#^https?://#i', $evOgInfo['url']) ? $evOgInfo['url'] : rtrim(HOME_URL, '/') . '/' . ltrim($evOgInfo['url'], '/');
+      }
+  }
+?>
 <meta property="og:title" content="<?php echo $e($metaTitle); ?>">
 <meta property="og:description" content="<?php echo $e($metaDescription); ?>">
 <meta property="og:url" content="<?php echo $e($evUrl); ?>">
 <meta property="og:type" content="website">
-<meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
+<meta property="og:image" content="<?php echo $e($evOgImg); ?>">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="<?php echo $e($metaTitle); ?>">
 <meta name="twitter:description" content="<?php echo $e($metaDescription); ?>">
-<meta name="twitter:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
+<meta name="twitter:image" content="<?php echo $e($evOgImg); ?>">
 
 <?php
 $eventSchema = null;

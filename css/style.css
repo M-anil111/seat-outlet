@@ -6506,3 +6506,88 @@ a.so-live__row:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(
 .so-nl__msg { margin: 10px 0 0; font-size: 14px; color: #b3261e; }
 .so-nl__msg.is-ok { color: #1a7f37; font-weight: 600; }
 @media (max-width: 575.98px) { .so-nl__fields--email { grid-template-columns: minmax(0, 1fr); } }
+
+/* ==== WS2: event page and purchase funnel (hero, empty state, saved events, notices) ==== */
+.so-seatmap { width: 100%; height: calc(100vh - 50px); }
+.so-seatmap__nojs { text-align: center; }
+.so-action { height: 44px; min-height: 44px; }
+.so-action[hidden] { display: none !important; }
+.so-action--save.is-saved i { color: #d6336c; }
+.so-evhero__venue a { display: inline-block; padding: 14px 2px; margin: -14px -2px; }   /* 44px tap area without making the line taller */
+.so-evhero__trust { list-style: none; margin: 12px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; font-weight: 600; }
+.so-evhero__trust li { display: flex; align-items: center; }
+.so-evhero__trust a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: -8px 0; color: #0b3c91; text-decoration: none; }
+.so-evhero__trust a:hover { text-decoration: underline; }
+.so-evhero__trust i { color: #0056d6; font-size: 17px; }
+.so-empty .so-evhero__chips { display: none; }
+.so-empty .so-evhero__price { color: #1d1d1f; font-weight: 600; }
+.so-empty .so-evhero__price strong { display: none; }
+
+/* No tickets / seat map unavailable */
+.so-nt__btn { display: flex; align-items: center; justify-content: center; min-height: 52px; padding: 10px 22px; border: 0; border-radius: 980px; background: #0066cc; color: #fff; font-size: 17px; font-weight: 600; line-height: 1.25; text-align: center; text-decoration: none; cursor: pointer; }
+.so-nt__btn:hover { background: #0052a3; color: #fff; }
+.so-nt__reload { max-width: 420px; margin: 0 auto 20px; }
+.so-nt__reload[hidden] { display: none; }
+.so-nt__reload .so-nt__btn { width: 100%; }
+.so-nt__lead { max-width: 560px; margin: 0 auto 22px; text-align: left; }
+.so-nt__lead .so-nl { margin: 0; }
+.so-nt__lead .so-nl__title { font-size: 20px; }
+
+/* Redirect notice (old event link) */
+.so-notice { background: #eaf1ff; border-bottom: 1px solid #c7d6fb; color: #0b3c91; font-size: 15px; }
+.so-notice__in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 6px; padding-bottom: 6px; }
+.so-notice__x { flex: none; width: 44px; height: 44px; border: 0; background: none; color: inherit; font-size: 26px; line-height: 1; cursor: pointer; }
+
+/* Saved events drawer */
+.so-saved[hidden] { display: none; }
+.so-saved { position: fixed; inset: 0; z-index: 2147482000; }
+.so-saved__scrim { position: absolute; inset: 0; background: rgba(10,8,30,.45); }
+.so-saved__panel { position: absolute; top: 0; right: 0; bottom: 0; width: min(100%, 380px); background: #fff; box-shadow: -20px 0 60px rgba(0,0,0,.25); display: flex; flex-direction: column; overflow: hidden; }
+.so-saved__head { display: flex; align-items: center; justify-content: space-between; padding: 12px 8px 4px 20px; }
+.so-saved__head h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.so-saved__x, .so-saved__rm { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: #1d1d1f; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.so-saved__x:hover, .so-saved__rm:hover { background: #f2f4f8; }
+.so-saved__note { margin: 0; padding: 0 20px 10px; font-size: 13px; color: #6e6e73; }
+.so-saved__list { list-style: none; margin: 0; padding: 0 8px 20px; overflow-y: auto; flex: 1; }
+.so-saved__item { display: flex; align-items: center; border-top: 1px solid rgba(0,0,0,.07); }
+.so-saved__link { flex: 1; min-width: 0; display: block; padding: 12px; color: #1d1d1f; text-decoration: none; }
+.so-saved__link strong { display: block; font-size: 16px; overflow-wrap: anywhere; }
+.so-saved__link small { display: block; font-size: 13px; color: #6e6e73; }
+.so-saved__empty { padding: 20px 12px; color: #6e6e73; }
+.so-nudge__x { width: 44px; height: 44px; }
+
+/* Compact hero on phones: the seat map starts higher */
+@media (max-width: 575.98px) {
+  .so-evhero { padding: 8px 0 6px; }
+  .so-evhero__card { grid-template-columns: 64px minmax(0, 1fr); gap: 4px 12px; border-radius: 20px; padding: 12px; }
+  .so-evhero__media { width: 64px; height: 64px; border-radius: 14px; grid-row: 1 / span 3; }
+  .so-evhero__initials { font-size: 24px; }
+  .so-evhero .so-evhero__title, .so-evhero h2.h1.so-evhero__title { font-size: 21px; line-height: 1.15; margin: 0; letter-spacing: -.02em; }
+  .so-evhero__when { font-size: 13px; margin: 0; }
+  .so-evhero__venue { font-size: 14px; margin: 0; line-height: 1.3; }
+  .so-evhero__main > .so-evhero__chips { grid-column: 1 / -1; order: 1; margin: 4px 0 0; gap: 6px; }
+  .so-evhero__main > .so-evhero__venue { grid-column: 2; }
+  .so-chipx { font-size: 12px; padding: 5px 10px; }
+  .so-evhero__main > .so-evhero__actions { grid-column: 1 / -1; order: 2; flex-wrap: nowrap; gap: 8px; margin-top: 6px; }
+  .so-evhero__buy { order: 3; }
+  .so-evhero__actions .so-action--icon { width: 44px; padding: 0; justify-content: center; flex: none; }
+  .so-evhero__actions .so-action--icon span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .so-evhero__actions .so-action--text { padding: 0 12px; font-size: 14px; flex: none; }
+  .so-evhero__actions .so-action--text i { display: none; }
+  .so-evhero__buy { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding-top: 10px; align-items: center; }
+  .so-evhero__price { font-size: 13px; }
+  .so-evhero__price strong { font-size: 24px; }
+  .so-evhero__cta { grid-column: 2; grid-row: 1; }
+  .so-evhero a.so-evhero__cta.ev-cta-btn { height: 48px; line-height: 48px; padding: 0 22px !important; font-size: 16px; }
+  .so-evhero__trust { grid-column: 1 / -1; margin: 4px 0 0; font-size: 13px; }
+  .so-evhero__trust li:nth-child(3) { display: none; }
+  .so-evhero__trust a { min-height: 44px; margin: -10px 0; }
+  .so-evhero__note { font-size: 12px; line-height: 1.4; }
+  .so-cal__menu { bottom: 12px; }
+  .so-seatmap { height: calc(100vh - 20px); }
+}
+@media (min-width: 576px) and (max-width: 991.98px) {
+  .so-evhero__cta { grid-row: 1; }
+  .so-evhero__trust { grid-column: 1 / -1; }
+}
+/* ==== end WS2 ==== */

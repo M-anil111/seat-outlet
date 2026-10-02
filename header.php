@@ -72,17 +72,28 @@ include_once 'functions.php';
             // remembered for it, or the matching category, instead of a 404.
             if ($soEvId > 0 && tnEntityDefinitelyMissing($soEvCheck)) {
                 $soTo = soEventRedirectTarget(null, $soEvId);
-                header('Location: ' . $soTo, true, strpos($soTo, '/artist/') === 0 ? 301 : 302);   // permanent only when we know the performer
-                exit;
+                if ($soTo !== '/buy-tickets-online') {
+                    // A removed event with a known performer or category: say so on the page we send the visitor to.
+                    header('Location: ' . $soTo . '?so_notice=event-gone', true, strpos($soTo, '/artist/') === 0 ? 301 : 302);   // permanent only when we know the performer
+                    exit;
+                }
+                // Nothing remembered about it: a real 404 (the page below offers search and browse links), not a silent redirect.
             }
             http_response_code(404);
             $pageRobots = 'noindex, follow';
         } elseif (soEventIsOver($soEvCheck)) {
-            // Over: the performer's page lists what is still on sale.
+            // Over: the performer's page lists what is still on sale. Temporary (302): the next date of a tour may reuse the performer page, the event page itself is gone.
             $soTo = soEventRedirectTarget($soEvCheck, $soEvId);
-            header('Location: ' . $soTo, true, strpos($soTo, '/artist/') === 0 ? 301 : 302);
+            header('Location: ' . $soTo . '?so_notice=event-past', true, 302);
             exit;
         } else {
+            // One canonical URL per event: lowercase "name-id" slug. The id is what identifies the event; any other spelling of the name 301s here.
+            $soEvCanon = '/event/' . createSlug((string) $soEvCheck['text']['name'], (int) $soEvCheck['id']);
+            if (in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true) && PHP_SAPI !== 'cli' && $soReqPath !== $soEvCanon) {
+                $soEvQs = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY);
+                header('Location: ' . $soEvCanon . ($soEvQs !== '' ? '?' . $soEvQs : ''), true, 301);
+                exit;
+            }
             soEventRemember($soEvCheck);
         }
     }
@@ -377,6 +388,7 @@ include_once 'functions.php';
             </div>
         </header>
     </div>
+    <?php require_once __DIR__ . '/inc/event-notice.php'; echo soEventNoticeHtml(); ?>
     <!-- Mobile Header -->
 
 
