@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Please enter a valid email address.';
         }
         if ($password !== '' && !admin_password_meets_policy($password)) {
-            $errors[] = 'Password must be at least 8 characters and include letters, numbers and a special character.';
+            $errors[] = 'Password must be at least 12 characters and include letters, numbers and a special character.';
         }
 
         if (empty($errors)) {
@@ -98,7 +98,7 @@ include __DIR__ . '/includes/header.php';
 
             <div class="admin-hint">
                 <i class="bi bi-info-circle"></i>
-                <span>Password must be at least 8 characters and include letters, numbers and a special character.</span>
+                <span>Password must be at least 12 characters and include letters, numbers and a special character.</span>
             </div>
 
             <button type="submit" class="admin-btn">Create Account <i class="bi bi-arrow-right"></i></button>

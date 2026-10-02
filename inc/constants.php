@@ -1,10 +1,15 @@
 <?php
 // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
+// Loaded once: admin pages and ajax endpoints include this from more than one place.
+if (defined('SO_CONSTANTS_LOADED')) { return; }
 // Non-sensitive config: safe to keep sane defaults if the env var isn't set.
-define('WEBSITE_CONFIG_ID', getenv('WEBSITE_CONFIG_ID') ?: 12498);
-define('WEBSITE_CONFIG_ID_LIVE', getenv('WEBSITE_CONFIG_ID_LIVE') ?: 27773);
 define('BASE_URL', getenv('BASE_URL') ?: 'https://sandbox.tn-apis.com');
+define('WEBSITE_CONFIG_ID_LIVE', getenv('WEBSITE_CONFIG_ID_LIVE') ?: 27773);
+// The website config id must match the API host: 12498 belongs to the sandbox, 27773 to the live API (mixing them makes the seat map
+// report every event as expired). An explicit WEBSITE_CONFIG_ID always wins; otherwise the live API host selects the live id.
+define('SO_TN_LIVE_API', preg_match('#^https://(www\.)?tn-apis\.com#i', BASE_URL) === 1);
+define('WEBSITE_CONFIG_ID', getenv('WEBSITE_CONFIG_ID') ?: (SO_TN_LIVE_API ? WEBSITE_CONFIG_ID_LIVE : 12498));
 define('BROKER_ID', getenv('BROKER_ID') ?: 9250);
 define('SITE_ID', getenv('SITE_ID') ?: 30);
 define('HOME_URL', getenv('HOME_URL') ?: 'https://beta.seatoutlet.com');
@@ -74,8 +79,38 @@ foreach ($requiredSecrets as $secretName) {
     }
     define($secretName, $value);
 }
-if (!empty($missingSecrets)) {
-    die('Missing required environment variable(s): ' . implode(', ', $missingSecrets));
+/**
+ * Configuration that cannot work: answer with a plain 503 page and put the reason in the server log. The page must not name
+ * settings or hosts to visitors.
+ */
+if (!function_exists('soConfigUnavailable')) {
+function soConfigUnavailable($detail) {
+    error_log('Seat Outlet configuration problem: ' . $detail . ' (run: php tools/check-env.php)');
+    if (PHP_SAPI === 'cli') {
+        fwrite(STDERR, 'Configuration problem: ' . $detail . "\n");
+        exit(1);
+    }
+    if (!headers_sent()) {
+        http_response_code(503);
+        header('Retry-After: 60');
+        header('Cache-Control: no-store');
+        header('X-Robots-Tag: noindex');
+        header('Content-Type: text/html; charset=UTF-8');
+    }
+    echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Temporarily unavailable | Seat Outlet</title></head>'
+       . '<body style="font-family:system-ui,sans-serif;text-align:center;padding:12vh 16px;color:#1f2937"><h1 style="font-size:24px;margin:0 0 8px">We will be right back</h1>'
+       . '<p style="margin:0;color:#5b6573">Seat Outlet is temporarily unavailable. Please try again in a minute.</p></body></html>';
+    exit;
 }
+}
+if (!empty($missingSecrets)) {
+    soConfigUnavailable('missing required environment variable(s): ' . implode(', ', $missingSecrets));
+}
+// Live ticket prices under a beta/staging/local address would publish canonical, sitemap and Open Graph URLs for the wrong host.
+// Set SO_ALLOW_MIXED_ENV=1 to test that combination on purpose.
+if (SO_TN_LIVE_API && preg_match('#//(beta\.|staging\.|dev\.|127\.0\.0\.1|localhost)#i', HOME_URL) && getenv('SO_ALLOW_MIXED_ENV') !== '1') {
+    soConfigUnavailable('BASE_URL is the live TicketNetwork API but HOME_URL is still a beta/local address');
+}
+define('SO_CONSTANTS_LOADED', true);
 
 
