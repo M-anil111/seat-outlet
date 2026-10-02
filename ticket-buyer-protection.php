@@ -57,49 +57,26 @@
         margin-bottom: 4px;
         list-style: disc;
     }
-    .feature-section h2 {
-  font-size: 32px;
-}
 
-.feature-card {
-  background: #fff;
-  padding: 30px 20px;
-  border-radius: 16px;
-  transition: all 0.3s ease;
-  height: 100%;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
-
-.feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-}
-
-.feature-section .icon {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, var(--clr-primary) 0%, #1a3fa8 40%, #0e2272 100%);
-  color: #fff;
-  font-size: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  margin: 0 auto 15px;
-}
-
-.feature-card h5 {
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.feature-card p {
-  font-size: 14px;
-  color: #666;
-}
-.feature-card::before{
-  display: none;
-}
+    /* Apple-style cards: quiet tiles on a soft panel, small icon, left-aligned copy */
+    .feature-section { background: #f5f5f7; text-align: left; }
+    .feature-section .so-lead { text-align: center; max-width: 720px; margin: 0 auto 36px; }
+    .feature-section h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 700; letter-spacing: -.02em; color: #1d1d1f; margin-bottom: 12px; }
+    .feature-section .so-lead p { font-size: 17px; line-height: 1.5; color: #6e6e73; margin: 0; }
+    .feature-card { background: #fff; border: 1px solid rgba(0,0,0,.06); border-radius: 20px; padding: 26px 24px 28px; height: 100%; box-shadow: none; transition: transform .25s ease, box-shadow .25s ease; }
+    .feature-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.08); }
+    .feature-card::before { display: none; }
+    .feature-section .icon { width: 44px; height: 44px; border-radius: 12px; background: #eaf1ff; color: #0056d6; font-size: 22px; display: flex; align-items: center; justify-content: center; margin: 0 0 18px; }
+    .feature-section .icon svg { width: 24px; height: 24px; }
+    .feature-section .icon svg path { fill: currentColor; }
+    .feature-card h5 { font-size: 19px; font-weight: 600; letter-spacing: -.01em; color: #1d1d1f; margin-bottom: 8px; }
+    .feature-card p { font-size: 15px; line-height: 1.55; color: #6e6e73; margin: 0; }
+    .privacy-page .policy-section img { display: none; }
+    .privacy-page .policy-section h2 { font-size: clamp(24px, 3vw, 32px); letter-spacing: -.02em; color: #1d1d1f; }
+    .privacy-page .policy-section p, .privacy-page .policy-section li { font-size: 17px; line-height: 1.6; color: #424245; }
+    .privacy-page .policy-section ul { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 10px; }
+    .privacy-page .policy-section ul li { list-style: none; position: relative; padding: 14px 16px 14px 46px; background: #f5f5f7; border-radius: 14px; margin: 0; }
+    .privacy-page .policy-section ul li::before { content: ""; position: absolute; left: 16px; top: 50%; width: 18px; height: 18px; margin-top: -9px; border-radius: 50%; background: #0056d6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.7 2.7L12 5.6' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/12px no-repeat; }
     /* Responsive */
 
     @media (max-width: 991px) {
@@ -134,13 +111,15 @@
     </section>
 
     <!-- Main Content (exact text, sections 1–14) -->
-    <section class="feature-section py-5 text-center">
+    <section class="feature-section section-padding">
   <div class="container">
     
-    <h2 class="fw-bold mb-3">Trust & Safety Focus</h2>
-    <p class="text-muted mb-5">
+    <div class="so-lead">
+    <h2>Trust & Safety Focus</h2>
+    <p>
     <?php echo getContentBlock('/buyer-protection', 'trust-safety-intro', 'We are committed to providing a safe and reliable ticket purchasing experience. Our Buyer Protection Guarantee ensures that every order placed through our platform is secure, authentic, and supported from purchase to event day.'); ?>
     </p>
+    </div>
 
     <div class="row g-4">
 
@@ -207,7 +186,6 @@
 
                 <!-- 1 -->
                 <div class="policy-section" id="section-1">
-                    <img src="/images/secure-payment-p3.png" class="img-fluid rounded mb-3" alt="Buyer protection secures every ticket order" loading="lazy" width="65" height="68" decoding="async">
                     <h2>Buyer Protection: Trusted Purchase Protection</h2>
                     <p>
                     Our buyer protection guarantee is backed by the same
