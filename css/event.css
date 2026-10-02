@@ -1691,3 +1691,7 @@ font-size: 18px;
     #tn-maps #sea-inventory-filtersBtncnt { padding: 0 11px !important; }
     #tn-maps #sea-inventory-slider-with-filterBtn .sea-inventory-slider .slick-track label span.filter-tg-type-text { font-size: 13px; }
 }
+
+/* The widget's first-visit "Add up to 10 tickets to My List" popup lands on top of the Tickets / Filters strip and hides the
+   controls people need first. The My List checkboxes themselves stay. */
+#tn-maps #sea-my-list-popup.sea-first-msg { display: none !important; }

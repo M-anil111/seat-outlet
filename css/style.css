@@ -6934,3 +6934,10 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
   .so-navbar.is-on { transition: opacity .15s; width: 88%; }
   a.so-link-busy::after { animation: none; border-color: #0071e3; }
 }
+
+/* Date chips: one swipeable line on phones instead of three wrapped rows (artist pages) */
+@media (max-width: 575.98px) {
+  .so-when { flex-wrap: nowrap; overflow-x: auto; margin-right: -16px; padding-right: 16px; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+  .so-when::-webkit-scrollbar { display: none; }
+  .so-when__chip { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
+}
