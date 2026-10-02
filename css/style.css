@@ -6479,3 +6479,20 @@ a.so-live__row:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(
 .so-seo-copy.so-cseo ul > li { list-style: none !important; padding-left: 0; }
 .so-seo-copy.so-cseo ul > li::marker { content: none; }
 .so-seo-copy.so-cseo ul { padding-left: 0; margin-left: 0; }
+
+/* Menus: "near you" group (js/menu-near.js) */
+.so-mega__near { grid-column: 1 / -1; margin-top: 6px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,.08); }
+.so-mega__near ul { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.so-mega__near a.so-near-item { margin: 0; padding: 12px 14px; background: #f5f5f7; border-radius: 14px; }
+.so-near-item strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.so-near-item span { display: block; margin-top: 3px; font-size: 13px; line-height: 1.35; color: #6e6e73; font-weight: 400; }
+.so-menu__near { margin-top: 4px; }
+.so-menu__panel .so-menu__near li a.so-near-item { padding: 12px 0; font-size: 16px; }
+@media (max-width: 1199.98px) { .so-mega__near ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.so-dd--near .so-dd__menu { z-index: 30; }
+.so-dd--near .so-pop__row { width: 100%; text-align: left; border: 0; background: transparent; }
+.so-near__empty { grid-column: 1 / -1; padding: 20px; border-radius: 16px; background: #f5f5f7; }
+.so-near__empty p { margin: 0 0 12px; color: #424245; font-size: 16px; }
+.so-near__any { height: 44px; padding: 0 20px; border: 0; border-radius: 980px; background: #0066cc; color: #fff; font-weight: 600; font-size: 15px; }
+.so-feed-card__dist { left: auto; right: 10px; bottom: auto; top: 10px; }

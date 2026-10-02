@@ -78,6 +78,7 @@ $staticPaths = [
     '/nfl-tickets',
     '/mlb-tickets',
     '/nhl-tickets',
+    '/mls-tickets',
     '/game-day-tickets',
     '/buy-broadway-tickets',
     '/upcoming-music-festivals',

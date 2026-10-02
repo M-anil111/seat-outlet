@@ -148,7 +148,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 $soPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $soIsHome = ($soPath === '/' || $soPath === '/index.php');
 $soIsSearch = ($soPath === '/search');
-$soHasEventList = (bool) preg_match('#^/(search|buy-tickets-online|concert-tickets-for-sale|game-day-tickets|buy-broadway-tickets|upcoming-music-festivals)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath);
+$soHasEventList = (bool) preg_match('#^/(search|buy-tickets-online|concert-tickets-for-sale|game-day-tickets|buy-broadway-tickets|upcoming-music-festivals)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath) || isset($soGenreSlug);   // clean genre URLs (/hip-hop-tickets) are category pages too
 ?>
 <script src="/lib/jquery/3.7.1/jquery.min.js" defer></script>
 <script src="/lib/bootstrap/5.3.8/bootstrap.bundle.min.js" defer></script>
@@ -173,6 +173,7 @@ window.addEventListener('load', function () {
     <script src="<?php echo htmlspecialchars(soAsset('js/event-actions.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/install-prompt.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/menu-near.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php if (preg_match('#^/(event|artist)/#', $soPath)) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/idle-nudge.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>

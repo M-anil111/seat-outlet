@@ -1700,7 +1700,7 @@ const SO_EXPLORE_HUBS = [
 function renderExploreBar($basePath, array $opts = []) {
     if (isset($opts['catId'])) {
         // A single category page: its own TicketNetwork category id and name.
-        $cat = 'all'; $noun = (string) ($opts['noun'] ?? 'events'); $heroImg = '/images/crowd-at-concert-or-event.webp';
+        $cat = 'all'; $noun = (string) ($opts['noun'] ?? 'events'); $heroImg = (string) ($opts['hero'] ?? '/images/crowd-at-concert-or-event.webp');
         $catId = (int) $opts['catId'];
     } elseif (isset(SO_EXPLORE_HUBS[$basePath])) {
         [$cat, $noun, $heroImg] = SO_EXPLORE_HUBS[$basePath];
@@ -1729,6 +1729,24 @@ function renderExploreBar($basePath, array $opts = []) {
                     <button type="button" class="so-pop__row" data-so-loc-here>Use my current location</button>
                 </div>
             </div>
+            <?php
+            $dd = function ($key, $icon, $label, array $opts) {
+                echo '<details class="so-dd so-dd--near" data-so-dd="' . $key . '"><summary class="so-chip" aria-label="' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '">' . $icon
+                    . '<span data-so-dd-label>' . htmlspecialchars(reset($opts), ENT_QUOTES, 'UTF-8') . '</span><svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="so-dd__menu">';
+                $first = true;
+                foreach ($opts as $v => $l) {
+                    echo '<button type="button" class="so-pop__row' . ($first ? ' is-active' : '') . '" data-val="' . htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($l, ENT_QUOTES, 'UTF-8') . '</button>';
+                    $first = false;
+                }
+                echo '</div></details>';
+            };
+            $icCal = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
+            $icDist = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>';
+            $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>';
+            $dd('when', $icCal, 'Dates', ['' => 'All dates'] + LISTING_WHEN);
+            $dd('radius', $icDist, 'Distance', ['0' => 'Any distance', '25' => 'Within 25 miles', '50' => 'Within 50 miles', '100' => 'Within 100 miles', '250' => 'Within 250 miles']);
+            $dd('sort', $icSort, 'Sort', ['distance' => 'Nearest first', 'soonest' => 'Soonest', 'popular' => 'Best sellers']);
+            ?>
         </div>
         <section class="so-near" data-so-near hidden aria-live="polite">
             <h2 class="so-near__title" data-so-near-title>Explore <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> near you</h2>
@@ -2623,7 +2641,18 @@ function getTnCatEventsCount($catId = 0, $params = []) {
 function getTnCatById($catId) {
     $params['filter'] = "contains(path, '." . (int) $catId . ".') and depth eq 2";
     $params['perPage'] = 1;
-    return tnRequest("/catalog/v2/categories/", $params);
+    $r = tnRequest("/catalog/v2/categories/", $params);
+    if (!empty($r['results'])) return $r;
+    // Deeper categories (the MLB, NBA, NHL and MLS ones sit under their sport, named "Professional (MLB)"): look at any depth
+    // and take the entry whose path ends with this id, so a descendant is never mistaken for it.
+    $r = tnRequest("/catalog/v2/categories/", ['filter' => "contains(path, '." . (int) $catId . ".')", 'perPage' => 10]);
+    foreach ($r['results'] ?? [] as $c) {
+        if (substr((string) ($c['path'] ?? ''), -strlen('.' . (int) $catId . '.')) === '.' . (int) $catId . '.') {
+            $r['results'] = [$c];
+            return $r;
+        }
+    }
+    return ['results' => []];
 }
 
 
