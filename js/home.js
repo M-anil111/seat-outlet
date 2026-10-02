@@ -731,3 +731,97 @@ document.addEventListener('DOMContentLoaded', function () {
     box.setAttribute('data-so-tabs-ready', '');
   });
 });
+
+
+/* =====================================================
+    HOME FEEDS: "Last-minute tickets" and "Trending events"
+    Located by the same address lookup as Top Picks (no browser permission prompt); falls back to the whole country.
+===================================================== */
+document.addEventListener('DOMContentLoaded', function () {
+  const boxes = Array.from(document.querySelectorAll('[data-so-feed]'));
+  if (!boxes.length) return;
+  const loaded = {};
+  let token = 0;
+
+  const esc = (typeof escapeHtml === 'function') ? escapeHtml : (v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
+  const slug = (typeof normalizeKey === 'function') ? normalizeKey : (v => String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''));
+
+  function whenBadge(iso) {
+    if (!iso) return '';
+    const p = iso.split('-').map(Number);
+    const d = new Date(p[0], p[1] - 1, p[2]);
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const days = Math.round((d - now) / 86400000);
+    if (days <= 0) return 'Today';
+    if (days === 1) return 'Tomorrow';
+    return d.toLocaleDateString('en-US', { weekday: 'long' });
+  }
+
+  function card(ev, i, kind) {
+    const badge = kind === 'lastminute' ? whenBadge(ev.iso) : '';
+    const eager = i < 2 ? 'eager' : 'lazy';
+    return '<a class="so-feed-card" href="/event/' + slug(ev.name) + '-' + ev.id + '">' +
+      '<div class="so-feed-card__img">' +
+        '<img src="' + esc(ev.placeholder) + '" alt="' + esc(ev.name) + '" class="event-dynamic-image blur-image" width="260" height="260" loading="' + eager + '"' +
+        ' data-event="' + encodeURIComponent(ev.name) + '" data-artist="' + encodeURIComponent(ev.performer || '') + '"' +
+        ' data-venue="' + encodeURIComponent(ev.venue || '') + '" data-tab="' + encodeURIComponent(ev.tab) + '"' +
+        " data-category='" + esc(JSON.stringify(ev.defaultCategory || {})) + "'>" +
+        (badge ? '<span class="so-feed-card__badge">' + esc(badge) + '</span>' : '') +
+      '</div>' +
+      '<h3 class="so-feed-card__name">' + esc(ev.name) + '</h3>' +
+      '<p class="so-feed-card__meta">' + esc(ev.date) + '</p>' +
+      '<p class="so-feed-card__meta">' + esc(ev.venue) + (ev.loc ? ' - ' + esc(ev.loc) : '') + '</p>' +
+      (ev.price ? '<p class="so-feed-card__price">From <strong>' + esc(ev.price) + '</strong></p>' : '') +
+    '</a>';
+  }
+
+  function render(box, kind, data, label) {
+    const track = box.querySelector('[data-so-feed-track]');
+    const title = box.querySelector('.so-feed__title');
+    const sub = box.querySelector('[data-so-feed-sub]');
+    const events = (data && data.events) || [];
+    if (!events.length) { box.hidden = true; return; }
+    box.hidden = false;
+    const near = data.scope === 'near' && label;
+    if (title) {
+      title.textContent = kind === 'lastminute'
+        ? (near ? 'Last-minute tickets near ' + label : 'Last-minute tickets')
+        : (near ? 'Trending events near ' + label : 'Trending events');
+    }
+    if (sub) {
+      sub.textContent = kind === 'lastminute'
+        ? (near ? 'Happening in the next 7 days within 50 miles' : 'Happening in the next 7 days')
+        : (near ? 'Popular within 50 miles of you' : 'What fans are buying right now');
+    }
+    track.innerHTML = events.map((ev, i) => card(ev, i, kind)).join('');
+    track.scrollLeft = 0;
+    if (window.soBatchLoadImages) window.soBatchLoadImages(track, '.event-dynamic-image', () => true);
+  }
+
+  function load(lat, lng) {
+    const key = (lat && lng) ? (Number(lat).toFixed(1) + ',' + Number(lng).toFixed(1)) : 'us';
+    const label = (typeof getCookie === 'function' ? getCookie('so_label') : '') || '';
+    const my = ++token;
+    boxes.forEach(box => {
+      const kind = box.getAttribute('data-so-feed');
+      if (loaded[kind] === key) return;
+      loaded[kind] = key;
+      const qs = 'kind=' + kind + (key !== 'us' ? '&lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng) : '');
+      fetch('/ajax/get-home-feed.php?' + qs)
+        .then(r => r.json())
+        .then(data => { if (my === token || loaded[kind] === key) render(box, kind, data, label); })
+        .catch(() => { loaded[kind] = ''; box.hidden = true; });
+    });
+  }
+
+  // The address lookup and the visitor's own choices all go through reloadActiveTab: follow it.
+  const original = window.reloadActiveTab;
+  window.reloadActiveTab = function (mode, loc) {
+    if (mode === 'll' && loc && loc.lat && loc.lng) load(loc.lat, loc.lng);
+    else load('', '');
+    return typeof original === 'function' ? original.apply(this, arguments) : undefined;
+  };
+  const lat = typeof getCookie === 'function' ? getCookie('so_lat') : '';
+  const lng = typeof getCookie === 'function' ? getCookie('so_lng') : '';
+  if (lat && lng) load(lat, lng); else load('', '');
+});

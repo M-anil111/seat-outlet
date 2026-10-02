@@ -178,6 +178,32 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
+<section class="so-feed" id="soFeedLastMinute" data-so-feed="lastminute" aria-labelledby="soFeedLastMinuteTitle">
+  <div class="container">
+    <div class="so-feed__head">
+      <div>
+        <h2 id="soFeedLastMinuteTitle" class="so-feed__title">Last-minute tickets</h2>
+        <p class="so-feed__sub" data-so-feed-sub>Events in the next 7 days with tickets listed</p>
+      </div>
+      <a class="so-feed__all" href="/buy-tickets-online">See all</a>
+    </div>
+    <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><?php } ?></div>
+  </div>
+</section>
+
+<section class="so-feed" id="soFeedTrending" data-so-feed="trending" aria-labelledby="soFeedTrendingTitle">
+  <div class="container">
+    <div class="so-feed__head">
+      <div>
+        <h2 id="soFeedTrendingTitle" class="so-feed__title">Trending events</h2>
+        <p class="so-feed__sub" data-so-feed-sub>What fans are buying right now</p>
+      </div>
+      <a class="so-feed__all" href="/concert-tickets-for-sale">See all</a>
+    </div>
+    <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><?php } ?></div>
+  </div>
+</section>
+
 <section id="recentlyViewed" class="recently-viewed bg-white d-none" aria-labelledby="recentlyViewedHeading">
   <div class="container">
     <h2 id="recentlyViewedHeading" class="fw-bold mb-3">Pick up where you left off</h2>
@@ -414,43 +440,31 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
-<section class="newsletter-section py-5">
-    <div class="container"> 
-		<div class="row g-3 justify-content-between">
-			<div class="col-lg-4">
-				<div class="col-12 d-flex align-items-center gap-3 justify-content-md-center">
-					<div class="newsletter-icon">
-						<i class="bi bi-send-fill fs-5"></i>
-					</div>
-					<div class="text-uppercase fw-bold text-white fs-5">
-						Newsletter Sign Up!
-					</div>
-				</div>
-			</div>
-			<div class="col-lg-8">
-				<form method="POST" action="/newsletter-email.php" id="newsletterForm">
+<section class="so-news-wrap" aria-labelledby="soNewsTitle">
+  <div class="container">
+    <details class="so-news">
+      <summary class="so-news__summary">
+        <span class="so-news__icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg></span>
+        <span class="so-news__title" id="soNewsTitle">Get an alert when your favorite artists announce tour dates</span>
+        <span class="so-news__btn">Subscribe</span>
+      </summary>
+      <div class="so-news__body">
+        <p class="so-news__lead">Enter your details and we will send tour alerts and ticket news to your inbox.</p>
+        <form method="POST" action="/newsletter-email.php" id="newsletterForm" class="so-news__form">
           <!-- Honeypot -->
-          <input type="text" name="company" value="" style="display:none" autocomplete="off">
-          <input type="hidden" name="token" id="recaptchaToken">	
-					<div class="newsletter-icontact">						
-						<div class="col-12 col-md-4 col-lg-3">
-							<input name="fname" type="text" class="form-control newsletter-input" placeholder="First Name" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />
-						</div>
-						<div class="col-12 col-md-4 col-lg-3">
-							<input name="lname" type="text" class="form-control newsletter-input" placeholder="Last Name" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />
-						</div>
-						<div class="col-12 col-md-4 col-lg-3">
-							<input name="email" type="email" class="form-control newsletter-input" placeholder="Email" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />               
-						</div>
-            <div class="col-12 col-md-4 col-lg-3"> 
-							<button type="submit" class="newsletter-btn px-4">Submit</button>
-						</div>	            				
-					</div>
-				</form>
-        <div class="text-white mt-3 d-none" id="form_error"></div>
-			</div>
-		</div>
-	</div>
+          <input type="text" name="company" value="" style="display:none" autocomplete="off" tabindex="-1">
+          <input type="hidden" name="token" id="recaptchaToken">
+          <div class="so-news__fields">
+            <input name="fname" type="text" class="form-control newsletter-input" placeholder="First name" aria-label="First name" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />
+            <input name="lname" type="text" class="form-control newsletter-input" placeholder="Last name" aria-label="Last name" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />
+            <input name="email" type="email" class="form-control newsletter-input" placeholder="Email" aria-label="Email" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />
+            <button type="submit" class="so-news__submit">Sign me up</button>
+          </div>
+        </form>
+        <div class="so-news__error d-none" id="form_error" role="alert"></div>
+      </div>
+    </details>
+  </div>
 </section> 
 
 <section class="partners-section teams-nearby py-5">

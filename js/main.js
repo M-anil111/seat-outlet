@@ -208,14 +208,13 @@ document.addEventListener('DOMContentLoaded', function () {
             loadNearbyVenues();
         }
     };
-    // Second chance when the network lookup has no answer: use the device location, but only if the visitor already
-    // allowed it, or ask once if they have not been asked yet.
+    // Second chance when the network lookup has no answer: use the device location only if the visitor has ALREADY allowed
+    // it for this site. The page never opens the browser's permission prompt by itself (like the big marketplaces, it
+    // starts from the visitor's address); the "Current location" button in the location menu is the only way to ask.
     const tryAllowedDeviceLocation = () => {
         if (!navigator.geolocation || !navigator.permissions || !navigator.permissions.query) { showPrompt(); return; }
         navigator.permissions.query({ name: 'geolocation' }).then(state => {
-            // 'prompt': ask once per visitor (remembered in a cookie), after the page has settled; 'denied': never nag.
-            if (state.state === 'prompt' && !getCookie('so_geo_asked')) { setCookie('so_geo_asked', '1'); }
-            else if (state.state !== 'granted') { showPrompt(); return; }
+            if (state.state !== 'granted') { showPrompt(); return; }
             navigator.geolocation.getCurrentPosition(async position => {
                 const lat = position.coords.latitude, lng = position.coords.longitude;
                 try {
