@@ -221,7 +221,7 @@ include 'header.php';
 							<input type="hidden" id="lngEvent" value="">
 							<input type="hidden" id="sdateEvent" value="">
 							<input type="hidden" id="edateEvent" value="">
-							<input type="hidden" id="pidEvent" value="<?php echo $id; ?>">
+							<input type="hidden" id="pidEvent" value="<?php echo $id; ?>" data-name="<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>">
 							<div class="row">
 								<div class="col-md-6">
 									<label class="filter-label">Location</label>
@@ -238,11 +238,10 @@ include 'header.php';
 									</div>
 								</div>
 								<div class="col-md-6">
-									<label class="filter-label">Dates</label>
-									<div class="filter-input">
-										<i class="bi bi-calendar3"></i>
-										<input type="text" id="performerDatePicker" placeholder="Select Date Range" class="form-control" autocomplete="off" readonly value="<?php echo !empty($dateTitle) ? $dateTitle : ''; ?>">  
-										<div class="filter-arrow"><i id="dateArrow" class="bi bi-chevron-down"></i></div>
+									<span class="filter-label" id="soWhenLabel">Dates</span>
+									<div class="so-when" role="group" aria-labelledby="soWhenLabel">
+										<button type="button" class="so-when__chip is-active" data-so-when="" aria-pressed="true">All dates</button>
+										<?php foreach (LISTING_WHEN as $wk => $wl) { ?><button type="button" class="so-when__chip" data-so-when="<?php echo $wk; ?>" aria-pressed="false"><?php echo htmlspecialchars($wl, ENT_QUOTES, 'UTF-8'); ?></button><?php } ?>
 									</div>
 								</div>
 							</div>
@@ -325,7 +324,7 @@ include 'header.php';
 											</div>
 										</div>
 										<div class="ms-3">
-											<?php if (!empty($cheapestEventId) && (int) ($event['id'] ?? 0) === $cheapestEventId) { ?><span class="event-cheapest-badge">Cheapest date</span><?php } ?>
+											<?php if (!empty($cheapestEventId) && (int) ($event['id'] ?? 0) === $cheapestEventId) { ?><div class="so-cheapest-row"><span class="event-cheapest-badge">Cheapest date</span></div><?php } ?>
 											<?php renderEventPriceTag($event); $evHasPrice = eventFromPrice($event) !== ''; ?>
 											<a href="/event/<?php echo htmlspecialchars($slug, ENT_QUOTES, 'UTF-8'); ?>" class="btn <?php echo $evHasPrice ? 'btn-primary' : 'btn-outline-primary'; ?> d-flex align-items-center gap-2" aria-label="<?php echo $evHasPrice ? 'Buy tickets for' : 'View'; ?> <?php echo htmlspecialchars($event['text']['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 												<span><?php echo $evHasPrice ? 'Buy Tickets' : 'View Event'; ?></span>

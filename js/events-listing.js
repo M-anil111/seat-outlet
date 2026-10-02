@@ -118,7 +118,7 @@ function updateHeading(loc = '') {
     const heading = document.getElementById('locationHeading');
     if (!heading) return;
     if (loc) {        
-        heading.textContent = `Events Near ${loc}`;
+        heading.textContent = `Dates nearest to ${loc} first`;
     } else {
         heading.textContent = '';
     }
@@ -131,6 +131,8 @@ function updateEventsSection(location) {
     if (location.startDate)   params.append('startDate', location.startDate);
     if (location.endDate)   params.append('endDate', location.endDate);
     if (location.pid)   params.append('pid', location.pid);
+    if (location.when === undefined) location.when = soWhen;
+    if (location.when && !location.startDate) params.append('when', location.when);
 
     const noResults = soById('location-no-results');
     fetch(`/ajax/load-events.php?${params}`)
@@ -159,18 +161,31 @@ function updateEventsSection(location) {
             };
         }
 
+        const who = (pidEvent && pidEvent.dataset.name) || 'this act';
+        const place = (input && input.value) ? input.value : '';
         if (!data.events || data.events.length === 0) {
-            var nrLabel = (input && input.value) ? input.value : 'that location';
             if (noResults) {
                 noResults.textContent = '';
-                var nrStrong = document.createElement('strong'); nrStrong.textContent = 'No dates near ' + nrLabel;
-                var nrP = document.createElement('p'); nrP.textContent = 'Nearest dates are shown below instead.';
+                var nrStrong = document.createElement('strong');
+                nrStrong.textContent = soWhen ? 'No ' + who + ' dates in that time frame' : 'No ' + who + ' dates are on sale right now';
+                var nrP = document.createElement('p');
+                nrP.textContent = soWhen ? 'Try All dates to see every upcoming date.' : 'Leave your email below and we will tell you when new dates go on sale.';
                 noResults.appendChild(nrStrong); noResults.appendChild(nrP);
             }
             return;
         }
 
-        if (noResults) noResults.innerHTML = '';
+        // Nearest first. When the closest date is far from the visitor, say so plainly instead of "no events".
+        if (noResults) {
+            noResults.textContent = '';
+            if (data.scope === 'nearest' && place) {
+                var nStrong = document.createElement('strong');
+                nStrong.textContent = 'No ' + who + ' dates within 50 miles of ' + place;
+                var nP = document.createElement('p');
+                nP.textContent = 'The closest is about ' + Number(data.closest).toLocaleString('en-US') + ' miles away. All dates below are listed nearest first.';
+                noResults.appendChild(nStrong); noResults.appendChild(nP);
+            }
+        }
         const list = soById('eventsSection');
         if (!list) return;
         list.innerHTML = '';
@@ -197,11 +212,14 @@ function updateEventsSection(location) {
 
         const savedParams = {};
         if (location.lat && location.lng) {
-            savedParams.geoFilter = `nearby(${location.lat},${location.lng},50mi)`;
+            savedParams.geoFilter = `nearby(${location.lat},${location.lng},3000mi)`;
+            savedParams.sort = 'distance';
         }
         if (location.startDate && location.endDate) {
             savedParams.filter =
                 `date/date ge ${location.startDate} and date/date le ${location.endDate}`;
+        } else if (data.params && data.params.filter) {
+            savedParams.filter = data.params.filter;   // the server's own window for a quick chip such as "This weekend"
         } else {
             savedParams.filter =
                 `country/alphaCode eq 'US' and date/date ge ${soTodayIso()}`;
@@ -234,6 +252,27 @@ function updateEventsSection(location) {
 
 document.addEventListener('DOMContentLoaded', () => {
     updateHeading();
+});
+
+/* Quick date chips (All dates, Today, This weekend, Next 7 days, Next 30 days) */
+let soWhen = '';
+document.addEventListener('click', function (e) {
+    const chip = e.target.closest && e.target.closest('[data-so-when]');
+    if (!chip || !pidEvent) return;
+    soWhen = chip.getAttribute('data-so-when') || '';
+    document.querySelectorAll('[data-so-when]').forEach(function (c) {
+        const on = c === chip;
+        c.classList.toggle('is-active', on);
+        c.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (sdateEvent) sdateEvent.value = '';
+    if (edateEvent) edateEvent.value = '';
+    updateEventsSection({
+        lat: latEvent.value || getCookie('so_lat') || '',
+        lng: lngEvent.value || getCookie('so_lng') || '',
+        when: soWhen,
+        pid: pidEvent.value
+    });
 });
     
 function getCurrentLocation() {

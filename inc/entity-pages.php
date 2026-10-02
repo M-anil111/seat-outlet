@@ -293,7 +293,7 @@ function soRenderEventRow(array $event, array $opts = []): void {
             </div>
         </div>
         <div class="ms-3">
-            <?php if (!empty($opts['cheapestId']) && (int) ($event['id'] ?? 0) === (int) $opts['cheapestId']) { ?><span class="event-cheapest-badge">Cheapest date</span><?php } ?>
+            <?php if (!empty($opts['cheapestId']) && (int) ($event['id'] ?? 0) === (int) $opts['cheapestId']) { ?><div class="so-cheapest-row"><span class="event-cheapest-badge">Cheapest date</span></div><?php } ?>
             <?php renderEventPriceTag($event); ?>
             <a href="/event/<?php echo $h($slug); ?>" class="btn <?php echo $hasPrice ? 'btn-primary' : 'btn-outline-primary'; ?> d-flex align-items-center gap-2" aria-label="<?php echo $hasPrice ? 'Buy tickets for' : 'View'; ?> <?php echo $h($name); ?>">
                 <span class="d-none d-md-inline"><?php echo $hasPrice ? 'Buy Tickets' : 'View Event'; ?></span>

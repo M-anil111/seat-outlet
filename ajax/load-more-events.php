@@ -24,7 +24,7 @@ const LOAD_MORE_ALLOWED_PARAM_KEYS = ['q', 'filter', 'geoFilter', 'performerFilt
 // Values that are not free-form filters are pinned to the ones the site
 // itself generates, so a tampered request cannot ask the upstream API for an
 // arbitrary sort or ranking window.
-const LOAD_MORE_ALLOWED_SORTS = ['date/date', '-date/date', '-salesRank', 'salesRank', 'pricingInfo/lowPrice/value', '-pricingInfo/lowPrice/value'];
+const LOAD_MORE_ALLOWED_SORTS = ['distance', 'date/date', '-date/date', '-salesRank', 'salesRank', 'pricingInfo/lowPrice/value', '-pricingInfo/lowPrice/value'];
 const LOAD_MORE_ALLOWED_RANK_OPTIONS = [
     '{"interval":"day","metric":"orderVolume"}',
     '{"interval":"day","metric":"ticketVolume"}',
