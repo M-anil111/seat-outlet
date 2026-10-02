@@ -19,30 +19,39 @@ header('Content-Type: application/json; charset=UTF-8');
 define('SO_NEAR_MILES', 50);
 define('SO_NEAR_MAX_MILES', 3000);
 
-$kindIn = $_GET['kind'] ?? '';
+$kindIn = soQs('kind');
 $kind = in_array($kindIn, ['lastminute', 'near'], true) ? $kindIn : 'trending';
-$lat = isset($_GET['lat']) && is_numeric($_GET['lat']) ? (float) $_GET['lat'] : null;
-$lng = isset($_GET['lng']) && is_numeric($_GET['lng']) ? (float) $_GET['lng'] : null;
-if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;
-if ($lng !== null && ($lng < -180 || $lng > 180)) $lng = null;
-$hasGeo = $lat !== null && $lng !== null;
-// Two decimals is about 0.7 miles: keeps the 50-mile radius honest while letting neighbors share one cached answer.
-if ($hasGeo) { $lat = round($lat, 2); $lng = round($lng, 2); }
+// Snapped to a 0.1 degree grid (about 7 miles) and limited to the area we sell in: every distinct coordinate used to create its own
+// cache file and its own live API call, so the key space was unbounded. A 50-mile search stays honest at this precision.
+$snap = soSnapGeo($_GET['lat'] ?? null, $_GET['lng'] ?? null);
+$lat = $snap ? $snap[0] : null;
+$lng = $snap ? $snap[1] : null;
+$hasGeo = $snap !== null;
+
+/** Live (uncached) feed builds are limited per visitor address, so one client cannot drive unlimited API calls. */
+function soHomeFeedLiveAllowed() {
+    if (soRateHit('feed-live', soIpHash(soClientIp()), 90, 600)) return true;
+    http_response_code(429);
+    header('Retry-After: 60');
+    header('Cache-Control: no-store');
+    echo json_encode(['scope' => 'none', 'events' => [], 'hasMore' => false, 'error' => 'Too many requests']);
+    exit;
+}
 
 
 /* ---- "Explore ... near you" on the listing hubs: one category, one date window, paged (See more) ---- */
 if ($kind === 'near') {
     $catMap = ['concerts' => TN_CATEGORY_PATH_CONCERTS, 'sports' => TN_CATEGORY_PATH_SPORTS, 'theatre' => TN_CATEGORY_PATH_THEATER, 'festival' => TN_CATEGORY_PATH_FESTIVAL, 'all' => ''];
-    $cat = $_GET['cat'] ?? 'all';
+    $cat = soQs('cat', 'all');
     $catPath = $catMap[$cat] ?? '';
     // A single category page (for example /category/basketball-1865) passes its own TicketNetwork category id.
-    $catId = isset($_GET['catid']) && ctype_digit((string) $_GET['catid']) ? (int) $_GET['catid'] : 0;
-    $whenIn = $_GET['when'] ?? '';
+    $catId = soQsInt('catid', 0, 0, 2147483647);
+    $whenIn = soQs('when');
     $when = isset(LISTING_WHEN[$whenIn]) ? $whenIn : '';
-    $page = max(1, min(20, (int) ($_GET['page'] ?? 1)));
-    $sortIn = $_GET['sort'] ?? 'distance';
+    $page = soQsInt('page', 1, 1, 20);
+    $sortIn = soQs('sort', 'distance');
     $nearSort = in_array($sortIn, ['soonest', 'popular'], true) ? $sortIn : 'distance';
-    $radiusIn = (int) ($_GET['radius'] ?? 0);
+    $radiusIn = soQsInt('radius');
     $radius = in_array($radiusIn, [25, 50, 100, 250], true) ? $radiusIn : 0;   // 0 = no limit: nearest anywhere
     if (!$hasGeo) {
         echo json_encode(['scope' => 'none', 'events' => [], 'hasMore' => false]);
@@ -55,6 +64,7 @@ if ($kind === 'near') {
         echo json_encode($cachedNear);
         exit;
     }
+    soHomeFeedLiveAllowed();
     try {
         // Always nearest first. The search is not cut off at 50 miles: when nothing is close, the closest events anywhere
         // in the country come back (San Antonio, Houston, Dallas for a Hill Country visitor) and the page says so.
@@ -98,6 +108,8 @@ if ($cached !== false) {
     echo json_encode($cached);
     exit;
 }
+
+soHomeFeedLiveAllowed();
 
 function soHomeFeedFetch(string $kind, ?float $lat, ?float $lng): array {
     $today = date('Y-m-d');

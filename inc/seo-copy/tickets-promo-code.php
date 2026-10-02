@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>How a Tickets Promo Code Works</h2>
 <p>A tickets promo code is a short code, usually letters and numbers, that you type in at checkout to lower the total of an order. The discount might be a percentage off or a fixed amount, and most codes come with conditions such as a minimum order size. The codes shown in the Latest Ticket Promo Codes box above list their own terms, so read them before you order.</p>
 <p>Codes are tied to the site that issues them. A code from one company will not work on another company's checkout, and a code can stop working when it expires or when its limit is reached. This page explains how to use a tickets promo code on Seat Outlet and how to compare it with other ways to save.</p>

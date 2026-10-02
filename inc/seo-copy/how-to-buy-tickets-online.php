@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>How to buy tickets online, step by step</h2>
 <p>Knowing how to buy tickets online takes the stress out of a popular on-sale or a last-minute plan. The process is similar for most events, and this guide to how to buy tickets online follows the order you will see on Seat Outlet: find the event, choose seats, check the total, pay securely and keep your confirmation.</p>
 <p>Seat Outlet is a resale marketplace, so prices are set by sellers and may be above or below face value. Taking a couple of minutes to compare options is the best way to protect your budget.</p>

@@ -131,3 +131,16 @@ function soPost($name, $default = '') {
     $v = $_POST[$name] ?? null;
     return is_string($v) ? trim($v) : $default;
 }
+
+/** Drop array-valued entries (?q[]=a) from a parameter array, so later string functions never get an array. */
+function soStringParams(array $params) {
+    return array_filter($params, 'is_string');
+}
+
+/** A coordinate pair snapped to a 0.1 degree grid (about 7 miles) inside the area we sell in, or null. Keeps the cache key space small. */
+function soSnapGeo($lat, $lng) {
+    if (!is_scalar($lat) || !is_scalar($lng) || !is_numeric($lat) || !is_numeric($lng)) return null;
+    $lat = (float) $lat; $lng = (float) $lng;
+    if ($lat < 17 || $lat > 72 || $lng < -180 || $lng > -64) return null;   // US, Alaska, Hawaii, territories
+    return [round($lat, 1), round($lng, 1)];
+}

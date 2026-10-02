@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Terms and conditions at a glance</h2>
 <p>The terms and conditions above are the full legal text, and these terms and conditions apply whenever you use the platform. This guide pulls out the points shoppers ask about most, using the policy's own wording. If anything here differs from the terms and conditions above, the full text applies.</p>
 

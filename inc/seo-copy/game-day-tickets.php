@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Game day tickets: a buyer's guide to NFL, NBA, MLB, NHL and more</h2>
 <p>The listings above are game day tickets from sellers on the Seat Outlet marketplace, covering pro football, basketball, baseball, hockey, college sports and soccer. Use the date and sort filters to line up a schedule of game day tickets, then open a game to compare sections and prices. Below you will find advice on picking seats, timing your purchase and what to check before you pay.</p>
 <p>Looking for one team in particular? The <a href="/all-artists-and-teams">teams and artists directory</a> lists every name with upcoming dates, so you can jump straight to a home schedule.</p>

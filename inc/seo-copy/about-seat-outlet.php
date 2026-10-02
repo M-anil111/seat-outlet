@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>About Seat Outlet: what we do and how it works</h2>
 <p>If you are looking for the basics about Seat Outlet, here they are in plain terms. Seat Outlet is an online ticket marketplace where fans can find, compare and buy tickets to concerts, sports, theater, festivals and other live events. We are a resale marketplace, which means tickets are offered by sellers and prices are set by them, not by us.</p>
 <p>Because sellers set the price, a ticket may cost more or less than the original face value. That is how resale works across the industry. Our job is to make the search easier, show you the options side by side and back your order with a written guarantee.</p>

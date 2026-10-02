@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>City events: how to find the right show in the right town</h2>
 <p>The directory above lists city events by category, so you can jump from a city name straight to its upcoming concerts, sports, theater and festivals. Pick the city you will be in, choose the type of outing you want, and compare tickets from sellers on the Seat Outlet marketplace. This page explains how to use city events listings, how local factors affect prices, and how to plan a trip around a show.</p>
 <p>Prefer to browse by type instead of place? Head to <a href="/concert-tickets-for-sale">concert tickets for sale</a>, <a href="/game-day-tickets">game day tickets</a>, <a href="/buy-broadway-tickets">theater tickets</a> or <a href="/upcoming-music-festivals">upcoming music festivals</a>.</p>

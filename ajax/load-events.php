@@ -6,14 +6,16 @@ header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: public, max-age=300');
 
 // Raw inputs
-$lat       = trim($_GET['lat'] ?? '');
-$lng       = trim($_GET['lng'] ?? '');
-$startDate = trim($_GET['startDate'] ?? '');
-$endDate   = trim($_GET['endDate'] ?? '');
-$pid       = (int) ($_GET['pid'] ?? 0);
+$lat       = soQs('lat');
+$lng       = soQs('lng');
+$startDate = soQs('startDate');
+$endDate   = soQs('endDate');
+$pid       = soQsInt('pid', 0, 0, 2147483647);
 
-$latVal = is_numeric($lat) ? (float) $lat : null;
-$lngVal = is_numeric($lng) ? (float) $lng : null;
+// Snapped to a 0.1 degree grid: visitors near each other share one cached answer and the cache key space stays small.
+$snap = soSnapGeo($lat, $lng);
+$latVal = $snap ? $snap[0] : null;
+$lngVal = $snap ? $snap[1] : null;
 
 $datePattern = '/^\d{4}-\d{2}-\d{2}$/';
 if (!preg_match($datePattern, $startDate)) $startDate = '';

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../inc/image-guard.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: public, max-age=600');
@@ -11,10 +12,10 @@ header('Cache-Control: public, max-age=600');
 // could trigger Wikipedia + Knowledge Graph + S3 + GD work inline, and a
 // transient failure was cached as the fallback forever.)
 
-$artist   = trim($_GET['artist'] ?? '');
-$venue    = trim($_GET['venue'] ?? '');
-$tab      = trim($_GET['tab'] ?? '');
-$category = $_GET['category'] ?? '';
+$artist   = soQs('artist');
+$venue    = soQs('venue');
+$tab      = soQs('tab');
+$category = soQs('category');
 
 $defaultCategory = [];
 if (!empty($category)) {
@@ -25,12 +26,12 @@ if (!empty($category)) {
 }
 
 if ($venue !== '') {
-    $img = getEntityImage('venue', $venue);
+    $img = soGuardedEntityImage('venue', $venue);
 } elseif ($artist !== '') {
     // Event cards pass event + artist; the artist is the only thing with a
     // findable image (an event name like "X vs. Y" never has one).
     $type = imageEntityTypeForPerformer($defaultCategory);
-    $img  = getEntityImage($type, $artist, ['category' => $defaultCategory, 'tab' => $tab]);
+    $img  = soGuardedEntityImage($type, $artist, ['category' => $defaultCategory, 'tab' => $tab]);
 } else {
     $fallback = $tab !== '' ? getCategoryFallbackImage($defaultCategory, $tab) : '';
     echo json_encode(['success' => $fallback !== '', 'image' => $fallback, 'credit' => '']);

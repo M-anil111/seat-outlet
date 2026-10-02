@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Concert tickets for sale: how to find seats you will actually enjoy</h2>
 <p>Every listing above is a set of concert tickets for sale from sellers on the Seat Outlet marketplace. Use the date and sort filters at the top to narrow the list of concert tickets for sale, then open any show to compare sections, rows and prices before you decide. This guide to concert tickets for sale covers how to pick a seat, what moves prices, and when to buy.</p>
 <p>If you already know the artist you want and need concert tickets for sale on a specific tour, the <a href="/all-artists-and-teams">full artists and teams directory</a> is the fastest route to every date on a tour. If you are open to ideas, scroll the list and sort by date to see what is coming up soonest.</p>

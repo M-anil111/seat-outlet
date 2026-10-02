@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Ticket FAQ: quick answers before you buy</h2>
 <p>Our ticket FAQ covers the questions shoppers ask most often: how checkout works, when and how tickets arrive, what to bring on the night, and what happens if plans change. The answers above are grouped by topic, and the guide below adds the context that helps you decide before you pay.</p>
 <p>Seat Outlet is a resale marketplace, so listings come from sellers and prices can be above or below face value. Always read the event page for seat details, delivery method and venue rules before you check out.</p>

@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Privacy policy key points at a glance</h2>
 <p>The privacy policy above is the full text. This guide highlights the main points in plain English, using the policy's own wording. If anything here differs from the privacy policy above, the full text applies.</p>
 

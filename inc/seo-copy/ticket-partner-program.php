@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Ticket partner program: what to expect from a conversation with us</h2>
 <p>If you run a venue, a festival, a team, a promoter or a brand, a ticket partner program is a way to reach fans through an established marketplace instead of building every sales channel yourself. This page explains how we approach the ticket partner program, what you should ask any marketplace, and how to start a conversation with Seat Outlet.</p>
 <p>We do not publish fixed terms, fees or commission rates here. Partnerships depend on your events, your audience and your current ticketing setup, so we talk through those details directly before anyone commits to anything.</p>

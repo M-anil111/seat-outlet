@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Buy Broadway tickets: musicals, plays and touring shows in one place</h2>
 <p>Want to buy Broadway tickets without guessing which seats are worth it? The listings above include Broadway and off-Broadway productions, touring musicals, plays and Las Vegas shows, all offered by sellers on the Seat Outlet marketplace. Filter by date, compare sections and prices, and open any show to see what is available before you buy Broadway tickets.</p>
 <p>This page explains how theater seating works for anyone ready to buy Broadway tickets, what affects prices, and how to time your purchase. If you also want to see what else is playing in town, our <a href="/city-events">city events directory</a> groups theater with concerts, sports and festivals.</p>

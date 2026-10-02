@@ -1,7 +1,7 @@
 <?php 
 require_once 'functions.php';
 
-$searchInput = array_merge($_GET, $_POST);
+$searchInput = soStringParams(array_merge($_GET, $_POST));
 
 $params = [];
 $filterParts = [];

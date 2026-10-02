@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Ticket customer service: how we help</h2>
 <p>Ticket customer service at Seat Outlet covers the questions that come up around a live-event order: where your tickets are, what happens if an event changes, and how to update an account. You can reach us by email, by phone, in person, or with the form on this page.</p>
 <p>Most questions are faster to resolve when you have your order ID and the event name ready, so keep your confirmation email nearby.</p>

@@ -21,7 +21,7 @@ include_once 'functions.php';
     // search.php reads the same array. Values are only ever echoed through
     // htmlspecialchars() below - the hidden lat/lng/date inputs previously
     // reflected raw request data into value="" attributes.
-    $searchInput = $searchInput ?? array_merge($_GET, $_POST);
+    $searchInput = $searchInput ?? soStringParams(array_merge($_GET, $_POST));
     if(!empty($searchInput['startInputHeader']) && !empty($searchInput['endInputHeader'])) {
         $dateTitle = $searchInput['startInputHeader'] . ' to ' . $searchInput['endInputHeader'];
     }else{

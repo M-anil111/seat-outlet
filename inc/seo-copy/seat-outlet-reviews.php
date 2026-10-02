@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Seat Outlet reviews: how feedback is handled</h2>
 <p>People searching for Seat Outlet reviews usually want one thing: proof that a ticket marketplace delivers what it promises. This section explains what you can and cannot learn from reviews on this site, how we treat feedback, and where to look when you want to check us out yourself.</p>
 <p>This page does not show customer ratings or quotes yet. We would rather publish nothing than let sample content pass for verified opinions, so reviews will appear here only after they are checked against a real order. This section explains how to read reviews of any ticket seller, including Seat Outlet reviews, and what you can rely on today.</p>
