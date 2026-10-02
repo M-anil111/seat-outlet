@@ -59,9 +59,6 @@ foreach (listPublishedBlogPosts(1, 6) as $r) {
         </div>
     </header>
     <div class="container so-article__body">
-        <?php if (!empty($post['featured_image'])) { ?>
-            <img class="so-article__hero" src="<?php echo htmlspecialchars($post['featured_image'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8'); ?>" width="1200" height="630" decoding="async" fetchpriority="high">
-        <?php } ?>
         <div class="blog-post-content">
             <?php echo $post['content']; ?>
         </div>
