@@ -216,6 +216,37 @@ function getEntityImage($type, $name, array $opts = []) {
 }
 
 /**
+ * "Pictures first": reorder a list so items whose performer, team or venue has a real stored picture come before the ones that
+ * would show an initials tile. Stable, and it only reads what is already stored (no lookups, no network).
+ *   $describe($item) => [type, name, category]       what to look the picture up by
+ *   $primary($item)  => scalar|null                  optional sort key that still wins: pictures only break ties
+ *                                                    (distance, date, price), so a "nearest first" list stays nearest first
+ * An image database that is behind or down ranks nobody, so the original order is kept.
+ */
+function soImageFirst(array $items, callable $describe, ?callable $primary = null): array {
+    if (count($items) < 2) return $items;
+    $has = [];
+    foreach ($items as $i => $item) {
+        $has[$i] = 0;
+        try {
+            [$type, $name, $cat] = $describe($item);
+            if ((string) $name !== '') {
+                $info = getEntityImage($type, $name, ['category' => $cat ?: [], 'resolve' => false]);
+                $has[$i] = (in_array($info['status'] ?? '', ['ok', 'manual'], true) && ($info['url'] ?? '') !== '') ? 1 : 0;
+            }
+        } catch (\Throwable $e) { /* decoration only */ }
+    }
+    if (!array_filter($has)) return $items;
+    $idx = array_keys($items);
+    usort($idx, function ($a, $b) use ($items, $has, $primary) {
+        $pa = $primary ? ($primary($items[$a]) ?? PHP_INT_MAX) : 0;
+        $pb = $primary ? ($primary($items[$b]) ?? PHP_INT_MAX) : 0;
+        return [$pa, -$has[$a], $a] <=> [$pb, -$has[$b], $b];
+    });
+    return array_map(function ($i) use ($items) { return $items[$i]; }, $idx);
+}
+
+/**
  * Count (sampled 1 in 10, so a busy page costs almost no writes) that a page was served the initials tile for this key.
  * The admin "misses" view sorts by it: the gaps people actually see come first.
  */
