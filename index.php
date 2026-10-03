@@ -76,7 +76,6 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
-<?php echo soAdSlot('home'); ?>
 
 <section class="so-feed so-popweek" id="soFeedPopWeekend" data-so-feed="popweekend" aria-labelledby="soFeedPopWeekendTitle" hidden>
   <div class="container">

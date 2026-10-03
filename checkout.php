@@ -49,6 +49,7 @@ $pageMetaTitle       = 'Secure Checkout | Seat Outlet';
 $pageMetaDescription = 'Review your ticket selection and continue to secure checkout.';
 $pageCanonicalUrl    = HOME_URL . '/checkout';
 $pageRobots          = 'noindex, nofollow';
+$GLOBALS['soNoAds'] = true;   // no ads on the pages where someone is paying or has paid
 include 'header.php';
 ?>
 

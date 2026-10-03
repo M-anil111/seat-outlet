@@ -46,5 +46,6 @@ function soSingleMain($html) {
     }, $html);
     // Closing tags: keep only the one followed by the marker, turn the others into </div>.
     $html = preg_replace('#</main>(?!<!--so-main-end-->)#i', '</div>', $html);
-    return str_replace('<!--so-main-end-->', '', $html);
+    $html = str_replace('<!--so-main-end-->', '', $html);
+    return function_exists('soAdInjectBanner') ? soAdInjectBanner($html) : $html;
 }

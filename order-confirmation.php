@@ -98,6 +98,7 @@ $pageMetaDescription = 'Thank you for your order with Seat Outlet.';
 $pageCanonicalUrl    = HOME_URL . '/order-confirmation';
 $pageRobots          = 'noindex, nofollow';
 $pageFocusKeyword    = $state === 'complete' ? 'Order confirmation' : 'Thank you';   // the strip above the header is the page's H1
+$GLOBALS['soNoAds'] = true;   // no ads on the pages where someone is paying or has paid
 include 'header.php';
 ?>
 
