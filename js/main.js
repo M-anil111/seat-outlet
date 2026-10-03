@@ -1003,23 +1003,21 @@ document.addEventListener('DOMContentLoaded', function () {
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const catJson = cat => esc(JSON.stringify(cat ? { path: cat } : {}));
   let html = '';
+  const kindOf = cat => /\.1988\./.test(cat || '') ? 'sports' : /\.1989\./.test(cat || '') ? 'theatre' : 'concerts';
   evs.forEach(function (ev) {
-    const when = ev.date ? new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
-    const who = ev.performer || ev.name;
-    html += '<a class="so-feed-card" href="/event/' + esc(ev.slug) + '" data-recent-event="' + esc(ev.id) + '">' +
-      '<div class="so-feed-card__img"><img class="event-dynamic-image blur-image" src="' + window.soTile(who) + '" alt="' + esc(ev.name) + '" width="260" height="260" loading="lazy" data-artist="' + encodeURIComponent(who) + '" data-category=\'' + catJson(ev.cat) + '\'><span class="so-feed-card__badge">Event</span></div>' +
-      '<h3 class="so-feed-card__name">' + esc(ev.name) + '</h3>' +
-      '<p class="so-feed-card__meta">' + esc([when, ev.city].filter(Boolean).join(' - ')) + '</p></a>';
+    html += '<div class="so-recent__slide" data-recent-event="' + esc(ev.id) + '">' + window.soEvCard({ id: ev.id, name: ev.name, iso: ev.date, loc: ev.city, venue: ev.venue, tab: kindOf(ev.cat) }, { status: 'Viewed', href: '/event/' + ev.slug, noTime: true }) + '</div>';
   });
   items.forEach(function (it) {
-    html += '<a class="so-feed-card" href="/artist/' + esc(it.slug) + '">' +
-      '<div class="so-feed-card__img"><img class="' + (it.img ? '' : 'event-dynamic-image blur-image') + '" src="' + (it.img ? esc(it.img) : window.soTile(it.name)) + '" alt="' + esc(it.name) + '" width="260" height="260" loading="lazy"' + (it.img ? '' : ' data-artist="' + encodeURIComponent(it.name) + '"') + '></div>' +
-      '<h3 class="so-feed-card__name">' + esc(it.name) + '</h3><p class="so-feed-card__meta">View tickets</p></a>';
+    const ini = String(it.name).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    let h = 0; for (let i = 0; i < it.name.length; i++) h = (h * 31 + it.name.charCodeAt(i)) % 360;
+    html += '<div class="so-recent__slide"><a class="so-rp" href="/artist/' + esc(it.slug) + '">' +
+      (it.img ? '<img class="so-topc__avatar" src="' + esc(it.img) + '" alt="" width="44" height="44" loading="lazy">' : '<span class="so-topc__avatar so-topc__avatar--init" style="--so-hue:' + h + '">' + esc(ini) + '</span>') +
+      '<span class="so-rp__txt"><strong>' + esc(it.name) + '</strong><small>View tickets</small></span>' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a></div>';
   });
   track.innerHTML = html;
   box.classList.remove('d-none');
   track.addEventListener('click', function (e) { var a = e.target.closest('[data-recent-event]'); if (a) (window.dataLayer = window.dataLayer || []).push({ event: 'recent_event_click', event_id: a.getAttribute('data-recent-event') }); });
-  if (window.soBatchLoadImages) window.soBatchLoadImages(track, '.event-dynamic-image', function () { return true; });
   const clear = box.querySelector('[data-so-recent-clear]');
   if (clear) clear.addEventListener('click', function () {
     try { localStorage.removeItem('so_recent_viewed'); localStorage.removeItem('so_recent_events'); } catch (e) {}
@@ -1206,7 +1204,7 @@ document.addEventListener('error', function (e) {
     tab = String(tab || '').toLowerCase();
     return tab === 'sports' ? 'sports' : (tab === 'theatre' || tab === 'theater') ? 'theater' : tab === 'festival' ? 'festival' : 'concert';
   }
-  function dateText(ev) {
+  function dateText(ev, noTime) {
     var out = '';
     if (/^\d{4}-\d{2}-\d{2}/.test(ev.iso || '')) {
       var p = ev.iso.slice(0, 10).split('-').map(Number);
@@ -1215,7 +1213,7 @@ document.addEventListener('error', function (e) {
       out = String(ev.date || '');
     }
     var t = String(ev.time || '').trim();
-    if (out && /^\d{4}-\d{2}-\d{2}/.test(ev.iso || '')) out += ' • ' + (t && !/^tba$/i.test(t) ? esc(t) : 'Time TBA').replace(/&amp;/g, '&');
+    if (out && !noTime && /^\d{4}-\d{2}-\d{2}/.test(ev.iso || '')) out += ' • ' + (t && !/^tba$/i.test(t) ? esc(t) : 'Time TBA').replace(/&amp;/g, '&');
     return out;
   }
   function slugOf(v) { return (typeof normalizeKey === 'function') ? normalizeKey(v) : String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
@@ -1228,17 +1226,17 @@ document.addEventListener('error', function (e) {
     opts = opts || {};
     var k = kind(ev.tab);
     var slug = slugOf(ev.name) + '-' + ev.id;
-    var href = '/event/' + slug;
+    var href = opts.href || ('/event/' + slug);
     var saved = storeOk() && savedIds().indexOf(String(ev.id)) !== -1;
     var place = ev.loc ? '<small>' + esc(ev.loc) + (ev.dist != null ? ' · ' + (ev.dist < 3 ? 'nearby' : ev.dist + ' mi') : '') + '</small>' : '';
-    return '<article class="so-evc so-evc--' + k + '">' +
+    return '<article class="so-evc so-evc--' + k + (opts.tint ? ' so-evc--tint' : '') + '">' +
       '<div class="so-evc__top"><span class="so-evc__badge">' + ICONS[k] + LABEL[k] + '</span>' +
         (opts.status ? '<span class="so-evc__status' + (/^Popular/.test(opts.status) ? ' so-evc__status--hot' : '') + '">' + esc(opts.status) + '</span>' : '') +
         (storeOk() ? '<button type="button" class="so-evc__save' + (saved ? ' is-saved' : '') + '" aria-pressed="' + (saved ? 'true' : 'false') + '" aria-label="Save ' + esc(ev.name) + '" data-so-evc-save data-id="' + esc(ev.id) + '" data-slug="' + esc(slug) + '" data-name="' + esc(ev.name) + '" data-iso="' + esc(ev.iso || '') + '" data-city="' + esc(ev.loc || '') + '" data-venue="' + esc(ev.venue || '') + '" data-price="' + esc(ev.price || '') + '"><svg width="20" height="20" viewBox="0 0 24 24" fill="' + (saved ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.3C1.7 8 3.6 5 6.7 5c1.9 0 3.5 1 5.3 3 1.8-2 3.4-3 5.3-3 3.1 0 5 3 3.9 6.2-1.7 4.7-9.2 9.3-9.2 9.3z"/></svg></button>' : '') +
       '</div>' +
       '<h3 class="so-evc__name"><a class="so-evc__link" href="' + href + '">' + esc(ev.name) + '</a></h3>' +
       '<ul class="so-evc__meta">' +
-        '<li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg><span>' + esc(dateText(ev)) + '</span></li>' +
+        '<li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg><span>' + esc(dateText(ev, opts.noTime)) + '</span></li>' +
         (ev.venue ? '<li><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12zm0-9.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6z"/></svg><span>' + esc(ev.venue) + place + '</span></li>' : '') +
       '</ul>' +
       '<div class="so-evc__foot">' + (ev.price ? '<span class="so-evc__price">From <strong>' + esc(ev.price) + '</strong></span>' : '<span class="so-evc__price so-evc__price--none">View tickets</span>') +

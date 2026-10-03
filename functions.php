@@ -1610,22 +1610,10 @@ function generateTeamSkeleton($count = 6) {
 }
 
 function buildVenueSkeleton($count = 8) {
-
     $html = '';
-
     for ($i = 0; $i < $count; $i++) {
-
-        $html .= '
-            <div class="venue-card-skeleton">
-                <div class="skeleton-img shimmer"></div>
-                <div class="venue-content text-center p-3">
-                    <div class="skeleton-line skeleton-title shimmer"></div>
-                    <div class="skeleton-line skeleton-location shimmer"></div>
-                </div>
-            </div>
-        ';
+        $html .= '<div class="so-vc-slide"><div class="so-vc so-vc--' . ($i % 4) . ' so-vc--skeleton" aria-hidden="true"><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></div></div>';
     }
-
     return $html;
 }
 
@@ -1806,11 +1794,26 @@ function renderExploreBar($basePath, array $opts = []) {
     ?>
     <div class="so-explore" data-so-explore data-hero="<?php echo htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8'); ?>" data-when="<?php echo htmlspecialchars($when, ENT_QUOTES, 'UTF-8'); ?>" data-sort="<?php echo htmlspecialchars($sort, ENT_QUOTES, 'UTF-8'); ?>" data-radius="<?php echo (int) $radius; ?>" data-max="<?php echo (int) $max; ?>" data-catid="<?php echo (int) $catId; ?>" data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
         <nav class="so-cattabs" aria-label="Event categories">
-            <?php foreach ($tabs as $href => $label) { ?>
-                <a href="<?php echo $href; ?>" <?php echo $href === $basePath ? 'class="active" aria-current="page"' : ''; ?>><?php echo $label; ?></a>
+            <?php $tabIcons = ['/buy-tickets-online' => 'ticket', '/game-day-tickets' => 'trophy', '/concert-tickets-for-sale' => 'mic', '/buy-broadway-tickets' => 'masks', '/upcoming-music-festivals' => 'tent'];
+            foreach ($tabs as $href => $label) { ?>
+                <a href="<?php echo $href; ?>" <?php echo $href === $basePath ? 'class="active" aria-current="page"' : ''; ?>><?php echo function_exists('soCategoryTileIcon') ? soCategoryTileIcon($tabIcons[$href] ?? 'ticket') : ''; ?><span><?php echo $label; ?></span></a>
             <?php } ?>
         </nav>
-        <div class="so-chips" role="group" aria-label="Filters">
+        <?php
+        // Sub-categories of the hub: links to pages that exist (each a genre or league page), the hub itself first and highlighted.
+        $subs = [
+            '/concert-tickets-for-sale' => [['Pop and rock', '/pop-rock-concert-tickets'], ['Alternative', '/alternative-concert-tickets'], ['Country', '/country-music-tickets'], ['Hip hop and rap', '/hip-hop-tickets'], ['R&B and soul', '/rnb-soul-concert-tickets'], ['Latin', '/latin-music-tickets'], ['Hard rock and metal', '/metal-concert-tickets'], ['Jazz and blues', '/jazz-and-blues-tickets'], ['Electronic', '/electronic-music-tickets'], ['Classical', '/classical-music-tickets'], ['Festivals', '/upcoming-music-festivals']],
+            '/game-day-tickets' => [['NFL', '/nfl-tickets'], ['NBA', '/nba-tickets'], ['MLB', '/mlb-tickets'], ['NHL', '/nhl-tickets'], ['MLS', '/mls-tickets']],
+            '/buy-broadway-tickets' => [['Comedy', '/comedy-show-tickets'], ['Family shows', '/category/children-family-1869']],
+        ];
+        $subAll = ['/concert-tickets-for-sale' => 'All concerts', '/game-day-tickets' => 'All sports', '/buy-broadway-tickets' => 'All theater'];
+        if (isset($subs[$basePath])) { ?>
+        <nav class="so-subcats" aria-label="<?php echo htmlspecialchars($subAll[$basePath], ENT_QUOTES, 'UTF-8'); ?> by type">
+            <a class="so-subcat so-subcat--on" href="<?php echo $basePath; ?>" aria-current="page"><?php echo htmlspecialchars($subAll[$basePath], ENT_QUOTES, 'UTF-8'); ?></a>
+            <?php foreach ($subs[$basePath] as [$sl, $sh]) { ?><a class="so-subcat" href="<?php echo htmlspecialchars($sh, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($sl, ENT_QUOTES, 'UTF-8'); ?></a><?php } ?>
+        </nav>
+        <?php } ?>
+        <div class="so-chips so-chips--one" role="group" aria-label="Filters">
             <div class="so-chip-wrap">
                 <button type="button" class="so-chip so-chip--on" data-so-loc aria-haspopup="dialog" aria-expanded="false">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
@@ -1823,8 +1826,6 @@ function renderExploreBar($basePath, array $opts = []) {
                     <button type="button" class="so-pop__row" data-so-loc-here>Use my current location</button>
                 </div>
             </div>
-            <button type="button" class="so-chip so-chip--quick<?php echo $when === 'today' ? ' so-chip--on' : ''; ?>" data-so-quick="today" aria-pressed="<?php echo $when === 'today' ? 'true' : 'false'; ?>"><span data-so-quick-label>Tonight</span></button>
-            <button type="button" class="so-chip so-chip--quick<?php echo $when === 'weekend' ? ' so-chip--on' : ''; ?>" data-so-quick="weekend" aria-pressed="<?php echo $when === 'weekend' ? 'true' : 'false'; ?>"><span data-so-quick-label>This weekend</span></button>
             <?php
             $dd = function ($key, $icon, $label, array $dopts, $current) {
                 $cur = isset($dopts[$current]) ? $current : (string) array_key_first($dopts);
@@ -1847,7 +1848,7 @@ function renderExploreBar($basePath, array $opts = []) {
         </div>
         <section class="so-near" data-so-near hidden aria-live="polite">
             <h2 class="so-near__title" data-so-near-title>Explore <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> near you</h2>
-            <div class="so-near__grid" data-so-near-grid></div>
+            <div class="list-category-bg so-near__card"><div class="section-artist-content event-row-all so-near__list" data-so-near-grid></div></div>
             <button type="button" class="so-near__more" data-so-near-more hidden>See more</button>
         </section>
         <h2 class="so-allhead">All <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> in the USA</h2>

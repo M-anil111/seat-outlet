@@ -1,9 +1,5 @@
 /* Escape a value for HTML text and attributes: names come from the ticket API and are put into innerHTML templates below. */
 function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-$('.venue-slider').on('setPosition', function(){
-	equalHeightSlider('venue-slider', 'venue-card');
-});
-
 /* =====================================================
     EVENTS Section
 ===================================================== */
@@ -352,42 +348,21 @@ $('.venue-slider').on('setPosition', function(){
 
           let html = '';
   
+          const eyebrow = document.getElementById('venueEyebrow');
+          if (eyebrow) eyebrow.textContent = (scope === 'near' && (getCookie('so_label') || '')) ? 'Trending near you' : 'Popular venues';
+
           data.forEach((venue, index) => {
-            const loadingType = index === 0 ? 'eager' : 'lazy';
-            const fetchPriority = index === 0 ? 'high' : 'low';
-        
-            html += `
-              <a href="/venue/${encodeURI(String(venue.slug || ''))}" class="team-link">
-                <div class="card venue-card">
-                  <div class="venue-img">
-                    <img
-                      src="${soEsc(venue.image)}"
-                      alt="${soEsc(venue.name)}"
-                      class="img-fluid venue-dynamic-image blur-image"
-                      data-venue="${encodeURIComponent(venue.name)}"
-                      loading="${loadingType}"
-                      fetchpriority="${fetchPriority}"
-                      width="278"
-                      height="200"
-                    >
-                  </div>
-                  <div class="venue-content text-center">
-                    <h3 class="venue-title">${soEsc(venue.name)}</h3>
-                    <p class="venue-location mb-0">
-                      ${soEsc(venue.city)}, ${soEsc(venue.state)}
-                    </p>
-                  </div>
-                </div>
-              </a>
-            `;
-        });
-  
+            html += '<div class="so-vc-slide"><a class="so-vc so-vc--' + (index % 4) + '" href="/venue/' + encodeURI(String(venue.slug || '')) + '">' +
+              '<h3 class="so-vc__name">' + soEsc(venue.name) + '</h3>' +
+              '<p class="so-vc__loc">' + soEsc(venue.city) + (venue.state ? ', ' + soEsc(venue.state) : '') + '</p>' +
+              '<span class="so-vc__cta">View Events <span class="so-vc__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span></a></div>';
+          });
+
           container.innerHTML = html;          
           setTimeout(() => {
             initVenueSlider();
           }, 50);
           
-          loadVenueImagesOneByOne(container, loadToken);
 
         })
         .catch(err => {
@@ -423,7 +398,7 @@ $('.venue-slider').on('setPosition', function(){
           slidesToShow: 4,
           slidesToScroll: 1,
           arrows: loader === 'skeleton' ? false : true,
-          autoplay: loader === 'skeleton' ? false : true,
+          autoplay: false,
           dots: false,
           infinite: false,
           responsive: [
@@ -640,14 +615,8 @@ document.addEventListener('DOMContentLoaded', function () {
     return window.soEvCard(ev, { status: badge });
   }
 
-  // "Popular this weekend": compact text-only cards (name, then date and venue).
-  function popCard(ev) {
-    const p = (ev.iso || '').split('-').map(Number);
-    const d = p.length === 3 ? new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-    return '<a class="so-pop-card" href="/event/' + slug(ev.name) + '-' + ev.id + '">' +
-      '<span class="so-pop-card__name">' + esc(ev.name) + '</span>' +
-      '<span class="so-pop-card__meta">' + esc(d + (ev.venue ? ' \u00b7 ' + ev.venue : '')) + '</span></a>';
-  }
+  // "Popular this weekend": the same text-only card as everywhere else, with a soft category-colored header.
+  function popCard(ev) { return window.soEvCard(ev, { tint: true }); }
 
   function render(box, kind, data, label) {
     const track = box.querySelector('[data-so-feed-track]');
@@ -659,6 +628,8 @@ document.addEventListener('DOMContentLoaded', function () {
       box.hidden = false;
       track.innerHTML = events.map(popCard).join('');
       track.scrollLeft = 0;
+      const nx = box.querySelector('[data-so-feed-next]');
+      if (nx && !nx.dataset.bound) { nx.dataset.bound = '1'; nx.addEventListener('click', function () { track.scrollBy({ left: Math.max(260, track.clientWidth * 0.8), behavior: 'smooth' }); }); }
       return;
     }
     // "This weekend near you" only makes sense for events really close by (not the "nearest anywhere" fallback).
