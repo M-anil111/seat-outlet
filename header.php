@@ -247,7 +247,7 @@ include_once 'functions.php';
 
 </head>
 
-<body>
+<body<?php echo !empty($soHomeHero) ? ' class="so-home"' : ''; ?>>
     <?php
     // The strip above the header is the page's one <h1>: its focus keyword (admin > Page rules, or the page's own).
     // The same keyword closes the footer. Any other <h1> in a page template is turned into an <h2> that looks the same.
@@ -265,6 +265,8 @@ include_once 'functions.php';
     // when the visitor arrived with a search (filled fields). Wider screens always show it (CSS).
     $soSearchOpen = in_array($soReqPath, ['/search'], true)
         || !empty($searchInput['locationInputHeader']) || !empty($searchInput['keywordHeader']) || !empty($searchInput['startInputHeader']);
+    // The home page shows the search form inside its hero (index.php prints $soHeaderSearchHtml there), so it is always open.
+    if (!empty($soHomeHero)) { $soSearchOpen = true; }
     ?>
     <div class="header-top-section">
         <!-- Top keyword strip -->
@@ -335,6 +337,7 @@ include_once 'functions.php';
                         </div>
                     </div>
                 </div>
+                <?php if (!empty($soHomeHero)) { ob_start(); } ?>
                 <form method="get" action="/search" class="search-bar-form" id="soSearch"<?php echo $soSearchOpen ? '' : ' data-so-collapsed'; ?>>
                     <div class="search-bar-container d-flex flex-md-row p-md-1">
                         <div class="city-location search-item d-flex align-items-center gap-md-2 gap-1 px-3 py-2 flex-fill header-location-close locationInputFieldWrapper">
@@ -388,6 +391,7 @@ include_once 'functions.php';
                         <button class="btn btn-stub-primary px-4 py-2 small fw-semibold rounded-pill d-md-block d-none">Search</button>
                     </div>
                 </form>
+                <?php if (!empty($soHomeHero)) { $soHeaderSearchHtml = ob_get_clean(); } ?>
             </div>
         </header>
     </div>
