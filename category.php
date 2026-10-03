@@ -41,7 +41,7 @@ $soCatSeo = soCategorySeo($soCatCfg, $soCatData);
 $soCatHero = soCategoryHero($id, $soCatData['path'] ?? '');
 $year = date('Y');
 // Which hub (concerts, sports, theater) this category sits under, from its category path: used to mark the right tab and show its sub-categories.
-$soCatPath = (string) ($soCatData['path'] ?? '');
+$soCatPath = (string) ($cat['results'][0]['path'] ?? ($soCatData['path'] ?? ''));   // the category's own place in the tree (events are not needed)
 $soFamily = strpos($soCatPath, '.1988.') !== false ? '/game-day-tickets' : (strpos($soCatPath, '.1989.') !== false ? '/buy-broadway-tickets' : (strpos($soCatPath, '.1986.') !== false ? '/concert-tickets-for-sale' : ''));
 if ($soFamily === '' && isset($soGenre['kind'])) { $soFamily = $soGenre['kind'] === 'sports' ? '/game-day-tickets' : ($soGenre['kind'] === 'concerts' ? '/concert-tickets-for-sale' : '/buy-broadway-tickets'); }
 

@@ -273,6 +273,12 @@ function soSitemapBuildFiles(string $tmp): array {
     foreach ((cache_get('top_categories', 30 * 86400) ?: []) as $bucket) {
         foreach ((array) $bucket as $cat) { if (!empty($cat['slug'])) { $loc = $base . '/category/' . $cat['slug']; $pages[$loc] = [$loc, null]; } }
     }
+    // Every sub-category the ticket API lists under concerts, sports and theater that has tickets on sale (the same list as the sub-category pills).
+    if (function_exists('soHubSubcategories')) {
+        foreach (array_keys(SO_HUB_ROOTS) as $hub) {
+            foreach (soHubSubcategories($hub) as $sub) { $loc = $base . $sub['href']; $pages[$loc] = [$loc, null]; }
+        }
+    }
     $emit('pages', array_values($pages));
 
     $keep = function (string $loc) use ($zero, $base) { return !isset($zero[substr($loc, strlen($base))]); };
