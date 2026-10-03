@@ -927,6 +927,7 @@ window.soBatchLoadImages = async function (container, selector, isCurrent) {
       img.style.transition = 'opacity 0.3s ease';
       const reveal = () => {
         if (typeof isCurrent === 'function' && !isCurrent()) return;
+        if (!img.dataset.soFallback) img.dataset.soFallback = img.getAttribute('src') || '';
         img.src = r.image;
         if (r.credit) img.title = r.credit;
         requestAnimationFrame(() => { img.style.opacity = '1'; img.classList.add('loaded'); });
@@ -1168,3 +1169,18 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () { f.querySelectorAll('input[name]').forEach(function (i) { i.disabled = false; }); }, 1500);
     });
 })();
+
+
+/* =====================================================
+    Expired or deleted picture: never show a broken image.
+    A stored artist or venue picture can disappear from storage (file removed, link expired). The image error does not bubble, so it is
+    caught here in the capture phase and the tile goes back to the category placeholder it started with (data-so-fallback), once.
+===================================================== */
+document.addEventListener('error', function (e) {
+  const img = e.target;
+  if (!img || img.tagName !== 'IMG' || img.dataset.soFailed) return;
+  img.dataset.soFailed = '1';
+  const fb = img.dataset.soFallback || img.getAttribute('data-fallback') || '';
+  if (fb && img.getAttribute('src') !== fb) { img.src = fb; img.classList.add('loaded'); img.style.opacity = '1'; return; }
+  img.style.visibility = 'hidden';   // nothing better to show: keep the card's layout, lose the broken-image icon
+}, true);

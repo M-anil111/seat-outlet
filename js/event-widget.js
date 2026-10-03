@@ -127,7 +127,7 @@
     if (reload) reload.hidden = kind !== 'failed';
     box.classList.remove('d-none');
     if (map) map.style.display = 'none';
-    root.classList.add('so-empty');
+    root.classList.add('so-ev-empty');
     if (hero.price) hero.price.textContent = kind === 'failed' ? 'Seat map unavailable' : 'No tickets listed right now';
     if (hero.cta) { hero.cta.textContent = kind === 'failed' ? 'See what to do' : 'Get notified'; hero.cta.setAttribute('href', '#so-no-tickets'); }
     var nudgeX = document.querySelector('#soNudge .so-nudge__x');
@@ -143,7 +143,7 @@
   function recover() {
     if (!state.failed) return;
     state.failed = false;
-    root.classList.remove('so-empty');
+    root.classList.remove('so-ev-empty');
     if (box) box.classList.add('d-none');
     if (map) map.style.display = '';
     if (hero.price) hero.price.innerHTML = original.price;
