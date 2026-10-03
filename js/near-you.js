@@ -39,13 +39,39 @@
     return '';
   }
 
+  // The same row as the national list below ("All concerts in the USA"): date tile, day and time, venue, place, name, price, button.
   function card(ev, i) {
     // "Popular" is only claimed when the grid really is sorted by sales (or is the nationwide list), never for "nearest first".
     var badge = whenBadge(ev.iso) || (ev.top ? (state.scope === 'nationwide' ? 'Popular nationwide' : 'Popular near you') : '');
-    return window.soEvCard(ev, { status: badge });
+    var d = null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(ev.iso || '')) { var p = ev.iso.slice(0, 10).split('-').map(Number); d = new Date(p[0], p[1] - 1, p[2]); }
+    var mon = d ? d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase() : '';
+    var day = d ? ('0' + d.getDate()).slice(-2) : '';
+    var wd = d ? d.toLocaleDateString('en-US', { weekday: 'short' }) : '';
+    var yr = d && d.getFullYear() > new Date().getFullYear() ? '<div class="month">' + d.getFullYear() + '</div>' : '';
+    var href = '/event/' + slug(ev.name) + '-' + ev.id;
+    var away = ev.dist != null ? (ev.dist < 3 ? 'nearby' : ev.dist + ' mi away') : '';
+    var time = String(ev.time || '').trim();
+    var hasPrice = !!ev.price;
+    return '<div class="d-flex align-items-center justify-content-between performer-event-item">' +
+      '<div class="date-box text-center me-3"><div class="month">' + esc(mon) + '</div><div class="day">' + esc(day) + '</div>' + yr + '</div>' +
+      '<div class="flex-grow-1 w-50">' +
+        '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="fw-semibold day-weeks">' + esc(wd) + '</span>' + (time ? '<span class="dot">&middot;</span><span class="time-clock">' + esc(time) + '</span>' : '') +
+          (badge ? '<span class="so-row__badge' + (/^Popular/.test(badge) ? ' so-row__badge--hot' : '') + '">' + esc(badge) + '</span>' : '') + '</div>' +
+        (ev.venue ? '<div class="ev-venue"><span>' + esc(ev.venue) + '</span></div>' : '') +
+        (ev.loc ? '<div class="ev-place"><span>' + esc(ev.loc) + '</span>' + (away ? '<span class="so-row__away"> &middot; ' + esc(away) + '</span>' : '') + '</div>' : '') +
+        '<div class="ev-name"><a href="' + href + '">' + esc(ev.name) + '<span class="visually-hidden"> tickets</span></a></div>' +
+      '</div>' +
+      '<div class="ms-3">' + (hasPrice ? '<div class="event-price-tag">From <strong>' + esc(ev.price) + '</strong></div>' : '<div class="event-price-tag event-price-tag--none">No tickets listed yet</div>') +
+        '<a href="' + href + '" class="btn ' + (hasPrice ? 'btn-primary' : 'btn-outline-primary') + ' d-flex align-items-center gap-2" aria-label="' + (hasPrice ? 'Buy tickets for ' : 'View ') + esc(ev.name) + '"><span>' + (hasPrice ? 'Buy Tickets' : 'View Event') + '</span><i class="bi bi-chevron-right"></i></a></div>' +
+    '</div>';
   }
 
-  function skeleton(n) { return window.soEvCardSkeleton(n); }
+  function skeleton(n) {
+    var h = '';
+    for (var i = 0; i < n; i++) h += '<div class="so-row-skel" aria-hidden="true"><span class="so-evc__sk so-row-skel__date"></span><span class="so-row-skel__txt"><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span></span></div>';
+    return h;
+  }
 
   var notice = null;
   var WHEN_TEXT = { today: 'today', weekend: 'this weekend', week: 'in the next 7 days', month: 'in the next 30 days' };
@@ -115,7 +141,7 @@
         grid.innerHTML = '';
       }
       events.forEach(function (e, i) { e.top = (page === 1 && i < 3) && ((state.sort === 'popular' && state.scope === 'near') || state.scope === 'nationwide'); });
-      var start = grid.querySelectorAll('.so-evc:not(.so-evc--skeleton)').length;
+      var start = grid.querySelectorAll('.performer-event-item').length;
       var html = events.map(function (e, i) { return card(e, start + i); }).join('');
       if (page === 1) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
       more.hidden = !(data && data.hasMore);
@@ -125,10 +151,9 @@
       // On phones this grid is a sideways carousel, so new cards used to land off-screen and "See more" looked dead. After the
       // first tap the grid opens up into rows and the first new card is brought into view.
       if (page > 1) {
-        var fresh = grid.querySelectorAll('.so-evc:not(.so-evc--skeleton)')[start];
+        var fresh = grid.querySelectorAll('.performer-event-item')[start];
         if (fresh && fresh.scrollIntoView) { fresh.scrollIntoView({ behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest' }); }
       }
-      if (window.soBatchLoadImages) window.soBatchLoadImages(grid, '.event-dynamic-image:not(.loaded)', function () { return my === state.token; });
     }).catch(function () {
       if (my !== state.token) return;
       more.disabled = false;

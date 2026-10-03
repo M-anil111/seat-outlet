@@ -7,6 +7,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  *
  *   ADSENSE_CLIENT        the publisher id, "ca-pub-" followed by 16 digits
  *   ADSENSE_SLOT_HOME     the ad unit id (digits) of the banner shown under the home page hero
+ *   ADSENSE_SLOT_LISTING  the ad unit id (digits) of the box under "Shop Tickets Worry Free" on the listing pages (concerts, sports, theater, festivals, all events)
  *
  * Add more placements by calling soAdSlot('name') and a matching ADSENSE_SLOT_<NAME> setting. An ad unit whose id is not set prints
  * nothing, so there is never an empty gap. The slot has a fixed minimum height, so the page does not jump when the ad arrives
@@ -21,7 +22,7 @@ function soAdsenseClient(): string {
 }
 
 /** The ad unit markup for a placement ('home' reads ADSENSE_SLOT_HOME), or '' when AdSense is not set up for it. */
-function soAdSlot(string $placement): string {
+function soAdSlot(string $placement, string $format = 'horizontal'): string {
     $client = soAdsenseClient();
     $slot = (string) getenv('ADSENSE_SLOT_' . strtoupper(preg_replace('/[^a-z0-9]/i', '_', $placement)));
     if ($client === '' || !preg_match('/^\d{6,20}$/', $slot)) return '';
@@ -29,7 +30,7 @@ function soAdSlot(string $placement): string {
     return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . '" aria-label="Advertisement" data-so-ad>'
         . '<span class="so-ad__label">Advertisement</span>'
         . '<ins class="adsbygoogle" style="display:block" data-ad-client="' . htmlspecialchars($client, ENT_QUOTES, 'UTF-8') . '" data-ad-slot="' . htmlspecialchars($slot, ENT_QUOTES, 'UTF-8')
-        . '" data-ad-format="horizontal" data-full-width-responsive="true"></ins></aside>';
+        . '" data-ad-format="' . ($format === 'rectangle' ? 'rectangle' : 'horizontal') . '" data-full-width-responsive="true"></ins></aside>';
 }
 
 /** Footer script: loads AdSense once, after the page has loaded, only when a slot was printed and the visitor has not opted out. */

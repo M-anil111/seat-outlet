@@ -455,6 +455,7 @@ function soRenderListingPage(array $o): void {
 								<i class="bi bi-shield-check"></i>
 							</div>
 						</div>
+						<?php echo function_exists('soAdSlot') ? soAdSlot('listing', 'rectangle') : ''; ?>
 					</div>
 				</div>
 			</div>

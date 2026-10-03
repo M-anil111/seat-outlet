@@ -7431,3 +7431,41 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
   .so-topc__title { font-size: 19px; bottom: 44px; }
   .so-topc__tag { right: 12px; }
 }
+
+/* ==========================================================================
+   Listing hubs: category tabs with icons, sub-category pills, one filter row, near-you in list view
+   ========================================================================== */
+.so-cattabs { gap: 4px; }
+.so-cattabs a { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 14px 12px; font-size: 15px; }
+.so-cattabs a svg { width: 26px; height: 26px; color: #6b6f7b; }
+.so-cattabs a.active { color: #5b21b6; border-bottom-color: #6d28d9; }
+.so-cattabs a.active svg { color: #6d28d9; }
+.so-subcats { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 12px; margin: 0 0 8px; border-bottom: 1px solid #e3e5ea; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.so-subcats::-webkit-scrollbar { display: none; }
+.so-subcat { flex: none; display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 980px; border: 1.5px solid #d3d6dd; background: #fff; color: #1f2937; font-size: 15px; font-weight: 500; text-decoration: none; white-space: nowrap; transition: border-color .15s ease, background .15s ease; }
+.so-subcat:hover { border-color: #6d28d9; color: #5b21b6; }
+.so-subcat--on { background: #6d28d9; border-color: #6d28d9; color: #fff; font-weight: 600; }
+.so-subcat--on:hover { color: #fff; background: #5b21b6; }
+.so-chips--one { flex-wrap: wrap; gap: 8px; margin: 14px 0 20px; }
+.so-chips--one .so-chip { height: 42px; padding: 0 14px; border-radius: 12px; font-size: 15px; font-weight: 500; border-width: 1.5px; }
+.so-chips--one .so-chip--on { border-color: #6d28d9; background: #f3ecff; color: #5b21b6; }
+.so-chips--one .so-chip span { max-width: 180px; }
+.so-near__card { margin: 0 0 8px; }
+.so-near__list .so-near__empty { padding: 22px 16px; }
+.so-row__badge { display: inline-flex; padding: 3px 9px; border-radius: 980px; background: #f2f3f7; color: #3a3a3c; font-size: 12px; font-weight: 700; line-height: 1.2; }
+.so-row__badge--hot { background: #fde7f0; color: #b3135b; }
+.event-row-all .ev-venue span { font-size: 17px; font-weight: 700; color: var(--so-ink); line-height: 1.25; }
+.event-row-all .ev-place span { font-size: 14px; color: #6b7280; }
+.so-row-skel { display: flex; align-items: center; gap: 16px; padding: 18px 8px; border-bottom: 1px solid #eceef2; }
+.so-row-skel__date { width: 58px; height: 64px; border-radius: 14px; flex: none; }
+.so-row-skel__txt { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 575.98px) {
+  .so-cattabs a { padding: 8px 10px 10px; font-size: 14px; }
+  .so-cattabs a svg { width: 24px; height: 24px; }
+  .so-subcats { margin: 0 -12px 6px; padding: 2px 12px 10px; }
+  .so-subcat { height: 38px; padding: 0 14px; font-size: 14px; }
+  .so-near__list { padding-left: 8px; padding-right: 8px; }
+}
+.so-ad--listing { width: 100%; align-self: stretch; max-width: none; margin: 16px 0 0; padding: 0; }
+.so-ad--listing::before { left: 0; right: 0; }
+.so-ad--listing .adsbygoogle { min-height: 250px; margin: 0 6px 6px; }
