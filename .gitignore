@@ -66,3 +66,6 @@ cache/sitemap_xml.json
 cache/search_vocab.json
 cache/image_worker.*
 cache/home_feed_*.json
+
+# Generated at runtime by inc/sitemap-build.php (static sitemap files served from the web root)
+/sitemaps/
