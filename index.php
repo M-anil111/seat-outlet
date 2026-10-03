@@ -1,5 +1,5 @@
 <?php
-$soHomeHero = true;   // header.php hands the search form back in $soHeaderSearchHtml: the hero below prints it
+$soHomeHero = true;   // marks the home page for the header (body class)
 include 'header.php';
 $festivalNames = getTopFestivalPerformers();
 
@@ -50,29 +50,12 @@ foreach ($fallbackCategories as $key => $list) {
 }
 ?>
 <section class="so-hero2" aria-label="Find tickets">
-  <img class="so-hero2__bg" src="/images/home-slider-1440.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w, /images/home-slider.webp 1920w" sizes="100vw" width="1440" height="825" alt="" fetchpriority="high" decoding="async">
+  <img class="so-hero2__bg" src="/images/home-slider-1440.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w" sizes="100vw" alt="" width="1440" height="700" fetchpriority="high" decoding="async">
   <div class="so-hero2__shade" aria-hidden="true"></div>
   <div class="container so-hero2__inner">
-    <p class="so-hero2__pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v1.5h18V16a2 2 0 0 0 0-4v0a2 2 0 0 0 0-4V6.5H3V8zM14 6.5v11"/></svg>Live events. Better seats.</p>
     <h1 class="so-hero2__title">Experience <span>live events</span>,<br class="d-none d-md-block"> made easy.</h1>
     <p class="so-hero2__sub">Concerts, sports, theater and more. Compare seats and prices from sellers across our marketplace.</p>
-    <div class="so-hero2__search"><?php echo $soHeaderSearchHtml ?? ''; ?></div>
-    <ul class="so-hero2__perks">
-      <li><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v1.5h18V16a2 2 0 0 0 0-4v0a2 2 0 0 0 0-4V6.5H3V8zM14 6.5v11"/></svg><span>Wide selection<br>of seats</span></li>
-      <li><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2c-.4-.9-1.4-1.4-2.8-1.4-1.6 0-2.7.8-2.7 2 0 3 5.6 1.2 5.6 4.2 0 1.2-1.2 2-2.9 2-1.5 0-2.6-.6-3-1.6M12 6.5v1.3M12 16.2v1.3"/></svg><span>Compare prices<br>across sellers</span></li>
-      <li><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 2.8v5.6c0 4.5-3 8.2-7.5 9.6-4.5-1.4-7.5-5.1-7.5-9.6V5.8L12 3z"/><path d="M8.8 12l2.3 2.3 4.2-4.6"/></svg><span>Trusted marketplace<br>and secure checkout</span></li>
-      <li><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/><path d="M19 20c0 1.2-1.4 2-4 2h-2"/></svg><span>100% Worry-Free<br>Guarantee</span></li>
-    </ul>
-    <nav class="so-hero2__cats" aria-label="Browse tickets by category">
-      <?php foreach ([['Concerts', '/concert-tickets-for-sale', 'concerts'], ['Sports', '/game-day-tickets', 'sports'], ['Theater', '/buy-broadway-tickets', 'theater'],
-                      ['Festivals', '/upcoming-music-festivals', 'festivals'], ['Artists &amp; Teams', '/all-artists-and-teams', 'artists'], ['Cities', '/city-events', 'cities']] as [$cl, $ch, $ck]) { ?>
-      <a class="so-hero2__cat" href="<?php echo $ch; ?>">
-        <img src="/images/home-cat-<?php echo $ck; ?>.webp" alt="" width="480" height="270" loading="lazy" decoding="async">
-        <span class="so-hero2__cat-name"><?php echo $cl; ?></span>
-        <span class="so-hero2__cat-go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-      </a>
-      <?php } ?>
-    </nav>
+    <button type="button" class="so-hero2__btn" data-so-open-search>Search Events <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </div>
 </section>
 
