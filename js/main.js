@@ -1072,14 +1072,13 @@ document.addEventListener('DOMContentLoaded', function () {
 })();
 
 /* =====================================================
-    PHONES: search icon folds the header search open and closed
+    Search: the header's Search button (an icon on phones) and the home hero's "Search Events" button fold the header search open and closed
 ===================================================== */
 (function () {
     var btn = document.querySelector('.so-search-toggle');
     var form = document.getElementById('soSearch');
     if (!btn || !form) return;
-    btn.addEventListener('click', function () {
-        var open = form.hasAttribute('data-so-collapsed');
+    function setOpen(open) {
         if (open) { form.removeAttribute('data-so-collapsed'); } else { form.setAttribute('data-so-collapsed', ''); }
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
         btn.classList.toggle('is-open', open);
@@ -1087,6 +1086,13 @@ document.addEventListener('DOMContentLoaded', function () {
             var field = document.getElementById('keywordHeader');
             if (field) { try { field.focus({ preventScroll: true }); } catch (e) { field.focus(); } }
         }
+    }
+    btn.addEventListener('click', function () { setOpen(form.hasAttribute('data-so-collapsed')); });
+    document.querySelectorAll('[data-so-open-search]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            window.scrollTo({ top: 0, behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+            setOpen(true);
+        });
     });
 })();
 

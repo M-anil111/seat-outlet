@@ -31,7 +31,7 @@ function soAdSlot(string $placement, string $format = 'horizontal'): string {
     if ($client === '' || !preg_match('/^\d{6,20}$/', $slot)) {
         // Not set up yet: on the test site (or with ADSENSE_PLACEHOLDER=1) show where the ad will go. On the live site nothing is printed.
         if (!(defined('SITE_INDEXABLE') && !SITE_INDEXABLE) && getenv('ADSENSE_PLACEHOLDER') !== '1') return '';
-        return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . ' so-ad--placeholder" aria-label="Advertisement"><span class="so-ad__label">Advertisement</span><div class="so-ad__ph"><strong>Google AdSense</strong><span>Ad space (code coming soon)</span></div></aside>';
+        return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . ' so-ad--placeholder" aria-label="Advertisement"><span class="so-ad__label">Advertisement</span><div class="so-ad__ph"><strong>AdSense Banner</strong><span>(' . ($placement === 'listing' ? 'Medium rectangle 300 &times; 250' : 'Leaderboard 728 &times; 90') . ')</span></div></aside>';
     }
     $GLOBALS['soAdsenseUsed'] = true;
     return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . '" aria-label="Advertisement" data-so-ad>'

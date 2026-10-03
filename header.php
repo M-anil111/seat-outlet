@@ -261,16 +261,16 @@ include_once 'functions.php';
     ?>
     <a class="so-skip" href="#main">Skip to main content</a>
     <?php
-    // Phones: the search bar is folded away behind the search icon, except on the search page and
-    // when the visitor arrived with a search (filled fields). Wider screens always show it (CSS).
+    // The search bar is folded away behind the Search button (an icon on phones), except on the search page and
+    // when the visitor arrived with a search (filled fields).
     $soSearchOpen = in_array($soReqPath, ['/search'], true)
         || !empty($searchInput['locationInputHeader']) || !empty($searchInput['keywordHeader']) || !empty($searchInput['startInputHeader']);
-    // The home page shows the search form inside its hero (index.php prints $soHeaderSearchHtml there), so it is always open.
-    if (!empty($soHomeHero)) { $soSearchOpen = true; }
     ?>
     <div class="header-top-section">
+        <div class="so-topstrip">
         <!-- Top keyword strip -->
         <div class="keyword-topbar">
+            <svg class="so-strip-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v1.5h18V16a2 2 0 0 0 0-4v0a2 2 0 0 0 0-4V6.5H3V8zM14 6.5v11"/></svg>
             <?php if ($soKeywordH1) { ?>
             <h1 class="so-keyword-h1"><?php echo htmlspecialchars(soKeywordLabel($soFocusKw), ENT_QUOTES, 'UTF-8'); ?></h1>
             <?php } else { ?>
@@ -281,10 +281,11 @@ include_once 'functions.php';
         <!-- Trust bar: static (it used to scroll), keeps the resale disclosure in view -->
         <div class="tm-topbar">
             <ul class="so-trustbar">
-                <li>Trusted resale marketplace</li>
-                <li>Prices may be above or below face value</li>
-                <li><a href="/worry-free-guarantee">100% Worry-Free Guarantee</a></li>
+                <li><svg class="so-strip-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.1 8.1-7.5 9.5-4.4-1.4-7.5-4.9-7.5-9.5V6L12 3z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg>Trusted resale marketplace</li>
+                <li><svg class="so-strip-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Prices may be above or below face value</li>
+                <li><svg class="so-strip-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.5-1.5 2.5-4 2.5h-2"/></svg><a href="/worry-free-guarantee">100% Worry-Free Guarantee</a></li>
             </ul>
+        </div>
         </div>
         <!-- MAIN BLUE HEADER -->
         <header class="tm-header">
@@ -328,8 +329,8 @@ include_once 'functions.php';
                             </ul>
                         </nav>
                         <div class="tm-top-links so-header-actions d-flex d-sm-flex d-md-flex align-items-center">
-                            <button type="button" class="btn so-icon-btn so-search-toggle d-lg-none p-0" aria-label="Search" aria-expanded="<?php echo $soSearchOpen ? 'true' : 'false'; ?>" aria-controls="soSearch">
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+                            <button type="button" class="btn so-icon-btn so-search-toggle p-0" aria-label="Search" aria-expanded="<?php echo $soSearchOpen ? 'true' : 'false'; ?>" aria-controls="soSearch">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span class="so-search-toggle__label">Search</span>
                             </button>
                             <button type="button" class="btn mobile-menu-btn so-icon-btn d-lg-none p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-label="Open menu">
                                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg>
@@ -337,7 +338,6 @@ include_once 'functions.php';
                         </div>
                     </div>
                 </div>
-                <?php if (!empty($soHomeHero)) { ob_start(); } ?>
                 <form method="get" action="/search" class="search-bar-form" id="soSearch"<?php echo $soSearchOpen ? '' : ' data-so-collapsed'; ?>>
                     <div class="search-bar-container d-flex flex-md-row p-md-1">
                         <div class="city-location search-item d-flex align-items-center gap-md-2 gap-1 px-3 py-2 flex-fill header-location-close locationInputFieldWrapper">
@@ -391,7 +391,6 @@ include_once 'functions.php';
                         <button class="btn btn-stub-primary px-4 py-2 small fw-semibold rounded-pill d-md-block d-none">Search</button>
                     </div>
                 </form>
-                <?php if (!empty($soHomeHero)) { $soHeaderSearchHtml = ob_get_clean(); } ?>
             </div>
         </header>
     </div>
