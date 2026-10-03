@@ -5,7 +5,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  * Google AdSense slots. Nothing is printed, and no Google script is loaded, until AdSense is configured with two settings
  * (environment variables, normally in inc/env.local.php on the server):
  *
- *   ADSENSE_CLIENT        the publisher id, "ca-pub-" followed by 16 digits
+ *   ADSENSE_CLIENT        the publisher id, "ca-pub-" followed by 16 digits (built in: ca-pub-1077085934387393; this setting only overrides it)
  *   ADSENSE_SLOT_BANNER   the ad unit id (digits) of the banner shown under the hero banner on every page (ADSENSE_SLOT_HOME still works as the same setting)
  *   ADSENSE_SLOT_LISTING  the ad unit id (digits) of the box under "Shop Tickets Worry Free" on the listing pages (concerts, sports, theater, festivals, all events)
  *
@@ -14,24 +14,33 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  * (layout shift), and the AdSense script itself is loaded after the page has finished loading, so it cannot slow the first paint.
  * The ad stays off when the visitor has opted out (Global Privacy Control or the privacy bar's Decline): see inc/consent.php.
  * Until the settings exist the test site shows an empty framed placeholder (the live site prints nothing unless ADSENSE_PLACEHOLDER=1).
- * Also needed on the live domain: a file /ads.txt containing  google.com, pub-<16 digits>, DIRECT, f08c47fec0942fa0
+ * /ads.txt (repo root) carries  google.com, pub-1077085934387393, DIRECT, f08c47fec0942fa0  and every page has the google-adsense-account <meta> tag.
  */
+
+/** Seat Outlet's AdSense publisher id (it is public: it is in every page and in /ads.txt). ADSENSE_CLIENT overrides it. */
+const SO_ADSENSE_PUBLISHER = 'ca-pub-1077085934387393';
 
 function soAdsenseClient(): string {
     $c = (string) getenv('ADSENSE_CLIENT');
-    return preg_match('/^ca-pub-\d{10,20}$/', $c) ? $c : '';
+    if (preg_match('/^ca-pub-\d{10,20}$/', $c)) return $c;
+    return SO_ADSENSE_PUBLISHER;
+}
+
+/** <meta> for the <head> of every page: lets AdSense verify the site (the "Meta tag" method) without loading any Google script. */
+function soAdsenseMetaTag(): string {
+    return '<meta name="google-adsense-account" content="' . htmlspecialchars(soAdsenseClient(), ENT_QUOTES, 'UTF-8') . '">';
 }
 
 /** The ad unit markup for a placement ('home' reads ADSENSE_SLOT_HOME), or '' when AdSense is not set up for it. */
 function soAdSlot(string $placement, string $format = 'horizontal'): string {
     $client = soAdsenseClient();
     $slot = (string) getenv('ADSENSE_SLOT_' . strtoupper(preg_replace('/[^a-z0-9]/i', '_', $placement)));
-    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot'], true)) $slot = (string) getenv('ADSENSE_SLOT_BANNER');   // one banner ad unit can serve every banner position
-    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot'], true)) $slot = (string) getenv('ADSENSE_SLOT_HOME');     // the home banner setting from before banners were on every page
+    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing'], true)) $slot = (string) getenv('ADSENSE_SLOT_BANNER');   // one banner ad unit can serve every banner position
+    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing'], true)) $slot = (string) getenv('ADSENSE_SLOT_HOME');     // the home banner setting from before banners were on every page
     if ($client === '' || !preg_match('/^\d{6,20}$/', $slot)) {
         // Not set up yet: on the test site (or with ADSENSE_PLACEHOLDER=1) show where the ad will go. On the live site nothing is printed.
         if (!(defined('SITE_INDEXABLE') && !SITE_INDEXABLE) && getenv('ADSENSE_PLACEHOLDER') !== '1') return '';
-        return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . ' so-ad--placeholder" aria-label="Advertisement"><span class="so-ad__label">Advertisement</span><div class="so-ad__ph"><strong>AdSense Banner</strong><span>(' . ($placement === 'listing' ? 'Medium rectangle 300 &times; 250' : 'Leaderboard 728 &times; 90') . ')</span></div></aside>';
+        return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . ' so-ad--placeholder" aria-label="Advertisement"><span class="so-ad__label">Advertisement</span><div class="so-ad__ph"><strong>AdSense Banner</strong><span>(' . (in_array($placement, ['listing', 'side2'], true) ? 'Medium rectangle 300 &times; 250' : 'Leaderboard 728 &times; 90') . ')</span></div></aside>';
     }
     $GLOBALS['soAdsenseUsed'] = true;
     return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . '" aria-label="Advertisement" data-so-ad>'
@@ -44,9 +53,9 @@ function soAdSlot(string $placement, string $format = 'horizontal'): string {
 function soAdsenseFooterScript(): string {
     $client = soAdsenseClient();
     if ($client === '') return '';
-    return '<script>(function(){var c=window.soConsent||{};if(c.gpc||c.choice==="decline"||!document.querySelector("ins.adsbygoogle"))return;function go(){var s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";'
+    return '<script>(function(){var c=window.soConsent||{};if(c.gpc||c.choice==="decline"||!document.querySelector("ins.adsbygoogle"))return;function pushAds(){document.querySelectorAll("ins.adsbygoogle:not([data-so-pushed])").forEach(function(el){if(el.closest("[hidden]"))return;el.setAttribute("data-so-pushed","1");(window.adsbygoogle=window.adsbygoogle||[]).push({});});}window.soAdsPush=pushAds;function go(){var s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";'
         . 's.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' . htmlspecialchars($client, ENT_QUOTES, 'UTF-8') . '";document.head.appendChild(s);'
-        . 'document.querySelectorAll("ins.adsbygoogle").forEach(function(){(window.adsbygoogle=window.adsbygoogle||[]).push({});});}'
+        . 'pushAds();}'
         . 'if(document.readyState==="complete"){setTimeout(go,1500);}else{window.addEventListener("load",function(){setTimeout(go,1500);});}})();</script>';
 }
 
@@ -91,6 +100,9 @@ function soAdInjectBanner(string $html): string {
         if ($best !== null) { $html = substr($html, 0, $best) . $mid . substr($html, $best); }
     }
     // 3. End of the page content, above the footer.
-    if (strpos($html, 'so-ad--foot') === false && ($foot = soAdSlot('foot')) !== '') { $html .= $foot; }
+    if (strpos($html, 'so-ad--foot') === false && ($foot = soAdSlot('foot')) !== '') {
+        $mark = strrpos($html, '</main><!--so-main-end-->');
+        $html = $mark !== false ? substr($html, 0, $mark) . $foot . substr($html, $mark) : $html . $foot;   // the end of the page content, above the footer
+    }
     return $html;
 }

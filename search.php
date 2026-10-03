@@ -228,12 +228,12 @@ $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="c
 						<?php if ($correctedFrom !== '') { ?>
 							<p class="search-corrected mb-2">Showing results for <strong><?php echo htmlspecialchars($keywordHeader, ENT_QUOTES, 'UTF-8'); ?></strong>. No results for &ldquo;<?php echo htmlspecialchars($correctedFrom, ENT_QUOTES, 'UTF-8'); ?>&rdquo;.</p>
 						<?php } ?>
-						<div class="d-flex justify-content-between align-items-center results-header">
+						<div class="d-flex justify-content-between align-items-center results-header so-hero">
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h2>
 									<?php echo $displayName !== '' ? htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') : 'EVENTS'; ?> <span class="dot">&middot;</span>
-									<span class="count" id="results_count"><?php echo $total_count; ?> <?php echo $total_count === 1 ? 'RESULT' : 'RESULTS'; ?></span>
+									<span class="count" id="results_count"><?php echo number_format((int) $total_count); ?> <?php echo $total_count === 1 ? 'RESULT' : 'RESULTS'; ?></span>
 								</h2>
 							</div>
 						</div>
@@ -279,7 +279,7 @@ $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="c
 										'interest_type' => 'performer',
 										'interest_id' => 0,
 										'interest_name' => $keywordHeader,
-										'names' => false,
+										'names' => true,
 										'class' => 'so-nl--empty text-start',
 									]);
 								} ?>

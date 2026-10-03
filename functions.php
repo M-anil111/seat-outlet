@@ -4627,13 +4627,13 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
                         <div class="mb-3 mb-md-4 mb-lg-4">
-                            <div class="d-flex justify-content-between align-items-center results-header">
+                            <div class="d-flex justify-content-between align-items-center results-header so-hero">
                                 <div class="results-title">
                                     <span class="active-indicator"></span>
                                     <h2>
                                         <?php echo htmlspecialchars(strtoupper($artistName), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN <?php echo htmlspecialchars(strtoupper($locationLabel), ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
                                         <span class="count" id="results_count">
-                                            <?php echo (int) $total_count; ?>
+                                            <?php echo number_format((int) $total_count); ?>
                                             <?php echo $total_count === 1 ? 'RESULT' : 'RESULTS'; ?>
                                         </span>
                                     </h2>
@@ -4916,13 +4916,13 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
                         <div class="mb-3 mb-md-4 mb-lg-4">
-                            <div class="d-flex justify-content-between align-items-center results-header">
+                            <div class="d-flex justify-content-between align-items-center results-header so-hero">
                                 <div class="results-title">
                                     <span class="active-indicator"></span>
                                     <h2>
                                         <?php echo htmlspecialchars(strtoupper($categoryLabel), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN <?php echo htmlspecialchars(strtoupper($locationLabel), ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
                                         <span class="count" id="results_count">
-                                            <?php echo (int) $total_count; ?>
+                                            <?php echo number_format((int) $total_count); ?>
                                             <?php echo $total_count === 1 ? 'RESULT' : 'RESULTS'; ?>
                                         </span>
                                     </h2>

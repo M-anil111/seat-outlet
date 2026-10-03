@@ -113,6 +113,7 @@ include_once 'functions.php';
     <?php if (GTM_ID !== '') { echo soConsentHeadScript() . "\n"; } ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?php echo function_exists('soAdsenseMetaTag') ? soAdsenseMetaTag() . "\n" : ''; ?>
     <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" type="image/png" href="/images/favicon-new.webp">
     <link rel="manifest" href="/manifest.webmanifest">

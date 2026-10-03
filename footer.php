@@ -1,5 +1,6 @@
 <?php // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; } ?>
+<?php if (!empty($GLOBALS['soMoreOpen'])) { echo '</div></div>'; $GLOBALS['soMoreOpen'] = false; }   // closes the Read more panel opened by soRenderListingPage ?>
 <?php
 // "Browse by category" tiles at the foot of the pages people land on from search: artist, venue, city, state, country, category, event and the listing hubs.
 // The home page prints its own copy; a page can opt out with $soCatTilesSkip = true.

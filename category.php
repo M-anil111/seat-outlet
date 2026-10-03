@@ -89,7 +89,7 @@ soRenderListingPage([
 			'kind' => 'category', 'id' => $id, 'name' => $catLabel, 'alts' => soListingAltCategories($id),
 		],
 	],
-	'lead'        => ['source' => 'listing', 'title' => 'Get alerts when new ' . $catInline . ' events are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => $id, 'interest_name' => $catLabel, 'names' => false],
+	'lead'        => ['source' => 'listing', 'title' => 'Get alerts when new ' . $catInline . ' events are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => $id, 'interest_name' => $catLabel, 'names' => true],
 ]);
 ?>
 <?php echo $soCatSeo['html']; ?>
