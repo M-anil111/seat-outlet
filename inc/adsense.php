@@ -20,6 +20,9 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 /** Seat Outlet's AdSense publisher id (it is public: it is in every page and in /ads.txt). ADSENSE_CLIENT overrides it. */
 const SO_ADSENSE_PUBLISHER = 'ca-pub-1077085934387393';
 
+/** The "Seat Outlet Responsive" display ad unit (public, it is in the page source). It serves every placement unless an ADSENSE_SLOT_* setting says otherwise. */
+const SO_ADSENSE_DEFAULT_SLOT = '8680343825';
+
 function soAdsenseClient(): string {
     $c = (string) getenv('ADSENSE_CLIENT');
     if (preg_match('/^ca-pub-\d{10,20}$/', $c)) return $c;
@@ -37,6 +40,7 @@ function soAdSlot(string $placement, string $format = 'horizontal'): string {
     $slot = (string) getenv('ADSENSE_SLOT_' . strtoupper(preg_replace('/[^a-z0-9]/i', '_', $placement)));
     if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing'], true)) $slot = (string) getenv('ADSENSE_SLOT_BANNER');   // one banner ad unit can serve every banner position
     if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing'], true)) $slot = (string) getenv('ADSENSE_SLOT_HOME');     // the home banner setting from before banners were on every page
+    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing'], true)) $slot = SO_ADSENSE_DEFAULT_SLOT;
     if ($client === '' || !preg_match('/^\d{6,20}$/', $slot)) {
         // Not set up yet: on the test site (or with ADSENSE_PLACEHOLDER=1) show where the ad will go. On the live site nothing is printed.
         if (!(defined('SITE_INDEXABLE') && !SITE_INDEXABLE) && getenv('ADSENSE_PLACEHOLDER') !== '1') return '';
