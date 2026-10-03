@@ -1793,25 +1793,39 @@ function renderExploreBar($basePath, array $opts = []) {
     $max = (int) ($opts['max'] ?? soListingMaxPrice());
     ?>
     <div class="so-explore" data-so-explore data-hero="<?php echo htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8'); ?>" data-when="<?php echo htmlspecialchars($when, ENT_QUOTES, 'UTF-8'); ?>" data-sort="<?php echo htmlspecialchars($sort, ENT_QUOTES, 'UTF-8'); ?>" data-radius="<?php echo (int) $radius; ?>" data-max="<?php echo (int) $max; ?>" data-catid="<?php echo (int) $catId; ?>" data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
-        <nav class="so-cattabs" aria-label="Event categories">
-            <?php $tabIcons = ['/buy-tickets-online' => 'ticket', '/game-day-tickets' => 'trophy', '/concert-tickets-for-sale' => 'mic', '/buy-broadway-tickets' => 'masks', '/upcoming-music-festivals' => 'tent'];
-            foreach ($tabs as $href => $label) { ?>
-                <a href="<?php echo $href; ?>" <?php echo $href === $basePath ? 'class="active" aria-current="page"' : ''; ?>><?php echo function_exists('soCategoryTileIcon') ? soCategoryTileIcon($tabIcons[$href] ?? 'ticket') : ''; ?><span><?php echo $label; ?></span></a>
-            <?php } ?>
-        </nav>
         <?php
-        // Sub-categories of the hub: links to pages that exist (each a genre or league page), the hub itself first and highlighted.
         $subs = [
             '/concert-tickets-for-sale' => [['Pop and rock', '/pop-rock-concert-tickets'], ['Alternative', '/alternative-concert-tickets'], ['Country', '/country-music-tickets'], ['Hip hop and rap', '/hip-hop-tickets'], ['R&B and soul', '/rnb-soul-concert-tickets'], ['Latin', '/latin-music-tickets'], ['Hard rock and metal', '/metal-concert-tickets'], ['Jazz and blues', '/jazz-and-blues-tickets'], ['Electronic', '/electronic-music-tickets'], ['Classical', '/classical-music-tickets'], ['Festivals', '/upcoming-music-festivals']],
             '/game-day-tickets' => [['NFL', '/nfl-tickets'], ['NBA', '/nba-tickets'], ['MLB', '/mlb-tickets'], ['NHL', '/nhl-tickets'], ['MLS', '/mls-tickets']],
             '/buy-broadway-tickets' => [['Comedy', '/comedy-show-tickets'], ['Family shows', '/category/children-family-1869']],
         ];
         $subAll = ['/concert-tickets-for-sale' => 'All concerts', '/game-day-tickets' => 'All sports', '/buy-broadway-tickets' => 'All theater'];
-        if (isset($subs[$basePath])) { ?>
-        <nav class="so-subcats" aria-label="<?php echo htmlspecialchars($subAll[$basePath], ENT_QUOTES, 'UTF-8'); ?> by type">
-            <a class="so-subcat so-subcat--on" href="<?php echo $basePath; ?>" aria-current="page"><?php echo htmlspecialchars($subAll[$basePath], ENT_QUOTES, 'UTF-8'); ?></a>
-            <?php foreach ($subs[$basePath] as [$sl, $sh]) { ?><a class="so-subcat" href="<?php echo htmlspecialchars($sh, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($sl, ENT_QUOTES, 'UTF-8'); ?></a><?php } ?>
+        // The hub this page belongs to: itself, or the family a single genre / league page sits in (concerts, sports, theater).
+        $hub = isset($opts['family']) && isset($tabs[$opts['family']]) ? $opts['family'] : $basePath;
+        ?>
+        <nav class="so-cattabs" aria-label="Event categories">
+            <?php $tabIcons = ['/buy-tickets-online' => 'ticket', '/game-day-tickets' => 'trophy', '/concert-tickets-for-sale' => 'mic', '/buy-broadway-tickets' => 'masks', '/upcoming-music-festivals' => 'tent'];
+            foreach ($tabs as $href => $label) { ?>
+                <a href="<?php echo $href; ?>" <?php echo $href === $hub ? 'class="active"' . ($href === $basePath ? ' aria-current="page"' : '') : ''; ?>><?php echo function_exists('soCategoryTileIcon') ? soCategoryTileIcon($tabIcons[$href] ?? 'ticket') : ''; ?><span><?php echo $label; ?></span></a>
+            <?php } ?>
         </nav>
+        <?php
+        // Sub-categories: links to pages that exist (each a genre or league page). The page you are on comes first and is
+        // highlighted; "All ..." and the rest follow, and the row has previous / next buttons when it is wider than the screen.
+        if ($subs[$hub] ?? false) {
+            $allLabel = $subAll[$hub];
+            $items = [[$allLabel, $hub]];
+            foreach ($subs[$hub] as $sub) { $items[] = $sub; }
+            $currentHref = $basePath;
+            usort($items, function ($x, $y) use ($currentHref) { return ((int) ($y[1] === $currentHref)) <=> ((int) ($x[1] === $currentHref)); });   // stable on PHP 8: the chosen one first, the rest keep their order
+            ?>
+        <div class="so-subcats-wrap" data-so-subs>
+            <button type="button" class="so-subcats__arrow so-subcats__arrow--prev" data-so-subs-prev aria-label="Previous categories" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+            <nav class="so-subcats" aria-label="<?php echo htmlspecialchars($allLabel, ENT_QUOTES, 'UTF-8'); ?> by type" data-so-subs-track>
+                <?php foreach ($items as [$sl, $sh]) { $on = $sh === $currentHref; ?><a class="so-subcat<?php echo $on ? ' so-subcat--on' : ''; ?>" href="<?php echo htmlspecialchars($sh, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $on ? ' aria-current="page"' : ''; ?>><?php echo htmlspecialchars($sl, ENT_QUOTES, 'UTF-8'); ?></a><?php } ?>
+            </nav>
+            <button type="button" class="so-subcats__arrow so-subcats__arrow--next" data-so-subs-next aria-label="More categories" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
         <?php } ?>
         <div class="so-chips so-chips--one" role="group" aria-label="Filters">
             <div class="so-chip-wrap">

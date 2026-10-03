@@ -13,6 +13,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  * nothing, so there is never an empty gap. The slot has a fixed minimum height, so the page does not jump when the ad arrives
  * (layout shift), and the AdSense script itself is loaded after the page has finished loading, so it cannot slow the first paint.
  * The ad stays off when the visitor has opted out (Global Privacy Control or the privacy bar's Decline): see inc/consent.php.
+ * Until the settings exist the test site shows an empty framed placeholder (the live site prints nothing unless ADSENSE_PLACEHOLDER=1).
  * Also needed on the live domain: a file /ads.txt containing  google.com, pub-<16 digits>, DIRECT, f08c47fec0942fa0
  */
 
@@ -25,7 +26,11 @@ function soAdsenseClient(): string {
 function soAdSlot(string $placement, string $format = 'horizontal'): string {
     $client = soAdsenseClient();
     $slot = (string) getenv('ADSENSE_SLOT_' . strtoupper(preg_replace('/[^a-z0-9]/i', '_', $placement)));
-    if ($client === '' || !preg_match('/^\d{6,20}$/', $slot)) return '';
+    if ($client === '' || !preg_match('/^\d{6,20}$/', $slot)) {
+        // Not set up yet: on the test site (or with ADSENSE_PLACEHOLDER=1) show where the ad will go. On the live site nothing is printed.
+        if (!(defined('SITE_INDEXABLE') && !SITE_INDEXABLE) && getenv('ADSENSE_PLACEHOLDER') !== '1') return '';
+        return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . ' so-ad--placeholder" aria-label="Advertisement"><span class="so-ad__label">Advertisement</span><div class="so-ad__ph"><strong>Google AdSense</strong><span>Ad space (code coming soon)</span></div></aside>';
+    }
     $GLOBALS['soAdsenseUsed'] = true;
     return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . '" aria-label="Advertisement" data-so-ad>'
         . '<span class="so-ad__label">Advertisement</span>'
