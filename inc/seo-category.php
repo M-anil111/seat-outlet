@@ -136,17 +136,30 @@ function soCategorySeo(array $cfg, array $d) {
         . ($topCities !== '' ? ' in ' . $h($topCities) . ' and more' : '') . ($price !== '' ? ', with tickets listed from ' . $h($price) : '')
         . '. Choose ' . ($kind === 'sports' ? 'a team' : 'an artist') . ', venue or city, pick your seats on the map and check out securely with our <a href="/worry-free-guarantee">100% guarantee</a>.</p>';
     if ($d['artists']) {
-        $o .= '<ul class="so-cseo__artists">';
+        // Acts with a real, licensed picture get a photo tile. The rest are a plain text list: a grey circle with two letters says
+        // nothing, and a wall of them made the page long and empty.
+        $withImg = []; $noImg = [];
         foreach ($d['artists'] as $a) {
-            // A real picture only; the generic category stock photo is the wrong image for a named act, so an initials tile stands in.
             $im = getEntityImage(imageEntityTypeForPerformer($a['cat'] ?: []), $a['name'], ['category' => $a['cat'] ?: [], 'resolve' => false]);
-            $img = !empty($im['real']) ? $im['url'] : '';
-            $initials = strtoupper(substr(preg_replace('/[^A-Za-z0-9 ]/', '', $a['name']), 0, 1) . (preg_match('/\s(\w)\S*$/', $a['name'], $m) ? $m[1] : ''));
-            $o .= '<li><a href="/artist/' . $h(createSlug($a['name'], $a['id'])) . '">'
-                . ($img ? '<img src="' . $h($img) . '" alt="' . $h($a['name'] . ' ' . $lbl . ' tickets') . '" width="96" height="96" loading="lazy" decoding="async">' : '<span class="so-cseo__tile" aria-hidden="true">' . $h($initials) . '</span>')
-                . '<span>' . $h($a['name']) . ' tickets</span></a></li>';
+            if (!empty($im['real']) && !empty($im['url'])) { $withImg[] = [$a, $im['url']]; } else { $noImg[] = $a; }
         }
-        $o .= '</ul>';
+        if ($withImg) {
+            $o .= '<ul class="so-cseo__artists">';
+            foreach ($withImg as [$a, $img]) {
+                $o .= '<li><a href="/artist/' . $h(createSlug($a['name'], $a['id'])) . '">'
+                    . '<img src="' . $h($img) . '" alt="' . $h($a['name'] . ' ' . $lbl . ' tickets') . '" width="96" height="96" loading="lazy" decoding="async">'
+                    . '<span>' . $h($a['name']) . ' tickets</span></a></li>';
+            }
+            $o .= '</ul>';
+        }
+        if ($noImg) {
+            $o .= ($withImg ? '<h3 class="so-cseo__sub">More ' . $h($lbl) . ' ' . ($kind === 'sports' ? 'teams' : 'artists') . ' on sale</h3>' : '')
+                . '<div class="so-cseo__chips so-cseo__chips--scroll so-cseo__chips--names" role="region" aria-label="' . $h($label) . ' ' . ($kind === 'sports' ? 'teams' : 'artists') . ', scrollable" tabindex="0">';
+            foreach ($noImg as $a) {
+                $o .= '<a class="so-linkchip" href="/artist/' . $h(createSlug($a['name'], $a['id'])) . '">' . $h($a['name']) . '</a>';
+            }
+            $o .= '</div>';
+        }
     }
 
     // 2. Venues (from the popular events in the catalog; no per-venue counts are claimed)
@@ -166,7 +179,7 @@ function soCategorySeo(array $cfg, array $d) {
     //    so the link text says exactly that instead of promising a genre-filtered view.
     if ($d['cities']) {
         $cityWord = $kind === 'sports' ? 'Sports' : ($kind === 'concerts' ? 'Concerts' : 'Events');
-        $o .= '<h2>' . $h($label) . ' ' . $h($unit) . ' by city</h2><p>These cities have the most ' . $h($long) . ' events on sale right now. Each city page lists every upcoming ' . ($kind === 'sports' ? 'sporting event' : ($kind === 'concerts' ? 'concert' : 'event')) . ' there, not only ' . $h($long) . '.</p><div class="so-cseo__chips">';
+        $o .= '<h2>' . $h($label) . ' ' . $h($unit) . ' by city</h2><p>These cities have the most ' . $h($long) . ' events on sale right now. Each city page lists every upcoming ' . ($kind === 'sports' ? 'sporting event' : ($kind === 'concerts' ? 'concert' : 'event')) . ' there, not only ' . $h($long) . '.</p><div class="so-cseo__chips so-cseo__chips--scroll" role="region" aria-label="' . $h($label) . ' cities, scrollable" tabindex="0">';
         foreach ($d['cities'] as $c) {
             $o .= '<a class="so-linkchip" href="/' . $cityPrefix . '/' . $h(createSlug($c['label'], $c['id'])) . '">' . $h($cityWord) . ' in ' . $h($c['label']) . '</a>';
         }

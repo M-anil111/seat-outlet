@@ -222,34 +222,37 @@ include 'header.php';
 							<input type="hidden" id="sdateEvent" value="">
 							<input type="hidden" id="edateEvent" value="">
 							<input type="hidden" id="pidEvent" value="<?php echo $id; ?>" data-name="<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>">
-							<div class="row">
-								<div class="col-md-6">
-									<label class="filter-label">Location</label>
-									<div class="filter-input">
-										<i class="bi bi-geo-alt"></i>
-										<input type="text" class="form-control" placeholder="City or Zip Code" id="locationInput" autocomplete="off">
-										<button type="button" id="locationInputReset" class="d-none so-close-octagon">
-											<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
-											<path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
-											<path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
-											</svg>
-										</button>
-										<div id="locationResults" class="tn-dropdown-menu dropdown"></div>
+							<div class="so-chips so-chips--compact" role="group" aria-label="Filter and sort dates">
+								<div class="so-chip-wrap">
+									<button type="button" class="so-chip" data-so-loc-toggle aria-haspopup="dialog" aria-expanded="false">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+										<span data-so-loc-label>Location</span>
+										<svg class="so-chip__caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+									</button>
+									<div class="so-pop so-pop--loc" data-so-loc-pop role="dialog" aria-label="Choose a location" hidden>
+										<label class="so-pop__label" for="locationInput">City or ZIP code</label>
+										<div class="filter-input so-pop__field">
+											<input type="text" class="form-control" placeholder="For example Austin, TX" id="locationInput" autocomplete="off">
+											<button type="button" id="locationInputReset" class="d-none so-close-octagon" aria-label="Clear location"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round"/></svg></button>
+											<div id="locationResults" class="tn-dropdown-menu dropdown"></div>
+										</div>
 									</div>
 								</div>
-								<div class="col-md-6">
-									<span class="filter-label" id="soWhenLabel">Dates</span>
-									<div class="so-when" role="group" aria-labelledby="soWhenLabel">
-										<button type="button" class="so-when__chip is-active" data-so-when="" aria-pressed="true">All dates</button>
-										<?php foreach (LISTING_WHEN as $wk => $wl) { ?><button type="button" class="so-when__chip" data-so-when="<?php echo $wk; ?>" aria-pressed="false"><?php echo htmlspecialchars($wl, ENT_QUOTES, 'UTF-8'); ?></button><?php } ?>
+								<details class="so-dd so-dd--near" data-so-dd="when">
+									<summary class="so-chip" aria-label="Dates"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span data-so-dd-label data-default="Date">Date</span><svg class="so-chip__caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+									<div class="so-dd__menu so-pop">
+										<button type="button" class="so-pop__row is-active" data-so-when="" data-label="Date">All dates</button>
+										<?php foreach (LISTING_WHEN as $wk => $wl) { ?><button type="button" class="so-pop__row" data-so-when="<?php echo $wk; ?>"><?php echo htmlspecialchars($wl, ENT_QUOTES, 'UTF-8'); ?></button><?php } ?>
 									</div>
-									<span class="filter-label so-sortlabel" id="soSortLabel">Sort by</span>
-									<div class="so-when" role="group" aria-labelledby="soSortLabel">
-										<button type="button" class="so-when__chip is-active" data-so-sort="" aria-pressed="true">Best match</button>
-										<button type="button" class="so-when__chip" data-so-sort="soonest" aria-pressed="false">Soonest</button>
-										<button type="button" class="so-when__chip" data-so-sort="price" aria-pressed="false">Lowest price</button>
+								</details>
+								<details class="so-dd so-dd--near" data-so-dd="sort">
+									<summary class="so-chip" aria-label="Sort"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg><span data-so-dd-label data-default="Sort">Sort</span><svg class="so-chip__caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+									<div class="so-dd__menu so-pop">
+										<button type="button" class="so-pop__row is-active" data-so-sort="" data-label="Sort">Best match</button>
+										<button type="button" class="so-pop__row" data-so-sort="soonest">Soonest</button>
+										<button type="button" class="so-pop__row" data-so-sort="price">Lowest price</button>
 									</div>
-								</div>
+								</details>
 							</div>
 							<h3 id="locationHeading" class="mt-4 fs-5"></h3>
 							<div id="location-no-results" class="text-center no-location"></div>

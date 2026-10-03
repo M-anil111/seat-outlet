@@ -6957,3 +6957,36 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-pricealert__body .so-nl__title { font-size: 17px; margin: 0 0 4px; }
 .so-pricealert__body .so-nl__sub { font-size: 14px; margin-bottom: 10px; }
 .so-sortlabel { display: block; margin-top: 12px; }
+
+/* City list in the category SEO block: about three rows tall, then it scrolls inside its own box (a long list used to push the
+   page down by a full screen). The fade at the bottom shows there is more. */
+.so-cseo__chips--scroll { max-height: calc(3 * 44px + 2 * 10px + 6px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 3px 6px 3px 0; scrollbar-width: thin; scrollbar-color: #c7ccd6 transparent;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent); }
+.so-cseo__chips--scroll:focus-visible { outline: 3px solid #0071e3; outline-offset: 3px; border-radius: 12px; }
+.so-cseo__chips--scroll a.so-linkchip { flex: 0 0 auto; }
+@media (max-width: 575.98px) { .so-cseo__chips--scroll a.so-linkchip { max-width: 100%; } }
+
+/* "See more" in the near-you carousel: after the first tap the sideways row opens into a two-column grid so every new card is seen */
+@media (max-width: 575.98px) {
+  .so-near__grid.is-expanded { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; overflow: visible; margin: 0; padding: 0; scroll-snap-type: none; }
+  .so-near__grid.is-expanded .so-feed-card { flex: none; }
+}
+.so-cseo__sub { margin: 22px 0 10px; font-size: 17px; font-weight: 700; color: #1d1d1f; }
+.so-cseo__chips--names { max-height: calc(3 * 44px + 2 * 10px + 6px); }
+
+/* Compact pickers: small pills (Location / Date / Sort) instead of large fields and chip rows. Used on artist pages and the category hubs. */
+.so-chips--compact { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 0 0 6px; }
+.so-chips .so-chip, .so-chips--compact .so-chip { height: 38px; min-height: 38px; padding: 0 14px; gap: 7px; border-radius: 999px; border: 1px solid #d2d2d7; font-size: 14px; font-weight: 600; background: #fff; box-shadow: none; }
+.so-chips .so-chip span, .so-chips--compact .so-chip span { max-width: 38vw; }
+.so-chips .so-chip svg:first-child { width: 16px; height: 16px; }
+.so-chips .so-chip--on, .so-chips--compact .so-chip--on { border-color: #0071e3; background: #eef5ff; color: #004a99; }
+.so-chips--compact .so-pop { min-width: 240px; padding: 8px; }
+.so-chips--compact .so-pop__row { padding: 10px 12px; font-size: 15px; }
+.so-pop--loc .so-pop__field { position: relative; margin: 0; }
+.so-pop--loc .so-pop__field .form-control { height: 44px; font-size: 16px; }
+.so-pop--loc .so-close-octagon { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); }
+#locationHeading { margin-top: 12px !important; font-size: 15px !important; font-weight: 600; color: #3a3a3c; }
+.so-chips--compact { gap: 6px; flex-wrap: nowrap; }
+.so-chips--compact .so-chip { padding: 0 11px; gap: 6px; font-size: 13.5px; flex: 0 0 auto; }
+.so-chips--compact .so-chip span { max-width: 30vw; }
+.so-chips--compact > .so-dd, .so-chips--compact > .so-chip-wrap { flex: 0 0 auto; }
