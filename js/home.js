@@ -615,14 +615,8 @@ document.addEventListener('DOMContentLoaded', function () {
     return window.soEvCard(ev, { status: badge });
   }
 
-  // "Popular this weekend": compact text-only cards (name, then date and venue).
-  function popCard(ev) {
-    const p = (ev.iso || '').split('-').map(Number);
-    const d = p.length === 3 ? new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-    return '<a class="so-pop-card" href="/event/' + slug(ev.name) + '-' + ev.id + '">' +
-      '<span class="so-pop-card__name">' + esc(ev.name) + '</span>' +
-      '<span class="so-pop-card__meta">' + esc(d + (ev.venue ? ' \u00b7 ' + ev.venue : '')) + '</span></a>';
-  }
+  // "Popular this weekend": the same text-only card as everywhere else, with a soft category-colored header.
+  function popCard(ev) { return window.soEvCard(ev, { tint: true }); }
 
   function render(box, kind, data, label) {
     const track = box.querySelector('[data-so-feed-track]');
@@ -634,6 +628,8 @@ document.addEventListener('DOMContentLoaded', function () {
       box.hidden = false;
       track.innerHTML = events.map(popCard).join('');
       track.scrollLeft = 0;
+      const nx = box.querySelector('[data-so-feed-next]');
+      if (nx && !nx.dataset.bound) { nx.dataset.bound = '1'; nx.addEventListener('click', function () { track.scrollBy({ left: Math.max(260, track.clientWidth * 0.8), behavior: 'smooth' }); }); }
       return;
     }
     // "This weekend near you" only makes sense for events really close by (not the "nearest anywhere" fallback).

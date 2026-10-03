@@ -83,10 +83,14 @@ foreach ($fallbackCategories as $key => $list) {
     <div class="so-feed__head">
       <div>
         <h2 id="soFeedPopWeekendTitle" class="so-feed__title">Popular this weekend</h2>
+        <p class="so-feed__sub">Top events across the U.S. this weekend. Don't miss what's happening.</p>
       </div>
-      <a class="so-feed__all" href="/buy-tickets-online?when=weekend">See all</a>
+      <a class="so-feed__all so-feed__all--arrow" href="/buy-tickets-online?when=weekend">See all events <span aria-hidden="true">&rarr;</span></a>
     </div>
-    <div class="so-feed__track" data-so-feed-track></div>
+    <div class="so-popweek__wrap">
+      <div class="so-feed__track" data-so-feed-track></div>
+      <button type="button" class="so-popweek__next" data-so-feed-next aria-label="Show more events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
   </div>
 </section>
 
@@ -209,16 +213,17 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
-<section id="recentlyViewed" class="so-feed so-recent d-none" aria-labelledby="recentlyViewedHeading">
+<section id="recentlyViewed" class="so-recent d-none" aria-labelledby="recentlyViewedHeading">
   <div class="container">
-    <div class="so-feed__head">
-      <div>
-        <h2 id="recentlyViewedHeading" class="so-feed__title">Pick up where you left off</h2>
-        <p class="so-feed__sub">Artists and events you looked at on this device</p>
+    <div class="so-recent__head">
+      <div class="so-sechead">
+        <p class="so-sechead__eyebrow">Welcome back</p>
+        <h2 id="recentlyViewedHeading" class="so-sechead__title so-recent__title">Pick up where you left off</h2>
+        <p class="so-sechead__sub">Artists and events you looked at on this device</p>
       </div>
-      <button type="button" class="so-feed__all so-recent__clear" data-so-recent-clear>Clear</button>
+      <button type="button" class="so-recent__clear" data-so-recent-clear>Clear</button>
     </div>
-    <div class="so-feed__track" data-so-recent-track></div>
+    <div class="so-recent__track" data-so-recent-track></div>
   </div>
 </section>
 
