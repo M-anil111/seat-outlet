@@ -702,12 +702,27 @@ document.addEventListener('DOMContentLoaded', function () {
     '</a>';
   }
 
+  // "Popular this weekend": compact text-only cards (name, then date and venue).
+  function popCard(ev) {
+    const p = (ev.iso || '').split('-').map(Number);
+    const d = p.length === 3 ? new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+    return '<a class="so-pop-card" href="/event/' + slug(ev.name) + '-' + ev.id + '">' +
+      '<span class="so-pop-card__name">' + esc(ev.name) + '</span>' +
+      '<span class="so-pop-card__meta">' + esc(d + (ev.venue ? ' \u00b7 ' + ev.venue : '')) + '</span></a>';
+  }
+
   function render(box, kind, data, label) {
     const track = box.querySelector('[data-so-feed-track]');
     const title = box.querySelector('.so-feed__title');
     const sub = box.querySelector('[data-so-feed-sub]');
     const events = (data && data.events) || [];
     if (!events.length) { box.hidden = true; return; }
+    if (kind === 'popweekend') {
+      box.hidden = false;
+      track.innerHTML = events.map(popCard).join('');
+      track.scrollLeft = 0;
+      return;
+    }
     // "This weekend near you" only makes sense for events really close by (not the "nearest anywhere" fallback).
     if (kind === 'weekend' && data.scope !== 'near') { box.hidden = true; return; }
     box.hidden = false;
@@ -733,16 +748,17 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function load(lat, lng) {
-    const key = (lat && lng) ? (Number(lat).toFixed(2) + ',' + Number(lng).toFixed(2)) : 'us';
+    const fullKey = (lat && lng) ? (Number(lat).toFixed(2) + ',' + Number(lng).toFixed(2)) : 'us';
     const label = (typeof getCookie === 'function' ? getCookie('so_label') : '') || '';
     const my = ++token;
     boxes.forEach(box => {
       const kind = box.getAttribute('data-so-feed');
+      const key = kind === 'popweekend' ? 'us' : fullKey;   // the same nationwide list wherever the visitor is
       if (loaded[kind] === key) return;
       loaded[kind] = key;
       // The weekend row needs a location (it is the "near" search for this weekend); without one it stays hidden.
       if (kind === 'weekend' && key === 'us') { box.hidden = true; return; }
-      const qs = (kind === 'weekend' ? 'kind=near&when=weekend&cat=all' : 'kind=' + kind) + (key !== 'us' ? '&lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng) : '');
+      const qs = (kind === 'popweekend' ? 'kind=popweekend' : kind === 'weekend' ? 'kind=near&when=weekend&cat=all' : 'kind=' + kind) + (key !== 'us' ? '&lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng) : '');
       fetch('/ajax/get-home-feed.php?' + qs)
         .then(r => r.json())
         .then(data => { if (my === token || loaded[kind] === key) render(box, kind, data, label); })

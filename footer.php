@@ -1,5 +1,17 @@
 <?php // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; } ?>
+<?php
+// "Browse by category" tiles at the foot of the pages people land on from search: artist, venue, city, state, country, category, event and the listing hubs.
+// The home page prints its own copy; a page can opt out with $soCatTilesSkip = true.
+$soCtPath = trim((string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/'), '/');
+$soCtSeg = explode('/', $soCtPath)[0];
+if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtPath !== ''
+    && (in_array($soCtSeg, ['artist', 'performer', 'venue', 'city', 'state', 'country', 'category', 'event', 'search', 'concerts', 'sports', 'theater', 'theatre', 'festival', 'festivals'], true)
+        || preg_match('/-tickets$|^(buy-tickets-online|city-events|game-day-tickets|buy-broadway-tickets|upcoming-music-festivals|concert-tickets-for-sale)$/', $soCtSeg))
+    && !in_array($soCtSeg, ['tickets-promo-code', 'ticket-deals', 'ticket-faq', 'ticket-scanner', 'ticket-customer-service', 'ticket-buyer-protection', 'ticket-partner-program', 'ticketing-truths', 'checkout', 'thank-you', 'order-confirmation'], true)) {
+    echo soRenderCategoryTiles(['class' => 'so-cattiles--foot', 'title' => 'Browse more tickets by category']);
+}
+?>
 </main><!--so-main-end-->
 <footer class="tm-footer">
 
