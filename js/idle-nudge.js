@@ -80,7 +80,7 @@
   /* Event pages: no nudge when the page has no tickets to point at, or while the visitor is looking at the seat map (that is the decision moment). */
   function blocked() {
     if (!isEvent) return false;
-    if (document.documentElement.classList.contains('so-empty')) return true;
+    if (document.documentElement.classList.contains('so-ev-empty')) return true;
     var m = document.getElementById('tn-maps');
     if (!m || !m.offsetHeight) return false;
     var r = m.getBoundingClientRect(), vh = window.innerHeight || document.documentElement.clientHeight;
@@ -88,7 +88,7 @@
     return visible > vh * 0.4;
   }
   function show() {
-    if (isEvent && document.documentElement.classList.contains('so-empty')) return;
+    if (isEvent && document.documentElement.classList.contains('so-ev-empty')) return;
     if (shown || anotherDialogOpen() || document.hidden || blocked()) { schedule(); return; }
     shown = true;
     try { sessionStorage.setItem(KEY, '1'); } catch (e) {}

@@ -43,6 +43,7 @@ Create the folders with mode 700 and the site user as owner.
 | Pictures | `php cron/resolve-images.php` | every 10 minutes |
 | Performer alerts | `php cron/send-alerts.php` | once a day |
 | Price-drop alerts | `php cron/send-price-alerts.php` | every 3 hours |
+| New-event announcements (IndexNow, production only) | `php cron/indexnow.php` | every 30 minutes (needs `SO_INDEXNOW_KEY`) |
 | Database backup | `php cron/backup-db.php` | once a day, at night |
 | GeoIP update | the weekly job already added | weekly |
 | Home and list caches | the existing cache-rebuild crons | as already scheduled |

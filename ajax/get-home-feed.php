@@ -92,6 +92,7 @@ if ($kind === 'near') {
         $data = tnRequest('/catalog/v2/events/', $buildParams(!$nationwide));
         $total = (int) ($data['totalCount'] ?? 0);
         $events = soHomeFeedFormat($data['results'] ?? [], 12);
+        if (!$nationwide && $nearSort === 'distance') $events = soHomeFeedImageFirst($events);
         $dists = array_filter(array_column($events, 'dist'), function ($d) { return $d !== null; });
         $closest = $dists ? min($dists) : null;
         $scope = !$events ? ($radius ? 'empty' : 'near') : ($radius === 0 && $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near');
@@ -198,6 +199,31 @@ function soHomeFeedFormat(array $events, int $max = 10): array {
         if (count($out) >= $max) break;
     }
     return $out;
+}
+
+/**
+ * Nearest first, and when two events are the same distance (same venue, same town) the one with a real picture goes first,
+ * so the first screen is not a row of grey initials tiles. Stable: otherwise the API's own order is kept.
+ * Only reads what is already stored (no lookups, no network); an image database that is behind simply ranks nobody.
+ */
+function soHomeFeedImageFirst(array $events): array {
+    if (count($events) < 2) return $events;
+    $has = [];
+    foreach ($events as $i => $ev) {
+        $has[$i] = 0;
+        $who = (string) ($ev['performer'] !== '' ? $ev['performer'] : $ev['name']);
+        try {
+            $info = getEntityImage(imageEntityTypeForPerformer($ev['defaultCategory'] ?? []), $who, ['category' => $ev['defaultCategory'] ?? [], 'resolve' => false]);
+            $has[$i] = in_array($info['status'] ?? '', ['ok', 'manual'], true) ? 1 : 0;
+        } catch (Throwable $e) { /* decoration only */ }
+    }
+    $idx = array_keys($events);
+    usort($idx, function ($a, $b) use ($events, $has) {
+        $da = $events[$a]['dist'] ?? PHP_INT_MAX;
+        $db = $events[$b]['dist'] ?? PHP_INT_MAX;
+        return [$da, -$has[$a], $a] <=> [$db, -$has[$b], $b];
+    });
+    return array_map(function ($i) use ($events) { return $events[$i]; }, $idx);
 }
 
 try {

@@ -102,9 +102,21 @@ if (!empty($event)) {
         "performer" => buildEventPerformerSchema($event),
         "organizer" => ["@id" => HOME_URL . "/#organization"],
     ];
-    // Only claim an offer when the API reports a real price and tickets exist.
+    if ($evOgImg !== '' && strpos($evOgImg, 'seatoutlet-logo') === false) $eventSchema['image'] = [$evOgImg];
+    if ($metaDescription !== '') $eventSchema['description'] = $metaDescription;
+    // Only claim an offer when the API reports a real price and tickets exist. The range and the count are TicketNetwork's own
+    // current figures for this event (lowest and highest listed price, number of tickets listed), nothing estimated.
     $offer = !empty($event['_metadata']['hasTickets']) ? seoOffer($evUrl, $event['pricingInfo']['lowPrice']['value'] ?? null) : null;
     if ($offer) {
+        $high = (float) ($event['pricingInfo']['highPrice']['value'] ?? 0);
+        $low = (float) $offer['price'];
+        $count = (int) ($event['_metadata']['ticketCount'] ?? 0);
+        $offer['@type'] = 'AggregateOffer';
+        $offer['lowPrice'] = $offer['price'];
+        unset($offer['price']);
+        if ($high >= $low && $high > 0) $offer['highPrice'] = number_format($high, 2, '.', '');
+        if ($count > 0) $offer['offerCount'] = $count;
+        $offer['seller'] = ['@id' => HOME_URL . '/#organization'];
         $eventSchema["offers"] = $offer;
     }
 }
