@@ -40,6 +40,10 @@ $soCatData = soCategoryData($id);
 $soCatSeo = soCategorySeo($soCatCfg, $soCatData);
 $soCatHero = soCategoryHero($id, $soCatData['path'] ?? '');
 $year = date('Y');
+// Which hub (concerts, sports, theater) this category sits under, from its category path: used to mark the right tab and show its sub-categories.
+$soCatPath = (string) ($soCatData['path'] ?? '');
+$soFamily = strpos($soCatPath, '.1988.') !== false ? '/game-day-tickets' : (strpos($soCatPath, '.1989.') !== false ? '/buy-broadway-tickets' : (strpos($soCatPath, '.1986.') !== false ? '/concert-tickets-for-sale' : ''));
+if ($soFamily === '' && isset($soGenre['kind'])) { $soFamily = $soGenre['kind'] === 'sports' ? '/game-day-tickets' : ($soGenre['kind'] === 'concerts' ? '/concert-tickets-for-sale' : '/buy-broadway-tickets'); }
 
 // --- SEO: computed before including header.php, same convention as the other listing pages - see functions.php. ---
 $pageMetaTitle       = "$catLabel Tickets $year | Dates & Prices | Seat Outlet";
@@ -75,7 +79,7 @@ soRenderListingPage([
 	'when'        => $when,
 	'sort'        => $sort,
 	'max'         => $maxPrice,
-	'explore'     => ['catId' => $id, 'noun' => $catInline . ' events', 'hero' => $soCatHero],
+	'explore'     => ['catId' => $id, 'noun' => $catInline . ' events', 'hero' => $soCatHero, 'family' => $soFamily],
 	'body'        => [
 		'events'  => $events,
 		'perPage' => $perPage,
