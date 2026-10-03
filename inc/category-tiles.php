@@ -29,6 +29,15 @@ function soCategoryTileIcon($key) {
     return '<svg ' . $a . '>' . ($p[$key] ?? $p['ticket']) . '</svg>';
 }
 
+/** The tile icon for a sub-category of a hub (by hub, with a few sports and genres picked out by name). */
+function soCategoryTileIconFor($hub, $label) {
+    $l = strtolower($label);
+    foreach (['baseball' => 'baseball', 'softball' => 'baseball', 'basketball' => 'basketball', 'hockey' => 'hockey', 'soccer' => 'soccer', 'football' => 'football', 'comedy' => 'smile', 'children' => 'family', 'family' => 'family', 'festival' => 'tent', 'hip hop' => 'mic', 'rap' => 'mic', 'soul' => 'mic'] as $k => $icon) {
+        if (strpos($l, $k) !== false) return $icon;
+    }
+    return $hub === '/game-day-tickets' ? 'trophy' : ($hub === '/buy-broadway-tickets' ? 'masks' : 'music');
+}
+
 /** @return array<int,array{0:string,1:string,2:string}> [label, url, icon] */
 function soCategoryTileList() {
     return [
@@ -55,11 +64,33 @@ function soRenderCategoryTiles(array $o = []) {
     $out = '<section class="so-cattiles ' . $h($o['class']) . '" aria-labelledby="' . $h($o['id']) . '"><div class="container">';
     if ($o['title'] !== '') $out .= '<h2 id="' . $h($o['id']) . '" class="so-cattiles__title">' . $h($o['title']) . '</h2>';
     if ($o['intro'] !== '') $out .= '<p class="so-cattiles__intro">' . $h($o['intro']) . '</p>';
-    $out .= '<ul class="so-cattiles__grid">';
-    foreach (soCategoryTileList() as [$label, $url, $icon]) {
+    // The hand-picked 20 first (kept in their 4 x 5 order), then every other sub-category the ticket API lists under concerts, sports and
+    // theater that has tickets on sale (inc/category-tree.php). The grid fills 5 rows high and scrolls sideways, so each column is
+    // written top to bottom.
+    $base = soCategoryTileList();
+    $seen = [];
+    foreach ($base as $t) { $seen[$t[1]] = true; }
+    $columns = [];
+    foreach ($base as $i => $t) { $columns[($i % 4) * 5 + intdiv($i, 4)] = $t; }
+    ksort($columns);
+    $tiles = array_values($columns);
+    if (function_exists('soHubSubcategories')) {
+        foreach (array_keys(SO_HUB_ROOTS) as $hub) {
+            foreach (soHubSubcategories($hub) as $sub) {
+                if (isset($seen[$sub['href']])) continue;
+                $seen[$sub['href']] = true;
+                $tiles[] = [$sub['label'], $sub['href'], soCategoryTileIconFor($hub, $sub['label'])];
+            }
+        }
+    }
+    $arrow = function ($dir) { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' . ($dir === 'prev' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7') . '"/></svg>'; };
+    $out .= '<div class="so-cattiles__wrap" data-so-subs><button type="button" class="so-subcats__arrow so-subcats__arrow--prev" data-so-subs-prev aria-label="Previous categories" hidden>' . $arrow('prev') . '</button>';
+    $out .= '<ul class="so-cattiles__grid" data-so-subs-track>';
+    foreach ($tiles as [$label, $url, $icon]) {
         $here = $url === $cur;
         $out .= '<li><a class="so-cattile' . ($here ? ' is-current' : '') . '" href="' . $h($url) . '"' . ($here ? ' aria-current="page"' : '') . '>'
             . soCategoryTileIcon($icon) . '<span>' . $h($label) . '</span></a></li>';
     }
-    return $out . '</ul></div></section>';
+    $out .= '</ul><button type="button" class="so-subcats__arrow so-subcats__arrow--next" data-so-subs-next aria-label="More categories" hidden>' . $arrow('next') . '</button></div>';
+    return $out . '</div></section>';
 }
