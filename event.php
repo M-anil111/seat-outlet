@@ -1,4 +1,5 @@
-<?php include 'header.php'; ?>
+<?php $GLOBALS['soNoAds'] = true;   // no ad banners on event pages: the seat map and ticket list are the page
+include 'header.php'; ?>
 
 
 <?php

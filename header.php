@@ -268,6 +268,7 @@ include_once 'functions.php';
         || !empty($searchInput['locationInputHeader']) || !empty($searchInput['keywordHeader']) || !empty($searchInput['startInputHeader']);
     ?>
     <div class="header-top-section">
+        <?php if (strpos($soReqPath, '/event/') !== 0) { /* no keyword strip on event pages: the event title is the page's heading */ ?>
         <div class="so-topstrip">
         <!-- Top keyword strip -->
         <div class="keyword-topbar">
@@ -288,6 +289,7 @@ include_once 'functions.php';
             </ul>
         </div>
         </div>
+        <?php } ?>
         <!-- MAIN BLUE HEADER -->
         <header class="tm-header">
             <div class="container-fluid p-0 px-md-4 px-lg-5 pb-md-4 pb-0">

@@ -2547,7 +2547,7 @@ function soFocusKeyword() {
 }
 
 /**
- * Output filter for the page body. The keyword strip is the page's one <h1>; any other <h1> a page template prints
+ * Output filter for the page body. The page's first <h1> (the keyword strip; on event pages the event title) is its one <h1>; any other <h1> a page template prints
  * becomes an <h2 class="h1 ..."> so it keeps its look (css/style.css styles ".h1" like "h1") and the page has a
  * single H1. Turn off with KEYWORD_H1=0 in the environment.
  */
@@ -2558,7 +2558,7 @@ function soSingleH1($html) {
             if ($demoted) { $demoted = false; return '</h2>'; }
             return $m[0];
         }
-        if (!$stripSeen && strpos($m[2], 'so-keyword-h1') !== false) { $stripSeen = true; return $m[0]; }
+        if (!$stripSeen) { $stripSeen = true; return $m[0]; }   // the first h1 on the page (the keyword strip, or the event title where there is no strip) stays
         $demoted = true;
         $attrs = $m[2];
         if (preg_match('/\bclass\s*=\s*(["\'])(.*?)\1/i', $attrs)) {
