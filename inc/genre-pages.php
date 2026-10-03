@@ -54,6 +54,7 @@ const SO_HERO_BY_ID = [
     1879 => '/images/event-football.jpg',
     1877 => '/images/festival-1.webp',
     2031 => '/images/loews-theatre.webp',
+    1872 => '/images/loews-theatre.webp',   // comedy is a live show: stage picture, not a concert crowd
 ];
 function soCategoryHero($id, $path = '') {
     $id = (int) $id;
