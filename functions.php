@@ -5727,6 +5727,7 @@ function seoScoreBadgeClass($score) {
 
 // Entity image layer (performers, teams, venues, festivals, cities).
 require_once __DIR__ . '/inc/images.php';
+require_once __DIR__ . '/inc/category-tiles.php';   // soRenderCategoryTiles(): blue category tile grid
 require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-capture form
 require_once __DIR__ . '/inc/request-guard.php';   // soClientIp(), soRateHit(), soQs(): shared request helpers
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter

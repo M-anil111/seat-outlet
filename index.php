@@ -69,6 +69,18 @@ foreach ($fallbackCategories as $key => $list) {
   </div><!-- /.hero-slider -->
 </section>
 
+<section class="so-feed so-popweek" id="soFeedPopWeekend" data-so-feed="popweekend" aria-labelledby="soFeedPopWeekendTitle" hidden>
+  <div class="container">
+    <div class="so-feed__head">
+      <div>
+        <h2 id="soFeedPopWeekendTitle" class="so-feed__title">Popular this weekend</h2>
+      </div>
+      <a class="so-feed__all" href="/buy-tickets-online?when=weekend">See all</a>
+    </div>
+    <div class="so-feed__track" data-so-feed-track></div>
+  </div>
+</section>
+
 <section class="so-feed" id="soFeedLastMinute" data-so-feed="lastminute" aria-labelledby="soFeedLastMinuteTitle">
   <div class="container">
     <div class="so-feed__head">
@@ -226,57 +238,7 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
-<section class="section categories teams-nearby py-5">
-  <div class="container so-tabs" data-so-tabs data-so-tab-labels="Concerts|Sports|Theater|Festivals">
-    <h2 class="section__title section__title--center fw-bold fs-4 mb-3">
-      Browse by Categories
-    </h2>
-    <p class="text-center mb-4 so-section-intro">
-      Concerts, sports, theater and festivals across the country. Pick a category to compare seats and prices before you buy.
-    </p>
-    <div class="categories__grid">
-      <div class="categories__col">
-        <h3 class="categories__heading">Concerts</h3>
-        <ul class="categories__list">
-          <?php foreach ($topCategories['concerts'] as $topCat) { ?>
-            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
-          <?php } ?>
-        </ul>
-        <a href="/concert-tickets-for-sale" class="common-btn">View All Concerts</a>
-        
-      </div>
-      <div class="categories__col">
-        <h3 class="categories__heading">Sports</h3>
-        <ul class="categories__list">
-          <?php foreach ($topCategories['sports'] as $topCat) { ?>
-            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
-          <?php } ?>
-        </ul>
-        <a href="/game-day-tickets" class="common-btn">View All Sports</a>
-      </div>
-      <div class="categories__col">
-        <h3 class="categories__heading">Theatre</h3>
-        <ul class="categories__list">
-          <?php foreach ($topCategories['theater'] as $topCat) { ?>
-            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
-          <?php } ?>
-        </ul>
-        <a href="/buy-broadway-tickets" class="common-btn">View All Theatre</a>
-      </div>
-      <div class="categories__col">
-        <h3 class="categories__heading">Festivals</h3>
-        <?php if(!empty($festivalNames)) { ?>
-          <ul class="categories__list">
-            <?php foreach($festivalNames as $festivalName) { ?>
-              <li><a href="/artist/<?php echo htmlspecialchars(createSlug($festivalName['name'],$festivalName['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($festivalName['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
-            <?php } ?>
-          </ul>   
-        <?php } ?>  
-        <a href="/upcoming-music-festivals" class="common-btn">View All Festivals</a>
-      </div>
-    </div>
-  </div>
-</section>
+<?php echo soRenderCategoryTiles(['class' => 'so-cattiles--home', 'intro' => 'Concerts, sports, theater and festivals across the country. Pick a category to compare seats and prices before you buy.']); ?>
 
 <section class="section categories bg-white teams-nearby py-md-5 py-4" aria-labelledby="cities-heading">
   <div class="container">

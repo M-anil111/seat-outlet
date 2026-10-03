@@ -22,13 +22,13 @@ define('SO_NEAR_MAX_MILES', 3000);
 define('SO_NEAR_FAR_MILES', 250);
 
 $kindIn = soQs('kind');
-$kind = in_array($kindIn, ['lastminute', 'near'], true) ? $kindIn : 'trending';
+$kind = in_array($kindIn, ['lastminute', 'near', 'popweekend'], true) ? $kindIn : 'trending';
 // Snapped to a 0.1 degree grid (about 7 miles) and limited to the area we sell in: every distinct coordinate used to create its own
 // cache file and its own live API call, so the key space was unbounded. A 50-mile search stays honest at this precision.
 $snap = soSnapGeo($_GET['lat'] ?? null, $_GET['lng'] ?? null);
 $lat = $snap ? $snap[0] : null;
 $lng = $snap ? $snap[1] : null;
-$hasGeo = $snap !== null;
+$hasGeo = $snap !== null && $kind !== 'popweekend';   // "Popular this weekend" is the same nationwide list for everyone
 
 /** Live (uncached) feed builds are limited per visitor address, so one client cannot drive unlimited API calls. */
 function soHomeFeedLiveAllowed() {
@@ -137,6 +137,9 @@ soHomeFeedLiveAllowed();
 function soHomeFeedFetch(string $kind, ?float $lat, ?float $lng): array {
     $today = date('Y-m-d');
     $end = $kind === 'lastminute' ? date('Y-m-d', strtotime('+7 days')) : date('Y-m-d', strtotime('+90 days'));
+    if ($kind === 'popweekend') {
+        [$today, $end] = listingDateRange('weekend');
+    }
     $params = [
         'filter' => "date/date ge $today and date/date le $end and _metadata/hasTickets eq true and country/alphaCode eq 'US'",
         'perPage' => 12,

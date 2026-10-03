@@ -6990,3 +6990,67 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-chips--compact .so-chip { padding: 0 11px; gap: 6px; font-size: 13.5px; flex: 0 0 auto; }
 .so-chips--compact .so-chip span { max-width: 30vw; }
 .so-chips--compact > .so-dd, .so-chips--compact > .so-chip-wrap { flex: 0 0 auto; }
+
+/* ---- Browse by category: solid blue tiles (icon + name), two columns on phones ---- */
+.so-cattiles { padding: 28px 0 8px; }
+.so-cattiles--home { padding: 36px 0 24px; background: #fff; }
+.so-cattiles--foot { padding: 32px 0 36px; border-top: 1px solid #e5e5ea; background: #fff; }
+.so-cattiles__title { font-size: 22px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em; }
+.so-cattiles--home .so-cattiles__title { text-align: center; }
+.so-cattiles__intro { margin: 0 0 18px; color: #6e6e73; font-size: 15px; }
+.so-cattiles--home .so-cattiles__intro { text-align: center; max-width: 640px; margin: 0 auto 20px; }
+.so-cattiles__grid { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.so-cattiles__intro + .so-cattiles__grid { margin-top: 0; }
+.so-cattile { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 12px 16px; border-radius: 14px; background: var(--so-blue, #0056d6); color: #fff !important; font-weight: 600; font-size: 16px; line-height: 1.2; text-decoration: none !important; transition: background .15s, transform .1s; -webkit-tap-highlight-color: transparent; }
+.so-cattile svg { flex: 0 0 auto; width: 22px; height: 22px; }
+.so-cattile span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.so-cattile:hover { background: #004ab8; }
+.so-cattile:active { transform: scale(.98); background: #003d99; }
+.so-cattile:focus-visible { outline: 3px solid #0071e3; outline-offset: 2px; }
+.so-cattile.is-current { background: #1d1d1f; }
+@media (min-width: 768px) { .so-cattiles__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } }
+@media (min-width: 1100px) { .so-cattiles__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ---- Popular this weekend: compact text cards in a swipeable row ---- */
+.so-popweek { padding-top: 8px; }
+.so-popweek .so-feed__track { gap: 10px; }
+.so-pop-card { flex: 0 0 auto; width: 232px; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid #e5e5ea; border-radius: 14px; background: #fff; color: #1d1d1f !important; text-decoration: none !important; scroll-snap-align: start; transition: border-color .15s, box-shadow .15s; }
+.so-pop-card:hover { border-color: #0071e3; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+.so-pop-card__name { font-weight: 700; font-size: 16px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.so-pop-card__meta { font-size: 14px; color: #6e6e73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Event rows, final: one clean bordered card per event (date tile | title, time and city, venue, price). No button stack; the whole card is the link. ---- */
+.event-row-all { padding: 6px 0 14px; }
+.event-row-all .performer-event-item { position: relative; display: grid !important; grid-template-columns: 68px minmax(0, 1fr); gap: 4px 14px; align-items: start; padding: 14px 14px 14px 12px; margin: 0 0 12px; border: 1px solid #e5e5ea !important; border-radius: 18px; background: #fff; box-shadow: none; transition: border-color .15s, box-shadow .15s; }
+.event-row-all .performer-event-item:last-child { border-bottom: 1px solid #e5e5ea !important; margin-bottom: 0; }
+.event-row-all .performer-event-item:hover { background: #fff; border-color: #0071e3 !important; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+.event-row-all .performer-event-item .date-box { width: 68px; margin: 0 !important; border-radius: 14px; box-shadow: none; grid-row: 1 / span 2; align-self: start; }
+.event-row-all .performer-event-item .date-box .day { font-size: 28px; padding-bottom: 4px; }
+.event-row-all .performer-event-item .date-box .month:first-child { padding-top: 7px; }
+.event-row-all .performer-event-item > .flex-grow-1 { width: auto !important; grid-column: 2; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "name name" "when place" "venue venue" "pill pill"; gap: 3px 0; min-width: 0; }
+.event-row-all .performer-event-item > .flex-grow-1 > .d-flex { grid-area: when; gap: 0 !important; font-size: 15px; color: #6e6e73; }
+.event-row-all .performer-event-item .day-weeks, .event-row-all .performer-event-item .dot, .event-row-all .performer-event-item .icon-i { display: none !important; }
+.event-row-all .performer-event-item .time-clock { font-size: 15px; font-weight: 400; color: #6e6e73; }
+.event-row-all .performer-event-item .time-clock:empty::before { content: "Time TBA"; }
+.event-row-all .performer-event-item .ev-place { grid-area: place; margin: 0; min-width: 0; font-size: 15px; color: #6e6e73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.event-row-all .performer-event-item .ev-place::before { content: "\00b7"; margin: 0 6px; }
+.event-row-all .performer-event-item .ev-place a, .event-row-all .performer-event-item .ev-venue a { position: relative; z-index: 1; font-size: 15px; color: #6e6e73; }
+.event-row-all .performer-event-item .ev-venue, .event-row-all .performer-event-item .ev-venue a { font-weight: 400 !important; }
+.event-row-all .performer-event-item .ev-venue { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; color: #6e6e73; }
+.event-row-all .performer-event-item .ev-venue a::before { display: none; }
+.event-row-all .performer-event-item .ev-name { margin-bottom: 2px; }
+.event-row-all .performer-event-item .ev-name a { font-size: 18px; font-weight: 700; line-height: 1.25; color: #1d1d1f; }
+.event-row-all .performer-event-item .ev-name a::after { content: ""; position: absolute; inset: 0; border-radius: 18px; }
+.event-row-all .performer-event-item > .ms-3 { grid-column: 2; margin: 2px 0 0 !important; padding: 0 !important; border: 0 !important; display: flex; flex-direction: row !important; align-items: baseline; justify-content: flex-start !important; gap: 10px; }
+.event-row-all .performer-event-item > .ms-3 .btn { display: none !important; }
+.event-row-all .performer-event-item .event-price-tag { font-size: 15px; color: #1d1d1f; text-align: left; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.event-row-all .performer-event-item .event-price-tag strong { font-size: 16px; font-weight: 700; }
+.event-row-all .performer-event-item .event-price-tag--none { color: #6e6e73; font-size: 14px; }
+.event-row-all .performer-event-item .event-low-inv { display: inline-block; margin: 0; padding: 2px 8px; border-radius: 8px; background: #fff0f5; color: #c2185b; font-size: 12px; font-weight: 600; }
+.event-row-all .performer-event-item .event-deal-badge { margin-right: 0; }
+@media (min-width: 768px) {
+  .event-row-all .performer-event-item { grid-template-columns: 72px minmax(0, 1fr) auto; padding: 16px 20px 16px 16px; align-items: center; }
+  .event-row-all .performer-event-item .date-box { grid-row: 1; width: 72px; }
+  .event-row-all .performer-event-item > .ms-3 { grid-column: 3; grid-row: 1; margin: 0 !important; }
+  .event-row-all .performer-event-item .ev-name a { font-size: 19px; }
+}
