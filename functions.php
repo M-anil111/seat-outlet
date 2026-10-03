@@ -5729,6 +5729,7 @@ function seoScoreBadgeClass($score) {
 
 // Entity image layer (performers, teams, venues, festivals, cities).
 require_once __DIR__ . '/inc/images.php';
+require_once __DIR__ . '/inc/auto-migrate.php';   // beta: applies pending db/migrations after deploys, see the file
 require_once __DIR__ . '/inc/sitemap-build.php';   // XML sitemap index + typed files, kept current by a background crawl
 require_once __DIR__ . '/inc/category-tiles.php';   // soRenderCategoryTiles(): blue category tile grid
 require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-capture form
@@ -5736,5 +5737,6 @@ require_once __DIR__ . '/inc/request-guard.php';   // soClientIp(), soRateHit(),
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
 require_once __DIR__ . '/inc/entity-pages.php';     // slug rule, strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages
+register_shutdown_function('soAutoMigrateMaybeRun');   // beta only: keep the schema in step with the code
 register_shutdown_function('soSitemapMaybeRun');   // background sitemap crawl, see inc/sitemap-build.php
 register_shutdown_function('imageWorkerMaybeRun');   // background image queue, see inc/images.php
