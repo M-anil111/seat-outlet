@@ -69,7 +69,7 @@ Behind Cloudflare, `$binary_remote_addr` is Cloudflare's address unless the real
 location = /robots.txt { rewrite ^ /robots.php last; }
 ```
 
-Beta/staging/dev hosts then return `Disallow: /`; the production host returns the normal rules plus `Sitemap: https://<host>/sitemap.php`. `sitemap.php` now lists top performers, venues and categories as well as events, cities and static pages (about 3,500 URLs); submit it in Google Search Console and Bing Webmaster Tools after launch.
+Beta/staging/dev hosts then return `Disallow: /`; the production host returns the normal rules plus a `Sitemap:` line for the sitemap index. The sitemap is a **sitemap index** (`/sitemaps/sitemap-index.xml`) pointing at typed files (`pages-1`, `events-1..N`, `performers-1..N`, `venues-1..N`, `cities-1..N`, 5,000 URLs each). The site builds and refreshes them itself in the background (see `inc/sitemap-build.php`; a fresh crawl every 6 hours on the live host, 24 on beta, `<lastmod>` from TicketNetwork's own update times). It writes static files into `<web root>/sitemaps/` when that folder is writable by PHP (nothing else to configure; the web server serves them as plain files) and otherwise into `cache/sitemaps/`, served through `/sitemap.php` and `/sitemap.php?f=NAME`. Optional: `php cron/build-sitemaps.php` from cron does the same crawl without waiting for page traffic (`--status` shows progress). Until the first crawl finishes, `/sitemap.php` serves the older single-file sitemap.
 
 ## Caching and compression (server settings the code cannot set)
 

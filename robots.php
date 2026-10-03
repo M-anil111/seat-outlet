@@ -26,4 +26,5 @@ foreach (['/admin/', '/ajax/', '/cache/', '/vendor/', '/db/', '/tools/', '/cron/
     echo "Disallow: $path\n";
 }
 // Always the host this install is configured for (HOME_URL), never a hard-coded domain.
-echo "\nSitemap: " . rtrim(HOME_URL, '/') . "/sitemap.php\n";
+require_once __DIR__ . '/inc/sitemap-build.php';
+echo "\nSitemap: " . soSitemapIndexUrl() . "\n";
