@@ -116,7 +116,7 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
             foreach ($eventVenueParts as [$href, $label]) {
               $out[] = $href ? '<a href="' . $h($href) . '">' . $h($label) . '</a>' : $h($label);
             }
-            echo implode(', ', $out);
+            echo implode("\u{2060}, ", $out);   // word joiner: the comma never starts a new line after a link
           ?></span></p>
         <?php } ?>
         <div class="so-evhero__actions">

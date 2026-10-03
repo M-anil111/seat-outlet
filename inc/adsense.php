@@ -49,8 +49,10 @@ function soAdSlot(string $placement, string $format = 'horizontal'): string {
     $GLOBALS['soAdsenseUsed'] = true;
     return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . '" aria-label="Advertisement" data-so-ad>'
         . '<span class="so-ad__label">Advertisement</span>'
-        . '<ins class="adsbygoogle" style="display:block" data-ad-client="' . htmlspecialchars($client, ENT_QUOTES, 'UTF-8') . '" data-ad-slot="' . htmlspecialchars($slot, ENT_QUOTES, 'UTF-8')
-        . '" data-ad-format="' . ($format === 'rectangle' ? 'rectangle' : 'horizontal') . '" data-full-width-responsive="true"></ins></aside>';
+        // Fixed sizes picked by CSS (320x100, 468x60, 728x90 for banners; 300x250 for boxes). The "full width responsive" mode is off on
+        // purpose: it makes the AdSense script size the ad to the whole screen, which pushed the sidebar below the page.
+        . '<ins class="adsbygoogle so-adunit so-adunit--' . ($format === 'rectangle' ? 'r' : 'h') . '" style="display:inline-block" data-ad-client="' . htmlspecialchars($client, ENT_QUOTES, 'UTF-8') . '" data-ad-slot="' . htmlspecialchars($slot, ENT_QUOTES, 'UTF-8')
+        . '"></ins></aside>';
 }
 
 /** Footer script: loads AdSense once, after the page has loaded, only when a slot was printed and the visitor has not opted out. */
