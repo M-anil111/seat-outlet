@@ -51,6 +51,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: production
+    env:
+      # SFTP port on the CloudPanel server; FTP_PORT secret or variable, 4124 if unset.
+      FTP_PORT: ${{ secrets.FTP_PORT || vars.FTP_PORT || '4124' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -59,12 +62,12 @@ jobs:
           FTP_HOST: ${{ secrets.FTP_HOST }}
         run: |
           echo "This runner's public IP: $(curl -s --max-time 10 https://api.ipify.org || echo unknown)"
-          if ! timeout 15 bash -c "exec 3<>/dev/tcp/$FTP_HOST/4124" 2>/dev/null; then
-            echo "::error::Cannot open TCP port 4124 on FTP_HOST from GitHub Actions. The server (or its cloud provider firewall) is dropping connections from GitHub's IP ranges - allow inbound TCP 4124 from them. Also check FTP_HOST is a bare hostname/IP (no sftp://, port or trailing slash)."
+          if ! timeout 15 bash -c "exec 3<>/dev/tcp/$FTP_HOST/$FTP_PORT" 2>/dev/null; then
+            echo "::error::Cannot open TCP port $FTP_PORT on FTP_HOST from GitHub Actions. The server (or its cloud provider firewall) is dropping connections from GitHub's IP ranges - allow inbound TCP $FTP_PORT from them. Also check FTP_HOST is a bare hostname/IP (no sftp://, port or trailing slash)."
             exit 1
           fi
           mkdir -p ~/.ssh
-          ssh-keyscan -T 15 -p 4124 "$FTP_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 15 -p "$FTP_PORT" "$FTP_HOST" >> ~/.ssh/known_hosts
           echo "Known hosts populated:"
           cat ~/.ssh/known_hosts
 
@@ -156,14 +159,14 @@ jobs:
             xargs -0 -P 4 -I{} bash -c '
               f="{}"
               rel="${f#./}"
-              curl -sS --ftp-create-dirs --user "$0:$1" -T "$f" "sftp://$2:4124/$3/$rel" \
+              curl -sS --ftp-create-dirs --user "$0:$1" -T "$f" "sftp://$2:$FTP_PORT/$3/$rel" \
                 || echo "FAILED: $rel"
             ' "$FTP_USERNAME" "$FTP_PASSWORD" "$FTP_HOST" "$REMOTE_ROOT"
           echo "Upload pass complete"
           FAIL_COUNT=$(find . -type f -not -path './.git/*' -print0 | \
             xargs -0 -P 4 -I{} bash -c '
               f="{}"; rel="${f#./}"
-              curl -sS --user "$0:$1" -o /dev/null "sftp://$2:4124/$3/$rel" || echo x
+              curl -sS --user "$0:$1" -o /dev/null "sftp://$2:$FTP_PORT/$3/$rel" || echo x
             ' "$FTP_USERNAME" "$FTP_PASSWORD" "$FTP_HOST" "$REMOTE_ROOT" | wc -l)
           echo "Post-upload verification: $FAIL_COUNT file(s) not confirmed on server"
           if [ "$FAIL_COUNT" -gt 0 ]; then

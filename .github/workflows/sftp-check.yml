@@ -1,0 +1,85 @@
+name: SFTP check
+
+# Verifies GitHub Actions can reach the beta server over SFTP and write to the
+# web root, without running a full deploy: connects to FTP_HOST on FTP_PORT
+# (default 4124), uploads only test.html, reads it back over SFTP and over
+# HTTPS.
+#
+# Run it from the Actions tab (Run workflow). It also runs once when this
+# file changes on a branch.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches-ignore: [main]
+    paths: ['.github/workflows/sftp-check.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-beta
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Connect + upload test.html
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      FTP_HOST: ${{ secrets.FTP_HOST }}
+      FTP_PORT: ${{ secrets.FTP_PORT || vars.FTP_PORT || '4124' }}
+      REMOTE_ROOT: /home/seatoutlet-beta/htdocs/beta.seatoutlet.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Settings
+        run: |
+          echo "Runner public IP: $(curl -s --max-time 10 https://api.ipify.org || echo unknown)"
+          echo "FTP_HOST set: $([ -n "$FTP_HOST" ] && echo yes || echo NO)"
+          if ! [[ "$FTP_PORT" =~ ^[0-9]+$ ]]; then
+            echo "::error::FTP_PORT must be a number only (e.g. 4124)"; exit 1
+          fi
+          echo "Port: $FTP_PORT"
+
+      - name: TCP connection to the server
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            if timeout 10 bash -c "exec 3<>/dev/tcp/$FTP_HOST/$FTP_PORT" 2>/dev/null; then
+              echo "TCP $FTP_PORT reachable (attempt $attempt)"; exit 0
+            fi
+            echo "TCP $FTP_PORT not reachable yet (attempt $attempt/6)"; sleep 5
+          done
+          echo "::error::Cannot open TCP $FTP_PORT on FTP_HOST from GitHub Actions - the server's firewall is dropping this runner's IP ($(curl -s --max-time 10 https://api.ipify.org)). Allow inbound TCP $FTP_PORT on the CloudPanel server."
+          exit 1
+
+      - name: SSH host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -T 15 -p "$FTP_PORT" "$FTP_HOST" >> ~/.ssh/known_hosts
+          echo "Host key types: $(awk '{print $2}' ~/.ssh/known_hosts | sort -u | tr '\n' ' ')"
+
+      - name: Upload test.html and read it back
+        env:
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          test -f test.html || { echo "::error::test.html is not in this commit"; exit 1; }
+          url="sftp://$FTP_HOST:$FTP_PORT$REMOTE_ROOT/test.html"
+          curl -sS --user "$FTP_USERNAME:$FTP_PASSWORD" -T test.html "$url"
+          echo "Uploaded test.html to $REMOTE_ROOT/"
+          curl -sS --user "$FTP_USERNAME:$FTP_PASSWORD" -o remote.html "$url"
+          if cmp -s test.html remote.html; then
+            echo "Read back over SFTP: identical ($(wc -c < remote.html) bytes)"
+          else
+            echo "::error::File read back over SFTP differs from test.html"; exit 1
+          fi
+
+      - name: Fetch https://beta.seatoutlet.com/test.html
+        run: |
+          code=$(curl -sS -o page.html -w '%{http_code}' --max-time 20 https://beta.seatoutlet.com/test.html || true)
+          echo "HTTP $code"
+          head -c 200 page.html 2>/dev/null; echo
+          # Basic Auth or a CDN in front of the site can make this differ even
+          # when the upload worked, so it is reported, not enforced.
+          if [ "$code" = "200" ] && grep -q Hello page.html; then echo "Site serves test.html"; else echo "::warning::Site did not return Hello (HTTP $code)"; fi
