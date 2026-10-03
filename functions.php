@@ -1813,6 +1813,8 @@ function renderExploreBar($basePath, array $opts = []) {
             $curId = (int) ($opts['catId'] ?? 0);
             $items = [['id' => 0, 'label' => $allLabel, 'href' => $hub]];
             foreach ($hubSubs as $sub) { $items[] = $sub; }
+            // A category that belongs to this tab but is not in its API list (Comedy under Theater) still gets its own selected pill.
+            if ($curId > 0 && !in_array($curId, array_column($hubSubs, 'id'), true) && !empty($opts['label'])) { $items[] = ['id' => $curId, 'label' => (string) $opts['label'], 'href' => $basePath]; }
             // The page you are on first (matched by category id, or by address for the hub itself), the rest keep their order.
             $isCurrent = function ($it) use ($curId, $basePath) { return ($curId > 0 && $it['id'] === $curId) || ($curId === 0 && $it['href'] === $basePath) || $it['href'] === $basePath; };
             usort($items, function ($x, $y) use ($isCurrent) { return ((int) $isCurrent($y)) <=> ((int) $isCurrent($x)); });
