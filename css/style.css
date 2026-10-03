@@ -7638,5 +7638,5 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
    grew past the box and was cut off or scrolled sideways; now the box has a sane width and height) ---- */
 .so-seatmap { max-width: 100%; overflow-x: clip; }
 @media (min-width: 768px) {
-  .so-seatmap { max-width: 1240px; margin: 0 auto; height: min(760px, calc(100vh - 70px)); overflow: hidden; }
+  #tn-maps.so-seatmap { max-width: 1240px !important; width: 100% !important; margin: 0 auto !important; height: min(760px, calc(100vh - 70px)); overflow: hidden; }
 }
