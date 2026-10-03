@@ -1610,22 +1610,10 @@ function generateTeamSkeleton($count = 6) {
 }
 
 function buildVenueSkeleton($count = 8) {
-
     $html = '';
-
     for ($i = 0; $i < $count; $i++) {
-
-        $html .= '
-            <div class="venue-card-skeleton">
-                <div class="skeleton-img shimmer"></div>
-                <div class="venue-content text-center p-3">
-                    <div class="skeleton-line skeleton-title shimmer"></div>
-                    <div class="skeleton-line skeleton-location shimmer"></div>
-                </div>
-            </div>
-        ';
+        $html .= '<div class="so-vc-slide"><div class="so-vc so-vc--' . ($i % 4) . ' so-vc--skeleton" aria-hidden="true"><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></div></div>';
     }
-
     return $html;
 }
 

@@ -256,11 +256,13 @@ foreach ($fallbackCategories as $key => $list) {
 
 <?php echo soRenderCategoryTiles(['class' => 'so-cattiles--home', 'intro' => 'Concerts, sports, theater and festivals across the country. Pick a category to compare seats and prices before you buy.']); ?>
 
-<section class="section categories bg-white teams-nearby py-md-5 py-4" aria-labelledby="cities-heading">
+<section class="section categories so-cities teams-nearby py-md-5 py-4" aria-labelledby="cities-heading">
   <div class="container">
-    <h2 id="cities-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
-      Popular Cities
-    </h2>
+    <div class="so-sechead">
+      <p class="so-sechead__eyebrow">Explore events</p>
+      <h2 id="cities-heading" class="so-sechead__title">Popular Cities</h2>
+      <p class="so-sechead__sub">Find concerts, sports, theater and more in the most popular cities across the U.S.</p>
+    </div>
     <div id="browseCitiesWrapper">
       <ul class="so-city-pills list-unstyled">
         <?php
@@ -271,14 +273,18 @@ foreach ($fallbackCategories as $key => $list) {
         foreach ($soCities as $ci => [$soCitySlug, $soCityName]) { ?>
         <li<?php echo $ci >= 8 ? ' class="so-city-extra"' : ''; ?>><a href="/city/<?php echo htmlspecialchars($soCitySlug, ENT_QUOTES, 'UTF-8'); ?>" class="city-pill"><?php echo htmlspecialchars($soCityName, ENT_QUOTES, 'UTF-8'); ?></a></li>
         <?php } ?>
-        <li><a href="/city-events" class="city-pill city-pill--all">All cities &rsaquo;</a></li>
+        <li><a href="/city-events" class="city-pill city-pill--all">All cities <span aria-hidden="true">&rarr;</span></a></li>
       </ul>
     </div>
   </div>
 </section>
 
 <section class="container new-slider venue-section left-right-btn py-md-5 py-4">
-  <h2 class="fw-bold fs-4 mb-4">Top Venues</h2>
+  <div class="so-sechead">
+    <p class="so-sechead__eyebrow" id="venueEyebrow">Popular venues</p>
+    <h2 class="so-sechead__title">Top Venues</h2>
+    <p class="so-sechead__sub">Discover popular venues for concerts, sports, comedy and more.</p>
+  </div>
   <div class="venue-slider">    
     <?php echo buildVenueSkeleton(4); ?>
   </div>
