@@ -113,8 +113,9 @@
     if (!state.lat || !state.lng) { near.hidden = true; return; }
     var my = ++state.token;
     state.page = page;
-    if (page === 1) { grid.innerHTML = skeleton(4); near.hidden = false; more.hidden = true; state.nw = false; }
+    if (page === 1) { grid.innerHTML = skeleton(4); near.hidden = false; more.hidden = true; state.nw = false; grid.classList.remove('is-expanded'); }
     more.disabled = true;
+    if (page > 1) { more.textContent = 'Loading...'; more.setAttribute('aria-busy', 'true'); }
     var qs = 'kind=near&cat=' + encodeURIComponent(cat) + (catId !== '0' ? '&catid=' + encodeURIComponent(catId) : '') + '&when=' + encodeURIComponent(state.when) + '&sort=' + encodeURIComponent(state.sort) + '&radius=' + encodeURIComponent(state.radius) + '&max=' + encodeURIComponent(state.max) + (state.nw ? '&nw=1' : '') + '&page=' + page +
       '&lat=' + encodeURIComponent(state.lat) + '&lng=' + encodeURIComponent(state.lng);
     fetch('/ajax/get-home-feed.php?' + qs).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (data) {
@@ -136,10 +137,20 @@
       if (page === 1) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
       more.hidden = !(data && data.hasMore);
       more.disabled = false;
+      more.textContent = 'See more';
+      more.removeAttribute('aria-busy');
+      // On phones this grid is a sideways carousel, so new cards used to land off-screen and "See more" looked dead. After the
+      // first tap the grid opens up into rows and the first new card is brought into view.
+      if (page > 1) {
+        var fresh = grid.querySelectorAll('.so-feed-card')[start];
+        if (fresh && fresh.scrollIntoView) { fresh.scrollIntoView({ behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest' }); }
+      }
       if (window.soBatchLoadImages) window.soBatchLoadImages(grid, '.event-dynamic-image:not(.loaded)', function () { return my === state.token; });
     }).catch(function () {
       if (my !== state.token) return;
       more.disabled = false;
+      more.textContent = 'See more';
+      more.removeAttribute('aria-busy');
       if (page === 1) showFailure();
     });
   }
@@ -170,7 +181,7 @@
   document.addEventListener('click', function (e) { if (!root.contains(e.target)) closePops(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePops(); });
 
-  more.addEventListener('click', function () { load(state.page + 1); });
+  more.addEventListener('click', function () { grid.classList.add('is-expanded'); load(state.page + 1); });
 
   // Typing a place: Google Places, loaded only when the field is first used.
   var placesReady = false;

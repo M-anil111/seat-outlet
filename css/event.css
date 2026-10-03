@@ -1695,3 +1695,63 @@ font-size: 18px;
 /* The widget's first-visit "Add up to 10 tickets to My List" popup lands on top of the Tickets / Filters strip and hides the
    controls people need first. The My List checkboxes themselves stay. */
 #tn-maps #sea-my-list-popup.sea-first-msg { display: none !important; }
+
+/* Quantity choices added by js/event-qty.js (5, 6, 6+) look like the widget's own, and the note above the list is quiet */
+#tn-maps .filters-qty-filter .so-qty-extra { cursor: pointer; }
+#tn-maps .filters-qty-filter .so-qty-extra.sea-active, #tn-maps .filters-qty-filter .so-qty-extra.active { background-color: #3358e4 !important; border-color: #3358e4 !important; color: #fff !important; }
+#tn-maps .so-qty-note { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 12px 0; padding: 10px 14px; border-radius: 12px; background: #eef4ff; color: #1d1d1f; font-size: 14px; line-height: 1.35; }
+#tn-maps .so-qty-note button { margin-left: auto; min-height: 36px; padding: 0 14px; border: 0; border-radius: 980px; background: #fff; color: #0071e3; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+/* "How many tickets?" sheet: a 3 x 2 grid of large choices (1, 2, 3, 4, 5, 6+), the picked one outlined in black. The widget's own
+   "Any" is hidden here and stays reachable as "Show all tickets" (the Skip button). */
+#tn-maps #sea-quantity-modal-options, body #sea-quantity-modal-options { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 16px; margin: 6px 0 16px; }
+#sea-quantity-modal-options > label, #sea-quantity-modal-options > .so-qty-extra { display: flex !important; align-items: center; justify-content: center; width: auto !important; height: 64px !important; min-height: 64px; margin: 0 !important; padding: 0 !important; border: 1px solid #d2d2d7 !important; border-radius: 14px !important; background: #fff !important; color: #1d1d1f !important; font-size: 22px; font-weight: 600; box-shadow: none !important; cursor: pointer; }
+#sea-quantity-modal-options > label:first-child { display: none !important; }
+#sea-quantity-modal-options > label.sea-active, #sea-quantity-modal-options > .so-qty-extra.sea-active { border: 2px solid #1d1d1f !important; background: #fff !important; color: #1d1d1f !important; }
+#sea-quantity-modal-options > label:hover, #sea-quantity-modal-options > .so-qty-extra:hover { border-color: #86868b !important; }
+#sea-quantity-modal-options input { position: absolute; opacity: 0; pointer-events: none; }
+#sea-quantity-modal-title { font-size: 20px; font-weight: 700; text-align: center; padding: 6px 16px 0; }
+#sea-quantity-modal-skip { display: block; margin: 0 auto; background: none !important; border: 0 !important; color: #0066cc !important; font-size: 16px; font-weight: 600; text-decoration: none; padding: 10px 16px; }
+
+/* The widget leaves a small arrow behind when its first-visit My List popup is hidden */
+#tn-maps .Sea-MyListPopup-arrow.sea-first-msg, #tn-maps .Sea-MyListPopup-arrow .sea-down-arrow { display: none !important; }
+
+/* Ticket rows: price first, "each" and "fees included" on one quiet line, a Buy button that looks like one, and the value score as
+   a small green label (same data as before, laid out like the best listing screens). */
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-price-col-inner { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; white-space: nowrap; }
+#tn-maps tr.Sea-TicketRow .sea-ticket-list-price-col-price { display: flex; align-items: baseline; gap: 4px; }
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-cta-amt { font-size: 22px !important; font-weight: 800 !important; line-height: 1.1; color: #1d1d1f; }
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-cta-amt-suffix { font-size: 13px !important; color: #6e6e73 !important; font-weight: 500 !important; }
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-price-col .sea-ticket-row-fees-included { font-size: 12px !important; font-style: normal !important; font-weight: 500 !important; color: #6e6e73 !important; text-transform: none; white-space: nowrap; }
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-cta-col br { display: none; }
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-cta-col .sea-ticket-row-fees-included { display: none !important; }
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-cta-col { vertical-align: middle; text-align: center; }
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-cta-col .buy-btn { display: inline-block; margin: 0 0 6px; padding: 9px 16px; border-radius: 980px; background: #0071e3; color: #fff !important; font-size: 14px; font-weight: 600; line-height: 1.1; }
+#tn-maps tr.Sea-TicketRow .sea-tg-list-value-score-inner { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+#tn-maps tr.Sea-TicketRow .sea-value-score-star { font-size: 11px !important; }
+#tn-maps tr.Sea-TicketRow .sea-tg-list-value-score-text { display: inline-block; padding: 2px 9px; border-radius: 980px; background: #e6f4ea; color: #137333 !important; font-size: 12px !important; font-weight: 700 !important; font-style: normal !important; }
+
+/* Row layout: details on the left (section, row, how many tickets), price over the Buy button on the right. The details icon sits at
+   the top right of the details block. */
+#tn-maps tr.Sea-TicketRow > td:nth-child(3) { min-width: 0; flex: 1 1 auto; }
+#tn-maps tr.Sea-TicketRow table.venue-ticket-list-tbl, #tn-maps tr.Sea-TicketRow table.venue-ticket-list-tbl > tbody { display: block; width: 100%; }
+#tn-maps tr.Sea-TicketRow table.venue-ticket-list-tbl > tbody > tr { display: grid; grid-template-columns: minmax(0, 1fr) auto !important; grid-template-areas: "qty price" "qty cta" !important; column-gap: 10px !important; row-gap: 8px; align-items: center; }
+#tn-maps tr.Sea-TicketRow td.venue-ticket-list-section-qty-col { grid-area: qty !important; display: block; width: auto !important; min-width: 0; padding: 0 !important; align-self: start; }
+#tn-maps tr.Sea-TicketRow td.venue-ticket-list-info-col { grid-area: qty !important; position: static !important; float: none !important; justify-self: end; align-self: start; width: auto !important; padding: 0 !important; margin: 0 !important; }
+#tn-maps tr.Sea-TicketRow td.venue-ticket-list-section-qty-col { padding-right: 36px !important; }
+#tn-maps tr.Sea-TicketRow td.venue-ticket-list-price-col { grid-area: price !important; width: auto !important; padding: 0 !important; text-align: right; }
+#tn-maps tr.Sea-TicketRow td.venue-ticket-list-cta-col { grid-area: cta !important; width: auto !important; padding: 0 !important; justify-self: stretch; display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-section-row-text { overflow-wrap: normal; word-break: normal; }
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-cta-col .buy-btn { margin: 0; text-align: center; }
+#tn-maps tr.Sea-TicketRow .sea-tg-list-value-score { text-align: center; }
+#tn-maps tr.Sea-TicketRow .sea-tg-list-value-score-inner { justify-content: center; }
+#tn-maps tr.Sea-TicketRow .sea-tg-list-value-score-inner { flex-direction: row; align-items: center; gap: 6px; }
+#tn-maps tr.Sea-TicketRow .sea-tg-list-value-score-inner br { display: none; }
+#tn-maps tr.Sea-TicketRow .sea-tg-list-value-score-inner .sea-value-score-star { display: none !important; }
+
+#tn-maps tr.Sea-TicketRow td.venue-ticket-list-info-col, #tn-maps tr.Sea-TicketRow td.venue-ticket-list-info-col * { position: static !important; transform: none !important; }
+#tn-maps tr.Sea-TicketRow td.venue-ticket-list-info-col { display: block; width: 28px !important; height: 28px; }
+#tn-maps tr.Sea-TicketRow td.venue-ticket-list-price-col { display: block; justify-self: stretch; }
+#tn-maps tr.Sea-TicketRow .venue-ticket-list-price-col-inner { width: 100%; }
+#tn-maps tr.Sea-TicketRow td.venue-ticket-list-info-col .sea-sr-only { position: absolute !important; }
+#tn-maps tr.Sea-TicketRow td.venue-ticket-list-price-col { width: 100% !important; max-width: none; min-width: 0; box-sizing: border-box; }

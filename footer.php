@@ -176,6 +176,7 @@ window.addEventListener('load', function () {
     <script src="<?php echo htmlspecialchars(soAsset('js/event-actions.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/saved-events.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/event-widget.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/event-qty.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
 <script>
 // Offline fallback page (sw.js). Registered after the page has loaded so it never competes with first paint; not on admin pages.

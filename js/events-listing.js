@@ -114,7 +114,54 @@ if(results) {
     });
 }
     
+/* Compact location pill: opens a small box with the city / ZIP field; the pill shows the chosen place. */
+function soSetLocLabel(text) {
+    document.querySelectorAll('[data-so-loc-label]').forEach(function (el) {
+        el.textContent = text ? text : 'Location';
+        const chip = el.closest('.so-chip');
+        if (chip) chip.classList.toggle('so-chip--on', !!text);
+    });
+}
+(function () {
+    const btn = document.querySelector('[data-so-loc-toggle]');
+    const pop = document.querySelector('[data-so-loc-pop]');
+    if (!btn || !pop) return;
+    function close() { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+    btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const open = pop.hidden;
+        document.querySelectorAll('.so-dd[open]').forEach(function (d) { d.removeAttribute('open'); });
+        pop.hidden = !open;
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) { const f = pop.querySelector('input'); if (f) setTimeout(function () { f.focus(); }, 30); }
+    });
+    document.addEventListener('click', function (e) {
+        if (!pop.hidden && !pop.contains(e.target) && !btn.contains(e.target) && !e.target.closest('.pac-container')) close();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    window.soCloseLocPop = close;
+})();
+
+/* Date and Sort dropdown pills: choosing a row shows it in the pill and closes the menu. */
+document.addEventListener('click', function (e) {
+    const row = e.target.closest && e.target.closest('.so-dd .so-pop__row');
+    const dd = row && row.closest('.so-dd');
+    if (!dd) return;
+    const label = dd.querySelector('[data-so-dd-label]');
+    if (label) {
+        const isDefault = row.hasAttribute('data-label');
+        label.textContent = isDefault ? (label.getAttribute('data-default') || row.textContent) : row.textContent;
+        dd.querySelector('summary').classList.toggle('so-chip--on', !isDefault);
+    }
+    dd.removeAttribute('open');
+});
+document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.so-dd')) return;
+    document.querySelectorAll('.so-dd[open]').forEach(function (d) { d.removeAttribute('open'); });
+});
+
 function updateHeading(loc = '') {
+    soSetLocLabel(loc);
     const heading = document.getElementById('locationHeading');
     if (!heading) return;
     if (loc) {        
@@ -144,11 +191,13 @@ function updateEventsSection(location) {
             spinner.classList.add('d-none');
         }
 
+        if (input && input.value !== '') { soSetLocLabel(input.value); if (window.soCloseLocPop) window.soCloseLocPop(); }
         if (input && input.value !== '' && resetBtn) {
             resetBtn.classList.remove('d-none');
             resetBtn.onclick = function () {
                 input.value = '';
                 this.classList.add('d-none');
+                soSetLocLabel('');
                 if (noResults) noResults.innerHTML = '';
                 const heading = soById('locationHeading');
                 if (heading) heading.innerHTML = '';
