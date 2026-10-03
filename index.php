@@ -296,7 +296,7 @@ foreach ($fallbackCategories as $key => $list) {
 <section class="so-home-lead" aria-label="Ticket alerts">
   <div class="container">
     <?php echo soLeadForm([
-        'source' => 'home', 'names' => false, 'id' => 'homeAlerts', 'class' => 'so-nl--home',
+        'source' => 'home', 'names' => true, 'id' => 'homeAlerts', 'class' => 'so-nl--home',
         'title' => 'Get alerts for tours and on-sales',
         'text' => 'Join the Seat Outlet list for tour announcements, on-sale news and ticket tips, sent to your inbox. Free, and you can unsubscribe any time.',
         'button' => 'Get alerts',

@@ -279,7 +279,7 @@ $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="c
 										'interest_type' => 'performer',
 										'interest_id' => 0,
 										'interest_name' => $keywordHeader,
-										'names' => false,
+										'names' => true,
 										'class' => 'so-nl--empty text-start',
 									]);
 								} ?>

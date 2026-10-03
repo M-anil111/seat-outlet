@@ -1295,3 +1295,37 @@ document.addEventListener('error', function (e) {
   function init() { document.querySelectorAll('[data-so-subs]').forEach(setup); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
+
+
+/* "Read more" under the newsletter on listing pages: opens everything below it, closes it again. */
+(function () {
+  var wrap = document.querySelector('[data-so-more]');
+  if (!wrap) return;
+  var btn = wrap.querySelector('[data-so-more-toggle]');
+  var panel = document.getElementById('soMorePanel');
+  var label = wrap.querySelector('[data-so-more-label]');
+  if (!btn || !panel) return;
+  function set(open, scroll) {
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (label) label.textContent = open ? 'Show less' : 'Read more';
+    wrap.classList.toggle('is-open', open);
+    if (open && typeof window.soAdsPush === 'function') window.soAdsPush();   // ads inside the panel are only requested once they are visible
+    if (scroll) {
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var target = open ? panel : btn;
+      var top = target.getBoundingClientRect().top + window.pageYOffset - (open ? 90 : 220);
+      window.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+    }
+  }
+  btn.addEventListener('click', function () { set(panel.hidden, true); });
+  // A link to something inside the panel (a #hash) opens it first.
+  function openForHash() {
+    if (!location.hash || location.hash.length < 2) return;
+    var t = null;
+    try { t = document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch (e) {}
+    if (t && panel.contains(t)) set(true, false);
+  }
+  openForHash();
+  window.addEventListener('hashchange', openForHash);
+})();

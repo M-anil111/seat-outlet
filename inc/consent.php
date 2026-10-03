@@ -46,6 +46,6 @@ function soSingleMain($html) {
     }, $html);
     // Closing tags: keep only the one followed by the marker, turn the others into </div>.
     $html = preg_replace('#</main>(?!<!--so-main-end-->)#i', '</div>', $html);
-    $html = str_replace('<!--so-main-end-->', '', $html);
-    return function_exists('soAdInjectBanner') ? soAdInjectBanner($html) : $html;
+    if (function_exists('soAdInjectBanner')) { $html = soAdInjectBanner($html); }   // before the marker goes: the end-of-page ad is placed at it
+    return str_replace('<!--so-main-end-->', '', $html);
 }

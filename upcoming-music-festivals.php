@@ -28,7 +28,7 @@ soRenderListingPage([
 		'params'  => $params,
 		'empty'   => ['basePath' => '/upcoming-music-festivals', 'noun' => 'festivals', 'when' => $when, 'max' => $maxPrice, 'fragment' => soCategoryFragment(LOCATION_CATEGORY_PATHS['festivals']), 'kind' => 'category', 'id' => 0, 'name' => 'Festivals', 'alts' => soListingHubAlts('/upcoming-music-festivals')],
 	],
-	'lead'     => ['source' => 'listing', 'title' => 'Get alerts when new festivals are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => 0, 'interest_name' => 'Festivals', 'names' => false],
+	'lead'     => ['source' => 'listing', 'title' => 'Get alerts when new festivals are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => 0, 'interest_name' => 'Festivals', 'names' => true],
 	'afterRow' => function () use ($events) { renderCategoryCityLinksBlock($events, 'festivals-city', 'Festival'); },
 ]);
 ?>

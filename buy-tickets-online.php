@@ -46,7 +46,7 @@ soRenderListingPage([
 		'params'  => $params,
 		'empty'   => ['basePath' => '/buy-tickets-online', 'noun' => 'events', 'when' => $when, 'max' => $maxPrice, 'fragment' => soCategoryFragment(''), 'kind' => 'category', 'id' => 0, 'name' => 'Events', 'alts' => soListingHubAlts('/buy-tickets-online')],
 	],
-	'lead'     => ['source' => 'listing', 'title' => 'Get alerts when new events are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => 0, 'interest_name' => 'Events', 'names' => false],
+	'lead'     => ['source' => 'listing', 'title' => 'Get alerts when new events are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => 0, 'interest_name' => 'Events', 'names' => true],
 	'afterSection' => function () use ($faqs, $artistName) {
 		?>
 		<div class="tab-section content-section-detail">

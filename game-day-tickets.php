@@ -28,7 +28,7 @@ soRenderListingPage([
 		'params'  => $params,
 		'empty'   => ['basePath' => '/game-day-tickets', 'noun' => 'games', 'when' => $when, 'max' => $maxPrice, 'fragment' => soCategoryFragment(TN_CATEGORY_PATH_SPORTS), 'kind' => 'category', 'id' => 0, 'name' => 'Sports', 'alts' => soListingHubAlts('/game-day-tickets')],
 	],
-	'lead'     => ['source' => 'listing', 'title' => 'Get alerts when new games are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => 0, 'interest_name' => 'Sports', 'names' => false],
+	'lead'     => ['source' => 'listing', 'title' => 'Get alerts when new games are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => 0, 'interest_name' => 'Sports', 'names' => true],
 	'afterRow' => function () use ($events) { renderCategoryCityLinksBlock($events, 'sports-city', 'Sports'); },
 ]);
 ?>

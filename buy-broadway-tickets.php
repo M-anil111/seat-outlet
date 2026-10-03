@@ -28,7 +28,7 @@ soRenderListingPage([
 		'params'  => $params,
 		'empty'   => ['basePath' => '/buy-broadway-tickets', 'noun' => 'shows', 'when' => $when, 'max' => $maxPrice, 'fragment' => soCategoryFragment(TN_CATEGORY_PATH_THEATER), 'kind' => 'category', 'id' => 0, 'name' => 'Theater', 'alts' => soListingHubAlts('/buy-broadway-tickets')],
 	],
-	'lead'     => ['source' => 'listing', 'title' => 'Get alerts when new theater shows are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => 0, 'interest_name' => 'Theater', 'names' => false],
+	'lead'     => ['source' => 'listing', 'title' => 'Get alerts when new theater shows are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => 0, 'interest_name' => 'Theater', 'names' => true],
 	'afterRow' => function () use ($events) { renderCategoryCityLinksBlock($events, 'theater-city', 'Theater'); },
 ]);
 ?>

@@ -344,7 +344,7 @@ function soRenderListingEmpty(array $o): string {
 			'interest_type' => $o['kind'] === 'city' ? 'city' : 'category',
 			'interest_id' => (int) $o['id'],
 			'interest_name' => $o['name'],
-			'names' => false,
+			'names' => true,
 			'class' => 'so-nl--empty',
 		]);
 	} ?>
@@ -455,15 +455,28 @@ function soRenderListingPage(array $o): void {
 								<i class="bi bi-shield-check"></i>
 							</div>
 						</div>
-						<?php echo function_exists('soAdSlot') ? soAdSlot('listing', 'rectangle') : ''; ?>
+						<?php echo function_exists('soAdSlot') ? soAdSlot('listing', 'rectangle') . soAdSlot('side2', 'rectangle') : ''; ?>
 					</div>
 				</div>
 			</div>
-			<?php if (is_callable($o['afterRow'])) { ($o['afterRow'])(); } ?>
 		</div>
-		<?php if (is_callable($o['afterSection'])) { ($o['afterSection'])(); } ?>
 	</div>
 </section>
+<?php
+    // Below the newsletter: an ad, then "Read more". Everything the page prints after this (the city links, the guide text, the FAQ)
+    // sits in the panel the button opens; footer.php closes it. Without JavaScript the panel stays open.
+    $GLOBALS['soMoreOpen'] = true;
+    echo function_exists('soAdSlot') ? '<div class="container so-more__ad">' . soAdSlot('pre') . '</div>' : '';
+    ?>
+<div class="so-more" data-so-more>
+	<div class="so-more__bar"><div class="container"><button type="button" class="so-more__btn" data-so-more-toggle aria-expanded="false" aria-controls="soMorePanel"><span data-so-more-label>Read more</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div></div>
+	<div class="so-more__panel" id="soMorePanel" hidden>
+		<noscript><style>.so-more__panel[hidden]{display:block}.so-more__bar{display:none}</style></noscript>
+		<div class="container so-more__inner">
+			<?php if (is_callable($o['afterRow'])) { ($o['afterRow'])(); } ?>
+			<?php if (is_callable($o['afterSection'])) { ($o['afterSection'])(); } ?>
+		</div>
+		<?php echo function_exists('soAdSlot') ? '<div class="container so-more__ad">' . soAdSlot('inpanel') . '</div>' : ''; ?>
 <?php
 }
 

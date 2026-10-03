@@ -28,7 +28,7 @@ soRenderListingPage([
 		'params'  => $params,
 		'empty'   => ['basePath' => '/concert-tickets-for-sale', 'noun' => 'concerts', 'when' => $when, 'max' => $maxPrice, 'fragment' => soCategoryFragment(TN_CATEGORY_PATH_CONCERTS), 'kind' => 'category', 'id' => 0, 'name' => 'Concerts', 'alts' => soListingHubAlts('/concert-tickets-for-sale')],
 	],
-	'lead'     => ['source' => 'listing', 'title' => 'Get alerts when new concerts are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => 0, 'interest_name' => 'Concerts', 'names' => false],
+	'lead'     => ['source' => 'listing', 'title' => 'Get alerts when new concerts are added', 'text' => 'One email when new dates go on sale. Unsubscribe any time.', 'button' => 'Notify me', 'interest_type' => 'category', 'interest_id' => 0, 'interest_name' => 'Concerts', 'names' => true],
 	'afterRow' => function () use ($events) { renderCategoryCityLinksBlock($events, 'concerts-city', 'Concert'); },
 ]);
 ?>
