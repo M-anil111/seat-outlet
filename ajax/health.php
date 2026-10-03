@@ -23,6 +23,9 @@ try {
     $pending = array_values(array_filter($names, function ($n) use ($applied) { return !isset($applied[$n]); }));
     $out['migrations'] = ['files' => count($names), 'applied' => count($applied), 'pending' => count($pending), 'pendingNames' => array_slice($pending, 0, 10)];
     if ($pending) $out['ok'] = false;
+    $ml = json_decode((string) @file_get_contents(__DIR__ . '/../cache/migrate_last.json'), true);
+    if (is_array($ml)) $out['migrations']['lastAutoRun'] = ['secondsAgo' => time() - (int) ($ml['at'] ?? 0), 'applied' => $ml['applied'] ?? [], 'error' => $ml['error'] ?? null];
+    $out['migrations']['autoMigrate'] = soAutoMigrateEnabled();
 } catch (Throwable $e) {
     $out['migrations'] = ['error' => 'could not read'];
     $out['ok'] = false;

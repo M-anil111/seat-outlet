@@ -326,6 +326,13 @@ optional.
   file or script? Just rebuild and commit the result (CI fails when it is stale). A class that is only assembled at runtime
   (`'btn-' + name`) cannot be found: write it out in full somewhere, or add it to the safelist in that config. Classes typed into
   blog posts or editable page blocks (stored in the database) also need to be in the safelist.
+- **Site CSS.** `css/style.css` is the readable source and is never trimmed; `css/style.min.css` is built from it with the rules for classes
+  the site never uses removed (`tools/purgecss-style.config.cjs`, same approach as Bootstrap above, scanning PHP, `js/*.js` and the SQL seeds).
+  Same rule: a class assembled at runtime (`'so-chipx--' . $kind`) is invisible to the scan, so write it out in full somewhere or add it to
+  that config's safelist. Classes that third-party scripts add (slick, flatpickr, Google Places) are already safelisted. Backup of the full
+  pre-trim state: branch `backup/before-css-optimization-2026-10-03`.
+- **Auto-migration (beta).** `inc/auto-migrate.php` applies pending `db/migrations/*.sql` after a public page request on hosts that are not
+  indexable (beta, staging); it is off on the live host unless `SO_AUTO_MIGRATE=1`. Result and any failure: `/ajax/health.php`.
 - **Sentry check.** `php tools/sentry-test.php` on the server sends one test message and says whether delivery worked.
 - **Icons.** Only the Bootstrap Icons the code uses are shipped (`fonts/bootstrap-icons-subset.woff2` + `css/icons.css`, folded into
   `style.min.css`). Using a new `bi-*` icon? Run `python3 tools/build-icons.py` (needs `pip install fonttools brotli`) then

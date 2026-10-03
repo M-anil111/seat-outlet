@@ -2,7 +2,8 @@
 # Builds the minified front-end assets that header.php / footer.php prefer
 # (see soAsset() in functions.php):
 #   css/event.min.css   = css/event.css, minified
-#   css/style.min.css   = css/fonts.css + css/style.css + css/skeleton.css + css/icons.css (icon subset, tools/build-icons.py), minified
+#   css/style.min.css   = css/fonts.css + css/style.css + css/skeleton.css, with the rules for classes the site never uses removed
+#                         (tools/purgecss-style.config.cjs), + css/icons.css (icon subset, tools/build-icons.py), minified
 #   js/<name>.min.js    = each js/<name>.js, compressed and mangled
 #   css/bootstrap.min.css = lib/bootstrap/5.3.8/bootstrap.min.css reduced to the classes the site uses
 #                         (tools/purgecss.config.cjs; a class that is only built at runtime must be safelisted there)
@@ -17,7 +18,9 @@ CHECK=0; [ "${1:-}" = "--check" ] && CHECK=1
 OUT="$(mktemp -d)"
 trap 'rm -rf "$OUT"' EXIT
 
-cat css/fonts.css css/style.css css/skeleton.css css/icons.css | npx --yes clean-css-cli@5.6.3 -O1 -o "$OUT/style.min.css"
+# Site stylesheet: unused rules out first (icons.css is generated from the glyphs in use, so it is added after and never purged).
+mkdir -p "$OUT/style-src" "$OUT/style-purged"
+cat css/fonts.css css/style.css css/skeleton.css > "$OUT/style-src/style.css"
 npx --yes clean-css-cli@5.6.3 -O1 css/event.css -o "$OUT/event.min.css"   # event pages only (seat-map widget skin), linked by inc/seo-event.php
 for f in js/*.js; do
   case "$f" in *.min.js) continue;; esac
@@ -28,6 +31,9 @@ done
 mkdir -p "$OUT/purged"
 npx --yes purgecss@6.0.0 --config tools/purgecss.config.cjs --output "$OUT/purged/" >/dev/null
 cp "$OUT/purged/bootstrap.min.css" "$OUT/bootstrap.purged.css"
+
+npx --yes purgecss@6.0.0 --config tools/purgecss-style.config.cjs --css "$OUT/style-src/style.css" --output "$OUT/style-purged/" >/dev/null
+cat "$OUT/style-purged/style.css" css/icons.css | npx --yes clean-css-cli@5.6.3 -O1 -o "$OUT/style.min.css"
 
 status=0
 install_or_compare() {

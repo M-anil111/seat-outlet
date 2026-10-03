@@ -118,3 +118,16 @@ location = /404.php { internal; fastcgi_param REDIRECT_STATUS 404; include fastc
 ```
 
 Also make sure `fastcgi_intercept_errors on;` is set if PHP answers 404 for a missing script. Test: `curl -I https://<host>/no-such-page` must return 404 with the branded body, and `curl -I https://<host>/404` must also return 404 (it no longer returns 200).
+
+## CDN (Cloudflare): what is cached today and the rules that cache the rest
+
+Checked on beta on 2026-10-03 with `curl -I`. Cloudflare already caches static files by extension (images, `.css`, `.js`, fonts: `cf-cache-status: HIT` after the first request). It does **not** cache HTML or the JSON feeds: every page shows `cf-cache-status: DYNAMIC`, even though the app already sends `Cache-Control: public, max-age=0, s-maxage=120, stale-while-revalidate=600, stale-if-error=3600` on public pages. Cloudflare ignores those headers for HTML until a Cache Rule makes the page eligible.
+
+Dashboard steps (Caching, then Cache Rules; about 10 minutes, nothing to deploy):
+
+1. **HTML and feeds.** Rule "Cache public pages": when the request URI path does not start with `/admin`, `/checkout`, `/ajax/` (add a second rule for `/ajax/get-home-feed.php`, `/ajax/get-location-category-events.php`, `/ajax/get-top-performers.php`), `/unsubscribe`, `/thank-you`, `/order-confirmation`, `/search`, `/newsletter` and the method is GET: **Eligible for cache**, Edge TTL **Use cache-control header if present**, Browser TTL **Respect origin**. The origin headers then decide: pages 2 minutes at the edge, served stale for 10 more while it refreshes, and kept for an hour if the origin is down. The app sets no session cookie on public pages (checked), so there is nothing to bypass on.
+2. **Static files.** Rule "Static files": path starts with `/css/`, `/js/`, `/fonts/`, `/lib/`, `/images/`: Edge TTL 1 month, Browser TTL respect origin. (The `?v=` stamp on our bundles changes with the content, so nothing stale is served after a deploy.) For the browser side, also add the nginx rules in "Caching and compression" above: `*.min.css` and `*.min.js` are currently `max-age=2592000` without `immutable`.
+3. **Speed settings** (Speed, Optimization): Brotli on, HTTP/3 on, Early Hints on, 0-RTT on. Leave Rocket Loader OFF (it breaks the seat-map widget) and Auto Minify off (the build already minifies).
+4. **Purge after a deploy** that changes HTML only (CSS and JS bundles are versioned): Caching, Configuration, Purge Everything, or purge by URL. With the 2 minute edge TTL pages refresh by themselves within about 2 to 12 minutes anyway.
+
+Check: `curl -sI https://<host>/ | grep -i cf-cache-status` should read `MISS` once and then `HIT` (or `REVALIDATED`/`UPDATING` inside the stale window).
