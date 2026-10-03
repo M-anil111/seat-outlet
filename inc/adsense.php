@@ -6,7 +6,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  * (environment variables, normally in inc/env.local.php on the server):
  *
  *   ADSENSE_CLIENT        the publisher id, "ca-pub-" followed by 16 digits
- *   ADSENSE_SLOT_HOME     the ad unit id (digits) of the banner shown under the home page hero
+ *   ADSENSE_SLOT_BANNER   the ad unit id (digits) of the banner shown under the hero banner on every page (ADSENSE_SLOT_HOME still works as the same setting)
  *   ADSENSE_SLOT_LISTING  the ad unit id (digits) of the box under "Shop Tickets Worry Free" on the listing pages (concerts, sports, theater, festivals, all events)
  *
  * Add more placements by calling soAdSlot('name') and a matching ADSENSE_SLOT_<NAME> setting. An ad unit whose id is not set prints
@@ -26,6 +26,7 @@ function soAdsenseClient(): string {
 function soAdSlot(string $placement, string $format = 'horizontal'): string {
     $client = soAdsenseClient();
     $slot = (string) getenv('ADSENSE_SLOT_' . strtoupper(preg_replace('/[^a-z0-9]/i', '_', $placement)));
+    if ($slot === '' && $placement === 'banner') $slot = (string) getenv('ADSENSE_SLOT_HOME');   // the home banner setting from before this was one banner for every page
     if ($client === '' || !preg_match('/^\d{6,20}$/', $slot)) {
         // Not set up yet: on the test site (or with ADSENSE_PLACEHOLDER=1) show where the ad will go. On the live site nothing is printed.
         if (!(defined('SITE_INDEXABLE') && !SITE_INDEXABLE) && getenv('ADSENSE_PLACEHOLDER') !== '1') return '';
@@ -40,11 +41,39 @@ function soAdSlot(string $placement, string $format = 'horizontal'): string {
 
 /** Footer script: loads AdSense once, after the page has loaded, only when a slot was printed and the visitor has not opted out. */
 function soAdsenseFooterScript(): string {
-    if (empty($GLOBALS['soAdsenseUsed'])) return '';
     $client = soAdsenseClient();
     if ($client === '') return '';
-    return '<script>(function(){var c=window.soConsent||{};if(c.gpc||c.choice==="decline")return;function go(){var s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";'
+    return '<script>(function(){var c=window.soConsent||{};if(c.gpc||c.choice==="decline"||!document.querySelector("ins.adsbygoogle"))return;function go(){var s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";'
         . 's.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' . htmlspecialchars($client, ENT_QUOTES, 'UTF-8') . '";document.head.appendChild(s);'
         . 'document.querySelectorAll("ins.adsbygoogle").forEach(function(){(window.adsbygoogle=window.adsbygoogle||[]).push({});});}'
         . 'if(document.readyState==="complete"){setTimeout(go,1500);}else{window.addEventListener("load",function(){setTimeout(go,1500);});}})();</script>';
+}
+
+/**
+ * The banner under the hero on every page. Pages have different heroes (home, content pages, listing, event, artist ...), so this is
+ * one output filter (called from soSingleMain in inc/consent.php): it finds the first hero element of the page and puts the banner
+ * right after it. A page can turn it off with $soNoAds = true (checkout and confirmation pages), and prints its own with
+ * soAdSlot('banner') when it needs a different place (then nothing is added). Pages without a hero get no banner.
+ */
+const SO_AD_HERO_CLASSES = ['hero-section', 'hero-so-why', 'vp-hero', 'tickets-hero-section', 'search-hero-section', 'performers-hero-section', 'mc-hero', 'is-hero', 'asm-hero', 'so-g-hero', 'so-evhero', 'so-ent-hero', 'so-art__hero', 'so-np__head', 'section-featured-header', 'so-hero2', 'results-header'];
+
+function soAdInjectBanner(string $html): string {
+    if (!empty($GLOBALS['soNoAds']) || strpos($html, 'so-ad--banner') !== false) return $html;
+    $banner = soAdSlot('banner');
+    if ($banner === '') return $html;
+    $alt = implode('|', array_map(function ($c) { return preg_quote($c, '#'); }, SO_AD_HERO_CLASSES));
+    // The first opening tag, anywhere in the page body, whose class list has a hero class as a whole word.
+    if (!preg_match('#<(section|header|div)\b[^>]*\bclass="(?:[^"]*\s)?(?:' . $alt . ')(?:\s[^"]*)?"[^>]*>#i', $html, $m, PREG_OFFSET_CAPTURE)) return $html;
+    $tag = strtolower($m[1][0]);
+    $start = $m[0][1];
+    $pos = $start + strlen($m[0][0]);
+    $depth = 1;
+    // Walk forward to the matching closing tag of the same element name.
+    while ($depth > 0 && preg_match('#<(/?)' . $tag . '\b[^>]*?(/?)>#i', $html, $t, PREG_OFFSET_CAPTURE, $pos)) {
+        $pos = $t[0][1] + strlen($t[0][0]);
+        if ($t[1][0] === '/') { $depth--; }
+        elseif ($t[2][0] !== '/') { $depth++; }
+    }
+    if ($depth > 0) return $html;   // unbalanced markup: leave the page alone
+    return substr($html, 0, $pos) . $banner . substr($html, $pos);
 }
