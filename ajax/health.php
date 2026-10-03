@@ -38,6 +38,8 @@ try {
     else { $img['error'] = 'images table not readable'; }
     $stampFile = __DIR__ . '/../cache/image_worker.stamp';
     $img['workerLastRunSecondsAgo'] = is_file($stampFile) ? time() - (int) filemtime($stampFile) : null;
+    $last = json_decode((string) @file_get_contents(__DIR__ . '/../cache/image_worker_last.json'), true);
+    if (is_array($last)) $img['lastRun'] = $last + ['secondsAgo' => time() - (int) ($last['at'] ?? 0)];
     $img['cacheWritable'] = is_writable(__DIR__ . '/../cache');
     $img['fastcgi'] = function_exists('fastcgi_finish_request');
     $img['webWorkerEnabled'] = getenv('IMAGE_WEB_WORKER') !== '0';

@@ -816,7 +816,10 @@ function imageWorkerMaybeRun($forTest = false) {
         ignore_user_abort(true);
         @set_time_limit(IMAGE_WORKER_BUDGET + 20);
         fastcgi_finish_request();   // the visitor already has the whole page; everything below is background work
-        imageWorkQueue(IMAGE_WORKER_BATCH, 1200000, time() + IMAGE_WORKER_BUDGET);
+        $t0 = microtime(true);
+        $stats = imageWorkQueue(IMAGE_WORKER_BATCH, 1200000, time() + IMAGE_WORKER_BUDGET);
+        // Shown by /ajax/health.php: how the last run went (so a slow or rate-limited queue is visible without server access).
+        @file_put_contents($dir . '/image_worker_last.json', json_encode($stats + ['at' => time(), 'seconds' => round(microtime(true) - $t0, 1)]));
     } catch (Throwable $e) {
         error_log('image worker: ' . $e->getMessage());
     }
