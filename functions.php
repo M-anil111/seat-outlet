@@ -1794,12 +1794,7 @@ function renderExploreBar($basePath, array $opts = []) {
     ?>
     <div class="so-explore" data-so-explore data-hero="<?php echo htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8'); ?>" data-when="<?php echo htmlspecialchars($when, ENT_QUOTES, 'UTF-8'); ?>" data-sort="<?php echo htmlspecialchars($sort, ENT_QUOTES, 'UTF-8'); ?>" data-radius="<?php echo (int) $radius; ?>" data-max="<?php echo (int) $max; ?>" data-catid="<?php echo (int) $catId; ?>" data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
         <?php
-        $subs = [
-            '/concert-tickets-for-sale' => [['Pop and rock', '/pop-rock-concert-tickets'], ['Alternative', '/alternative-concert-tickets'], ['Country', '/country-music-tickets'], ['Hip hop and rap', '/hip-hop-tickets'], ['R&B and soul', '/rnb-soul-concert-tickets'], ['Latin', '/latin-music-tickets'], ['Hard rock and metal', '/metal-concert-tickets'], ['Jazz and blues', '/jazz-and-blues-tickets'], ['Electronic', '/electronic-music-tickets'], ['Classical', '/classical-music-tickets'], ['Festivals', '/upcoming-music-festivals']],
-            '/game-day-tickets' => [['NFL', '/nfl-tickets'], ['NBA', '/nba-tickets'], ['MLB', '/mlb-tickets'], ['NHL', '/nhl-tickets'], ['MLS', '/mls-tickets']],
-            '/buy-broadway-tickets' => [['Comedy', '/comedy-show-tickets'], ['Family shows', '/category/children-family-1869']],
-        ];
-        $subAll = ['/concert-tickets-for-sale' => 'All concerts', '/game-day-tickets' => 'All sports', '/buy-broadway-tickets' => 'All theater'];
+        // Sub-categories come from the API's category tree (inc/category-tree.php); the hubs without one (all events, festivals) have none.
         // The hub this page belongs to: itself, or the family a single genre / league page sits in (concerts, sports, theater).
         $hub = isset($opts['family']) && isset($tabs[$opts['family']]) ? $opts['family'] : $basePath;
         ?>
@@ -1812,17 +1807,20 @@ function renderExploreBar($basePath, array $opts = []) {
         <?php
         // Sub-categories: links to pages that exist (each a genre or league page). The page you are on comes first and is
         // highlighted; "All ..." and the rest follow, and the row has previous / next buttons when it is wider than the screen.
-        if ($subs[$hub] ?? false) {
-            $allLabel = $subAll[$hub];
-            $items = [[$allLabel, $hub]];
-            foreach ($subs[$hub] as $sub) { $items[] = $sub; }
-            $currentHref = $basePath;
-            usort($items, function ($x, $y) use ($currentHref) { return ((int) ($y[1] === $currentHref)) <=> ((int) ($x[1] === $currentHref)); });   // stable on PHP 8: the chosen one first, the rest keep their order
+        $hubSubs = isset(SO_HUB_ROOTS[$hub]) ? soHubSubcategories($hub) : [];
+        if ($hubSubs) {
+            $allLabel = soHubAllLabel($hub);
+            $curId = (int) ($opts['catId'] ?? 0);
+            $items = [['id' => 0, 'label' => $allLabel, 'href' => $hub]];
+            foreach ($hubSubs as $sub) { $items[] = $sub; }
+            // The page you are on first (matched by category id, or by address for the hub itself), the rest keep their order.
+            $isCurrent = function ($it) use ($curId, $basePath) { return ($curId > 0 && $it['id'] === $curId) || ($curId === 0 && $it['href'] === $basePath) || $it['href'] === $basePath; };
+            usort($items, function ($x, $y) use ($isCurrent) { return ((int) $isCurrent($y)) <=> ((int) $isCurrent($x)); });
             ?>
         <div class="so-subcats-wrap" data-so-subs>
             <button type="button" class="so-subcats__arrow so-subcats__arrow--prev" data-so-subs-prev aria-label="Previous categories" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
             <nav class="so-subcats" aria-label="<?php echo htmlspecialchars($allLabel, ENT_QUOTES, 'UTF-8'); ?> by type" data-so-subs-track>
-                <?php foreach ($items as [$sl, $sh]) { $on = $sh === $currentHref; ?><a class="so-subcat<?php echo $on ? ' so-subcat--on' : ''; ?>" href="<?php echo htmlspecialchars($sh, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $on ? ' aria-current="page"' : ''; ?>><?php echo htmlspecialchars($sl, ENT_QUOTES, 'UTF-8'); ?></a><?php } ?>
+                <?php foreach ($items as $it) { $on = $isCurrent($it); ?><a class="so-subcat<?php echo $on ? ' so-subcat--on' : ''; ?>" href="<?php echo htmlspecialchars($it['href'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo $on ? ' aria-current="page"' : ''; ?>><?php echo htmlspecialchars($it['label'], ENT_QUOTES, 'UTF-8'); ?></a><?php } ?>
             </nav>
             <button type="button" class="so-subcats__arrow so-subcats__arrow--next" data-so-subs-next aria-label="More categories" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
         </div>
@@ -5744,7 +5742,8 @@ function seoScoreBadgeClass($score) {
 
 // Entity image layer (performers, teams, venues, festivals, cities).
 require_once __DIR__ . '/inc/images.php';
-require_once __DIR__ . '/inc/top-performers.php';   // home Top performers cards: build + background refresh
+require_once __DIR__ . '/inc/top-performers.php';
+require_once __DIR__ . '/inc/category-tree.php';   // sub-categories of the concert, sports and theater hubs, from the API's category tree
 require_once __DIR__ . '/inc/adsense.php';   // AdSense slots (print nothing until ADSENSE_CLIENT is set)
 require_once __DIR__ . '/inc/auto-migrate.php';   // beta: applies pending db/migrations after deploys, see the file
 require_once __DIR__ . '/inc/sitemap-build.php';   // XML sitemap index + typed files, kept current by a background crawl

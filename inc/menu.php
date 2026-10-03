@@ -6,7 +6,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  * Each section: key, label, link, icon (inline SVG path data, 24x24 stroke icons), tagline, groups of links.
  * All links are pages that exist; category ids come from the site's own category pages.
  */
-return [
+$soMenuDef = [
     ['key' => 'concerts', 'label' => 'Concerts', 'href' => '/concert-tickets-for-sale', 'tag' => 'Tours, shows and live music',
      'icon' => '<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
      'groups' => [
@@ -42,3 +42,18 @@ return [
         ['title' => 'More cities', 'links' => [['Atlanta', '/event-city/atlanta-ga-223'], ['Dallas', '/event-city/dallas-tx-1121'], ['Houston', '/event-city/houston-tx-2013'], ['Boston', '/event-city/boston-ma-559'], ['Seattle', '/event-city/seattle-wa-3997'], ['Miami', '/event-city/miami-fl-2784']]],
      ], 'all' => 'All cities'],
 ];
+
+// The second group of Concerts, Sports and Theater lists every other sub-category the ticket API has (Boxing, Rodeo, Ballet ...),
+// busiest first; the first group stays a hand-picked headline set. If the API is unreachable the hand-written lists above stay.
+if (function_exists('soHubSubcategories')) {
+    foreach ($soMenuDef as $i => $m) {
+        if (!isset(SO_HUB_ROOTS[$m['href']]) || count($m['groups']) < 2) continue;
+        try { $subs = soHubSubcategories($m['href']); } catch (Throwable $e) { $subs = []; }
+        if (!$subs) continue;
+        $shown = array_column($m['groups'][0]['links'], 1);
+        $more = [];
+        foreach ($subs as $sub) { if (!in_array($sub['href'], $shown, true) && $sub['href'] !== $m['href']) $more[] = [$sub['label'], $sub['href']]; }
+        if ($more) $soMenuDef[$i]['groups'][1]['links'] = array_slice($more, 0, 14);
+    }
+}
+return $soMenuDef;
