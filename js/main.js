@@ -1184,3 +1184,86 @@ document.addEventListener('error', function (e) {
   if (fb && img.getAttribute('src') !== fb) { img.src = fb; img.classList.add('loaded'); img.style.opacity = '1'; return; }
   img.style.visibility = 'hidden';   // nothing better to show: keep the card's layout, lose the broken-image icon
 }, true);
+
+/* =====================================================
+    Event cards (text only, no pictures): one card for every event list on the site.
+    soEvCard(ev, opts) returns the HTML; ev is what the feed endpoints return
+    { id, name, iso 'YYYY-MM-DD', date (text, fallback), time, venue, loc, price, tab, dist }.
+    opts.status = a small chip such as "Tomorrow" or "Popular". The heart saves the event on this device only
+    (same localStorage list the event page uses, key so_saved_events).
+===================================================== */
+(function () {
+  var KEY = 'so_saved_events';
+  var ICONS = {
+    concert: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>',
+    sports: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H4.5a2 2 0 0 0 2 3.5M16 6h3.5a2 2 0 0 1-2 3.5M12 13v4M8.5 20h7"/></svg>',
+    theater: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5.5h10v6a5 5 0 0 1-10 0v-6zM6.5 9h.01M10.5 9h.01M6.5 13c1 1 3 1 4 0"/><path d="M10.5 18.5a5 5 0 0 0 10-1.5v-6h-5.5M15.5 14h.01M19 14h.01"/></svg>',
+    festival: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v1.5h18V16a2 2 0 0 0 0-4v0a2 2 0 0 0 0-4V6.5H3V8zM14 6.5v11"/></svg>'
+  };
+  var LABEL = { concert: 'Concert', sports: 'Sports', theater: 'Theater', festival: 'Festival' };
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function kind(tab) {
+    tab = String(tab || '').toLowerCase();
+    return tab === 'sports' ? 'sports' : (tab === 'theatre' || tab === 'theater') ? 'theater' : tab === 'festival' ? 'festival' : 'concert';
+  }
+  function dateText(ev) {
+    var out = '';
+    if (/^\d{4}-\d{2}-\d{2}/.test(ev.iso || '')) {
+      var p = ev.iso.slice(0, 10).split('-').map(Number);
+      out = new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    } else {
+      out = String(ev.date || '');
+    }
+    var t = String(ev.time || '').trim();
+    if (out && /^\d{4}-\d{2}-\d{2}/.test(ev.iso || '')) out += ' • ' + (t && !/^tba$/i.test(t) ? esc(t) : 'Time TBA').replace(/&amp;/g, '&');
+    return out;
+  }
+  function slugOf(v) { return (typeof normalizeKey === 'function') ? normalizeKey(v) : String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+  function storeOk() { try { localStorage.getItem(KEY); return true; } catch (e) { return false; } }
+  function savedIds() {
+    try { var a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a.map(function (x) { return String(x && x.id); }) : []; } catch (e) { return []; }
+  }
+
+  window.soEvCard = function (ev, opts) {
+    opts = opts || {};
+    var k = kind(ev.tab);
+    var slug = slugOf(ev.name) + '-' + ev.id;
+    var href = '/event/' + slug;
+    var saved = storeOk() && savedIds().indexOf(String(ev.id)) !== -1;
+    var place = ev.loc ? '<small>' + esc(ev.loc) + (ev.dist != null ? ' · ' + (ev.dist < 3 ? 'nearby' : ev.dist + ' mi') : '') + '</small>' : '';
+    return '<article class="so-evc so-evc--' + k + '">' +
+      '<div class="so-evc__top"><span class="so-evc__badge">' + ICONS[k] + LABEL[k] + '</span>' +
+        (opts.status ? '<span class="so-evc__status' + (/^Popular/.test(opts.status) ? ' so-evc__status--hot' : '') + '">' + esc(opts.status) + '</span>' : '') +
+        (storeOk() ? '<button type="button" class="so-evc__save' + (saved ? ' is-saved' : '') + '" aria-pressed="' + (saved ? 'true' : 'false') + '" aria-label="Save ' + esc(ev.name) + '" data-so-evc-save data-id="' + esc(ev.id) + '" data-slug="' + esc(slug) + '" data-name="' + esc(ev.name) + '" data-iso="' + esc(ev.iso || '') + '" data-city="' + esc(ev.loc || '') + '" data-venue="' + esc(ev.venue || '') + '" data-price="' + esc(ev.price || '') + '"><svg width="20" height="20" viewBox="0 0 24 24" fill="' + (saved ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.3C1.7 8 3.6 5 6.7 5c1.9 0 3.5 1 5.3 3 1.8-2 3.4-3 5.3-3 3.1 0 5 3 3.9 6.2-1.7 4.7-9.2 9.3-9.2 9.3z"/></svg></button>' : '') +
+      '</div>' +
+      '<h3 class="so-evc__name"><a class="so-evc__link" href="' + href + '">' + esc(ev.name) + '</a></h3>' +
+      '<ul class="so-evc__meta">' +
+        '<li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg><span>' + esc(dateText(ev)) + '</span></li>' +
+        (ev.venue ? '<li><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12zm0-9.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6z"/></svg><span>' + esc(ev.venue) + place + '</span></li>' : '') +
+      '</ul>' +
+      '<div class="so-evc__foot">' + (ev.price ? '<span class="so-evc__price">From <strong>' + esc(ev.price) + '</strong></span>' : '<span class="so-evc__price so-evc__price--none">View tickets</span>') +
+        '<span class="so-evc__go" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>' +
+    '</article>';
+  };
+  window.soEvCardSkeleton = function (n) {
+    var h = '';
+    for (var i = 0; i < (n || 4); i++) h += '<article class="so-evc so-evc--skeleton" aria-hidden="true"><div class="so-evc__top"><span class="so-evc__sk so-evc__sk--badge"></span></div><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></article>';
+    return h;
+  };
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-so-evc-save]') : null;
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var list;
+    try { list = JSON.parse(localStorage.getItem(KEY) || '[]'); if (!Array.isArray(list)) list = []; } catch (x) { return; }
+    var id = String(b.getAttribute('data-id'));
+    var had = list.some(function (x) { return String(x && x.id) === id; });
+    if (had) list = list.filter(function (x) { return String(x && x.id) !== id; });
+    else list.unshift({ id: id, name: b.getAttribute('data-name'), slug: b.getAttribute('data-slug'), date: b.getAttribute('data-iso'), city: b.getAttribute('data-city'), venue: b.getAttribute('data-venue'), price: b.getAttribute('data-price'), savedAt: Date.now() });
+    try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, 40))); } catch (x) { return; }
+    b.classList.toggle('is-saved', !had);
+    b.setAttribute('aria-pressed', had ? 'false' : 'true');
+    var svg = b.querySelector('svg'); if (svg) svg.setAttribute('fill', had ? 'none' : 'currentColor');
+  });
+})();

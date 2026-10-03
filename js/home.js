@@ -1,9 +1,5 @@
 /* Escape a value for HTML text and attributes: names come from the ticket API and are put into innerHTML templates below. */
 function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-$('.custom-slider').on('setPosition', function(){
-  	equalHeightSlider('custom-slider', 'event-card');
-});
-
 $('.venue-slider').on('setPosition', function(){
 	equalHeightSlider('venue-slider', 'venue-card');
 });
@@ -29,69 +25,14 @@ $('.venue-slider').on('setPosition', function(){
     }
 
     function buildCards(data) {
-      let html = '';
-
-      data.forEach((event, index) => {
-        const loadingType = index < 2 ? 'eager' : 'lazy';
-        const fetchPriority = index < 2 ? 'high' : 'low';
-        const eSlug = normalizeKey(event.name) + '-' + event.id;
-    
-        html += `
-          <a href="/event/${eSlug}" class="team-link">
-            <article class="event-card" data-event-index="${index}">
-              <div class="event-card__img">
-                <img
-                  src="${escapeHtml(event.placeholder)}"
-                  alt="${escapeHtml(event.name)}"
-                  class="img-fluid event-dynamic-image blur-image"
-                  data-event="${encodeURIComponent(event.name)}"
-                  data-artist="${encodeURIComponent(event.performer || '')}"
-                  data-tab="${encodeURIComponent(event.tab)}"
-                  data-category='${escapeHtml(JSON.stringify(event.defaultCategory || {}))}'
-                  loading="${loadingType}"
-                  fetchpriority="${fetchPriority}"
-                  width="278"
-                  height="200"
-                >
-              </div>
-              <div class="event-card__body">
-                <h3 class="event-card__title venu-name-hide">${escapeHtml(event.name)}</h3>
-                <div class="mb-1">
-                  <span class="venu-date">${escapeHtml(event.date)}</span>
-                  <span class="venu-name">${escapeHtml(event.venue)} - ${escapeHtml(event.loc)}</span>
-                </div>
-                ${event.price ? `<p class="event-card__price mb-0">from <strong>${escapeHtml(event.price)}</strong></p>` : ''}
-              </div>
-            </article>
-          </a>
-        `;
-      });
-    
-      return html;
+      return data.map(function (event) {
+        return '<div class="so-evc-slide">' + window.soEvCard(event) + '</div>';
+      }).join('');
     }
 
     function generateEventSkeleton(count = 4) {
       let html = '';
-  
-      for (let i = 0; i < count; i++) {
-        html += `
-          <a href="javascript:void(0)" class="team-link skeleton-link">
-            <article class="event-card skeleton-card">
-              <div class="event-card__img skeleton-img"></div>
-              <div class="event-card__body">
-                <div class="skeleton-line skeleton-title"></div>
-                <div class="skeleton-meta">
-                  <span class="skeleton-line skeleton-date"></span>
-                  <span class="dot"></span>
-                  <span class="skeleton-line skeleton-venue"></span>
-                </div>
-                <div class="skeleton-line skeleton-price"></div>
-              </div>
-            </article>
-          </a>
-        `;
-      }
-  
+      for (let i = 0; i < count; i++) html += '<div class="so-evc-slide">' + window.soEvCardSkeleton(1) + '</div>';
       return html;
     }
 
@@ -166,7 +107,6 @@ $('.venue-slider').on('setPosition', function(){
         container.classList.remove('skeleton-loading');
         $slider.slick('setPosition');
   
-        loadImagesOneByOne(container, loadToken);
       } catch (err) {
         const $slider = $(selector);
         if ($slider.hasClass('slick-initialized')) {
@@ -559,6 +499,11 @@ document.addEventListener("DOMContentLoaded", function () {
         renderList(data.concerts, 'concerts-list');
         renderList(data.sports, 'sports-list');
         renderList(data.theater, 'theater-list');
+        // "From $53": the lowest listed price among that card's performers (computed on the server from TicketNetwork's own figures)
+        Object.keys(data.from || {}).forEach(k => {
+          const el = document.querySelector('[data-so-from="' + k + '"]');
+          if (el && data.from[k] > 0) { el.textContent = 'From $' + data.from[k]; el.hidden = false; }
+        });
       })
       .catch(err => {
         console.error(err);
@@ -569,26 +514,32 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // -----------------------
-  // Render List
+  // Render List: avatar (stored picture, otherwise an initials tile), name, chevron
   // -----------------------
+  function initials(name) {
+    const w = String(name || '').replace(/[^A-Za-z0-9 ]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+    return ((w[0] || '?')[0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase();
+  }
+  function hue(name) { let h = 0; for (const c of String(name || '')) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+
   function renderList(list, elementId) {
     const el = document.getElementById(elementId);
     if (!el) return;
-  
+
     if (!list || list.length === 0) {
-      el.innerHTML = '<li>No data available</li>';
+      el.innerHTML = '<li class="so-topc__row so-topc__row--empty">Check back soon</li>';
       return;
     }
-  
-    const html = list.map(item => `
-      <li>
-        <a href="/artist/${encodeURI(String(item.slug || ''))}">
-          ${soEsc(item.name)}
-        </a>
-      </li>
-    `).join('');
-  
-    // ✅ Single DOM write (no multiple reflows)
+
+    const html = list.map(item => {
+      const avatar = item.img
+        ? '<img class="so-topc__avatar" src="' + soEsc(item.img) + '" alt="" width="44" height="44" loading="lazy" decoding="async">'
+        : '<span class="so-topc__avatar so-topc__avatar--init" style="--so-hue:' + hue(item.name) + '" aria-hidden="true">' + soEsc(initials(item.name)) + '</span>';
+      return '<li><a class="so-topc__row" href="/artist/' + encodeURI(String(item.slug || '')) + '">' + avatar +
+        '<span class="so-topc__name">' + soEsc(item.name) + '</span>' +
+        '<svg class="so-topc__chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a></li>';
+    }).join('');
+
     el.innerHTML = html;
   }
 
@@ -686,20 +637,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function card(ev, i, kind) {
     const badge = (kind === 'lastminute' || kind === 'weekend') ? whenBadge(ev.iso) : '';
-    const eager = i < 2 ? 'eager' : 'lazy';
-    return '<a class="so-feed-card" href="/event/' + slug(ev.name) + '-' + ev.id + '">' +
-      '<div class="so-feed-card__img">' +
-        '<img src="' + esc(ev.placeholder) + '" alt="' + esc(ev.name) + '" class="event-dynamic-image blur-image" width="260" height="260" loading="' + eager + '"' +
-        ' data-event="' + encodeURIComponent(ev.name) + '" data-artist="' + encodeURIComponent(ev.performer || '') + '"' +
-        ' data-venue="' + encodeURIComponent(ev.venue || '') + '" data-tab="' + encodeURIComponent(ev.tab) + '"' +
-        " data-category='" + esc(JSON.stringify(ev.defaultCategory || {})) + "'>" +
-        (badge ? '<span class="so-feed-card__badge">' + esc(badge) + '</span>' : '') +
-      '</div>' +
-      '<h3 class="so-feed-card__name">' + esc(ev.name) + '</h3>' +
-      '<p class="so-feed-card__meta">' + esc(ev.date) + '</p>' +
-      '<p class="so-feed-card__meta">' + esc(ev.venue) + (ev.loc ? ' - ' + esc(ev.loc) : '') + '</p>' +
-      (ev.price ? '<p class="so-feed-card__price">From <strong>' + esc(ev.price) + '</strong></p>' : '') +
-    '</a>';
+    return window.soEvCard(ev, { status: badge });
   }
 
   // "Popular this weekend": compact text-only cards (name, then date and venue).

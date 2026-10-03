@@ -248,5 +248,6 @@ if ('serviceWorker' in navigator && location.pathname.indexOf('/admin') !== 0) {
   // Event pages: the widget settings (checkout address, quantity sheet, sort order, precheckout) live in js/event-widget.js, which loads the widget.
 </script>
     
-  </body>
+  <?php echo function_exists('soAdsenseFooterScript') ? soAdsenseFooterScript() : ''; ?>
+</body>
 </html>

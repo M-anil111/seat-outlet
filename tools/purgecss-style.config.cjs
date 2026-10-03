@@ -21,7 +21,7 @@ module.exports = {
     standard: ['show', 'showing', 'hiding', 'fade', 'active', 'disabled', 'collapsing', 'collapsed', 'modal-open', 'offcanvas-open', 'loaded', 'is-active', 'is-open', 'is-expanded'],
     greedy: [/slick/, /flatpickr/, /^pac-/, /^grecaptcha/, /^grecaptcha/, /data-bs/, /^offcanvas/, /^dropdown/, /^modal/, /^tooltip/, /^popover/, /^bs-/, /^sea-/i, /^tn-/, /^so-mega-/,
       // class names built from pieces in PHP or JS ("so-chipx--" . $kind, "suggestion-" + type, ...): found by tools/ scan of the sources
-      /^so-chipx--/, /^suggestion-/, /^so-tab-/, /^so-art__toc/,
+      /^so-chipx--/, /^so-evc--/, /^so-topc--/, /^suggestion-/, /^so-tab-/, /^so-art__toc/,
       // the blog: article and listing markup is assembled by inc/blog-render.php and stored posts, so keep the whole family
       /^so-art__/, /^so-np__/, /^so-blog/, /^so-article/,
       // classes that exist only inside stored HTML (blog posts and page blocks in the database; checked against the seeded content)

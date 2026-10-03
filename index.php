@@ -1,4 +1,5 @@
 <?php
+$soHomeHero = true;   // header.php hands the search form back in $soHeaderSearchHtml: the hero below prints it
 include 'header.php';
 $festivalNames = getTopFestivalPerformers();
 
@@ -48,26 +49,34 @@ foreach ($fallbackCategories as $key => $list) {
     }
 }
 ?>
-<section class="top-hero-slider">
-
-
-  <div class="hero_slider">
-
-    <!-- Slide 1 – Concert / Event -->
-    <div class="slide">
-      <img src="/images/home-slider-1024.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w, /images/home-slider.webp 1920w" sizes="100vw" width="1920" height="1100" alt="Ticket Marketplace - Live Concert Event" loading="eager" fetchpriority="high" />
-      <div class="slide-overlay"></div>
-      <div class="slide-caption">
-        <h1>Live events,<br>made easy.</h1>
-        <p>Buy event tickets for sold-out concerts, must-see sports and theater shows. Compare seats and prices from sellers across our ticket marketplace network.</p>
-        <div class="so-hero-cta"><a href="/buy-tickets-online" class="btn-slide">Explore events</a><a href="/city-events" class="so-hero-link">Browse by city</a></div>
-      </div>
-    </div>
-
-
-
-  </div><!-- /.hero-slider -->
+<section class="so-hero2" aria-label="Find tickets">
+  <img class="so-hero2__bg" src="/images/home-slider-1440.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w, /images/home-slider.webp 1920w" sizes="100vw" width="1440" height="825" alt="" fetchpriority="high" decoding="async">
+  <div class="so-hero2__shade" aria-hidden="true"></div>
+  <div class="container so-hero2__inner">
+    <p class="so-hero2__pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v1.5h18V16a2 2 0 0 0 0-4v0a2 2 0 0 0 0-4V6.5H3V8zM14 6.5v11"/></svg>Live events. Better seats.</p>
+    <h1 class="so-hero2__title">Experience <span>live events</span>,<br class="d-none d-md-block"> made easy.</h1>
+    <p class="so-hero2__sub">Concerts, sports, theater and more. Compare seats and prices from sellers across our marketplace.</p>
+    <div class="so-hero2__search"><?php echo $soHeaderSearchHtml ?? ''; ?></div>
+    <ul class="so-hero2__perks">
+      <li><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v1.5h18V16a2 2 0 0 0 0-4v0a2 2 0 0 0 0-4V6.5H3V8zM14 6.5v11"/></svg><span>Wide selection<br>of seats</span></li>
+      <li><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2c-.4-.9-1.4-1.4-2.8-1.4-1.6 0-2.7.8-2.7 2 0 3 5.6 1.2 5.6 4.2 0 1.2-1.2 2-2.9 2-1.5 0-2.6-.6-3-1.6M12 6.5v1.3M12 16.2v1.3"/></svg><span>Compare prices<br>across sellers</span></li>
+      <li><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 2.8v5.6c0 4.5-3 8.2-7.5 9.6-4.5-1.4-7.5-5.1-7.5-9.6V5.8L12 3z"/><path d="M8.8 12l2.3 2.3 4.2-4.6"/></svg><span>Trusted marketplace<br>and secure checkout</span></li>
+      <li><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/><path d="M19 20c0 1.2-1.4 2-4 2h-2"/></svg><span>100% Worry-Free<br>Guarantee</span></li>
+    </ul>
+    <nav class="so-hero2__cats" aria-label="Browse tickets by category">
+      <?php foreach ([['Concerts', '/concert-tickets-for-sale', 'concerts'], ['Sports', '/game-day-tickets', 'sports'], ['Theater', '/buy-broadway-tickets', 'theater'],
+                      ['Festivals', '/upcoming-music-festivals', 'festivals'], ['Artists &amp; Teams', '/all-artists-and-teams', 'artists'], ['Cities', '/city-events', 'cities']] as [$cl, $ch, $ck]) { ?>
+      <a class="so-hero2__cat" href="<?php echo $ch; ?>">
+        <img src="/images/home-cat-<?php echo $ck; ?>.webp" alt="" width="480" height="270" loading="lazy" decoding="async">
+        <span class="so-hero2__cat-name"><?php echo $cl; ?></span>
+        <span class="so-hero2__cat-go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+      <?php } ?>
+    </nav>
+  </div>
 </section>
+
+<?php echo soAdSlot('home'); ?>
 
 <section class="so-feed so-popweek" id="soFeedPopWeekend" data-so-feed="popweekend" aria-labelledby="soFeedPopWeekendTitle" hidden>
   <div class="container">
@@ -138,6 +147,7 @@ foreach ($fallbackCategories as $key => $list) {
         </button>
       </div>
       </div>
+      <a class="so-picks-all" href="/buy-tickets-online">See all events <span aria-hidden="true">&rsaquo;</span></a>
     </div>
   </div>
 
@@ -212,28 +222,34 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
-<section class="section top_performers bg-white categories teams-nearby py-5" id="topPerformersSection">
-  <div class="container so-tabs" data-so-tabs data-so-tab-labels="Concerts|Sports|Theater">
-    <div class="categories__grid">
-
-      <div class="categories__col">
-        <h3 class="categories__heading">Top Concert Performers</h3>
-        <ul class="categories__list" id="concerts-list"></ul>
-        <a href="/concert-tickets-for-sale" class="common-btn">View All Concerts</a>
-      </div>
-
-      <div class="categories__col">
-        <h3 class="categories__heading">Top Sports Performers</h3>
-        <ul class="categories__list" id="sports-list"></ul>
-        <a href="/game-day-tickets" class="common-btn">View All Sports</a>
-      </div>
-
-      <div class="categories__col">
-        <h3 class="categories__heading">Top Theater Performers</h3>
-        <ul class="categories__list" id="theater-list"></ul>
-        <a href="/buy-broadway-tickets" class="common-btn">View All Theatre</a>
-      </div>
-
+<section class="so-topp" id="topPerformersSection" aria-labelledby="soToppTitle">
+  <div class="container">
+    <div class="so-topp__head">
+      <span class="so-topp__pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.8l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17.4 6.1 20.6l1.3-6.5L2.5 9.6l6.6-.8L12 2.8z"/></svg>Top performers</span>
+      <h2 id="soToppTitle" class="so-topp__title">Who fans are buying right now</h2>
+      <p class="so-topp__sub">The acts, teams and shows with the most recent ticket sales on the marketplace.</p>
+    </div>
+    <div class="so-topp__grid">
+      <?php foreach ([
+          ['concerts', 'Top Concert Performers', 'Live music. Unforgettable nights.', '/concert-tickets-for-sale', 'View all concerts', 'music'],
+          ['sports', 'Top Sports Performers', 'Big games. Bigger moments.', '/game-day-tickets', 'View all sports', 'trophy'],
+          ['theater', 'Top Theater Performers', 'Broadway. Classics. Family favorites.', '/buy-broadway-tickets', 'View all theater', 'masks'],
+      ] as [$tk, $tt, $tg, $th, $tc, $ti]) { ?>
+      <article class="so-topc so-topc--<?php echo $tk; ?>">
+        <header class="so-topc__hero">
+          <img class="so-topc__bg" src="/images/home-top-<?php echo $tk; ?>.webp" alt="" width="720" height="300" loading="lazy" decoding="async">
+          <div class="so-topc__shade" aria-hidden="true"></div>
+          <span class="so-topc__icon"><?php echo soCategoryTileIcon($ti); ?></span>
+          <h3 class="so-topc__title"><?php echo $tt; ?></h3>
+          <span class="so-topc__from" data-so-from="<?php echo $tk; ?>" hidden></span>
+          <p class="so-topc__tag"><?php echo $tg; ?></p>
+        </header>
+        <ul class="so-topc__list" id="<?php echo $tk; ?>-list" aria-label="<?php echo $tt; ?>">
+          <?php for ($i = 0; $i < 5; $i++) { ?><li class="so-topc__row so-topc__row--skeleton" aria-hidden="true"><span class="so-topc__avatar"></span><span class="so-topc__name"></span></li><?php } ?>
+        </ul>
+        <a href="<?php echo $th; ?>" class="so-topc__cta"><?php echo $tc; ?><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a>
+      </article>
+      <?php } ?>
     </div>
   </div>
 </section>

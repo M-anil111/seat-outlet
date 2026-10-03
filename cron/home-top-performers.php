@@ -2,16 +2,5 @@
 require_once __DIR__ . '/../inc/cli-guard.php';
 require_once __DIR__ . '/../functions.php';
 
-$concerts = getTopPerformersByCategory(".1859.1986.");
-$sports   = getTopPerformersByCategory(".1859.1988.");
-$theater  = getTopPerformersByCategory(".1859.1989.");
-
-$performers = [
-    'concerts' => $concerts,
-    'sports'   => $sports,
-    'theater'  => $theater
-];
-
-cache_set("top_performers", $performers);
-
-echo "home top performers cache refreshed on " . date('Y-m-d H:i:s');
+// The site also refreshes this by itself in the background (inc/top-performers.php); this script is for a cron or a manual run.
+echo soTopPerformersRefresh() ? "home top performers cache refreshed on " . date('Y-m-d H:i:s') : "API returned nothing; kept the old cache";

@@ -42,27 +42,10 @@
   function card(ev, i) {
     // "Popular" is only claimed when the grid really is sorted by sales (or is the nationwide list), never for "nearest first".
     var badge = whenBadge(ev.iso) || (ev.top ? (state.scope === 'nationwide' ? 'Popular nationwide' : 'Popular near you') : '');
-    return '<a class="so-feed-card" href="/event/' + slug(ev.name) + '-' + ev.id + '">' +
-      '<div class="so-feed-card__img">' +
-      '<img src="' + esc(ev.placeholder) + '" alt="' + esc(ev.name) + '" class="event-dynamic-image blur-image" width="260" height="260" loading="lazy"' +
-      ' data-event="' + encodeURIComponent(ev.name) + '" data-artist="' + encodeURIComponent(ev.performer || '') + '"' +
-      ' data-venue="' + encodeURIComponent(ev.venue || '') + '" data-tab="' + encodeURIComponent(ev.tab) + '"' +
-      " data-category='" + esc(JSON.stringify(ev.defaultCategory || {})) + "'>" +
-      (ev.dist != null ? '<span class="so-feed-card__dist">' + (ev.dist < 3 ? 'Nearby' : ev.dist + ' mi away') + '</span>' : '') +
-      (badge ? '<span class="so-feed-card__badge' + (/^Popular/.test(badge) ? ' so-feed-card__badge--hot' : '') + '">' + esc(badge) + '</span>' : '') +
-      '</div>' +
-      '<h3 class="so-feed-card__name">' + esc(ev.name) + '</h3>' +
-      '<p class="so-feed-card__meta">' + esc(ev.date) + '</p>' +
-      '<p class="so-feed-card__meta">' + esc(ev.venue) + (ev.loc ? ' - ' + esc(ev.loc) : '') + '</p>' +
-      (ev.price ? '<p class="so-feed-card__price">From <strong>' + esc(ev.price) + '</strong></p>' : '') +
-      '</a>';
+    return window.soEvCard(ev, { status: badge });
   }
 
-  function skeleton(n) {
-    var h = '';
-    for (var i = 0; i < n; i++) h += '<div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div>';
-    return h;
-  }
+  function skeleton(n) { return window.soEvCardSkeleton(n); }
 
   var notice = null;
   var WHEN_TEXT = { today: 'today', weekend: 'this weekend', week: 'in the next 7 days', month: 'in the next 30 days' };
@@ -132,7 +115,7 @@
         grid.innerHTML = '';
       }
       events.forEach(function (e, i) { e.top = (page === 1 && i < 3) && ((state.sort === 'popular' && state.scope === 'near') || state.scope === 'nationwide'); });
-      var start = grid.querySelectorAll('.so-feed-card').length;
+      var start = grid.querySelectorAll('.so-evc:not(.so-evc--skeleton)').length;
       var html = events.map(function (e, i) { return card(e, start + i); }).join('');
       if (page === 1) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
       more.hidden = !(data && data.hasMore);
@@ -142,7 +125,7 @@
       // On phones this grid is a sideways carousel, so new cards used to land off-screen and "See more" looked dead. After the
       // first tap the grid opens up into rows and the first new card is brought into view.
       if (page > 1) {
-        var fresh = grid.querySelectorAll('.so-feed-card')[start];
+        var fresh = grid.querySelectorAll('.so-evc:not(.so-evc--skeleton)')[start];
         if (fresh && fresh.scrollIntoView) { fresh.scrollIntoView({ behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest' }); }
       }
       if (window.soBatchLoadImages) window.soBatchLoadImages(grid, '.event-dynamic-image:not(.loaded)', function () { return my === state.token; });
