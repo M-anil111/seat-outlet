@@ -7633,3 +7633,10 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-ad--side2 { width: 100%; align-self: stretch; max-width: none; margin: 18px 0 0; padding: 0; }
 .so-ad--side2 .adsbygoogle, .so-ad--side2 .so-ad__ph { min-height: 250px; border: 0; border-radius: 8px; box-shadow: none; background: #e8eefc; }
 @media (max-width: 767.98px) { .so-ad--pre .adsbygoogle, .so-ad--inpanel .adsbygoogle, .so-ad--pre .so-ad__ph, .so-ad--inpanel .so-ad__ph { max-width: 100%; min-height: 100px; } }
+
+/* ---- Event page seat map: fits its box on every screen (the widget scales the map to the box width, so on a wide screen it
+   grew past the box and was cut off or scrolled sideways; now the box has a sane width and height) ---- */
+.so-seatmap { max-width: 100%; overflow-x: clip; }
+@media (min-width: 768px) {
+  .so-seatmap { max-width: 1240px; margin: 0 auto; height: min(760px, calc(100vh - 70px)); overflow: hidden; }
+}
