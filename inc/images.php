@@ -792,8 +792,8 @@ function imageWorkQueue($batch, $pauseMicros = 1500000, $deadline = null, $mysql
  * the queue has work. The scheduled cron job stays the better option; this is the safety net. Turn it off with the
  * environment variable IMAGE_WEB_WORKER=0.
  */
-const IMAGE_WORKER_INTERVAL = 300;   // seconds between runs
-const IMAGE_WORKER_BATCH    = 10;
+const IMAGE_WORKER_INTERVAL = 60;    // seconds between runs (it only runs when something is queued)
+const IMAGE_WORKER_BATCH    = 15;
 const IMAGE_WORKER_BUDGET   = 40;    // seconds of work after the response has been sent
 
 function imageWorkerMaybeRun($forTest = false) {
