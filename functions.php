@@ -1863,6 +1863,7 @@ function renderExploreBar($basePath, array $opts = []) {
             <div class="list-category-bg so-near__card"><div class="section-artist-content event-row-all so-near__list" data-so-near-grid></div></div>
             <button type="button" class="so-near__more" data-so-near-more hidden>See more</button>
         </section>
+        <?php echo function_exists('soAdSlot') ? soAdSlot('mid') : ''; ?>
         <h2 class="so-allhead">All <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> in the USA</h2>
     </div>
     <?php

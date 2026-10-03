@@ -137,12 +137,12 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
       <div class="d-flex align-items-center flex-wrap creater">
         <div class="space-between d-flex pe-2">
           Website Designed by 
-          <a class="px-2 footer-bottom-logo" style="color: #e1c24e;" href="https://www.jaymehta.co/" target="_blank" title="Jay Mehta Digital">
-            <img src="/images/jm.webp" alt="Website Design Service by Jay Mehta Digital" style="max-width:100px;" width="100" height="19">
+          <a class="px-2 footer-bottom-logo" style="color: #e1c24e;" href="https://www.jaymehta.co/" target="_blank" title="JM Digital">
+            <img src="/images/jm.webp" alt="JM Digital" style="max-width:100px;" width="100" height="19">
           </a> | 
         </div> 
         <div class="space-between d-flex">
-          Developed & Maintained by 
+          Developed by 
           <a class="px-2 footer-bottom-logo" title="Mindshare Consulting" href="https://www.mindshare.consulting/" target="_blank" > 
             <img src="/images/mindshare-logo-230.webp" alt="Mindshare Consulting" style="max-width:100px;" width="100" height="22" loading="lazy">
           </a>

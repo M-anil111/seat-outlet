@@ -336,28 +336,3 @@
   });
   setTimeout(function () { if (!state.lat && /^Finding/.test(locLabel.textContent)) locLabel.textContent = 'Choose location'; }, 5000);
 })();
-
-
-/* Sub-category row: previous / next buttons appear only when the row is wider than its box. */
-(function () {
-  document.querySelectorAll('[data-so-subs]').forEach(function (wrap) {
-    var track = wrap.querySelector('[data-so-subs-track]');
-    var prev = wrap.querySelector('[data-so-subs-prev]');
-    var next = wrap.querySelector('[data-so-subs-next]');
-    if (!track || !prev || !next) return;
-    function sync() {
-      var max = track.scrollWidth - track.clientWidth;
-      prev.hidden = !(max > 4 && track.scrollLeft > 4);
-      next.hidden = !(max > 4 && track.scrollLeft < max - 4);
-    }
-    function by(dir) { track.scrollBy({ left: dir * Math.max(200, track.clientWidth * 0.7), behavior: 'smooth' }); }
-    prev.addEventListener('click', function () { by(-1); });
-    next.addEventListener('click', function () { by(1); });
-    track.addEventListener('scroll', sync, { passive: true });
-    window.addEventListener('resize', sync);
-    var on = track.querySelector('.so-subcat--on');
-    if (on) track.scrollLeft = 0;
-    sync();
-    setTimeout(sync, 400);
-  });
-})();

@@ -26,7 +26,8 @@ function soAdsenseClient(): string {
 function soAdSlot(string $placement, string $format = 'horizontal'): string {
     $client = soAdsenseClient();
     $slot = (string) getenv('ADSENSE_SLOT_' . strtoupper(preg_replace('/[^a-z0-9]/i', '_', $placement)));
-    if ($slot === '' && $placement === 'banner') $slot = (string) getenv('ADSENSE_SLOT_HOME');   // the home banner setting from before this was one banner for every page
+    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot'], true)) $slot = (string) getenv('ADSENSE_SLOT_BANNER');   // one banner ad unit can serve every banner position
+    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot'], true)) $slot = (string) getenv('ADSENSE_SLOT_HOME');     // the home banner setting from before banners were on every page
     if ($client === '' || !preg_match('/^\d{6,20}$/', $slot)) {
         // Not set up yet: on the test site (or with ADSENSE_PLACEHOLDER=1) show where the ad will go. On the live site nothing is printed.
         if (!(defined('SITE_INDEXABLE') && !SITE_INDEXABLE) && getenv('ADSENSE_PLACEHOLDER') !== '1') return '';
@@ -58,22 +59,38 @@ function soAdsenseFooterScript(): string {
 const SO_AD_HERO_CLASSES = ['hero-section', 'hero-so-why', 'vp-hero', 'tickets-hero-section', 'search-hero-section', 'performers-hero-section', 'mc-hero', 'is-hero', 'asm-hero', 'so-g-hero', 'so-evhero', 'so-ent-hero', 'so-art__hero', 'so-np__head', 'section-featured-header', 'so-hero2', 'results-header'];
 
 function soAdInjectBanner(string $html): string {
-    if (!empty($GLOBALS['soNoAds']) || strpos($html, 'so-ad--banner') !== false) return $html;
-    $banner = soAdSlot('banner');
-    if ($banner === '') return $html;
-    $alt = implode('|', array_map(function ($c) { return preg_quote($c, '#'); }, SO_AD_HERO_CLASSES));
-    // The first opening tag, anywhere in the page body, whose class list has a hero class as a whole word.
-    if (!preg_match('#<(section|header|div)\b[^>]*\bclass="(?:[^"]*\s)?(?:' . $alt . ')(?:\s[^"]*)?"[^>]*>#i', $html, $m, PREG_OFFSET_CAPTURE)) return $html;
-    $tag = strtolower($m[1][0]);
-    $start = $m[0][1];
-    $pos = $start + strlen($m[0][0]);
-    $depth = 1;
-    // Walk forward to the matching closing tag of the same element name.
-    while ($depth > 0 && preg_match('#<(/?)' . $tag . '\b[^>]*?(/?)>#i', $html, $t, PREG_OFFSET_CAPTURE, $pos)) {
-        $pos = $t[0][1] + strlen($t[0][0]);
-        if ($t[1][0] === '/') { $depth--; }
-        elseif ($t[2][0] !== '/') { $depth++; }
+    if (!empty($GLOBALS['soNoAds'])) return $html;
+    // 1. Under the hero.
+    if (strpos($html, 'so-ad--banner') === false && ($banner = soAdSlot('banner')) !== '') {
+        $alt = implode('|', array_map(function ($c) { return preg_quote($c, '#'); }, SO_AD_HERO_CLASSES));
+        // The first opening tag, anywhere in the page body, whose class list has a hero class as a whole word.
+        if (preg_match('#<(section|header|div)\b[^>]*\bclass="(?:[^"]*\s)?(?:' . $alt . ')(?:\s[^"]*)?"[^>]*>#i', $html, $m, PREG_OFFSET_CAPTURE)) {
+            $tag = strtolower($m[1][0]);
+            $pos = $m[0][1] + strlen($m[0][0]);
+            $depth = 1;
+            // Walk forward to the matching closing tag of the same element name.
+            while ($depth > 0 && preg_match('#<(/?)' . $tag . '\b[^>]*?(/?)>#i', $html, $t, PREG_OFFSET_CAPTURE, $pos)) {
+                $pos = $t[0][1] + strlen($t[0][0]);
+                if ($t[1][0] === '/') { $depth--; }
+                elseif ($t[2][0] !== '/') { $depth++; }
+            }
+            if ($depth === 0) { $html = substr($html, 0, $pos) . $banner . substr($html, $pos); }
+        }
     }
-    if ($depth > 0) return $html;   // unbalanced markup: leave the page alone
-    return substr($html, 0, $pos) . $banner . substr($html, $pos);
+    // 2. Roughly halfway down: after the section nearest the middle, only where the next thing is another section (so it lands between
+    //    page blocks that stack, never inside a row or grid) and the sections before it are all closed.
+    if (strpos($html, 'so-ad--mid') === false && ($mid = soAdSlot('mid')) !== '' && preg_match_all('#</section>\s*(?=<section\b)#i', $html, $mm, PREG_OFFSET_CAPTURE) && count($mm[0]) >= 4) {
+        $len = strlen($html);
+        $best = null;
+        foreach ($mm[0] as $hit) {
+            $end = $hit[1] + strlen(rtrim($hit[0]));
+            if (substr_count(strtolower(substr($html, 0, $end)), '<section') !== substr_count(strtolower(substr($html, 0, $end)), '</section>')) continue;
+            if ($end < $len * 0.3 || $end > $len * 0.75) continue;
+            if ($best === null || abs($end - $len / 2) < abs($best - $len / 2)) $best = $end;
+        }
+        if ($best !== null) { $html = substr($html, 0, $best) . $mid . substr($html, $best); }
+    }
+    // 3. End of the page content, above the footer.
+    if (strpos($html, 'so-ad--foot') === false && ($foot = soAdSlot('foot')) !== '') { $html .= $foot; }
+    return $html;
 }

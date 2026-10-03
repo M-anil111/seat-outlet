@@ -5373,7 +5373,7 @@ a.common-btn:hover{
 
 /* SEO COPY BLOCK: the guide, images and FAQ printed above the footer by soSeoCopy() (inc/seo-copy/*.php) */
 .so-seo-copy { background: #fff; padding: 56px 0 64px; border-top: 1px solid #e6e9ef; color: #2b2f36; }
-.so-seo-copy__inner { max-width: 880px; margin: 0 auto; }
+.so-seo-copy__inner { max-width: 880px; margin: 0; }
 .so-seo-copy h2 { font-size: clamp(24px, 3.4vw, 32px); line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; color: #0b1120; margin: 44px 0 14px; }
 .so-seo-copy h2:first-child { margin-top: 0; }
 .so-seo-copy h3 { font-size: clamp(19px, 2.4vw, 22px); line-height: 1.3; font-weight: 650; color: #0b1120; margin: 28px 0 8px; }
@@ -6999,7 +6999,11 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-cattiles--home .so-cattiles__title { text-align: center; }
 .so-cattiles__intro { margin: 0 0 18px; color: #6e6e73; font-size: 15px; }
 .so-cattiles--home .so-cattiles__intro { text-align: center; max-width: 640px; margin: 0 auto 20px; }
-.so-cattiles__grid { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.so-cattiles__grid { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-rows: repeat(5, auto); grid-auto-flow: column; grid-auto-columns: calc(46% - 5px); gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; scroll-behavior: smooth; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.so-cattiles__grid::-webkit-scrollbar { display: none; }
+.so-cattiles__grid > li { min-width: 0; scroll-snap-align: none; }
+.so-cattiles__grid > li:nth-child(5n+1) { scroll-snap-align: start; }
+.so-cattiles__wrap { position: relative; }
 .so-cattiles__intro + .so-cattiles__grid { margin-top: 0; }
 .so-cattile { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 12px 16px; border-radius: 14px; background: var(--so-blue, #0056d6); color: #fff !important; font-weight: 600; font-size: 16px; line-height: 1.2; text-decoration: none !important; transition: background .15s, transform .1s; -webkit-tap-highlight-color: transparent; }
 .so-cattile svg { flex: 0 0 auto; width: 22px; height: 22px; }
@@ -7008,8 +7012,8 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-cattile:active { transform: scale(.98); background: #003d99; }
 .so-cattile:focus-visible { outline: 3px solid #0071e3; outline-offset: 2px; }
 .so-cattile.is-current { background: #1d1d1f; }
-@media (min-width: 768px) { .so-cattiles__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } }
-@media (min-width: 1100px) { .so-cattiles__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 768px) { .so-cattiles__grid { grid-auto-columns: calc((100% - 24px) / 3); gap: 12px; } }
+@media (min-width: 1100px) { .so-cattiles__grid { grid-auto-columns: calc((100% - 36px) / 4); } }
 
 /* ---- Popular this weekend: compact text cards in a swipeable row ---- */
 .so-popweek { padding-top: 8px; }
@@ -7251,9 +7255,6 @@ body.so-home .so-search-toggle { display: none !important; }
 @media (prefers-reduced-motion: reduce) { .so-hero2__cat img { transition: none; } .so-hero2__cat:hover img { transform: none; } }
 
 /* Advertisement slot (Google AdSense): space is reserved so the page does not jump */
-.so-ad { max-width: 970px; margin: 18px auto; padding: 0 12px; text-align: center; min-height: 112px; }
-.so-ad__label { display: block; margin-bottom: 4px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8a90a0; }
-.so-ad .adsbygoogle { display: block; min-height: 90px; }
 
 /* ==========================================================================
    Top performers (.so-topp): three category cards
@@ -7402,10 +7403,6 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-popweek__next { position: absolute; right: -8px; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border-radius: 50%; border: 1px solid #d9dde7; background: #fff; color: #111827; display: none; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(16,24,40,.18); cursor: pointer; z-index: 3; }
 .so-popweek__next:hover { background: #f4f6fb; }
 @media (min-width: 992px) { .so-popweek__next { display: inline-flex; } }
-.so-ad { position: relative; max-width: 1242px; margin: 20px auto 8px; padding: 0 12px; min-height: 0; text-align: left; }
-.so-ad::before { content: ""; position: absolute; left: 12px; right: 12px; top: 22px; bottom: 0; border-radius: 16px; background: linear-gradient(90deg, #eef4ff, #e3edff); z-index: 0; }
-.so-ad__label { position: relative; z-index: 1; display: inline-block; margin: 0 0 0 0; padding: 4px 12px 4px 14px; border-radius: 10px 10px 0 0; background: #eef4ff; font-size: 12px; font-weight: 600; letter-spacing: .02em; text-transform: none; color: #5b6475; }
-.so-ad .adsbygoogle { position: relative; z-index: 1; display: block; min-height: 90px; margin: 0 8px 8px; border-radius: 12px; overflow: hidden; }
 @media (max-width: 1279.98px) {
   .top-picks .custom-slider.new-slider .slick-prev { left: 4px; }
   .top-picks .custom-slider.new-slider .slick-next { right: 4px; }
@@ -7423,7 +7420,7 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
   .so-recent__clear { padding: 7px 14px; font-size: 13px; }
 }
 @media (max-width: 339.98px) {
-  .so-cattiles__grid { grid-template-columns: minmax(0, 1fr); }
+  .so-cattiles__grid { grid-auto-columns: calc(86% - 5px); }
   .so-topc__hero { aspect-ratio: auto; min-height: 168px; }
   .so-topc__title { font-size: 19px; bottom: 44px; }
   .so-topc__tag { right: 12px; }
@@ -7463,9 +7460,6 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
   .so-subcat { height: 38px; padding: 0 14px; font-size: 14px; }
   .so-near__list { padding-left: 8px; padding-right: 8px; }
 }
-.so-ad--listing { width: 100%; align-self: stretch; max-width: none; margin: 16px 0 0; padding: 0; }
-.so-ad--listing::before { left: 0; right: 0; }
-.so-ad--listing .adsbygoogle { min-height: 250px; margin: 0 6px 6px; }
 
 /* Header: the home page's dark navy look on every page */
 .keyword-topbar { background: #070c1b; }
@@ -7482,10 +7476,33 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-subcats__arrow[hidden] { display: none; }
 .so-subcats__arrow:hover { background: #f4f6fb; }
 .so-subcats__arrow--prev { left: -6px; }
+.so-cattiles__wrap .so-subcats__arrow { top: 50%; transform: translateY(-50%); width: 46px; height: 46px; }
 .so-subcats__arrow--next { right: -6px; }
 @media (max-width: 575.98px) { .so-subcats__arrow { display: none !important; } }
 
 /* AdSense placeholder */
-.so-ad__ph { position: relative; z-index: 1; margin: 0 8px 8px; min-height: 90px; border: 1.5px dashed #b9c8ea; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #5b6475; font-size: 14px; text-align: center; padding: 10px; }
-.so-ad__ph strong { font-size: 15px; color: #3b4558; }
-.so-ad--listing .so-ad__ph { min-height: 250px; margin: 0 6px 6px; }
+
+/* ==========================================================================
+   Advertisement banner (AdSense): a quiet, rounded card under the hero on every page
+   ========================================================================== */
+.so-ad { position: relative; max-width: 1242px; margin: 26px auto 14px; padding: 0 12px; text-align: left; }
+.so-ad__label { display: block; margin: 0 0 9px 6px; font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #8e8e93; line-height: 1; }
+.so-ad .adsbygoogle, .so-ad__ph { display: block; position: relative; min-height: 96px; margin: 0; border-radius: 22px; overflow: hidden; background: #fff; border: 1px solid rgba(60, 60, 67, .12); box-shadow: 0 1px 1px rgba(0, 0, 0, .03), 0 14px 34px -14px rgba(0, 0, 0, .2); }
+.so-ad__ph { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 18px; text-align: center; background: radial-gradient(120% 140% at 0% 0%, #ffffff 0%, #f4f6fb 55%, #eceff6 100%); isolation: isolate; }
+.so-ad__ph strong { font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: #1d1d1f; }
+.so-ad__ph span { font-size: 13px; color: #86868b; }
+.so-ad__ph::before { content: ""; width: 30px; height: 30px; margin-bottom: 6px; border-radius: 10px; background: linear-gradient(135deg, #2f6bff, #7a5cff); box-shadow: 0 6px 14px -4px rgba(47, 107, 255, .55); -webkit-mask: none; }
+.so-ad__ph::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .85) 50%, transparent 65%); transform: translateX(-100%); animation: so-ad-sheen 5.5s ease-in-out infinite; }
+@keyframes so-ad-sheen { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.so-ad--listing { width: 100%; max-width: none; margin: 18px 0 0; padding: 0; }
+.so-ad--listing .adsbygoogle, .so-ad--listing .so-ad__ph { min-height: 250px; }
+@media (max-width: 767.98px) {
+  .so-ad { margin: 20px auto 8px; }
+  .so-ad .adsbygoogle, .so-ad__ph { border-radius: 18px; min-height: 100px; }
+}
+@media (prefers-reduced-motion: reduce) { .so-ad__ph::after { animation: none; display: none; } }
+/* Inside a column or container the page already provides the gutter: the card lines up with the content around it */
+.container .so-ad, .left-bar .so-ad, [class*="col-"] .so-ad { max-width: none; padding: 0; }
+.so-ad--foot { margin-top: 36px; margin-bottom: 36px; }
+.so-ad--mid { margin-top: 30px; margin-bottom: 30px; }
+
