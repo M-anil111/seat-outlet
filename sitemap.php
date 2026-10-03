@@ -13,10 +13,11 @@
 //   Consulting) and /our-network, the hub page linking all of them - these
 //   are real businesses, deliberately networked together, not orphaned
 //   demo clutter.
-// - EXCLUDED: admin/, ajax/, cache/, search.php, category.php, performer.php,
-//   city.php, venue.php - each of these needs a specific
-//   ID/query param and has no safe "list all valid IDs" source in this repo
-//   to enumerate from.
+// - INCLUDED: artist, venue and city pages. The performers, venues and cities that appear on the upcoming events fetched
+//   below (all with tickets on sale now), the best-selling performers and venues from the search vocabulary, and the top
+//   cities. Pages the site has seen come up empty are dropped again (soZeroPages).
+// - EXCLUDED: admin/, ajax/, cache/, search.php, category.php (a specific id is
+//   needed; the category pages linked from the homepage are listed separately).
 // - EXCLUDED: the artist-city/-state/-country/-venue and
 //   concerts-city/sports-state/etc. combinator pages (24 files, see
 //   functions.php's renderArtistLocationPage()/renderCategoryLocationPage()).
@@ -163,8 +164,18 @@ if ($totalPages > 1) {
     for ($page = 2; $page <= $totalPages; $page++) { $rest[] = $eventPageSpec($page); }
     $eventPages = array_merge($eventPages, tnRequestMulti($rest));
 }
+// Every performer, venue and city on those events has tickets on sale right now: they are listed below too (the "long tail"
+// of artist, venue and city pages), taken from the same responses, so this costs no extra API call.
+$harvest = ['artist' => [], 'venue' => [], 'city' => []];
 foreach ($eventPages as $response) {
     foreach ($response['results'] ?? [] as $event) {
+        foreach ($event['performers'] ?? [] as $pf) {
+            if (!empty($pf['id']) && !empty($pf['name'])) $harvest['artist'][(int) $pf['id']] = (string) $pf['name'];
+        }
+        if (!empty($event['venue']['id']) && !empty($event['venue']['text']['name'])) $harvest['venue'][(int) $event['venue']['id']] = (string) $event['venue']['text']['name'];
+        if (!empty($event['city']['id']) && !empty($event['city']['text']['name'])) {
+            $harvest['city'][(int) $event['city']['id']] = trim($event['city']['text']['name'] . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
+        }
         $slug = createSlug($event['text']['name'] ?? '', $event['id'] ?? 0);
         $urls[] = [
             'loc' => HOME_URL . '/event/' . $slug,
@@ -191,6 +202,17 @@ foreach (smartVocab() as $item) {
         $urls[] = ['loc' => HOME_URL . $item['u'], 'changefreq' => 'daily', 'priority' => '0.6'];
     }
 }
+// Then everything else the event responses showed (skipping pages already listed above).
+$listed = [];
+foreach ($urls as $u) { $listed[$u['loc']] = true; }
+foreach (['artist' => ['/artist/', '0.6'], 'venue' => ['/venue/', '0.5'], 'city' => ['/city/', '0.6']] as $kind => [$prefix, $prio]) {
+    foreach ($harvest[$kind] as $hid => $hname) {
+        $loc = HOME_URL . $prefix . createSlug($hname, $hid);
+        if (isset($listed[$loc])) continue;
+        $listed[$loc] = true;
+        $urls[] = ['loc' => $loc, 'changefreq' => 'daily', 'priority' => $prio];
+    }
+}
 foreach ((cache_get('top_categories', 30 * 86400) ?: []) as $bucket) {
     foreach ((array) $bucket as $cat) {
         if (!empty($cat['slug'])) {
@@ -210,6 +232,7 @@ if ($zeroPages) {
     }));
 }
 
+if (count($urls) > 50000) { $urls = array_slice($urls, 0, 50000); }   // protocol limit per file
 ob_start();
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";

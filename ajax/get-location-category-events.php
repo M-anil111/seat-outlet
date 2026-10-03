@@ -85,6 +85,9 @@ if (empty($output) && $type !== '') {
     }
 }
 
+// Same day: events whose performer has a stored picture come first (the date order itself is kept).
+$output = soImageFirst($output, function ($o) { return [imageEntityTypeForPerformer($o['defaultCategory'] ?? []), $o['performer'] !== '' ? $o['performer'] : $o['name'], $o['defaultCategory'] ?? []]; },
+    function ($o) { return $o['edate'] !== '' ? date('Y-m-d', (int) $o['edate']) : null; });
 header('Cache-Control: public, max-age=86400');
 header('X-Cache: HIT');
 echo json_encode($output);

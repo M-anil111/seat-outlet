@@ -4325,6 +4325,8 @@ function soInitials($name): string {
 function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
     $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
     $n = 0;
+    // Performers with a real picture first, so the first row of cards is not a row of initials tiles.
+    $related = soImageFirst(array_values($related), function ($r) { return [imageEntityTypeForPerformer($r['defaultCategory'] ?? []), trim((string) ($r['text']['name'] ?? '')), $r['defaultCategory'] ?? []]; });
     ?>
     <div class="so-related" data-so-related>
         <?php foreach ($related as $rel) {

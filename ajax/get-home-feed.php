@@ -92,7 +92,9 @@ if ($kind === 'near') {
         $data = tnRequest('/catalog/v2/events/', $buildParams(!$nationwide));
         $total = (int) ($data['totalCount'] ?? 0);
         $events = soHomeFeedFormat($data['results'] ?? [], 12);
-        if (!$nationwide && $nearSort === 'distance') $events = soHomeFeedImageFirst($events);
+        if ($nearSort === 'distance' && !$nationwide) $events = soHomeFeedImageFirst($events, function ($e) { return $e['dist']; });
+        elseif ($nearSort === 'soonest') $events = soHomeFeedImageFirst($events, function ($e) { return $e['iso'] !== '' ? $e['iso'] : null; });
+        elseif ($nearSort === 'popular' || $nationwide) $events = soHomeFeedImageFirst($events);   // a "best sellers" top 12: the same twelve, pictures first
         $dists = array_filter(array_column($events, 'dist'), function ($d) { return $d !== null; });
         $closest = $dists ? min($dists) : null;
         $scope = !$events ? ($radius ? 'empty' : 'near') : ($radius === 0 && $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near');
@@ -201,29 +203,11 @@ function soHomeFeedFormat(array $events, int $max = 10): array {
     return $out;
 }
 
-/**
- * Nearest first, and when two events are the same distance (same venue, same town) the one with a real picture goes first,
- * so the first screen is not a row of grey initials tiles. Stable: otherwise the API's own order is kept.
- * Only reads what is already stored (no lookups, no network); an image database that is behind simply ranks nobody.
- */
-function soHomeFeedImageFirst(array $events): array {
-    if (count($events) < 2) return $events;
-    $has = [];
-    foreach ($events as $i => $ev) {
-        $has[$i] = 0;
-        $who = (string) ($ev['performer'] !== '' ? $ev['performer'] : $ev['name']);
-        try {
-            $info = getEntityImage(imageEntityTypeForPerformer($ev['defaultCategory'] ?? []), $who, ['category' => $ev['defaultCategory'] ?? [], 'resolve' => false]);
-            $has[$i] = in_array($info['status'] ?? '', ['ok', 'manual'], true) ? 1 : 0;
-        } catch (Throwable $e) { /* decoration only */ }
-    }
-    $idx = array_keys($events);
-    usort($idx, function ($a, $b) use ($events, $has) {
-        $da = $events[$a]['dist'] ?? PHP_INT_MAX;
-        $db = $events[$b]['dist'] ?? PHP_INT_MAX;
-        return [$da, -$has[$a], $a] <=> [$db, -$has[$b], $b];
-    });
-    return array_map(function ($i) use ($events) { return $events[$i]; }, $idx);
+/** Pictures first for one home-feed row (see soImageFirst): $primary keeps the row's own order, pictures only break ties. */
+function soHomeFeedImageFirst(array $events, ?callable $primary = null): array {
+    return soImageFirst($events, function ($ev) {
+        return [imageEntityTypeForPerformer($ev['defaultCategory'] ?? []), (string) (($ev['performer'] ?? '') !== '' ? $ev['performer'] : $ev['name']), $ev['defaultCategory'] ?? []];
+    }, $primary);
 }
 
 try {
@@ -234,7 +218,10 @@ try {
         $events = soHomeFeedFetch($kind, null, null);
         $scope = 'national';
     }
-    $result = ['scope' => $scope, 'events' => soHomeFeedFormat($events)];
+    $formatted = soHomeFeedFormat($events);
+    if ($kind === 'lastminute') $formatted = soHomeFeedImageFirst($formatted, function ($e) { return $e['iso'] !== '' ? $e['iso'] : null; });   // same day: pictures first
+    elseif ($kind === 'trending') $formatted = soHomeFeedImageFirst($formatted);   // top sellers: the same set, pictures first
+    $result = ['scope' => $scope, 'events' => $formatted];
     if ($result['events']) {
         cache_set($cacheKey, $result);
     }
