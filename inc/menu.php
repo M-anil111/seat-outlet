@@ -16,8 +16,8 @@ $soMenuDef = [
     ['key' => 'sports', 'label' => 'Sports', 'href' => '/game-day-tickets', 'tag' => 'Game day, every league',
      'icon' => '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
      'groups' => [
-        ['title' => 'Leagues', 'links' => [['NFL', '/nfl-tickets'], ['NBA', '/nba-tickets'], ['MLB', '/mlb-tickets'], ['NHL', '/nhl-tickets'], ['MLS', '/mls-tickets'], ['Tennis', '/category/tennis-1916']]],
-        ['title' => 'More sports', 'links' => [['Basketball', '/category/basketball-1865'], ['Baseball', '/category/baseball-1864'], ['Hockey', '/category/hockey-1883'], ['Soccer', '/category/soccer-1913'], ['Boxing', '/category/boxing-1867'], ['Racing', '/category/racing-1905']]],
+        ['title' => 'Leagues', 'links' => [['NFL', '/nfl-tickets'], ['NBA', '/nba-tickets'], ['MLB', '/mlb-tickets'], ['NHL', '/nhl-tickets'], ['MLS', '/mls-tickets'], ['Tennis', '/tennis-tickets']]],
+        ['title' => 'More sports', 'links' => [['Basketball', '/category/basketball-1865'], ['Baseball', '/category/baseball-1864'], ['Hockey', '/category/hockey-1883'], ['Soccer', '/soccer-tickets'], ['Boxing', '/boxing-tickets'], ['Racing', '/racing-tickets']]],
      ], 'all' => 'All sports'],
     ['key' => 'theater', 'label' => 'Theater', 'href' => '/buy-broadway-tickets', 'tag' => 'Broadway, musicals and more',
      'icon' => '<path d="M4 5h16v6a8 8 0 0 1-16 0Z"/><path d="M9 10h.01M15 10h.01M9 14.5c1.6 1.4 4.4 1.4 6 0"/>',

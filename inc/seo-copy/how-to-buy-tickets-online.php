@@ -46,3 +46,6 @@
 <details class="so-faq"><summary>When will I receive my tickets?</summary><p>Tickets may be delivered immediately or closer to the event date, depending on organizer release timing. Your confirmation email has the delivery details.</p></details>
 <details class="so-faq"><summary>Can I get a refund if I change my mind?</summary><p>No. Tickets are not refundable for a change of plans. If an event is canceled, the order is refunded (delivery fees excluded).</p></details>
 <details class="so-faq"><summary>Are prices the same as face value?</summary><p>Not always. Sellers set resale prices, so they can be above or below face value. Review the full cost at checkout before you pay.</p></details>
+
+<h2>Where to buy event tickets</h2>
+<p>Buy event tickets from a marketplace that shows every listing, explains who the seller is and backs the order with a guarantee. Seat Outlet orders are fulfilled through TicketNetwork and covered by its 100% guarantee. Always compare a few sections, confirm the date and venue, and check out only on a secure page.</p>

@@ -75,3 +75,6 @@
 <details class="so-faq"><summary>Which seats are best when I buy Broadway tickets?</summary><p>Many people like the center orchestra a few rows back or the front mezzanine for a full view of the stage. The best choice depends on the show and your budget.</p></details>
 <details class="so-faq"><summary>Can I buy Broadway tickets for touring shows and Las Vegas productions too?</summary><p>Yes. This category includes touring musicals, plays, off-Broadway productions and Las Vegas shows. Use the date filter to see upcoming performances.</p></details>
 <details class="so-faq"><summary>How will my tickets be delivered?</summary><p>Delivery may be electronic, by mobile transfer or by physical shipping, depending on the event and seller. Check your confirmation email for details.</p></details>
+
+<h2>Theater tickets and Broadway show tickets for sale</h2>
+<p>Theater tickets cover Broadway, touring musicals, plays and <a href="/comedy-show-tickets">comedy shows</a>. Compare orchestra, mezzanine and balcony seats for each performance, check the date and time, and buy with our 100% buyer guarantee. Seat Outlet is a resale marketplace, so prices are set by sellers and can be above or below face value. Also see <a href="/las-vegas-shows-tickets">Las Vegas shows</a>.</p>
