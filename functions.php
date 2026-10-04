@@ -731,7 +731,7 @@ function performerPriceSnapshot(array $events) {
 }
 
 /** BreadcrumbList + one Event node per listed event, for the performer page. */
-function buildPerformerPageJsonLd(string $artistName, int $performerId, array $events, array $breadcrumbs, string $imageUrl = '') {
+function buildPerformerPageJsonLd(string $artistName, int $performerId, array $events, array $breadcrumbs, string $imageUrl = '', string $catPath = '', array $sameAs = []) {
     $nodes = [];
     $crumbs = [];
     foreach ($breadcrumbs as $i => $crumb) {
@@ -740,41 +740,16 @@ function buildPerformerPageJsonLd(string $artistName, int $performerId, array $e
     $crumbs[] = ['@type' => 'ListItem', 'position' => count($crumbs) + 1, 'name' => $artistName . ' Tickets', 'item' => HOME_URL . '/artist/' . createSlug($artistName, $performerId)];
     $nodes[] = ['@type' => 'BreadcrumbList', 'itemListElement' => $crumbs];
 
+    // The performer the page is about. Events below point at it through the same @id.
+    $artistUrl = HOME_URL . '/artist/' . createSlug($artistName, $performerId);
+    $perf = ['@type' => soPerformerSchemaType($catPath), '@id' => $artistUrl . '#performer', 'name' => $artistName, 'url' => $artistUrl];
+    if ($imageUrl !== '') $perf['image'] = $imageUrl;
+    if ($sameAs) $perf['sameAs'] = array_values($sameAs);
+    $nodes[] = $perf;
+
     foreach (array_slice($events, 0, 20) as $event) {
-        $startDate = $event['date']['datetime'] ?? $event['date']['date'] ?? '';
-        if ($startDate === '') continue;
-        $price = $event['pricingInfo']['lowPrice']['value'] ?? null;
-        $node = [
-            '@type'       => 'Event',
-            'name'        => $event['text']['name'] ?? $artistName,
-            'startDate'   => $startDate,
-            'eventStatus' => 'https://schema.org/EventScheduled',
-            'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
-            'url'         => HOME_URL . '/event/' . createSlug($event['text']['name'] ?? '', $event['id'] ?? 0),
-            'location'    => [
-                '@type'   => 'Place',
-                'name'    => $event['venue']['text']['name'] ?? '',
-                'address' => [
-                    '@type'           => 'PostalAddress',
-                    'addressLocality' => $event['city']['text']['name'] ?? '',
-                    'addressRegion'   => $event['stateProvince']['text']['abbr'] ?? '',
-                    'addressCountry'  => $event['country']['alphaCode'] ?? 'US',
-                ],
-            ],
-            'performer'   => buildEventPerformerSchema($event),
-        ];
-        if ($imageUrl !== '') $node['image'] = $imageUrl;
-        if ($price !== null && (float) $price > 0) {
-            $node['offers'] = [
-                '@type'         => 'Offer',
-                'url'           => $node['url'],
-                'price'         => (string) $price,
-                'priceCurrency' => 'USD',
-                'availability'  => !empty($event['_metadata']['hasTickets']) ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
-                // No validFrom: we do not know when the listing went live, and "today" on every render is not a fact.
-            ];
-        }
-        $nodes[] = $node;
+        if (empty($event['date']['date']) && empty($event['date']['datetime'])) continue;
+        $nodes[] = soEventNode($event, ['image' => $imageUrl]);
     }
     return $nodes;
 }
@@ -975,6 +950,18 @@ function buildCategoryBreadcrumb($defaultCategory) {
         ];
     }
 
+    // Point every step at the page's real address (the old /concerts and /category/<name>-<id> addresses redirect):
+    // the category hubs, and the clean genre / league pages (/comedy-show-tickets, /nba-tickets). Comedy sits under Theater.
+    $hubs = ['/concerts' => ['Concerts', '/concert-tickets-for-sale'], '/sports' => ['Sports', '/game-day-tickets'], '/theater' => ['Theater', '/buy-broadway-tickets'], '/theatre' => ['Theater', '/buy-broadway-tickets']];
+    $isComedy = strpos((string) ($defaultCategory['path'] ?? ''), '.1872.') !== false;
+    foreach ($breadcrumb as $i => $c) {
+        $u = (string) ($c['url'] ?? '');
+        if (isset($hubs[$u])) {
+            $breadcrumb[$i] = ['label' => $isComedy ? 'Theater' : $hubs[$u][0], 'url' => $isComedy ? '/buy-broadway-tickets' : $hubs[$u][1]];
+        } elseif (preg_match('#^/category/.+-(\d+)$#', $u, $m) && function_exists('soGenreById') && ($g = soGenreById((int) $m[1]))) {
+            $breadcrumb[$i]['url'] = '/' . $g['slug'];
+        }
+    }
     return $breadcrumb;
 }
 
@@ -2276,7 +2263,6 @@ function seoOffer($url, $price) {
     ];
 }
 
-/** Trim a <title> to ~60 characters at a word boundary, keeping the brand suffix when it fits. */
 /** The brand at the end of every page title, joined with an em dash and no spaces ("Keyword—Hook—Seat Outlet"). */
 const SO_TITLE_BRAND = "\u{2014}Seat Outlet";
 
@@ -3795,22 +3781,127 @@ function deleteBlogPost($id, $mysqli = MYSQLI) {
  */
 function buildEventPerformerSchema(array $event) {
     $performers = $event['performers'] ?? [];
+    $type = soPerformerSchemaType((string) ($event['defaultCategory']['path'] ?? ($event['categories'][0]['path'] ?? '')));
     if (empty($performers)) {
-        return [
-            "@type" => "PerformingGroup",
-            "name" => $event['text']['name'] ?? '',
-        ];
+        return ["@type" => $type, "name" => $event['text']['name'] ?? ''];
     }
-    if (count($performers) === 1) {
-        return [
-            "@type" => "PerformingGroup",
-            "name" => $performers[0]['name'] ?? ($event['text']['name'] ?? ''),
-        ];
+    $nodes = array_map(function ($p) use ($type) {
+        $name = (string) ($p['name'] ?? '');
+        $node = ["@type" => $type, "name" => $name];
+        if (!empty($p['id']) && $name !== '') {
+            $artistUrl = HOME_URL . '/artist/' . createSlug($name, (int) $p['id']);
+            $node['@id'] = $artistUrl . '#performer';
+            $node['url'] = $artistUrl;
+        }
+        return $node;
+    }, $performers);
+    return count($nodes) === 1 ? $nodes[0] : $nodes;
+}
+
+/** Breadcrumb step for a category hub path (the tab a genre or league sits under). */
+function soFamilyCrumb($hubPath) {
+    $names = ['/concert-tickets-for-sale' => 'Concerts', '/game-day-tickets' => 'Sports', '/buy-broadway-tickets' => 'Theater', '/upcoming-music-festivals' => 'Festivals'];
+    $hubPath = isset($names[$hubPath]) ? $hubPath : '/buy-tickets-online';
+    return ['label' => $names[$hubPath] ?? 'Events', 'url' => HOME_URL . $hubPath];
+}
+
+/** ItemList of up to 20 Event nodes for a listing page, or null when there is nothing listed. */
+function soEventItemList(array $events, $pageUrl) {
+    $items = [];
+    foreach (array_slice($events, 0, 20) as $ev) {
+        if (empty($ev['text']['name']) || (empty($ev['date']['date']) && empty($ev['date']['datetime']))) continue;
+        $items[] = ['@type' => 'ListItem', 'position' => count($items) + 1, 'item' => soEventNode($ev)];
     }
-    return array_map(fn($p) => [
-        "@type" => "PerformingGroup",
-        "name" => $p['name'] ?? '',
-    ], $performers);
+    if (!$items) return null;
+    $list = ['@type' => 'ItemList', 'itemListOrder' => 'https://schema.org/ItemListOrderAscending', 'numberOfItems' => count($items), 'itemListElement' => $items];
+    if ($pageUrl !== '') $list['@id'] = rtrim((string) $pageUrl, '/') . '#events';
+    return $list;
+}
+
+/** schema.org event status from TicketNetwork's scheduleStatus ("On Schedule", "Rescheduled", "Indefinitely Postponed", "Cancelled"). */
+function soEventStatusUrl(array $event) {
+    $st = strtolower((string) ($event['scheduleStatus'] ?? ''));
+    if (strpos($st, 'cancel') !== false) return 'https://schema.org/EventCancelled';
+    if (strpos($st, 'postpone') !== false) return 'https://schema.org/EventPostponed';
+    if (strpos($st, 'reschedul') !== false) return 'https://schema.org/EventRescheduled';
+    return 'https://schema.org/EventScheduled';
+}
+
+/** schema.org type for a performer, from the TicketNetwork category path: a team for sports, a theater group for shows, else a music group. */
+function soPerformerSchemaType($catPath) {
+    $catPath = (string) $catPath;
+    if (strpos($catPath, '.1872.') !== false) return 'PerformingGroup';   // comedy: a comedian or a comedy show, not a music group
+    if (defined('TN_CATEGORY_PATH_SPORTS') && strpos($catPath, TN_CATEGORY_PATH_SPORTS) === 0) return 'SportsTeam';
+    if (defined('TN_CATEGORY_PATH_THEATER') && strpos($catPath, TN_CATEGORY_PATH_THEATER) === 0) return 'TheaterGroup';
+    if (defined('TN_CATEGORY_PATH_CONCERTS') && strpos($catPath, TN_CATEGORY_PATH_CONCERTS) === 0) return 'MusicGroup';
+    return 'PerformingGroup';
+}
+
+/**
+ * One schema.org Event node for a TicketNetwork event, the same everywhere (event page, artist page, listings).
+ * Offers are TicketNetwork's own live figures: lowest and highest listed price and the number of tickets listed, never estimated.
+ * $venue: the venue's own record (street address, postal code, geo) when the caller has it.
+ * No "organizer": Seat Outlet resells tickets, it does not organize the event, and the API does not name the promoter.
+ */
+function soEventNode(array $event, array $opts = []) {
+    $name = (string) ($event['text']['name'] ?? '');
+    $id = (int) ($event['id'] ?? 0);
+    $url = HOME_URL . '/event/' . createSlug($name, $id);
+    $venueName = (string) ($event['venue']['text']['name'] ?? '');
+    $venueId = (int) ($event['venue']['id'] ?? 0);
+    $place = ['@type' => 'Place', 'name' => $venueName];
+    if ($venueId > 0 && $venueName !== '') {
+        $place['@id'] = HOME_URL . '/venue/' . createSlug($venueName, $venueId) . '#place';
+        $place['url'] = HOME_URL . '/venue/' . createSlug($venueName, $venueId);
+    }
+    $address = [
+        '@type' => 'PostalAddress',
+        'addressLocality' => (string) ($event['city']['text']['name'] ?? ''),
+        'addressRegion' => (string) ($event['stateProvince']['text']['abbr'] ?? ''),
+        'addressCountry' => (string) ($event['country']['alphaCode'] ?? 'US'),
+    ];
+    $v = $opts['venue'] ?? null;
+    if (is_array($v)) {
+        $street = trim((string) ($v['address']['text']['address1'] ?? ''));
+        if ($street !== '') $address['streetAddress'] = $street;
+        $zip = (string) ($v['address']['postalCode'] ?? ($v['postalCode'] ?? ''));
+        if (is_string($zip) && $zip !== '' && $zip !== '00000') $address['postalCode'] = $zip;
+        $geo = $v['geoLocation'] ?? ($v['address']['geoLocation'] ?? []);
+        if (isset($geo['latitude'], $geo['longitude']) && (float) $geo['latitude'] != 0.0) {
+            $place['geo'] = ['@type' => 'GeoCoordinates', 'latitude' => (float) $geo['latitude'], 'longitude' => (float) $geo['longitude']];
+        }
+    }
+    $place['address'] = $address;
+    $node = [
+        '@type' => 'Event',
+        '@id' => $url . '#event',
+        'name' => $name,
+        'startDate' => (string) ($event['date']['datetimeOffset'] ?? ($event['date']['datetime'] ?? ($event['date']['date'] ?? ''))),
+        'eventStatus' => soEventStatusUrl($event),
+        'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
+        'url' => $url,
+        'location' => $place,
+        'performer' => buildEventPerformerSchema($event),
+    ];
+    if (!empty($opts['image'])) $node['image'] = [(string) $opts['image']];
+    if (!empty($opts['description'])) $node['description'] = (string) $opts['description'];
+    $low = (float) ($event['pricingInfo']['lowPrice']['value'] ?? 0);
+    if (!empty($event['_metadata']['hasTickets']) && $low > 0) {
+        $offer = [
+            '@type' => 'AggregateOffer',
+            'url' => $url,
+            'lowPrice' => number_format($low, 2, '.', ''),
+            'priceCurrency' => 'USD',
+            'availability' => 'https://schema.org/InStock',
+            'seller' => ['@id' => HOME_URL . '/#organization'],
+        ];
+        $high = (float) ($event['pricingInfo']['highPrice']['value'] ?? 0);
+        if ($high >= $low) $offer['highPrice'] = number_format($high, 2, '.', '');
+        $count = (int) ($event['_metadata']['ticketCount'] ?? 0);
+        if ($count > 0) $offer['offerCount'] = $count;
+        $node['offers'] = $offer;
+    }
+    return $node;
 }
 
 function buildOrganizationSchema() {
@@ -3834,6 +3925,14 @@ function buildOrganizationSchema() {
         ],
         "image" => HOME_URL . "/images/seatoutlet-logo.webp",
         "description" => "Independent resale ticket marketplace for concerts, sports, theater and festivals. Listings come from the TicketNetwork marketplace and every order is backed by a 100% guarantee.",
+        "email" => "support@seatoutlet.com",
+        "contactPoint" => [
+            "@type" => "ContactPoint",
+            "contactType" => "customer service",
+            "email" => "support@seatoutlet.com",
+            "url" => HOME_URL . "/ticket-customer-service",
+            "availableLanguage" => ["English"],
+        ],
         "sameAs" => [
             "https://www.facebook.com/profile.php?id=61588886945534",
             "https://www.instagram.com/seatoutlet/",
@@ -3849,9 +3948,16 @@ function buildWebsiteSchema() {
         "@id" => HOME_URL . "/#website",
         "url" => HOME_URL . "/",
         "name" => "Seat Outlet",
+        "inLanguage" => "en-US",
         "publisher" => [
             "@id" => HOME_URL . "/#organization"
-        ]
+        ],
+        // The site search box: /search?keywordHeader=<what you typed>.
+        "potentialAction" => [
+            "@type" => "SearchAction",
+            "target" => ["@type" => "EntryPoint", "urlTemplate" => HOME_URL . "/search?keywordHeader={search_term_string}"],
+            "query-input" => "required name=search_term_string",
+        ],
     ];
 }
 
@@ -3934,20 +4040,135 @@ function buildArticleSchema(array $post, string $url) {
         "@type" => "Article",
         "@id" => $url . '#article',
         // The page itself is described right here, so the reference does not point at a node that is not in the graph.
-        "mainEntityOfPage" => ["@type" => "WebPage", "@id" => $url],
+        "mainEntityOfPage" => ["@id" => $url . '#webpage'],
         "headline" => $post['title'] ?? '',
         "description" => $post['meta_description'] ?? ($post['excerpt'] ?? ''),
         "datePublished" => !empty($post['published_at']) ? date('c', strtotime($post['published_at'])) : null,
         "dateModified" => !empty($post['updated_at']) ? date('c', strtotime($post['updated_at'])) : null,
         "publisher" => ["@id" => HOME_URL . '/#organization'],
     ];
-    if (!empty($post['author_name'])) {
-        $node['author'] = ["@type" => "Person", "name" => $post['author_name']];
+    if (!empty($post['author_name']) && ($person = soAuthorPerson($post['author_name']))) {
+        $node['author'] = ['@id' => $person['@id']];
     }
     if ($img !== '') {
         $node['image'] = [$img];
     }
     return $node;
+}
+
+/**
+ * Authors with a public profile (blog bylines). Only real, stated facts: the name on the byline, the person's own website and role.
+ * No Wikidata item exists for them, so none is claimed.
+ */
+const SO_AUTHORS = [
+    'Jay Mehta' => ['url' => 'https://jaymehta.co', 'jobTitle' => 'Founder and CEO, Mindshare Consulting Inc.', 'sameAs' => ['https://jaymehta.co']],
+];
+
+/** schema.org Person node for a byline (with an @id so pages can point at it), or null for an unknown name. */
+function soAuthorPerson($name) {
+    $name = trim((string) $name);
+    if ($name === '') return null;
+    $node = ['@type' => 'Person', '@id' => HOME_URL . '/#author-' . trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($name)), '-'), 'name' => $name];
+    if (isset(SO_AUTHORS[$name])) $node += SO_AUTHORS[$name];
+    $node['worksFor'] = ['@id' => HOME_URL . '/#organization'];
+    return $node;
+}
+
+/** Page type for the WebPage node, by address (the default is WebPage). */
+function soPageSchemaType($path) {
+    $path = rtrim((string) $path, '/') ?: '/';
+    if (in_array($path, ['/about-seat-outlet', '/our-network'], true)) return 'AboutPage';
+    if ($path === '/ticket-customer-service') return 'ContactPage';
+    if ($path === '/search') return 'SearchResultsPage';
+    if (in_array($path, ['/', '/concert-tickets-for-sale', '/game-day-tickets', '/buy-broadway-tickets', '/upcoming-music-festivals', '/buy-tickets-online', '/city-events', '/all-artists-and-teams', '/blog', '/ticket-deals'], true)) return 'CollectionPage';
+    if (preg_match('#^/(artist|venue|city|state|country|category)/#', $path) || preg_match('#^/[a-z0-9-]+-(city|state|country|venue)/#', $path) || preg_match('#^/[a-z0-9-]+-tickets$#', $path)) return 'CollectionPage';
+    if (strpos($path, '/event/') === 0) return 'ItemPage';
+    return 'WebPage';
+}
+
+/**
+ * Completes a page's @graph: gives the breadcrumb and FAQ nodes stable ids, adds a breadcrumb trail for pages that have none
+ * (Home > page, or Home > Our Network > page for partner sites) and adds the WebPage node that ties the page to the site,
+ * the organization, its breadcrumb, its main entity, its picture and its author.
+ * $ctx: url, name, description, image, type, mainEntity (an @id), author (an @id), crumbLabel.
+ */
+function soCompletePageGraph(array $nodes, array $ctx) {
+    $url = (string) ($ctx['url'] ?? '');
+    if ($url === '') return $nodes;
+    $hasPage = false; $crumbId = null;
+    foreach ($nodes as $i => $n) {
+        if (!is_array($n)) continue;
+        $t = $n['@type'] ?? '';
+        if ($t === 'BreadcrumbList') { $nodes[$i]['@id'] = $nodes[$i]['@id'] ?? $url . '#breadcrumb'; $crumbId = $nodes[$i]['@id']; }
+        if ($t === 'FAQPage') { $nodes[$i]['@id'] = $nodes[$i]['@id'] ?? $url . '#faq'; }
+        if (in_array($t, ['WebPage', 'CollectionPage', 'ItemPage', 'AboutPage', 'ContactPage', 'SearchResultsPage'], true)) $hasPage = true;
+    }
+    $path = rtrim((string) parse_url($url, PHP_URL_PATH), '/') ?: '/';
+    if ($crumbId === null && $path !== '/') {
+        $label = trim((string) ($ctx['crumbLabel'] ?? ''));
+        if ($label !== '') {
+            $trail = [['label' => 'Home', 'url' => HOME_URL . '/']];
+            if (in_array($path, ['/dotbooker', '/wingcms', '/salespeep', '/signs-n-more', '/it-sprinkles', '/austin-sign-masters', '/viralpep', '/mindshare-consulting', '/hunt-tickets', '/grab-tickets-now', '/ticket-scanner'], true)) {
+                $trail[] = ['label' => 'Our Network', 'url' => HOME_URL . '/our-network'];
+            }
+            $bc = buildBreadcrumbListSchema($trail, $label);
+            $bc['@id'] = $url . '#breadcrumb';
+            $bc['itemListElement'][count($bc['itemListElement']) - 1]['item'] = $url;
+            $nodes[] = $bc;
+            $crumbId = $bc['@id'];
+        }
+    }
+    if (!$hasPage) {
+        $page = [
+            '@type' => $ctx['type'] ?? soPageSchemaType($path),
+            '@id' => $url . '#webpage',
+            'url' => $url,
+            'name' => (string) ($ctx['name'] ?? ''),
+            'isPartOf' => ['@id' => HOME_URL . '/#website'],
+            'publisher' => ['@id' => HOME_URL . '/#organization'],
+            'inLanguage' => 'en-US',
+        ];
+        if (!empty($ctx['description'])) $page['description'] = (string) $ctx['description'];
+        if ($crumbId !== null) $page['breadcrumb'] = ['@id' => $crumbId];
+        if (!empty($ctx['mainEntity'])) $page['mainEntity'] = ['@id' => $ctx['mainEntity']];
+        $page['author'] = ['@id' => !empty($ctx['author']) ? $ctx['author'] : HOME_URL . '/#organization'];
+        if (!empty($ctx['image']) && strpos((string) $ctx['image'], 'seatoutlet-logo') === false) {
+            $page['primaryImageOfPage'] = ['@type' => 'ImageObject', 'url' => (string) $ctx['image']];
+        }
+        $nodes[] = $page;
+    }
+    return $nodes;
+}
+
+/**
+ * FAQPage structured data for pages whose FAQ is written in the page itself (accordions and <details> blocks) and that do not
+ * already describe one: the questions and answers are read from the finished HTML, so the markup always matches what is shown.
+ * Called on the page body by the output filter (inc/consent.php).
+ */
+function soInjectFaqSchema($html) {
+    if (!empty($GLOBALS['soHasFaqSchema']) || stripos($html, '"FAQPage"') !== false) return $html;
+    $clean = function ($x) { return trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) $x), ENT_QUOTES | ENT_HTML5, 'UTF-8'))); };
+    $pairs = [];
+    if (preg_match_all('#<details[^>]*class="[^"]*\bso-faq\b[^"]*"[^>]*>\s*<summary[^>]*>(.*?)</summary>(.*?)</details>#is', $html, $m, PREG_SET_ORDER)) {
+        foreach ($m as $x) $pairs[] = [$clean($x[1]), $clean($x[2])];
+    }
+    if (!$pairs && preg_match_all('#class="accordion-button[^"]*"[^>]*>(.*?)</button>#is', $html, $q) && preg_match_all('#class="accordion-body[^"]*"[^>]*>(.*?)</div>#is', $html, $a)
+        && count($q[1]) === count($a[1])) {
+        foreach ($q[1] as $i => $qq) $pairs[] = [$clean($qq), $clean($a[1][$i])];
+    }
+    $items = [];
+    foreach ($pairs as [$qq, $aa]) {
+        if ($qq === '' || mb_strlen($aa) < 10 || mb_strpos($qq, '[') !== false) continue;
+        $items[] = ['@type' => 'Question', 'name' => $qq, 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $aa]];
+        if (count($items) >= 25) break;
+    }
+    if (count($items) < 2) return $html;
+    $url = (string) ($GLOBALS['pageCanonicalUrl'] ?? '');
+    $node = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $items];
+    if ($url !== '') { $node['@id'] = $url . '#faq'; $node['isPartOf'] = ['@id' => $url . '#webpage']; }
+    $tag = '<script type="application/ld+json">' . json_encode($node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+    $pos = strripos($html, '</body>');
+    return $pos !== false ? substr($html, 0, $pos) . $tag . substr($html, $pos) : $html . $tag;
 }
 
 /**
@@ -3958,6 +4179,7 @@ function buildArticleSchema(array $post, string $url) {
 function outputJsonLdGraph(array $nodes) {
     $nodes = array_values(array_filter($nodes));
     if (empty($nodes)) return;
+    foreach ($nodes as $n) { if (($n['@type'] ?? '') === 'FAQPage') $GLOBALS['soHasFaqSchema'] = true; }   // the body filter must not add a second one
 
     echo '<script type="application/ld+json">' . "\n";
     echo json_encode([

@@ -103,6 +103,7 @@ include_once 'functions.php';
     }
     sendPageCacheHeaders();   // after the 404 check above: the status decides the policy
     // Keep titles and descriptions inside what a search result shows.
+    if (!empty($pageCanonicalUrl)) { $GLOBALS['pageCanonicalUrl'] = $pageCanonicalUrl; }   // pages rendered inside a function: the output filters read it
     if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
     if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription($pageMetaDescription); }
 ?>
@@ -214,7 +215,17 @@ include_once 'functions.php';
         // got ZERO structured data, not even the baseline Organization/
         // WebSite graph every other path on the site has. Always emit that
         // baseline here; merge in page-specific nodes when present.
-        outputJsonLdGraph(array_merge([buildOrganizationSchema(), buildWebsiteSchema()], $pageJsonLdNodes ?? []));
+        $soTitleBare = preg_replace('/\x{2014}Seat Outlet$/u', '', (string) $pageMetaTitle);
+        outputJsonLdGraph(soCompletePageGraph(array_merge([buildOrganizationSchema(), buildWebsiteSchema()], $pageJsonLdNodes ?? []), [
+            'url' => $pageCanonicalUrl ?? '',
+            'name' => $soTitleBare,
+            'description' => $pageMetaDescription ?? '',
+            'image' => $pageOgImage ?? '',
+            'type' => $pageSchemaType ?? null,
+            'mainEntity' => $pageMainEntity ?? null,
+            'author' => $pageAuthorId ?? null,
+            'crumbLabel' => $pageCrumbLabel ?? trim(explode("\u{2014}", $soTitleBare)[0]),
+        ]));
         ?>
     <?php } elseif ($soReqPath === '/' || $soReqPath === '/index.php') { ?>
         <?php include 'inc/seo.php'; ?>

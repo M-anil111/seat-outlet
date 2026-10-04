@@ -34,7 +34,11 @@ $pageJsonLdNodes = array_values(array_filter([
         ['label' => 'Blog', 'url' => HOME_URL . '/blog'],
     ], $post['title']),
     buildArticleSchema($post, $postUrl),
+    soAuthorPerson($post['author_name'] ?? ''),
 ]));
+$pageMainEntity = $postUrl . '#article';
+$soAuthorNode = soAuthorPerson($post['author_name'] ?? '');
+$pageAuthorId = $soAuthorNode ? $soAuthorNode['@id'] : null;
 
 include 'header.php';
 

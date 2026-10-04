@@ -46,6 +46,7 @@ function soSingleMain($html) {
     }, $html);
     // Closing tags: keep only the one followed by the marker, turn the others into </div>.
     $html = preg_replace('#</main>(?!<!--so-main-end-->)#i', '</div>', $html);
-    if (function_exists('soAdInjectBanner')) { $html = soAdInjectBanner($html); }   // before the marker goes: the end-of-page ad is placed at it
+    if (function_exists('soAdInjectBanner')) { $html = soAdInjectBanner($html); }
+    if (function_exists('soInjectFaqSchema')) { $html = soInjectFaqSchema($html); }   // FAQPage data read from the FAQ shown on the page   // before the marker goes: the end-of-page ad is placed at it
     return str_replace('<!--so-main-end-->', '', $html);
 }

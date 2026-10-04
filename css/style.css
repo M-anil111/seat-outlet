@@ -7690,3 +7690,13 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
   .tm-header .so-mega-top { padding-left: 9px; padding-right: 9px; white-space: nowrap; }
   .tm-header .tm-logo img { max-width: 176px; height: auto; }
 }
+
+/* ---- Breadcrumb trail (event pages): small, quiet, one line that scrolls on phones ---- */
+.so-crumbs { margin: 0 0 12px; }
+.so-crumbs ol { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; white-space: nowrap; font-size: 13px; color: #6e6e73; }
+.so-crumbs ol::-webkit-scrollbar { display: none; }
+.so-crumbs li { display: inline-flex; align-items: center; gap: 6px; }
+.so-crumbs li + li::before { content: "/"; color: #c7c7cc; }
+.so-crumbs a { color: #0056d6; text-decoration: none; }
+.so-crumbs a:hover { text-decoration: underline; }
+.so-crumbs [aria-current] { color: #1d1d1f; font-weight: 500; overflow: hidden; text-overflow: ellipsis; max-width: 48ch; }

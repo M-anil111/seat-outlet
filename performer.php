@@ -94,7 +94,8 @@ $soFaqs[] = ['question' => "Are $artistName tickets on Seat Outlet legit?", 'ans
 $faqs = array_merge($soFaqs, array_map(function ($q) use ($artistName) {
     return ['question' => str_replace('[artist_name]', $artistName, (string) $q['question']), 'answer' => str_replace('[artist_name]', $artistName, (string) $q['answer'])];
 }, is_array($faqs) ? $faqs : []));
-$pageJsonLdNodes = buildPerformerPageJsonLd($artistName, (int) $id, $events, $breadcrumbs, $pageOgImage ?? '');
+$pageJsonLdNodes = buildPerformerPageJsonLd($artistName, (int) $id, $events, $breadcrumbs, $pageOgImage ?? '', $soCatPath, $soEntityFacts['sameAs'] ?? []);
+$pageMainEntity  = HOME_URL . '/artist/' . createSlug($artistName, (int) $id) . '#performer';
 if ($faqNode = buildFaqPageSchema($faqs)) { $pageJsonLdNodes[] = $faqNode; }
 
 $pagePreloadImage = $hasRealImage ? $performer_image : '/images/event-so.webp';

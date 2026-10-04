@@ -183,6 +183,7 @@ $pageMetaDescription = $displayName !== ''
     ? soMetaFit("$displayName tickets: every matching event, date and venue on Seat Outlet. Compare seats and prices and buy with our 100% buyer guarantee.", 'Live seat maps and secure checkout.')
     : soMetaFit('Search event tickets by artist, team, show, venue or city. Compare seats and prices from many sellers and buy with our 100% buyer guarantee.', 'Live seat maps and secure checkout.');
 $pageFocusKeyword = $displayName !== '' ? $displayName . ' Tickets' : 'Search Event Tickets';
+$pageCrumbLabel = 'Search';
 
 include 'header.php';
 

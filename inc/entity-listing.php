@@ -124,8 +124,13 @@ function soRenderEntityListing(array $c): void {
     $pageCanonicalUrl = HOME_URL . $c['path'];
     $trailFull = array_merge([['label' => 'Home', 'url' => HOME_URL]], $c['trail']);
     $nodes = [soBreadcrumbNodes($trailFull, $name)];
-    if ($kind === 'venue' && !empty($c['entity'])) { $nodes[] = soBuildVenuePlaceSchema($c['entity'], $pageCanonicalUrl); }
-    if ($kind === 'city') { $nodes[] = ['@type' => 'City', 'name' => $name, 'url' => $pageCanonicalUrl, 'containedInPlace' => ['@type' => 'AdministrativeArea', 'name' => (string) ($c['entity']['stateProvince']['text']['name'] ?? '')]]; }
+    if ($kind === 'venue' && !empty($c['entity'])) {
+        $soPlace = soBuildVenuePlaceSchema($c['entity'], $pageCanonicalUrl);
+        if (!empty($soEntityFacts['sameAs'])) $soPlace['sameAs'] = array_values($soEntityFacts['sameAs']);
+        $nodes[] = $soPlace;
+        $pageMainEntity = $soPlace['@id'];
+    }
+    if ($kind === 'city') { $nodes[] = ['@type' => 'City', '@id' => $pageCanonicalUrl . '#city', 'name' => $name, 'url' => $pageCanonicalUrl, 'containedInPlace' => ['@type' => 'AdministrativeArea', 'name' => (string) ($c['entity']['stateProvince']['text']['name'] ?? '')]]; $pageMainEntity = $pageCanonicalUrl . '#city'; }
     $nodes[] = soBuildEventItemListSchema($events, "Upcoming events: $label");
     $pageJsonLdNodes = array_values(array_filter($nodes));
     $img = $c['image'] ?? null;

@@ -86,6 +86,12 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
 ?>
 <section class="so-evhero">
   <div class="container">
+    <?php if (!empty($evTrail)) { /* the same trail as the BreadcrumbList in the head: up to the category and the performer */ ?>
+    <nav class="so-crumbs" aria-label="Breadcrumb"><ol>
+      <?php foreach ($evTrail as $c) { ?><li><a href="<?php echo $h($c['url']); ?>"><?php echo $h($c['label']); ?></a></li><?php } ?>
+      <li aria-current="page"><?php echo $h($evCrumbLabel ?? ($event['text']['name'] ?? '')); ?></li>
+    </ol></nav>
+    <?php } ?>
     <div class="so-evhero__card">
       <div class="so-evhero__media" style="--so-hue:<?php echo (int) $evHue; ?>">
         <?php if ($evReal) { ?>
