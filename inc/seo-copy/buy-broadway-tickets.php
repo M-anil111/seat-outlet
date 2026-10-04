@@ -1,5 +1,6 @@
 <?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Buy Broadway tickets: musicals, plays and touring shows in one place</h2>
+<p class="so-cseo__lead"><strong>To buy Broadway tickets,</strong> pick the show and date, compare orchestra, mezzanine and balcony seats by price, and check out on the guaranteed checkout page. Prices are set by sellers on this resale marketplace, so they can be above or below face value.</p>
 <p>Want to buy Broadway tickets without guessing which seats are worth it? The listings above include Broadway and off-Broadway productions, touring musicals, plays and Las Vegas shows, all offered by sellers on the Seat Outlet marketplace. Filter by date, compare sections and prices, and open any show to see what is available before you buy Broadway tickets.</p>
 <p>This page explains how theater seating works for anyone ready to buy Broadway tickets, what affects prices, and how to time your purchase. If you also want to see what else is playing in town, our <a href="/city-events">city events directory</a> groups theater with concerts, sports and festivals.</p>
 
@@ -33,6 +34,13 @@
 <h3>Boxes and side sections</h3>
 <p>Boxes and side seats can feel exclusive, but some have partial or angled views. Read each listing for notes and check the seating chart before you buy.</p>
 
+<h2>How much do Broadway tickets cost?</h2>
+<p>Broadway ticket prices vary widely by show, performance and seat, so there is no single price. Each listing above shows its lowest current price, and you can sort to see the cheapest seats first. Hits and weekend evenings cost more, and rear balcony or side seats usually cost less. For the full cost, read the total on the checkout page, since fees and taxes can be added there.</p>
+<h3>Cheap Broadway tickets and how to get cheap Broadway tickets</h3>
+<p>To find cheaper seats, compare the rear mezzanine and balcony, look at weeknight and matinee performances, and check several dates for the same show. You do not need a code, but see our <a href="/tickets-promo-code">ticket promo code</a> page and <a href="/ticket-deals">ticket deals</a> for current offers.</p>
+<h3>Broadway rush tickets and lottery tickets</h3>
+<p>Many productions run their own rush or lottery programs that sell a limited number of discounted tickets, often on the day of the performance. The rules, prices and times are set by each production and change, so check the show's official site. Seat Outlet does not run rush or lottery sales. We are a resale marketplace, so you can compare listings for a date when you want to choose your seats in advance.</p>
+
 <h2>What affects the price when you buy Broadway tickets</h2>
 <ul>
   <li><strong>The show's popularity.</strong> New hits, award-season favorites and shows with a well-known cast draw higher prices.</li>
@@ -45,6 +53,9 @@
 <div class="so-callout">
   <p><strong>Good to know:</strong> A seat in the first rows of the mezzanine can offer a clearer view than a seat at the edge of the front orchestra, and it may cost less. Compare both when you buy Broadway tickets.</p>
 </div>
+
+<h2>Orchestra vs mezzanine: which Broadway seats are better?</h2>
+<p>Orchestra seats are on the main floor, closest to the performers. Mezzanine seats are on the first raised level, with a wider view of staging and choreography. Neither is always better. A few rows back in the center orchestra gives a straight-on view, while the front mezzanine suits big dance-heavy musicals. Are mezzanine seats good? For many shows, yes, especially the front rows, and they often cost less than the best orchestra seats. Always check a listing for notes such as partial view or obstructed view.</p>
 
 <h2>When to buy Broadway tickets</h2>
 <p>For a popular show on a weekend or holiday, buy Broadway tickets as early as you can so you have more seats to choose from, especially if you need several together. For performances that are not selling as fast, prices can move as the date approaches, but waiting does not always pay off. Watch for <a href="/ticket-deals">ticket deals</a> and check the <a href="/tickets-promo-code">promo code page</a> before you pay.</p>
@@ -75,6 +86,10 @@
 <details class="so-faq"><summary>Which seats are best when I buy Broadway tickets?</summary><p>Many people like the center orchestra a few rows back or the front mezzanine for a full view of the stage. The best choice depends on the show and your budget.</p></details>
 <details class="so-faq"><summary>Can I buy Broadway tickets for touring shows and Las Vegas productions too?</summary><p>Yes. This category includes touring musicals, plays, off-Broadway productions and Las Vegas shows. Use the date filter to see upcoming performances.</p></details>
 <details class="so-faq"><summary>How will my tickets be delivered?</summary><p>Delivery may be electronic, by mobile transfer or by physical shipping, depending on the event and seller. Check your confirmation email for details.</p></details>
+
+<details class="so-faq"><summary>How much are Broadway tickets?</summary><p>It depends on the show, date and seat. Compare the lowest price on each listing, sort by price, and check the total at checkout before you pay.</p></details>
+<details class="so-faq"><summary>Can I buy last-minute or same-day Broadway tickets?</summary><p>Often yes, if seats are still listed. Availability changes daily, and you can use the date filter to see performances happening soon. Some productions also sell rush or lottery tickets themselves.</p></details>
+<details class="so-faq"><summary>Are resale Broadway tickets legit?</summary><p><?php require_once __DIR__ . '/../guarantee.php'; echo htmlspecialchars(soGuaranteeSentence(), ENT_QUOTES, 'UTF-8'); ?> Seat Outlet is a resale marketplace, not the theater box office.</p></details>
 
 <h2>Theater tickets and Broadway show tickets for sale</h2>
 <p>Theater tickets cover Broadway, touring musicals, plays and <a href="/comedy-show-tickets">comedy shows</a>. Compare orchestra, mezzanine and balcony seats for each performance, check the date and time, and buy with our 100% buyer guarantee. Seat Outlet is a resale marketplace, so prices are set by sellers and can be above or below face value. Also see <a href="/las-vegas-shows-tickets">Las Vegas shows</a>.</p>

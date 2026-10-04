@@ -1,5 +1,6 @@
 <?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Broadway Shows List: Find Any Show With Tickets</h2>
+<p class="so-cseo__lead"><strong>This Broadway shows list is an A to Z guide to the Broadway musicals and plays with tickets on sale right now.</strong> Open a show to see its dates, theater and the seat prices listed for each performance.</p>
 <p>This Broadway shows list covers the musicals, plays and touring productions that currently have tickets on sale on Seat Outlet, from A to Z. Open a show to see its performance dates and the seat sections and prices listed for each.</p>
 <p>To browse by date instead of by title, open <a href="/buy-broadway-tickets">theater tickets</a>. For comedy see <a href="/comedy-show-tickets">comedy show tickets</a>, and for Las Vegas productions see <a href="/las-vegas-shows-tickets">Las Vegas show tickets</a>.</p>
 
@@ -9,6 +10,10 @@
     <figcaption>Open any name to see its dates and seats.</figcaption>
   </figure>
 </div>
+
+<h2>Current, new and upcoming Broadway shows</h2>
+<p>The list shows current Broadway shows and touring productions that have tickets on sale, so it changes as shows open, move and close. A new Broadway show appears here once tickets are listed, and an upcoming Broadway show appears when its first performances go on sale. Looking for a Broadway musicals list or family friendly Broadway shows? Browse the titles and check each event page for the theater and any age guidance, which is set by the production.</p>
+<p>Want shows this weekend or near you? Open <a href="/buy-broadway-tickets">theater tickets</a> to filter by date and set your location, or read <a href="/buy-broadway-tickets">how to buy Broadway tickets</a> before you choose seats.</p>
 
 <h2>How to use the Broadway shows list</h2>
 <ol>
