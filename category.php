@@ -8,10 +8,10 @@ require_once __DIR__ . '/inc/genre-focus.php';
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage = 20;
 
-// Extract performer ID from slug; expect a trailing numeric ID.
+// The category behind the slug: the stub files of the clean genre pages pass "genre-<id>" (internal, never shown in a URL);
+// every other category is /category/<name>, read back from the url_slugs table (or the old name-and-id form).
 $slug  = $_GET['slug'] ?? '';
-$parts = explode('-', (string) $slug);
-$id    = (int) end($parts);
+if (preg_match('/^genre-(\d{1,10})$/', (string) $slug, $soGm)) { $id = (int) $soGm[1]; } else { [$id] = soSlugResolve('category', (string) $slug); $id = (int) $id; }
 
 if ($id <= 0) {
 	renderNotFoundPage('Category');
@@ -29,7 +29,8 @@ if ($catName === '') {
 // Clean URL for the big genres and leagues: /category/rap-hip-hop-1906 -> /hip-hop-tickets (301), and /hip-hop-tickets is served
 // by a small stub that includes this file.
 $soGenre = isset($soGenreSlug) ? soGenreBySlug($soGenreSlug) : soGenreById($id);
-$catBasePath = $soGenre ? '/' . $soGenre['slug'] : '/category/' . $slug;
+$catBasePath = $soGenre ? '/' . $soGenre['slug'] : '/category/' . soSlug('category', $catName, $id);
+if (!$soGenre && trim((string) $slug, '/') !== substr($catBasePath, 10)) { soRedirect301($catBasePath); }   // the old name-and-id form or another spelling
 if ($soGenre && !isset($soGenreSlug)) {
 	parse_str($_SERVER['QUERY_STRING'] ?? '', $soQs);
 	unset($soQs['slug']);   // the server rewrite passes the old /category/<name>-<id> path as ?slug=, which must not leak into the clean URL

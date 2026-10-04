@@ -84,7 +84,7 @@ $moreHeading = $moreFromPerformer > 0 && !empty($event['performers'][0]['name'])
 
 $soConfEvent = null;
 if ($hasEvent) {
-    $slug = createSlug($event['text']['name'], $eventId);
+    $slug = soEventSlug($event);
     $soConfEvent = [
         'id' => $eventId, 'name' => (string) $event['text']['name'], 'slug' => $slug, 'url' => rtrim(HOME_URL, '/') . '/event/' . $slug,
         'date' => (string) ($event['date']['date'] ?? ''), 'start' => (string) ($event['date']['datetimeOffset'] ?? ''),
@@ -178,7 +178,7 @@ include 'header.php';
             <ul class="list-unstyled mb-0 confirmation-more">
               <?php foreach (array_slice($moreEvents, 0, 5) as $ev) { ?>
                 <li class="mb-2">
-                  <a href="/event/<?php echo htmlspecialchars(createSlug($ev['name'], $ev['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ev['name'], ENT_QUOTES, 'UTF-8'); ?></a>
+                  <a href="/event/<?php echo htmlspecialchars(soEventSlug($ev), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ev['name'], ENT_QUOTES, 'UTF-8'); ?></a>
                   <div class="small text-muted"><?php echo htmlspecialchars(trim(($ev['date'] ?? '') . ' · ' . ($ev['loc'] ?? ''), ' ·'), ENT_QUOTES, 'UTF-8'); ?><?php echo !empty($ev['price']) ? ' · from ' . htmlspecialchars($ev['price'], ENT_QUOTES, 'UTF-8') : ''; ?></div>
                 </li>
               <?php } ?>

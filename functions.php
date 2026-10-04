@@ -500,7 +500,7 @@ function tnIdOutOfRange($endpoint) {
 /**
  * Every TicketNetwork call goes through here: the raw answer (tnRequestRaw) with display names cleaned up.
  * TicketNetwork joins name parts with " - " ("The Fillmore - Detroit", "Water For Elephants - The Musical"); the site
- * shows them without dashes. Slugs do not change, because createSlug() drops the punctuation either way.
+ * shows them without dashes. Slugs do not change, because soSlug() drops the punctuation either way.
  */
 function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
     $data = tnRequestRaw($endpoint, $params, $method, $ttl);
@@ -778,11 +778,11 @@ function buildPerformerPageJsonLd(string $artistName, int $performerId, array $e
     foreach ($breadcrumbs as $i => $crumb) {
         $crumbs[] = ['@type' => 'ListItem', 'position' => $i + 1, 'name' => $crumb['label'] ?? '', 'item' => $crumb['url'] ?? HOME_URL];
     }
-    $crumbs[] = ['@type' => 'ListItem', 'position' => count($crumbs) + 1, 'name' => $artistName . ' Tickets', 'item' => HOME_URL . '/artist/' . createSlug($artistName, $performerId)];
+    $crumbs[] = ['@type' => 'ListItem', 'position' => count($crumbs) + 1, 'name' => $artistName . ' Tickets', 'item' => HOME_URL . '/artist/' . soSlug('performer', $artistName, $performerId)];
     $nodes[] = ['@type' => 'BreadcrumbList', 'itemListElement' => $crumbs];
 
     // The performer the page is about. Events below point at it through the same @id.
-    $artistUrl = HOME_URL . '/artist/' . createSlug($artistName, $performerId);
+    $artistUrl = HOME_URL . '/artist/' . soSlug('performer', $artistName, $performerId);
     $perf = ['@type' => soPerformerSchemaType($catPath), '@id' => $artistUrl . '#performer', 'name' => $artistName, 'url' => $artistUrl];
     if ($imageUrl !== '') $perf['image'] = $imageUrl;
     if ($sameAs) $perf['sameAs'] = array_values($sameAs);
@@ -905,7 +905,7 @@ function soEventRedirectTarget($event, int $eventId): string {
             // The table may not exist yet: carry on with the category data above.
         }
     }
-    if ($perfId > 0 && $perfName !== '') return '/artist/' . createSlug($perfName, $perfId);
+    if ($perfId > 0 && $perfName !== '') return '/artist/' . soSlug('performer', $perfName, $perfId);
     if (strpos($path, '.1988.') !== false) return '/game-day-tickets';
     if (strpos($path, '.1989.') !== false) return '/buy-broadway-tickets';
     if (strpos($path, '.1877.') !== false || strpos($path, '.2065.') !== false) return '/upcoming-music-festivals';
@@ -1373,6 +1373,15 @@ function getKeywordSearchSuggestions($q) {
     ]);
 
     if (!$data) return [];
+
+    // The links the search box builds: a clean slug per suggestion (no ids in URLs, see inc/slugs.php).
+    foreach (['performers' => 'performer', 'venues' => 'venue', 'cities' => 'city'] as $kind => $slugType) {
+        foreach ($data[$kind]['results'] ?? [] as $i => $item) {
+            if (empty($item['id']) || !isset($item['name'])) continue;
+            $label = $slugType === 'city' && !empty($item['state']) ? $item['name'] . ', ' . $item['state'] : $item['name'];
+            $data[$kind]['results'][$i]['slug'] = soSlug($slugType, $label, (int) $item['id']);
+        }
+    }
 
     // TicketNetwork's suggest is a prefix matcher: "adelle" finds nothing, and
     // "carot top" only unrelated venues. No performer match on a real-looking
@@ -2080,7 +2089,7 @@ function getTopSubcategories($rootPath, $limit = 8) {
         $rows[] = [
             'id'          => $id,
             'name'        => ucwords(strtolower($name)),
-            'slug'        => createSlug($name, $id),
+            'slug'        => soSlug('category', $name, $id),
             'ticketCount' => (int) ($cat['_metadata']['ticketCount'] ?? 0),
             'eventCount'  => (int) ($cat['_metadata']['eventCount'] ?? 0),
         ];
@@ -2673,7 +2682,7 @@ function soRedirectLegacyUrl() {
     if (($path === '/event.php' || $path === '/event') && isset($_GET['id']) && ctype_digit((string) $_GET['id']) && (int) $_GET['id'] > 0) {
         $ev = getTnEventById((int) $_GET['id']);
         if (!tnEntityMissing($ev) && !empty($ev['text']['name'])) {
-            $to = '/event/' . createSlug($ev['text']['name'], (int) $_GET['id']);
+            $to = '/event/' . soEventSlug($ev);
             $qs = '';   // the id is now in the path
         } elseif (tnEntityDefinitelyMissing($ev)) {
             http_response_code(404);   // an id that does not exist is a real 404, not a 200 page that says "not found"
@@ -2761,6 +2770,8 @@ function soSnapshotFile(?string $uri = null): ?string {
 
 function soSnapshotStore(string $html): void {
     if (strlen($html) < SO_SNAPSHOT_MIN_BYTES || stripos($html, '<html') === false) return;
+    // A page that tells search engines not to index it (an empty listing, an error) is not a page worth showing in place of a good one.
+    if (preg_match('/<meta[^>]+name=["\']robots["\'][^>]+content=["\'][^"\']*noindex/i', $html)) return;
     $file = soSnapshotFile();
     if ($file === null) return;
     // Rewrite at most every 10 minutes per page: the cost is a gzip and a file write, not worth doing on every view.
@@ -2914,17 +2925,6 @@ function getTopFestivalPerformers() {
     $data = tnCurlRequest($url);
 
     return $data['performers']['results'] ?? [];
-}
-
-function createSlug($name, $id) {
-    // THE slug rule for every canonical, link and redirect: see inc/entity-pages.php.
-    if (is_string($id) && !ctype_digit($id)) { $id = strtolower($id); }   // country codes: "...-us", never mixed case
-    $name = strtolower(trim(soAsciiFold((string) $name)));
-    $name = preg_replace('/[^a-z0-9\s-]/', '', $name);
-    $name = preg_replace('/\s+/', '-', $name);
-    $name = preg_replace('/-+/', '-', $name);
-    $slug = $name . '-' . $id;
-    return $slug;
 }
 
 function getTnCityById($cityId) {
@@ -3901,7 +3901,7 @@ function buildEventPerformerSchema(array $event) {
         $name = (string) ($p['name'] ?? '');
         $node = ["@type" => $type, "name" => $name];
         if (!empty($p['id']) && $name !== '') {
-            $artistUrl = HOME_URL . '/artist/' . createSlug($name, (int) $p['id']);
+            $artistUrl = HOME_URL . '/artist/' . soSlug('performer', $name, (int) $p['id']);
             $node['@id'] = $artistUrl . '#performer';
             $node['url'] = $artistUrl;
         }
@@ -3958,13 +3958,13 @@ function soPerformerSchemaType($catPath) {
 function soEventNode(array $event, array $opts = []) {
     $name = (string) ($event['text']['name'] ?? '');
     $id = (int) ($event['id'] ?? 0);
-    $url = HOME_URL . '/event/' . createSlug($name, $id);
+    $url = HOME_URL . '/event/' . soEventSlug($event);
     $venueName = (string) ($event['venue']['text']['name'] ?? '');
     $venueId = (int) ($event['venue']['id'] ?? 0);
     $place = ['@type' => 'Place', 'name' => $venueName];
     if ($venueId > 0 && $venueName !== '') {
-        $place['@id'] = HOME_URL . '/venue/' . createSlug($venueName, $venueId) . '#place';
-        $place['url'] = HOME_URL . '/venue/' . createSlug($venueName, $venueId);
+        $place['@id'] = HOME_URL . '/venue/' . soVenueSlug($venueName, $venueId, soPlaceLabel($event)) . '#place';
+        $place['url'] = HOME_URL . '/venue/' . soVenueSlug($venueName, $venueId, soPlaceLabel($event));
     }
     $address = [
         '@type' => 'PostalAddress',
@@ -4326,7 +4326,8 @@ function outputJsonLdGraph(array $nodes) {
  * duplicated inline (explode('-') + end()) in every page that needed it.
  */
 function extractTrailingId(string $slug): int {
-    return soSlugTrailingId($slug) ?? 0;   // strict: digits only, 1..2147483647 (0 = not an id)
+    [$id] = soSlugResolve('performer', $slug);   // a performer slug: the stored one, or the old name-and-id form
+    return (int) ($id ?? 0);
 }
 
 const LOCATION_CATEGORY_PATHS = [
@@ -4350,12 +4351,9 @@ const LOCATION_CATEGORY_PATHS = [
  *                          country, or null if the slug doesn't match.
  */
 function parseLocationSlug(string $dimension, string $slug) {
-    if ($dimension === 'country') {
-        return soSlugCountryCode($slug);
-    }
-
-    // Strict id (digits only, at most 2147483647): a crafted id must never reach the API.
-    return soSlugTrailingId($slug);
+    if (!in_array($dimension, ['city', 'state', 'venue', 'country'], true)) return null;
+    [$id] = soSlugResolve($dimension, $slug);   // stored slug, or the old name-and-id form (country: the two letter code)
+    return $id;
 }
 
 /**
@@ -4549,7 +4547,7 @@ const LOCATION_CATEGORY_PAGES = [
 function renderLocationCategoryLinks(string $dimension, $locationValue, string $locationLabel, string $currentPrefix = ''): void {
     $conf = LOCATION_CATEGORY_PAGES[$dimension] ?? null;
     if (!$conf || $locationLabel === '' || $locationValue === null || $locationValue === '') return;
-    $slug = createSlug($locationLabel, $locationValue);
+    $slug = soSlug($dimension, $locationLabel, $locationValue);
     $links = [];
     if ($currentPrefix !== '') {
         $links[] = ['href' => '/' . $conf['plain'] . '/' . $slug, 'text' => 'All events in ' . $locationLabel];
@@ -4578,7 +4576,7 @@ function renderLocationCategoryLinks(string $dimension, $locationValue, string $
  * artist-state. Used by performer.php and the artist location renderer.
  */
 function renderPerformerLocationLinks(string $artistName, int $performerId, array $events, string $skipDimension = ''): void {
-    $performerSlug = createSlug($artistName, $performerId);
+    $performerSlug = soSlug('performer', $artistName, $performerId);
     $dims = [
         'city'  => ['prefix' => 'artist-city',  'heading' => 'by City'],
         'venue' => ['prefix' => 'artist-venue', 'heading' => 'by Venue'],
@@ -4612,7 +4610,7 @@ function renderPerformerLocationLinks(string $artistName, int $performerId, arra
             <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets <?php echo $conf['heading']; ?></h2>
             <div class="so-linkchips">
                 <?php foreach ($items as $it) { ?>
-                    <a href="/<?php echo $conf['prefix']; ?>/<?php echo htmlspecialchars($performerSlug, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($it['label'], $it['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
+                    <a href="/<?php echo $conf['prefix']; ?>/<?php echo htmlspecialchars($performerSlug, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(soSlug($dim, $it['label'], $it['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
                         <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo $dim === 'venue' ? 'at' : 'in'; ?> <?php echo htmlspecialchars($it['label'], ENT_QUOTES, 'UTF-8'); ?>
                     </a>
                 <?php } ?>
@@ -4664,7 +4662,7 @@ function performerWhereGroups(array $events): array {
 function renderPerformerWhere(string $artistName, int $performerId, array $events, int $totalCount): void {
     $groups = performerWhereGroups(performerWhereEvents($performerId, $events, $totalCount));
     if (!$groups['city'] && !$groups['venue'] && !$groups['state']) return;
-    $slug = createSlug($artistName, $performerId);
+    $slug = soSlug('performer', $artistName, $performerId);
     $dims = [
         'city'  => ['label' => 'Cities', 'prefix' => 'artist-city',  'word' => 'in'],
         'venue' => ['label' => 'Venues', 'prefix' => 'artist-venue', 'word' => 'at'],
@@ -4687,7 +4685,7 @@ function renderPerformerWhere(string $artistName, int $performerId, array $event
                 <ul class="so-list">
                     <?php foreach ($rows as $i => $it) { ?>
                         <li class="so-list__item<?php echo $i >= $visible ? ' so-list__item--extra' : ''; ?>"<?php echo $i >= $visible ? ' hidden' : ''; ?>>
-                            <a class="so-list__link" href="/<?php echo $conf['prefix']; ?>/<?php echo $e($slug); ?>/<?php echo $e(createSlug($it['label'], $it['id'])); ?>" title="<?php echo $e($artistName . ' ' . $conf['word'] . ' ' . $it['label']); ?>">
+                            <a class="so-list__link" href="/<?php echo $conf['prefix']; ?>/<?php echo $e($slug); ?>/<?php echo $e(soSlug($dim, $it['label'], $it['id'])); ?>" title="<?php echo $e($artistName . ' ' . $conf['word'] . ' ' . $it['label']); ?>">
                                 <span class="so-list__name"><?php echo $e($it['label']); ?></span>
                                 <span class="so-list__meta"><?php echo (int) $it['count']; ?> <?php echo $it['count'] === 1 ? 'date' : 'dates'; ?></span>
                                 <i class="bi bi-chevron-right so-list__chev" aria-hidden="true"></i>
@@ -4882,7 +4880,7 @@ function renderCategoryCityLinksBlock(array $events, string $urlPrefix, string $
         <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets by city</h2>
         <div class="so-linkchips">
             <?php foreach ($cities as $city) { ?>
-                <a href="/<?php echo htmlspecialchars($urlPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
+                <a href="/<?php echo htmlspecialchars($urlPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(soSlug('city', $city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
                     <?php echo htmlspecialchars(['Concert' => 'Concerts', 'Festival' => 'Festivals'][$categoryLabel] ?? $categoryLabel, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             <?php } ?>
@@ -4934,8 +4932,8 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
     $artistName    = $performer['text']['name'];
     $locationLabel = $location['label'];
-    $canonArtistSlug = soEntitySlug($artistName, $performerId);
-    $canonLocSlug    = soEntitySlug($locationLabel, $locationValue);
+    $canonArtistSlug = soSlug('performer', $artistName, $performerId);
+    $canonLocSlug    = soSlug($dimension, $locationLabel, $locationValue);
     soRedirectToCanonicalSlug($urlPrefix, $requestedSlug, $canonArtistSlug, $requestedLoc, $canonLocSlug);
 
     $eventsResponse = getPerformerEventsByLocation($performerId, $dimension, $locationValue, [
@@ -5045,10 +5043,10 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                     <?php foreach ($events as $event) {
                                         $eventDateRaw = $event['date']['date'] ?? '';
                                         $timestamp    = $eventDateRaw ? strtotime($eventDateRaw) : false;
-                                        $eventSlug    = createSlug($event['text']['name'] ?? '', $event['id'] ?? 0);
+                                        $eventSlug    = soEventSlug($event);
                                         $evtCityLabel = trim(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
-                                        $evtCitySlug  = !empty($event['city']['id']) ? createSlug($evtCityLabel, $event['city']['id']) : null;
-                                        $evtVenueSlug = !empty($event['venue']['id']) ? createSlug($event['venue']['text']['name'] ?? '', $event['venue']['id']) : null;
+                                        $evtCitySlug  = !empty($event['city']['id']) ? soSlug('city', $evtCityLabel, $event['city']['id']) : null;
+                                        $evtVenueSlug = !empty($event['venue']['id']) ? soVenueSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'], $evtCityLabel) : null;
                                     ?>
                                         <div class="d-flex align-items-center justify-content-between performer-event-item">
                                             <div class="date-box text-center me-3">
@@ -5179,8 +5177,8 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             <div class="tab-section content-section-detail" id="more-tickets">
                 <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets</h2>
                 <div class="so-linkchips">
-                    <a href="/artist/<?php echo htmlspecialchars(createSlug($artistName, $performerId), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">All <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets</a>
-                    <a href="/<?php echo htmlspecialchars(LOCATION_CATEGORY_PAGES[$dimension]['plain'] ?? $dimension, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($locationLabel, $locationValue), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">All events in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+                    <a href="/artist/<?php echo htmlspecialchars(soSlug('performer', $artistName, $performerId), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">All <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets</a>
+                    <a href="/<?php echo htmlspecialchars(LOCATION_CATEGORY_PAGES[$dimension]['plain'] ?? $dimension, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(soSlug($dimension, $locationLabel, $locationValue), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">All events in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>
             </div>
             <?php $whereEvents = $allPerformerEvents ?? $events; renderPerformerWhere($artistName, (int) $performerId, $whereEvents, count($whereEvents)); ?>
@@ -5228,7 +5226,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
         renderNotFoundPage('Location', $rawLocation);   // 404 when the API says not found, 503 when it failed
     }
 
-    soRedirectToCanonicalSlug($urlPrefix, $requestedSlug, soEntitySlug($location['label'], $locationValue));
+    soRedirectToCanonicalSlug($urlPrefix, $requestedSlug, soSlug($dimension, $location['label'], $locationValue));
 
     $locationLabel = $location['label'];
 
@@ -5247,7 +5245,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
 
     // A failed feed is a 503 (retry), never a thin 200. A page with no events is noindex,follow and kept out of the sitemap.
     if ($total_count === 0 && !$events && soApiDegraded()) { renderUnavailablePage($categoryLabel . ' tickets'); }
-    $canonSlug = soEntitySlug($locationLabel, $locationValue);
+    $canonSlug = soSlug($dimension, $locationLabel, $locationValue);
     $isZero = ($total_count === 0);
     if ($isZero) { $pageRobots = 'noindex, follow'; }
     soZeroPageNote('/' . $urlPrefix . '/' . $canonSlug, $isZero);
@@ -5307,10 +5305,10 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                     <?php foreach ($events as $event) {
                                         $eventDateRaw = $event['date']['date'] ?? '';
                                         $timestamp    = $eventDateRaw ? strtotime($eventDateRaw) : false;
-                                        $eventSlug    = createSlug($event['text']['name'] ?? '', $event['id'] ?? 0);
+                                        $eventSlug    = soEventSlug($event);
                                         $eventCityLabel = trim(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
-                                        $eventCitySlug  = createSlug($eventCityLabel, $event['city']['id'] ?? 0);
-                                        $eventVenueSlug = createSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'] ?? 0);
+                                        $eventCitySlug  = soSlug('city', $eventCityLabel, $event['city']['id'] ?? 0);
+                                        $eventVenueSlug = soVenueSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'] ?? 0, $eventCityLabel);
                                     ?>
                                         <div class="d-flex align-items-center justify-content-between performer-event-item">
                                             <div class="date-box text-center me-3">
@@ -6127,7 +6125,8 @@ require_once __DIR__ . '/inc/entity-facts.php';   // soEntityFacts(): Wikidata, 
 require_once __DIR__ . '/inc/trust-block.php';   // soBuyerGuaranteeSection(): Buyer Guarantee section with the refund terms and live ticket count
 require_once __DIR__ . '/inc/page-hero.php';   // soPageHero(): the one page header card (artist, venue, city, search, category, hubs)
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
-require_once __DIR__ . '/inc/entity-pages.php';     // slug rule, strict ids, canonical redirects, zero-event bookkeeping
+require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
+require_once __DIR__ . '/inc/slugs.php';             // url_slugs table: ids never appear in URLs (soSlug, soEventSlug, soSlugResolve)
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages
 register_shutdown_function('soTopPerformersMaybeRun');   // keeps the home Top performers cards fresh
 register_shutdown_function('soAutoMigrateMaybeRun');   // beta only: keep the schema in step with the code

@@ -65,7 +65,7 @@ include_once 'functions.php';
     // to be sent before any output; the event is cached by tnRequest, so inc/seo-event.php reuses it.
     if (strpos($soReqPath, '/event/') === 0) {
         $soEvId = (int) ($_GET['id'] ?? 0);
-        if ($soEvId <= 0) { $soEvParts = explode('-', (string) ($_GET['slug'] ?? '')); $soEvId = (int) end($soEvParts); }
+        if ($soEvId <= 0) { [$soEvResolved] = soSlugResolve('event', (string) ($_GET['slug'] ?? '')); $soEvId = (int) $soEvResolved; }
         $soEvCheck = $soEvId > 0 ? getTnEventById($soEvId) : null;
         if ($soEvCheck !== null && tnEntityUnavailable($soEvCheck)) {
             // The API failed (throttled, timeout, circuit open): a retryable 503, never a 404 that deindexes a live event.
@@ -94,7 +94,7 @@ include_once 'functions.php';
             exit;
         } else {
             // One canonical URL per event: lowercase "name-id" slug. The id is what identifies the event; any other spelling of the name 301s here.
-            $soEvCanon = '/event/' . createSlug((string) $soEvCheck['text']['name'], (int) $soEvCheck['id']);
+            $soEvCanon = '/event/' . soEventSlug($soEvCheck);
             if (in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true) && PHP_SAPI !== 'cli' && $soReqPath !== $soEvCanon) {
                 $soEvQs = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY);
                 header('Location: ' . $soEvCanon . ($soEvQs !== '' ? '?' . $soEvQs : ''), true, 301);

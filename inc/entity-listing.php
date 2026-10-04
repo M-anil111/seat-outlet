@@ -54,7 +54,7 @@ function soRenderEntityAlternatives(array $c, array $nearby): void {
         <?php if ($nearby) { ?>
             <p class="so-empty__lead mt-3">Venues nearby with tickets:</p>
             <div class="so-linkchips">
-                <?php foreach ($nearby as $v) { ?><a class="so-linkchip" href="/venue/<?php echo $h(soEntitySlug($v['text']['name'] ?? '', $v['id'])); ?>"><?php echo $h($v['text']['name'] ?? ''); ?></a><?php } ?>
+                <?php foreach ($nearby as $v) { ?><a class="so-linkchip" href="/venue/<?php echo $h(soVenueSlug($v['text']['name'] ?? '', $v['id'], soPlaceLabel($v))); ?>"><?php echo $h($v['text']['name'] ?? ''); ?></a><?php } ?>
             </div>
         <?php } ?>
     </div>
@@ -189,7 +189,7 @@ function soRenderEntityListing(array $c): void {
                         ?>
                         <p class="so-ent-intro">Seat Outlet lists <?php echo $h(soCountWord($total, 'upcoming event')); ?> in <?php echo $h($label); ?><?php if ($vn) { ?>, including dates at <?php echo $h(implode(', ', array_slice($vn, 0, 3))); ?><?php } ?>. Choose a date to compare seats and prices, then check out securely with our 100% guarantee.</p>
                     <?php } elseif ($total > 0) { ?>
-                        <p class="so-ent-intro">Seat Outlet lists <?php echo $h(soCountWord($total, 'upcoming event')); ?> at <?php echo $h($name); ?><?php if ($next) { ?>. The next is <a href="/event/<?php echo $h(soEntitySlug($next['text']['name'] ?? '', $next['id'] ?? 0)); ?>"><?php echo $h($next['text']['name'] ?? ''); ?></a> on <?php echo $h(date('F j, Y', strtotime((string) ($next['date']['date'] ?? 'now')))); ?><?php } ?>. Compare seats and prices for each date before you buy.</p>
+                        <p class="so-ent-intro">Seat Outlet lists <?php echo $h(soCountWord($total, 'upcoming event')); ?> at <?php echo $h($name); ?><?php if ($next) { ?>. The next is <a href="/event/<?php echo $h(soEventSlug($next)); ?>"><?php echo $h($next['text']['name'] ?? ''); ?></a> on <?php echo $h(date('F j, Y', strtotime((string) ($next['date']['date'] ?? 'now')))); ?><?php } ?>. Compare seats and prices for each date before you buy.</p>
                     <?php } ?>
                     <div class="mb-3 mb-md-4 mb-lg-4" id="eventsHead">
                         <div class="d-flex justify-content-between align-items-center results-header">
@@ -247,7 +247,7 @@ function soRenderEntityListing(array $c): void {
                         <div class="tab-section content-section-detail" id="top-performers">
                             <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Top performers <?php echo $kind === 'venue' ? 'at' : 'in'; ?> <?php echo $h($name); ?></h2>
                             <div class="so-linkchips">
-                                <?php foreach ($top['performers'] as $p) { ?><a class="so-linkchip" href="/artist/<?php echo $h(soEntitySlug($p['name'], $p['id'])); ?>"><?php echo $h($p['name']); ?></a><?php } ?>
+                                <?php foreach ($top['performers'] as $p) { ?><a class="so-linkchip" href="/artist/<?php echo $h(soSlug('performer', $p['name'], $p['id'])); ?>"><?php echo $h($p['name']); ?></a><?php } ?>
                             </div>
                         </div>
                     <?php } ?>
@@ -255,7 +255,7 @@ function soRenderEntityListing(array $c): void {
                         <div class="tab-section content-section-detail" id="top-venues">
                             <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Popular venues <?php echo $kind === 'city' ? 'in' : 'across'; ?> <?php echo $h($name); ?></h2>
                             <div class="so-linkchips">
-                                <?php foreach ($top['venues'] as $v) { ?><a class="so-linkchip" href="/venue/<?php echo $h(soEntitySlug($v['name'], $v['id'])); ?>"><?php echo $h($v['name']); ?></a><?php } ?>
+                                <?php foreach ($top['venues'] as $v) { ?><a class="so-linkchip" href="/venue/<?php echo $h(soSlug('venue', $v['name'], $v['id'])); ?>"><?php echo $h($v['name']); ?></a><?php } ?>
                             </div>
                         </div>
                     <?php } ?>
@@ -288,7 +288,7 @@ function soRenderEntityListing(array $c): void {
                             <div class="so-side-card mt-3">
                                 <h2 class="so-side-card__title">Nearby venues</h2>
                                 <ul class="so-side-card__list">
-                                    <?php foreach ($sidebarNearby as $v) { ?><li><a href="/venue/<?php echo $h(soEntitySlug($v['text']['name'] ?? '', $v['id'])); ?>"><?php echo $h($v['text']['name'] ?? ''); ?></a></li><?php } ?>
+                                    <?php foreach ($sidebarNearby as $v) { ?><li><a href="/venue/<?php echo $h(soVenueSlug($v['text']['name'] ?? '', $v['id'], soPlaceLabel($v))); ?>"><?php echo $h($v['text']['name'] ?? ''); ?></a></li><?php } ?>
                                 </ul>
                             </div>
                         <?php } ?>

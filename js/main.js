@@ -572,7 +572,10 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
         DOM.keywordResultsHeader.style.display = 'block';
     }
   
-    function createSlug(name, id) {
+    // Slugs come from the server (no ids in URLs). The name-and-id form is only the fallback for an answer without a slug; the server
+    // understands it and redirects to the clean URL.
+    function createSlug(name, id, slug) {
+        if (slug) return slug;
         return `${name}-${id}`
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')
@@ -615,7 +618,7 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
                 performers.results.forEach(item => {
                     html += `
                     <li class="result-item" id="suggestion-${s}" role="option">
-                        <a href="/artist/${createSlug(item.name, item.id)}">
+                        <a href="/artist/${createSlug(item.name, item.id, item.slug)}">
                         ${escapeHtml(item.name)}
                         </a>
                     </li>`;
@@ -628,7 +631,7 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
                 cities.results.forEach(item => {
                     html += `
                     <li class="result-item" id="suggestion-${s}" role="option">
-                        <a href="/city/${createSlug(item.name, item.id)}">
+                        <a href="/city/${createSlug(item.name, item.id, item.slug)}">
                         ${escapeHtml(item.name)}, ${escapeHtml(item.state || '')}
                         </a>
                     </li>`;
@@ -641,7 +644,7 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
                 venues.results.forEach(item => {
                     html += `
                     <li class="result-item" id="suggestion-${s}" role="option">
-                        <a href="/venue/${createSlug(item.name, item.id)}">
+                        <a href="/venue/${createSlug(item.name, item.id, item.slug)}">
                         ${escapeHtml(item.name)}
                         </a>
                     </li>`;
@@ -1253,7 +1256,7 @@ document.addEventListener('error', function (e) {
   window.soEvCard = function (ev, opts) {
     opts = opts || {};
     var k = kind(ev.tab);
-    var slug = slugOf(ev.name) + '-' + ev.id;
+    var slug = ev.slug || (slugOf(ev.name) + '-' + ev.id);   // the server sends the clean slug
     var href = opts.href || ('/event/' + slug);
     var saved = storeOk() && savedIds().indexOf(String(ev.id)) !== -1;
     var place = ev.loc ? '<small>' + esc(ev.loc) + (ev.dist != null ? ' · ' + (ev.dist < 3 ? 'nearby' : ev.dist + ' mi') : '') + '</small>' : '';

@@ -8,8 +8,8 @@ $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 if ($id <= 0) {
   $slug  = $_GET['slug'] ?? '';
-  $parts = explode('-', (string) $slug);
-  $id    = (int) end($parts);
+  [$id]  = soSlugResolve('event', (string) $slug);   // stored slug, or the old name-and-id form
+  $id    = (int) $id;
   if ($id <= 0) {
     echo notFoundBlockHtml('Event');
     include 'footer.php';
@@ -54,10 +54,10 @@ $evNmForLead = (string) ($event['text']['name'] ?? '');
 <?php
 $eventVenueParts = [];
 if ($eventVenueName !== '') {
-  $eventVenueParts[] = $eventVenueId ? ['/venue/' . createSlug($eventVenueName, $eventVenueId), $eventVenueName] : [null, $eventVenueName];
+  $eventVenueParts[] = $eventVenueId ? ['/venue/' . soVenueSlug($eventVenueName, $eventVenueId, $eventCityLabel), $eventVenueName] : [null, $eventVenueName];
 }
 if ($eventCityName !== '') {
-  $eventVenueParts[] = $eventCityId ? ['/' . $categoryCityPrefix . '/' . createSlug($eventCityLabel, $eventCityId), $eventCityName] : [null, $eventCityName];
+  $eventVenueParts[] = $eventCityId ? ['/' . $categoryCityPrefix . '/' . soSlug('city', $eventCityLabel, $eventCityId), $eventCityName] : [null, $eventCityName];
 }
 foreach ([$event['stateProvince']['text']['abbr'] ?? '', ($event['country']['alphaCode'] ?? '') !== 'US' ? ($event['country']['text']['name'] ?? '') : ''] as $part) {
   if ($part !== '') $eventVenueParts[] = [null, $part];
@@ -71,9 +71,9 @@ $h = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
 // One related link under the venue: this performer in this city, else this city.
 $eventInfoLink = null;
 if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !empty($eventCityId)) {
-  $eventInfoLink = ['/artist-city/' . createSlug($primaryPerformer['name'], $primaryPerformer['id']) . '/' . createSlug($eventCityLabel, $eventCityId), 'More ' . $primaryPerformer['name'] . ' tickets in ' . $eventCityLabel];
+  $eventInfoLink = ['/artist-city/' . soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id']) . '/' . soSlug('city', $eventCityLabel, $eventCityId), 'More ' . $primaryPerformer['name'] . ' tickets in ' . $eventCityLabel];
 } elseif (!empty($eventCityId)) {
-  $eventInfoLink = ['/' . $categoryCityPrefix . '/' . createSlug($eventCityLabel, $eventCityId), 'More events in ' . $eventCityLabel];
+  $eventInfoLink = ['/' . $categoryCityPrefix . '/' . soSlug('city', $eventCityLabel, $eventCityId), 'More events in ' . $eventCityLabel];
 }
 ?>
 <?php
@@ -233,20 +233,20 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
     </div>
     <div class="so-nt__actions">
       <?php if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name'])) { ?>
-        <a class="so-nt__btn" href="/artist/<?php echo htmlspecialchars(createSlug($primaryPerformer['name'], $primaryPerformer['id']), ENT_QUOTES, 'UTF-8'); ?>">All <?php echo htmlspecialchars($primaryPerformer['name'], ENT_QUOTES, 'UTF-8'); ?> dates</a>
+        <a class="so-nt__btn" href="/artist/<?php echo htmlspecialchars(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id']), ENT_QUOTES, 'UTF-8'); ?>">All <?php echo htmlspecialchars($primaryPerformer['name'], ENT_QUOTES, 'UTF-8'); ?> dates</a>
       <?php } ?>
       <?php if (!empty($eventCityId)) { ?>
-        <a class="so-linkchip" href="/<?php echo htmlspecialchars($categoryCityPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($eventCityLabel, $eventCityId), ENT_QUOTES, 'UTF-8'); ?>">More events in <?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+        <a class="so-linkchip" href="/<?php echo htmlspecialchars($categoryCityPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(soSlug('city', $eventCityLabel, $eventCityId), ENT_QUOTES, 'UTF-8'); ?>">More events in <?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?></a>
       <?php } ?>
       <?php if (!empty($eventVenueId)) { ?>
-        <a class="so-linkchip" href="/venue/<?php echo htmlspecialchars(createSlug($eventVenueName, $eventVenueId), ENT_QUOTES, 'UTF-8'); ?>">More at <?php echo htmlspecialchars($eventVenueName, ENT_QUOTES, 'UTF-8'); ?></a>
+        <a class="so-linkchip" href="/venue/<?php echo htmlspecialchars(soVenueSlug($eventVenueName, $eventVenueId, $eventCityLabel), ENT_QUOTES, 'UTF-8'); ?>">More at <?php echo htmlspecialchars($eventVenueName, ENT_QUOTES, 'UTF-8'); ?></a>
       <?php } ?>
     </div>
   </div>
 </div>
 <?php
 // Facts for js/event-actions.js (calendar file, share, "recently viewed"). Everything here is already on the page.
-$soEventSlug = createSlug($event['text']['name'] ?? '', $id);
+$soEventSlug = soEventSlug($event);
 $soEventData = [
   'id'       => (int) $id,
   'name'     => (string) ($event['text']['name'] ?? ''),
@@ -320,9 +320,9 @@ $evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $
           <dl>
             <?php if ($evWhenLong !== '') { ?><dt>Date</dt><dd><?php echo $h($evWhenLong); ?></dd><?php } ?>
             <?php if ($eventTimeText !== '') { ?><dt>Time</dt><dd><?php echo $h($eventTimeText); ?></dd><?php } ?>
-            <?php if ($eventVenueName !== '') { ?><dt>Venue</dt><dd><?php echo $eventVenueId ? '<a href="/venue/' . $h(createSlug($eventVenueName, $eventVenueId)) . '">' . $h($eventVenueName) . ' tickets</a>' : $h($eventVenueName); ?></dd><?php } ?>
-            <?php if ($evPlaceFull !== '') { ?><dt>City</dt><dd><?php echo $eventCityId ? '<a href="/' . $h($categoryCityPrefix) . '/' . $h(createSlug($eventCityLabel, $eventCityId)) . '">Events in ' . $h($evPlaceFull) . '</a>' : $h($evPlaceFull); ?></dd><?php } ?>
-            <?php if (!empty($primaryPerformer['id'])) { ?><dt>Performer</dt><dd><a href="/artist/<?php echo $h(createSlug($primaryPerformer['name'], $primaryPerformer['id'])); ?>"><?php echo $h($primaryPerformer['name']); ?> tickets</a></dd><?php } ?>
+            <?php if ($eventVenueName !== '') { ?><dt>Venue</dt><dd><?php echo $eventVenueId ? '<a href="/venue/' . $h(soVenueSlug($eventVenueName, $eventVenueId, $eventCityLabel)) . '">' . $h($eventVenueName) . ' tickets</a>' : $h($eventVenueName); ?></dd><?php } ?>
+            <?php if ($evPlaceFull !== '') { ?><dt>City</dt><dd><?php echo $eventCityId ? '<a href="/' . $h($categoryCityPrefix) . '/' . $h(soSlug('city', $eventCityLabel, $eventCityId)) . '">Events in ' . $h($evPlaceFull) . '</a>' : $h($evPlaceFull); ?></dd><?php } ?>
+            <?php if (!empty($primaryPerformer['id'])) { ?><dt>Performer</dt><dd><a href="/artist/<?php echo $h(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id'])); ?>"><?php echo $h($primaryPerformer['name']); ?> tickets</a></dd><?php } ?>
             <?php if ($evCatName !== '') { ?><dt>Category</dt><dd><?php echo $h($evCatName); ?></dd><?php } ?>
           </dl>
         </div>
@@ -331,10 +331,10 @@ $evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $
           <h3>More <?php echo $h($primaryPerformer['name'] ?? 'dates'); ?> dates</h3>
           <ul class="so-evother">
             <?php foreach ($evOther as $oe) { $ots = strtotime($oe['date']['date'] ?? 'now'); ?>
-            <li><a href="/event/<?php echo $h(createSlug($oe['text']['name'] ?? '', $oe['id'])); ?>"><span class="so-evother__d"><?php echo $h(date('M j', $ots)); ?></span><span class="so-evother__t"><?php echo $h(($oe['city']['text']['name'] ?? '') . ', ' . ($oe['stateProvince']['text']['abbr'] ?? '')); ?><small><?php echo $h($oe['venue']['text']['name'] ?? ''); ?></small></span><span class="so-evother__p"><?php echo $h($oe['pricingInfo']['lowPrice']['text']['formatted'] ?? ''); ?></span></a></li>
+            <li><a href="/event/<?php echo $h(soEventSlug($oe)); ?>"><span class="so-evother__d"><?php echo $h(date('M j', $ots)); ?></span><span class="so-evother__t"><?php echo $h(($oe['city']['text']['name'] ?? '') . ', ' . ($oe['stateProvince']['text']['abbr'] ?? '')); ?><small><?php echo $h($oe['venue']['text']['name'] ?? ''); ?></small></span><span class="so-evother__p"><?php echo $h($oe['pricingInfo']['lowPrice']['text']['formatted'] ?? ''); ?></span></a></li>
             <?php } ?>
           </ul>
-          <?php if (!empty($primaryPerformer['id'])) { ?><a class="so-evcard__more" href="/artist/<?php echo $h(createSlug($primaryPerformer['name'], $primaryPerformer['id'])); ?>">See all <?php echo $h($primaryPerformer['name']); ?> tickets &rsaquo;</a><?php } ?>
+          <?php if (!empty($primaryPerformer['id'])) { ?><a class="so-evcard__more" href="/artist/<?php echo $h(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id'])); ?>">See all <?php echo $h($primaryPerformer['name']); ?> tickets &rsaquo;</a><?php } ?>
         </div>
         <?php } ?>
       </aside>

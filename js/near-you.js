@@ -43,7 +43,7 @@
     var day = d ? ('0' + d.getDate()).slice(-2) : '';
     var wd = d ? d.toLocaleDateString('en-US', { weekday: 'short' }) : '';
     var yr = d && d.getFullYear() > new Date().getFullYear() ? '<div class="month">' + d.getFullYear() + '</div>' : '';
-    var href = '/event/' + slug(ev.name) + '-' + ev.id;
+    var href = '/event/' + (ev.slug || (slug(ev.name) + '-' + ev.id));
     var away = ev.dist != null ? (ev.dist < 3 ? 'nearby' : ev.dist + ' mi away') : '';
     var time = String(ev.time || '').trim();
     var hasPrice = !!ev.price;

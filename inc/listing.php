@@ -180,9 +180,9 @@ function soRenderListingRow(array $event): string {
     $venueId = $event['venue']['id'] ?? 0;
     $cityName = (string) ($event['city']['text']['name'] ?? '');
     $place = trim($cityName . ', ' . (string) ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
-    $slug = createSlug($name, $id);
-    $venueSlug = $venueId ? createSlug($venueName, $venueId) : '';
-    $citySlug = !empty($event['city']['id']) ? createSlug($place, $event['city']['id']) : '';
+    $slug = soEventSlug($event);
+    $venueSlug = $venueId ? soVenueSlug($venueName, $venueId, $place) : '';
+    $citySlug = !empty($event['city']['id']) ? soSlug('city', $place, $event['city']['id']) : '';
     $names = []; $slugs = [];
     foreach ($event['performers'] ?? [] as $p) {
         $pn = trim((string) ($p['name'] ?? ''));
@@ -209,6 +209,7 @@ function soRenderListingRow(array $event): string {
 			<button type="button" class="bi bi-info-circle text-muted icon-i" aria-label="Details for <?php echo $h($name); ?>"
 				data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"
 				data-id="<?php echo $id; ?>"
+				data-event-slug="<?php echo $h($slug); ?>"
 				data-date="<?php echo $ts ? $h(date('D, M d', $ts)) : ''; ?>"
 				data-venue="<?php echo $h($venueName); ?>"
 				data-venue-slug="<?php echo $h($venueSlug); ?>"
@@ -242,9 +243,9 @@ function soRenderFestivalCard(array $run): string {
     $tsN = strtotime((string) ($run[count($run) - 1]['date']['date'] ?? ''));
     $year = (int) date('Y');
     $venueName = (string) ($first['venue']['text']['name'] ?? '');
-    $venueSlug = !empty($first['venue']['id']) ? createSlug($venueName, $first['venue']['id']) : '';
     $place = trim((string) ($first['city']['text']['name'] ?? '') . ', ' . (string) ($first['stateProvince']['text']['abbr'] ?? ''), ', ');
-    $citySlug = !empty($first['city']['id']) ? createSlug($place, $first['city']['id']) : '';
+    $venueSlug = !empty($first['venue']['id']) ? soVenueSlug($venueName, $first['venue']['id'], $place) : '';
+    $citySlug = !empty($first['city']['id']) ? soSlug('city', $place, $first['city']['id']) : '';
     $min = null; $minText = '';
     $weekends = 1; $prev = null;
     foreach ($run as $ev) {
@@ -278,7 +279,7 @@ function soRenderFestivalCard(array $run): string {
 				$ets = strtotime((string) ($ev['date']['date'] ?? ''));
 				$from = eventFromPrice($ev);
 				?>
-				<li><a href="/event/<?php echo $h(createSlug((string) ($ev['text']['name'] ?? ''), $ev['id'])); ?>"><span><?php echo $ets ? $h(date('D, M j', $ets)) : ''; ?></span><small><?php echo $from !== '' ? 'from ' . $h($from) : 'no tickets yet'; ?></small></a></li>
+				<li><a href="/event/<?php echo $h(soEventSlug($ev)); ?>"><span><?php echo $ets ? $h(date('D, M j', $ets)) : ''; ?></span><small><?php echo $from !== '' ? 'from ' . $h($from) : 'no tickets yet'; ?></small></a></li>
 			<?php } ?>
 		</ul>
 	</div>
@@ -313,7 +314,7 @@ function soRenderListingEmpty(array $o): string {
             $r = tnRequest('/catalog/v2/events/', locationListingParams($o['fragment'], 1, 1, '', 'soonest', $o['max']), 'GET', 900);
             $e = $r['results'][0] ?? null;
             if ($e && ($ts = strtotime((string) ($e['date']['date'] ?? '')))) {
-                $next = ['ts' => $ts, 'name' => (string) ($e['text']['name'] ?? ''), 'slug' => createSlug((string) ($e['text']['name'] ?? ''), $e['id']), 'place' => trim((string) ($e['city']['text']['name'] ?? '') . ', ' . (string) ($e['stateProvince']['text']['abbr'] ?? ''), ', ')];
+                $next = ['ts' => $ts, 'name' => (string) ($e['text']['name'] ?? ''), 'slug' => soEventSlug($e), 'place' => trim((string) ($e['city']['text']['name'] ?? '') . ', ' . (string) ($e['stateProvince']['text']['abbr'] ?? ''), ', ')];
             }
         } catch (Throwable $ex) { $next = null; }
     }

@@ -7,17 +7,12 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 |--------------------------------------------------------------------------
 | Loaded by functions.php. Everything here is about URLs and indexation:
 |
-|   THE SLUG RULE (one rule, used for every canonical, link and redirect)
-|     soEntitySlug($name, $id) = createSlug(): the name folded to ASCII
-|     ("Beyonce" for the accented spelling), lowercased, every character that
-|     is not a letter, digit, space or hyphen REMOVED (not turned into a
-|     hyphen, so "AC/DC" is "acdc" and "Guns N' Roses" is "guns-n-roses"),
-|     whitespace runs become one hyphen, then "-" and the numeric id. Country
-|     slugs end in the lowercase alpha code ("united-states-of-america-us").
-|     The id is the only thing that identifies the entity; the name part is
-|     decoration, so any other spelling gets a 301 to the canonical one.
+|   URLS HAVE NO IDS (inc/slugs.php)
+|     /artist/taylor-swift, /city/austin-tx, /event/taylor-swift-austin-tx-2026-10-12. soSlug() builds every slug and
+|     soSlugResolve() reads one back; the table url_slugs keeps the pairing, so a URL never changes. The old
+|     name-and-id form is still understood (and answers 301 to the clean URL).
 |
-|   IDS: strict. The slug must end in digits only and fit a signed 32-bit int
+|   IDS: strict. An id read from an old-form slug must be digits only and fit a signed 32-bit int
 |     (the TicketNetwork API answers an error, not a 404, above that), so
 |     junk ids are rejected before any API call.
 |
@@ -47,28 +42,6 @@ function soAsciiFold($s) {
         'Ì' => 'I', 'Í' => 'I', 'Î' => 'I', 'Ï' => 'I', 'Ñ' => 'N', 'Ò' => 'O', 'Ó' => 'O', 'Ô' => 'O', 'Õ' => 'O', 'Ö' => 'O', 'Ø' => 'O',
         'Ù' => 'U', 'Ú' => 'U', 'Û' => 'U', 'Ü' => 'U', 'Ý' => 'Y',
     ]);
-}
-
-/** The slug rule (see the file header). Country codes are lowercased so the canonical never has mixed case. */
-function soEntitySlug($name, $id) {
-    return createSlug($name, $id);
-}
-
-/**
- * The numeric id at the end of a slug, or null. Strict: digits only after the last hyphen ("wicked-1145abc" is not an
- * id), between 1 and 2147483647 (bigger ids make the API answer an error, which must never reach it).
- */
-function soSlugTrailingId($slug): ?int {
-    $slug = trim((string) $slug, '/');
-    if (!preg_match('/(?:^|-)(\d{1,10})$/', $slug, $m)) return null;
-    $id = (int) $m[1];
-    return ($id >= 1 && $id <= SO_MAX_ENTITY_ID) ? $id : null;
-}
-
-/** Same, for country slugs: the two-letter code (upper case) or null. */
-function soSlugCountryCode($slug): ?string {
-    if (!preg_match('/-([A-Za-z]{2})$/', trim((string) $slug, '/'), $m)) return null;
-    return strtoupper($m[1]);
 }
 
 /** 301 to $path, keeping the visitor's own query string (filters, page). Never returns. */
@@ -236,14 +209,14 @@ function soRenderEventRow(array $event, array $opts = []): void {
     $name = (string) ($event['text']['name'] ?? '');
     $venueName = (string) ($event['venue']['text']['name'] ?? '');
     $place = soPlaceLabel($event);
-    $slug = soEntitySlug($name, $event['id'] ?? 0);
-    $venueSlug = !empty($event['venue']['id']) ? soEntitySlug($venueName, $event['venue']['id']) : '';
-    $citySlug = !empty($event['city']['id']) ? soEntitySlug($place, $event['city']['id']) : '';
+    $slug = soEventSlug($event);
+    $venueSlug = !empty($event['venue']['id']) ? soVenueSlug($venueName, $event['venue']['id'], $place) : '';
+    $citySlug = !empty($event['city']['id']) ? soSlug('city', $place, $event['city']['id']) : '';
     $names = []; $pslugs = [];
     foreach ($event['performers'] ?? [] as $p) {
         $pn = (string) ($p['name'] ?? ''); $pid = $p['id'] ?? '';
         if ($pn !== '') $names[] = $pn;
-        if ($pn !== '' && $pid !== '') $pslugs[] = soEntitySlug($pn, $pid);
+        if ($pn !== '' && $pid !== '') $pslugs[] = soSlug('performer', $pn, $pid);
     }
     $hasPrice = eventFromPrice($event) !== '';
     ?>
@@ -260,6 +233,7 @@ function soRenderEventRow(array $event, array $opts = []): void {
                 <span class="time-clock"><?php echo $h($event['date']['text']['time'] ?? ''); ?></span>
                 <button type="button" class="icon-i so-info-btn" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight" aria-label="Event details for <?php echo $h($name); ?>"
                     data-id="<?php echo (int) ($event['id'] ?? 0); ?>"
+                    data-event-slug="<?php echo $h($slug); ?>"
                     data-date="<?php echo $ts ? $h(date('D, M d', $ts)) : ''; ?>"
                     data-venue="<?php echo $h($venueName); ?>"
                     data-venueSlug="<?php echo $h($venueSlug); ?>"

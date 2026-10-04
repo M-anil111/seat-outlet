@@ -55,7 +55,7 @@ include 'header.php';
                         <h2 class="section-heading"><?php echo $h($soStates[$abbr] ?? $abbr); ?> <small><?php echo number_format($info['events']); ?> events in top cities</small></h2>
                         <div class="so-cities__grid">
                             <?php foreach ($info['cities'] as $city) {
-                                $citySlug = createSlug($city['label'], $city['id']); ?>
+                                $citySlug = soSlug('city', $city['label'], $city['id']); ?>
                                 <div class="so-citycard">
                                     <a class="so-citycard__main" href="/event-city/<?php echo $h($citySlug); ?>">
                                         <strong><?php echo $h($city['label']); ?></strong>

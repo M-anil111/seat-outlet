@@ -63,7 +63,7 @@ if (!empty($results['results'])) {
           ],
           "performer" => buildEventPerformerSchema($event),
       ];
-      $offer = !empty($event['_metadata']['hasTickets']) ? seoOffer(HOME_URL . "/event/" . ($event['uriComponent'] ?? $event['id'] ?? ''), $price) : null;
+      $offer = !empty($event['_metadata']['hasTickets']) ? seoOffer(HOME_URL . "/event/" . soEventSlug($event), $price) : null;
       if ($offer) {
           $eventsSchema[array_key_last($eventsSchema)]["offers"] = $offer;
       }

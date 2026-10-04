@@ -62,7 +62,7 @@ if(!empty($artists)) {
         $response[] = [
             'type' => 'artist',
             'name' => $artistItem['name'],
-            'slug' => '/artist/' . createSlug($artistItem['name'], $artistItem['id']),
+            'slug' => '/artist/' . soSlug('performer', $artistItem['name'], $artistItem['id']),
             'image' => getCategoryFallbackImage($defaultCategory, $cat),
             'meta' => $subcat,
             'category' => $defaultCategory
@@ -77,7 +77,7 @@ if(!empty($venues)) {
         $response[] = [
             'type' => 'venue',
             'name' => $venueItem['name'],
-            'slug' => '/venue/' . createSlug($venueItem['name'], $venueItem['id']),
+            'slug' => '/venue/' . soSlug('venue', $venueItem['name'], $venueItem['id']),
             'image' => "/images/venue-480.webp",
             'meta' => $venueItem['city'] . ', ' . $venueItem['state']
             //'category' => $defaultCategory

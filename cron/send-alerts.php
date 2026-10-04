@@ -56,7 +56,7 @@ foreach ($performers as $pid) {
             'venue' => (string) ($e['venue']['text']['name'] ?? ''),
             'place' => $place,
             'from' => ($low !== null && (float) $low > 0) ? '$' . number_format((float) $low, 0) : '',
-            'url' => HOME_URL . '/event/' . createSlug((string) ($e['text']['name'] ?? ''), (int) ($e['id'] ?? 0)),
+            'url' => HOME_URL . '/event/' . soEventSlug($e),
         ];
         if (count($list) >= $perPerformer) break;
     }
@@ -79,7 +79,7 @@ foreach ($byLead as $leadId => $entry) {
     $groups = [];
     foreach ($entry['items'] as $item) {
         $pid = (int) $item['interest_id'];
-        $groups[] = ['name' => (string) $item['interest_name'], 'url' => HOME_URL . '/artist/' . createSlug((string) $item['interest_name'], $pid), 'events' => $eventsFor[$pid]];
+        $groups[] = ['name' => (string) $item['interest_name'], 'url' => HOME_URL . '/artist/' . soSlug('performer', (string) $item['interest_name'], $pid), 'events' => $eventsFor[$pid]];
     }
     if ($dry) {
         echo 'DRY RUN would email ' . $r['email'] . ': ' . implode(', ', array_map(function ($g) { return $g['name'] . ' (' . count($g['events']) . ' events)'; }, $groups)) . "\n";

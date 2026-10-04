@@ -52,17 +52,17 @@ $add = function ($name, $type, $id, $url) use (&$items, &$seen) {
 foreach (array_slice($responses, 0, 10) as $res) {
     foreach ($res['results'] ?? [] as $p) {
         $name = $p['text']['name'] ?? '';
-        $add($name, 'performer', $p['id'] ?? 0, '/artist/' . createSlug($name, $p['id'] ?? 0));
+        $add($name, 'performer', $p['id'] ?? 0, '/artist/' . soSlug('performer', $name, $p['id'] ?? 0));
     }
 }
 foreach (array_slice($responses, 10) as $res) {
     foreach ($res['results'] ?? [] as $v) {
         $name = $v['text']['name'] ?? '';
-        $add($name, 'venue', $v['id'] ?? 0, '/venue/' . createSlug($name, $v['id'] ?? 0));
+        $add($name, 'venue', $v['id'] ?? 0, '/venue/' . soSlug('venue', $name, $v['id'] ?? 0));
     }
 }
 foreach (getTopCities(200) as $c) {
-    $add($c['name'], 'city', $c['id'], '/city/' . createSlug($c['label'], $c['id']));
+    $add($c['name'], 'city', $c['id'], '/city/' . soSlug('city', $c['label'], $c['id']));
 }
 
 if (count($items) < 50) {

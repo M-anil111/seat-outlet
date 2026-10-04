@@ -45,7 +45,7 @@ function soCategoryDisplayName(string $name): string {
 /** The page a sub-category links to. */
 function soCategoryHref(int $id, string $name): string {
     if (function_exists('soGenreById') && ($g = soGenreById($id))) return '/' . $g['slug'];
-    return '/category/' . createSlug($name, $id);
+    return '/category/' . soSlug('category', $name, $id);
 }
 
 /**

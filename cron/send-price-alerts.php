@@ -59,7 +59,7 @@ foreach ($ids as $eid) {
         'date' => trim(($e['date']['text']['date'] ?? '') . (isset($e['date']['text']['time']) ? ' at ' . $e['date']['text']['time'] : '')),
         'venue' => (string) ($e['venue']['text']['name'] ?? ''),
         'place' => $place,
-        'url' => HOME_URL . '/event/' . createSlug((string) $e['text']['name'], $eid),
+        'url' => HOME_URL . '/event/' . soEventSlug($e),
     ];
 }
 
