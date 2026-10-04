@@ -2702,6 +2702,13 @@ function soNoindexPrivatePaths() {
     }
 }
 
+/** Output filter: canonical and og:url point at SO_PUBLIC_ORIGIN instead of this server's own HOME_URL. */
+function soPublicCanonical($html) {
+    $from = rtrim(HOME_URL, '/');
+    if ($from === SO_PUBLIC_ORIGIN) return $html;
+    return preg_replace('#(<link rel="canonical" href="|<meta property="og:url" content=")' . preg_quote($from, '#') . '#', '$1' . SO_PUBLIC_ORIGIN, $html);
+}
+
 function soRedirectLegacyUrl() {
     if (PHP_SAPI === 'cli' || headers_sent()) return;
     if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
