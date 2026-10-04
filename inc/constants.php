@@ -62,7 +62,7 @@ define('GEOIP_DB_PATH', getenv('GEOIP_DB_PATH') ?: dirname(rtrim(HOME_PATH, '/')
 define('TN_CHECKOUT_URL', rtrim(getenv('TN_CHECKOUT_URL') ?: 'https://checkout.seatoutlet.com', '/'));
 // Google Tag Manager container (GTM-XXXXXXX). Empty = no tag, dataLayer still
 // receives the ecommerce events so a container can be added without a deploy.
-define('GTM_ID', getenv('GTM_ID') ?: '');
+define('GTM_ID', getenv('GTM_ID') ?: 'GTM-W2XCB423');   // Seat Outlet container; the GTM_ID env var overrides it (empty string = no tags)
 
 define('SENTRY_DSN', getenv('SENTRY_DSN') ?: '');
 define('SENTRY_ENVIRONMENT', getenv('SENTRY_ENVIRONMENT') ?: (BASE_URL === 'https://www.tn-apis.com' ? 'production' : 'sandbox'));
