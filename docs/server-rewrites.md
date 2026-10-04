@@ -83,6 +83,18 @@ location = /sitemaps/sitemap-index.xml { return 301 /sitemaps/sitemap.xml; }
 
 If the Cloudflare Worker still answers `/sitemap.xml` itself (the old 21-URL list), remove that route from the Worker, or have it 301 to `/sitemaps/sitemap.xml`.
 
+## Blog posts: /blog/<slug>
+
+The blog list (`/blog`) works, but every post address (`/blog/upcoming-concert-tours` and the other six) answers 404 on beta, because the web server has no rule for it. The post page itself is fine: `/blog-post?slug=upcoming-concert-tours` returns the full article (about 3,500 words, table of contents, images with alt text, FAQ data). While the 404 stands, the Cloudflare Worker `seatoutlet-blog-proxy` swaps in its own short placeholder page ("Quick Guide", about 150 words, a button to the beta site), which is what visitors see on seatoutlet.com today.
+
+Add inside the `server { }` block, before the `location ~ \.php$` block, and reload nginx:
+
+```nginx
+rewrite ^/blog/([a-z0-9-]+)/?$ /blog-post.php?slug=$1 last;
+```
+
+Test: `curl -s -o /dev/null -w "%{http_code}\n" https://beta.seatoutlet.com/blog/upcoming-concert-tours` should print 200, and the page should have an `<h1>` and many `<h2>` headings. The Worker only shows its placeholder when the origin answers 400 or higher, so it steps aside by itself once this rule exists. If the rule cannot be added yet, the same effect is one line in the Worker: for paths that start with `/blog/` and have a slug, fetch `${BETA_ORIGIN}/blog-post?slug=<slug>` instead of the path itself.
+
 ## Caching and compression (server settings the code cannot set)
 
 - Versioned, never-changing files can be cached for a year: `/lib/`, `/fonts/` (the file name or path changes when the content does), the minified bundles `*.min.css` / `*.min.js` (they carry `?v=` stamps) and `/images/`:
