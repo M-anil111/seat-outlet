@@ -114,9 +114,13 @@ function soRenderEntityListing(array $c): void {
         $pageMetaDescription = $total > 0
             ? soMetaFit("Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ($cheap ? ", from {$cheap['formatted']}" : '') . '. Pick seats on live seat maps and buy with our 100% buyer guarantee.', 'Prices from many sellers in one place.')
             : soMetaFit("See upcoming events at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . '. Nothing is on sale right now: get a price alert or browse nearby venues on Seat Outlet.', 'Every order has a 100% buyer guarantee.');
+        $pageFocusKeyword = "$name Tickets";
         $h1 = "$name Tickets";
     } else {
-        $pageMetaTitle = soTitle("$label Events & Concerts\u{2014}Tickets & Dates", "$label Events\u{2014}" . date('Y') . " Tickets", "$label Event Tickets", "$label Tickets");
+        // "events in dallas" (9.9k/month) is the search; the phrase leads, the state suffix ("Dallas, TX") is dropped.
+        $soCityShort = preg_replace('/,\s*[A-Z]{2}$/', '', $label);
+        $pageFocusKeyword = "Events in $soCityShort";
+        $pageMetaTitle = soTitle("Events in $soCityShort\u{2014}Concerts, Sports & Shows", "Events in $soCityShort\u{2014}Tickets & Dates", "Events in $soCityShort", "$soCityShort Tickets");
         $pageMetaDescription = $total > 0
             ? soMetaFit("Find tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ': concerts, sports and theater. Compare prices and buy with our 100% buyer guarantee.', 'Live seat maps and secure checkout.')
             : soMetaFit("Find concert, sports and theater tickets in $label. Nothing is on sale right now: browse nearby places on Seat Outlet.", 'Every order has a 100% buyer guarantee.', 'New listings are added every day.');
@@ -262,11 +266,12 @@ function soRenderEntityListing(array $c): void {
                     $soWhere = $kind === 'venue'
                         ? [ "Where is $name?", $name . ($soAddr !== '' ? " is at $soAddr" : '') . ($c['cityLabel'] !== '' ? ($soAddr !== '' ? ', ' : ' is in ') . $c['cityLabel'] : '') . '. Check the event page for the start time and any venue rules before you go.' ]
                         : [ "What events are on in $name?", $total > 0 ? 'There are ' . soCountWord($total, 'upcoming event') . " in $name on Seat Outlet right now, including concerts, sports and theater. Use the date and price filters above to narrow the list." : "Nothing is on sale in $name right now. New dates are added every day, so leave your email above and we will tell you when tickets go on sale." ];
-                    soMiniFaq(($kind === 'venue' ? $name : $label) . ' tickets FAQ', [
+                    soMiniFaq(($kind === 'venue' ? $name : $label) . ' tickets FAQ', array_values(array_filter([
                         $soWhere,
                         [ ($kind === 'venue' ? "How do I buy tickets for events at $name?" : "How do I buy event tickets in $name?"), 'Pick a date above, choose how many tickets you need, compare sections and prices on the seat map and check out securely. Tickets ship in time for at least one delivery attempt before the event.' ],
+                        ($kind === 'venue' ? [ "Where can I see the $name seating chart?", "Open any upcoming event at $name above. Its seat map shows every section with the tickets listed for sale and their prices, so you can compare views before you buy." ] : null),
                         [ 'What happens if an event is canceled?', 'You get a full refund (delivery fees excluded). If the event is rescheduled, your tickets stay valid for the new date. Every order is covered by our 100% guarantee.' ],
-                    ]);
+                    ])));
                     ?>
                     <?php soRenderPromoBlock(); ?>
                 </div>

@@ -89,6 +89,14 @@ if ($soNext) {
     $soNextWhen = date('l, F j, Y', strtotime($soNext['date']['date'] ?? 'now'));
     $soFaqs[] = ['question' => "When is the next $artistName {$soNoun[1]}?", 'answer' => "The next $artistName date listed is $soNextWhen at " . ($soNext['venue']['text']['name'] ?? 'the venue') . ' in ' . trim(($soNext['city']['text']['name'] ?? '') . ', ' . ($soNext['stateProvince']['text']['abbr'] ?? ''), ', ') . '. Dates can change, so check the event page before you travel.'];
 }
+if ($events && $soNoun[0] === 'games') {
+    // "<team> schedule" and "<team> game today" are the biggest searches for teams. Absolute dates only: the page is cached, so "today" would go stale.
+    $soSched = [];
+    foreach (array_slice($events, 0, 3) as $soEv) {
+        $soSched[] = date('D, M j', strtotime($soEv['date']['date'] ?? 'now')) . ' at ' . ($soEv['venue']['text']['name'] ?? 'the venue');
+    }
+    $soFaqs[] = ['question' => "What is the $artistName schedule and when is the next game?", 'answer' => "The next $artistName games listed on Seat Outlet are: " . implode('; ', $soSched) . ". The schedule above shows every date with seats and prices. Game times can change, so check the event page on game day."];
+}
 $soFaqs[] = ['question' => "How do I buy $artistName tickets?", 'answer' => "Pick a $artistName date above, choose how many tickets you need, compare sections and prices on the seat map and check out securely. Your tickets are delivered before the event."];
 $soFaqs[] = ['question' => "Are $artistName tickets on Seat Outlet legit?", 'answer' => "Yes. Every order is covered by our 100% guarantee: valid tickets, delivery before the event, and a refund if the event is canceled and not rescheduled. Seat Outlet is a resale marketplace, so prices may be above or below face value."];
 $faqs = array_merge($soFaqs, array_map(function ($q) use ($artistName) {
