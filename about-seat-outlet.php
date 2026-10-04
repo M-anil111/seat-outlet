@@ -506,7 +506,7 @@
             </p>
             <p>
               Checkout and fulfillment are handled by TicketNetwork. If something goes wrong with an order, you can
-              <a href="/ticket-customer-service">contact our support team</a> and we will help you work it out.
+              <a href="/ticket-customer-service" class="text-decoration-underline">contact our support team</a> and we will help you work it out.
             </p>'); ?>
           </div>
         </div>
@@ -525,9 +525,9 @@
                     </p>
                 </div>
         <div class="d-flex flex-wrap gap-3 px-4 px-xxl-5 mb-4">
-          <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Musicians performing on a stage lit by beams of light" loading="lazy" width="750" height="843" decoding="async">
-          <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Singer on stage under red and blue lights in front of a crowd" loading="lazy" width="800" height="512" decoding="async">
-          <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:200px;" alt="Fans cheering at a live event" loading="lazy" width="442" height="442" decoding="async">
+          <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;height:auto;" alt="Musicians performing on a stage lit by beams of light" loading="lazy" width="750" height="843" decoding="async">
+          <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;height:auto;" alt="Singer on stage under red and blue lights in front of a crowd" loading="lazy" width="800" height="512" decoding="async">
+          <img src="/images/crowd-at-concert-or-event.webp" class="img-fluid rounded" style="max-width:200px;height:auto;" alt="Fans cheering at a live event" loading="lazy" width="442" height="442" decoding="async">
         </div>
         <div class="industry-slider">
           <!-- 2022 -->
