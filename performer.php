@@ -94,6 +94,7 @@ $soFaqs[] = ['question' => "Are $artistName tickets on Seat Outlet legit?", 'ans
 $faqs = array_merge($soFaqs, array_map(function ($q) use ($artistName) {
     return ['question' => str_replace('[artist_name]', $artistName, (string) $q['question']), 'answer' => str_replace('[artist_name]', $artistName, (string) $q['answer'])];
 }, is_array($faqs) ? $faqs : []));
+$soEntityFacts = soEntityFacts($artistName, 'performer');   // Wikidata / Wikipedia / official site, [] until the background lookup has run
 $pageJsonLdNodes = buildPerformerPageJsonLd($artistName, (int) $id, $events, $breadcrumbs, $pageOgImage ?? '', $soCatPath, $soEntityFacts['sameAs'] ?? []);
 $pageMainEntity  = HOME_URL . '/artist/' . createSlug($artistName, (int) $id) . '#performer';
 if ($faqNode = buildFaqPageSchema($faqs)) { $pageJsonLdNodes[] = $faqNode; }
@@ -535,8 +536,9 @@ include 'header.php';
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">About <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?></h2>
 						<?php renderBioBlock($performer_bio); ?>
 						<?php if (!empty($performer_bio)) { ?>
-						<p class="small text-muted mb-0 bio-source">Biography adapted from <a href="https://en.wikipedia.org/wiki/<?php echo rawurlencode(str_replace(' ', '_', $artistName)); ?>" rel="nofollow noopener" target="_blank">Wikipedia</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="nofollow noopener" target="_blank">CC BY-SA</a>.</p>
+						<p class="small text-muted mb-0 bio-source">Biography adapted from <a href="<?php echo htmlspecialchars($soEntityFacts['wikipedia'] ?? ('https://en.wikipedia.org/wiki/' . rawurlencode(str_replace(' ', '_', $artistName))), ENT_QUOTES, 'UTF-8'); ?>" rel="nofollow noopener" target="_blank">Wikipedia</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="nofollow noopener" target="_blank">CC BY-SA</a>.</p>
 						<?php } ?>
+						<?php echo soFactsSourcesHtml($soEntityFacts, $artistName); ?>
 					</div>
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">

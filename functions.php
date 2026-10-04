@@ -6067,6 +6067,7 @@ require_once __DIR__ . '/inc/sitemap-build.php';   // XML sitemap index + typed 
 require_once __DIR__ . '/inc/category-tiles.php';   // soRenderCategoryTiles(): blue category tile grid
 require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-capture form
 require_once __DIR__ . '/inc/request-guard.php';   // soClientIp(), soRateHit(), soQs(): shared request helpers
+require_once __DIR__ . '/inc/entity-facts.php';   // soEntityFacts(): Wikidata, Wikipedia and official site for performers and venues (cached, looked up after the response)
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
 require_once __DIR__ . '/inc/entity-pages.php';     // slug rule, strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages

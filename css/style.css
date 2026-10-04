@@ -7700,3 +7700,9 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-crumbs a { color: #0056d6; text-decoration: none; }
 .so-crumbs a:hover { text-decoration: underline; }
 .so-crumbs [aria-current] { color: #1d1d1f; font-weight: 500; overflow: hidden; text-overflow: ellipsis; max-width: 48ch; }
+
+/* "About X: Official website · Wikipedia · Wikidata" reference line on artist and venue pages */
+.so-sources{margin:.75rem 0 0;font-size:.8125rem;line-height:1.5;color:#6e6e73}
+.so-sources__label{font-weight:600;color:#1d1d1f}
+.so-sources a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.so-sources a:hover{color:#0071e3}

@@ -86,6 +86,7 @@ function soNearbyVenuesWithEvents(array $venue, int $limit = 6): array {
 function soRenderEntityListing(array $c): void {
     $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
     $kind = $c['kind']; $label = (string) $c['label']; $name = (string) $c['name'];
+    $soEntityFacts = $kind === 'venue' ? soEntityFacts($name, 'venue', (string) ($c['entity']['city']['text']['name'] ?? '')) : [];   // Wikidata / Wikipedia / official site, [] until looked up
     $events = $c['events']; $total = (int) $c['total']; $count = (int) $c['count']; $perPage = (int) $c['perPage'];
     $totalPages = $total > 0 ? (int) ceil($total / $perPage) : 0;
     $percent = $total > 0 ? ($perPage / $total) * 100 : 0;
@@ -188,6 +189,7 @@ function soRenderEntityListing(array $c): void {
                     } else { echo 'No upcoming events listed right now'; } ?>
                 </p>
                 <p class="so-ent-hero__note">Resale marketplace. Prices are set by sellers and may be above or below face value.</p>
+                <?php echo soFactsSourcesHtml($soEntityFacts, $name); ?>
                 <?php if ($total > 0) { ?><a class="btn btn-primary so-ent-hero__cta" href="#eventsHead">See dates</a><?php } ?>
             </div>
         </div>
