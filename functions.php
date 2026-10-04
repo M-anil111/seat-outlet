@@ -5239,10 +5239,14 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     }, $faqsRaw);
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
-    $pageFocusKeyword    = "$categoryLabel Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
+    // Keyword per category, from search data: "concerts in dallas" (27k/month) beats "concert tickets in dallas", so the phrase leads.
     $soLocShort = preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
-    $pageMetaTitle       = soTitle("$categoryLabel Tickets in $locationLabel\u{2014}" . date('Y') . " Dates & Prices", "$categoryLabel Tickets in $locationLabel", "$categoryLabel Tickets in $soLocShort");
-    $pageMetaDescription = soMetaFit("Buy $categoryLabel tickets in $locationLabel. Browse upcoming dates, compare prices from many sellers and buy with our 100% buyer guarantee.", 'Live seat maps and secure checkout.', 'Prices change often, so check back for new listings.');
+    $soKwWord = ['concerts' => 'Concerts', 'sports' => 'Sports events', 'theater' => 'Theater', 'theatre' => 'Theater', 'festivals' => 'Music festivals', 'events' => 'Events'][$categoryKey] ?? $categoryLabel;
+    $soKwPrep = $dimension === 'venue' ? 'at' : 'in';
+    $pageFocusKeyword    = "$soKwWord $soKwPrep $soLocShort";
+    $soKwHook = ['concerts' => 'Tickets & Dates', 'sports' => 'Schedule & Tickets', 'theater' => 'Shows, Dates & Tickets', 'theatre' => 'Shows, Dates & Tickets', 'festivals' => 'Dates & Passes', 'events' => 'Concerts, Sports & Shows'][$categoryKey] ?? 'Tickets & Dates';
+    $pageMetaTitle       = soTitle("$pageFocusKeyword\u{2014}" . date('Y') . " $soKwHook", "$pageFocusKeyword\u{2014}$soKwHook", $pageFocusKeyword, "$categoryLabel Tickets in $soLocShort");
+    $pageMetaDescription = soMetaFit("$pageFocusKeyword: browse upcoming dates, compare prices from many sellers and buy tickets with our 100% buyer guarantee.", 'Live seat maps and secure checkout.', 'Prices change often, so check back for new listings.');
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema($breadcrumbs, "$categoryLabel in $locationLabel"),
