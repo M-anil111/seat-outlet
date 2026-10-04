@@ -30,7 +30,9 @@ if ($catName === '') {
 $soGenre = isset($soGenreSlug) ? soGenreBySlug($soGenreSlug) : soGenreById($id);
 $catBasePath = $soGenre ? '/' . $soGenre['slug'] : '/category/' . $slug;
 if ($soGenre && !isset($soGenreSlug)) {
-	$qs = $_SERVER['QUERY_STRING'] ?? '';
+	parse_str($_SERVER['QUERY_STRING'] ?? '', $soQs);
+	unset($soQs['slug']);   // the server rewrite passes the old /category/<name>-<id> path as ?slug=, which must not leak into the clean URL
+	$qs = http_build_query($soQs);
 	header('Location: ' . $catBasePath . ($qs !== '' ? '?' . $qs : ''), true, 301);
 	exit;
 }
