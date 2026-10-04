@@ -201,21 +201,19 @@ $icPrice = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="
 $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>';
 ?>
 
-<?php if ($keywordHeader === '') { ?>
-<!-- Hero Section (only for the empty search page; a search with a query goes straight to its results) -->
-<section class="search-hero-section section-padding">
-	<div class="container">
-		<!-- Hero Content -->
-		<div class="row justify-content-center align-items-center">
-			<div class="col-lg-7 col-md-8">
-				<h1 class="hero-title text-center">
-					<span class="hero-title-white">Search Tickets Online</span>
-				</h1>
-			</div>
-		</div>
-	</div>
-</section>
-<?php } ?>
+<?php
+$soSearchTitle = $keywordHeader === '' ? 'Search Tickets Online' : ($displayName !== '' ? $displayName : 'Search results');
+soPageHero([
+	'crumbs'  => $keywordHeader === '' ? [['label' => 'Home', 'url' => '/'], ['label' => 'Search']] : [['label' => 'Home', 'url' => '/'], ['label' => 'Search', 'url' => '/search'], ['label' => $soSearchTitle]],
+	'icon'    => 'bi-search',
+	'name'    => 'Search',
+	'eyebrow' => $keywordHeader === '' ? 'Search' : 'Search results',
+	'title'   => $soSearchTitle,
+	'stats'   => $keywordHeader === '' ? [] : ['<span id="results_count">' . number_format((int) $total_count) . ' ' . ((int) $total_count === 1 ? 'result' : 'results') . '</span>'],
+	'lead'    => $keywordHeader === '' ? 'Find tickets by artist, team, venue or city. Every order is backed by a 100% guarantee.' : '',
+	'note'    => $keywordHeader !== '',
+]);
+?>
 
 <section>
 	<div class="container so-search-main">
@@ -234,15 +232,6 @@ $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="c
 						<?php if ($correctedFrom !== '') { ?>
 							<p class="search-corrected mb-2">Showing results for <strong><?php echo htmlspecialchars($keywordHeader, ENT_QUOTES, 'UTF-8'); ?></strong>. No results for &ldquo;<?php echo htmlspecialchars($correctedFrom, ENT_QUOTES, 'UTF-8'); ?>&rdquo;.</p>
 						<?php } ?>
-						<div class="d-flex justify-content-between align-items-center results-header so-hero">
-							<div class="results-title">
-								<span class="active-indicator"></span>
-								<h2>
-									<?php echo $displayName !== '' ? htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') : 'EVENTS'; ?> <span class="dot">&middot;</span>
-									<span class="count" id="results_count"><?php echo number_format((int) $total_count); ?> <?php echo $total_count === 1 ? 'RESULT' : 'RESULTS'; ?></span>
-								</h2>
-							</div>
-						</div>
 					</div>
 					<?php
 					// Compact filter bar, same chips as the listing pages: date window, price cap, sort.

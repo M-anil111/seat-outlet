@@ -18,7 +18,10 @@ $pageJsonLdNodes = array_merge($pageJsonLdNodes ?? [], [soEventItemList($events,
 include 'header.php';
 
 soRenderListingPage([
-	'h1'       => 'BUY BROADWAY TICKETS',
+	'h1'       => 'Buy Broadway Tickets',
+	'crumbs'   => [['label' => 'Home', 'url' => '/'], ['label' => 'Theater']],
+	'eyebrow'  => 'Theater',
+	'lead_text' => 'Broadway, touring musicals, plays and comedy, with live seat maps and a 100% guarantee on every order.',
 	'total'    => $total_count,
 	'basePath' => '/buy-broadway-tickets',
 	'when'     => $when,

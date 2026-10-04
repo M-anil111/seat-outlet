@@ -76,7 +76,10 @@ include 'header.php';
 $catInline = soListingInline($catLabel);   // "hip hop", but NBA / MLB / R&B keep their capitals
 
 soRenderListingPage([
-	'h1'          => strtoupper($catLabel) . ' TICKETS',
+	'h1'          => $catLabel . ' Tickets',
+	'crumbs'      => [['label' => 'Home', 'url' => '/'], soFamilyCrumb($soFamily), ['label' => $catLabel . ' Tickets']],
+	'eyebrow'     => soFamilyCrumb($soFamily)['label'],
+	'eyebrowUrl'  => soFamilyCrumb($soFamily)['url'],
 	'total'       => $total_count,
 	'basePath'    => $catBasePath,
 	'when'        => $when,

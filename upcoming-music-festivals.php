@@ -18,7 +18,10 @@ $pageJsonLdNodes = array_merge($pageJsonLdNodes ?? [], [soEventItemList($events,
 include 'header.php';
 
 soRenderListingPage([
-	'h1'       => 'UPCOMING MUSIC FESTIVALS',
+	'h1'       => 'Upcoming Music Festivals',
+	'crumbs'   => [['label' => 'Home', 'url' => '/'], ['label' => 'Festivals']],
+	'eyebrow'  => 'Festivals',
+	'lead_text' => 'Music festival passes and single-day tickets across the US, with a 100% guarantee on every order.',
 	'total'    => $total_count,
 	'basePath' => '/upcoming-music-festivals',
 	'when'     => $when,

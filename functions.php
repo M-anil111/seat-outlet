@@ -4930,56 +4930,17 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     ]));
 
     include 'header.php';
+    soPageHero([
+        'crumbs'     => array_merge(array_map(fn($c) => ['label' => (string) $c['label'], 'url' => (string) ($c['url'] ?? '')], $breadcrumbs), [['label' => $artistName, 'url' => '/artist/' . $canonArtistSlug], ['label' => $locationLabel]]),
+        'image'      => $hasRealImage ? ['url' => $performer_image, 'alt' => "$artistName {$noun['nounCap']} tickets in $locationLabel"] : null,
+        'credit'     => $hasRealImage ? $performerImg : null,
+        'name'       => $artistName,
+        'eyebrow'    => $categoryLabel,
+        'eyebrowUrl' => (string) (end($breadcrumbs)['url'] ?? ''),
+        'title'      => "$artistName Tickets in $locationLabel",
+        'stats'      => ['<span id="results_count">' . number_format($total_count) . ' ' . ($total_count === 1 ? 'result' : 'results') . '</span>'],
+    ]);
     ?>
-
-    <section class="section-featured-header text-sm-center text-md-start">
-        <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-            style="background-image: url('<?php echo HOME_URL; ?>/images/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-            <div class="container mx-xl-5 mx-lg-5 mx-md-3">
-                <div class="row">
-                    <div class="col-12 mb-4">
-                        <div class="section-content">
-                            <nav class="breadcrumb justify-content-sm-center justify-content-md-start">
-                                <?php foreach ($breadcrumbs as $index => $item) { ?>
-                                    <?php if ($index > 0) { ?>
-                                        <?php echo $sep; ?>
-                                    <?php } ?>
-                                    <a href="<?php echo htmlspecialchars($item['url'] ?? '#', ENT_QUOTES, 'UTF-8'); ?>">
-                                        <?php echo htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8'); ?>
-                                    </a>
-                                <?php } ?>
-                                <?php echo $sep; ?>
-                                <span class="current">
-                                    <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>
-                                </span>
-                            </nav>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="row align-items-center text-center text-md-start">
-                            <div class="col-md-3">
-                                <div class="img-artist">
-                                    <?php if ($hasRealImage) { ?><img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars("$artistName $noun[nounCap] tickets in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" width="300" height="300" /><?php renderImageCredit($performerImg, 'img-credit'); } else { echo soTileHtml($artistName, 'so-tile so-tile--hero'); } ?>
-                                </div>
-                            </div>
-                            <div class="col-md-9 text-white">
-                                <div class="artist-heading text-center text-md-start text-lg-start text-xl-start text-xxl-start">
-                                    <div class="artist-category">
-                                        <a href="<?php echo htmlspecialchars(sanitize_title($categoryLabel), ENT_QUOTES, 'UTF-8'); ?>">
-                                            <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?>
-                                        </a>
-                                    </div>
-                                    <h1 class="artist-title">
-                                        <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?>
-                                    </h1>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <section class="so-tabs sticky-tabs">
         <div class="artist-tabs tabs-wrapper">
@@ -5007,20 +4968,6 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             <div class="tab-section section-performer-content" id="default">
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
-                        <div class="mb-3 mb-md-4 mb-lg-4">
-                            <div class="d-flex justify-content-between align-items-center results-header so-hero">
-                                <div class="results-title">
-                                    <span class="active-indicator"></span>
-                                    <h2>
-                                        <?php echo htmlspecialchars(strtoupper($artistName), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN <?php echo htmlspecialchars(strtoupper($locationLabel), ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
-                                        <span class="count" id="results_count">
-                                            <?php echo number_format((int) $total_count); ?>
-                                            <?php echo $total_count === 1 ? 'RESULT' : 'RESULTS'; ?>
-                                        </span>
-                                    </h2>
-                                </div>
-                            </div>
-                        </div>
                         <div class="list-category-bg pb-3">
                             <?php if (!empty($events)) { ?>
                                 <div id="eventsSection" class="section-artist-content event-row-all">
@@ -5237,7 +5184,8 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     $sep = '<span class="separator"><strong> / </strong></span>';
     $breadcrumbs = [
         ['label' => 'Home', 'url' => HOME_URL],
-        ['label' => $categoryLabel, 'url' => HOME_URL . '/' . sanitize_title($categoryLabel)],
+        // The hub page for this category (the old /concert and /theatre links were 404s).
+        ['label' => $categoryLabel, 'url' => HOME_URL . (['concerts' => '/concert-tickets-for-sale', 'sports' => '/game-day-tickets', 'theater' => '/buy-broadway-tickets', 'theatre' => '/buy-broadway-tickets', 'festivals' => '/upcoming-music-festivals'][$categoryKey] ?? '/buy-tickets-online')],
     ];
 
     $faqsRaw = getFaqs($categoryKey);
@@ -5260,57 +5208,22 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     ]));
 
     include 'header.php';
+    soPageHero([
+        'crumbs'     => array_merge($breadcrumbs, [['label' => $locationLabel]]),
+        'image'      => ['url' => '/images/event-so.webp', 'alt' => "$categoryLabel tickets in $locationLabel"],
+        'name'       => $categoryLabel,
+        'eyebrow'    => $categoryLabel,
+        'eyebrowUrl' => $breadcrumbs[1]['url'],
+        'title'      => "$categoryLabel Tickets in $locationLabel",
+        'stats'      => ['<span id="results_count">' . number_format($total_count) . ' ' . ($total_count === 1 ? 'result' : 'results') . '</span>'],
+    ]);
     ?>
-
-    <section class="section-featured-header text-sm-center text-md-start">
-        <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-            style="background-image: url('<?php echo HOME_URL; ?>/images/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-            <div class="container mx-xl-5 mx-lg-5 mx-md-3">
-                <div class="row">
-                    <div class="col-12 mb-4">
-                        <div class="section-content">
-                            <nav class="breadcrumb justify-content-sm-center justify-content-md-start">
-                                <?php foreach ($breadcrumbs as $item) { ?>
-                                    <a href="<?php echo htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8'); ?>">
-                                        <?php echo htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8'); ?>
-                                    </a>
-                                    <?php echo $sep; ?>
-                                <?php } ?>
-                                <span class="current">
-                                    <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?>
-                                </span>
-                            </nav>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <h1 class="artist-title text-white">
-                            <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?>
-                        </h1>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <section>
         <div class="container">
             <div class="tab-section section-performer-content" id="default">
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
-                        <div class="mb-3 mb-md-4 mb-lg-4">
-                            <div class="d-flex justify-content-between align-items-center results-header so-hero">
-                                <div class="results-title">
-                                    <span class="active-indicator"></span>
-                                    <h2>
-                                        <?php echo htmlspecialchars(strtoupper($categoryLabel), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN <?php echo htmlspecialchars(strtoupper($locationLabel), ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
-                                        <span class="count" id="results_count">
-                                            <?php echo number_format((int) $total_count); ?>
-                                            <?php echo $total_count === 1 ? 'RESULT' : 'RESULTS'; ?>
-                                        </span>
-                                    </h2>
-                                </div>
-                            </div>
-                        </div>
                         <div class="list-category-bg pb-3">
                             <?php if (!empty($events)) { ?>
                                 <div id="eventsSection" class="section-artist-content event-row-all">
@@ -6135,6 +6048,7 @@ require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-cap
 require_once __DIR__ . '/inc/request-guard.php';   // soClientIp(), soRateHit(), soQs(): shared request helpers
 require_once __DIR__ . '/inc/entity-facts.php';   // soEntityFacts(): Wikidata, Wikipedia and official site for performers and venues (cached, looked up after the response)
 require_once __DIR__ . '/inc/trust-block.php';   // soBuyerGuaranteeSection(): Buyer Guarantee section with the refund terms and live ticket count
+require_once __DIR__ . '/inc/page-hero.php';   // soPageHero(): the one page header card (artist, venue, city, search, category, hubs)
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
 require_once __DIR__ . '/inc/entity-pages.php';     // slug rule, strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages
