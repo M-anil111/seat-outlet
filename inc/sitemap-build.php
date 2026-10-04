@@ -23,6 +23,8 @@ const SO_SITEMAP_CHUNK     = 5000;   // URLs per file (the protocol allows 50,00
 const SO_SITEMAP_PER_PAGE  = 200;
 const SO_SITEMAP_MAX_PAGES = 250;    // 50,000 events; the catalog is far below this
 const SO_SITEMAP_PAUSE_US  = 700000; // between API requests, so the crawl never competes with visitors for the API
+const SO_SITEMAP_FORMAT    = 2;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
+const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap.php?f=style"?>';
 
 function soSitemapStaticPaths(): array {
     return [
@@ -132,7 +134,7 @@ function soSitemapWriteAtomic(string $file, string $body): bool {
 
 /** @param array<int,array{0:string,1:?string}> $entries [loc, lastmod] */
 function soSitemapUrlsetXml(array $entries): string {
-    $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<?xml-stylesheet type="text/xsl" href="/sitemap.php?f=style"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . SO_SITEMAP_STYLE_PI . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
     foreach ($entries as [$loc, $lm]) {
         $x .= '<url><loc>' . soSitemapEsc($loc) . '</loc>' . ($lm ? '<lastmod>' . soSitemapEsc($lm) . '</lastmod>' : '') . "</url>\n";
     }
@@ -159,12 +161,37 @@ function soSitemapNeedsWork(): bool {
     $s = soSitemapState();
     if (!$s) return true;
     if (($s['phase'] ?? '') === 'crawl') return true;
+    if ((int) ($s['fmt'] ?? 0) !== SO_SITEMAP_FORMAT) return true;
     return time() - (int) ($s['builtAt'] ?? 0) >= soSitemapRebuildAfter();
 }
 
+/** W3C datetime with the time of day and a UTC offset ("2026-10-04T17:49:46+00:00"), the form Google's sitemap guidance recommends for <lastmod>. */
 function soSitemapDate($ts): ?string {
-    $t = is_string($ts) ? strtotime($ts) : false;
-    return $t ? gmdate('Y-m-d', $t) : null;
+    if (!is_string($ts) || trim($ts) === '') return null;
+    try {
+        $d = new DateTimeImmutable($ts, new DateTimeZone('UTC'));   // a stamp with no zone is read as UTC, never as the server's local time
+    } catch (Exception $e) {
+        return null;
+    }
+    return $d->setTimezone(new DateTimeZone('UTC'))->format('c');
+}
+
+/**
+ * Add the browser stylesheet to files built before it existed, so every sitemap is readable right away instead of after the next
+ * full crawl. Only the header line changes; the URLs and dates are untouched. Returns how many files were updated.
+ */
+function soSitemapRestyleExisting(): int {
+    $n = 0;
+    foreach ([dirname(__DIR__) . '/sitemaps', soSitemapCacheDir() . '/sitemaps'] as $dir) {
+        foreach (glob($dir . '/*.xml') ?: [] as $f) {
+            $head = (string) @file_get_contents($f, false, null, 0, 400);
+            if ($head === '' || strpos($head, '<?xml-stylesheet') !== false) continue;
+            $xml = (string) @file_get_contents($f);
+            $new = preg_replace('/^(<\?xml[^>]*\?>\s*)/', '$1' . SO_SITEMAP_STYLE_PI . "\n", $xml, 1);
+            if ($new !== null && $new !== $xml && soSitemapWriteAtomic($f, $new)) $n++;
+        }
+    }
+    return $n;
 }
 
 /**
@@ -178,10 +205,12 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
         $deadline = microtime(true) + $budgetSeconds;
         $tmp = soSitemapTmpDir();
         $s = soSitemapState();
-        $rebuild = $force || !$s || (($s['phase'] ?? '') !== 'crawl' && time() - (int) ($s['builtAt'] ?? 0) >= soSitemapRebuildAfter());
+        $stale = ($s['phase'] ?? '') !== 'crawl' && ((int) ($s['fmt'] ?? 0) !== SO_SITEMAP_FORMAT || time() - (int) ($s['builtAt'] ?? 0) >= soSitemapRebuildAfter());
+        $rebuild = $force || !$s || $stale;
         if ($rebuild) {
+            if ((int) ($s['fmt'] ?? 0) !== SO_SITEMAP_FORMAT) soSitemapRestyleExisting();   // readable now, rebuilt with full timestamps below
             foreach (['events', 'performers', 'venues', 'cities'] as $k) { @unlink($tmp . '/' . $k . '.tsv'); }
-            $s = ['phase' => 'crawl', 'startedAt' => time(), 'page' => 1, 'pages' => null, 'fails' => 0, 'builtAt' => (int) ($s['builtAt'] ?? 0), 'counts' => $s['counts'] ?? []];
+            $s = ['phase' => 'crawl', 'startedAt' => time(), 'page' => 1, 'pages' => null, 'fails' => 0, 'builtAt' => (int) ($s['builtAt'] ?? 0), 'counts' => $s['counts'] ?? [], 'fmt' => (int) ($s['fmt'] ?? 0)];
             soSitemapSaveState($s);
         }
         if (($s['phase'] ?? '') !== 'crawl') return 'fresh';
@@ -227,7 +256,7 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
         }
         if ($s['page'] > ($s['pages'] ?? SO_SITEMAP_MAX_PAGES) && ($s['pages'] ?? null) !== null) {
             $counts = soSitemapBuildFiles($tmp);
-            $s = ['phase' => 'done', 'builtAt' => time(), 'startedAt' => $s['startedAt'] ?? time(), 'counts' => $counts, 'fails' => 0];
+            $s = ['phase' => 'done', 'builtAt' => time(), 'startedAt' => $s['startedAt'] ?? time(), 'counts' => $counts, 'fails' => 0, 'fmt' => SO_SITEMAP_FORMAT];
             soSitemapSaveState($s);
             return 'built ' . json_encode($counts);
         }
@@ -250,7 +279,7 @@ function soSitemapBuildFiles(string $tmp): array {
     };
     $files = [];   // name => lastmod
     $counts = [];
-    $maxLm = function (array $entries) { $m = ''; foreach ($entries as $e) { if (($e[1] ?? '') > $m) $m = $e[1]; } return $m !== '' ? $m : date('Y-m-d'); };
+    $maxLm = function (array $entries) { $m = ''; foreach ($entries as $e) { if (($e[1] ?? '') > $m) $m = $e[1]; } return $m !== '' ? $m : gmdate('c'); };
     $emit = function (string $group, array $entries) use (&$files, &$counts, $write, $maxLm, $dir) {
         $counts[$group] = count($entries);
         $chunks = array_chunk($entries, SO_SITEMAP_CHUNK);
@@ -269,7 +298,7 @@ function soSitemapBuildFiles(string $tmp): array {
     foreach (listBlogPosts() as $post) {
         if (($post['status'] ?? '') !== 'published' || empty($post['published_at']) || strtotime($post['published_at']) > time()) continue;
         $loc = $base . '/blog/' . $post['slug'];
-        $pages[$loc] = [$loc, date('Y-m-d', strtotime($post['updated_at'] ?? $post['published_at']))];
+        $pages[$loc] = [$loc, gmdate('c', strtotime($post['updated_at'] ?? $post['published_at']))];
     }
     foreach (getTopCities(60) as $i => $city) {
         $slug = createSlug($city['label'], $city['id']);
@@ -316,7 +345,7 @@ function soSitemapBuildFiles(string $tmp): array {
         $emit($group, $list);
     }
 
-    $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<?xml-stylesheet type="text/xsl" href="/sitemap.php?f=style"?>' . "\n" . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . SO_SITEMAP_STYLE_PI . "\n" . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
     foreach ($files as $name => $lm) {
         $x .= '<sitemap><loc>' . soSitemapEsc(soSitemapChildUrl($name, $static)) . '</loc><lastmod>' . soSitemapEsc($lm) . '</lastmod></sitemap>' . "\n";
     }
