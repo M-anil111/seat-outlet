@@ -148,53 +148,32 @@ function soRenderEntityListing(array $c): void {
     extract($soSnap, EXTR_OVERWRITE);
     unset($soSnap);
     ?>
-<section class="so-ent-hero">
-    <div class="container">
-        <div class="section-content">
-            <nav class="breadcrumb" aria-label="Breadcrumb">
-                <?php foreach ($trailFull as $item) { ?>
-                    <a href="<?php echo $h($item['url']); ?>"><?php echo $h($item['label']); ?></a><span class="separator" aria-hidden="true"><strong> / </strong></span>
-                <?php } ?>
-                <span class="current" aria-current="page"><?php echo $h($name); ?></span>
-            </nav>
-        </div>
-        <div class="so-ent-hero__row">
-            <div class="so-ent-hero__media">
-                <?php if ($img && soImageIsReal($img)) { ?>
-                    <img src="<?php echo $h($img['url']); ?>" alt="<?php echo $h($kind === 'venue' ? "$name, event venue" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') : "Photo of $name"); ?>" width="240" height="240" fetchpriority="high">
-                    <?php renderImageCredit($img, 'img-credit so-ent-hero__credit'); ?>
-                <?php } else { echo soTileHtml($name, 'so-tile so-tile--hero'); } ?>
-            </div>
-            <div class="so-ent-hero__body">
-                <p class="so-ent-hero__kind"><?php echo $h($kindNoun); ?></p>
-                <h1 class="so-ent-hero__title"><?php echo $h($h1); ?></h1>
-                <?php if ($kind === 'venue') {
-                    $addr = trim((string) ($c['entity']['address']['text']['address1'] ?? ''));
-                    $cityUrl = $c['cityUrl'] ?? '';
-                    ?>
-                    <p class="so-ent-hero__meta">
-                        <?php if ($addr !== '') { echo $h($addr) . ($c['cityLabel'] !== '' ? ', ' : ''); } ?>
-                        <?php if ($c['cityLabel'] !== '' && $cityUrl !== '') { ?><a href="<?php echo $h($cityUrl); ?>"><?php echo $h($c['cityLabel']); ?></a><?php } elseif ($c['cityLabel'] !== '') { echo $h($c['cityLabel']); } ?>
-                        <?php if ($addr !== '' || $c['cityLabel'] !== '') { ?>
-                            <span class="dot" aria-hidden="true">·</span>
-                            <a href="https://www.google.com/maps/search/?api=1&amp;query=<?php echo $h(rawurlencode(trim($name . ' ' . $addr . ' ' . $c['cityLabel']))); ?>" target="_blank" rel="noopener">Map<span class="visually-hidden"> (opens in a new tab)</span></a>
-                        <?php } ?>
-                    </p>
-                <?php } ?>
-                <p class="so-ent-hero__stats">
-                    <?php if ($total > 0) {
-                        echo $h(soCountWord($total, 'upcoming event'));
-                        if ($cheap) { echo ' <span class="dot" aria-hidden="true">·</span> Tickets from <strong>' . $h($cheap['formatted']) . '</strong>'; }
-                        if ($next) { echo ' <span class="dot" aria-hidden="true">·</span> Next: ' . $h(date('M j', strtotime((string) ($next['date']['date'] ?? 'now')))); }
-                    } else { echo 'No upcoming events listed right now'; } ?>
-                </p>
-                <p class="so-ent-hero__note">Resale marketplace. Prices are set by sellers and may be above or below face value.</p>
-                <?php echo soFactsSourcesHtml($soEntityFacts, $name); ?>
-                <?php if ($total > 0) { ?><a class="btn btn-primary so-ent-hero__cta" href="#eventsHead">See dates</a><?php } ?>
-            </div>
-        </div>
-    </div>
-</section>
+<?php
+    $soAddr = trim((string) ($c['entity']['address']['text']['address1'] ?? ''));
+    $soMeta = '';
+    if ($kind === 'venue' && ($soAddr !== '' || $c['cityLabel'] !== '')) {
+        $soCityUrl = $c['cityUrl'] ?? '';
+        $soMeta = ($soAddr !== '' ? $h($soAddr) . ($c['cityLabel'] !== '' ? ', ' : '') : '')
+            . ($c['cityLabel'] !== '' ? ($soCityUrl !== '' ? '<a href="' . $h($soCityUrl) . '">' . $h($c['cityLabel']) . '</a>' : $h($c['cityLabel'])) : '')
+            . ' <span aria-hidden="true">&middot;</span> <a href="https://www.google.com/maps/search/?api=1&amp;query=' . $h(rawurlencode(trim($name . ' ' . $soAddr . ' ' . $c['cityLabel']))) . '" target="_blank" rel="noopener">Map<span class="visually-hidden"> (opens in a new tab)</span></a>';
+    }
+    $soReal = $img && soImageIsReal($img);
+    soPageHero([
+        'crumbs'  => array_merge(array_map(fn($t) => ['label' => (string) $t['label'], 'url' => (string) $t['url']], $trailFull), [['label' => $name]]),
+        'image'   => $soReal ? ['url' => $img['url'], 'alt' => $kind === 'venue' ? "$name, event venue" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') : "Photo of $name"] : null,
+        'credit'  => $soReal ? $img : null,
+        'name'    => $name,
+        'eyebrow' => $kindNoun,
+        'title'   => $h1,
+        'meta'    => $soMeta,
+        'stats'   => $total > 0 ? [
+            $h(soCountWord($total, 'upcoming event')),
+            $cheap ? 'Tickets from <strong>' . $h($cheap['formatted']) . '</strong>' : '',
+            $next ? 'Next: ' . $h(date('M j', strtotime((string) ($next['date']['date'] ?? 'now')))) : '',
+        ] : ['No upcoming events listed right now'],
+        'cta'     => $total > 0 ? ['See dates', '#eventsHead'] : null,
+    ]);
+    ?>
 
 <section>
     <div class="container">
@@ -213,7 +192,7 @@ function soRenderEntityListing(array $c): void {
                             <div class="results-title">
                                 <span class="active-indicator"></span>
                                 <h2><?php echo $kind === 'venue' ? 'Upcoming events at ' : 'Upcoming events in '; ?><?php echo $h($name); ?> <span class="dot">·</span>
-                                    <span class="count" id="results_count"><?php echo $total; ?> <?php echo $total === 1 ? 'RESULT' : 'RESULTS'; ?></span>
+                                    <span class="count" id="results_count"><?php echo number_format($total); ?> <?php echo $total === 1 ? 'result' : 'results'; ?></span>
                                 </h2>
                             </div>
                         </div>

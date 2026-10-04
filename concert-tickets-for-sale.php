@@ -18,7 +18,10 @@ $pageJsonLdNodes = array_merge($pageJsonLdNodes ?? [], [soEventItemList($events,
 include 'header.php';
 
 soRenderListingPage([
-	'h1'       => 'CONCERT TICKETS FOR SALE',
+	'h1'       => 'Concert Tickets for Sale',
+	'crumbs'   => [['label' => 'Home', 'url' => '/'], ['label' => 'Concerts']],
+	'eyebrow'  => 'Concerts',
+	'lead_text' => 'Compare seats and prices for concerts across the US, from arenas to small clubs, with a 100% guarantee on every order.',
 	'total'    => $total_count,
 	'basePath' => '/concert-tickets-for-sale',
 	'when'     => $when,

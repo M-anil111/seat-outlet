@@ -419,23 +419,26 @@ function soRenderListingPage(array $o): void {
     $o += ['tag' => 'h1', 'defaultSort' => 'popular', 'explore' => [], 'body' => [], 'lead' => null, 'afterRow' => null, 'afterSection' => null, 'when' => '', 'sort' => 'popular', 'max' => 0];
     $total = (int) $o['total'];
     $tag = $o['tag'] === 'h2' ? 'h2' : 'h1';
+    // The page header: the shared card (inc/page-hero.php), with the hub or category picture and the live result count.
+    $heroImg = (string) ($o['image'] ?? ($o['explore']['hero'] ?? (SO_EXPLORE_HUBS[$o['basePath']][2] ?? '')));
+    $title = (string) ($o['title'] ?? $o['h1']);
+    soPageHero([
+        'crumbs'     => $o['crumbs'] ?? [['label' => 'Home', 'url' => '/'], ['label' => $title]],
+        'image'      => $heroImg !== '' ? ['url' => $heroImg, 'alt' => $title] : null,
+        'name'       => $title,
+        'eyebrow'    => (string) ($o['eyebrow'] ?? ''),
+        'eyebrowUrl' => (string) ($o['eyebrowUrl'] ?? ''),
+        'title'      => $title,
+        'tag'        => $tag,
+        'lead'       => (string) ($o['lead_text'] ?? ''),
+        'stats'      => ['<span id="results_count">' . number_format($total) . ' ' . ($total === 1 ? 'result' : 'results') . '</span>'],
+    ]);
     ?>
 <section>
 	<div class="container">
 		<div class="tab-section section-performer-content" id="default">
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">
-					<div class="mb-3 mb-md-4 mb-lg-4">
-						<div class="d-flex justify-content-between align-items-center results-header so-hero">
-							<div class="results-title">
-								<span class="active-indicator"></span>
-								<<?php echo $tag; ?>>
-									<?php echo soListingH($o['h1']); ?> <span class="dot">&middot;</span>
-									<span class="count" id="results_count"><?php echo number_format($total); ?> <?php echo $total === 1 ? 'RESULT' : 'RESULTS'; ?></span>
-								</<?php echo $tag; ?>>
-							</div>
-						</div>
-					</div>
 					<?php renderListingFilters($o['basePath'], $o['when'], $o['sort'], $total, $o['defaultSort'], $o['explore'] + ['max' => (int) $o['max']]); ?>
 					<div class="list-category-bg pb-3">
 						<?php soRenderListingBody($o['body'] + ['total' => $total]); ?>

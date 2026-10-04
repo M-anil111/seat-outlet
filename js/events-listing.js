@@ -245,9 +245,9 @@ function updateEventsSection(location) {
         soAppendRows(list, data);
 
         const loaded = data.totalCount;
-        const countmsg = loaded === 1 ? ' RESULT' : ' RESULTS';
+        const countmsg = loaded === 1 ? ' result' : ' results';
         const rc = soById('results_count');
-        if (rc) rc.textContent = loaded + countmsg;
+        if (rc) rc.textContent = Number(loaded).toLocaleString('en-US') + countmsg;
         const tc = soById('totalCount');
         if (tc) tc.textContent = loaded;
 

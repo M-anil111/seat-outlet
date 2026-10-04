@@ -18,7 +18,10 @@ $pageJsonLdNodes = array_merge($pageJsonLdNodes ?? [], [soEventItemList($events,
 include 'header.php';
 
 soRenderListingPage([
-	'h1'       => 'GAME DAY TICKETS',
+	'h1'       => 'Game Day Tickets',
+	'crumbs'   => [['label' => 'Home', 'url' => '/'], ['label' => 'Sports']],
+	'eyebrow'  => 'Sports',
+	'lead_text' => 'Tickets for NFL, NBA, MLB, NHL, MLS and college games, with live seat maps and a 100% guarantee on every order.',
 	'total'    => $total_count,
 	'basePath' => '/game-day-tickets',
 	'when'     => $when,

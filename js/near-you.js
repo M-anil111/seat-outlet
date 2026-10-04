@@ -9,12 +9,6 @@
   var cat = root.getAttribute('data-cat') || 'all';
   var noun = root.getAttribute('data-noun') || 'events';
   var catId = root.getAttribute('data-catid') || '0';
-  // Header card: the page title block becomes a dark card with a picture, like a ticket app's category header.
-  var heroBox = document.querySelector('.results-header');
-  if (heroBox && root.getAttribute('data-hero')) {
-    heroBox.classList.add('so-hero');
-    heroBox.style.setProperty('--so-hero-img', 'url(' + root.getAttribute('data-hero') + ')');
-  }
   var $ = function (sel) { return root.querySelector(sel); };
   var locBtn = $('[data-so-loc]'), locLabel = $('[data-so-loc-label]'), locPop = $('[data-so-loc-pop]');
   var locInput = $('#soNearInput'), locHere = $('[data-so-loc-here]');

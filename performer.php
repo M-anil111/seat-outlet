@@ -103,74 +103,24 @@ $pagePreloadImage = $hasRealImage ? $performer_image : '/images/event-so.webp';
 include 'header.php';
 ?>
 
-<section class="section-featured-header text-sm-center text-md-start">
-	<div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-		style="background-image: url('<?php echo htmlspecialchars($hasRealImage ? $performer_image : '/images/event-so.webp', ENT_QUOTES, 'UTF-8'); ?>'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-		<div class="container mx-xl-5 mx-lg-5 mx-md-3">
-			<div class="row">
-				<div class="col-12 mb-4">
-					<div class="section-content">
-						<nav class="breadcrumb justify-content-sm-center justify-content-md-start">
-							<?php foreach ($breadcrumbs as $index => $item) { ?>
-								<?php if ($index > 0) { ?>
-									<?php echo $sep; ?>
-								<?php } ?>
-								<a href="<?php echo htmlspecialchars((string) ($item['url'] ?? '#'), ENT_QUOTES, 'UTF-8'); ?>">
-									<?php echo htmlspecialchars((string) ($item['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-								</a>
-							<?php } ?>
-							<?php echo $sep; ?>
-							<span class="current">
-								<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>
-							</span>
-						</nav>
-					</div>
-				</div>
-				<div class="col-12">
-					<div class="row align-items-center text-center text-md-start so-hero-row">
-						<div class="col-md-3">
-							<div class="img-artist">
-								<?php if ($hasRealImage) { ?>
-									<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($artistName . ', ' . strtolower($soNoun[1]) . ' tickets on Seat Outlet', ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" fetchpriority="high" width="300" height="300" />
-									<?php renderImageCredit($performerImg, 'img-credit d-none d-md-block'); ?>
-								<?php } else { echo soTileHtml($artistName, 'so-tile so-tile--hero'); } ?>
-							</div>
-						</div>
-						<div class="col-md-9 text-white">
-							<div class="artist-heading text-center text-md-start text-lg-start text-xl-start text-xxl-start">
-								<?php 
-									$lastBreadcrumb = end($breadcrumbs);
-									$categoryLabel  = $lastBreadcrumb['label'] ?? '';
-								?>
-								<div class="artist-category">
-									<a href="<?php echo htmlspecialchars((string) ($lastBreadcrumb['url'] ?? '#'), ENT_QUOTES, 'UTF-8'); ?>">
-										<?php echo htmlspecialchars((string) $categoryLabel, ENT_QUOTES, 'UTF-8'); ?>
-									</a>
-								</div>
-								<h1 class="artist-title">
-								<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets
-								</h1>
-								<?php if ($total_count > 0) { ?>
-								<p class="artist-snapshot mb-0">
-									<?php echo (int) $total_count; ?> upcoming <?php echo $total_count === 1 ? 'event' : 'events'; ?>
-									<?php if ($priceSnapshot['from'] !== '') { ?>
-										<span class="dot">·</span> Tickets from <strong><?php echo htmlspecialchars($priceSnapshot['from'], ENT_QUOTES, 'UTF-8'); ?></strong>
-									<?php } ?>
-									<?php if ($nextEvent) { ?>
-										<span class="dot">·</span> Next: <?php echo htmlspecialchars(date('M j', strtotime($nextEvent['date']['date'] ?? 'now')) . ' in ' . ($nextEvent['city']['text']['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-									<?php } ?>
-								</p>
-								<?php } ?>
-								<p class="so-resale-note mb-0">Resale marketplace. Prices are set by sellers and may be above or below face value.</p>
-								<?php if ($hasRealImage) { renderImageCredit($performerImg, 'img-credit so-hero-credit d-md-none'); } ?>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</section>
+<?php
+$soLastCrumb = end($breadcrumbs) ?: [];
+soPageHero([
+	'crumbs'     => array_merge(array_map(fn($c) => ['label' => (string) ($c['label'] ?? ''), 'url' => (string) ($c['url'] ?? '')], $breadcrumbs), [['label' => $artistName]]),
+	'image'      => $hasRealImage ? ['url' => $performer_image, 'alt' => $artistName . ', ' . strtolower($soNoun[1]) . ' tickets on Seat Outlet'] : null,
+	'credit'     => $hasRealImage ? $performerImg : null,
+	'name'       => $artistName,
+	'eyebrow'    => (string) ($soLastCrumb['label'] ?? ''),
+	'eyebrowUrl' => (string) ($soLastCrumb['url'] ?? ''),
+	'title'      => $artistName . ' Tickets',
+	'stats'      => $total_count > 0 ? [
+		number_format((int) $total_count) . ' upcoming ' . ($total_count === 1 ? 'event' : 'events'),
+		$priceSnapshot['from'] !== '' ? 'Tickets from <strong>' . htmlspecialchars($priceSnapshot['from'], ENT_QUOTES, 'UTF-8') . '</strong>' : '',
+		$nextEvent ? 'Next: ' . htmlspecialchars(date('M j', strtotime($nextEvent['date']['date'] ?? 'now')) . ' in ' . ($nextEvent['city']['text']['name'] ?? ''), ENT_QUOTES, 'UTF-8') : '',
+	] : ['No dates on sale right now'],
+	'cta'        => $total_count > 0 ? ['See dates', '#default'] : null,
+]);
+?>
 
 <section class="so-tabs sticky-tabs">
 	<div class="artist-tabs tabs-wrapper">
@@ -211,11 +161,8 @@ include 'header.php';
 							<div class="results-title">
 								<span class="active-indicator"></span>
 								<h2>
-									<?php echo htmlspecialchars(strtoupper($artistName), ENT_QUOTES, 'UTF-8'); ?> TICKETS FOR SALE <span class="dot">·</span>
-									<span class="count" id="results_count">
-										<?php echo (int) $total_count; ?>
-										<?php echo $total_count === 1 ? 'RESULT' : 'RESULTS'; ?>
-									</span>
+									Upcoming <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> dates <span class="dot">·</span>
+									<span class="count" id="results_count"><?php echo number_format((int) $total_count); ?> <?php echo $total_count === 1 ? 'result' : 'results'; ?></span>
 								</h2>
 							</div>
 						</div>

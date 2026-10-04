@@ -16,27 +16,12 @@ $faqs = getFaqs('events');
 $artistName = 'Live';   // the FAQ copy is shared with performer pages: "FAQs about Live Events"
 ?>
 
-<!-- Hero Section -->
-<section class="tickets-hero-section section-padding">
-	<div class="container">		
-		<!-- Hero Content -->
-		<div class="row justify-content-center align-items-center">
-			<div class="col-lg-7 col-md-8">
-				<h1 class="hero-title text-center">
-					<span class="hero-title-white">Buy Tickets Online</span>
-				</h1>
-				<p class="hero-subtitle">
-					Buy tickets online for concerts, games, shows and festivals. Compare seats and prices from many sellers, check out securely and get a 100% guarantee on every order.
-				</p>
-			</div>
-		</div>
-	</div>
-</section>
-
 <?php
 soRenderListingPage([
-	'tag'      => 'h2',   // the page's h1 is the hero above
-	'h1'       => 'EVENTS',
+	'h1'       => 'Buy Tickets Online',
+	'crumbs'   => [['label' => 'Home', 'url' => '/'], ['label' => 'All events']],
+	'eyebrow'  => 'All events',
+	'lead_text' => 'Buy tickets online for concerts, games, shows and festivals. Compare seats and prices from many sellers, check out securely and get a 100% guarantee on every order.',
 	'total'    => $total_count,
 	'basePath' => '/buy-tickets-online',
 	'when'     => $when,
