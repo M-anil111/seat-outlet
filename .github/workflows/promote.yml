@@ -1,0 +1,64 @@
+name: Promote to production
+
+# Beta deploys every commit on main (deploy/pull-deploy.sh, every 2 minutes). Live deploys the `production` branch only,
+# with the same script and DEPLOY_BRANCH=production (docs/production-cutover.md). This workflow moves `production`:
+#   - to the commit you name (default: the tip of main), which is a promotion; or
+#   - to an older commit, which is a rollback.
+# It refuses a commit whose CI checks are not green. Free: GitHub Actions minutes are unlimited for public repositories.
+#
+# Run it: GitHub > Actions > "Promote to production" > Run workflow (leave `ref` empty for the tip of main).
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Commit SHA, tag or branch to put live (empty = tip of main)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  checks: read
+
+concurrency:
+  group: promote-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Move the production branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the commit
+        id: sha
+        run: |
+          ref="${{ github.event.inputs.ref }}"
+          if [ -z "$ref" ]; then ref="origin/main"; fi
+          sha="$(git rev-parse --verify "$ref^{commit}" 2>/dev/null || git rev-parse --verify "origin/$ref^{commit}")"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Promoting $sha"
+          git log -1 --format='%h %s' "$sha"
+
+      - name: CI must be green on that commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="${{ steps.sha.outputs.sha }}"
+          json="$(gh api "repos/${{ github.repository }}/commits/$sha/check-runs?per_page=100")"
+          total="$(echo "$json" | jq '[.check_runs[] | select(.name != "Promote to production")] | length')"
+          bad="$(echo "$json" | jq '[.check_runs[] | select(.name != "Promote to production") | select(.status != "completed" or (.conclusion != "success" and .conclusion != "skipped" and .conclusion != "neutral"))] | length')"
+          echo "checks: $total, not green: $bad"
+          if [ "$total" -lt 2 ] || [ "$bad" -ne 0 ]; then
+            echo "::error::CI is not green on $sha (need the Lint and Database migration checks to pass). Not promoting."
+            echo "$json" | jq -r '.check_runs[] | "\(.name): \(.status) \(.conclusion)"'
+            exit 1
+          fi
+
+      - name: Move production
+        run: |
+          git push origin "${{ steps.sha.outputs.sha }}:refs/heads/production" --force
+          echo "production is now $(git rev-parse --short ${{ steps.sha.outputs.sha }}). The live server picks it up within about 2 minutes."

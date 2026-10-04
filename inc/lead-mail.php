@@ -24,6 +24,12 @@ function soMailer() {
         $m->CharSet = 'UTF-8';
         return $m;
     }
+    // Beta (and any host that is not indexable) never sends real customer mail unless SO_ALLOW_BETA_MAIL=1: a beta database
+    // copied from production holds real subscribers, and a test run of the alert crons must not email them.
+    if (defined('SITE_INDEXABLE') && !SITE_INDEXABLE && getenv('SO_ALLOW_BETA_MAIL') !== '1') {
+        error_log('mail skipped: this host is not indexable (beta); set SO_ALLOW_BETA_MAIL=1 to send from here');
+        return null;
+    }
     $user = getenv('SMTP_USER');
     $pass = getenv('SMTP_PASS');
     if ($user === false || $user === '' || $pass === false || $pass === '') {
