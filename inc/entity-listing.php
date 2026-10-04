@@ -109,10 +109,10 @@ function soRenderEntityListing(array $c): void {
     // ---- head: titles follow "<place> <what> | <what you get>" and never repeat the word Tickets twice
     if ($kind === 'venue') {
         $pageMetaTitle = $c['cityLabel'] !== ''
-            ? soTitle("$name Tickets\u{2014}{$c['cityLabel']} Events & Seats", "$name Tickets\u{2014}{$c['cityLabel']}", "$name Tickets")
-            : soTitle("$name Tickets\u{2014}Events & Seating", "$name Tickets");
+            ? soTitle("$name Tickets in {$c['cityLabel']} Events & Seats", "$name Tickets in {$c['cityLabel']}", "$name Tickets and Seats", "$name Tickets")
+            : soTitle("$name Tickets Events & Seating", "$name Tickets");
         $pageMetaDescription = $total > 0
-            ? soMetaFit("Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ($cheap ? ", from {$cheap['formatted']}" : '') . '. Pick seats on live seat maps and buy with our 100% buyer guarantee.', 'Prices from many sellers in one place.')
+            ? soMetaFit("Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ($cheap ? ", from {$cheap['formatted']}" : '') . '. Pick seats on live seat maps. Orders carry the TicketNetwork guarantee.', 'Prices from many sellers in one place.')
             : soMetaFit("See upcoming events at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . '. Nothing is on sale right now: get a price alert or browse nearby venues on Seat Outlet.', 'Every order has a 100% buyer guarantee.');
         $pageFocusKeyword = "$name Tickets";
         $h1 = "$name Tickets";
@@ -120,9 +120,9 @@ function soRenderEntityListing(array $c): void {
         // "events in dallas" (9.9k/month) is the search; the phrase leads, the state suffix ("Dallas, TX") is dropped.
         $soCityShort = preg_replace('/,\s*[A-Z]{2}$/', '', $label);
         $pageFocusKeyword = "Events in $soCityShort";
-        $pageMetaTitle = soTitle("Events in $soCityShort\u{2014}Concerts, Sports & Shows", "Events in $soCityShort\u{2014}Tickets & Dates", "Events in $soCityShort", "$soCityShort Tickets");
+        $pageMetaTitle = soTitle("Events in $soCityShort for Concerts, Sports and Shows", "Events in $soCityShort Concerts and Sports", "Events in $soCityShort " . date('Y'), "Events in $soCityShort", "$soCityShort Tickets");
         $pageMetaDescription = $total > 0
-            ? soMetaFit("Find tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ': concerts, sports and theater. Compare prices and buy with our 100% buyer guarantee.', 'Live seat maps and secure checkout.')
+            ? soMetaFit("Find tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ': concerts, sports and theater. Compare prices. Orders carry the TicketNetwork guarantee.', 'Live seat maps and secure checkout.')
             : soMetaFit("Find concert, sports and theater tickets in $label. Nothing is on sale right now: browse nearby places on Seat Outlet.", 'Every order has a 100% buyer guarantee.', 'New listings are added every day.');
         $h1 = "$label Event Tickets";
     }

@@ -44,6 +44,9 @@ jobs:
       - name: Check for calls to undefined functions
         run: php tools/check-undefined-functions.php .
 
+      - name: SEO titles and descriptions follow the site rules
+        run: php tools/check-seo-titles.php
+
       - name: No function is defined twice
         run: |
           # Two top-level functions with the same name only fail at runtime, on the pages that load both files.

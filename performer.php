@@ -72,11 +72,11 @@ soZeroPageNote('/artist/' . soEntitySlug($artistName, $id), $total_count === 0);
 $soCatPath = (string) ($performer['defaultCategory']['path'] ?? '');
 $soNoun  = strpos($soCatPath, TN_CATEGORY_PATH_SPORTS) === 0 ? ['games', 'Game', 'schedule'] : (strpos($soCatPath, TN_CATEGORY_PATH_THEATER) === 0 ? ['shows', 'Show', 'dates'] : ['concerts', 'Concert', 'tour dates']);
 $soDatesWord = $soNoun[0] === 'games' ? 'Schedule' : ($soNoun[0] === 'shows' ? 'Show Dates' : 'Tour Dates');
-$pageMetaTitle       = soTitle("$artistName Tickets\u{2014}$year $soDatesWord & Prices", "$artistName Tickets\u{2014}$year $soDatesWord", "$artistName Tickets\u{2014}$year", "$artistName Tickets");
-$pageMetaDescription = soMetaFit("Buy $artistName tickets and see the full $artistName {$soNoun[2]}. Compare seats on live seat maps and buy with our 100% buyer guarantee.", 'Secure checkout and on time delivery.');
+$pageMetaTitle       = soTitle("$artistName Tickets $year $soDatesWord & Prices", "$artistName Tickets $year $soDatesWord", "$artistName Tickets $year", "$artistName Tickets");
+$pageMetaDescription = soMetaFit("Buy $artistName tickets and see the full $artistName {$soNoun[2]}. Compare seats on live seat maps. Orders carry the TicketNetwork guarantee.", 'Secure checkout and on time delivery.');
 $pageCanonicalUrl    = HOME_URL . '/artist/' . soEntitySlug($artistName, $id);   // the same slug every internal link uses
 if ($priceSnapshot['from'] !== '' && $total_count > 0) {
-    $pageMetaDescription = soMetaFit("$artistName tickets from {$priceSnapshot['from']} for $total_count upcoming " . ($total_count === 1 ? rtrim($soNoun[0], 's') : $soNoun[0]) . ". Compare seats on live seat maps and buy with our 100% buyer guarantee.", 'Prices from many sellers in one place.', 'Secure checkout and on time delivery.');
+    $pageMetaDescription = soMetaFit("$artistName tickets from {$priceSnapshot['from']} for $total_count upcoming " . ($total_count === 1 ? rtrim($soNoun[0], 's') : $soNoun[0]) . ". Compare seats on live seat maps. Orders carry the TicketNetwork guarantee.", 'Prices from many sellers in one place.', 'Secure checkout and on time delivery.');
 }
 // BreadcrumbList + an Event node per listed date (the page emitted only the
 // site-wide Organization/WebSite graph before).

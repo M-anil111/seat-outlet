@@ -33,7 +33,7 @@ if ($page > 1 && $page > max(1, $total_pages)) {
 // throughout this app - see functions.php. ---
 $baseTitle           = $activeCat ? $activeCat['name'] . ' Guides' : 'Ticket Buying Tips & Event Guides';
 $soKeepOwnMeta       = $activeCat || $page > 1;   // the plain /blog page takes its title from the keyword plan
-$pageMetaTitle       = soTitle($baseTitle . "\u{2014}Ticket Buying Tips" . ($page > 1 ? ", Page $page" : ''), $baseTitle . ($page > 1 ? "\u{2014}Page $page" : ''));
+$pageMetaTitle       = soTitle($baseTitle . " Ticket Buying Tips" . ($page > 1 ? ", Page $page" : ''), $baseTitle . ($page > 1 ? ", Page $page" : ''));
 $pageMetaDescription = $activeCat
     ? soMetaFit($activeCat['name'] . ' guides from the Seat Outlet blog: practical ticket buying tips, venue advice and event picks written for fans.', 'Learn how to compare seats and prices and buy with confidence.')
     : soMetaFit('Ticket buying tips, event guides and city guides from Seat Outlet. Learn how to find better seats, compare prices and buy tickets with confidence.');
