@@ -68,3 +68,6 @@
 <details class="so-faq"><summary>How do I receive my game day tickets?</summary><p>Delivery may be electronic, by mobile transfer or by physical shipping, depending on the event and seller. Your confirmation email shows the details.</p></details>
 <details class="so-faq"><summary>What if a game on my game day tickets is postponed or canceled?</summary><p>If an event is canceled and not rescheduled, you receive a full refund. For postponed games, check the event page and contact customer service for the next steps.</p></details>
 <details class="so-faq"><summary>When should I buy game day tickets?</summary><p>For high-demand games, buying early gives the most seat choices. For lower-demand games, you may see prices change closer to the date, but there is no guarantee.</p></details>
+
+<h2>Sports tickets by league and sport</h2>
+<p>Pick your league to see the schedule and prices: <a href="/nfl-tickets">NFL</a>, <a href="/nba-tickets">NBA</a>, <a href="/mlb-tickets">MLB</a>, <a href="/nhl-tickets">NHL</a> and <a href="/mls-tickets">MLS</a>, or browse <a href="/soccer-tickets">soccer</a>, <a href="/tennis-tickets">tennis</a>, <a href="/racing-tickets">racing</a> and <a href="/boxing-tickets">boxing</a>. Each page lists upcoming games with seat maps and prices from many sellers.</p>

@@ -80,3 +80,8 @@
 <details class="so-faq"><summary>What happens to concert tickets for sale if a show is canceled?</summary><p>If an event is canceled and not rescheduled, you receive a full refund for your ticket purchase under our buyer protection.</p></details>
 <details class="so-faq"><summary>Is it better to buy concert tickets for sale early or wait?</summary><p>Buying early gives the most choice of seats among concert tickets for sale. Waiting may lower prices on some shows, but it is not guaranteed, so set a budget and buy when a listing fits it.</p></details>
 <details class="so-faq"><summary>Who can I contact with questions about my order?</summary><p>Email support@seatoutlet.com or visit <a href="/ticket-customer-service">customer service</a> for phone and office details and support hours.</p></details>
+
+<h2>The best place to buy concert tickets</h2>
+<p>The best place to buy concert tickets is wherever you can compare every listing before you pay. On Seat Outlet you see seats and prices from many sellers on one seat map, and every order is covered by the TicketNetwork 100% guarantee: valid tickets, delivery before the show and a refund if the event is canceled. Because this is a resale marketplace, prices are set by sellers and can be above or below face value, so check a few sections before you buy.</p>
+<h2>Concert tickets near me</h2>
+<p>Looking for concerts near you? Browse by <a href="/city-events">city</a> or by genre, such as <a href="/country-music-tickets">country</a>, <a href="/hip-hop-tickets">hip hop</a> and <a href="/pop-rock-concert-tickets">pop and rock</a>, to see tours that are coming to your area.</p>

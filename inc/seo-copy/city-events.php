@@ -79,3 +79,6 @@
 <details class="so-faq"><summary>What kinds of city events can I find?</summary><p>The directory covers concerts, sports, theater and festivals, plus a general Events group that brings them together by city.</p></details>
 <details class="so-faq"><summary>What if my city is not in the list?</summary><p>Search the <a href="/all-artists-and-teams">artists and teams directory</a> for the performer or team you want, then check where they are playing next.</p></details>
 <details class="so-faq"><summary>What happens if one of the city events is canceled?</summary><p>If an event is canceled and not rescheduled, you receive a full refund for your ticket purchase under our buyer protection.</p></details>
+
+<h2>Events near me today</h2>
+<p>To find events near you today, pick your city above, then use the date filter to show what is on now. Each city page lists upcoming concerts, games and shows with seat maps and prices from many sellers.</p>

@@ -116,7 +116,7 @@ function soRenderEntityListing(array $c): void {
             : soMetaFit("See upcoming events at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . '. Nothing is on sale right now: get a price alert or browse nearby venues on Seat Outlet.', 'Every order has a 100% buyer guarantee.');
         $h1 = "$name Tickets";
     } else {
-        $pageMetaTitle = soTitle("$label Event Tickets\u{2014}Concerts, Sports & Shows", "$label Event Tickets\u{2014}" . date('Y') . " Events", "$label Event Tickets", "$label Tickets");
+        $pageMetaTitle = soTitle("$label Events & Concerts\u{2014}Tickets & Dates", "$label Events\u{2014}" . date('Y') . " Tickets", "$label Event Tickets", "$label Tickets");
         $pageMetaDescription = $total > 0
             ? soMetaFit("Find tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ': concerts, sports and theater. Compare prices and buy with our 100% buyer guarantee.', 'Live seat maps and secure checkout.')
             : soMetaFit("Find concert, sports and theater tickets in $label. Nothing is on sale right now: browse nearby places on Seat Outlet.", 'Every order has a 100% buyer guarantee.', 'New listings are added every day.');

@@ -34,3 +34,6 @@
 <details class="so-faq"><summary>How do I contact Seat Outlet?</summary><p>Use the contact form on this page or email support@seatoutlet.com. A member of our team replies by email.</p></details>
 <details class="so-faq"><summary>How do I check my order?</summary><p>Look in your order confirmation email. It has your order number and delivery details.</p></details>
 <details class="so-faq"><summary>How long do refunds take?</summary><p>It depends on the payment provider and the event, so we cannot give a fixed number of days. Contact us with your order ID.</p></details>
+
+<h2>Looking for Ticketmaster, SeatGeek or Vivid Seats support?</h2>
+<p>Seat Outlet is an independent company and is not affiliated with Ticketmaster, SeatGeek or Vivid Seats. If you bought from one of them, contact that company directly for help with your order. If you bought from Seat Outlet, use the contact form or email on this page.</p>

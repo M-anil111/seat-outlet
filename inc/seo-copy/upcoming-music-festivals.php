@@ -74,3 +74,6 @@
 <details class="so-faq"><summary>For upcoming music festivals, is a weekend pass better than a single-day pass?</summary><p>A weekend pass usually costs less per day and covers the whole lineup. A single-day pass makes sense if you only want to see certain acts.</p></details>
 <details class="so-faq"><summary>What happens if one of the upcoming music festivals is canceled?</summary><p>If an event is canceled and not rescheduled, you receive a full refund for your ticket purchase under our buyer protection.</p></details>
 <details class="so-faq"><summary>How will I receive my pass for upcoming music festivals?</summary><p>Delivery may be electronic, by mobile transfer or by physical shipping, depending on the event and seller. Your confirmation email shows how it will arrive.</p></details>
+
+<h2>Festival tickets for sale</h2>
+<p>Festival tickets for sale on Seat Outlet include general admission, VIP and single day passes where sellers list them. Compare the pass type, the days it covers and the price before you buy, and check each listing for lineup details.</p>

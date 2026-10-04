@@ -73,7 +73,7 @@ $soCatPath = (string) ($performer['defaultCategory']['path'] ?? '');
 $soNoun  = strpos($soCatPath, TN_CATEGORY_PATH_SPORTS) === 0 ? ['games', 'Game', 'schedule'] : (strpos($soCatPath, TN_CATEGORY_PATH_THEATER) === 0 ? ['shows', 'Show', 'dates'] : ['concerts', 'Concert', 'tour dates']);
 $soDatesWord = $soNoun[0] === 'games' ? 'Schedule' : ($soNoun[0] === 'shows' ? 'Show Dates' : 'Tour Dates');
 $pageMetaTitle       = soTitle("$artistName Tickets\u{2014}$year $soDatesWord & Prices", "$artistName Tickets\u{2014}$year $soDatesWord", "$artistName Tickets\u{2014}$year", "$artistName Tickets");
-$pageMetaDescription = soMetaFit("Buy $artistName tickets for every upcoming $artistName {$soNoun[0]}. Compare seats on live seat maps and buy with our 100% buyer guarantee.", 'Secure checkout and on time delivery.');
+$pageMetaDescription = soMetaFit("Buy $artistName tickets and see the full $artistName {$soNoun[2]}. Compare seats on live seat maps and buy with our 100% buyer guarantee.", 'Secure checkout and on time delivery.');
 $pageCanonicalUrl    = HOME_URL . '/artist/' . soEntitySlug($artistName, $id);   // the same slug every internal link uses
 if ($priceSnapshot['from'] !== '' && $total_count > 0) {
     $pageMetaDescription = soMetaFit("$artistName tickets from {$priceSnapshot['from']} for $total_count upcoming " . ($total_count === 1 ? rtrim($soNoun[0], 's') : $soNoun[0]) . ". Compare seats on live seat maps and buy with our 100% buyer guarantee.", 'Prices from many sellers in one place.', 'Secure checkout and on time delivery.');
@@ -107,7 +107,7 @@ include 'header.php';
 $soLastCrumb = end($breadcrumbs) ?: [];
 soPageHero([
 	'crumbs'     => array_merge(array_map(fn($c) => ['label' => (string) ($c['label'] ?? ''), 'url' => (string) ($c['url'] ?? '')], $breadcrumbs), [['label' => $artistName]]),
-	'image'      => $hasRealImage ? ['url' => $performer_image, 'alt' => $artistName . ', ' . strtolower($soNoun[1]) . ' tickets on Seat Outlet'] : null,
+	'image'      => $hasRealImage ? ['url' => $performer_image, 'alt' => $artistName . ' tickets and ' . $soNoun[2] . ' on Seat Outlet'] : null,
 	'credit'     => $hasRealImage ? $performerImg : null,
 	'name'       => $artistName,
 	'eyebrow'    => (string) ($soLastCrumb['label'] ?? ''),
@@ -495,7 +495,7 @@ soPageHero([
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
 						<?php if ($hasRealImage) { ?>
-							<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars('Photo of ' . $artistName, ENT_QUOTES, 'UTF-8'); ?>" class="img-about img-fluid rounded" loading="lazy" width="600" height="450" />
+							<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($artistName . ' tickets, photo of ' . $artistName, ENT_QUOTES, 'UTF-8'); ?>" class="img-about img-fluid rounded" loading="lazy" width="600" height="450" />
 							<?php renderImageCredit($performerImg, 'img-credit'); ?>
 						<?php } else { echo soTileHtml($artistName, 'so-tile so-tile--about'); } ?>
 					</div>
