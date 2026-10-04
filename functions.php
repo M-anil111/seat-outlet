@@ -2603,6 +2603,26 @@ function soRedirectLegacyUrl() {
     exit;
 }
 
+/**
+ * Addresses people (and old links) commonly guess for pages that exist under another name. Called by 404.php: a match is a permanent
+ * redirect to the real page instead of a 404.
+ */
+function soAliasRedirect() {
+    if (PHP_SAPI === 'cli' || headers_sent()) return;
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
+    $path = rtrim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+    $aliases = [
+        '/terms' => '/terms-and-conditions', '/terms-of-use' => '/terms-and-conditions', '/terms-of-service' => '/terms-and-conditions',
+        '/terms-conditions' => '/terms-and-conditions', '/privacy' => '/privacy-policy', '/venues' => '/cities', '/about' => '/about-seat-outlet',
+        '/about-us' => '/about-seat-outlet', '/contact-us' => '/contact', '/artists' => '/performers', '/guarantee' => '/worry-free-guarantee',
+    ];
+    if (!isset($aliases[$path]) || !is_file(__DIR__ . '/' . ltrim($aliases[$path], '/') . '.php')) return;
+    http_response_code(301);
+    header('Location: ' . $aliases[$path]);
+    header('Cache-Control: public, max-age=3600');
+    exit;
+}
+
 /** Output-buffer callback: a page that rendered without API data is never CDN-cached. */
 function soDegradedGuard($buffer) {
     if (!empty($GLOBALS['tn_degraded']) && !headers_sent()) {
