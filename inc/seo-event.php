@@ -25,23 +25,33 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $evDate   = $evTs ? date('M j, Y', $evTs) : '';
   // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
   // The date is the first thing to go when the title is too long, so a result never ends in a half word: name + place + date, else name + place, else name.
+  $evShort = $evTs ? date('M j', $evTs) : '';
+  $evClock = ($evTs && date('H:i', $evTs) !== '00:00') ? date('g:i A', $evTs) : '';
+  $evShortT = trim($evShort . ($evClock !== '' ? ' ' . $evClock : ''));
   $metaTitle = soTitle('Event Not Found');
   if (tnEntityUnavailable($event) && $evName === '') {
       $metaTitle = soTitle('Event Temporarily Unavailable');
   } elseif ($evName !== '') {
       // "<event> Tickets—<City, ST> <Mon D>": the place and date go first when the name is long, never half a word.
       $evShort = $evTs ? date('M j', $evTs) : '';
+      // Showings of one event in one city share a name, so the time of day is part of the first choice: no two pages get the same title.
+      $evClock = ($evTs && date('H:i', $evTs) !== '00:00') ? date('g:i A', $evTs) : '';
+      $evShortT = trim($evShort . ($evClock !== '' ? ' ' . $evClock : ''));
       $metaTitle = soTitle(
+          ($evPlace !== '' && $evShortT !== '') ? "$evName Tickets in $evPlace on $evShortT" : '',
           ($evPlace !== '' && $evShort !== '') ? "$evName Tickets in $evPlace on $evShort" : '',
           $evPlace !== '' ? "$evName Tickets in $evPlace" : '',
           $evShort !== '' ? "$evName Tickets on $evShort" : '',
           "$evName Tickets"
       );
   }
-  if ($evName !== '' && empty($pageFocusKeyword)) { $pageFocusKeyword = $evName . ' Tickets'; }   // shown in the strip above the header and the footer
+  if ($evName !== '' && empty($pageFocusKeyword)) {
+      // The page's one H1 (the strip above the header). Showings of one event share a name, so the venue, day and time of day make each heading its own.
+      $pageFocusKeyword = $evName . ' Tickets' . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evShortT !== '' ? ', ' . $evShortT : '');
+  }   // shown in the strip above the header and the footer
   $evDay = $evTs ? date('D, M j, Y', $evTs) : '';
   $metaDescription = soMetaFit(
-      $evName . ' tickets' . ($evDay !== '' ? ' for ' . $evDay : '') . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
+      $evName . ' tickets' . ($evDay !== '' ? ' for ' . $evDay . (($evClock ?? '') !== '' ? ' at ' . $evClock : '') : '') . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
       . '. Pick seats on the live seat map. Orders carry the TicketNetwork guarantee.',
       'Secure checkout and on time delivery.', 'Prices from many sellers in one place.'
   );

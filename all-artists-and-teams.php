@@ -311,7 +311,7 @@ try {
 					<div class="col-12 col-sm-6 col-md-4 col-lg-3 performer-col">
 						<div class="performer-card so-dircard">
 							<div class="performer-img-wrap">
-								<img src="<?php echo htmlspecialchars($performer['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="" loading="lazy" onerror="this.src='<?php echo HOME_URL; ?>/images/placeholder.webp'">
+								<img src="<?php echo htmlspecialchars($performer['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" onerror="this.src='<?php echo HOME_URL; ?>/images/placeholder.webp'">
 							</div>
 							<div class="performer-body">
 								<div>

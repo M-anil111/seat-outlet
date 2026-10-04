@@ -41,7 +41,7 @@ function soFactsSearchName(string $name, string $kind): string {
 }
 
 function soFactsKey(string $name, string $kind): string {
-    return 'wdfacts_' . $kind . '_' . md5(mb_strtolower(soFactsSearchName($name, $kind)));
+    return 'wdfacts2_' . $kind . '_' . md5(mb_strtolower(soFactsSearchName($name, $kind)));
 }
 
 /** Cached facts for an entity, or [] (and a background lookup is queued) when not known yet. */
@@ -137,6 +137,24 @@ function soFactsPick(array $search, string $name, string $kind, string $context 
     return preg_match('/^Q\d+$/', (string) ($hits[0]['id'] ?? '')) ? $hits[0] : null;
 }
 
+/** Follow redirects once, here, and return the final address when it answers 2xx; null for an error, a timeout or a dead site. */
+function soFactsLiveUrl(string $url): ?string {
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 5,
+        CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 6, CURLOPT_ENCODING => '',
+        CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+        CURLOPT_USERAGENT => 'SeatOutletBot/1.0 (' . HOME_URL . '; support@seatoutlet.com)',
+        CURLOPT_RANGE => '0-0',   // headers are enough; some sites refuse HEAD
+    ]);
+    curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $final = (string) curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+    curl_close($ch);
+    if (($code < 200 || $code >= 300) || !preg_match('#^https?://[^\s"<>]+$#', $final)) return null;
+    return $final;
+}
+
 /** Facts from a wbgetentities item: Wikidata URI, English Wikipedia article, official website (P856). */
 function soFactsFromEntity(string $qid, string $description, array $e): array {
     $facts = [
@@ -148,7 +166,9 @@ function soFactsFromEntity(string $qid, string $description, array $e): array {
     if (strpos($wiki, 'https://en.wikipedia.org/wiki/') === 0) $facts['wikipedia'] = $wiki;
     foreach ($e['claims']['P856'] ?? [] as $claim) {   // P856 = official website
         $site = (string) ($claim['mainsnak']['datavalue']['value'] ?? '');
-        if (($claim['rank'] ?? '') !== 'deprecated' && preg_match('#^https?://[^\s"<>]+$#', $site)) { $facts['website'] = $site; break; }
+        if (($claim['rank'] ?? '') === 'deprecated' || !preg_match('#^https?://[^\s"<>]+$#', $site)) continue;
+        $live = soFactsLiveUrl($site);   // the address that answers 200 itself, so the page never links a redirect, an error or a dead site
+        if ($live !== null) { $facts['website'] = $live; break; }
     }
     $facts['sameAs'] = array_values(array_filter([$facts['wikidata'], $facts['wikipedia'] ?? '', $facts['website'] ?? '']));
     return $facts;
