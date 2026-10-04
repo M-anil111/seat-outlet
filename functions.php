@@ -3559,7 +3559,7 @@ function deletePageContentBlock($id, $mysqli = MYSQLI) {
  * Blog (blog_posts table - db/migrations/0004_blog_posts.sql). Same CRUD
  * shape as page_rules above: list/get/save/delete, admin-facing, no caching
  * layer (unlike page_rules this isn't hit on every single front-end page
- * load, just blog.php/blog-post.php, so it doesn't need one).
+ * load, just blog.php (list and article), so it doesn't need one).
  */
 function blogGenerateUniqueSlug($title, ?int $excludeId = null, $mysqli = MYSQLI) {
     $base = sanitize_title($title);

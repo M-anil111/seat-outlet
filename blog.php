@@ -1,5 +1,16 @@
 <?php
-require_once 'functions.php';
+// The one blog entry point: /blog is the list, /blog/<slug> is an article. The web server rule sends /blog/<slug> here with
+// ?slug=<slug> (see docs/server-rewrites.md); /blog.php/<slug> works as well, and so does the original path in REQUEST_URI.
+define('SO_BLOG_ENTRY', true);
+require_once __DIR__ . '/functions.php';
+$soBlogSlug = (string) ($_GET['slug'] ?? '');
+if ($soBlogSlug === '' && !empty($_SERVER['PATH_INFO']) && preg_match('#^/blog\.php/#', (string) ($_SERVER['REQUEST_URI'] ?? ''))) { $soBlogSlug = trim((string) $_SERVER['PATH_INFO'], '/'); }
+if ($soBlogSlug === '' && preg_match('#^/blog/([a-z0-9-]+)/?(?:\?|$)#i', (string) ($_SERVER['REQUEST_URI'] ?? ''), $soBlogM)) { $soBlogSlug = $soBlogM[1]; }
+if ($soBlogSlug !== '') {
+    $_GET['slug'] = $soBlogSlug;
+    require __DIR__ . '/inc/blog-post-view.php';
+    return;
+}
 
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage = 10;
@@ -31,7 +42,7 @@ if ($page > 1 && $page > max(1, $total_pages)) {
 
 // --- SEO: computed before including header.php, same convention used
 // throughout this app - see functions.php. ---
-$baseTitle           = $activeCat ? $activeCat['name'] . ' Guides' : 'Ticket Buying Tips & Event Guides';
+$baseTitle           = $activeCat ? $activeCat['name'] . (substr($activeCat['name'], -6) === 'Guides' ? '' : ' Guides') : 'Ticket Buying Tips & Event Guides';
 $soKeepOwnMeta       = $activeCat || $page > 1;   // the plain /blog page takes its title from the keyword plan
 $pageMetaTitle       = soTitle($baseTitle . " Ticket Buying Tips" . ($page > 1 ? ", Page $page" : ''), $baseTitle . ($page > 1 ? ", Page $page" : ''));
 $pageMetaDescription = $activeCat
