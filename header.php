@@ -13,6 +13,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 // runtime double-inclusion.
 include_once 'functions.php';
     include_once __DIR__ . '/inc/consent.php';
+    soRedirectWwwHost();
     soRedirectLegacyUrl();
     sendSecurityHeaders();
     // The header search form now submits via GET so a results page has a

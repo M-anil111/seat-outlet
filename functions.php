@@ -2492,6 +2492,12 @@ function soAsset($rel) {
     $min = preg_replace('/\.(css|js)$/', '.min.$1', $rel);
     $file = __DIR__ . '/' . $min;
     if ($min !== $rel && is_file($file)) {
+        // The live Cloudflare Worker answers exactly /js/main.min.js and /js/home.min.js itself, from a fixed GitHub commit,
+        // so later deploys of those two files would never reach seatoutlet.com. "/js//main.min.js" is the same file on the
+        // server (nginx merges slashes) but not a path the Worker intercepts, so live always gets the deployed version.
+        if (in_array($min, ['js/main.min.js', 'js/home.min.js'], true)) {
+            return rtrim(HOME_URL, '/') . '/js//' . basename($min) . '?v=' . filemtime($file);
+        }
         return rtrim(HOME_URL, '/') . '/' . $min . '?v=' . filemtime($file);
     }
     $file = __DIR__ . '/' . $rel;
@@ -2667,6 +2673,35 @@ function soSingleH1($html) {
  * /event.php?id=123 and /event?id=123 forms. Send visitors and crawlers to the one real address with a permanent
  * redirect; before this they got a duplicate page titled "Performers.php" or "Event.php".
  */
+/**
+ * One public host. www.seatoutlet.com used to answer with the whole site (and canonical tags pointing at www), so search
+ * engines saw two copies. Requests for a www host get a 301 to the same path on the bare domain. The live Cloudflare Worker
+ * forwards the visitor's host in X-Forwarded-Host (it fetches from the beta origin), so that header is checked first.
+ */
+function soRedirectWwwHost() {
+    if (PHP_SAPI === 'cli' || headers_sent()) return;
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
+    $host = strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? ''))[0]));
+    $host = preg_replace('/:\d+$/', '', $host);
+    if (strpos($host, 'www.') !== 0 || !preg_match('/^www\.[a-z0-9.-]+$/', $host)) return;
+    header('Location: https://' . substr($host, 4) . ((string) ($_SERVER['REQUEST_URI'] ?? '/')), true, 301);
+    header('Cache-Control: public, max-age=86400');
+    exit;
+}
+
+/**
+ * Paths that are not pages for search results: data endpoints, checkout, newsletter forms, admin. robots.txt is supposed to
+ * keep crawlers out of them, but the live Worker serves its own robots.txt without those rules, so the responses themselves
+ * say noindex (a header, which works for JSON too and survives the Worker).
+ */
+function soNoindexPrivatePaths() {
+    if (PHP_SAPI === 'cli' || headers_sent()) return;
+    $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+    if (preg_match('#^/(ajax|admin|cron|tools|checkout|newsletter|unsubscribe|order-confirmation|thank-you)(/|\.php|$)#', $path)) {
+        header('X-Robots-Tag: noindex, nofollow');
+    }
+}
+
 function soRedirectLegacyUrl() {
     if (PHP_SAPI === 'cli' || headers_sent()) return;
     if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
@@ -6056,3 +6091,5 @@ register_shutdown_function('soTopPerformersMaybeRun');   // keeps the home Top p
 register_shutdown_function('soAutoMigrateMaybeRun');   // beta only: keep the schema in step with the code
 register_shutdown_function('soSitemapMaybeRun');   // background sitemap crawl, see inc/sitemap-build.php
 register_shutdown_function('imageWorkerMaybeRun');   // background image queue, see inc/images.php
+
+soNoindexPrivatePaths();
