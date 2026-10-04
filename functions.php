@@ -2721,18 +2721,6 @@ function soAliasRedirect($to = null) {
 }
 
 /** Output-buffer callback: a page that rendered without API data is never CDN-cached. */
-/**
- * Cloudflare Rocket Loader (a zone setting) rewrites every <script> into a deferred loader. That breaks the order the pages
- * rely on: the seat-map widget is loaded synchronously on purpose so js/event-widget.js can apply its settings before the
- * map starts, and inline scripts expect jQuery and main.js to be there. Our scripts already load with defer, so Rocket
- * Loader adds nothing. data-cfasync="false" is Cloudflare's documented per-script opt-out (and a script's dependencies need
- * it too, so every tag gets it). Turning Rocket Loader off in the dashboard does the same for the whole zone.
- */
-function soNoRocketLoader($html) {
-    // JSON blocks (structured data, page data) are not JavaScript: Rocket Loader leaves them alone, so they stay as they are.
-    return preg_replace('/<script\b(?![^>]*\bdata-cfasync=)(?![^>]*\btype=["\']application\/(?:ld\+)?json)/i', '<script data-cfasync="false"', $html);
-}
-
 function soDegradedGuard($buffer) {
     if (!empty($GLOBALS['tn_degraded']) && !headers_sent()) {
         header('Cache-Control: no-store');
