@@ -2635,8 +2635,8 @@ function soAliasRedirect($to = null) {
         $path = rtrim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
         $aliases = [
             '/terms' => '/terms-and-conditions', '/terms-of-use' => '/terms-and-conditions', '/terms-of-service' => '/terms-and-conditions',
-            '/terms-conditions' => '/terms-and-conditions', '/privacy' => '/privacy-policy', '/venues' => '/cities', '/about' => '/about-seat-outlet',
-            '/contact-us' => '/ticket-customer-service', '/artists' => '/performers',
+            '/terms-conditions' => '/terms-and-conditions', '/privacy' => '/privacy-policy', '/venues' => '/city-events', '/about' => '/about-seat-outlet',
+            '/contact-us' => '/ticket-customer-service', '/artists' => '/all-artists-and-teams',
         ];
         $to = $aliases[$path] ?? null;
     }
