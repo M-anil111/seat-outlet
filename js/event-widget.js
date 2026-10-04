@@ -202,11 +202,30 @@
     }
   }
 
-  /* The seat-map widget prints the event name as a second <h1>. One page, one top heading: keep the markup and the widget's own
-     updates, and tell assistive technology (and the outline) it is a level-2 heading. */
+  /* The seat-map widget prints the event name as a second <h1>. One page, one top heading: the widget's heading becomes a level-2 heading
+     element (same classes, same children, same look), here and again if the widget redraws its header. */
   function demoteWidgetH1() {
-    var hs = document.querySelectorAll('#tn-maps h1');
-    for (var i = 0; i < hs.length; i++) { hs[i].setAttribute('role', 'heading'); hs[i].setAttribute('aria-level', '2'); }
+    var box = document.getElementById('tn-maps');
+    if (!box) return;
+    var hs = box.querySelectorAll('h1');
+    for (var i = 0; i < hs.length; i++) {
+      var h = hs[i], d = document.createElement('div');
+      for (var a = 0; a < h.attributes.length; a++) d.setAttribute(h.attributes[a].name, h.attributes[a].value);
+      d.setAttribute('role', 'heading');
+      d.setAttribute('aria-level', '2');
+      d.style.lineHeight = window.getComputedStyle(h).lineHeight;   // a div's default line height differs from the h1's
+      while (h.firstChild) d.appendChild(h.firstChild);
+      h.parentNode.replaceChild(d, h);
+    }
+    if (!demoteWidgetH1.watching && window.MutationObserver) {
+      demoteWidgetH1.watching = true;
+      var busy = false;
+      new MutationObserver(function () {
+        if (busy || !box.querySelector('h1')) return;
+        busy = true;
+        setTimeout(function () { busy = false; demoteWidgetH1(); }, 50);
+      }).observe(box, { childList: true, subtree: true });
+    }
   }
 
   function load() {

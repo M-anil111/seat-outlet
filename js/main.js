@@ -429,7 +429,15 @@ window.soLoadFlatpickr = (function () {
             js.src = assets.flatpickrJs || '/lib/flatpickr/4.6.13/flatpickr.min.js';
             js.async = true;
             js.onload = function () { resolve(window.flatpickr); };
-            js.onerror = function () { pending = null; reject(new Error('flatpickr failed to load')); };
+            js.onerror = function () {
+                // One retry (a different address, so a failed answer is not reused) before giving up.
+                var again = document.createElement('script');
+                again.src = js.src + (js.src.indexOf('?') === -1 ? '?r=1' : '&r=1');
+                again.async = true;
+                again.onload = function () { resolve(window.flatpickr); };
+                again.onerror = function () { pending = null; reject(new Error('flatpickr failed to load')); };
+                setTimeout(function () { document.head.appendChild(again); }, 800);
+            };
             document.head.appendChild(js);
         });
         return pending;

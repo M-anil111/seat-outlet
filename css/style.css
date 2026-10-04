@@ -7666,3 +7666,27 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
   .performer-filter-row .performer-filter-wrap .performer-filter-btn { flex: 1 1 0; min-width: 0; padding: 0 2px; }
   .performer-filter-row .performer-filter-wrap .performer-filter-btn.is-all { flex: 0 0 auto; padding: 0 20px; }
 }
+
+/* ---- One alignment for the page edges ---- */
+/* Header: logo and Search button sit on the same left and right edges as the page content (it was wider than the page) */
+.tm-header > .container-fluid { max-width: 1248px; margin-left: auto; margin-right: auto; }
+@media (min-width: 768px) { .tm-header > .container-fluid { padding-left: 15px !important; padding-right: 15px !important; } }
+@media (max-width: 767.98px) { .tm-header > .container-fluid > .d-flex { padding-left: 15px !important; padding-right: 15px !important; } }
+/* Page heroes (FAQ, guarantee, contact, cities, privacy, about, blog, genre pages): text starts at the content's left edge, like the
+   performers, artist and listing headers. They were centered on some pages and left-aligned on others. */
+.hero-section .row.justify-content-center { justify-content: flex-start !important; }
+.hero-section .text-center, .hero-section .hero-inner { text-align: left !important; }
+.hero-section .hero-subtitle, .hero-section .hero-title, .hero-section .hero-eyebrow { margin-left: 0 !important; margin-right: 0 !important; }
+.hero-so-why, .about-us-section .hero-section, .so-blog-hero, .so-g-hero { text-align: left !important; }
+.so-blog-hero p, .so-g-hero p { margin-left: 0; margin-right: 0; }
+.hero-so-why .hero-left, .about-us-section .hero-section .left-content { margin-left: 0; margin-right: 0; }
+.so-np .so-np__head { margin-left: 0; margin-right: 0; text-align: left; }
+.so-np .so-np__head .so-np__sub, .so-np .so-np__head .so-np__pick { margin-left: 0; margin-right: 0; }
+.so-np .so-np__pills ul { justify-content: flex-start; }
+.hero-section .hero-subtitle, .hero-section .hero-title, .hero-section .hero-eyebrow { text-align: left !important; }
+/* Header on mid-size screens: the content-width header is narrower than the old full-width one, so keep the menu on one line */
+@media (min-width: 992px) and (max-width: 1139.98px) {
+  .tm-header .so-search-toggle__label { display: none; }
+  .tm-header .so-mega-top { padding-left: 9px; padding-right: 9px; white-space: nowrap; }
+  .tm-header .tm-logo img { max-width: 176px; height: auto; }
+}
