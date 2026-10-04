@@ -103,6 +103,7 @@ include_once 'functions.php';
         }
     }
     sendPageCacheHeaders();   // after the 404 check above: the status decides the policy
+    ob_start('soPublicCanonical');   // canonical + og:url name the public address, whatever host served the page
     // Keep titles and descriptions inside what a search result shows.
     if (!empty($pageCanonicalUrl)) { $GLOBALS['pageCanonicalUrl'] = $pageCanonicalUrl; }   // pages rendered inside a function: the output filters read it
     if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
@@ -113,6 +114,7 @@ include_once 'functions.php';
 <html lang="en">
 
 <head>
+    <script data-cfasync="false">if(location.hostname.indexOf('www.')===0){location.replace('https://'+location.hostname.slice(4)+location.pathname+location.search+location.hash);}</script>
     <script>window.dataLayer = window.dataLayer || [];</script>
     <?php /* Google Tag Manager, gated on the visitor's privacy choice (Global Privacy Control, or Decline in the privacy bar): see inc/consent.php */ ?>
     <?php if (GTM_ID !== '') { echo soConsentHeadScript() . "\n"; } ?>

@@ -21,6 +21,9 @@ define('WEBSITE_CONFIG_ID', getenv('WEBSITE_CONFIG_ID') ?: (SO_TN_LIVE_API ? WEB
 define('BROKER_ID', getenv('BROKER_ID') ?: 9250);
 define('SITE_ID', getenv('SITE_ID') ?: 30);
 define('HOME_URL', getenv('HOME_URL') ?: 'https://beta.seatoutlet.com');
+// The address search engines should index. Canonical and og:url tags always use it, so a page reached through another host
+// (the live Worker serves www. and the bare domain from this server) still names one URL.
+define('SO_PUBLIC_ORIGIN', rtrim(getenv('SO_PUBLIC_ORIGIN') ?: 'https://seatoutlet.com', '/'));
 define('HOME_PATH', getenv('HOME_PATH') ?: '/home/seatoutlet-beta/htdocs/beta.seatoutlet.com/');
 define('AWS_ACCOUNT_ID', getenv('AWS_ACCOUNT_ID') ?: '2f20a4f9aec4a1c3b457bc4a6165f503');
 define('AWS_BUCKET_NAME', getenv('AWS_BUCKET_NAME') ?: 'seat-outlet-assets');
