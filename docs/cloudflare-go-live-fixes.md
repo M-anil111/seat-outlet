@@ -16,7 +16,7 @@ requests go straight to the origin instead of an error page).
 
 ## 2. robots.txt and sitemap (Worker code)
 
-The Worker serves its own robots.txt (no Disallow lines) and a 21-URL sitemap. The real sitemap index at `/sitemap.php`
+The Worker serves its own robots.txt (no Disallow lines) and a 21-URL sitemap. The real sitemap index at `/sitemap.xml`
 lists about 75,000 URLs (events, performers, venues, cities, pages). In the Worker editor replace the two functions below,
 and make the sitemap call awaited:
 
@@ -28,15 +28,15 @@ function robotsResponse(requestUrl) {
   const origin = `${requestUrl.protocol}//${requestUrl.hostname}`;
   const disallow = ["/admin/", "/ajax/", "/cache/", "/vendor/", "/db/", "/tools/", "/cron/", "/deploy/", "/docs/", "/inc/",
     "/search", "/checkout", "/newsletter", "/unsubscribe", "/thank-you", "/order-confirmation"];
-  return new Response(`User-agent: *\n${disallow.map((p) => `Disallow: ${p}`).join("\n")}\n\nSitemap: ${origin}/sitemap.php\n`, {
+  return new Response(`User-agent: *\n${disallow.map((p) => `Disallow: ${p}`).join("\n")}\n\nSitemap: ${origin}/sitemap.xml\n`, {
     headers: { "cache-control": "public, max-age=3600", "content-type": "text/plain; charset=UTF-8" }
   });
 }
 
-// /sitemap.xml now serves the real sitemap index (the same document as /sitemap.php), with live URLs.
+// /sitemap.xml now serves the real sitemap index (the same document as /sitemap.xml), with live URLs.
 async function sitemapResponse(requestUrl) {
   const origin = `${requestUrl.protocol}//${requestUrl.hostname}`;
-  const upstream = await fetch(`${BETA_ORIGIN}/sitemap.php`, { headers: { "Host": "beta.seatoutlet.com" } });
+  const upstream = await fetch(`${BETA_ORIGIN}/sitemap.xml`, { headers: { "Host": "beta.seatoutlet.com" } });
   const body = (await upstream.text()).replaceAll(BETA_ORIGIN, origin);
   return new Response(body, {
     status: upstream.status,
@@ -53,7 +53,7 @@ The Worker's `REPO_JS_ASSETS` / `LIVE_REPO_COMMIT` block is no longer used by th
 so it can be deleted.
 
 After deploying: open https://seatoutlet.com/robots.txt and https://seatoutlet.com/sitemap.xml to check, then in Google
-Search Console (property seatoutlet.com) > Sitemaps, submit `https://seatoutlet.com/sitemap.php`.
+Search Console (property seatoutlet.com) > Sitemaps, submit `https://seatoutlet.com/sitemap.xml`.
 
 ## 3. Rocket Loader off
 

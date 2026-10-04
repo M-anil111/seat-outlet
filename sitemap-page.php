@@ -1,5 +1,5 @@
 <?php
-// Human-readable sitemap: the main sections of the site in one place. (sitemap.php is the XML file for search engines.)
+// Human-readable sitemap: the main sections of the site in one place. (sitemap.xml is the XML file for search engines.)
 require_once 'functions.php';
 $pageMetaTitle       = 'Sitemap: Every Section of Seat Outlet';
 $pageMetaDescription = 'Find your way around Seat Outlet: concerts, sports, theater and festivals, city listings, buying guides, help, guarantee and policy pages.';
@@ -13,7 +13,7 @@ include 'header.php';
 <section class="so-sitemap py-5">
     <div class="container">
         <h2 class="so-sitemap__title">Sitemap</h2>
-        <p class="so-sitemap__lead">Every main section of Seat Outlet in one place. Search engines read our <a href="/sitemap.php">XML sitemap</a> instead.</p>
+        <p class="so-sitemap__lead">Every main section of Seat Outlet in one place. Search engines read our <a href="/sitemap.xml">XML sitemap</a> instead.</p>
 
         <div class="so-sitemap__grid">
             <?php foreach ($soMenu as $sec) { ?>

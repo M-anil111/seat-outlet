@@ -8,7 +8,7 @@ require_once __DIR__ . '/../inc/cli-guard.php';
  *
  * Needs SO_INDEXNOW_KEY (8 to 128 letters, digits or dashes; make one with `php -r "echo bin2hex(random_bytes(16));"`).
  * The key file <docroot>/<key>.txt is written on the first run, as the protocol requires. Only runs on the indexable (production)
- * host. Google does not take part in IndexNow and has no event submission API: it finds new events through sitemap.php (rebuilt
+ * host. Google does not take part in IndexNow and has no event submission API: it finds new events through sitemap.xml (rebuilt
  * hourly) and the internal links on artist, venue and city pages. Schedule: every 30 minutes.
  */
 require_once __DIR__ . '/../functions.php';

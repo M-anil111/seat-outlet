@@ -16,7 +16,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  *   Freshness         A new cycle starts every 6 hours on the live site (24 on beta), so a new event, performer, venue or city is listed within
  *                     about 6 hours; <lastmod> is TicketNetwork's own update time for the event (and the newest of an entity's events).
  *   Where files go    <docroot>/sitemaps/NAME.xml when that folder is writable (clean static URLs, served by the web server), otherwise
- *                     cache/sitemaps/ and sitemap.php?f=NAME. The index is /sitemaps/sitemap-index.xml or /sitemap.php.
+ *                     cache/sitemaps/ and sitemap-serve.php?f=NAME. The index is /sitemap.xml.
  */
 
 const SO_SITEMAP_CHUNK     = 5000;   // URLs per file (the protocol allows 50,000; small files are easier on crawlers)
@@ -24,7 +24,7 @@ const SO_SITEMAP_PER_PAGE  = 200;
 const SO_SITEMAP_MAX_PAGES = 250;    // 50,000 events; the catalog is far below this
 const SO_SITEMAP_PAUSE_US  = 700000; // between API requests, so the crawl never competes with visitors for the API
 const SO_SITEMAP_FORMAT    = 2;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
-const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap.php?f=style"?>';
+const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap-serve.php?f=style"?>';
 
 function soSitemapStaticPaths(): array {
     return [
@@ -67,6 +67,16 @@ function soSitemapStaticPaths(): array {
     '/boxing-tickets',
     '/las-vegas-shows-tickets',
     '/game-day-tickets',
+    '/concert-artists',
+    '/sports-teams',
+    '/nfl-teams',
+    '/nba-teams',
+    '/mlb-teams',
+    '/nhl-teams',
+    '/mls-teams',
+    '/broadway-shows',
+    '/comedians-on-tour',
+    '/music-festivals-list',
     '/buy-broadway-tickets',
     '/upcoming-music-festivals',
     '/tickets-promo-code',
@@ -104,14 +114,12 @@ function soSitemapTarget(): array {
 }
 
 function soSitemapChildUrl(string $name, bool $static): string {
-    return rtrim(HOME_URL, '/') . ($static ? '/sitemaps/' . $name . '.xml' : '/sitemap.php?f=' . $name);
+    return rtrim(HOME_URL, '/') . ($static ? '/sitemaps/' . $name . '.xml' : '/sitemap-serve.php?f=' . $name);
 }
 
-/** The address of the index, for robots.txt: the static file when it exists, otherwise sitemap.php. */
+/** The address of the index, for robots.txt: always /sitemap.xml. */
 function soSitemapIndexUrl(): string {
-    return is_file(dirname(__DIR__) . '/sitemaps/sitemap-index.xml')
-        ? rtrim(HOME_URL, '/') . '/sitemaps/sitemap-index.xml'
-        : rtrim(HOME_URL, '/') . '/sitemap.php';
+    return rtrim(HOME_URL, '/') . '/sitemap.xml';
 }
 
 /** The full path of a built file (child or the index), or null when it does not exist. */
