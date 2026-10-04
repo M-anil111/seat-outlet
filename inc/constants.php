@@ -105,7 +105,7 @@ function soConfigUnavailable($detail) {
         header('X-Robots-Tag: noindex');
         header('Content-Type: text/html; charset=UTF-8');
     }
-    echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Temporarily unavailable | Seat Outlet</title></head>'
+    echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Temporarily Unavailable&#x2014;Seat Outlet</title></head>'
        . '<body style="font-family:system-ui,sans-serif;text-align:center;padding:12vh 16px;color:#1f2937"><h1 style="font-size:24px;margin:0 0 8px">We will be right back</h1>'
        . '<p style="margin:0;color:#5b6573">Seat Outlet is temporarily unavailable. Please try again in a minute.</p></body></html>';
     exit;

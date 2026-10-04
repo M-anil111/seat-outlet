@@ -31,9 +31,12 @@ if ($page > 1 && $page > max(1, $total_pages)) {
 
 // --- SEO: computed before including header.php, same convention used
 // throughout this app - see functions.php. ---
-$baseTitle           = $activeCat ? $activeCat['name'] . ' Guides' : 'Blog: Ticket Buying Tips & Event Guides';
-$pageMetaTitle       = $baseTitle . ($page > 1 ? " - Page $page" : '') . ' | Seat Outlet';
-$pageMetaDescription = 'News, guides, and updates from Seat Outlet - buying tips, event spotlights, and ticket marketplace insights.';
+$baseTitle           = $activeCat ? $activeCat['name'] . ' Guides' : 'Ticket Buying Tips & Event Guides';
+$soKeepOwnMeta       = $activeCat || $page > 1;   // the plain /blog page takes its title from the keyword plan
+$pageMetaTitle       = soTitle($baseTitle . "\u{2014}Ticket Buying Tips" . ($page > 1 ? ", Page $page" : ''), $baseTitle . ($page > 1 ? "\u{2014}Page $page" : ''));
+$pageMetaDescription = $activeCat
+    ? soMetaFit($activeCat['name'] . ' guides from the Seat Outlet blog: practical ticket buying tips, venue advice and event picks written for fans.', 'Learn how to compare seats and prices and buy with confidence.')
+    : soMetaFit('Ticket buying tips, event guides and city guides from Seat Outlet. Learn how to find better seats, compare prices and buy tickets with confidence.');
 $pageCanonicalUrl    = HOME_URL . $blogUrl($page);
 $pageJsonLdNodes = array_values(array_filter([
     buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL]], 'Blog'),

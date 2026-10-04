@@ -20,7 +20,7 @@ $postUrl = HOME_URL . '/blog/' . $post['slug'];
 
 // --- SEO: computed before including header.php, same convention used
 // throughout this app - see functions.php. ---
-$pageMetaTitle       = !empty($post['meta_title']) ? $post['meta_title'] : ($post['title'] . ' | Seat Outlet Blog');
+$pageMetaTitle       = soTitle(!empty($post['meta_title']) ? $post['meta_title'] : $post['title'], $post['title']);
 $pageMetaDescription = !empty($post['meta_description']) ? $post['meta_description'] : ($post['excerpt'] ?? '');
 $pageCanonicalUrl    = $postUrl;
 $GLOBALS['soBlogSlug'] = $post['slug'];

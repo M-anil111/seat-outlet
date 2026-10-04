@@ -176,7 +176,12 @@ $displayName = $keywordHeader !== '' ? soSearchDisplayName($keywordHeader, $even
 $artistName = $displayName !== '' ? $displayName : 'Event';
 $faqs = getFaqs('search');
 
-$pageMetaTitle = ($displayName !== '' ? $displayName . ' Tickets - Search Results' : 'Search Tickets') . ' | Seat Outlet';
+$pageMetaTitle = $displayName !== ''
+    ? soTitle("$displayName Tickets\u{2014}Search Results", "$displayName Tickets")
+    : soTitle("Search Event Tickets\u{2014}Concerts, Sports & Shows", 'Search Event Tickets');
+$pageMetaDescription = $displayName !== ''
+    ? soMetaFit("$displayName tickets: every matching event, date and venue on Seat Outlet. Compare seats and prices and buy with our 100% buyer guarantee.", 'Live seat maps and secure checkout.')
+    : soMetaFit('Search event tickets by artist, team, show, venue or city. Compare seats and prices from many sellers and buy with our 100% buyer guarantee.', 'Live seat maps and secure checkout.');
 $pageFocusKeyword = $displayName !== '' ? $displayName . ' Tickets' : 'Search Event Tickets';
 
 include 'header.php';

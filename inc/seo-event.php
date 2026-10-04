@@ -25,22 +25,25 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $evDate   = $evTs ? date('M j, Y', $evTs) : '';
   // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
   // The date is the first thing to go when the title is too long, so a result never ends in a half word: name + place + date, else name + place, else name.
-  $metaTitle = 'Event not found | Seat Outlet';
+  $metaTitle = soTitle('Event Not Found');
   if (tnEntityUnavailable($event) && $evName === '') {
-      $metaTitle = 'Event temporarily unavailable | Seat Outlet';
+      $metaTitle = soTitle('Event Temporarily Unavailable');
   } elseif ($evName !== '') {
-      $tryTitles = [];
-      if ($evPlace !== '' && $evTs) $tryTitles[] = $evName . ' Tickets in ' . $evPlace . ' - ' . $evDate . ' | Seat Outlet';
-      if ($evPlace !== '') $tryTitles[] = $evName . ' Tickets in ' . $evPlace . ' | Seat Outlet';
-      $tryTitles[] = $evName . ' Tickets | Seat Outlet';
-      $metaTitle = null;
-      foreach ($tryTitles as $tt) { if (mb_strlen($tt) <= 62) { $metaTitle = $tt; break; } }
-      if ($metaTitle === null) $metaTitle = seoClampTitle($evName . ' Tickets | Seat Outlet');
+      // "<event> Tickets—<City, ST> <Mon D>": the place and date go first when the name is long, never half a word.
+      $evShort = $evTs ? date('M j', $evTs) : '';
+      $metaTitle = soTitle(
+          ($evPlace !== '' && $evShort !== '') ? "$evName Tickets\u{2014}$evPlace, $evShort" : '',
+          $evPlace !== '' ? "$evName Tickets\u{2014}$evPlace" : '',
+          $evShort !== '' ? "$evName Tickets\u{2014}$evShort" : '',
+          "$evName Tickets"
+      );
   }
   if ($evName !== '' && empty($pageFocusKeyword)) { $pageFocusKeyword = $evName . ' Tickets'; }   // shown in the strip above the header and the footer
-  $metaDescription = seoClampDescription(
-      'Buy ' . $evName . ' tickets for sale' . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
-      . ($evDate !== '' ? ' on ' . $evDate : '') . '. Compare seats and prices, then check out securely at Seat Outlet.'
+  $evDay = $evTs ? date('D, M j, Y', $evTs) : '';
+  $metaDescription = soMetaFit(
+      $evName . ' tickets' . ($evDay !== '' ? ' for ' . $evDay : '') . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
+      . '. Pick seats on the live seat map and buy with our 100% buyer guarantee.',
+      'Secure checkout and on time delivery.', 'Prices from many sellers in one place.'
   );
   $keywords = [];
   $keywords[] = $evName . " tickets";

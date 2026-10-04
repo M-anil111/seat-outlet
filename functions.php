@@ -2277,29 +2277,75 @@ function seoOffer($url, $price) {
 }
 
 /** Trim a <title> to ~60 characters at a word boundary, keeping the brand suffix when it fits. */
-function seoClampTitle($title, $max = 62) {
-    $title = trim(preg_replace('/\s+/', ' ', (string) $title));
-    if (mb_strlen($title) <= $max) return $title;
-    $brand = ' | Seat Outlet';
-    $base = $title;
-    if (mb_substr($title, -mb_strlen($brand)) === $brand) {
-        $base = mb_substr($title, 0, -mb_strlen($brand));
-        if (mb_strlen($base) + mb_strlen($brand) <= $max) return $title;
-    } else {
-        $brand = '';
+/** The brand at the end of every page title, joined with an em dash and no spaces ("Keyword—Hook—Seat Outlet"). */
+const SO_TITLE_BRAND = "\u{2014}Seat Outlet";
+
+/**
+ * Puts any title into the site format: parts joined by an em dash with no spaces around it, ending in the brand.
+ * Old separators (" | ", " - ", " – ", " — ") become the em dash; " | Seat Outlet", " | Seat Outlet Network" and
+ * " | Seat Outlet Blog" become the brand suffix. A title without the brand gets it.
+ */
+function soNormalizeTitle($title) {
+    $t = trim(preg_replace('/\s+/u', ' ', (string) $title));
+    if ($t === '') return $t;
+    $t = preg_replace('/\s*\|\s*Seat Outlet(?: Network| Blog)?$/u', '', $t);
+    $t = preg_replace('/\s*\x{2014}\s*Seat Outlet$/u', '', $t);
+    $t = preg_replace('/\s+(?:\||-|\x{2013}|\x{2014})\s+/u', "\u{2014}", $t);
+    $t = preg_replace('/\s*\x{2014}\s*/u', "\u{2014}", $t);
+    // Titles that already name the brand ("About Seat Outlet", "Seat Outlet Reviews") do not repeat it.
+    return mb_stripos($t, 'Seat Outlet') !== false ? $t : $t . SO_TITLE_BRAND;
+}
+
+/**
+ * First candidate that fits a search result with the brand (under 60 characters). Candidates are titles without the brand,
+ * most specific first; the last one is shortened at a word boundary when nothing fits.
+ */
+function soTitle(...$candidates) {
+    $candidates = array_values(array_filter(array_map('strval', $candidates), 'strlen'));
+    foreach ($candidates as $c) {
+        $full = soNormalizeTitle($c);
+        if (mb_strlen($full) <= 59) return $full;
     }
+    return seoClampTitle(soNormalizeTitle((string) end($candidates)));
+}
+
+function seoClampTitle($title, $max = 59) {
+    $title = soNormalizeTitle($title);
+    if (mb_strlen($title) <= $max) return $title;
+    $brand = mb_substr($title, -mb_strlen(SO_TITLE_BRAND)) === SO_TITLE_BRAND ? SO_TITLE_BRAND : '';
+    $base = $brand !== '' ? mb_substr($title, 0, -mb_strlen($brand)) : $title;
     $room = $max - mb_strlen($brand);
     if (mb_strlen($base) > $room) {
-        $cut = mb_substr($base, 0, $room - 1);
-        $sp = mb_strrpos($cut, ' ');
-        $base = rtrim(($sp !== false && $sp > $room * 0.6) ? mb_substr($cut, 0, $sp) : $cut, " ,:;-\u{2013}") . "\u{2026}";
+        // Drop whole trailing parts first ("Keyword—Hook" keeps "Keyword"), then cut at a word.
+        while (mb_strlen($base) > $room && ($pos = mb_strrpos($base, "\u{2014}")) !== false) { $base = mb_substr($base, 0, $pos); }
+        if (mb_strlen($base) > $room) {
+            $cut = mb_substr($base, 0, $room - 1);
+            $sp = mb_strrpos($cut, ' ');
+            $base = rtrim(($sp !== false && $sp > $room * 0.6) ? mb_substr($cut, 0, $sp) : $cut, " ,:;-\u{2013}\u{2014}") . "\u{2026}";
+        }
     }
     return $base . $brand;
 }
 
+/**
+ * A meta description of 120 to 155 characters: the main sentence, then the extra sentences in order while it is shorter
+ * than 120 characters (search results show about 155; a short one wastes the space a reason to click could use).
+ */
+function soMetaFit($text, ...$extras) {
+    $text = trim(preg_replace('/\s+/', ' ', (string) $text));
+    foreach ($extras as $x) {
+        if (mb_strlen($text) >= 120) break;
+        $x = trim((string) $x);
+        if ($x !== '' && mb_strlen($text . ' ' . $x) <= 155) $text .= ' ' . $x;
+    }
+    return seoClampDescription($text);
+}
+
 /** Trim a meta description to ~155 characters at a word boundary. */
-function seoClampDescription($desc, $max = 158) {
+function seoClampDescription($desc, $max = 155) {
     $desc = trim(preg_replace('/\s+/', ' ', (string) $desc));
+    // No dashes in descriptions: " - ", " – " and " — " read as a pause, a comma says the same.
+    $desc = preg_replace('/\s+(?:-|\x{2013}|\x{2014})\s+|\x{2014}/u', ', ', $desc);
     if (mb_strlen($desc) <= $max) return $desc;
     $cut = mb_substr($desc, 0, $max - 1);
     $sp = mb_strrpos($cut, ' ');
@@ -2375,7 +2421,7 @@ function renderUnavailablePage($what) {
     http_response_code(503);
     header('Retry-After: 30');
     $pageRobots = 'noindex, follow';
-    $pageMetaTitle = $what . ' temporarily unavailable | Seat Outlet';
+    $pageMetaTitle = soTitle($what . ' Temporarily Unavailable');
     $pageMetaDescription = 'This page is temporarily unavailable. Please try again in a moment.';
     include 'header.php';
     echo unavailableBlockHtml($what);
@@ -2398,7 +2444,7 @@ function renderNotFoundPage($what, $apiResponse = null) {
     }
     http_response_code(404);
     $pageRobots = 'noindex, follow';
-    $pageMetaTitle = $what . ' not found | Seat Outlet';
+    $pageMetaTitle = soTitle($what . ' Not Found');
     $pageMetaDescription = 'The page you were looking for could not be found. Browse concerts, sports, theater and festival tickets on Seat Outlet.';
     include 'header.php';
     echo notFoundBlockHtml($what);
@@ -2533,7 +2579,7 @@ function soSeoPlan($path = null) {
     return [
         'keyword' => $kw,
         'title' => $title !== null ? str_replace('{Y}', date('Y'), $title) : null,
-        'description' => $desc,
+        'description' => $desc !== null ? str_replace('{Y}', date('Y'), $desc) : null,
         'volume' => $vol, 'difficulty' => $kd, 'scored' => $scored,
     ];
 }
@@ -3787,7 +3833,7 @@ function buildOrganizationSchema() {
             "url" => HOME_URL . "/images/seatoutlet-logo.webp"
         ],
         "image" => HOME_URL . "/images/seatoutlet-logo.webp",
-        "description" => "Verified ticket marketplace network to buy concert, sports, theater, and live event tickets online.",
+        "description" => "Independent resale ticket marketplace for concerts, sports, theater and festivals. Listings come from the TicketNetwork marketplace and every order is backed by a 100% guarantee.",
         "sameAs" => [
             "https://www.facebook.com/profile.php?id=61588886945534",
             "https://www.instagram.com/seatoutlet/",
@@ -4586,8 +4632,9 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
     $pageFocusKeyword    = "$artistName Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
-    $pageMetaTitle       = "$artistName {$noun['nounCap']} Tickets in $locationLabel | Seat Outlet";
-    $pageMetaDescription = "Buy verified $artistName {$noun['noun']} tickets in $locationLabel. Compare prices across sellers and find upcoming $artistName {$noun['noun']}s near you on Seat Outlet.";
+    $soLocShort = preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
+    $pageMetaTitle       = soTitle("$artistName Tickets in $locationLabel\u{2014}" . date('Y') . " Dates", "$artistName Tickets in $locationLabel", "$artistName Tickets in $soLocShort", "$artistName Tickets");
+    $pageMetaDescription = soMetaFit("Buy $artistName {$noun['noun']} tickets in $locationLabel. Compare prices from many sellers, pick seats on live seat maps and buy with our 100% buyer guarantee.", 'Secure checkout and on time delivery.');
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema(array_map(fn($c) => ['label' => $c['label'], 'url' => null], $breadcrumbs), "$artistName in $locationLabel"),
@@ -4915,8 +4962,9 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
     $pageFocusKeyword    = "$categoryLabel Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
-    $pageMetaTitle       = "Buy $categoryLabel Tickets in $locationLabel | Seat Outlet";
-    $pageMetaDescription = "Buy $categoryLabel tickets in $locationLabel. Compare prices across sellers, browse upcoming events, and find great seats on Seat Outlet.";
+    $soLocShort = preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
+    $pageMetaTitle       = soTitle("$categoryLabel Tickets in $locationLabel\u{2014}" . date('Y') . " Dates & Prices", "$categoryLabel Tickets in $locationLabel", "$categoryLabel Tickets in $soLocShort");
+    $pageMetaDescription = soMetaFit("Buy $categoryLabel tickets in $locationLabel. Browse upcoming dates, compare prices from many sellers and buy with our 100% buyer guarantee.", 'Live seat maps and secure checkout.', 'Prices change often, so check back for new listings.');
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema($breadcrumbs, "$categoryLabel in $locationLabel"),

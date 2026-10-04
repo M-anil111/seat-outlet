@@ -71,11 +71,12 @@ soZeroPageNote('/artist/' . soEntitySlug($artistName, $id), $total_count === 0);
 // previously rendering with no <title> and no canonical tag at all. ---
 $soCatPath = (string) ($performer['defaultCategory']['path'] ?? '');
 $soNoun  = strpos($soCatPath, TN_CATEGORY_PATH_SPORTS) === 0 ? ['games', 'Game', 'schedule'] : (strpos($soCatPath, TN_CATEGORY_PATH_THEATER) === 0 ? ['shows', 'Show', 'dates'] : ['concerts', 'Concert', 'tour dates']);
-$pageMetaTitle       = "$artistName Tickets $year | {$soNoun[1]} Dates & Prices | Seat Outlet";
-$pageMetaDescription = "Buy $artistName tickets for sale. Compare seats and prices for every upcoming $artistName {$soNoun[0]}, then check out securely with our 100% guarantee.";
+$soDatesWord = $soNoun[0] === 'games' ? 'Schedule' : ($soNoun[0] === 'shows' ? 'Show Dates' : 'Tour Dates');
+$pageMetaTitle       = soTitle("$artistName Tickets\u{2014}$year $soDatesWord & Prices", "$artistName Tickets\u{2014}$year $soDatesWord", "$artistName Tickets\u{2014}$year", "$artistName Tickets");
+$pageMetaDescription = soMetaFit("Buy $artistName tickets for every upcoming $artistName {$soNoun[0]}. Compare seats on live seat maps and buy with our 100% buyer guarantee.", 'Secure checkout and on time delivery.');
 $pageCanonicalUrl    = HOME_URL . '/artist/' . soEntitySlug($artistName, $id);   // the same slug every internal link uses
 if ($priceSnapshot['from'] !== '' && $total_count > 0) {
-    $pageMetaDescription = "$artistName tickets for sale from {$priceSnapshot['from']}. $total_count upcoming " . ($total_count === 1 ? 'event' : 'events') . ". Compare prices across sellers and find $artistName shows near you on Seat Outlet.";
+    $pageMetaDescription = soMetaFit("$artistName tickets from {$priceSnapshot['from']} for $total_count upcoming " . ($total_count === 1 ? rtrim($soNoun[0], 's') : $soNoun[0]) . ". Compare seats on live seat maps and buy with our 100% buyer guarantee.", 'Prices from many sellers in one place.', 'Secure checkout and on time delivery.');
 }
 // BreadcrumbList + an Event node per listed date (the page emitted only the
 // site-wide Organization/WebSite graph before).

@@ -47,8 +47,8 @@ if ($id === 1872) $soFamily = '/buy-broadway-tickets';   // comedy is listed wit
 if ($soFamily === '' && isset($soGenre['kind'])) { $soFamily = $soGenre['kind'] === 'sports' ? '/game-day-tickets' : ($soGenre['kind'] === 'concerts' ? '/concert-tickets-for-sale' : '/buy-broadway-tickets'); }
 
 // --- SEO: computed before including header.php, same convention as the other listing pages - see functions.php. ---
-$pageMetaTitle       = "$catLabel Tickets $year | Dates & Prices | Seat Outlet";
-$pageMetaDescription = $soCatSeo['description'];
+$pageMetaTitle       = soTitle("$catLabel Tickets\u{2014}$year Dates & Prices", "$catLabel Tickets\u{2014}$year", "$catLabel Tickets");
+$pageMetaDescription = soMetaFit($soCatSeo['description'], 'Live seat maps and secure checkout.', 'Prices from many sellers in one place.');
 $pageCanonicalUrl    = HOME_URL . $catBasePath;
 $pageJsonLdNodes     = array_values(array_filter([
 	buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/buy-tickets-online']], "$catLabel Tickets"),

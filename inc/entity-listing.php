@@ -107,16 +107,18 @@ function soRenderEntityListing(array $c): void {
 
     // ---- head: titles follow "<place> <what> | <what you get>" and never repeat the word Tickets twice
     if ($kind === 'venue') {
-        $pageMetaTitle = "$name Tickets" . ($c['cityLabel'] !== '' ? " - {$c['cityLabel']}" : '') . ' | Seat Outlet';
+        $pageMetaTitle = $c['cityLabel'] !== ''
+            ? soTitle("$name Tickets\u{2014}{$c['cityLabel']} Events & Seats", "$name Tickets\u{2014}{$c['cityLabel']}", "$name Tickets")
+            : soTitle("$name Tickets\u{2014}Events & Seating", "$name Tickets");
         $pageMetaDescription = $total > 0
-            ? "Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ($cheap ? ", from {$cheap['formatted']}" : '') . '. Compare prices and book securely on Seat Outlet.'
-            : "See upcoming events at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . '. Nothing is on sale right now: get an alert or browse nearby venues on Seat Outlet.';
+            ? soMetaFit("Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ($cheap ? ", from {$cheap['formatted']}" : '') . '. Pick seats on live seat maps and buy with our 100% buyer guarantee.', 'Prices from many sellers in one place.')
+            : soMetaFit("See upcoming events at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . '. Nothing is on sale right now: get a price alert or browse nearby venues on Seat Outlet.', 'Every order has a 100% buyer guarantee.');
         $h1 = "$name Tickets";
     } else {
-        $pageMetaTitle = "$label Event Tickets | Concerts, Sports & Theater | Seat Outlet";
+        $pageMetaTitle = soTitle("$label Event Tickets\u{2014}Concerts, Sports & Shows", "$label Event Tickets\u{2014}" . date('Y') . " Events", "$label Event Tickets", "$label Tickets");
         $pageMetaDescription = $total > 0
-            ? "Find tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ': concerts, sports and theater. Compare prices and book securely on Seat Outlet.'
-            : "Find concert, sports and theater tickets in $label. Nothing is on sale right now: browse nearby places on Seat Outlet.";
+            ? soMetaFit("Find tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ': concerts, sports and theater. Compare prices and buy with our 100% buyer guarantee.', 'Live seat maps and secure checkout.')
+            : soMetaFit("Find concert, sports and theater tickets in $label. Nothing is on sale right now: browse nearby places on Seat Outlet.", 'Every order has a 100% buyer guarantee.', 'New listings are added every day.');
         $h1 = "$label Event Tickets";
     }
     $pageCanonicalUrl = HOME_URL . $c['path'];

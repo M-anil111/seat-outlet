@@ -1,19 +1,19 @@
 <?php // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; } ?>
-<title>Seat Outlet: Verified Ticket Marketplace for Concerts &amp; Sports</title>
-<meta name="description" content="Seat Outlet is a verified ticket marketplace network to buy concert, sports, and event tickets online. Compare prices, find deals, and book securely.">
-<meta name="keywords" content="Verified Ticket Marketplace Network, buy event tickets online, concert tickets online, sports tickets marketplace, compare ticket prices online">
+<title>Buy Event Tickets&#x2014;Concerts, Sports &amp; Theater&#x2014;Seat Outlet</title>
+<meta name="description" content="Buy event tickets for concerts, sports, theater and festivals. Compare seats and prices side by side, check out securely and get our 100% guarantee.">
+<meta name="keywords" content="Buy event tickets online, concert tickets online, sports tickets marketplace, compare ticket prices online">
 <link rel="canonical" href="<?php echo HOME_URL; ?>/">
 
-<meta property="og:title" content="Verified Ticket Marketplace Network | Seat Outlet">
-<meta property="og:description" content="Seat Outlet is a verified ticket marketplace network to buy concert, sports, and event tickets online. Compare prices, find deals, and book securely.">
+<meta property="og:title" content="Buy Event Tickets&#x2014;Concerts, Sports &amp; Theater&#x2014;Seat Outlet">
+<meta property="og:description" content="Buy event tickets for concerts, sports, theater and festivals. Compare seats and prices side by side, check out securely and get our 100% guarantee.">
 <meta property="og:url" content="<?php echo HOME_URL; ?>/">
 <meta property="og:type" content="website">
 <meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Seat Outlet Ticket Marketplace">
-<meta name="twitter:description" content="Seat Outlet is a verified ticket marketplace network to buy concert, sports, and event tickets online. Compare prices, find deals, and book securely.">
+<meta name="twitter:title" content="Buy Event Tickets&#x2014;Concerts, Sports &amp; Theater&#x2014;Seat Outlet">
+<meta name="twitter:description" content="Buy event tickets for concerts, sports, theater and festivals. Compare seats and prices side by side, check out securely and get our 100% guarantee.">
 <meta name="twitter:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
 
 <?php
@@ -245,7 +245,7 @@ $webPageSchema = [
     "@type" => "WebPage",
     "@id" => HOME_URL . "/#webpage",
     "url" => HOME_URL . "/",
-    "name" => "Verified Ticket Marketplace Network for Concerts & Sports Tickets",
+    "name" => "Buy Event Tickets for Concerts, Sports & Theater",
     "isPartOf" => ["@id" => HOME_URL . "/#website"],
     "about" => ["@id" => HOME_URL . "/#organization"],
     "primaryImageOfPage" => [

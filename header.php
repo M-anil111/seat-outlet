@@ -43,7 +43,7 @@ include_once 'functions.php';
     if (empty($pageMetaTitle)) {
         $soStaticMeta = require __DIR__ . '/inc/page-meta.php';
         if (isset($soStaticMeta[$soReqPath])) {
-            $pageMetaTitle       = $soStaticMeta[$soReqPath][0] . ' | Seat Outlet';
+            $pageMetaTitle       = soNormalizeTitle($soStaticMeta[$soReqPath][0]);
             $pageMetaDescription = $soStaticMeta[$soReqPath][1];
             $pageCanonicalUrl    = rtrim(HOME_URL, '/') . $soReqPath;
         }
@@ -53,9 +53,12 @@ include_once 'functions.php';
     $soPlan = soSeoPlan($soReqPath);
     if ($soPlan !== null) {
         if (empty($pageRule['focus_keyword'])) { $pageFocusKeyword = $soPlan['keyword']; }
-        if ($soPlan['title'] !== null)       { $pageMetaTitle       = $soPlan['title'] . ' | Seat Outlet'; }
-        if ($soPlan['description'] !== null) { $pageMetaDescription = $soPlan['description']; }
-        $pageCanonicalUrl = rtrim(HOME_URL, '/') . ($soReqPath === '/' ? '' : $soReqPath);
+        // A letter, category or page 2+ of a listed page keeps its own title, description and canonical (they are different pages).
+        if (empty($soKeepOwnMeta)) {
+            if ($soPlan['title'] !== null)       { $pageMetaTitle       = soNormalizeTitle($soPlan['title']); }
+            if ($soPlan['description'] !== null) { $pageMetaDescription = $soPlan['description']; }
+            $pageCanonicalUrl = rtrim(HOME_URL, '/') . ($soReqPath === '/' ? '' : $soReqPath);
+        }
     }
     // Unknown event ids must answer 404 (they used to be a 200 page with a junk title). The status has
     // to be sent before any output; the event is cached by tnRequest, so inc/seo-event.php reuses it.

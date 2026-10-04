@@ -24,7 +24,7 @@ $artistName = 'Live';   // the FAQ copy is shared with performer pages: "FAQs ab
 					<span class="hero-title-white">Buy Tickets Online</span>
 				</h1>
 				<p class="hero-subtitle">
-					Buy tickets online for live events from our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.
+					Buy tickets online for concerts, games, shows and festivals. Compare seats and prices from many sellers, check out securely and get a 100% guarantee on every order.
 				</p>
 			</div>
 		</div>
