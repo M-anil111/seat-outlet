@@ -253,11 +253,8 @@ foreach ($fallbackCategories as $key => $list) {
     <div id="browseCitiesWrapper">
       <ul class="so-city-pills list-unstyled">
         <?php
-        $soCities = [['new-york-ny-3027', 'New York, NY'], ['los-angeles-ca-2551', 'Los Angeles, CA'], ['chicago-il-915', 'Chicago, IL'], ['houston-tx-2013', 'Houston, TX'],
-            ['phoenix-az-3396', 'Phoenix, AZ'], ['philadelphia-pa-3394', 'Philadelphia, PA'], ['san-antonio-tx-3846', 'San Antonio, TX'], ['san-diego-ca-3854', 'San Diego, CA'],
-            ['dallas-tx-1121', 'Dallas, TX'], ['jacksonville-fl-2108', 'Jacksonville, FL'], ['fort-worth-tx-1558', 'Fort Worth, TX'], ['san-jose-ca-3862', 'San Jose, CA'],
-            ['austin-tx-247', 'Austin, TX'], ['charlotte-nc-880', 'Charlotte, NC'], ['columbus-oh-1025', 'Columbus, OH'], ['indianapolis-in-2061', 'Indianapolis, IN']];
-        foreach ($soCities as $ci => [$soCitySlug, $soCityName]) { ?>
+        $soCities = [[3027, 'New York, NY'], [2551, 'Los Angeles, CA'], [915, 'Chicago, IL'], [2013, 'Houston, TX'], [3396, 'Phoenix, AZ'], [3394, 'Philadelphia, PA'], [3846, 'San Antonio, TX'], [3854, 'San Diego, CA'], [1121, 'Dallas, TX'], [2108, 'Jacksonville, FL'], [1558, 'Fort Worth, TX'], [3862, 'San Jose, CA'], [247, 'Austin, TX'], [880, 'Charlotte, NC'], [1025, 'Columbus, OH'], [2061, 'Indianapolis, IN']];
+        foreach ($soCities as $ci => [$soCityId, $soCityName]) { $soCitySlug = soSlug('city', $soCityName, $soCityId); ?>
         <li<?php echo $ci >= 8 ? ' class="so-city-extra"' : ''; ?>><a href="/city/<?php echo htmlspecialchars($soCitySlug, ENT_QUOTES, 'UTF-8'); ?>" class="city-pill"><?php echo htmlspecialchars($soCityName, ENT_QUOTES, 'UTF-8'); ?></a></li>
         <?php } ?>
         <li><a href="/city-events" class="city-pill city-pill--all">All cities <span aria-hidden="true">&rarr;</span></a></li>

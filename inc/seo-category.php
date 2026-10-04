@@ -148,7 +148,7 @@ function soCategorySeo(array $cfg, array $d) {
         if ($withImg) {
             $o .= '<ul class="so-cseo__artists">';
             foreach ($withImg as [$a, $img]) {
-                $o .= '<li><a href="/artist/' . $h(createSlug($a['name'], $a['id'])) . '">'
+                $o .= '<li><a href="/artist/' . $h(soSlug('performer', $a['name'], $a['id'])) . '">'
                     . '<img src="' . $h($img) . '" alt="' . $h($a['name'] . ' ' . $lbl . ' tickets') . '" width="96" height="96" loading="lazy" decoding="async">'
                     . '<span>' . $h($a['name']) . ' tickets</span></a></li>';
             }
@@ -158,7 +158,7 @@ function soCategorySeo(array $cfg, array $d) {
             $o .= ($withImg ? '<h3 class="so-cseo__sub">More ' . $h($lbl) . ' ' . ($kind === 'sports' ? 'teams' : 'artists') . ' on sale</h3>' : '')
                 . '<div class="so-cseo__chips so-cseo__chips--scroll so-cseo__chips--names" role="region" aria-label="' . $h($label) . ' ' . ($kind === 'sports' ? 'teams' : 'artists') . ', scrollable" tabindex="0">';
             foreach ($noImg as $a) {
-                $o .= '<a class="so-linkchip" href="/artist/' . $h(createSlug($a['name'], $a['id'])) . '">' . $h($a['name']) . '</a>';
+                $o .= '<a class="so-linkchip" href="/artist/' . $h(soSlug('performer', $a['name'], $a['id'])) . '">' . $h($a['name']) . '</a>';
             }
             $o .= '</div>';
         }
@@ -172,7 +172,7 @@ function soCategorySeo(array $cfg, array $d) {
         $o .= '<h2>Best venues for ' . $h($long) . ' ' . $h($unit) . '</h2>';
         $o .= '<p>These venues are hosting some of the most popular ' . $h($long) . ' events right now' . ($vWhere !== '' ? ', including ' . ($vCities && count($vCities) > 1 ? 'venues in ' : 'a venue in ') . $h($vWhere) : '') . '. Each venue page shows every upcoming date and seat options for that building.</p><ul class="so-cseo__venues">';
         foreach ($d['venues'] as $v) {
-            $o .= '<li><a href="/venue/' . $h(createSlug($v['name'], $v['id'])) . '"><strong>' . $h($v['name']) . ' tickets</strong><span>' . $h($v['city']) . '</span></a></li>';
+            $o .= '<li><a href="/venue/' . $h(soVenueSlug($v['name'], $v['id'], $v['city'])) . '"><strong>' . $h($v['name']) . ' tickets</strong><span>' . $h($v['city']) . '</span></a></li>';
         }
         $o .= '</ul>';
     }
@@ -183,7 +183,7 @@ function soCategorySeo(array $cfg, array $d) {
         $cityWord = $kind === 'sports' ? 'Sports' : ($kind === 'concerts' ? 'Concerts' : 'Events');
         $o .= '<h2>' . $h($label) . ' ' . $h($unit) . ' by city</h2><p>These cities have the most ' . $h($long) . ' events on sale right now. Each city page lists every upcoming ' . ($kind === 'sports' ? 'sporting event' : ($kind === 'concerts' ? 'concert' : 'event')) . ' there, not only ' . $h($long) . '.</p><div class="so-cseo__chips so-cseo__chips--scroll" role="region" aria-label="' . $h($label) . ' cities, scrollable" tabindex="0">';
         foreach ($d['cities'] as $c) {
-            $o .= '<a class="so-linkchip" href="/' . $cityPrefix . '/' . $h(createSlug($c['label'], $c['id'])) . '">' . $h($cityWord) . ' in ' . $h($c['label']) . '</a>';
+            $o .= '<a class="so-linkchip" href="/' . $cityPrefix . '/' . $h(soSlug('city', $c['label'], $c['id'])) . '">' . $h($cityWord) . ' in ' . $h($c['label']) . '</a>';
         }
         $o .= '</div>';
     }

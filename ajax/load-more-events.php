@@ -71,6 +71,8 @@ try {
     $rankQuery = ($type === 'search' && !isset($params['sort']) && isset($params['q']) && $params['q'] !== '*') ? (string) $params['q'] : '';
     $rows = $rankQuery !== '' ? soRankSearchEvents($results, $rankQuery) : $results;
 
+    soSlugWarmEvents($results);
+    foreach ($results as $i => $r) { $results[$i]['so'] = soEventSlugBundle($r); }
     echo json_encode([
         'events'      => $results,
         'html'        => soRenderListingRows($rows),

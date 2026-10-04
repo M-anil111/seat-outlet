@@ -5,9 +5,9 @@ require_once 'functions.php';
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage = 20;
 
-// Extract performer ID from slug; strict (digits only, at most 2147483647), so junk never reaches the API.
+// The performer behind the slug (stored slug, or the old name-and-id form); a made-up slug never reaches the API.
 $slug = (string) ($_GET['slug'] ?? '');
-$id   = soSlugTrailingId($slug);
+[$id] = soSlugResolve('performer', $slug);
 
 if ($id === null) {
 	renderNotFoundPage('Performer');
@@ -22,10 +22,11 @@ if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
 }
 
 $artistName = (string) $performer['text']['name'];
-soRedirectToCanonicalSlug('artist', $slug, soEntitySlug($artistName, $id));   // 301 when the name part is wrong
+soRedirectToCanonicalSlug('artist', $slug, soSlug('performer', $artistName, $id));   // 301 for the old form or a different spelling
 
 $today = date('Y-m-d');
 [$params, $results] = getPerformerPageEvents($id, $perPage);
+soSlugWarmEvents($results['results'] ?? []);   // one query for the links of every row below
 $total_count = (int) ($results['totalCount'] ?? 0);
 $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
 $events = $results['results'] ?? [];
@@ -64,7 +65,7 @@ $pageOgImage     = $hasRealImage ? $performer_image : null;
 // An outage is not an empty page (503 via the shared guard); a real zero-event artist is noindex,follow and left out of the sitemap.
 if ($total_count === 0 && !$events && soApiDegraded()) { renderUnavailablePage('Performer'); }
 if ($total_count === 0) { $pageRobots = 'noindex, follow'; }
-soZeroPageNote('/artist/' . soEntitySlug($artistName, $id), $total_count === 0);
+soZeroPageNote('/artist/' . soSlug('performer', $artistName, $id), $total_count === 0);
 
 // --- SEO: computed before including header.php, same convention as the
 // artist-city/concerts-city/etc. pages - see functions.php. This page was
@@ -74,7 +75,7 @@ $soNoun  = strpos($soCatPath, TN_CATEGORY_PATH_SPORTS) === 0 ? ['games', 'Game',
 $soDatesWord = $soNoun[0] === 'games' ? 'Schedule' : ($soNoun[0] === 'shows' ? 'Show Dates' : 'Tour Dates');
 $pageMetaTitle       = soTitle("$artistName Tickets $year $soDatesWord & Prices", "$artistName Tickets $year $soDatesWord", "$artistName Tickets $year", "$artistName Tickets");
 $pageMetaDescription = soMetaFit("Buy $artistName tickets and see the full $artistName {$soNoun[2]}. Compare seats on live seat maps. Orders carry the TicketNetwork guarantee.", 'Secure checkout and on time delivery.');
-$pageCanonicalUrl    = HOME_URL . '/artist/' . soEntitySlug($artistName, $id);   // the same slug every internal link uses
+$pageCanonicalUrl    = HOME_URL . '/artist/' . soSlug('performer', $artistName, $id);   // the same slug every internal link uses
 if ($priceSnapshot['from'] !== '' && $total_count > 0) {
     $pageMetaDescription = soMetaFit("$artistName tickets from {$priceSnapshot['from']} for $total_count upcoming " . ($total_count === 1 ? rtrim($soNoun[0], 's') : $soNoun[0]) . ". Compare seats on live seat maps. Orders carry the TicketNetwork guarantee.", 'Prices from many sellers in one place.', 'Secure checkout and on time delivery.');
 }
@@ -104,7 +105,7 @@ $faqs = array_merge($soFaqs, array_map(function ($q) use ($artistName) {
 }, is_array($faqs) ? $faqs : []));
 $soEntityFacts = soEntityFacts($artistName, 'performer');   // Wikidata / Wikipedia / official site, [] until the background lookup has run
 $pageJsonLdNodes = buildPerformerPageJsonLd($artistName, (int) $id, $events, $breadcrumbs, $pageOgImage ?? '', $soCatPath, $soEntityFacts['sameAs'] ?? []);
-$pageMainEntity  = HOME_URL . '/artist/' . createSlug($artistName, (int) $id) . '#performer';
+$pageMainEntity  = HOME_URL . '/artist/' . soSlug('performer', $artistName, (int) $id) . '#performer';
 if ($faqNode = buildFaqPageSchema($faqs)) { $pageJsonLdNodes[] = $faqNode; }
 
 $pagePreloadImage = $hasRealImage ? $performer_image : '/images/event-so.webp';
@@ -239,14 +240,14 @@ soPageHero([
 									$performerSlugs = array_map(function ($performer) {
 										$pn = (string) ($performer['name'] ?? '');
 										$pid = $performer['id'] ?? '';
-										return $pn !== '' && $pid ? soEntitySlug($pn, $pid) : null;   // the one slug rule
+										return $pn !== '' && $pid ? soSlug('performer', $pn, $pid) : null;
 									}, $evtPerformers);
 									$dataPerformers = implode('|', array_filter($names));	
 									$dataPerformerSlugs  = implode('|', array_filter($performerSlugs));
-									$slug = soEntitySlug($event['text']['name'] ?? '', $event['id'] ?? 0);
+									$slug = soEventSlug($event);
 									$city = soPlaceLabel($event);
-									$citySlug = soEntitySlug($city, $event['city']['id'] ?? 0);
-									$venueSlug = soEntitySlug($event['venue']['text']['name'] ?? '', $event['venue']['id'] ?? 0);
+									$citySlug = soSlug('city', $city, $event['city']['id'] ?? 0);
+									$venueSlug = soVenueSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'] ?? 0, $city);
 								?>
 									<div class="d-flex align-items-center justify-content-between performer-event-item"<?php echo isset($weekendOf[(int) ($event['id'] ?? 0)]) ? ' data-wk="' . (int) $weekendOf[(int) $event['id']] . '"' : ''; ?>>
 										<div class="date-box text-center me-3">
@@ -399,15 +400,15 @@ soPageHero([
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">
 						<?php if ($nextEvent) {
-							$nextSlug = createSlug($nextEvent['text']['name'] ?? '', $nextEvent['id'] ?? 0);
+							$nextSlug = soEventSlug($nextEvent);
 							$nextTs   = strtotime($nextEvent['date']['date'] ?? 'now');
 							$nextDeal = eventDealInfo($nextEvent);
 						?>
 						<?php
 							$nvCity  = trim(($nextEvent['city']['text']['name'] ?? '') . ', ' . ($nextEvent['stateProvince']['text']['abbr'] ?? ''), ', ');
 							$nvVenue = (string) ($nextEvent['venue']['text']['name'] ?? '');
-							$nvCityUrl  = !empty($nextEvent['city']['id'])  && $nvCity  !== '' ? '/city/'  . createSlug($nvCity,  $nextEvent['city']['id'])  : '';
-							$nvVenueUrl = !empty($nextEvent['venue']['id']) && $nvVenue !== '' ? '/venue/' . createSlug($nvVenue, $nextEvent['venue']['id']) : '';
+							$nvCityUrl  = !empty($nextEvent['city']['id'])  && $nvCity  !== '' ? '/city/'  . soSlug('city', $nvCity,  $nextEvent['city']['id'])  : '';
+							$nvVenueUrl = !empty($nextEvent['venue']['id']) && $nvVenue !== '' ? '/venue/' . soVenueSlug($nvVenue, $nextEvent['venue']['id'], $nvCity) : '';
 							$nvLink = function ($url, $text) { $t = htmlspecialchars($text, ENT_QUOTES, 'UTF-8'); return $url !== '' ? '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">' . $t . '</a>' : $t; };
 						?>
 						<div class="next-event-card mb-3">
@@ -461,7 +462,7 @@ soPageHero([
 						$cityPriced[$tc] = ($cityPriced[$tc] ?? 0) + 1;
 						if (!isset($cityMin[$tc]) || (float) $tv < $cityMin[$tc]) { $cityMin[$tc] = (float) $tv; }
 					}
-					$artistSlugForLinks = soEntitySlug($artistName, $id);
+					$artistSlugForLinks = soSlug('performer', $artistName, $id);
 					foreach ($tourRows as $te) {
 						$tts = strtotime($te['date']['date'] ?? 'now');
 						$tcity = soPlaceLabel($te);
@@ -473,10 +474,10 @@ soPageHero([
 					?>
 						<tr>
 							<td><?php echo htmlspecialchars(date('D, M j, Y', $tts), ENT_QUOTES, 'UTF-8'); ?></td>
-							<td><?php if ($tcid > 0 && $tcity !== '') { ?><a href="/artist-city/<?php echo htmlspecialchars($artistSlugForLinks . '/' . soEntitySlug($tcity, $tcid), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($tcity, ENT_QUOTES, 'UTF-8'); ?></a><?php } else { echo htmlspecialchars($tcity, ENT_QUOTES, 'UTF-8'); } ?></td>
+							<td><?php if ($tcid > 0 && $tcity !== '') { ?><a href="/artist-city/<?php echo htmlspecialchars($artistSlugForLinks . '/' . soSlug('city', $tcity, $tcid), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($tcity, ENT_QUOTES, 'UTF-8'); ?></a><?php } else { echo htmlspecialchars($tcity, ENT_QUOTES, 'UTF-8'); } ?></td>
 							<td><?php echo htmlspecialchars($tven, ENT_QUOTES, 'UTF-8'); ?></td>
 							<td><?php echo $tlow !== '' ? htmlspecialchars($tlow, ENT_QUOTES, 'UTF-8') : 'Not listed'; ?><?php if ($lowestInCity) { ?> <span class="so-tag-low">Lowest in city</span><?php } ?></td>
-							<td><a href="/event/<?php echo htmlspecialchars(soEntitySlug($te['text']['name'] ?? '', $te['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets</a></td>
+							<td><a href="/event/<?php echo htmlspecialchars(soEventSlug($te), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets</a></td>
 						</tr>
 					<?php } ?>
 					</tbody>
@@ -594,7 +595,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.soLocal.addPerformer({
       id: <?php echo json_encode((string) $id); ?>,
       name: <?php echo json_encode($artistName, JSON_HEX_TAG | JSON_HEX_AMP); ?>,
-      slug: <?php echo json_encode(soEntitySlug($artistName, $id)); ?>,
+      slug: <?php echo json_encode(soSlug('performer', $artistName, $id)); ?>,
       img: <?php echo json_encode($hasRealImage ? $performer_image : ''); ?>
     });
   }

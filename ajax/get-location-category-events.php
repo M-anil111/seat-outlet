@@ -69,6 +69,7 @@ if (!empty($events)) {
             'defaultCategory' => $event['defaultCategory'] ?? [],
             'placeholder'     => getCategoryFallbackImage($event['defaultCategory'] ?? [], $tab),
             'edate'           => $timestamp ? $timestamp : '',
+            'slug'            => soEventSlug($event),
             'iso'             => $timestamp ? date('Y-m-d', $timestamp) : '',
             'time'            => (string)$time,
         ];

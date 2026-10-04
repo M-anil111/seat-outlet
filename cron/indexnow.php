@@ -39,7 +39,7 @@ foreach ($responses as $r) {
         $name = (string) ($ev['text']['name'] ?? '');
         if ($id <= 0 || $name === '') continue;
         $ids[$id] = true;
-        if (!isset($seen[$id])) $urls[] = rtrim(HOME_URL, '/') . '/event/' . createSlug($name, $id);
+        if (!isset($seen[$id])) $urls[] = rtrim(HOME_URL, '/') . '/event/' . soEventSlug($ev);
     }
 }
 $first = !$seen;   // first run: record what exists without announcing the whole catalog at once

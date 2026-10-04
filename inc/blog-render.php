@@ -87,7 +87,7 @@ function soBlogLoadEvents(array $a) {
             $pname = $pick['text']['name'];
             [$endpoint, $params] = performerPageEventsSpec((int) $pick['id'], $limit);
             $data = tnRequest($endpoint, $params, 'GET', 600);
-            return [$pname, '/artist/' . createSlug($pname, (int) $pick['id']), array_slice($data['results'] ?? [], 0, $limit), $pname . ' tickets'];
+            return [$pname, '/artist/' . soSlug('performer', $pname, (int) $pick['id']), array_slice($data['results'] ?? [], 0, $limit), $pname . ' tickets'];
         }
         // Venue and city blocks: the catalog's venue / city search by name, then the events at that id (verified against the sandbox API).
         if ($venue !== '' || $city !== '') {
@@ -97,7 +97,7 @@ function soBlogLoadEvents(array $a) {
                 $v = soBlogPickByName($res['results'] ?? [], $venue);
                 if (!$v || stripos((string) $v['text']['name'], $venue) !== 0) return [$venue, null, [], $venue . ' tickets'];
                 $frag[] = 'venue/id eq ' . (int) $v['id'];
-                $label = $v['text']['name']; $url = '/venue/' . createSlug($label, (int) $v['id']); $all = $label . ' tickets';
+                $label = $v['text']['name']; $url = '/venue/' . soVenueSlug($label, (int) $v['id'], soPlaceLabel($v)); $all = $label . ' tickets';
             } else {
                 $abbr = '';
                 $cname = $city;
@@ -106,7 +106,7 @@ function soBlogLoadEvents(array $a) {
                 $c = soBlogPickByName($res['results'] ?? [], $cname, $abbr);
                 if (!$c) return [$city, null, [], 'events in ' . $city];
                 $frag[] = 'city/id eq ' . (int) $c['id'];
-                $label = $c['text']['name']; $url = '/city/' . createSlug($label, (int) $c['id']); $all = 'events in ' . $label;
+                $label = $c['text']['name']; $url = '/city/' . soSlug('city', $label . (!empty($c['stateProvince']['text']['abbr']) ? ', ' . $c['stateProvince']['text']['abbr'] : ''), (int) $c['id']); $all = 'events in ' . $label;
             }
             if (isset($map[$cat])) $frag[] = "startswith(defaultCategory/path, '" . tnEscapeFilterValue($map[$cat]) . "')";
             elseif (preg_match('/^\d{1,6}$/', $cat)) $frag[] = "contains(defaultCategory/path, '." . (int) $cat . ".')";   // a TicketNetwork category id, e.g. 2094 = Children / Family (concerts)
@@ -139,7 +139,7 @@ function soBlogEventsBlock(array $a) {
         if ($id === 0 || $nm === '' || !$ts) continue;
         $where = trim(($e['venue']['text']['name'] ?? '') . ', ' . trim(($e['city']['text']['name'] ?? '') . ', ' . ($e['stateProvince']['text']['abbr'] ?? ''), ', '), ', ');
         $price = $e['pricingInfo']['lowPrice']['text']['formatted'] ?? '';
-        $rows .= '<li><a class="so-live__row" href="/event/' . soBlogH(createSlug($nm, $id)) . '" data-blog-post="' . soBlogH($GLOBALS['soBlogSlug'] ?? '') . '">'
+        $rows .= '<li><a class="so-live__row" href="/event/' . soBlogH(soEventSlug($e)) . '" data-blog-post="' . soBlogH($GLOBALS['soBlogSlug'] ?? '') . '">'
             . '<span class="so-live__date"><b>' . soBlogH(strtoupper(date('M', $ts))) . '</b><i>' . soBlogH(date('j', $ts)) . '</i></span>'
             . '<span class="so-live__info"><strong>' . soBlogH($nm) . '</strong><small>' . soBlogH($where) . '</small></span>'
             . ($price !== '' ? '<span class="so-live__price">From ' . soBlogH($price) . '</span>' : '')

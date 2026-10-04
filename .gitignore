@@ -74,3 +74,6 @@ cache/home_feed_*.json
 cache/so_zero_pages.json
 cache/wdfacts_*
 cache/tn_*
+
+# Page snapshots (last good copy of each page, see docs/reliability.md)
+cache/pages/

@@ -1,10 +1,10 @@
 <?php
 require_once 'functions.php';
 
-// /state/{name}-{id}. Markup in soRenderEntityListing() (inc/entity-listing.php).
+// /state/{name}. Markup in soRenderEntityListing() (inc/entity-listing.php).
 $perPage = 20;
 $slug = (string) ($_GET['slug'] ?? '');
-$id   = parseLocationSlug('state', $slug);   // strict id, at most 2147483647
+$id   = parseLocationSlug('state', $slug);   // stored slug, or the old name-and-id form
 if ($id === null) {
 	renderNotFoundPage('State');
 }
@@ -15,7 +15,7 @@ if (empty($state)) {
 }
 
 $stateLabel = $state['label'];
-$canonSlug  = soEntitySlug($stateLabel, $id);
+$canonSlug  = soSlug('state', $stateLabel, $id);
 soRedirectToCanonicalSlug('state', $slug, $canonSlug);
 
 [$when, $sort, $isFiltered] = listingRequestState('popular');

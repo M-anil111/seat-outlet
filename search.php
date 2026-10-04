@@ -289,7 +289,7 @@ soPageHero([
 										<ul class="list-unstyled mb-0">
 											<?php foreach (array_slice($popular, 0, 6) as $popEv) { ?>
 												<li class="mb-2">
-													<a href="/event/<?php echo htmlspecialchars(createSlug($popEv['name'], $popEv['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($popEv['name'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<a href="/event/<?php echo htmlspecialchars(soEventSlug($popEv), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($popEv['name'], ENT_QUOTES, 'UTF-8'); ?></a>
 													<span class="small text-muted"> · <?php echo htmlspecialchars(trim(($popEv['date'] ?? '') . ' · ' . ($popEv['loc'] ?? ''), ' ·'), ENT_QUOTES, 'UTF-8'); ?><?php echo !empty($popEv['price']) ? ' · from ' . htmlspecialchars($popEv['price'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
 												</li>
 											<?php } ?>

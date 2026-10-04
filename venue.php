@@ -1,11 +1,11 @@
 <?php
 require_once 'functions.php';
 
-// /venue/{name}-{id}. All markup lives in soRenderEntityListing() (inc/entity-listing.php); this file validates the URL,
+// /venue/{name}. All markup lives in soRenderEntityListing() (inc/entity-listing.php); this file validates the URL,
 // fetches the venue and its first page of events, and decides 404 / 503 / 301.
 $perPage = 20;
 $slug = (string) ($_GET['slug'] ?? '');
-$id   = soSlugTrailingId($slug);   // strict id, at most 2147483647: junk never reaches the API
+[$id] = soSlugResolve('venue', $slug);   // stored slug, or the old name-and-id form: a made-up slug never reaches the API
 if ($id === null) {
 	renderNotFoundPage('Venue');
 }
@@ -19,7 +19,7 @@ $venueName  = (string) ($venue['text']['name'] ?? '');
 $cityName   = (string) ($venue['city']['text']['name'] ?? '');
 $cityId     = (int) ($venue['city']['id'] ?? 0);
 $cityLabel  = soPlaceLabel($venue);
-$canonSlug  = soEntitySlug($venueName, $id);
+$canonSlug  = soVenueSlug($venueName, $id, $cityLabel);
 soRedirectToCanonicalSlug('venue', $slug, $canonSlug);
 
 [$when, $sort, $isFiltered] = listingRequestState('soonest');
@@ -30,8 +30,8 @@ $events = $eventsResponse['results'] ?? [];
 $stateId   = (int) ($venue['stateProvince']['id'] ?? 0);
 $stateName = (string) ($venue['stateProvince']['text']['name'] ?? '');
 $trail = [];
-if ($stateId > 0 && $stateName !== '') { $trail[] = ['label' => $stateName, 'url' => HOME_URL . '/state/' . soEntitySlug($stateName, $stateId)]; }
-$cityUrl = $cityId > 0 && $cityLabel !== '' ? '/city/' . soEntitySlug($cityLabel, $cityId) : '';
+if ($stateId > 0 && $stateName !== '') { $trail[] = ['label' => $stateName, 'url' => HOME_URL . '/state/' . soSlug('state', $stateName, $stateId)]; }
+$cityUrl = $cityId > 0 && $cityLabel !== '' ? '/city/' . soSlug('city', $cityLabel, $cityId) : '';
 if ($cityUrl !== '') { $trail[] = ['label' => $cityLabel, 'url' => HOME_URL . $cityUrl]; }
 
 soRenderEntityListing([
@@ -41,5 +41,5 @@ soRenderEntityListing([
 	'trail' => $trail, 'entity' => $venue, 'cityId' => $cityId, 'cityLabel' => $cityLabel, 'cityUrl' => $cityUrl,
 	'image' => getEntityImage('venue', $venueName, ['resolve' => false]),   // serve-only: initials tile until a licensed photo is stored
 	'parent' => $cityUrl !== '' ? ['url' => $cityUrl, 'text' => "All events in $cityLabel"] : null,
-	'stateParent' => $stateId > 0 && $stateName !== '' ? ['url' => '/state/' . soEntitySlug($stateName, $stateId), 'text' => "Events in $stateName"] : null,
+	'stateParent' => $stateId > 0 && $stateName !== '' ? ['url' => '/state/' . soSlug('state', $stateName, $stateId), 'text' => "Events in $stateName"] : null,
 ]);

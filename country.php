@@ -1,7 +1,7 @@
 <?php
 require_once 'functions.php';
 
-// /country/{name}-{code}. Markup in soRenderEntityListing() (inc/entity-listing.php).
+// /country/{name}. Markup in soRenderEntityListing() (inc/entity-listing.php).
 $perPage = 20;
 $slug = (string) ($_GET['slug'] ?? '');
 $code = parseLocationSlug('country', $slug);   // two-letter alpha code, upper case
@@ -15,7 +15,7 @@ if (empty($country)) {
 }
 
 $countryLabel = $country['label'];
-$canonSlug    = soEntitySlug($countryLabel, $code);   // ends in the lower case code
+$canonSlug    = soSlug('country', $countryLabel, $code);
 soRedirectToCanonicalSlug('country', $slug, $canonSlug);
 
 [$when, $sort, $isFiltered] = listingRequestState('popular');

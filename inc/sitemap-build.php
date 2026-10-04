@@ -223,12 +223,13 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
             $s['fails'] = 0;
             if ($s['page'] === 1) $s['pages'] = min(SO_SITEMAP_MAX_PAGES, max(1, (int) ceil(((int) ($r['totalCount'] ?? 0)) / SO_SITEMAP_PER_PAGE)));
             $ev = $per = $ven = $cit = '';
+            soSlugWarmEvents($r['results']);   // one query per kind for the whole page, not one per link
             foreach ($r['results'] as $e) {
                 $id = (int) ($e['id'] ?? 0);
                 $name = (string) ($e['text']['name'] ?? '');
                 if ($id <= 0 || $name === '') continue;
                 $lm = soSitemapDate($e['metadataInclusiveUpdatedAt'] ?? ($e['updatedAt'] ?? '')) ?? '';
-                $ev .= createSlug($name, $id) . "\t" . $lm . "\n";
+                $ev .= soEventSlug($e) . "\t" . $lm . "\n";
                 foreach ($e['performers'] ?? [] as $p) {
                     if (!empty($p['id']) && !empty($p['name'])) $per .= (int) $p['id'] . "\t" . $clean($p['name']) . "\t" . $lm . "\n";
                 }
@@ -294,7 +295,7 @@ function soSitemapBuildFiles(string $tmp): array {
         $pages[$loc] = [$loc, gmdate('c', strtotime($post['updated_at'] ?? $post['published_at']))];
     }
     foreach (getTopCities(60) as $i => $city) {
-        $slug = createSlug($city['label'], $city['id']);
+        $slug = soSlug('city', $city['label'], $city['id']);
         foreach (($i < 30 ? ['concerts-city', 'sports-city', 'theater-city'] : []) as $prefix) { $pages[$base . '/' . $prefix . '/' . $slug] = [$base . '/' . $prefix . '/' . $slug, null]; }
     }
     foreach ((cache_get('top_categories', 30 * 86400) ?: []) as $bucket) {
@@ -321,7 +322,7 @@ function soSitemapBuildFiles(string $tmp): array {
     $emit('events', $entries);
 
     // Performers, venues and cities: every one on those events, with the newest update among its events as <lastmod>.
-    foreach (['performers' => '/artist/', 'venues' => '/venue/', 'cities' => '/city/'] as $group => $prefix) {
+    foreach (['performers' => ['/artist/', 'performer'], 'venues' => ['/venue/', 'venue'], 'cities' => ['/city/', 'city']] as $group => [$prefix, $slugType]) {
         $ents = [];
         foreach (@file($tmp . '/' . $group . '.tsv', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
             [$id, $name, $lm] = array_pad(explode("\t", $line), 3, '');
@@ -331,8 +332,9 @@ function soSitemapBuildFiles(string $tmp): array {
             elseif ($lm > $ents[$id][1]) $ents[$id][1] = $lm;
         }
         $list = [];
+        soSlugWarm(array_map(fn($i) => [$slugType, $i], array_keys($ents)));
         foreach ($ents as $id => [$name, $lm]) {
-            $loc = $base . $prefix . createSlug($name, $id);
+            $loc = $base . $prefix . soSlug($slugType, $name, $id);
             if ($keep($loc)) $list[] = [$loc, $lm !== '' ? $lm : null];
         }
         $emit($group, $list);

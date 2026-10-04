@@ -4,8 +4,8 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
   if ($id <= 0) {
     $slug  = $_GET['slug'] ?? '';
-    $parts = explode('-', (string) $slug);
-    $id    = (int) end($parts);
+    [$id]  = soSlugResolve('event', (string) $slug);   // stored slug, or the old name-and-id form
+    $id    = (int) $id;
     if ($id <= 0) {
       echo '<div class="container"><p>Invalid event.</p></div>';
       include 'footer.php';
@@ -20,7 +20,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $evState  = (string) ($event['stateProvince']['text']['abbr'] ?? '');
   $evPlace  = trim($evCity . ($evState !== '' ? ', ' . $evState : ''));
   // Lowercase "name-id" slug, the same one the sitemap and every internal link use (header.php 301s any other spelling to it).
-  $evUrl    = rtrim(HOME_URL, '/') . '/event/' . createSlug($evName, (int) ($event['id'] ?? $id));
+  $evUrl    = rtrim(HOME_URL, '/') . '/event/' . soEventSlug($event);
   $evTs     = !empty($event['date']['date']) ? strtotime($event['date']['date']) : false;
   $evDate   = $evTs ? date('M j, Y', $evTs) : '';
   // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
@@ -104,7 +104,7 @@ $evHub = strpos($evCatPath, '.1872.') !== false ? ['Theater', '/buy-broadway-tic
 $evTrail = [["label" => "Home", "url" => HOME_URL . '/'], ["label" => $evHub[0], "url" => HOME_URL . $evHub[1]]];
 $evMainPerf = $event['performers'][0] ?? null;
 if (!empty($evMainPerf['id']) && !empty($evMainPerf['name']) && count($event['performers'] ?? []) === 1) {
-    $evTrail[] = ["label" => $evMainPerf['name'], "url" => HOME_URL . '/artist/' . createSlug((string) $evMainPerf['name'], (int) $evMainPerf['id'])];
+    $evTrail[] = ["label" => $evMainPerf['name'], "url" => HOME_URL . '/artist/' . soSlug('performer', (string) $evMainPerf['name'], (int) $evMainPerf['id'])];
 }
 // The last step names the date when the event is called the same as its performer ("Daniel Sloss, Oct 9").
 $evCrumbLabel = ($evName !== '' && isset($evTrail[2]) && strcasecmp($evTrail[2]['label'], $evName) === 0 && $evTs) ? $evName . ', ' . date('M j', $evTs) : $evName;

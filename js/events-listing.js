@@ -594,11 +594,12 @@ function renderEvent(event) {
     });
     const performers = (event.performers || []).filter(p => p && p.name);
     const dataPerformers = performers.map(p => p.name).join('|');
-    const dataPerformerSlugs = performers.map(p => p.id ? normalizeKey(p.name) + '-' + p.id : '').join('|');
-    const eSlug = normalizeKey(event.text.name) + '-' + event.id;
+    const so = event.so || {};   // clean addresses computed by the server (no ids in URLs); the name-and-id form is only a fallback
+    const dataPerformerSlugs = performers.map(p => p.id ? ((so.performers && so.performers[String(p.id)]) || (normalizeKey(p.name) + '-' + p.id)) : '').join('|');
+    const eSlug = so.slug || (normalizeKey(event.text.name) + '-' + event.id);
     const cityName = event.city.text.name + ', ' + event.stateProvince.text.abbr;
-    const citySlug = normalizeKey(cityName) + '-' + event.city.id;
-    const venueSlug = normalizeKey(event.venue.text.name) + '-' + event.venue.id;
+    const citySlug = so.city || (normalizeKey(cityName) + '-' + event.city.id);
+    const venueSlug = so.venue || (normalizeKey(event.venue.text.name) + '-' + event.venue.id);
     const priceTag = buildPriceTag(event);
     const inStock = priceTag.indexOf('event-price-tag--none') === -1;
     const evName = escHtml(event.text.name), evVenue = escHtml(event.venue.text.name), evCityName = escHtml(cityName);
@@ -615,7 +616,7 @@ function renderEvent(event) {
                 <span class="dot">&middot;</span>
                 <span class="time-clock">${escHtml(event.date.text.time)}</span>
                 <button type="button" class="bi bi-info-circle text-muted icon-i" aria-label="Details for ${evName}" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"
-                    data-id="${escHtml(event.id)}" data-date="${escHtml(formattedDate)}" data-venue="${evVenue}" data-venue-slug="${escHtml(venueSlug)}"
+                    data-id="${escHtml(event.id)}" data-event-slug="${escHtml(eSlug)}" data-date="${escHtml(formattedDate)}" data-venue="${evVenue}" data-venue-slug="${escHtml(venueSlug)}"
                     data-location="${evCityName}" data-title="${evName}" data-performers="${escHtml(dataPerformers)}" data-performer-slugs="${escHtml(dataPerformerSlugs)}"></button>
             </div>
             <div class="ev-venue"><a href="/venue/${escHtml(venueSlug)}">${evVenue}</a></div>
@@ -661,7 +662,7 @@ document.addEventListener('click', function (e) {
     document.getElementById('offcanvasVenue').textContent = evenue;
     document.getElementById('offcanvasLocation').textContent = elocation;
     document.getElementById('offcanvasTitle').textContent = etitle;
-    document.getElementById('offcanvasId').href = '/event/' + normalizeKey(etitle) + '-' + eid;
+    document.getElementById('offcanvasId').href = '/event/' + (icon.getAttribute('data-event-slug') || (normalizeKey(etitle) + '-' + eid));
     const eplist = document.getElementById('offcanvasPerformers');
     eplist.textContent = '';
     names.forEach((name, index) => {

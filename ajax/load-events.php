@@ -78,6 +78,8 @@ try {
         if (isset($r['geoLocation']['distance']['distance'])) $dists[] = (float) $r['geoLocation']['distance']['distance'];
     }
     $closest = $dists ? (int) round(min($dists)) : null;
+    soSlugWarmEvents($results);
+    foreach ($results as $i => $r) { $results[$i]['so'] = soEventSlugBundle($r); }   // clean addresses for the browser-side fallback row
     echo json_encode([
         'events'      => $results,
         'html'        => soRenderListingRows($results),
