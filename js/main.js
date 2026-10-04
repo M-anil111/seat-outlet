@@ -1396,3 +1396,21 @@ document.addEventListener('error', function (e) {
     }
     window.addEventListener('load', function () { all(); setTimeout(all, 600); });
 })();
+
+// Filter and "See all" controls that change the listing (date, sort) carry their target in data-go instead of an href: they are
+// choices on the page, not pages of their own, so crawlers do not list every filtered copy of a page.
+(function () {
+    function go(el) {
+        var to = el.getAttribute('data-go');
+        if (to && to.charAt(0) === '/') window.location.href = to;
+    }
+    document.addEventListener('click', function (e) {
+        var el = e.target.closest && e.target.closest('[data-go]');
+        if (el) { e.preventDefault(); go(el); }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        var el = e.target.closest && e.target.closest('[data-go]');
+        if (el && el.tagName !== 'BUTTON') { e.preventDefault(); go(el); }
+    });
+})();

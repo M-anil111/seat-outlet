@@ -5,6 +5,7 @@
 #   css/style.min.css   = css/fonts.css + css/style.css + css/skeleton.css, with the rules for classes the site never uses removed
 #                         (tools/purgecss-style.config.cjs), + css/icons.css (icon subset, tools/build-icons.py), minified
 #   js/<name>.min.js    = each js/<name>.js, compressed and mangled
+#   js/site-extras.min.js = nav-feedback, install-prompt, menu-near, analytics-events and lead-capture in one file
 #   css/bootstrap.min.css = lib/bootstrap/5.3.8/bootstrap.min.css reduced to the classes the site uses
 #                         (tools/purgecss.config.cjs; a class that is only built at runtime must be safelisted there)
 # Run after editing any source file, and commit the .min files.
@@ -27,6 +28,10 @@ for f in js/*.js; do
   name="$(basename "$f" .js)"
   npx --yes terser@5.51.2 "$f" --compress --mangle -o "$OUT/$name.min.js"
 done
+
+# The scripts every page loads, as one file (fewer requests): footer.php prefers it, same order as the separate files.
+cat js/nav-feedback.js js/install-prompt.js js/menu-near.js js/analytics-events.js js/lead-capture.js | sed -e '$a\' > "$OUT/site-extras.src.js"
+npx --yes terser@5.51.2 "$OUT/site-extras.src.js" --compress --mangle -o "$OUT/site-extras.min.js"
 
 mkdir -p "$OUT/purged"
 npx --yes purgecss@6.0.0 --config tools/purgecss.config.cjs --output "$OUT/purged/" >/dev/null

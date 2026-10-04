@@ -24,13 +24,13 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
       <p class="section-title">Let’s connect</p>
       <div class="social-icons">
-        <a href="https://www.facebook.com/profile.php?id=61588886945534" aria-label="Facebook" target="_blank"><i class="bi bi-facebook fs-4"></i></a>
-        <a href="https://www.youtube.com/@SeatOutlet" aria-label="Youtube" target="_blank"><i class="bi bi-youtube fs-4"></i></a>
-        <a href="https://www.instagram.com/seatoutlet/" aria-label="Instagram" target="_blank"><i class="bi bi-instagram fs-4"></i></a>
+        <a href="https://www.facebook.com/profile.php?id=61588886945534" aria-label="Facebook" target="_blank"><i class="bi bi-facebook fs-4"></i><span class="visually-hidden">Facebook</span></a>
+        <a href="https://www.youtube.com/@SeatOutlet" aria-label="Youtube" target="_blank"><i class="bi bi-youtube fs-4"></i><span class="visually-hidden">Youtube</span></a>
+        <a href="https://www.instagram.com/seatoutlet/" aria-label="Instagram" target="_blank"><i class="bi bi-instagram fs-4"></i><span class="visually-hidden">Instagram</span></a>
         <a href="https://linktr.ee/seatoutlet" aria-label="Linktree" class="google-icon" target="_blank"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="30" height="25" id="Layer_1" x="0px" y="0px" viewBox="0 0 80 97.7" style="fill: #e0e0e0;" xml:space="preserve">
  <path d="M0.2,33.1h24.2L7.1,16.7l9.5-9.6L33,23.8V0h14.2v23.8L63.6,7.1l9.5,9.6L55.8,33H80v13.5H55.7l17.3,16.7l-9.5,9.4L40,49.1  L16.5,72.7L7,63.2l17.3-16.7H0V33.1H0.2z M33.1,65.8h14.2v32H33.1V65.8z">
  </path>
-</svg></a>
+</svg><span class="visually-hidden">Linktree</span></a>
       </div>
      
 
@@ -119,7 +119,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
       <div class="d-flex align-items-center">
         <div class="copyright me-2">
             <span class="link-tag"> © <?php echo date('Y'); ?> SeatOutlet. All rights reserved.</span>
-            <span class="link-tag geo-attribution d-block small">This product includes GeoLite2 data created by MaxMind, available from <a href="https://www.maxmind.com" rel="nofollow noopener" target="_blank">https://www.maxmind.com</a>.</span>
+            <span class="link-tag geo-attribution d-block small">This product includes GeoLite2 data created by MaxMind, available from <a href="https://www.maxmind.com" rel="noopener" target="_blank">https://www.maxmind.com</a>.</span>
         </div>
         <div class="tm-country">
             <button type="button" class="btn btn-link">
@@ -200,14 +200,19 @@ if ('serviceWorker' in navigator && location.pathname.indexOf('/admin') !== 0) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
 }
 </script>
-    <script src="<?php echo htmlspecialchars(soAsset('js/nav-feedback.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
-    <script src="<?php echo htmlspecialchars(soAsset('js/install-prompt.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
-    <script src="<?php echo htmlspecialchars(soAsset('js/menu-near.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
-    <script src="<?php echo htmlspecialchars(soAsset('js/analytics-events.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php if (is_file(__DIR__ . '/js/site-extras.min.js')) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/site-extras.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php if (GTM_ID !== '') { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/consent.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php } ?>
+<?php } else { foreach (['nav-feedback', 'install-prompt', 'menu-near', 'analytics-events'] as $soJs) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/' . $soJs . '.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php } ?>
 <?php if (GTM_ID !== '') { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/consent.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/lead-capture.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php } ?>
 <?php if (preg_match('#^/(event|artist)/#', $soPath)) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/idle-nudge.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>

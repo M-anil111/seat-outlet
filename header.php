@@ -466,7 +466,7 @@ include_once 'functions.php';
             </div>
         </div>
         <div class="so-menu__foot">
-            <a class="so-menu__search" href="/search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg> Search events</a>
+            <a class="so-menu__search" role="link" tabindex="0" data-go="/search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg> Search events</a>
         </div>
     </div>
     <?php // The page's one landmark: skip link target. Pages that print their own <main> get a <div> instead (soSingleMain in inc/consent.php); footer.php closes this one. ?>

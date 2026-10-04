@@ -30,6 +30,7 @@ const SO_GENRE_PAGES = [
     'racing-tickets'          => [1905, 'Racing',           'auto racing',                'sports',   null],
     'boxing-tickets'          => [1867, 'Boxing',           'boxing',                     'sports',   null],
     'las-vegas-shows-tickets' => [1888, 'Las Vegas Show',   'Las Vegas shows',            'other',    null],
+    'christmas-shows-near-me' => [1884, 'Holiday',          'holiday',                    'concerts', null],
 ];
 
 /** @return array|null [slug, id, label, long, kind, profile] for a clean slug */

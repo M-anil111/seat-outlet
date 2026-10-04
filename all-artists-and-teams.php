@@ -98,15 +98,6 @@ try {
 		background: radial-gradient(60% 130% at 88% 0%, rgba(255, 255, 255, .24) 0%, rgba(255, 255, 255, 0) 62%);
 		pointer-events: none;
 	}
-	.performers-hero-section .hero-bg-photo {
-		position: absolute;
-		inset: 0;
-		background-image: url('<?php echo HOME_URL; ?>/images/crowd-at-concert-or-event.webp');
-		background-size: cover;
-		background-position: center;
-		opacity: .07;
-		mix-blend-mode: luminosity;
-	}
 	.performers-hero-section .container { position: relative; z-index: 1; }
 	.performers-hero-section .hero-inner { padding: 56px 0 60px; max-width: 640px; }
 	.performers-hero-section .hero-eyebrow {
@@ -271,7 +262,6 @@ try {
 </style>
 
 <section class="performers-hero-section">
-	<div class="hero-bg-photo"></div>
 	<div class="container">
 		<div class="hero-inner">
 			<span class="hero-eyebrow"><?php echo htmlspecialchars($soDir['eyebrow'], ENT_QUOTES, 'UTF-8'); ?></span>
@@ -311,7 +301,7 @@ try {
 					<div class="col-12 col-sm-6 col-md-4 col-lg-3 performer-col">
 						<div class="performer-card so-dircard">
 							<div class="performer-img-wrap">
-								<img src="<?php echo htmlspecialchars($performer['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="" loading="lazy" onerror="this.src='<?php echo HOME_URL; ?>/images/placeholder.webp'">
+								<img src="<?php echo htmlspecialchars($performer['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" onerror="this.src='<?php echo HOME_URL; ?>/images/placeholder.webp'">
 							</div>
 							<div class="performer-body">
 								<div>

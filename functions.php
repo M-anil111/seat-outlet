@@ -1949,9 +1949,9 @@ function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'p
                 <svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <div class="so-dd__menu">
-                <a class="so-pop__row<?php echo $when === '' ? ' is-active' : ''; ?>" href="<?php echo $url('', $sort); ?>"<?php echo $when === '' ? ' aria-current="true"' : ''; ?>>All dates</a>
+                <button type="button" class="so-pop__row<?php echo $when === '' ? ' is-active' : ''; ?>" data-go="<?php echo $url('', $sort); ?>"<?php echo $when === '' ? ' aria-current="true"' : ''; ?>>All dates</button>
                 <?php foreach (LISTING_WHEN as $key => $label) { ?>
-                    <a class="so-pop__row<?php echo $when === $key ? ' is-active' : ''; ?>" href="<?php echo $url($key, $sort); ?>"<?php echo $when === $key ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+                    <button type="button" class="so-pop__row<?php echo $when === $key ? ' is-active' : ''; ?>" data-go="<?php echo $url($key, $sort); ?>"<?php echo $when === $key ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></button>
                 <?php } ?>
             </div>
         </details>
@@ -1963,12 +1963,12 @@ function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'p
             </summary>
             <div class="so-dd__menu">
                 <?php foreach (LISTING_SORT as $key => $label) { ?>
-                    <a class="so-pop__row<?php echo $sort === $key ? ' is-active' : ''; ?>" href="<?php echo $url($when, $key); ?>"<?php echo $sort === $key ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+                    <button type="button" class="so-pop__row<?php echo $sort === $key ? ' is-active' : ''; ?>" data-go="<?php echo $url($when, $key); ?>"<?php echo $sort === $key ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></button>
                 <?php } ?>
             </div>
         </details>
         <?php if (!$explored && (int) $total === 0 && $when !== '') { ?>
-            <p class="listing-filter-empty">No events match <strong><?php echo htmlspecialchars(strtolower(LISTING_WHEN[$when]), ENT_QUOTES, 'UTF-8'); ?></strong>. <a href="<?php echo $url('', $sort); ?>">Show all dates</a>.</p>
+            <p class="listing-filter-empty">No events match <strong><?php echo htmlspecialchars(strtolower(LISTING_WHEN[$when]), ENT_QUOTES, 'UTF-8'); ?></strong>. <button type="button" class="btn btn-link p-0 align-baseline" data-go="<?php echo $url('', $sort); ?>">Show all dates</button>.</p>
         <?php } ?>
     </div>
     <?php
@@ -2667,6 +2667,12 @@ function soNoindexPrivatePaths() {
 
 /** Output filter: canonical and og:url point at SO_PUBLIC_ORIGIN instead of this server's own HOME_URL. */
 function soPublicCanonical($html) {
+    // Cloudflare's email obfuscation rewrites every address into a /cdn-cgi/l/email-protection link, which answers 404 to a crawler.
+    // Cloudflare skips whatever sits between these two comments, so addresses (and mailto links) stay as written.
+    if (stripos($html, '<body') !== false && strpos($html, 'email_off') === false) {
+        $html = preg_replace('#(<body\b[^>]*>)#i', '$1<!--email_off-->', $html, 1);
+        $html = preg_replace('#</body>#i', '<!--/email_off--></body>', $html, 1);
+    }
     $from = rtrim(HOME_URL, '/');
     if ($from === SO_PUBLIC_ORIGIN) return $html;
     return preg_replace('#(<link rel="canonical" href="|<meta property="og:url" content=")' . preg_quote($from, '#') . '#', '$1' . SO_PUBLIC_ORIGIN, $html);

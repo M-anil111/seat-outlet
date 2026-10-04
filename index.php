@@ -50,7 +50,7 @@ foreach ($fallbackCategories as $key => $list) {
 }
 ?>
 <section class="so-hero2" aria-label="Find tickets">
-  <img class="so-hero2__bg" src="/images/home-slider-1440.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w" sizes="100vw" alt="" width="1440" height="700" fetchpriority="high" decoding="async">
+  <img class="so-hero2__bg" src="/images/home-slider-1440.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w" sizes="100vw" alt="Crowd in a large theater watching a live show on stage" width="1440" height="700" fetchpriority="high" decoding="async">
   <div class="so-hero2__shade" aria-hidden="true"></div>
   <div class="container so-hero2__inner">
     <h1 class="so-hero2__title">Experience <span>live events</span>,<br class="d-none d-md-block"> made easy.</h1>
@@ -67,7 +67,7 @@ foreach ($fallbackCategories as $key => $list) {
         <h2 id="soFeedPopWeekendTitle" class="so-feed__title">Popular this weekend</h2>
         <p class="so-feed__sub">Top events across the U.S. this weekend. Don't miss what's happening.</p>
       </div>
-      <a class="so-feed__all so-feed__all--arrow" href="/buy-tickets-online?when=weekend">See all events <span aria-hidden="true">&rarr;</span></a>
+      <a class="so-feed__all so-feed__all--arrow" role="link" tabindex="0" data-go="/buy-tickets-online?when=weekend">See all events <span aria-hidden="true">&rarr;</span></a>
     </div>
     <div class="so-popweek__wrap">
       <div class="so-feed__track" data-so-feed-track><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div></div>
@@ -96,7 +96,7 @@ foreach ($fallbackCategories as $key => $list) {
         <h2 id="soFeedWeekendTitle" class="so-feed__title">This weekend near you</h2>
         <p class="so-feed__sub" data-so-feed-sub>Events within 50 miles, Friday to Sunday</p>
       </div>
-      <a class="so-feed__all" href="/buy-tickets-online?when=weekend">See all</a>
+      <a class="so-feed__all" role="link" tabindex="0" data-go="/buy-tickets-online?when=weekend">See all</a>
     </div>
     <div class="so-feed__track" data-so-feed-track></div>
   </div>
@@ -224,7 +224,7 @@ foreach ($fallbackCategories as $key => $list) {
       ] as [$tk, $tt, $tg, $th, $tc, $ti]) { ?>
       <article class="so-topc so-topc--<?php echo $tk; ?>">
         <header class="so-topc__hero">
-          <img class="so-topc__bg" src="/images/home-top-<?php echo $tk; ?>.webp" alt="" width="720" height="300" loading="lazy" decoding="async">
+          <img class="so-topc__bg" src="/images/home-top-<?php echo $tk; ?>.webp" alt="<?php echo htmlspecialchars(['concerts' => 'Guitarist on stage under red and blue concert lights with fans cheering', 'sports' => 'Football stadium at night with floodlights and a packed crowd', 'theater' => 'Empty theater with a red stage curtain and rows of seats'][$tk] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="720" height="300" loading="lazy" decoding="async">
           <div class="so-topc__shade" aria-hidden="true"></div>
           <span class="so-topc__icon"><?php echo soCategoryTileIcon($ti); ?></span>
           <h3 class="so-topc__title"><?php echo $tt; ?></h3>
