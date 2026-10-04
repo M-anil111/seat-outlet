@@ -67,7 +67,7 @@ try {
 		];
 	}
 } catch (Throwable $e) {
-	\Sentry\captureException($e);
+	if (!($e instanceof SoTnUnavailable)) \Sentry\captureException($e);   // an API outage was already reported once by the circuit breaker
 	$apiError = true;
 }
 ?>
