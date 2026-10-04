@@ -45,10 +45,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
           "$evName Tickets"
       );
   }
-  if ($evName !== '' && empty($pageFocusKeyword)) {
-      // The page's one H1 (the strip above the header). Showings of one event share a name, so the venue, day and time of day make each heading its own.
-      $pageFocusKeyword = $evName . ' Tickets' . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evShortT !== '' ? ', ' . $evShortT : '');
-  }   // shown in the strip above the header and the footer
+  if ($evName !== '' && empty($pageFocusKeyword)) { $pageFocusKeyword = $evName . ' Tickets'; }   // shown in the strip above the header and the footer
   $evDay = $evTs ? date('D, M j, Y', $evTs) : '';
   $metaDescription = soMetaFit(
       $evName . ' tickets' . ($evDay !== '' ? ' for ' . $evDay . (($evClock ?? '') !== '' ? ' at ' . $evClock : '') : '') . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')

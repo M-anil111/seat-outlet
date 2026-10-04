@@ -63,6 +63,24 @@ function soGenreFocus($slug) {
                 ['Are there Latin music festivals?', 'Some Latin acts play festivals. The upcoming music festivals page lists what is on sale.'],
             ],
         ],
+        'christmas-shows-near-me' => [
+            'lead' => '<p class="so-cseo__lead"><strong>Christmas shows near me are the holiday concerts, orchestra pops nights, ballet and theater productions that come back every December.</strong> Compare Christmas concerts and holiday shows by date and city, pick seats on the map and check out through the guaranteed checkout. Seat Outlet compares listings from sellers; it does not sell tickets itself, and orders are fulfilled through TicketNetwork.</p>',
+            'sections' => [
+                ['Christmas concerts near me', '<p>Set your location at the top of the listing to see Christmas concerts near you first, then use the date filter to jump to this weekend or the next 30 days. Holiday dates are added as tours and venues announce their seasons, so check back if your city does not show a date yet. For more live music, browse <a href="/concert-tickets-for-sale">concert tickets</a>.</p>'],
+                ['Holiday pops and Christmas orchestra concerts', '<p>Many symphony orchestras program a holiday pops or Christmas orchestra concert, often with a choir and sing-along carols. These nights are a good first show for families and for guests who like a seated, reserved evening. Look for the orchestra name in the listing, or open the venue page to see everything on at one hall.</p>'],
+                ['Nutcracker tickets and holiday theater', '<p>The Nutcracker is the best known holiday ballet and many companies stage it each season, so see <a href="/category/' . soSlug('category', 'Ballet', 1863) . '">ballet tickets</a> for current dates. Holiday musicals and plays, including pantomime and Christmas story productions, are listed under <a href="/category/' . soSlug('category', 'Musical / Play', 1894) . '">musicals and plays</a> and on the <a href="/buy-broadway-tickets">Broadway tickets</a> page.</p>'],
+                ['Christmas shows for kids and the whole family', '<p>Family shows are listed with the rest of the holiday events, and many are daytime or early evening performances. Check the show description and the venue rules for age guidance, because policies differ by venue and promoter. You can also browse <a href="/category/' . soSlug('category', 'Children / Family', 1869) . '">children and family shows</a>.</p>'],
+                ['December events and winter events near you', '<p>If you are planning a month of things to do at Christmas, use the date filter to line up holiday concerts, shows and games around your calendar, or pick a city from <a href="/city-events">events by city</a> to see everything on in one place. Prices are set by sellers and can move, so compare the lowest listed price on each date before you choose.</p>'],
+                ['Buying Christmas tickets safely', '<p>Holiday dates sell out and attract copycat sellers, so buy from a checkout that protects the order. Orders placed through Seat Outlet are covered by the <a href="/worry-free-guarantee">100% guarantee</a>, and our guide on <a href="/blog/how-to-avoid-ticket-scams">how to avoid ticket scams</a> explains what to look for.</p>'],
+            ],
+            'faqs' => [
+                ['Where can I find Christmas shows near me?', 'Set your location at the top of the listing to see Christmas and holiday shows near you first, then use the date filter to narrow to this weekend or the next 30 days. You can also pick a city from the events by city page.'],
+                ['Are there Christmas concerts for kids and families?', 'Yes, family friendly holiday shows are listed with the other holiday events. Age guidance is set by the venue or promoter, so read the show description before you buy.'],
+                ['Where can I buy Nutcracker tickets?', 'Nutcracker performances are listed under ballet when a company has dates on sale. Open the ballet page, choose your city and compare seats and prices.'],
+                ['When do Christmas show tickets go on sale?', 'Holiday dates are added as venues, orchestras and tours announce their seasons, which can be months ahead, and sellers list tickets as they become available. If your date is not listed yet, check back or set up an alert.'],
+                ['Does Seat Outlet sell the tickets?', 'No. Seat Outlet compares listings from sellers and sends you to a guaranteed checkout. Orders are fulfilled through TicketNetwork and covered by our 100% guarantee.'],
+            ],
+        ],
     ];
     return $all[$slug] ?? null;
 }
@@ -81,6 +99,8 @@ function soGenreFocusMeta($slug) {
             'desc' => 'Compare comedy show tickets for upcoming comedy shows and comedy tours near you. See dates, venues and prices, with every order covered by our guarantee.'],
         'latin-music-tickets'  => ['title' => 'Latin Concerts {Y} Dates and Tickets', 'h1' => 'Latin Concerts and Tickets',
             'desc' => 'Compare Latin concert tickets for reggaeton, bachata, salsa and Latin pop shows near you. See dates, venues and prices, backed by our 100% guarantee.'],
+        'christmas-shows-near-me' => ['title' => 'Christmas Shows Near Me {Y} Tickets', 'h1' => 'Christmas Shows Near Me',
+            'desc' => 'Find Christmas shows near me. Compare dates, seats and prices for holiday concerts, orchestra pops and the Nutcracker, with our 100% guarantee.'],
     ];
     if (!isset($m[$slug])) return null;
     $r = $m[$slug];

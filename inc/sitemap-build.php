@@ -66,6 +66,7 @@ function soSitemapStaticPaths(): array {
     '/racing-tickets',
     '/boxing-tickets',
     '/las-vegas-shows-tickets',
+    '/christmas-shows-near-me',
     '/game-day-tickets',
     '/concert-artists',
     '/sports-teams',

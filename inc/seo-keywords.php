@@ -36,6 +36,8 @@ $SEO_PLAN = [
         'Learn how to buy Broadway tickets and compare orchestra, mezzanine and balcony prices for musicals and plays. Orders carry the TicketNetwork guarantee.', 390, 6, true],
     '/upcoming-music-festivals' => ['upcoming music festivals', 'Upcoming Music Festivals and Tickets',
         'Festival tickets for sale to upcoming music festivals with {Y} dates and passes. Compare GA, VIP and day prices. Orders carry the TicketNetwork guarantee.', 540, 42, true],
+    '/christmas-shows-near-me' => ['christmas shows near me', 'Christmas Shows Near Me {Y} Tickets',
+        'Find Christmas shows near me. Compare dates, seats and prices for holiday concerts, orchestra pops and the Nutcracker, with our 100% guarantee.', 720, 15, true],
     '/city-events' => ['city events', 'Events Near Me for Concerts and Sports',
         'Find events near me in any major US city. Pick a city for concerts, games and shows and compare prices. Orders carry the TicketNetwork guarantee.', 390, 55, true],
     '/all-artists-and-teams' => ['all artists', 'All Artists, Teams and Shows A to Z',

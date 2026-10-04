@@ -104,7 +104,12 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
         <?php if ($eventTimestamp) { ?>
           <p class="so-evhero__when"><?php echo $h(date('l, F j, Y', $eventTimestamp)); ?><?php echo $eventTimeText !== '' ? ' &middot; ' . $h($eventTimeText) : ''; ?></p>
         <?php } ?>
-        <h1 class="ev-title so-evhero__title"><?php echo $h($event['text']['name'] ?? ''); ?></h1>
+        <h1 class="ev-title so-evhero__title"><?php
+          // The page's one H1 (no keyword strip on event pages). Showings of one event share a name, so venue, day and time follow it: each page gets its own heading.
+          echo $h($event['text']['name'] ?? '');
+          $evH1Bits = array_filter([(string) ($event['venue']['text']['name'] ?? ''), $eventTimestamp ? date('M j, Y', $eventTimestamp) . ($eventTimeText !== '' ? ', ' . $eventTimeText : '') : '']);
+          if ($evH1Bits) { echo ' <span class="so-evhero__sub">' . $h(implode(', ', $evH1Bits)) . '</span>'; }
+        ?></h1>
         <?php
           $evChips = [];
           $evTickets = (int) ($event['_metadata']['ticketCount'] ?? 0);
