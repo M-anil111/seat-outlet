@@ -1,5 +1,8 @@
 <?php
 require_once 'functions.php';
+require_once __DIR__ . '/inc/directories.php';
+$soDirKey = $soDirKey ?? 'all';          // a stub file (concert-artists.php ...) sets this before including the page
+$soDir = soDirectoryConfig($soDirKey);
 
 // Page name: this is the A-Z directory of every artist, team and show, so it is called "Artists, Teams & Shows" (nav label: "Artists & Teams").
 $perPage = 48;
@@ -9,13 +12,16 @@ $page = max(1, min(500, (int) ($_GET['page'] ?? 1)));
 
 // Page name: this is the A-Z directory of every artist, team and show, so it is called "Artists, Teams & Shows" (nav label: "Artists & Teams").
 // Every letter is its own crawlable address (?letter=A, ?letter=0-9) rendered on the server, with numbered pages.
-$letterTitle = $letter === '' ? 'Artists, Teams & Shows A to Z' : ($letter === '0-9' ? 'Artists & Teams Starting With a Number' : 'Artists & Teams Starting With ' . $letter);
+$soDirShort = $soDir['short'];
+$letterTitle = $letter === '' ? $soDir['h1'] : ($letter === '0-9' ? "$soDirShort Starting With a Number" : "$soDirShort Starting With $letter");
 $soKeepOwnMeta       = $letter !== '' || $page > 1;   // the plain A to Z page takes its title from the keyword plan
-$pageMetaTitle       = soTitle($letterTitle . " Tickets" . ($page > 1 ? ", Page $page" : ''), $letterTitle . ($page > 1 ? ", Page $page" : ''));
+$pageMetaTitle       = $letter === ''
+	? soTitle(...($soDir['titles'] ?? [$soDir['h1'] . ($page > 1 ? ", Page $page" : '')]))
+	: soTitle($letterTitle . " with Tickets" . ($page > 1 ? ", Page $page" : ''), $letterTitle . ($page > 1 ? ", Page $page" : ''), $letterTitle);
 $pageMetaDescription = $letter === ''
-	? soMetaFit('Browse every artist, team and show on Seat Outlet, A to Z. Find upcoming events, compare prices. Orders carry the TicketNetwork guarantee.')
-	: soMetaFit('Artists, teams and shows ' . ($letter === '0-9' ? 'starting with a number' : 'starting with ' . $letter) . ' with tickets on sale at Seat Outlet. Compare prices. Orders carry the TicketNetwork guarantee.', 'Pick a name to see every upcoming date.');
-$soDirBase = '/all-artists-and-teams';
+	? soMetaFit($soDir['desc'] ?? 'Browse every artist, team and show on Seat Outlet, A to Z. Find upcoming events, compare prices. Orders carry the TicketNetwork guarantee.')
+	: soMetaFit(ucfirst($soDir['noun']) . ' ' . ($letter === '0-9' ? 'starting with a number' : 'starting with ' . $letter) . ' with tickets on sale at Seat Outlet. Compare seats and prices. Orders carry the TicketNetwork guarantee.');
+$soDirBase = $soDir['path'];
 $soDirUrl = function ($l, $pg = 1) use ($soDirBase) {
 	$q = [];
 	if ($l !== '') { $q['letter'] = $l; }
@@ -24,6 +30,7 @@ $soDirUrl = function ($l, $pg = 1) use ($soDirBase) {
 };
 $pageCanonicalUrl    = HOME_URL . $soDirUrl($letter, $page);
 $pageSearchPlaceholder = 'Artists, teams or shows';
+if ($soDirKey !== 'all') { $pageFocusKeyword = $soDir['focus']; }
 include 'header.php';
 
 $filters = [];
@@ -32,6 +39,7 @@ if ($letter === '0-9') {
 } elseif ($letter !== '') {
 	$filters[] = "startswith(text/name,'" . tnEscapeFilterValue($letter) . "')";
 }
+if (!empty($soDir['category'])) { $filters[] = "startswith(defaultCategory/path, '" . tnEscapeFilterValue($soDir['category']) . "')"; }
 $params = ['page' => $page, 'perPage' => $perPage, 'includeTotalCount' => 'true', 'sort' => 'text/name'];
 if ($filters) { $params['filter'] = implode(' and ', $filters); }
 
@@ -74,6 +82,9 @@ try {
 ?>
 
 <style>
+	.so-dir__types { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 6px; }
+	.so-dir__types a { display: inline-block; padding: 7px 14px; border-radius: 999px; background: #eef1f6; color: #1d1d1f; font-size: 14px; font-weight: 600; text-decoration: none; }
+	.so-dir__types a:hover { background: #dfe6f3; }
 	.performers-hero-section {
 		position: relative;
 		overflow: hidden;
@@ -263,9 +274,9 @@ try {
 	<div class="hero-bg-photo"></div>
 	<div class="container">
 		<div class="hero-inner">
-			<span class="hero-eyebrow">A to Z</span>
-			<h1 class="hero-title">Artists, Teams &amp; Shows</h1>
-			<p class="hero-subtitle">Browse all artists, teams and shows on Seat Outlet, from A to Z. Pick a letter to jump straight in.</p>
+			<span class="hero-eyebrow"><?php echo htmlspecialchars($soDir['eyebrow'], ENT_QUOTES, 'UTF-8'); ?></span>
+			<h1 class="hero-title"><?php echo htmlspecialchars($soDir['h1'], ENT_QUOTES, 'UTF-8'); ?></h1>
+			<p class="hero-subtitle"><?php echo htmlspecialchars($soDir['lead'], ENT_QUOTES, 'UTF-8'); ?></p>
 		</div>
 	</div>
 </section>
@@ -273,7 +284,7 @@ try {
 <section class="py-4 py-lg-5">
 	<div class="container">
 
-		<nav class="performer-filter-row" id="performerFilterRow" aria-label="Artists, teams and shows starting with">
+		<nav class="performer-filter-row" id="performerFilterRow" aria-label="<?php echo htmlspecialchars(ucfirst($soDir['noun']), ENT_QUOTES, 'UTF-8'); ?> starting with">
 			<div class="performer-filter-wrap" id="performerFilterBar">
 				<a class="performer-filter-btn is-all<?php echo $letter === '' ? ' active' : ''; ?>" href="<?php echo $soDirBase; ?>"<?php echo $letter === '' ? ' aria-current="page"' : ''; ?>>All</a>
 				<a class="performer-filter-btn<?php echo $letter === '0-9' ? ' active' : ''; ?>" href="<?php echo htmlspecialchars($soDirUrl('0-9'), ENT_QUOTES, 'UTF-8'); ?>"<?php echo $letter === '0-9' ? ' aria-current="page"' : ''; ?>>0-9</a>
@@ -281,6 +292,11 @@ try {
 					<a class="performer-filter-btn<?php echo $letter === $l ? ' active' : ''; ?>" href="<?php echo htmlspecialchars($soDirUrl($l), ENT_QUOTES, 'UTF-8'); ?>"<?php echo $letter === $l ? ' aria-current="page"' : ''; ?>><?php echo $l; ?></a>
 				<?php } ?>
 			</div>
+		</nav>
+
+		<nav class="so-dir__types" aria-label="Browse by type">
+			<?php foreach (soDirectoryLinks($soDirKey) as [$soTypeHref, $soTypeLabel]) { ?><a href="<?php echo htmlspecialchars($soTypeHref, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($soTypeLabel, ENT_QUOTES, 'UTF-8'); ?></a><?php } ?>
+			<?php if (!empty($soDir['league'])) { ?><a href="<?php echo htmlspecialchars($soDir['league'], ENT_QUOTES, 'UTF-8'); ?>">Schedule and tickets</a><?php } ?>
 		</nav>
 
 		<?php if ($letter !== '') { ?><h2 class="so-dir__heading"><?php echo $letter === '0-9' ? 'Starting with a number' : 'Starting with ' . htmlspecialchars($letter, ENT_QUOTES, 'UTF-8'); ?> <span><?php echo number_format($totalCount); ?> with tickets on sale</span></h2><?php } ?>
@@ -327,5 +343,5 @@ try {
 </section>
 
 
-<?php soSeoCopy('all-artists-and-teams'); ?>
+<?php soSeoCopy($soDir['copy'] ?? 'all-artists-and-teams'); ?>
 <?php include 'footer.php'; ?>

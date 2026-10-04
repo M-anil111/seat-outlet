@@ -27,6 +27,19 @@ foreach ($plan as $path => $row) {
         if (preg_match('/[\x{2013}\x{2014}]|\s-\s/u', $d)) { echo "DESCRIPTION HAS A DASH ($path)\n"; $fail++; }
     }
 }
+// The A to Z directories (inc/directories.php): same rules for every title variant and description.
+require_once __DIR__ . '/../inc/directories.php';
+foreach (SO_DIRECTORIES as $key => $dir) {
+    foreach ($dir['titles'] ?? [] as $i => $variant) {
+        $t = soNormalizeTitle($variant);
+        if ($i === 0 && mb_strlen($t) > 59) { echo "DIRECTORY TITLE TOO LONG ($key): " . mb_strlen($t) . " $t\n"; $fail++; }
+        if (preg_match('/[|\x{2013}\x{2014}\x{2026}]|\s-\s|:(?=\s|$)/u', $variant)) { echo "DIRECTORY TITLE HAS A FORBIDDEN CHARACTER ($key): $variant\n"; $fail++; }
+    }
+    if (isset($dir['desc'])) {
+        $n = mb_strlen($dir['desc']);
+        if ($n < 120 || $n > 155) { echo "DIRECTORY DESCRIPTION LENGTH ($key): $n\n"; $fail++; }
+    }
+}
 // The normalizer itself: whatever goes in, no forbidden character comes out.
 foreach (["A | B", "A \u{2014} B", "A \u{2013} B", "A - B", "A: B", "A\u{2026}", "Rock: The Tour | Seat Outlet"] as $probe) {
     $out = soNormalizeTitle($probe);
