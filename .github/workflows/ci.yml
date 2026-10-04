@@ -44,6 +44,12 @@ jobs:
       - name: Check for calls to undefined functions
         run: php tools/check-undefined-functions.php .
 
+      - name: No function is defined twice
+        run: |
+          # Two top-level functions with the same name only fail at runtime, on the pages that load both files.
+          dupes=$(grep -rhoP '^\s*function\s+\K\w+(?=\s*\()' --include=*.php --exclude-dir=vendor --exclude-dir=phpmailer --exclude-dir=node_modules . | sort | uniq -d)
+          if [ -n "$dupes" ]; then echo "::error::Functions defined more than once: $dupes"; exit 1; fi
+
       - name: Icon subset covers every bi-* class used
         run: python3 tools/build-icons.py --check
 
