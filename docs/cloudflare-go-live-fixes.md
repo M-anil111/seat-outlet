@@ -52,8 +52,8 @@ fallback page never sends visitors to beta.
 The Worker's `REPO_JS_ASSETS` / `LIVE_REPO_COMMIT` block is no longer used by the site (pages load `/js//main.min.js`),
 so it can be deleted.
 
-After deploying: open https://seatoutlet.com/robots.txt and https://seatoutlet.com/sitemap.xml to check, then in Google
-Search Console (property seatoutlet.com) > Sitemaps, submit `https://seatoutlet.com/sitemap.xml`.
+After deploying: open https://seatoutlet.com/robots.txt and https://seatoutlet.com/sitemaps/sitemap.xml to check, then in Google
+Search Console (property seatoutlet.com) > Sitemaps, submit `https://seatoutlet.com/sitemaps/sitemap.xml`.
 
 ## 3. Rocket Loader off
 

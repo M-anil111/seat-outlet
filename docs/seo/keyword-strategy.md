@@ -54,7 +54,7 @@ Templates (apply to every generated page)
 
 ## Next steps that move revenue
 
-1. Connect Search Console and submit /sitemap.xml. After 2 to 4 weeks, rank by impressions per page and rewrite titles for pages with high impressions and low click-through.
+1. Connect Search Console and submit /sitemaps/sitemap.xml. After 2 to 4 weeks, rank by impressions per page and rewrite titles for pages with high impressions and low click-through.
 2. Confirm the ids for the sports and show categories above and add pages.
 3. Add a "Schedule" jump link and a visible schedule table on team pages for the "game today" searches.
 4. Internal links: link each league page to its top teams (already driven by inventory) and each team page to its venue and city.

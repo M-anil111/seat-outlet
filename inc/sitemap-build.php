@@ -15,8 +15,8 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  *                        no cron needed. 2. cron/build-sitemaps.php for a server cron or by hand. Both use the same lock.
  *   Freshness         A new cycle starts every 6 hours on the live site (24 on beta), so a new event, performer, venue or city is listed within
  *                     about 6 hours; <lastmod> is TicketNetwork's own update time for the event (and the newest of an entity's events).
- *   Where files go    <docroot>/sitemaps/NAME.xml when that folder is writable (clean static URLs, served by the web server), otherwise
- *                     cache/sitemaps/ and sitemap-serve.php?f=NAME. The index is /sitemap.xml.
+ *   Where files go    <docroot>/sitemaps/NAME.xml (the folder must be writable by PHP; the web server serves the files as static files).
+ *                     The one index is /sitemaps/sitemap.xml.
  */
 
 const SO_SITEMAP_CHUNK     = 5000;   // URLs per file (the protocol allows 50,000; small files are easier on crawlers)
@@ -24,7 +24,7 @@ const SO_SITEMAP_PER_PAGE  = 200;
 const SO_SITEMAP_MAX_PAGES = 250;    // 50,000 events; the catalog is far below this
 const SO_SITEMAP_PAUSE_US  = 700000; // between API requests, so the crawl never competes with visitors for the API
 const SO_SITEMAP_FORMAT    = 2;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
-const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap-serve.php?f=style"?>';
+const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap-style.php"?>';
 
 function soSitemapStaticPaths(): array {
     return [
@@ -101,35 +101,20 @@ function soSitemapStaticPaths(): array {
 
 function soSitemapCacheDir(): string { return dirname(__DIR__) . '/cache'; }
 
-/** Where the files live and how the index addresses them. */
+/** Where the files live: <web root>/sitemaps, served as plain static files (the folder must be writable by PHP). */
 function soSitemapTarget(): array {
-    $root = dirname(__DIR__);
-    $dir = $root . '/sitemaps';
-    if ((is_dir($dir) || @mkdir($dir, 0755)) && is_writable($dir)) {
-        return ['static' => true, 'dir' => $dir];
-    }
-    $dir = soSitemapCacheDir() . '/sitemaps';
-    if (!is_dir($dir)) @mkdir($dir, 0755, true);
-    return ['static' => false, 'dir' => $dir];
+    $dir = dirname(__DIR__) . '/sitemaps';
+    if (!is_dir($dir)) @mkdir($dir, 0755);
+    return ['static' => true, 'dir' => $dir];
 }
 
 function soSitemapChildUrl(string $name, bool $static): string {
-    return rtrim(HOME_URL, '/') . ($static ? '/sitemaps/' . $name . '.xml' : '/sitemap-serve.php?f=' . $name);
+    return rtrim(HOME_URL, '/') . '/sitemaps/' . $name . '.xml';
 }
 
-/** The address of the index, for robots.txt: always /sitemap.xml. */
+/** The one address of the index: /sitemaps/sitemap.xml (robots.txt, Search Console). */
 function soSitemapIndexUrl(): string {
-    return rtrim(HOME_URL, '/') . '/sitemap.xml';
-}
-
-/** The full path of a built file (child or the index), or null when it does not exist. */
-function soSitemapFile(string $name): ?string {
-    if (!preg_match('/^[a-z0-9-]{1,40}$/', $name)) return null;
-    foreach ([dirname(__DIR__) . '/sitemaps', soSitemapCacheDir() . '/sitemaps'] as $dir) {
-        $f = $dir . '/' . $name . '.xml';
-        if (is_file($f)) return $f;
-    }
-    return null;
+    return rtrim(HOME_URL, '/') . '/sitemaps/sitemap.xml';
 }
 
 function soSitemapEsc(string $v): string { return htmlspecialchars($v, ENT_QUOTES | ENT_XML1, 'UTF-8'); }
@@ -358,9 +343,11 @@ function soSitemapBuildFiles(string $tmp): array {
         $x .= '<sitemap><loc>' . soSitemapEsc(soSitemapChildUrl($name, $static)) . '</loc><lastmod>' . soSitemapEsc($lm) . '</lastmod></sitemap>' . "\n";
     }
     $x .= '</sitemapindex>' . "\n";
-    soSitemapWriteAtomic($dir . '/sitemap-index.xml', $x);
-    // When the static folder is in use, an index left in the cache folder from an earlier fallback build must not shadow it.
-    if ($static) { @unlink(soSitemapCacheDir() . '/sitemaps/sitemap-index.xml'); }
+    soSitemapWriteAtomic($dir . '/sitemap.xml', $x);
+    // Leftovers from earlier layouts: the old index name and any copy in the cache folder.
+    @unlink($dir . '/sitemap-index.xml');
+    @unlink(soSitemapCacheDir() . '/sitemaps/sitemap-index.xml');
+    @unlink(soSitemapCacheDir() . '/sitemap_xml.json');
     return $counts;
 }
 
