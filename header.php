@@ -102,6 +102,7 @@ include_once 'functions.php';
         }
     }
     sendPageCacheHeaders();   // after the 404 check above: the status decides the policy
+    ob_start('soNoRocketLoader');   // every <script> opts out of Cloudflare Rocket Loader, see functions.php
     // Keep titles and descriptions inside what a search result shows.
     if (!empty($pageCanonicalUrl)) { $GLOBALS['pageCanonicalUrl'] = $pageCanonicalUrl; }   // pages rendered inside a function: the output filters read it
     if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
