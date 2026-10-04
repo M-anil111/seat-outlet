@@ -26,15 +26,15 @@ if ($argc < 2 || trim($argv[1]) === '') {
 
 $siteUrl = rtrim($argv[1], '/');
 
-$sitemapXml = @file_get_contents($siteUrl . '/sitemap.php');
+$sitemapXml = @file_get_contents($siteUrl . '/sitemap.xml');
 if ($sitemapXml === false) {
-    fwrite(STDERR, "Could not fetch $siteUrl/sitemap.php\n");
+    fwrite(STDERR, "Could not fetch $siteUrl/sitemap.xml\n");
     exit(1);
 }
 
 $sitemap = @simplexml_load_string($sitemapXml);
 if ($sitemap === false) {
-    fwrite(STDERR, "Could not parse sitemap XML from $siteUrl/sitemap.php\n");
+    fwrite(STDERR, "Could not parse sitemap XML from $siteUrl/sitemap.xml\n");
     exit(1);
 }
 

@@ -2,7 +2,7 @@ name: Lighthouse scores
 
 # Runs real Google Lighthouse (github.com/GoogleChrome/lighthouse) against
 # every URL in the live sitemap - every static page and every published
-# blog post, the same set sitemap.php itself lists (see its own comment
+# blog post, the same set sitemap.xml itself lists (see its own comment
 # for what's deliberately excluded: the location-combinator pages and city
 # lists, which aren't enumerable this way either).
 #

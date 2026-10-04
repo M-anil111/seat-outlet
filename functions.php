@@ -4455,7 +4455,7 @@ function getPerformerNounForPath($categoryPath): array {
 | Internal links between the location pages
 |--------------------------------------------------------------------------
 | The 24 category/performer x location pages are excluded from the sitemap
-| (see sitemap.php) so they are only discoverable through links. These two
+| (see sitemap.xml) so they are only discoverable through links. These two
 | helpers put those links on every page that has the data for them.
 */
 

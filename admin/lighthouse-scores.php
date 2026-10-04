@@ -37,7 +37,7 @@ include __DIR__ . '/includes/app-header.php';
         <div class="alert alert-info">
             This runs in GitHub Actions (<code>.github/workflows/lighthouse.yml</code>), not on this server - real Lighthouse needs
             a real headless Chrome to measure actual page-load performance, which this PHP host doesn't run. The workflow fetches
-            <code>/sitemap.php</code>, runs Lighthouse against every URL in it except individual <code>/event/...</code> pages
+            <code>/sitemap.xml</code>, runs Lighthouse against every URL in it except individual <code>/event/...</code> pages
             (too many, and constantly changing - not a stable set to track), and commits the results here. It runs weekly on its
             own, or trigger it manually from the repo's Actions tab ("Lighthouse scores" → "Run workflow"). Requires the
             <code>LIGHTHOUSE_SITE_URL</code> repository variable to be set to this site's real public URL - see CONTRIBUTING.md.
