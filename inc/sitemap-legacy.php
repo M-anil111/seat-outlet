@@ -237,7 +237,7 @@ if ($zeroPages) {
 if (count($urls) > 50000) { $urls = array_slice($urls, 0, 50000); }   // protocol limit per file
 ob_start();
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-echo '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>' . "\n";
+echo '<?xml-stylesheet type="text/xsl" href="/sitemap.php?f=style"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 foreach ($urls as $url) {
     echo "  <url>\n";

@@ -11,6 +11,15 @@
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/inc/sitemap-build.php';
 
+// The browser stylesheet, sent with an XSLT content type (the web server would send a bare .xsl file as a generic download,
+// which Safari and Firefox refuse to apply).
+if (($_GET['f'] ?? '') === 'style') {
+    header('Content-Type: text/xsl; charset=utf-8');
+    header('Cache-Control: public, max-age=86400');
+    readfile(__DIR__ . '/sitemap.xsl');
+    exit;
+}
+
 $name = isset($_GET['f']) ? (string) $_GET['f'] : 'sitemap-index';
 $file = soSitemapFile($name);
 if ($file !== null) {
@@ -20,7 +29,7 @@ if ($file !== null) {
     // Files built before the stylesheet existed get it added on the way out, so every sitemap is readable in a browser.
     $xml = (string) file_get_contents($file);
     if (strpos($xml, '<?xml-stylesheet') === false) {
-        $xml = preg_replace('/^(<\?xml[^>]*\?>\s*)/', '$1<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>' . "\n", $xml, 1);
+        $xml = preg_replace('/^(<\?xml[^>]*\?>\s*)/', '$1<?xml-stylesheet type="text/xsl" href="/sitemap.php?f=style"?>' . "\n", $xml, 1);
     }
     echo $xml;
     exit;
