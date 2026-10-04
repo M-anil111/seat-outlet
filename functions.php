@@ -274,7 +274,7 @@ function getTnAccessToken($rejected = '') {
 | per HTTP request with every call, cache hit/miss and milliseconds.
 */
 
-const TN_CACHE_SWEEP_AGE = 172800; // 2 days: must exceed TN_STALE_ON_ERROR (24h)
+const TN_CACHE_SWEEP_AGE = 1296000; // 15 days: must exceed TN_STALE_ON_ERROR (14 days)
 
 function tnDefaultTtl($endpoint, array $params) {
     $e = trim($endpoint, '/');
@@ -328,8 +328,8 @@ function tnGrace($ttl) {
     return (int) min($ttl * 3, 86400);
 }
 
-/** Longest a stale entry may stand in for a failed live call. */
-const TN_STALE_ON_ERROR = 86400;
+/** Longest a stale entry may stand in for a failed live call (the API throttling us must not empty a page that was fine yesterday). */
+const TN_STALE_ON_ERROR = 1209600;   // 14 days
 
 /** Thrown by helpers that need live API data when the API is down or throttling us; the outage alert has already been sent. */
 class SoTnUnavailable extends RuntimeException {}
@@ -2385,7 +2385,7 @@ function notFoundBlockHtml($what) {
 /** "Try again in a moment" content for when the ticket feed failed (no header/footer). */
 function unavailableBlockHtml($what) {
     $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
-    return '<div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' temporarily unavailable</h1>'
+    return '<meta http-equiv="refresh" content="15"><div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' temporarily unavailable</h1>'
         . '<p class="text-muted mb-4">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
         . '<div class="d-flex flex-wrap justify-content-center gap-2">'
         . '<a class="btn btn-primary" href="">Try again</a>'
@@ -2398,6 +2398,7 @@ function unavailableBlockHtml($what) {
 
 /** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, noindex, never cached. */
 function renderUnavailablePage($what) {
+    soSnapshotServe();   // the last good copy of this very page beats an error page
     http_response_code(503);
     header('Retry-After: 30');
     $pageRobots = 'noindex, follow';
@@ -2715,12 +2716,87 @@ function soAliasRedirect($to = null) {
     exit;
 }
 
-/** Output-buffer callback: a page that rendered without API data is never CDN-cached. */
-function soDegradedGuard($buffer) {
+/**
+ * Output-buffer callback: a page that rendered without API data is never CDN-cached; a page that rendered fully (200, with data) is
+ * kept as a snapshot, so a later TicketNetwork outage or throttling window can serve it instead of an error page.
+ */
+function soDegradedGuard($buffer, $phase = null) {
     if (!empty($GLOBALS['tn_degraded']) && !headers_sent()) {
         header('Cache-Control: no-store');
     }
+    if (empty($GLOBALS['tn_degraded']) && (http_response_code() ?: 200) === 200
+        && ($phase === null || (($phase & PHP_OUTPUT_HANDLER_START) && ($phase & PHP_OUTPUT_HANDLER_FINAL)))) {
+        soSnapshotStore($buffer);
+    }
     return $buffer;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Page snapshots: the last good copy of a page, served when the live one cannot be built
+|--------------------------------------------------------------------------
+| TicketNetwork throttles (HTTP 429) or goes down now and then. A page that is not in the data cache then used to answer "temporarily
+| unavailable". Now every page that renders completely is also stored here (gzip, one file per URL under cache/pages/), and
+| renderUnavailablePage() serves that copy, up to 14 days old, instead of an error. Only a page that was never rendered before and
+| cannot be built right now still answers 503 (never cached, retried by the visitor and by search engines). cron/warm-snapshots.php
+| visits the sitemap URLs slowly so that case stays rare.
+*/
+const SO_SNAPSHOT_MAX_AGE = 1209600;   // 14 days
+const SO_SNAPSHOT_MIN_BYTES = 15000;   // anything smaller is a fragment or an error page, never kept
+
+/** The snapshot file for this request, or null when the request is not one we keep (not a plain GET, filtered, private). */
+function soSnapshotFile(?string $uri = null): ?string {
+    if (PHP_SAPI === 'cli' && $uri === null) return null;
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET' && $uri === null) return null;
+    $uri = $uri ?? (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $path = rtrim((string) parse_url($uri, PHP_URL_PATH), '/') ?: '/';
+    parse_str((string) parse_url($uri, PHP_URL_QUERY), $q);
+    unset($q['slug'], $q['loc']);
+    if ($q && array_keys($q) !== ['page']) return null;   // filters, sorts, tracking tags: not the page
+    if (preg_match('#^/(admin|ajax|cron|checkout|order-confirmation|thank-you|unsubscribe|search|newsletter)(/|$)#', $path)) return null;
+    $key = sha1(strtolower($path) . ($q ? '?page=' . (int) $q['page'] : ''));
+    $dir = __DIR__ . '/cache/pages/' . substr($key, 0, 2);
+    return $dir . '/' . $key . '.html.gz';
+}
+
+function soSnapshotStore(string $html): void {
+    if (strlen($html) < SO_SNAPSHOT_MIN_BYTES || stripos($html, '<html') === false) return;
+    $file = soSnapshotFile();
+    if ($file === null) return;
+    // Rewrite at most every 10 minutes per page: the cost is a gzip and a file write, not worth doing on every view.
+    if (is_file($file) && (time() - (int) @filemtime($file)) < 600) return;
+    $dir = dirname($file);
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) return;
+    $tmp = $file . '.' . getmypid() . '.tmp';
+    $gz = @gzencode($html, 6);
+    if ($gz !== false && @file_put_contents($tmp, $gz, LOCK_EX) !== false) { @rename($tmp, $file); } else { @unlink($tmp); }
+    if (mt_rand(1, 400) === 1) soSnapshotSweep();
+}
+
+/** Delete snapshots older than the serve window. */
+function soSnapshotSweep(): void {
+    $cut = time() - SO_SNAPSHOT_MAX_AGE - 86400;
+    foreach (glob(__DIR__ . '/cache/pages/*/*.html.gz') ?: [] as $f) {
+        if ((int) @filemtime($f) < $cut) @unlink($f);
+    }
+}
+
+/** Serve this request's snapshot (HTTP 200, short CDN lifetime, marked stale) and stop. Returns false when there is none. */
+function soSnapshotServe(): bool {
+    if (headers_sent()) return false;
+    $file = soSnapshotFile();
+    if ($file === null || !is_file($file) || (time() - (int) @filemtime($file)) > SO_SNAPSHOT_MAX_AGE) return false;
+    $gz = @file_get_contents($file);
+    $html = $gz === false ? false : @gzdecode($gz);
+    if (!is_string($html) || $html === '') return false;
+    while (ob_get_level() > 0) { @ob_end_clean(); }
+    http_response_code(200);
+    header('Content-Type: text/html; charset=UTF-8');
+    header('Cache-Control: public, max-age=0, s-maxage=60');
+    header('X-Page-Snapshot: stale');
+    header_remove('Retry-After');
+    echo $html;
+    exit;
 }
 
 function getTnCityEvents($cityId = 0, $params = []) {

@@ -418,6 +418,12 @@ function soRenderListingBody(array $o): void {
 function soRenderListingPage(array $o): void {
     $o += ['tag' => 'h1', 'defaultSort' => 'popular', 'explore' => [], 'body' => [], 'lead' => null, 'afterRow' => null, 'afterSection' => null, 'when' => '', 'sort' => 'popular', 'max' => 0];
     $total = (int) $o['total'];
+    // The feed failed (throttled, down): never present that as "0 results". Serve the last good copy of this page; without one,
+    // answer 503 (retry) so neither visitors nor search engines keep an empty page.
+    if ($total === 0 && empty($o['body']['events']) && soApiDegraded()) {
+        soSnapshotServe();
+        if (!headers_sent()) { http_response_code(503); header('Retry-After: 30'); }
+    }
     $tag = $o['tag'] === 'h2' ? 'h2' : 'h1';
     // The page header: the shared card (inc/page-hero.php), with the hub or category picture and the live result count.
     $heroImg = (string) ($o['image'] ?? ($o['explore']['hero'] ?? (SO_EXPLORE_HUBS[$o['basePath']][2] ?? '')));

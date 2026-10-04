@@ -69,6 +69,7 @@ include_once 'functions.php';
         $soEvCheck = $soEvId > 0 ? getTnEventById($soEvId) : null;
         if ($soEvCheck !== null && tnEntityUnavailable($soEvCheck)) {
             // The API failed (throttled, timeout, circuit open): a retryable 503, never a 404 that deindexes a live event.
+            soSnapshotServe();   // the last good copy of this event page, if there is one
             http_response_code(503);
             header('Retry-After: 30');
             $pageRobots = 'noindex, follow';
