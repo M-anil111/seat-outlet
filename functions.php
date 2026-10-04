@@ -2304,55 +2304,8 @@ function seoOffer($url, $price) {
     ];
 }
 
-/** The brand at the end of every page title, joined with an em dash and no spaces ("Keyword—Hook—Seat Outlet"). */
-const SO_TITLE_BRAND = "\u{2014}Seat Outlet";
+require_once __DIR__ . '/inc/title.php';   // soNormalizeTitle(), soTitle(), seoClampTitle(), SO_TITLE_BRAND
 
-/**
- * Puts any title into the site format: parts joined by an em dash with no spaces around it, ending in the brand.
- * Old separators (" | ", " - ", " – ", " — ") become the em dash; " | Seat Outlet", " | Seat Outlet Network" and
- * " | Seat Outlet Blog" become the brand suffix. A title without the brand gets it.
- */
-function soNormalizeTitle($title) {
-    $t = trim(preg_replace('/\s+/u', ' ', (string) $title));
-    if ($t === '') return $t;
-    $t = preg_replace('/\s*\|\s*Seat Outlet(?: Network| Blog)?$/u', '', $t);
-    $t = preg_replace('/\s*\x{2014}\s*Seat Outlet$/u', '', $t);
-    $t = preg_replace('/\s+(?:\||-|\x{2013}|\x{2014})\s+/u', "\u{2014}", $t);
-    $t = preg_replace('/\s*\x{2014}\s*/u', "\u{2014}", $t);
-    // Titles that already name the brand ("About Seat Outlet", "Seat Outlet Reviews") do not repeat it.
-    return mb_stripos($t, 'Seat Outlet') !== false ? $t : $t . SO_TITLE_BRAND;
-}
-
-/**
- * First candidate that fits a search result with the brand (under 60 characters). Candidates are titles without the brand,
- * most specific first; the last one is shortened at a word boundary when nothing fits.
- */
-function soTitle(...$candidates) {
-    $candidates = array_values(array_filter(array_map('strval', $candidates), 'strlen'));
-    foreach ($candidates as $c) {
-        $full = soNormalizeTitle($c);
-        if (mb_strlen($full) <= 59) return $full;
-    }
-    return seoClampTitle(soNormalizeTitle((string) end($candidates)));
-}
-
-function seoClampTitle($title, $max = 59) {
-    $title = soNormalizeTitle($title);
-    if (mb_strlen($title) <= $max) return $title;
-    $brand = mb_substr($title, -mb_strlen(SO_TITLE_BRAND)) === SO_TITLE_BRAND ? SO_TITLE_BRAND : '';
-    $base = $brand !== '' ? mb_substr($title, 0, -mb_strlen($brand)) : $title;
-    $room = $max - mb_strlen($brand);
-    if (mb_strlen($base) > $room) {
-        // Drop whole trailing parts first ("Keyword—Hook" keeps "Keyword"), then cut at a word.
-        while (mb_strlen($base) > $room && ($pos = mb_strrpos($base, "\u{2014}")) !== false) { $base = mb_substr($base, 0, $pos); }
-        if (mb_strlen($base) > $room) {
-            $cut = mb_substr($base, 0, $room - 1);
-            $sp = mb_strrpos($cut, ' ');
-            $base = rtrim(($sp !== false && $sp > $room * 0.6) ? mb_substr($cut, 0, $sp) : $cut, " ,:;-\u{2013}\u{2014}") . "\u{2026}";
-        }
-    }
-    return $base . $brand;
-}
 
 /**
  * A meta description of 120 to 155 characters: the main sentence, then the extra sentences in order while it is shorter
@@ -4963,8 +4916,8 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     // --- SEO: computed before including header.php so the <head> can use real data ---
     $pageFocusKeyword    = "$artistName Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
     $soLocShort = preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
-    $pageMetaTitle       = soTitle("$artistName Tickets in $locationLabel\u{2014}" . date('Y') . " Dates", "$artistName Tickets in $locationLabel", "$artistName Tickets in $soLocShort", "$artistName Tickets");
-    $pageMetaDescription = soMetaFit("Buy $artistName {$noun['noun']} tickets in $locationLabel. Compare prices from many sellers, pick seats on live seat maps and buy with our 100% buyer guarantee.", 'Secure checkout and on time delivery.');
+    $pageMetaTitle       = soTitle("$artistName Tickets in $locationLabel " . date('Y') . " Dates", "$artistName Tickets in $locationLabel", "$artistName Tickets in $soLocShort", "$artistName Tickets");
+    $pageMetaDescription = soMetaFit("Buy $artistName {$noun['noun']} tickets in $locationLabel. Compare prices from many sellers, pick seats on live seat maps. Orders carry the TicketNetwork guarantee.", 'Secure checkout and on time delivery.');
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema(array_map(fn($c) => ['label' => $c['label'], 'url' => null], $breadcrumbs), "$artistName in $locationLabel"),
@@ -5244,9 +5197,11 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     $soKwWord = ['concerts' => 'Concerts', 'sports' => 'Sports events', 'theater' => 'Theater', 'theatre' => 'Theater', 'festivals' => 'Music festivals', 'events' => 'Events'][$categoryKey] ?? $categoryLabel;
     $soKwPrep = $dimension === 'venue' ? 'at' : 'in';
     $pageFocusKeyword    = "$soKwWord $soKwPrep $soLocShort";
-    $soKwHook = ['concerts' => 'Tickets & Dates', 'sports' => 'Schedule & Tickets', 'theater' => 'Shows, Dates & Tickets', 'theatre' => 'Shows, Dates & Tickets', 'festivals' => 'Dates & Passes', 'events' => 'Concerts, Sports & Shows'][$categoryKey] ?? 'Tickets & Dates';
-    $pageMetaTitle       = soTitle("$pageFocusKeyword\u{2014}" . date('Y') . " $soKwHook", "$pageFocusKeyword\u{2014}$soKwHook", $pageFocusKeyword, "$categoryLabel Tickets in $soLocShort");
-    $pageMetaDescription = soMetaFit("$pageFocusKeyword: browse upcoming dates, compare prices from many sellers and buy tickets with our 100% buyer guarantee.", 'Live seat maps and secure checkout.', 'Prices change often, so check back for new listings.');
+    $soKwHook = ['concerts' => 'Tickets and Dates', 'sports' => 'Schedule and Tickets', 'theater' => 'Shows, Dates and Tickets', 'theatre' => 'Shows, Dates and Tickets', 'festivals' => 'Dates and Passes'][$categoryKey] ?? 'Tickets and Dates';
+    $pageMetaTitle       = $categoryKey === 'events'
+        ? soTitle("$pageFocusKeyword for Concerts, Sports and Shows", "$pageFocusKeyword Concerts and Sports", "$pageFocusKeyword " . date('Y'), $pageFocusKeyword)
+        : soTitle("$pageFocusKeyword " . date('Y') . " $soKwHook", "$pageFocusKeyword $soKwHook", $pageFocusKeyword, "$categoryLabel Tickets in $soLocShort");
+    $pageMetaDescription = soMetaFit("$pageFocusKeyword: browse upcoming dates, compare prices from many sellers. Orders carry the TicketNetwork guarantee.", 'Live seat maps and secure checkout.', 'Prices change often, so check back for new listings.');
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema($breadcrumbs, "$categoryLabel in $locationLabel"),

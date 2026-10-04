@@ -50,7 +50,7 @@ if ($soFamily === '' && isset($soGenre['kind'])) { $soFamily = $soGenre['kind'] 
 
 // --- SEO: computed before including header.php, same convention as the other listing pages - see functions.php. ---
 $soCatDates          = ($soGenre['kind'] ?? '') === 'sports' ? 'Schedule & Prices' : 'Dates & Prices';   // sports searches are for the schedule ("phillies schedule", "nba tickets")
-$pageMetaTitle       = soTitle("$catLabel Tickets\u{2014}$year $soCatDates", "$catLabel Tickets\u{2014}$year", "$catLabel Tickets");
+$pageMetaTitle       = soTitle("$catLabel Tickets $year $soCatDates", "$catLabel Tickets $year", "$catLabel Tickets");
 $pageMetaDescription = soMetaFit($soCatSeo['description'], 'Live seat maps and secure checkout.', 'Prices from many sellers in one place.');
 $pageCanonicalUrl    = HOME_URL . $catBasePath;
 $pageJsonLdNodes     = array_values(array_filter([

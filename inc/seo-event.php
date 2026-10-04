@@ -32,9 +32,9 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
       // "<event> Tickets—<City, ST> <Mon D>": the place and date go first when the name is long, never half a word.
       $evShort = $evTs ? date('M j', $evTs) : '';
       $metaTitle = soTitle(
-          ($evPlace !== '' && $evShort !== '') ? "$evName Tickets\u{2014}$evPlace, $evShort" : '',
-          $evPlace !== '' ? "$evName Tickets\u{2014}$evPlace" : '',
-          $evShort !== '' ? "$evName Tickets\u{2014}$evShort" : '',
+          ($evPlace !== '' && $evShort !== '') ? "$evName Tickets in $evPlace on $evShort" : '',
+          $evPlace !== '' ? "$evName Tickets in $evPlace" : '',
+          $evShort !== '' ? "$evName Tickets on $evShort" : '',
           "$evName Tickets"
       );
   }
@@ -42,7 +42,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $evDay = $evTs ? date('D, M j, Y', $evTs) : '';
   $metaDescription = soMetaFit(
       $evName . ' tickets' . ($evDay !== '' ? ' for ' . $evDay : '') . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
-      . '. Pick seats on the live seat map and buy with our 100% buyer guarantee.',
+      . '. Pick seats on the live seat map. Orders carry the TicketNetwork guarantee.',
       'Secure checkout and on time delivery.', 'Prices from many sellers in one place.'
   );
   $keywords = [];

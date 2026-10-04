@@ -218,7 +218,7 @@ include_once 'functions.php';
         // got ZERO structured data, not even the baseline Organization/
         // WebSite graph every other path on the site has. Always emit that
         // baseline here; merge in page-specific nodes when present.
-        $soTitleBare = preg_replace('/\x{2014}Seat Outlet$/u', '', (string) $pageMetaTitle);
+        $soTitleBare = preg_replace('/\s+at Seat Outlet$/u', '', (string) $pageMetaTitle);
         outputJsonLdGraph(soCompletePageGraph(array_merge([buildOrganizationSchema(), buildWebsiteSchema()], $pageJsonLdNodes ?? []), [
             'url' => $pageCanonicalUrl ?? '',
             'name' => $soTitleBare,
@@ -227,7 +227,7 @@ include_once 'functions.php';
             'type' => $pageSchemaType ?? null,
             'mainEntity' => $pageMainEntity ?? null,
             'author' => $pageAuthorId ?? null,
-            'crumbLabel' => $pageCrumbLabel ?? trim(explode("\u{2014}", $soTitleBare)[0]),
+            'crumbLabel' => $pageCrumbLabel ?? (preg_match('/^(.{2,60}?\bTickets)\b/u', $soTitleBare, $soCm) ? $soCm[1] : $soTitleBare),
         ]));
         ?>
     <?php } elseif ($soReqPath === '/' || $soReqPath === '/index.php') { ?>

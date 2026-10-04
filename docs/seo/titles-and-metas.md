@@ -4,7 +4,8 @@ Every page has three title variants and three meta description variants. The fir
 
 ## Rules used
 
-- Title format: `Keyword—Hook—Seat Outlet`, joined by an em dash with no spaces. The primary keyword comes first. The whole title stays under 60 characters (checked by `soTitle()` and `seoClampTitle()` in `functions.php`). Titles that already contain the brand do not repeat it.
+- Title format (updated 4 Oct 2026): plain words, no separators. `Keyword and hook at Seat Outlet`, for example `Dallas Mavericks Tickets 2026 Schedule & Prices at Seat Outlet`. A title never contains a pipe, a dash, a spaced hyphen, a colon or an ellipsis; `soNormalizeTitle()` in `inc/title.php` removes them from every title (templates, the keyword plan, admin page rules, blog meta titles) and `tools/check-seo-titles.php` fails CI when a plan entry breaks the rule. The whole title stays at 59 characters or fewer including the brand. A long name is trimmed to whole words and keeps the word Tickets (no ellipsis). Titles that already contain the brand do not repeat it.
+- The variant tables below were written for the old em dash format and are kept as history. The meta descriptions no longer say "our guarantee": the guarantee is TicketNetwork's, and Seat Outlet does not sell the tickets.
 - Meta descriptions: 120 to 155 characters, keyword in the first sentence, and a reason to click that is true for every order (100% buyer guarantee, live seat maps, secure checkout). `soMetaFit()` keeps template descriptions in range.
 - `{Y}` is replaced with the current year. Lengths below are counted with the year filled in.
 - Focus keywords were researched on 30 Sep 2026 (SE Ranking, US) and were kept; every chosen title starts with its keyword.
