@@ -137,7 +137,7 @@ function soBlogEventsBlock(array $a) {
         $nm = $e['text']['name'] ?? '';
         $ts = strtotime($e['date']['date'] ?? '');
         if ($id === 0 || $nm === '' || !$ts) continue;
-        $where = trim(($e['venue']['text']['name'] ?? '') . ' - ' . trim(($e['city']['text']['name'] ?? '') . ', ' . ($e['stateProvince']['text']['abbr'] ?? ''), ', '), ' -');
+        $where = trim(($e['venue']['text']['name'] ?? '') . ', ' . trim(($e['city']['text']['name'] ?? '') . ', ' . ($e['stateProvince']['text']['abbr'] ?? ''), ', '), ', ');
         $price = $e['pricingInfo']['lowPrice']['text']['formatted'] ?? '';
         $rows .= '<li><a class="so-live__row" href="/event/' . soBlogH(createSlug($nm, $id)) . '" data-blog-post="' . soBlogH($GLOBALS['soBlogSlug'] ?? '') . '">'
             . '<span class="so-live__date"><b>' . soBlogH(strtoupper(date('M', $ts))) . '</b><i>' . soBlogH(date('j', $ts)) . '</i></span>'

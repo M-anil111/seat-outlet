@@ -108,7 +108,7 @@ include 'header.php';
                 <div class="policy-section" id="section-1">
                     <h2> Plan Your Travel with Ease</h2>
                     <p>
-                    <p><strong>Ticket Scanner</strong> is a smart and reliable <strong>online travel booking website for flights hotels and cars</strong>, designed to simplify how people plan their journeys. Whether you're traveling for business or leisure, the platform brings together everything you need&mdash;flights, accommodations, and transportation&mdash;in one convenient place.</p>
+                    <p><strong>Ticket Scanner</strong> is a smart and reliable <strong>online travel booking website for flights hotels and cars</strong>, designed to simplify how people plan their journeys. Whether you're traveling for business or leisure, the platform brings together everything you need (flights, accommodations and transportation) in one convenient place.</p>
                     <p>Instead of browsing multiple platforms, users can rely on this <strong>online travel booking website for flights hotels and cars</strong> to search, compare, and book travel services quickly and efficiently.</p>
                     </p>
 

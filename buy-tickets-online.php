@@ -80,7 +80,7 @@ soRenderListingPage([
 						$isFirst = ($index === 0);
 					?>
 						<div class="accordion-item">
-							<h2 class="accordion-header" id="<?php echo $headingId; ?>">
+							<h3 class="accordion-header" id="<?php echo $headingId; ?>">
 								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>" 
 										type="button"
 										data-bs-toggle="collapse"
@@ -89,7 +89,7 @@ soRenderListingPage([
 										aria-controls="<?php echo $collapseId; ?>">
 									<?php echo $question; ?>
 								</button>
-							</h2>
+							</h3>
 							<div id="<?php echo $collapseId; ?>" 
 								class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>" 
 								aria-labelledby="<?php echo $headingId; ?>" 

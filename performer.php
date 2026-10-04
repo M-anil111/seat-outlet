@@ -131,7 +131,7 @@ include 'header.php';
 						<div class="col-md-3">
 							<div class="img-artist">
 								<?php if ($hasRealImage) { ?>
-									<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" fetchpriority="high" width="300" height="300" />
+									<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($artistName . ', ' . strtolower($soNoun[1]) . ' tickets on Seat Outlet', ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" fetchpriority="high" width="300" height="300" />
 									<?php renderImageCredit($performerImg, 'img-credit d-none d-md-block'); ?>
 								<?php } else { echo soTileHtml($artistName, 'so-tile so-tile--hero'); } ?>
 							</div>
@@ -488,7 +488,7 @@ include 'header.php';
 		</div>
 		<?php if (!empty($events)) { ?>
 		<div class="tab-section content-section-detail so-tourtable" id="dates">
-			<h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars($soNoun[2], ENT_QUOTES, 'UTF-8'); ?> and ticket prices</h2>
+			<h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars($soNoun[0] === 'games' ? 'Schedule & Game Dates' : ($soNoun[0] === 'shows' ? 'Schedule & Show Dates' : 'Schedule & Tour Dates'), ENT_QUOTES, 'UTF-8'); ?></h2>
 			<p class="so-tourtable__lead">Every upcoming <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars(strtolower($soNoun[1]), ENT_QUOTES, 'UTF-8'); ?> on Seat Outlet, with the lowest price listed today. Pick a date to compare seats.</p>
 			<div class="so-table-wrap">
 				<table>
@@ -529,6 +529,7 @@ include 'header.php';
 			<p class="so-tourtable__more">Looking for something else? Browse <a href="<?php echo htmlspecialchars($breadcrumbs[1]['url'] ?? '/buy-tickets-online', ENT_QUOTES, 'UTF-8'); ?>">more <?php echo htmlspecialchars(strtolower($breadcrumbs[1]['label'] ?? 'event'), ENT_QUOTES, 'UTF-8'); ?> tickets</a>, see <a href="/city-events">events by city</a>, or read how our <a href="/worry-free-guarantee">100% guarantee</a> and <a href="/ticket-buyer-protection">buyer protection</a> work.</p>
 		</div>
 		<?php } ?>
+		<?php soGuaranteeBlock(['subject' => $artistName, 'events' => $events]); ?>
 		<div class="tab-section content-section-detail" id="about">
 			<div class="row">
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
@@ -544,7 +545,7 @@ include 'header.php';
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
 						<?php if ($hasRealImage) { ?>
-							<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>" class="img-about img-fluid rounded" loading="lazy" width="600" height="450" />
+							<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars('Photo of ' . $artistName, ENT_QUOTES, 'UTF-8'); ?>" class="img-about img-fluid rounded" loading="lazy" width="600" height="450" />
 							<?php renderImageCredit($performerImg, 'img-credit'); ?>
 						<?php } else { echo soTileHtml($artistName, 'so-tile so-tile--about'); } ?>
 					</div>
@@ -566,7 +567,7 @@ include 'header.php';
 						$isExtra = ($index >= $faqVisible);
 					?>
 						<div class="accordion-item<?php echo $isExtra ? ' faq-extra d-none' : ''; ?>">
-							<h2 class="accordion-header" id="<?php echo $headingId; ?>">
+							<h3 class="accordion-header" id="<?php echo $headingId; ?>">
 								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>" 
 										type="button"
 										data-bs-toggle="collapse"
@@ -575,7 +576,7 @@ include 'header.php';
 										aria-controls="<?php echo $collapseId; ?>">
 									<?php echo $question; ?>
 								</button>
-							</h2>
+							</h3>
 							<div id="<?php echo $collapseId; ?>" 
 								class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>" 
 								aria-labelledby="<?php echo $headingId; ?>" 

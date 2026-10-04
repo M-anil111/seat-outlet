@@ -497,7 +497,48 @@ function tnIdOutOfRange($endpoint) {
     return preg_match('#/(\d{10,})/?$#', (string) $endpoint, $m) && (float) $m[1] > TN_MAX_ID;
 }
 
+/**
+ * Every TicketNetwork call goes through here: the raw answer (tnRequestRaw) with display names cleaned up.
+ * TicketNetwork joins name parts with " - " ("The Fillmore - Detroit", "Water For Elephants - The Musical"); the site
+ * shows them without dashes. Slugs do not change, because createSlug() drops the punctuation either way.
+ */
 function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
+    $data = tnRequestRaw($endpoint, $params, $method, $ttl);
+    return is_array($data) ? soCleanTnNames($data, strpos((string) $endpoint, '/venues') !== false ? 'venue' : '') : $data;
+}
+
+/** One TicketNetwork name without dashes: venues "The Fillmore, Detroit"; events and performers "Water For Elephants: The Musical". */
+function soCleanTnName(string $name, string $ctx = ''): string {
+    if (!preg_match('/\s[-\x{2013}\x{2014}]\s/u', $name)) return $name;
+    $parts = preg_split('/\s+[-\x{2013}\x{2014}]\s+/u', trim($name));
+    $parts = array_values(array_filter(array_map('trim', $parts), 'strlen'));
+    if (count($parts) < 2) return trim($parts[0] ?? $name, " -");
+    if ($ctx === 'venue' || strpos($parts[0], ':') !== false) return implode(', ', $parts);
+    return array_shift($parts) . ': ' . implode(', ', $parts);
+}
+
+/** Walk an API answer and clean every text.name; anything under a "venue" key uses the venue rule. */
+function soCleanTnNames(array $d, string $ctx = ''): array {
+    foreach ($d as $k => $v) {
+        if (!is_array($v)) continue;
+        if ($k === 'text' && isset($v['name']) && is_string($v['name'])) {
+            $d[$k]['name'] = soCleanTnName($v['name'], $ctx);
+            continue;
+        }
+        if ($k === 'performers') {   // event rows list performers as {name, id, role}
+            foreach ($v as $i => $perf) {
+                if (is_array($perf) && isset($perf['name']) && is_string($perf['name'])) $v[$i]['name'] = soCleanTnName($perf['name']);
+            }
+        }
+        $childCtx = $ctx;
+        if ($k === 'venue' || $k === 'venues') $childCtx = 'venue';
+        elseif (is_string($k) && in_array($k, ['performer', 'performers', 'city', 'stateProvince', 'country', 'defaultCategory', 'categories', 'category', 'parent'], true)) $childCtx = '';
+        $d[$k] = soCleanTnNames($v, $childCtx);
+    }
+    return $d;
+}
+
+function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
     $params = is_array($params) ? $params : [];
     if (tnIdOutOfRange($endpoint)) {
         return ['Message' => 'The requested resource was not found.'];
@@ -1757,7 +1798,7 @@ function soWeekendGroups(array $events): array {
     foreach ($groups as $i => &$grp) {
         $grp['label'] = 'Weekend ' . ($i + 1);
         $a = date('M d', strtotime($grp['from'])); $b = date('M d', strtotime($grp['to']));
-        $grp['range'] = $a === $b ? $a : $a . ' - ' . $b;
+        $grp['range'] = $a === $b ? $a : $a . ' to ' . $b;
     }
     unset($grp);
     return $groups;
@@ -3326,7 +3367,7 @@ function getContentBlock($pagePath, $blockKey, $defaultHtml, $mysqli = MYSQLI) {
     if (function_exists('apcu_fetch')) {
         $cached = apcu_fetch($cacheKey, $success);
         if ($success) {
-            return $cached !== null && $cached !== '' ? $cached : $defaultHtml;
+            return $cached !== null && $cached !== '' ? soNoDashes((string) $cached) : $defaultHtml;
         }
     }
 
@@ -3348,7 +3389,7 @@ function getContentBlock($pagePath, $blockKey, $defaultHtml, $mysqli = MYSQLI) {
         apcu_store($cacheKey, $content, CONTENT_BLOCK_CACHE_TTL);
     }
 
-    return $content !== null && $content !== '' ? $content : $defaultHtml;
+    return $content !== null && $content !== '' ? soNoDashes((string) $content) : $defaultHtml;
 }
 
 function contentBlockCacheForget($pagePath, $blockKey) {
@@ -4611,8 +4652,33 @@ function renderPerformerWhere(string $artistName, int $performerId, array $event
 }
 
 /** Artist biography: first lines, then "Read more" (the full text stays in the page for search engines and no-JS visitors). */
+/**
+ * Copy without dashes, the site's house style: "1990–2001" becomes "1990 to 2001", a spaced dash or an em dash between
+ * words becomes a comma. Works on HTML: only text between tags changes, and script/style/pre/code blocks are left alone.
+ */
+function soNoDashes(string $html): string {
+    if (!preg_match('/[\x{2013}\x{2014}]|\s-\s|&[mn]dash;/u', $html)) return $html;
+    $parts = preg_split('/(<(script|style|pre|code)\b.*?<\/\2>|<[^>]+>)/is', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+    $out = '';
+    for ($i = 0, $n = count($parts); $i < $n; $i++) {
+        $p = $parts[$i];
+        if ($p === '' ) continue;
+        if ($p[0] === '<') {
+            $out .= $p;
+            if (isset($parts[$i + 1]) && preg_match('/^(script|style|pre|code)$/i', $parts[$i + 1])) $i++;   // skip the captured tag name
+            continue;
+        }
+        $t = str_replace(['&mdash;', '&ndash;'], ["\u{2014}", "\u{2013}"], $p);
+        $t = preg_replace('/(\d)\s*[\x{2013}\x{2014}]\s*(\d)/u', '$1 to $2', $t);
+        $t = preg_replace('/\s*[\x{2013}\x{2014}]\s*|\s+-\s+/u', ', ', $t);
+        $t = preg_replace('/,\s*([,.;:!?)])/u', '$1', $t);
+        $out .= $t;
+    }
+    return $out;
+}
+
 function renderBioBlock($bio): void {
-    $bio = (string) $bio;
+    $bio = soNoDashes((string) $bio);
     if (trim($bio) === '') return;
     $long = mb_strlen(strip_tags($bio)) > 420;
     ?>
@@ -5068,7 +5134,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                             $isFirst = ($index === 0);
                         ?>
                             <div class="accordion-item">
-                                <h2 class="accordion-header" id="<?php echo $headingId; ?>">
+                                <h3 class="accordion-header" id="<?php echo $headingId; ?>">
                                     <button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>"
                                             type="button"
                                             data-bs-toggle="collapse"
@@ -5077,7 +5143,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                             aria-controls="<?php echo $collapseId; ?>">
                                         <?php echo htmlspecialchars($faq['question'], ENT_QUOTES, 'UTF-8'); ?>
                                     </button>
-                                </h2>
+                                </h3>
                                 <div id="<?php echo $collapseId; ?>"
                                     class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>"
                                     aria-labelledby="<?php echo $headingId; ?>"
@@ -5346,7 +5412,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                             $isFirst = ($index === 0);
                         ?>
                             <div class="accordion-item">
-                                <h2 class="accordion-header" id="<?php echo $headingId; ?>">
+                                <h3 class="accordion-header" id="<?php echo $headingId; ?>">
                                     <button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>"
                                             type="button"
                                             data-bs-toggle="collapse"
@@ -5355,7 +5421,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                             aria-controls="<?php echo $collapseId; ?>">
                                         <?php echo htmlspecialchars($faq['question'], ENT_QUOTES, 'UTF-8'); ?>
                                     </button>
-                                </h2>
+                                </h3>
                                 <div id="<?php echo $collapseId; ?>"
                                     class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>"
                                     aria-labelledby="<?php echo $headingId; ?>"
@@ -6068,6 +6134,7 @@ require_once __DIR__ . '/inc/category-tiles.php';   // soRenderCategoryTiles(): 
 require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-capture form
 require_once __DIR__ . '/inc/request-guard.php';   // soClientIp(), soRateHit(), soQs(): shared request helpers
 require_once __DIR__ . '/inc/entity-facts.php';   // soEntityFacts(): Wikidata, Wikipedia and official site for performers and venues (cached, looked up after the response)
+require_once __DIR__ . '/inc/trust-block.php';   // soGuaranteeBlock(): Buyer Guarantee section with the refund terms and live ticket count
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
 require_once __DIR__ . '/inc/entity-pages.php';     // slug rule, strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages

@@ -209,7 +209,7 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
   </div>
 </section>
 <?php } ?>
-<div id="tn-maps" class="seatics so-seatmap" aria-live="polite"></div>
+<div id="tn-maps" class="seatics so-seatmap" role="region" aria-label="<?php echo $h('Interactive seating chart and rows map for ' . ($eventVenueName !== '' ? $eventVenueName : 'the venue') . ' during ' . ($event['text']['name'] ?? 'this event')); ?>" aria-live="polite"></div>
 <noscript><p class="so-seatmap__nojs container py-4">The seat map needs JavaScript. Please turn it on, or <a href="/ticket-customer-service">contact us</a> and we will help you find tickets.</p></noscript>
 <div id="so-no-tickets" class="so-no-tickets d-none" role="region" aria-labelledby="so-no-tickets-title" tabindex="-1">
   <div class="container py-5 text-center">
@@ -304,6 +304,8 @@ $evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $
           <li><span><strong>Pick your seats.</strong> Use the map and the filters to compare sections, rows and prices.</span></li>
           <li><span><strong>Check out and go.</strong> Pay securely and get your tickets before the event.</span></li>
         </ol>
+
+        <?php soGuaranteeBlock(['events' => [$event]]); ?>
 
         <h2>Questions about <?php echo $h($evNm); ?> tickets</h2>
         <div class="so-evfaq">

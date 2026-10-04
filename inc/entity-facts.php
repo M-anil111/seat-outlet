@@ -34,7 +34,7 @@ function soFactsKindWords(string $kind): array {
 function soFactsSearchName(string $name, string $kind): string {
     $n = trim(preg_replace('/\s+/', ' ', $name));
     if ($kind === 'venue') {
-        $n = preg_replace('/\s+[-\x{2013}\x{2014}]\s+[A-Z]{2}$/u', '', $n);   // " - TX"
+        $n = preg_replace('/(?:\s+[-\x{2013}\x{2014}]\s+|,\s*)[A-Z]{2}$/u', '', $n);   // "Toyota Center - TX" / "Toyota Center, TX"
         $n = preg_replace('/\s*\((?:formerly|fka)[^)]*\)$/i', '', $n);
     }
     return trim($n);

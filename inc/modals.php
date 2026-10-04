@@ -10,7 +10,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 			<div class="modal-body">
 				<p>Shop tickets with total confidence, knowing your purchase is protected.
 					Our 100% guarantee means secure checkout, valid tickets and delivery in time for the event.
-					From start to showtime, we’ve got you covered—worry free.</p>
+					From start to showtime, we’ve got you covered, worry free.</p>
 			</div>
 		</div>
 	</div>

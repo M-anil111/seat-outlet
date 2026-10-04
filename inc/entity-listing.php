@@ -161,7 +161,7 @@ function soRenderEntityListing(array $c): void {
         <div class="so-ent-hero__row">
             <div class="so-ent-hero__media">
                 <?php if ($img && soImageIsReal($img)) { ?>
-                    <img src="<?php echo $h($img['url']); ?>" alt="<?php echo $h($name); ?>" width="240" height="240" fetchpriority="high">
+                    <img src="<?php echo $h($img['url']); ?>" alt="<?php echo $h($kind === 'venue' ? "$name, event venue" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') : "Photo of $name"); ?>" width="240" height="240" fetchpriority="high">
                     <?php renderImageCredit($img, 'img-credit so-ent-hero__credit'); ?>
                 <?php } else { echo soTileHtml($name, 'so-tile so-tile--hero'); } ?>
             </div>
@@ -277,6 +277,18 @@ function soRenderEntityListing(array $c): void {
                         </div>
                     <?php } ?>
                     <?php renderLocationCategoryLinks($kind, $c['id'], $label); ?>
+                    <?php soGuaranteeBlock(['events' => $events]); ?>
+                    <?php
+                    $soAddr = trim((string) ($c['entity']['address']['text']['address1'] ?? ''));
+                    $soWhere = $kind === 'venue'
+                        ? [ "Where is $name?", $name . ($soAddr !== '' ? " is at $soAddr" : '') . ($c['cityLabel'] !== '' ? ($soAddr !== '' ? ', ' : ' is in ') . $c['cityLabel'] : '') . '. Check the event page for the start time and any venue rules before you go.' ]
+                        : [ "What events are on in $name?", $total > 0 ? 'There are ' . soCountWord($total, 'upcoming event') . " in $name on Seat Outlet right now, including concerts, sports and theater. Use the date and price filters above to narrow the list." : "Nothing is on sale in $name right now. New dates are added every day, so leave your email above and we will tell you when tickets go on sale." ];
+                    soMiniFaq(($kind === 'venue' ? $name : $label) . ' tickets FAQ', [
+                        $soWhere,
+                        [ ($kind === 'venue' ? "How do I buy tickets for events at $name?" : "How do I buy event tickets in $name?"), 'Pick a date above, choose how many tickets you need, compare sections and prices on the seat map and check out securely. Tickets ship in time for at least one delivery attempt before the event.' ],
+                        [ 'What happens if an event is canceled?', 'You get a full refund (delivery fees excluded). If the event is rescheduled, your tickets stay valid for the new date. Every order is covered by our 100% guarantee.' ],
+                    ]);
+                    ?>
                     <?php soRenderPromoBlock(); ?>
                 </div>
                 <div id="secondary" class="sidebar col-sm-12 col-md-4">

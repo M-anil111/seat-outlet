@@ -397,7 +397,7 @@ function imageLicenseIsUsable($license) {
 function imageCleanName($name) {
     $n = preg_replace('/\s*\(.*?\)/', '', (string) $name);
     $n = preg_replace('/\s+(feat\.?|featuring|with|vs\.?|&|and)\s+.*$/i', '', $n);
-    $n = preg_replace('/\s+-\s+.*$/', '', $n);
+    $n = preg_replace('/(?:\s+-\s+|:\s+).*$/', '', $n);   // "& Juliet - Musical", shown as "& Juliet: Musical" since soCleanTnName()
     return trim($n);
 }
 

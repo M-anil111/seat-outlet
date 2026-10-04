@@ -54,6 +54,7 @@ $cat      = trim((string) ($post['category'] ?? ''));
 // What the article is about travels with every sign-up, so alerts can be targeted later.
 $nlArgs   = $live !== '' ? ['interest_type' => 'performer', 'interest_name' => $live] : ($cat !== '' ? ['interest_type' => 'category', 'interest_name' => $cat] : []);
 [$articleHtml, $toc] = soBlogProcess(soBlogShortcodes((string) $post['content']), true, $nlArgs);
+$articleHtml = soNoDashes($articleHtml);
 $author   = trim((string) ($post['author_name'] ?? '')) ?: 'Jay Mehta';
 $aParts   = preg_split('/\s+/', $author);
 $initials = strtoupper(substr($aParts[0], 0, 1) . (count($aParts) > 1 ? substr(end($aParts), 0, 1) : ''));

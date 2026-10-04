@@ -107,7 +107,7 @@ function soFestivalTitle(string $name): string {
     $t = $name;
     if (($p = strpos($t, ':')) !== false && $p > 3) $t = substr($t, 0, $p);
     $t = preg_replace('/\s*\([^)]*\)\s*$/', '', $t);
-    $t = preg_replace('/\s+-\s+(mon|tues|wednes|thurs|fri|satur|sun)day\b.*$/i', '', $t);
+    $t = preg_replace('/(?:\s+-\s+|,\s+)(mon|tues|wednes|thurs|fri|satur|sun)day\b.*$/i', '', $t);
     return trim($t);
 }
 
@@ -473,6 +473,7 @@ function soRenderListingPage(array $o): void {
 	<div class="so-more__panel" id="soMorePanel" hidden>
 		<noscript><style>.so-more__panel[hidden]{display:block}.so-more__bar{display:none}</style></noscript>
 		<div class="container so-more__inner">
+			<?php soGuaranteeBlock(['events' => $o['body']['events'] ?? []]); ?>
 			<?php if (is_callable($o['afterRow'])) { ($o['afterRow'])(); } ?>
 			<?php if (is_callable($o['afterSection'])) { ($o['afterSection'])(); } ?>
 		</div>
