@@ -176,8 +176,14 @@ $displayName = $keywordHeader !== '' ? soSearchDisplayName($keywordHeader, $even
 $artistName = $displayName !== '' ? $displayName : 'Event';
 $faqs = getFaqs('search');
 
-$pageMetaTitle = ($displayName !== '' ? $displayName . ' Tickets - Search Results' : 'Search Tickets') . ' | Seat Outlet';
+$pageMetaTitle = $displayName !== ''
+    ? soTitle("$displayName Tickets\u{2014}Search Results", "$displayName Tickets")
+    : soTitle("Search Event Tickets\u{2014}Concerts, Sports & Shows", 'Search Event Tickets');
+$pageMetaDescription = $displayName !== ''
+    ? soMetaFit("$displayName tickets: every matching event, date and venue on Seat Outlet. Compare seats and prices and buy with our 100% buyer guarantee.", 'Live seat maps and secure checkout.')
+    : soMetaFit('Search event tickets by artist, team, show, venue or city. Compare seats and prices from many sellers and buy with our 100% buyer guarantee.', 'Live seat maps and secure checkout.');
 $pageFocusKeyword = $displayName !== '' ? $displayName . ' Tickets' : 'Search Event Tickets';
+$pageCrumbLabel = 'Search';
 
 include 'header.php';
 
@@ -323,7 +329,7 @@ $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="c
 		</div>
 		<?php if (!empty($faqs)) { ?>
 			<div class="tab-section content-section-detail" id="faqs">
-				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Events</h2>
+				<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets FAQ</h2>
 				<div class="accordion" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;
@@ -333,7 +339,7 @@ $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="c
 						$isFirst = ($index === 0);
 					?>
 						<div class="accordion-item">
-							<h2 class="accordion-header" id="<?php echo $headingId; ?>">
+							<h3 class="accordion-header" id="<?php echo $headingId; ?>">
 								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>"
 										type="button"
 										data-bs-toggle="collapse"
@@ -342,7 +348,7 @@ $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="c
 										aria-controls="<?php echo $collapseId; ?>">
 									<?php echo $question; ?>
 								</button>
-							</h2>
+							</h3>
 							<div id="<?php echo $collapseId; ?>"
 								class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>"
 								aria-labelledby="<?php echo $headingId; ?>"

@@ -20,7 +20,7 @@ $postUrl = HOME_URL . '/blog/' . $post['slug'];
 
 // --- SEO: computed before including header.php, same convention used
 // throughout this app - see functions.php. ---
-$pageMetaTitle       = !empty($post['meta_title']) ? $post['meta_title'] : ($post['title'] . ' | Seat Outlet Blog');
+$pageMetaTitle       = soTitle(!empty($post['meta_title']) ? $post['meta_title'] : $post['title'], $post['title']);
 $pageMetaDescription = !empty($post['meta_description']) ? $post['meta_description'] : ($post['excerpt'] ?? '');
 $pageCanonicalUrl    = $postUrl;
 $GLOBALS['soBlogSlug'] = $post['slug'];
@@ -34,7 +34,11 @@ $pageJsonLdNodes = array_values(array_filter([
         ['label' => 'Blog', 'url' => HOME_URL . '/blog'],
     ], $post['title']),
     buildArticleSchema($post, $postUrl),
+    soAuthorPerson($post['author_name'] ?? ''),
 ]));
+$pageMainEntity = $postUrl . '#article';
+$soAuthorNode = soAuthorPerson($post['author_name'] ?? '');
+$pageAuthorId = $soAuthorNode ? $soAuthorNode['@id'] : null;
 
 include 'header.php';
 
@@ -50,6 +54,7 @@ $cat      = trim((string) ($post['category'] ?? ''));
 // What the article is about travels with every sign-up, so alerts can be targeted later.
 $nlArgs   = $live !== '' ? ['interest_type' => 'performer', 'interest_name' => $live] : ($cat !== '' ? ['interest_type' => 'category', 'interest_name' => $cat] : []);
 [$articleHtml, $toc] = soBlogProcess(soBlogShortcodes((string) $post['content']), true, $nlArgs);
+$articleHtml = soNoDashes($articleHtml);
 $author   = trim((string) ($post['author_name'] ?? '')) ?: 'Jay Mehta';
 $aParts   = preg_split('/\s+/', $author);
 $initials = strtoupper(substr($aParts[0], 0, 1) . (count($aParts) > 1 ? substr(end($aParts), 0, 1) : ''));

@@ -30,7 +30,7 @@ function soRenderPromoBlock(): void {
     <?php };
     ?>
     <div class="tab-section content-section-detail mb-0" id="promocode">
-        <h2 class="so-heading fw-bold fs-4 mb-4 text-black">Exclusive Discounts on Event Tickets</h2>
+        <h2 class="so-heading fw-bold fs-4 mb-4 text-black">Ticket promo codes</h2>
         <p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
         <div class="row g-3 mt-2"><?php $pill(5, 'TAKE5'); $pill(10, 'TAKE10'); ?></div>
     </div>
@@ -86,6 +86,7 @@ function soNearbyVenuesWithEvents(array $venue, int $limit = 6): array {
 function soRenderEntityListing(array $c): void {
     $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
     $kind = $c['kind']; $label = (string) $c['label']; $name = (string) $c['name'];
+    $soEntityFacts = $kind === 'venue' ? soEntityFacts($name, 'venue', (string) ($c['entity']['city']['text']['name'] ?? '')) : [];   // Wikidata / Wikipedia / official site, [] until looked up
     $events = $c['events']; $total = (int) $c['total']; $count = (int) $c['count']; $perPage = (int) $c['perPage'];
     $totalPages = $total > 0 ? (int) ceil($total / $perPage) : 0;
     $percent = $total > 0 ? ($perPage / $total) * 100 : 0;
@@ -107,23 +108,30 @@ function soRenderEntityListing(array $c): void {
 
     // ---- head: titles follow "<place> <what> | <what you get>" and never repeat the word Tickets twice
     if ($kind === 'venue') {
-        $pageMetaTitle = "$name Tickets" . ($c['cityLabel'] !== '' ? " - {$c['cityLabel']}" : '') . ' | Seat Outlet';
+        $pageMetaTitle = $c['cityLabel'] !== ''
+            ? soTitle("$name Tickets\u{2014}{$c['cityLabel']} Events & Seats", "$name Tickets\u{2014}{$c['cityLabel']}", "$name Tickets")
+            : soTitle("$name Tickets\u{2014}Events & Seating", "$name Tickets");
         $pageMetaDescription = $total > 0
-            ? "Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ($cheap ? ", from {$cheap['formatted']}" : '') . '. Compare prices and book securely on Seat Outlet.'
-            : "See upcoming events at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . '. Nothing is on sale right now: get an alert or browse nearby venues on Seat Outlet.';
+            ? soMetaFit("Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ($cheap ? ", from {$cheap['formatted']}" : '') . '. Pick seats on live seat maps and buy with our 100% buyer guarantee.', 'Prices from many sellers in one place.')
+            : soMetaFit("See upcoming events at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . '. Nothing is on sale right now: get a price alert or browse nearby venues on Seat Outlet.', 'Every order has a 100% buyer guarantee.');
         $h1 = "$name Tickets";
     } else {
-        $pageMetaTitle = "$label Event Tickets | Concerts, Sports & Theater | Seat Outlet";
+        $pageMetaTitle = soTitle("$label Event Tickets\u{2014}Concerts, Sports & Shows", "$label Event Tickets\u{2014}" . date('Y') . " Events", "$label Event Tickets", "$label Tickets");
         $pageMetaDescription = $total > 0
-            ? "Find tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ': concerts, sports and theater. Compare prices and book securely on Seat Outlet.'
-            : "Find concert, sports and theater tickets in $label. Nothing is on sale right now: browse nearby places on Seat Outlet.";
+            ? soMetaFit("Find tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ': concerts, sports and theater. Compare prices and buy with our 100% buyer guarantee.', 'Live seat maps and secure checkout.')
+            : soMetaFit("Find concert, sports and theater tickets in $label. Nothing is on sale right now: browse nearby places on Seat Outlet.", 'Every order has a 100% buyer guarantee.', 'New listings are added every day.');
         $h1 = "$label Event Tickets";
     }
     $pageCanonicalUrl = HOME_URL . $c['path'];
     $trailFull = array_merge([['label' => 'Home', 'url' => HOME_URL]], $c['trail']);
     $nodes = [soBreadcrumbNodes($trailFull, $name)];
-    if ($kind === 'venue' && !empty($c['entity'])) { $nodes[] = soBuildVenuePlaceSchema($c['entity'], $pageCanonicalUrl); }
-    if ($kind === 'city') { $nodes[] = ['@type' => 'City', 'name' => $name, 'url' => $pageCanonicalUrl, 'containedInPlace' => ['@type' => 'AdministrativeArea', 'name' => (string) ($c['entity']['stateProvince']['text']['name'] ?? '')]]; }
+    if ($kind === 'venue' && !empty($c['entity'])) {
+        $soPlace = soBuildVenuePlaceSchema($c['entity'], $pageCanonicalUrl);
+        if (!empty($soEntityFacts['sameAs'])) $soPlace['sameAs'] = array_values($soEntityFacts['sameAs']);
+        $nodes[] = $soPlace;
+        $pageMainEntity = $soPlace['@id'];
+    }
+    if ($kind === 'city') { $nodes[] = ['@type' => 'City', '@id' => $pageCanonicalUrl . '#city', 'name' => $name, 'url' => $pageCanonicalUrl, 'containedInPlace' => ['@type' => 'AdministrativeArea', 'name' => (string) ($c['entity']['stateProvince']['text']['name'] ?? '')]]; $pageMainEntity = $pageCanonicalUrl . '#city'; }
     $nodes[] = soBuildEventItemListSchema($events, "Upcoming events: $label");
     $pageJsonLdNodes = array_values(array_filter($nodes));
     $img = $c['image'] ?? null;
@@ -153,7 +161,7 @@ function soRenderEntityListing(array $c): void {
         <div class="so-ent-hero__row">
             <div class="so-ent-hero__media">
                 <?php if ($img && soImageIsReal($img)) { ?>
-                    <img src="<?php echo $h($img['url']); ?>" alt="<?php echo $h($name); ?>" width="240" height="240" fetchpriority="high">
+                    <img src="<?php echo $h($img['url']); ?>" alt="<?php echo $h($kind === 'venue' ? "$name, event venue" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') : "Photo of $name"); ?>" width="240" height="240" fetchpriority="high">
                     <?php renderImageCredit($img, 'img-credit so-ent-hero__credit'); ?>
                 <?php } else { echo soTileHtml($name, 'so-tile so-tile--hero'); } ?>
             </div>
@@ -181,6 +189,7 @@ function soRenderEntityListing(array $c): void {
                     } else { echo 'No upcoming events listed right now'; } ?>
                 </p>
                 <p class="so-ent-hero__note">Resale marketplace. Prices are set by sellers and may be above or below face value.</p>
+                <?php echo soFactsSourcesHtml($soEntityFacts, $name); ?>
                 <?php if ($total > 0) { ?><a class="btn btn-primary so-ent-hero__cta" href="#eventsHead">See dates</a><?php } ?>
             </div>
         </div>
@@ -268,6 +277,18 @@ function soRenderEntityListing(array $c): void {
                         </div>
                     <?php } ?>
                     <?php renderLocationCategoryLinks($kind, $c['id'], $label); ?>
+                    <?php soBuyerGuaranteeSection(['events' => $events]); ?>
+                    <?php
+                    $soAddr = trim((string) ($c['entity']['address']['text']['address1'] ?? ''));
+                    $soWhere = $kind === 'venue'
+                        ? [ "Where is $name?", $name . ($soAddr !== '' ? " is at $soAddr" : '') . ($c['cityLabel'] !== '' ? ($soAddr !== '' ? ', ' : ' is in ') . $c['cityLabel'] : '') . '. Check the event page for the start time and any venue rules before you go.' ]
+                        : [ "What events are on in $name?", $total > 0 ? 'There are ' . soCountWord($total, 'upcoming event') . " in $name on Seat Outlet right now, including concerts, sports and theater. Use the date and price filters above to narrow the list." : "Nothing is on sale in $name right now. New dates are added every day, so leave your email above and we will tell you when tickets go on sale." ];
+                    soMiniFaq(($kind === 'venue' ? $name : $label) . ' tickets FAQ', [
+                        $soWhere,
+                        [ ($kind === 'venue' ? "How do I buy tickets for events at $name?" : "How do I buy event tickets in $name?"), 'Pick a date above, choose how many tickets you need, compare sections and prices on the seat map and check out securely. Tickets ship in time for at least one delivery attempt before the event.' ],
+                        [ 'What happens if an event is canceled?', 'You get a full refund (delivery fees excluded). If the event is rescheduled, your tickets stay valid for the new date. Every order is covered by our 100% guarantee.' ],
+                    ]);
+                    ?>
                     <?php soRenderPromoBlock(); ?>
                 </div>
                 <div id="secondary" class="sidebar col-sm-12 col-md-4">

@@ -25,22 +25,25 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $evDate   = $evTs ? date('M j, Y', $evTs) : '';
   // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
   // The date is the first thing to go when the title is too long, so a result never ends in a half word: name + place + date, else name + place, else name.
-  $metaTitle = 'Event not found | Seat Outlet';
+  $metaTitle = soTitle('Event Not Found');
   if (tnEntityUnavailable($event) && $evName === '') {
-      $metaTitle = 'Event temporarily unavailable | Seat Outlet';
+      $metaTitle = soTitle('Event Temporarily Unavailable');
   } elseif ($evName !== '') {
-      $tryTitles = [];
-      if ($evPlace !== '' && $evTs) $tryTitles[] = $evName . ' Tickets in ' . $evPlace . ' - ' . $evDate . ' | Seat Outlet';
-      if ($evPlace !== '') $tryTitles[] = $evName . ' Tickets in ' . $evPlace . ' | Seat Outlet';
-      $tryTitles[] = $evName . ' Tickets | Seat Outlet';
-      $metaTitle = null;
-      foreach ($tryTitles as $tt) { if (mb_strlen($tt) <= 62) { $metaTitle = $tt; break; } }
-      if ($metaTitle === null) $metaTitle = seoClampTitle($evName . ' Tickets | Seat Outlet');
+      // "<event> Tickets—<City, ST> <Mon D>": the place and date go first when the name is long, never half a word.
+      $evShort = $evTs ? date('M j', $evTs) : '';
+      $metaTitle = soTitle(
+          ($evPlace !== '' && $evShort !== '') ? "$evName Tickets\u{2014}$evPlace, $evShort" : '',
+          $evPlace !== '' ? "$evName Tickets\u{2014}$evPlace" : '',
+          $evShort !== '' ? "$evName Tickets\u{2014}$evShort" : '',
+          "$evName Tickets"
+      );
   }
   if ($evName !== '' && empty($pageFocusKeyword)) { $pageFocusKeyword = $evName . ' Tickets'; }   // shown in the strip above the header and the footer
-  $metaDescription = seoClampDescription(
-      'Buy ' . $evName . ' tickets for sale' . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
-      . ($evDate !== '' ? ' on ' . $evDate : '') . '. Compare seats and prices, then check out securely at Seat Outlet.'
+  $evDay = $evTs ? date('D, M j, Y', $evTs) : '';
+  $metaDescription = soMetaFit(
+      $evName . ' tickets' . ($evDay !== '' ? ' for ' . $evDay : '') . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
+      . '. Pick seats on the live seat map and buy with our 100% buyer guarantee.',
+      'Secure checkout and on time delivery.', 'Prices from many sellers in one place.'
   );
   $keywords = [];
   $keywords[] = $evName . " tickets";
@@ -80,61 +83,48 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 
 <?php
 $eventSchema = null;
-if (!empty($event)) {
-    $eventSchema = [
-        "@type" => "Event",
-        "name" => $evName,
-        // Full local date-time with offset when the API gives one, so search engines show the right start.
-        "startDate" => $event['date']['datetimeOffset'] ?? ($event['date']['date'] ?? ''),
-        "eventStatus" => "https://schema.org/EventScheduled",
-        "eventAttendanceMode" => "https://schema.org/OfflineEventAttendanceMode",
-        "url" => $evUrl,
-        "location" => [
-            "@type" => "Place",
-            "name" => $evVenue,
-            "address" => [
-                "@type" => "PostalAddress",
-                "addressLocality" => $evCity,
-                "addressRegion" => $evState,
-                "addressCountry" => "US"
-            ]
-        ],
-        "performer" => buildEventPerformerSchema($event),
-        "organizer" => ["@id" => HOME_URL . "/#organization"],
-    ];
-    if ($evOgImg !== '' && strpos($evOgImg, 'seatoutlet-logo') === false) $eventSchema['image'] = [$evOgImg];
-    if ($metaDescription !== '') $eventSchema['description'] = $metaDescription;
-    // Only claim an offer when the API reports a real price and tickets exist. The range and the count are TicketNetwork's own
-    // current figures for this event (lowest and highest listed price, number of tickets listed), nothing estimated.
-    $offer = !empty($event['_metadata']['hasTickets']) ? seoOffer($evUrl, $event['pricingInfo']['lowPrice']['value'] ?? null) : null;
-    if ($offer) {
-        $high = (float) ($event['pricingInfo']['highPrice']['value'] ?? 0);
-        $low = (float) $offer['price'];
-        $count = (int) ($event['_metadata']['ticketCount'] ?? 0);
-        $offer['@type'] = 'AggregateOffer';
-        $offer['lowPrice'] = $offer['price'];
-        unset($offer['price']);
-        if ($high >= $low && $high > 0) $offer['highPrice'] = number_format($high, 2, '.', '');
-        if ($count > 0) $offer['offerCount'] = $count;
-        $offer['seller'] = ['@id' => HOME_URL . '/#organization'];
-        $eventSchema["offers"] = $offer;
-    }
+if (!empty($event) && $evName !== '') {
+    // The venue's own record adds the street address, postal code and map position (cached a day: venues rarely change).
+    $evVenueId = (int) ($event['venue']['id'] ?? 0);
+    $evVenueRec = $evVenueId > 0 ? tnRequestCached('/catalog/v2/venues/' . $evVenueId, [], 86400) : null;
+    $eventSchema = soEventNode($event, [
+        'venue' => (is_array($evVenueRec) && !tnEntityMissing($evVenueRec)) ? $evVenueRec : null,
+        'image' => ($evOgImg !== '' && strpos($evOgImg, 'seatoutlet-logo') === false) ? $evOgImg : '',
+        'description' => $metaDescription,
+    ]);
 }
 
+// Breadcrumb: Home > category hub > performer > this event (the same trail the page links up through).
+$evCatPath = (string) ($event['defaultCategory']['path'] ?? '');
+$evHub = strpos($evCatPath, '.1872.') !== false ? ['Theater', '/buy-broadway-tickets']   // comedy sits under the Theater tab
+    : ((defined('TN_CATEGORY_PATH_SPORTS') && strpos($evCatPath, TN_CATEGORY_PATH_SPORTS) === 0) ? ['Sports', '/game-day-tickets']
+    : ((defined('TN_CATEGORY_PATH_THEATER') && strpos($evCatPath, TN_CATEGORY_PATH_THEATER) === 0) ? ['Theater', '/buy-broadway-tickets']
+    : ((defined('TN_CATEGORY_PATH_FESTIVAL') && strpos($evCatPath, TN_CATEGORY_PATH_FESTIVAL) === 0) ? ['Festivals', '/upcoming-music-festivals']
+    : ((defined('TN_CATEGORY_PATH_CONCERTS') && strpos($evCatPath, TN_CATEGORY_PATH_CONCERTS) === 0) ? ['Concerts', '/concert-tickets-for-sale'] : ['Events', '/buy-tickets-online']))));
+$evTrail = [["label" => "Home", "url" => HOME_URL . '/'], ["label" => $evHub[0], "url" => HOME_URL . $evHub[1]]];
+$evMainPerf = $event['performers'][0] ?? null;
+if (!empty($evMainPerf['id']) && !empty($evMainPerf['name']) && count($event['performers'] ?? []) === 1) {
+    $evTrail[] = ["label" => $evMainPerf['name'], "url" => HOME_URL . '/artist/' . createSlug((string) $evMainPerf['name'], (int) $evMainPerf['id'])];
+}
+// The last step names the date when the event is called the same as its performer ("Daniel Sloss, Oct 9").
+$evCrumbLabel = ($evName !== '' && isset($evTrail[2]) && strcasecmp($evTrail[2]['label'], $evName) === 0 && $evTs) ? $evName . ', ' . date('M j', $evTs) : $evName;
+$breadcrumbSchema = buildBreadcrumbListSchema($evTrail, $evCrumbLabel !== '' ? $evCrumbLabel : null);
+$breadcrumbSchema['@id'] = $evUrl . '#breadcrumb';
+
 $webPageSchema = [
-    "@type" => "WebPage",
+    "@type" => "ItemPage",
     "@id" => $evUrl . "#webpage",
     "url" => $evUrl,
-    "name" => $evName,
+    "name" => preg_replace('/\x{2014}Seat Outlet$/u', '', (string) $metaTitle),
     "isPartOf" => ["@id" => HOME_URL . "/#website"],
-    "about" => ["@id" => HOME_URL . "/#organization"],
+    "publisher" => ["@id" => HOME_URL . "/#organization"],
+    "author" => ["@id" => HOME_URL . "/#organization"],
+    "inLanguage" => "en-US",
+    "breadcrumb" => ["@id" => $evUrl . '#breadcrumb'],
     "description" => $metaDescription,
 ];
-
-$breadcrumbSchema = buildBreadcrumbListSchema([
-    ["label" => "Home", "url" => HOME_URL],
-    ["label" => "Events", "url" => HOME_URL . "/buy-tickets-online"],
-], $event['text']['name'] ?? null);
+if ($eventSchema) $webPageSchema['mainEntity'] = ['@id' => $eventSchema['@id']];
+if ($evOgImg !== '' && strpos($evOgImg, 'seatoutlet-logo') === false) $webPageSchema['primaryImageOfPage'] = ['@type' => 'ImageObject', 'url' => $evOgImg];
 ?>
 <!-- ============================
 STRUCTURED DATA (JSON-LD)

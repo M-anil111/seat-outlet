@@ -47,11 +47,11 @@ if ($id === 1872) $soFamily = '/buy-broadway-tickets';   // comedy is listed wit
 if ($soFamily === '' && isset($soGenre['kind'])) { $soFamily = $soGenre['kind'] === 'sports' ? '/game-day-tickets' : ($soGenre['kind'] === 'concerts' ? '/concert-tickets-for-sale' : '/buy-broadway-tickets'); }
 
 // --- SEO: computed before including header.php, same convention as the other listing pages - see functions.php. ---
-$pageMetaTitle       = "$catLabel Tickets $year | Dates & Prices | Seat Outlet";
-$pageMetaDescription = $soCatSeo['description'];
+$pageMetaTitle       = soTitle("$catLabel Tickets\u{2014}$year Dates & Prices", "$catLabel Tickets\u{2014}$year", "$catLabel Tickets");
+$pageMetaDescription = soMetaFit($soCatSeo['description'], 'Live seat maps and secure checkout.', 'Prices from many sellers in one place.');
 $pageCanonicalUrl    = HOME_URL . $catBasePath;
 $pageJsonLdNodes     = array_values(array_filter([
-	buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL], ['label' => 'Events', 'url' => HOME_URL . '/buy-tickets-online']], "$catLabel Tickets"),
+	buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL . '/'], soFamilyCrumb($soFamily)], "$catLabel Tickets"),
 	buildFaqPageSchema($soCatSeo['faqs']),
 ]));
 
@@ -60,7 +60,6 @@ $maxPrice = soListingMaxPrice();
 if ($maxPrice > 0) { $isFiltered = true; }
 if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // canonical page stays the indexed one
 
-include 'header.php';
 
 // US events only, the same set the near-you grid, the page copy and the "in the USA" heading describe.
 $catFragment = "contains(defaultCategory/path, '.$id.') and country/alphaCode eq 'US'";
@@ -71,6 +70,9 @@ $eventsResponse = tnRequest('/catalog/v2/events/', $params);
 // be a second, separate API call per page view.
 $total_count = (int) ($eventsResponse['totalCount'] ?? 0);
 $events = $eventsResponse['results'] ?? [];
+// Upcoming events as an ItemList of Event nodes (the same rows the page lists below).
+$pageJsonLdNodes = array_merge($pageJsonLdNodes ?? [], [soEventItemList($events, $pageCanonicalUrl ?? '')]);
+include 'header.php';
 $catInline = soListingInline($catLabel);   // "hip hop", but NBA / MLB / R&B keep their capitals
 
 soRenderListingPage([

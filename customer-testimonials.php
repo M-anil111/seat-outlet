@@ -5,7 +5,7 @@ require_once 'functions.php';
 // the visible content is still illustrative sample testimonials - see
 // the disclaimer added to this page.
 $pageMetaTitle       = 'Customer Testimonials | Seat Outlet';
-$pageMetaDescription = 'See what Seat Outlet customers say about buying concert, sports, and event tickets through our verified ticket marketplace.';
+$pageMetaDescription = 'See what Seat Outlet customers say about buying concert, sports, and event tickets through our resale ticket marketplace.';
 $pageCanonicalUrl    = HOME_URL . '/customer-testimonials';
 include 'header.php';
 ?>

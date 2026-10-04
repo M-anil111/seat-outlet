@@ -177,31 +177,13 @@ function soCheapestEvent(array $events): ?array {
 
 /* ------------------------------------------------------------ structured data */
 
-/** Event nodes inside one ItemList, for venue/city/state/country pages. */
+/** Event nodes inside one ItemList, for venue/city/state/country pages (the same Event node as every other page: soEventNode()). */
 function soBuildEventItemListSchema(array $events, string $listName, int $limit = 20): ?array {
     $items = []; $pos = 1;
     foreach (array_slice($events, 0, $limit) as $ev) {
-        $start = $ev['date']['datetime'] ?? $ev['date']['date'] ?? '';
         $name = trim((string) ($ev['text']['name'] ?? ''));
-        if ($start === '' || $name === '' || empty($ev['id'])) continue;
-        $url = HOME_URL . '/event/' . soEntitySlug($name, $ev['id']);
-        $node = [
-            '@type' => 'Event', 'name' => $name, 'startDate' => $start,
-            'eventStatus' => 'https://schema.org/EventScheduled',
-            'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
-            'url' => $url,
-            'location' => [
-                '@type' => 'Place', 'name' => (string) ($ev['venue']['text']['name'] ?? ''),
-                'address' => ['@type' => 'PostalAddress', 'addressLocality' => (string) ($ev['city']['text']['name'] ?? ''), 'addressRegion' => (string) ($ev['stateProvince']['text']['abbr'] ?? ''), 'addressCountry' => (string) ($ev['country']['alphaCode'] ?? 'US')],
-            ],
-        ];
-        $price = $ev['pricingInfo']['lowPrice']['value'] ?? null;
-        if ($price !== null && (float) $price > 0) {
-            // No validFrom: we do not know when the listing went live, and "today" on every render is not a fact.
-            $node['offers'] = ['@type' => 'Offer', 'url' => $url, 'price' => number_format((float) $price, 2, '.', ''), 'priceCurrency' => 'USD',
-                'availability' => !empty($ev['_metadata']['hasTickets']) ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut'];
-        }
-        $items[] = ['@type' => 'ListItem', 'position' => $pos++, 'item' => $node];
+        if ((empty($ev['date']['datetime']) && empty($ev['date']['date'])) || $name === '' || empty($ev['id'])) continue;
+        $items[] = ['@type' => 'ListItem', 'position' => $pos++, 'item' => soEventNode($ev)];
     }
     if (!$items) return null;
     return ['@type' => 'ItemList', 'name' => $listName, 'numberOfItems' => count($items), 'itemListElement' => $items];
@@ -211,7 +193,7 @@ function soBuildEventItemListSchema(array $events, string $listName, int $limit 
 function soBuildVenuePlaceSchema(array $venue, string $url): array {
     $addr = $venue['address']['text'] ?? [];
     $geo = $venue['geoLocation'] ?? $venue['address']['geoLocation'] ?? [];
-    $node = ['@type' => 'Place', 'name' => (string) ($venue['text']['name'] ?? ''), 'url' => $url];
+    $node = ['@type' => 'Place', '@id' => $url . '#place', 'name' => (string) ($venue['text']['name'] ?? ''), 'url' => $url];
     $street = trim((string) ($addr['address1'] ?? ''));
     $address = ['@type' => 'PostalAddress', 'addressLocality' => (string) ($venue['city']['text']['name'] ?? ''), 'addressRegion' => (string) ($venue['stateProvince']['text']['abbr'] ?? ''), 'addressCountry' => (string) ($venue['country']['alphaCode'] ?? 'US')];
     if ($street !== '') $address['streetAddress'] = $street;

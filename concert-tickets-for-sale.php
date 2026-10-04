@@ -8,12 +8,14 @@ $pageCanonicalUrl    = HOME_URL . '/concert-tickets-for-sale';
 $maxPrice = soListingMaxPrice();
 if ($maxPrice > 0) { $isFiltered = true; }
 if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // filtered/sorted variants: canonical page stays the indexed one
-include 'header.php';
 $perPage = 20;
 $params = categoryListingParams(TN_CATEGORY_PATH_CONCERTS, $perPage, 1, $when, $sort, $maxPrice);
 $results = tnRequest('/catalog/v2/events/', $params);
 $total_count = (int) ($results['totalCount'] ?? 0);
 $events = $results['results'] ?? [];
+// Upcoming events as an ItemList of Event nodes (the same rows the page lists below).
+$pageJsonLdNodes = array_merge($pageJsonLdNodes ?? [], [soEventItemList($events, $pageCanonicalUrl ?? '')]);
+include 'header.php';
 
 soRenderListingPage([
 	'h1'       => 'CONCERT TICKETS FOR SALE',

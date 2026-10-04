@@ -9,11 +9,12 @@ $page = max(1, min(500, (int) ($_GET['page'] ?? 1)));
 
 // Page name: this is the A-Z directory of every artist, team and show, so it is called "Artists, Teams & Shows" (nav label: "Artists & Teams").
 // Every letter is its own crawlable address (?letter=A, ?letter=0-9) rendered on the server, with numbered pages.
-$letterTitle = $letter === '' ? 'Artists, Teams & Shows A-Z' : ($letter === '0-9' ? 'Artists, Teams & Shows starting with a number' : 'Artists, Teams & Shows starting with ' . $letter);
-$pageMetaTitle       = $letterTitle . ($page > 1 ? ' - Page ' . $page : '') . ' | Seat Outlet';
+$letterTitle = $letter === '' ? 'Artists, Teams & Shows A to Z' : ($letter === '0-9' ? 'Artists & Teams Starting With a Number' : 'Artists & Teams Starting With ' . $letter);
+$soKeepOwnMeta       = $letter !== '' || $page > 1;   // the plain A to Z page takes its title from the keyword plan
+$pageMetaTitle       = soTitle($letterTitle . "\u{2014}Tickets" . ($page > 1 ? ", Page $page" : ''), $letterTitle . ($page > 1 ? "\u{2014}Page $page" : ''));
 $pageMetaDescription = $letter === ''
-	? 'Browse every artist, team and show on Seat Outlet, A to Z. Find upcoming events, compare prices and buy tickets with a 100% Worry-Free Guarantee.'
-	: 'Artists, teams and shows ' . ($letter === '0-9' ? 'starting with a number' : 'starting with ' . $letter) . ' with tickets on sale at Seat Outlet. Compare prices and buy with a 100% Worry-Free Guarantee.';
+	? soMetaFit('Browse every artist, team and show on Seat Outlet, A to Z. Find upcoming events, compare prices and buy tickets with our 100% buyer guarantee.')
+	: soMetaFit('Artists, teams and shows ' . ($letter === '0-9' ? 'starting with a number' : 'starting with ' . $letter) . ' with tickets on sale at Seat Outlet. Compare prices and buy with our 100% buyer guarantee.', 'Pick a name to see every upcoming date.');
 $soDirBase = '/all-artists-and-teams';
 $soDirUrl = function ($l, $pg = 1) use ($soDirBase) {
 	$q = [];

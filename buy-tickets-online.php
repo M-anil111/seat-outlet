@@ -4,12 +4,14 @@ require_once 'functions.php';
 $maxPrice = soListingMaxPrice();
 if ($maxPrice > 0) { $isFiltered = true; }
 if ($isFiltered) { $pageRobots = 'noindex, follow'; }
-include 'header.php';
 $perPage = 20;
 $params = categoryListingParams('', $perPage, 1, $when, $sort, $maxPrice);
 $results = tnRequest('/catalog/v2/events/', $params);
 $total_count = (int) ($results['totalCount'] ?? 0);
 $events = $results['results'] ?? [];
+// Upcoming events as an ItemList of Event nodes (the same rows the page lists below).
+$pageJsonLdNodes = array_merge($pageJsonLdNodes ?? [], [soEventItemList($events, $pageCanonicalUrl ?? '')]);
+include 'header.php';
 $faqs = getFaqs('events');
 $artistName = 'Live';   // the FAQ copy is shared with performer pages: "FAQs about Live Events"
 ?>
@@ -24,7 +26,7 @@ $artistName = 'Live';   // the FAQ copy is shared with performer pages: "FAQs ab
 					<span class="hero-title-white">Buy Tickets Online</span>
 				</h1>
 				<p class="hero-subtitle">
-					Buy tickets online for live events from our verified ticket marketplace network. Safe checkout, real tickets, and instant access to unforgettable experiences.
+					Buy tickets online for concerts, games, shows and festivals. Compare seats and prices from many sellers, check out securely and get a 100% guarantee on every order.
 				</p>
 			</div>
 		</div>
@@ -68,7 +70,7 @@ soRenderListingPage([
 		</div>
 		<?php if (!empty($faqs)) { ?>
 			<div class="tab-section content-section-detail">
-				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Events</h2>
+				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Live event tickets FAQ</h2>
 				<div class="accordion" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;
@@ -78,7 +80,7 @@ soRenderListingPage([
 						$isFirst = ($index === 0);
 					?>
 						<div class="accordion-item">
-							<h2 class="accordion-header" id="<?php echo $headingId; ?>">
+							<h3 class="accordion-header" id="<?php echo $headingId; ?>">
 								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>" 
 										type="button"
 										data-bs-toggle="collapse"
@@ -87,7 +89,7 @@ soRenderListingPage([
 										aria-controls="<?php echo $collapseId; ?>">
 									<?php echo $question; ?>
 								</button>
-							</h2>
+							</h3>
 							<div id="<?php echo $collapseId; ?>" 
 								class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>" 
 								aria-labelledby="<?php echo $headingId; ?>" 

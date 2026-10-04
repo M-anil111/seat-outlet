@@ -71,11 +71,12 @@ soZeroPageNote('/artist/' . soEntitySlug($artistName, $id), $total_count === 0);
 // previously rendering with no <title> and no canonical tag at all. ---
 $soCatPath = (string) ($performer['defaultCategory']['path'] ?? '');
 $soNoun  = strpos($soCatPath, TN_CATEGORY_PATH_SPORTS) === 0 ? ['games', 'Game', 'schedule'] : (strpos($soCatPath, TN_CATEGORY_PATH_THEATER) === 0 ? ['shows', 'Show', 'dates'] : ['concerts', 'Concert', 'tour dates']);
-$pageMetaTitle       = "$artistName Tickets $year | {$soNoun[1]} Dates & Prices | Seat Outlet";
-$pageMetaDescription = "Buy $artistName tickets for sale. Compare seats and prices for every upcoming $artistName {$soNoun[0]}, then check out securely with our 100% guarantee.";
+$soDatesWord = $soNoun[0] === 'games' ? 'Schedule' : ($soNoun[0] === 'shows' ? 'Show Dates' : 'Tour Dates');
+$pageMetaTitle       = soTitle("$artistName Tickets\u{2014}$year $soDatesWord & Prices", "$artistName Tickets\u{2014}$year $soDatesWord", "$artistName Tickets\u{2014}$year", "$artistName Tickets");
+$pageMetaDescription = soMetaFit("Buy $artistName tickets for every upcoming $artistName {$soNoun[0]}. Compare seats on live seat maps and buy with our 100% buyer guarantee.", 'Secure checkout and on time delivery.');
 $pageCanonicalUrl    = HOME_URL . '/artist/' . soEntitySlug($artistName, $id);   // the same slug every internal link uses
 if ($priceSnapshot['from'] !== '' && $total_count > 0) {
-    $pageMetaDescription = "$artistName tickets for sale from {$priceSnapshot['from']}. $total_count upcoming " . ($total_count === 1 ? 'event' : 'events') . ". Compare prices across sellers and find $artistName shows near you on Seat Outlet.";
+    $pageMetaDescription = soMetaFit("$artistName tickets from {$priceSnapshot['from']} for $total_count upcoming " . ($total_count === 1 ? rtrim($soNoun[0], 's') : $soNoun[0]) . ". Compare seats on live seat maps and buy with our 100% buyer guarantee.", 'Prices from many sellers in one place.', 'Secure checkout and on time delivery.');
 }
 // BreadcrumbList + an Event node per listed date (the page emitted only the
 // site-wide Organization/WebSite graph before).
@@ -93,7 +94,9 @@ $soFaqs[] = ['question' => "Are $artistName tickets on Seat Outlet legit?", 'ans
 $faqs = array_merge($soFaqs, array_map(function ($q) use ($artistName) {
     return ['question' => str_replace('[artist_name]', $artistName, (string) $q['question']), 'answer' => str_replace('[artist_name]', $artistName, (string) $q['answer'])];
 }, is_array($faqs) ? $faqs : []));
-$pageJsonLdNodes = buildPerformerPageJsonLd($artistName, (int) $id, $events, $breadcrumbs, $pageOgImage ?? '');
+$soEntityFacts = soEntityFacts($artistName, 'performer');   // Wikidata / Wikipedia / official site, [] until the background lookup has run
+$pageJsonLdNodes = buildPerformerPageJsonLd($artistName, (int) $id, $events, $breadcrumbs, $pageOgImage ?? '', $soCatPath, $soEntityFacts['sameAs'] ?? []);
+$pageMainEntity  = HOME_URL . '/artist/' . createSlug($artistName, (int) $id) . '#performer';
 if ($faqNode = buildFaqPageSchema($faqs)) { $pageJsonLdNodes[] = $faqNode; }
 
 $pagePreloadImage = $hasRealImage ? $performer_image : '/images/event-so.webp';
@@ -128,7 +131,7 @@ include 'header.php';
 						<div class="col-md-3">
 							<div class="img-artist">
 								<?php if ($hasRealImage) { ?>
-									<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" fetchpriority="high" width="300" height="300" />
+									<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($artistName . ', ' . strtolower($soNoun[1]) . ' tickets on Seat Outlet', ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" fetchpriority="high" width="300" height="300" />
 									<?php renderImageCredit($performerImg, 'img-credit d-none d-md-block'); ?>
 								<?php } else { echo soTileHtml($artistName, 'so-tile so-tile--hero'); } ?>
 							</div>
@@ -180,9 +183,11 @@ include 'header.php';
 			<li class="nav-item">
 				<button class="nav-link" type="button" data-target="promocode" onclick="scrollToElement('promocode')">Promocode</button>
 			</li>
+			<?php if (trim(strip_tags((string) $performer_bio)) !== '') { ?>
 			<li class="nav-item">
 				<button class="nav-link" type="button" data-target="about" onclick="scrollToElement('about')">About</button>
 			</li>
+			<?php } ?>
 			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
 			</li>
@@ -382,7 +387,7 @@ include 'header.php';
 					</div>	
 
 					<div class="tab-section content-section-detail mb-0" id="promocode">
-						<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Ticket Promo Codes</h2>
+						<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> ticket promo codes</h2>
 						<p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
 						<div class="row g-3 mt-2">
 							<div class="col-md-6">
@@ -485,7 +490,7 @@ include 'header.php';
 		</div>
 		<?php if (!empty($events)) { ?>
 		<div class="tab-section content-section-detail so-tourtable" id="dates">
-			<h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars($soNoun[2], ENT_QUOTES, 'UTF-8'); ?> and ticket prices</h2>
+			<h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars($soNoun[0] === 'games' ? 'Schedule & Game Dates' : ($soNoun[0] === 'shows' ? 'Schedule & Show Dates' : 'Schedule & Tour Dates'), ENT_QUOTES, 'UTF-8'); ?></h2>
 			<p class="so-tourtable__lead">Every upcoming <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars(strtolower($soNoun[1]), ENT_QUOTES, 'UTF-8'); ?> on Seat Outlet, with the lowest price listed today. Pick a date to compare seats.</p>
 			<div class="so-table-wrap">
 				<table>
@@ -526,6 +531,8 @@ include 'header.php';
 			<p class="so-tourtable__more">Looking for something else? Browse <a href="<?php echo htmlspecialchars($breadcrumbs[1]['url'] ?? '/buy-tickets-online', ENT_QUOTES, 'UTF-8'); ?>">more <?php echo htmlspecialchars(strtolower($breadcrumbs[1]['label'] ?? 'event'), ENT_QUOTES, 'UTF-8'); ?> tickets</a>, see <a href="/city-events">events by city</a>, or read how our <a href="/worry-free-guarantee">100% guarantee</a> and <a href="/ticket-buyer-protection">buyer protection</a> work.</p>
 		</div>
 		<?php } ?>
+		<?php soBuyerGuaranteeSection(['subject' => $artistName, 'events' => $events]); ?>
+		<?php if (trim(strip_tags((string) $performer_bio)) !== '') { /* no bio: no About block (it used to show an empty column) */ ?>
 		<div class="tab-section content-section-detail" id="about">
 			<div class="row">
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
@@ -533,24 +540,26 @@ include 'header.php';
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">About <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?></h2>
 						<?php renderBioBlock($performer_bio); ?>
 						<?php if (!empty($performer_bio)) { ?>
-						<p class="small text-muted mb-0 bio-source">Biography adapted from <a href="https://en.wikipedia.org/wiki/<?php echo rawurlencode(str_replace(' ', '_', $artistName)); ?>" rel="nofollow noopener" target="_blank">Wikipedia</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="nofollow noopener" target="_blank">CC BY-SA</a>.</p>
+						<p class="small text-muted mb-0 bio-source">Biography adapted from <a href="<?php echo htmlspecialchars($soEntityFacts['wikipedia'] ?? ('https://en.wikipedia.org/wiki/' . rawurlencode(str_replace(' ', '_', $artistName))), ENT_QUOTES, 'UTF-8'); ?>" rel="nofollow noopener" target="_blank">Wikipedia</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="nofollow noopener" target="_blank">CC BY-SA</a>.</p>
 						<?php } ?>
+						<?php echo soFactsSourcesHtml($soEntityFacts, $artistName); ?>
 					</div>
 				</div>
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
 					<div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
 						<?php if ($hasRealImage) { ?>
-							<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>" class="img-about img-fluid rounded" loading="lazy" width="600" height="450" />
+							<img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars('Photo of ' . $artistName, ENT_QUOTES, 'UTF-8'); ?>" class="img-about img-fluid rounded" loading="lazy" width="600" height="450" />
 							<?php renderImageCredit($performerImg, 'img-credit'); ?>
 						<?php } else { echo soTileHtml($artistName, 'so-tile so-tile--about'); } ?>
 					</div>
 				</div>				
 			</div>
 		</div>
+		<?php } ?>
 		<?php if (!empty($faqs)) { ?>
 			<?php $faqVisible = 5; // FAQs shown before "Show more" ?>
 			<div class="tab-section content-section-detail" id="faqs">
-				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Events</h2>
+				<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets FAQ</h2>
 				<div class="accordion" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;
@@ -562,7 +571,7 @@ include 'header.php';
 						$isExtra = ($index >= $faqVisible);
 					?>
 						<div class="accordion-item<?php echo $isExtra ? ' faq-extra d-none' : ''; ?>">
-							<h2 class="accordion-header" id="<?php echo $headingId; ?>">
+							<h3 class="accordion-header" id="<?php echo $headingId; ?>">
 								<button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>" 
 										type="button"
 										data-bs-toggle="collapse"
@@ -571,7 +580,7 @@ include 'header.php';
 										aria-controls="<?php echo $collapseId; ?>">
 									<?php echo $question; ?>
 								</button>
-							</h2>
+							</h3>
 							<div id="<?php echo $collapseId; ?>" 
 								class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>" 
 								aria-labelledby="<?php echo $headingId; ?>" 
@@ -616,7 +625,7 @@ include 'header.php';
 		<?php renderPerformerWhere($artistName, (int) $id, $events ?? [], (int) $total_count); ?>
 		<?php if (!empty($relatedPerformers)) { $i = 0; ?>
 			<div class="tab-section content-section-detail" id="fans">
-				<h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Fans Also Love</h2>
+				<h2 class="so-heading fw-bold fs-4 mb-3 text-black">Fans of <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> also love</h2>
 				<?php renderRelatedPerformersGrid($relatedPerformers, 8); ?>
 			</div>
 		<?php } ?>

@@ -189,7 +189,7 @@ function soHomeFeedFormat(array $events, int $max = 10): array {
             'name' => $name,
             'iso' => $ts ? date('Y-m-d', $ts) : '',
             'time' => (string)($event['date']['text']['time'] ?? ''),
-            'date' => $ts ? date('D, M j', $ts) . (($event['date']['text']['time'] ?? '') !== '' ? ' - ' . $event['date']['text']['time'] : '') : '',
+            'date' => $ts ? date('D, M j', $ts) . (($event['date']['text']['time'] ?? '') !== '' ? ', ' . $event['date']['text']['time'] : '') : '',
             'venue' => $event['venue']['text']['name'] ?? '',
             'loc' => trim($city . ', ' . $state, ', '),
             'dist' => isset($event['geoLocation']['distance']['distance']) ? (int) round($event['geoLocation']['distance']['distance']) : null,

@@ -43,7 +43,7 @@ include_once 'functions.php';
     if (empty($pageMetaTitle)) {
         $soStaticMeta = require __DIR__ . '/inc/page-meta.php';
         if (isset($soStaticMeta[$soReqPath])) {
-            $pageMetaTitle       = $soStaticMeta[$soReqPath][0] . ' | Seat Outlet';
+            $pageMetaTitle       = soNormalizeTitle($soStaticMeta[$soReqPath][0]);
             $pageMetaDescription = $soStaticMeta[$soReqPath][1];
             $pageCanonicalUrl    = rtrim(HOME_URL, '/') . $soReqPath;
         }
@@ -53,9 +53,12 @@ include_once 'functions.php';
     $soPlan = soSeoPlan($soReqPath);
     if ($soPlan !== null) {
         if (empty($pageRule['focus_keyword'])) { $pageFocusKeyword = $soPlan['keyword']; }
-        if ($soPlan['title'] !== null)       { $pageMetaTitle       = $soPlan['title'] . ' | Seat Outlet'; }
-        if ($soPlan['description'] !== null) { $pageMetaDescription = $soPlan['description']; }
-        $pageCanonicalUrl = rtrim(HOME_URL, '/') . ($soReqPath === '/' ? '' : $soReqPath);
+        // A letter, category or page 2+ of a listed page keeps its own title, description and canonical (they are different pages).
+        if (empty($soKeepOwnMeta)) {
+            if ($soPlan['title'] !== null)       { $pageMetaTitle       = soNormalizeTitle($soPlan['title']); }
+            if ($soPlan['description'] !== null) { $pageMetaDescription = $soPlan['description']; }
+            $pageCanonicalUrl = rtrim(HOME_URL, '/') . ($soReqPath === '/' ? '' : $soReqPath);
+        }
     }
     // Unknown event ids must answer 404 (they used to be a 200 page with a junk title). The status has
     // to be sent before any output; the event is cached by tnRequest, so inc/seo-event.php reuses it.
@@ -100,6 +103,7 @@ include_once 'functions.php';
     }
     sendPageCacheHeaders();   // after the 404 check above: the status decides the policy
     // Keep titles and descriptions inside what a search result shows.
+    if (!empty($pageCanonicalUrl)) { $GLOBALS['pageCanonicalUrl'] = $pageCanonicalUrl; }   // pages rendered inside a function: the output filters read it
     if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
     if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription($pageMetaDescription); }
 ?>
@@ -211,7 +215,17 @@ include_once 'functions.php';
         // got ZERO structured data, not even the baseline Organization/
         // WebSite graph every other path on the site has. Always emit that
         // baseline here; merge in page-specific nodes when present.
-        outputJsonLdGraph(array_merge([buildOrganizationSchema(), buildWebsiteSchema()], $pageJsonLdNodes ?? []));
+        $soTitleBare = preg_replace('/\x{2014}Seat Outlet$/u', '', (string) $pageMetaTitle);
+        outputJsonLdGraph(soCompletePageGraph(array_merge([buildOrganizationSchema(), buildWebsiteSchema()], $pageJsonLdNodes ?? []), [
+            'url' => $pageCanonicalUrl ?? '',
+            'name' => $soTitleBare,
+            'description' => $pageMetaDescription ?? '',
+            'image' => $pageOgImage ?? '',
+            'type' => $pageSchemaType ?? null,
+            'mainEntity' => $pageMainEntity ?? null,
+            'author' => $pageAuthorId ?? null,
+            'crumbLabel' => $pageCrumbLabel ?? trim(explode("\u{2014}", $soTitleBare)[0]),
+        ]));
         ?>
     <?php } elseif ($soReqPath === '/' || $soReqPath === '/index.php') { ?>
         <?php include 'inc/seo.php'; ?>
