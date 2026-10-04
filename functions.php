@@ -2623,21 +2623,26 @@ function soRedirectLegacyUrl() {
 }
 
 /**
- * Addresses people (and old links) commonly guess for pages that exist under another name. Called by 404.php: a match is a permanent
- * redirect to the real page instead of a 404.
+ * Addresses people (and old links) commonly guess for pages that exist under another name: a permanent redirect to the real page
+ * instead of a 404. Each guessed address is a tiny file in the web root that calls this with its target (terms-of-use.php, venues.php ...),
+ * so it works with the web server's plain "try the .php file" rule; 404.php also calls it with no target for servers that send unknown
+ * addresses there.
  */
-function soAliasRedirect() {
+function soAliasRedirect($to = null) {
     if (PHP_SAPI === 'cli' || headers_sent()) return;
     if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
-    $path = rtrim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
-    $aliases = [
-        '/terms' => '/terms-and-conditions', '/terms-of-use' => '/terms-and-conditions', '/terms-of-service' => '/terms-and-conditions',
-        '/terms-conditions' => '/terms-and-conditions', '/privacy' => '/privacy-policy', '/venues' => '/cities', '/about' => '/about-seat-outlet',
-        '/about-us' => '/about-seat-outlet', '/contact-us' => '/contact', '/artists' => '/performers', '/guarantee' => '/worry-free-guarantee',
-    ];
-    if (!isset($aliases[$path]) || !is_file(__DIR__ . '/' . ltrim($aliases[$path], '/') . '.php')) return;
+    if ($to === null) {
+        $path = rtrim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+        $aliases = [
+            '/terms' => '/terms-and-conditions', '/terms-of-use' => '/terms-and-conditions', '/terms-of-service' => '/terms-and-conditions',
+            '/terms-conditions' => '/terms-and-conditions', '/privacy' => '/privacy-policy', '/venues' => '/cities', '/about' => '/about-seat-outlet',
+            '/contact-us' => '/ticket-customer-service', '/artists' => '/performers',
+        ];
+        $to = $aliases[$path] ?? null;
+    }
+    if ($to === null || !is_file(__DIR__ . '/' . ltrim($to, '/') . '.php')) return;
     http_response_code(301);
-    header('Location: ' . $aliases[$path]);
+    header('Location: ' . $to);
     header('Cache-Control: public, max-age=3600');
     exit;
 }
