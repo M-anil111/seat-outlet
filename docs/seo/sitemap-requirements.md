@@ -12,11 +12,11 @@ Source: Google Search Central, "Build and submit a sitemap" (developers.google.c
 | `<lastmod>` only if consistently and verifiably accurate | Met, with a note | Value is TicketNetwork's own update time for the event (`metadataInclusiveUpdatedAt`, else `updatedAt`); an artist, venue or city gets the newest of its events. Pages with no real change time (static pages) have no `<lastmod>` at all instead of a guessed one |
 | `<lastmod>` in W3C datetime | Done in this release | Full timestamp with the time of day and a UTC offset, for example `2026-10-04T17:49:46+00:00` (was date only). A stamp with no zone is read as UTC |
 | `<priority>` and `<changefreq>` | Not used | Google ignores both |
-| Sitemap at the site root, submitted via Search Console or robots.txt | See open item | Index is at `/sitemaps/sitemap-index.xml` and `/sitemap.xml`; submit it in Search Console |
+| Sitemap at the site root, submitted via Search Console or robots.txt | See open item | Index is at `/sitemaps/sitemap.xml`; submit it in Search Console |
 
 ## Readable in a browser
 
-`sitemap.xsl` (served as `text/xsl` by `/sitemap-serve.php?f=style`) styles every sitemap file for people: header, counts, newest and oldest change, type labels, UTC timestamps, a filter box, mobile and dark mode. Search engines ignore it and read the XML.
+`sitemap.xsl` (served as `text/xsl` by `/sitemap-style.php`) styles every sitemap file for people: header, counts, newest and oldest change, type labels, UTC timestamps, a filter box, mobile and dark mode. Search engines ignore it and read the XML.
 
 Why `/sitemaps/events-9.xml` looked broken: it is a static file the builder wrote before the stylesheet existed, so it had no `<?xml-stylesheet?>` line. This release:
 
@@ -25,4 +25,4 @@ Why `/sitemaps/events-9.xml` looked broken: it is a static file the builder wrot
 
 ## Open item (not fixable in code)
 
-While live is served through the Cloudflare Worker, `https://seatoutlet.com/robots.txt` says `Sitemap: https://seatoutlet.com/sitemap.xml`, and the Worker answers `/sitemap.xml` with its own list of about 20 URLs, not the real index. Until the Worker is removed (see docs/production-cutover.md) or its robots.txt and `/sitemap.xml` are changed to point at `/sitemaps/sitemap-index.xml`, submit `https://seatoutlet.com/sitemaps/sitemap-index.xml` directly in Search Console.
+While live is served through the Cloudflare Worker, `https://seatoutlet.com/robots.txt` says `Sitemap: https://seatoutlet.com/sitemaps/sitemap.xml`, and the Worker answers `/sitemap.xml` with its own list of about 20 URLs, not the real index. Until the Worker is removed (see docs/production-cutover.md) or its robots.txt and `/sitemap.xml` are changed to point at `/sitemaps/sitemap.xml`, submit `https://seatoutlet.com/sitemaps/sitemap.xml` directly in Search Console.

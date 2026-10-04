@@ -22,7 +22,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 |     junk ids are rejected before any API call.
 |
 |   ZERO-EVENT PAGES: noindex,follow, and remembered in a small cache file so
-|     sitemap.php can leave them out without calling the API per URL.
+|     sitemap.xml can leave them out without calling the API per URL.
 */
 
 const SO_MAX_ENTITY_ID = 2147483647;
@@ -104,7 +104,7 @@ const SO_ZERO_PAGES_KEY = 'so_zero_pages';
 const SO_ZERO_PAGES_TTL_DAYS = 14;
 
 /**
- * Remember (or forget) that a page showed no events, so sitemap.php can skip it. Called by the entity renderers on every
+ * Remember (or forget) that a page showed no events, so sitemap.xml can skip it. Called by the entity renderers on every
  * render: a rare cache write only when the state changes. The sitemap never calls the API per URL; it only reads this.
  */
 function soZeroPageNote(string $path, bool $isZero): void {

@@ -79,8 +79,8 @@ Names below follow the beta layout (`/home/seatoutlet-beta/htdocs/beta.seatoutle
 8. **Test live before any DNS change**, from your own computer (replace the IP with the server's):
    ```
    curl -sk --resolve seatoutlet.com:443:<server-ip> https://seatoutlet.com/ | grep -c "<title>"
-   curl -sk --resolve seatoutlet.com:443:<server-ip> https://seatoutlet.com/robots.txt        # Allow: /, Sitemap: https://seatoutlet.com/sitemap.php
-   curl -sk --resolve seatoutlet.com:443:<server-ip> https://seatoutlet.com/sitemap.php | head   # the index with about 16 files
+   curl -sk --resolve seatoutlet.com:443:<server-ip> https://seatoutlet.com/robots.txt        # Allow: /, Sitemap: https://seatoutlet.com/sitemaps/sitemap.xml
+   curl -sk --resolve seatoutlet.com:443:<server-ip> https://seatoutlet.com/sitemaps/sitemap.xml | head   # the index with about 16 files
    ```
    Open the home page, an artist, an event and the blog the same way (or temporarily add the IP to your hosts file).
 
@@ -98,7 +98,7 @@ Names below follow the beta layout (`/home/seatoutlet-beta/htdocs/beta.seatoutle
    `/order-confirmation`, `/ajax`: **Eligible for cache**, Edge TTL **Use cache-control header if present**. The site already
    sends `s-maxage=120, stale-while-revalidate=600`, and answers `no-store` for pages built without API data.
 6. **Speed > Optimization > Content Optimization: Rocket Loader Off.** **SSL/TLS > Edge Certificates: Always Use HTTPS On.**
-7. **Search Console:** add the domain property, then Sitemaps > submit `https://seatoutlet.com/sitemap.php`.
+7. **Search Console:** add the domain property, then Sitemaps > submit `https://seatoutlet.com/sitemaps/sitemap.xml`.
 
 Rollback at any point before step 3 of Part 2: nothing changed for visitors. After: point the DNS record back to the old setup
 and re-create the Worker route (keep the Worker's code until a week of live traffic has gone well).
@@ -113,7 +113,7 @@ LIVE_DB=seatoutlet_live BETA_DB=seatoutlet_beta deploy/clone-live-db-to-beta.sh
 
 ## After the cutover: check
 
-- `https://seatoutlet.com/robots.txt` shows the Disallow list and the sitemap.php line; `https://seatoutlet.com/sitemap.xml` is
+- `https://seatoutlet.com/robots.txt` shows the Disallow list and the sitemap.php line; `https://seatoutlet.com/sitemaps/sitemap.xml` is
   served by the site, not the Worker.
 - `curl -sI https://seatoutlet.com/concert-tickets-for-sale` shows `cf-cache-status: HIT` on the second request.
 - `https://beta.seatoutlet.com/robots.txt` still says `Disallow: /`, and beta pages have `noindex`.

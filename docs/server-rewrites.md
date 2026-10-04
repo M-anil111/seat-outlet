@@ -69,18 +69,19 @@ Behind Cloudflare, `$binary_remote_addr` is Cloudflare's address unless the real
 location = /robots.txt { rewrite ^ /robots.php last; }
 ```
 
-Beta/staging/dev hosts then return `Disallow: /`; the production host returns the normal rules plus a `Sitemap:` line for the sitemap index. The sitemap is a **sitemap index** (`/sitemaps/sitemap-index.xml`) pointing at typed files (`pages-1`, `events-1..N`, `performers-1..N`, `venues-1..N`, `cities-1..N`, 5,000 URLs each). The site builds and refreshes them itself in the background (see `inc/sitemap-build.php`; a fresh crawl every 6 hours on the live host, 24 on beta, `<lastmod>` from TicketNetwork's own update times). It writes static files into `<web root>/sitemaps/` when that folder is writable by PHP (nothing else to configure; the web server serves them as plain files) and otherwise into `cache/sitemaps/`, served through `/sitemap.php` and `/sitemap-serve.php?f=NAME`. Optional: `php cron/build-sitemaps.php` from cron does the same crawl without waiting for page traffic (`--status` shows progress). Until the first crawl finishes, `/sitemap.php` serves the older single-file sitemap.
+Beta/staging/dev hosts then return `Disallow: /`; the production host returns the normal rules plus a `Sitemap:` line for the sitemap index. The sitemap is a **sitemap index** (`/sitemaps/sitemap.xml`) pointing at typed files (`pages-1`, `events-1..N`, `performers-1..N`, `venues-1..N`, `cities-1..N`, 5,000 URLs each). The site builds and refreshes them itself in the background (see `inc/sitemap-build.php`; a fresh crawl every 6 hours on the live host, 24 on beta, `<lastmod>` from TicketNetwork's own update times). It writes static files into `<web root>/sitemaps/` when that folder is writable by PHP (nothing else to configure; the web server serves them as plain files) and otherwise into `cache/sitemaps/`, served through `/sitemap.php` and `/sitemap-serve.php?f=NAME`. Optional: `php cron/build-sitemaps.php` from cron does the same crawl without waiting for page traffic (`--status` shows progress). Until the first crawl finishes, `/sitemap.php` serves the older single-file sitemap.
 
-### One sitemap address: /sitemap.xml
+### One sitemap address: /sitemaps/sitemap.xml
 
-The index lives at `/sitemap.xml` only (robots.txt, the footer and Search Console all use it). Add inside the `server { }` block, before the `location ~ \.php$` block, then reload nginx:
+The only index is `/sitemaps/sitemap.xml`, a static file the site writes itself (robots.txt, the footer and Search Console all use it). The old names are retired: `/sitemaps/sitemap-index.xml` is deleted by the next build, and the root `/sitemap.php` and `/sitemap.xml` should 301 to the new address. Add inside the `server { }` block, then reload nginx:
 
 ```nginx
-location = /sitemap.xml { rewrite ^ /sitemap-serve.php last; }
-location = /sitemap.php { return 301 /sitemap.xml; }
+location = /sitemap.xml { return 301 /sitemaps/sitemap.xml; }
+location = /sitemap.php { return 301 /sitemaps/sitemap.xml; }
+location = /sitemaps/sitemap-index.xml { return 301 /sitemaps/sitemap.xml; }
 ```
 
-If the Cloudflare Worker still answers `/sitemap.xml` itself, remove that route from the Worker (it served the old 21-URL list) so the request reaches the origin. `sitemap.php` stays only as a 301 to `/sitemap.xml` for old links.
+If the Cloudflare Worker still answers `/sitemap.xml` itself (the old 21-URL list), remove that route from the Worker, or have it 301 to `/sitemaps/sitemap.xml`.
 
 ## Caching and compression (server settings the code cannot set)
 

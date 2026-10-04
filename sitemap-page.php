@@ -13,7 +13,7 @@ include 'header.php';
 <section class="so-sitemap py-5">
     <div class="container">
         <h2 class="so-sitemap__title">Sitemap</h2>
-        <p class="so-sitemap__lead">Every main section of Seat Outlet in one place. Search engines read our <a href="/sitemap.xml">XML sitemap</a> instead.</p>
+        <p class="so-sitemap__lead">Every main section of Seat Outlet in one place. Search engines read our <a href="/sitemaps/sitemap.xml">XML sitemap</a> instead.</p>
 
         <div class="so-sitemap__grid">
             <?php foreach ($soMenu as $sec) { ?>

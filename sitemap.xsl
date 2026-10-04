@@ -2,7 +2,7 @@
 <!--
   Makes the XML sitemaps readable in a browser: a header, a few facts about the file and a searchable table with the time each address
   last changed. Search engines ignore this file and read the XML underneath exactly as before.
-  Served as text/xsl by /sitemap.php?f=style. XSLT 1.0 only (that is what browsers run), no external requests.
+  Served as text/xsl by /sitemap-style.php. XSLT 1.0 only (that is what browsers run), no external requests.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:s="http://www.sitemaps.org/schemas/sitemap/0.9">
   <xsl:output method="html" encoding="UTF-8" indent="no"/>
@@ -191,7 +191,7 @@
               </table></div>
             </xsl:otherwise>
           </xsl:choose>
-          <p class="foot">This page is only a readable view. Search engines read the same file as plain XML. Back to the <a href="/sitemap.php">sitemap index</a> or the <a href="/">home page</a>.</p>
+          <p class="foot">This page is only a readable view. Search engines read the same file as plain XML. Back to the <a href="/sitemaps/sitemap.xml">sitemap index</a> or the <a href="/">home page</a>.</p>
         </main>
         <script>
           (function () {
