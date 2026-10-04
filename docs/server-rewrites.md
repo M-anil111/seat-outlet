@@ -83,17 +83,19 @@ location = /sitemaps/sitemap-index.xml { return 301 /sitemaps/sitemap.xml; }
 
 If the Cloudflare Worker still answers `/sitemap.xml` itself (the old 21-URL list), remove that route from the Worker, or have it 301 to `/sitemaps/sitemap.xml`.
 
-## Blog posts: /blog/<slug>
+## Blog: one entry point, /blog
 
-The blog list (`/blog`) works, but every post address (`/blog/upcoming-concert-tours` and the other six) answers 404 on beta, because the web server has no rule for it. The post page itself is fine: `/blog-post?slug=upcoming-concert-tours` returns the full article (about 3,500 words, table of contents, images with alt text, FAQ data). While the 404 stands, the Cloudflare Worker `seatoutlet-blog-proxy` swaps in its own short placeholder page ("Quick Guide", about 150 words, a button to the beta site), which is what visitors see on seatoutlet.com today.
+`blog.php` is the whole blog: `/blog` is the list and `/blog/<slug>` is an article. There is no separate article script and no `?slug=` address to share; `/blog-post` and `/blog-post.php?slug=x` answer 301 to `/blog/x`.
 
-Add inside the `server { }` block, before the `location ~ \.php$` block, and reload nginx:
+The web server needs one rule so `/blog/<slug>` reaches `blog.php` (without it, `/blog/upcoming-concert-tours` answers 404 "File not found." on beta, and the Cloudflare Worker `seatoutlet-blog-proxy` then replaces the article with its own short placeholder page, which is what seatoutlet.com showed). Add inside the `server { }` block, before the `location ~ \.php$` block, and reload nginx:
 
 ```nginx
-rewrite ^/blog/([a-z0-9-]+)/?$ /blog-post.php?slug=$1 last;
+rewrite ^/blog/([a-z0-9-]+)/?$ /blog.php?slug=$1 last;
 ```
 
-Test: `curl -s -o /dev/null -w "%{http_code}\n" https://beta.seatoutlet.com/blog/upcoming-concert-tours` should print 200, and the page should have an `<h1>` and many `<h2>` headings. The Worker only shows its placeholder when the origin answers 400 or higher, so it steps aside by itself once this rule exists. If the rule cannot be added yet, the same effect is one line in the Worker: for paths that start with `/blog/` and have a slug, fetch `${BETA_ORIGIN}/blog-post?slug=<slug>` instead of the path itself.
+Test: `curl -s -o /dev/null -w "%{http_code}\n" https://beta.seatoutlet.com/blog/upcoming-concert-tours` prints 200 and the page has an `<h1>` and many `<h2>` headings.
+
+If the rule cannot be added yet, `https://beta.seatoutlet.com/blog.php/upcoming-concert-tours` already works (PATH_INFO), so the Worker can fetch that address for every `/blog/<slug>`. The Worker is deleted at cutover (docs/production-cutover.md), after which only the nginx rule matters.
 
 ## Caching and compression (server settings the code cannot set)
 

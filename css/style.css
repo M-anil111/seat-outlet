@@ -6406,6 +6406,8 @@ a.so-live__row:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(
 .so-art__written { margin: 0; font-size: 14px; color: #6e6e73; }
 .so-art__name { margin: 2px 0 8px; font-size: 22px; font-weight: 700; letter-spacing: -.01em; color: #1d1d1f; }
 .so-art__bio { margin: 0; font-size: 16px; line-height: 1.55; color: #424245; }
+.so-art__cluster { margin: 0 0 18px; color: #6e6e73; font-size: 15px; line-height: 1.5; }
+.so-art__cluster a { color: #0a58ca; font-weight: 600; }
 .so-art__more-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .so-art__more-grid a { display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: #1d1d1f; font-weight: 600; line-height: 1.3; }
 .so-art__more-grid img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 16px; background: #f5f5f7; }
