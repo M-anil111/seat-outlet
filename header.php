@@ -102,7 +102,6 @@ include_once 'functions.php';
         }
     }
     sendPageCacheHeaders();   // after the 404 check above: the status decides the policy
-    ob_start('soNoRocketLoader');   // every <script> opts out of Cloudflare Rocket Loader, see functions.php
     // Keep titles and descriptions inside what a search result shows.
     if (!empty($pageCanonicalUrl)) { $GLOBALS['pageCanonicalUrl'] = $pageCanonicalUrl; }   // pages rendered inside a function: the output filters read it
     if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
@@ -264,6 +263,7 @@ include_once 'functions.php';
 </head>
 
 <body<?php echo !empty($soHomeHero) ? ' class="so-home"' : ''; ?>>
+    <?php if (GTM_ID !== '') { ?><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=<?php echo htmlspecialchars(GTM_ID, ENT_QUOTES, 'UTF-8'); ?>" height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Manager"></iframe></noscript><?php } ?>
     <?php
     // The strip above the header is the page's one <h1>: its focus keyword (admin > Page rules, or the page's own).
     // The same keyword closes the footer. Any other <h1> in a page template is turned into an <h2> that looks the same.
