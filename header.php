@@ -142,7 +142,11 @@ include_once 'functions.php';
     <!-- Critical CSS -->
     <?php /* css/bootstrap.min.css = Bootstrap trimmed to the classes this site uses (tools/build-assets.sh); the full file is the fallback. */ ?>
     <link rel="stylesheet" href="<?php echo is_file(__DIR__ . '/css/bootstrap.min.css') ? htmlspecialchars(soAsset('css/bootstrap.css'), ENT_QUOTES, 'UTF-8') : '/lib/bootstrap/5.3.8/bootstrap.min.css'; ?>">
-    <?php if (is_file(__DIR__ . '/css/style.min.css')) { ?>
+    <?php /* One stylesheet per page type (inc/css-groups.php), the same rules in the same order minus what the page type cannot use; css/style.min.css when the build has not made them. */
+    $soCssFiles = soCssBundleFiles();
+    if ($soCssFiles) { foreach ($soCssFiles as $soCssRel) { ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(HOME_URL, '/') . '/' . $soCssRel . '?v=' . filemtime(__DIR__ . '/' . $soCssRel), ENT_QUOTES, 'UTF-8'); ?>">
+    <?php } } elseif (is_file(__DIR__ . '/css/style.min.css')) { ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
     <?php } else { ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
