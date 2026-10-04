@@ -127,7 +127,7 @@ function soSitemapWriteAtomic(string $file, string $body): bool {
 
 /** @param array<int,array{0:string,1:?string}> $entries [loc, lastmod] */
 function soSitemapUrlsetXml(array $entries): string {
-    $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<?xml-stylesheet type="text/xsl" href="/sitemap.php?f=style"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
     foreach ($entries as [$loc, $lm]) {
         $x .= '<url><loc>' . soSitemapEsc($loc) . '</loc>' . ($lm ? '<lastmod>' . soSitemapEsc($lm) . '</lastmod>' : '') . "</url>\n";
     }
@@ -311,7 +311,7 @@ function soSitemapBuildFiles(string $tmp): array {
         $emit($group, $list);
     }
 
-    $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>' . "\n" . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<?xml-stylesheet type="text/xsl" href="/sitemap.php?f=style"?>' . "\n" . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
     foreach ($files as $name => $lm) {
         $x .= '<sitemap><loc>' . soSitemapEsc(soSitemapChildUrl($name, $static)) . '</loc><lastmod>' . soSitemapEsc($lm) . '</lastmod></sitemap>' . "\n";
     }
