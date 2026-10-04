@@ -129,6 +129,8 @@ function soCategorySeo(array $cfg, array $d) {
 
     $h = 'soCatH';
     $o = '<section class="so-seo-copy so-cseo"><div class="container"><div class="so-cseo__wrap">';
+    $focus = !empty($cfg['slug']) && function_exists('soGenreFocus') ? soGenreFocus($cfg['slug']) : null;   // keyword-targeted copy, inc/genre-focus.php
+    if ($focus) $o .= $focus['lead'];
 
     // 1. Artists with upcoming shows
     $o .= '<h2>' . $h($label) . ' tickets: ' . ($kind === 'sports' ? 'teams' : 'artists') . ' with upcoming ' . $h($unit) . '</h2>';
@@ -200,6 +202,9 @@ function soCategorySeo(array $cfg, array $d) {
             . '<p>Seat maps differ from building to building. Use the map on each event page to compare sections, rows and total price, and check the venue\'s own page for doors time and entry rules before you go.</p>';
     }
 
+    // Hand-written sections for the pages tracked for ranking (inc/genre-focus.php)
+    foreach ($focus['sections'] ?? [] as [$fh, $fb]) $o .= '<h2>' . $h($fh) . '</h2>' . $fb;
+
     // 5. How to buy
     $o .= '<h2>How to buy ' . $h($kw) . '</h2><ol class="so-steps"><li><span><strong>Pick an event.</strong> Choose a date, city or venue from the list above or from the <a href="' . $h($hub[0]) . '">' . $h($hub[1]) . '</a> page.</span></li>'
         . '<li><span><strong>Choose your seats.</strong> Select how many tickets you need, then compare sections, rows and prices on the map.</span></li>'
@@ -223,6 +228,8 @@ function soCategorySeo(array $cfg, array $d) {
     }
     $faqs[] = ['question' => 'Are ' . $kw . ' on Seat Outlet legit?', 'answer' => 'Yes. Every order is covered by our 100% guarantee: valid tickets, delivery before the event, and a refund if the event is canceled and not rescheduled. Seat Outlet is a resale marketplace, not the venue box office, so prices can be above or below face value.'];
     $faqs[] = ['question' => 'Can I buy ' . $kw . ' at the last minute?', 'answer' => 'Yes, as long as tickets are still listed. Listings change daily, and some events have tickets available right up to the start. Use the date filter to see events happening this week.'];
+
+    foreach ($focus['faqs'] ?? [] as [$fq, $fa]) $faqs[] = ['question' => $fq, 'answer' => $fa];
 
     $o .= '<h2>' . $h($label) . ' tickets FAQ</h2><div class="so-cseo__faq">';
     foreach ($faqs as $f) $o .= '<details class="so-faq"><summary>' . $h($f['question']) . '</summary><p>' . $h($f['answer']) . '</p></details>';

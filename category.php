@@ -2,6 +2,7 @@
 require_once 'functions.php';
 require_once __DIR__ . '/inc/genre-pages.php';
 require_once __DIR__ . '/inc/seo-category.php';
+require_once __DIR__ . '/inc/genre-focus.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -37,7 +38,7 @@ if ($soGenre && !isset($soGenreSlug)) {
 	exit;
 }
 $catLabel = $soGenre['label'] ?? $catName;
-$soCatCfg = ['id' => $id, 'label' => $catLabel, 'long' => $soGenre['long'] ?? strtolower($catName), 'kind' => $soGenre['kind'] ?? 'other', 'profile' => $soGenre['profile'] ?? null];
+$soCatCfg = ['id' => $id, 'label' => $catLabel, 'long' => $soGenre['long'] ?? strtolower($catName), 'kind' => $soGenre['kind'] ?? 'other', 'profile' => $soGenre['profile'] ?? null, 'slug' => $soGenre['slug'] ?? ''];
 $soCatData = soCategoryData($id);
 $soCatSeo = soCategorySeo($soCatCfg, $soCatData);
 $soCatHero = soCategoryHero($id, $soCatData['path'] ?? '');
@@ -52,6 +53,8 @@ if ($soFamily === '' && isset($soGenre['kind'])) { $soFamily = $soGenre['kind'] 
 $soCatDates          = ($soGenre['kind'] ?? '') === 'sports' ? 'Schedule & Prices' : 'Dates & Prices';   // sports searches are for the schedule ("phillies schedule", "nba tickets")
 $pageMetaTitle       = soTitle("$catLabel Tickets $year $soCatDates", "$catLabel Tickets $year", "$catLabel Tickets");
 $pageMetaDescription = soMetaFit($soCatSeo['description'], 'Live seat maps and secure checkout.', 'Prices from many sellers in one place.');
+$soFocusMeta = !empty($soGenre['slug']) ? soGenreFocusMeta($soGenre['slug']) : null;   // keyword-targeted title, H1 and description (inc/genre-focus.php)
+if ($soFocusMeta) { $pageMetaTitle = soTitle($soFocusMeta['title'], str_replace(' Schedule & Prices', '', str_replace(' Dates and Prices', '', $soFocusMeta['title'])), $soFocusMeta['h1']); $pageMetaDescription = $soFocusMeta['desc']; }
 $pageCanonicalUrl    = HOME_URL . $catBasePath;
 $pageJsonLdNodes     = array_values(array_filter([
 	buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL . '/'], soFamilyCrumb($soFamily)], "$catLabel Tickets"),
@@ -79,7 +82,7 @@ include 'header.php';
 $catInline = soListingInline($catLabel);   // "hip hop", but NBA / MLB / R&B keep their capitals
 
 soRenderListingPage([
-	'h1'          => $catLabel . ' Tickets',
+	'h1'          => $soFocusMeta['h1'] ?? ($catLabel . ' Tickets'),
 	'crumbs'      => [['label' => 'Home', 'url' => '/'], soFamilyCrumb($soFamily), ['label' => $catLabel . ' Tickets']],
 	'eyebrow'     => soFamilyCrumb($soFamily)['label'],
 	'eyebrowUrl'  => soFamilyCrumb($soFamily)['url'],

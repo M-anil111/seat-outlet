@@ -40,6 +40,18 @@ foreach (SO_DIRECTORIES as $key => $dir) {
         if ($n < 120 || $n > 155) { echo "DIRECTORY DESCRIPTION LENGTH ($key): $n\n"; $fail++; }
     }
 }
+// Keyword-targeted genre pages (inc/genre-focus.php).
+require_once __DIR__ . '/../inc/genre-focus.php';
+foreach (['mls-tickets', 'soccer-tickets', 'comedy-show-tickets', 'latin-music-tickets'] as $slug) {
+    $m = soGenreFocusMeta($slug);
+    if (!$m) { echo "GENRE FOCUS MISSING ($slug)\n"; $fail++; continue; }
+    $t = soNormalizeTitle($m['title']);
+    if (mb_strlen($t) > 59) { echo "GENRE TITLE TOO LONG ($slug): " . mb_strlen($t) . " $t\n"; $fail++; }
+    if (preg_match('/[|\x{2013}\x{2014}\x{2026}]|\s-\s|:(?=\s|$)/u', $m['title'])) { echo "GENRE TITLE HAS A FORBIDDEN CHARACTER ($slug)\n"; $fail++; }
+    $n = mb_strlen($m['desc']);
+    if ($n < 120 || $n > 155) { echo "GENRE DESCRIPTION LENGTH ($slug): $n\n"; $fail++; }
+    if (preg_match('/[\x{2013}\x{2014}]|\s-\s/u', $m['desc'])) { echo "GENRE DESCRIPTION HAS A DASH ($slug)\n"; $fail++; }
+}
 // The normalizer itself: whatever goes in, no forbidden character comes out.
 foreach (["A | B", "A \u{2014} B", "A \u{2013} B", "A - B", "A: B", "A\u{2026}", "Rock: The Tour | Seat Outlet"] as $probe) {
     $out = soNormalizeTitle($probe);

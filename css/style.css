@@ -6473,6 +6473,7 @@ a.so-live__row:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(
 .so-cseo__links { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
 .so-cseo__links li { margin: 0; padding: 0; }
 .so-cseo__links a { display: inline-block; padding: 6px 0; font-weight: 600; text-decoration: none; }
+.so-cseo__lead{font-size:1.125rem;line-height:1.55;margin:0 0 1.25rem;color:#1d1d1f}
 .so-cseo__src, .so-cseo__note { font-size: 14px !important; line-height: 1.55 !important; color: #6e6e73 !important; }
 
 .so-cseo li { list-style: none; }
