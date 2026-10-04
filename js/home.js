@@ -217,6 +217,19 @@ function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, functi
 
     if (locationClearBtn) {
       locationClearBtn.addEventListener('click', function () {
+        const loadNationalEvents = () => {
+          setCookie('so_lat', '');
+          setCookie('so_lng', '');
+          setCookie('so_label', '');
+          if (cityInput) cityInput.value = '';
+          soSetLocText('');
+          if (typeof reloadActiveTab === 'function') {
+            reloadActiveTab('', {});
+          }
+          if (typeof loadNearbyVenues === 'function') {
+            loadNearbyVenues();
+          }
+        };
 
         fetch(`/ajax/get_ip_details.php`)
           .then(res => res.json())
@@ -225,7 +238,8 @@ function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, functi
             // empty response (rate limited, IP not resolvable, timeout)
             // must not overwrite the location field with a literal
             // "undefined, undefined".
-            if (!data || !data.city || !data.state) {
+            if (!data || !data.city || !data.state || !data.lat || !data.lng) {
+              loadNationalEvents();
               return;
             }
 
@@ -246,9 +260,7 @@ function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, functi
             }, 200);
             
           })
-        .catch(() => {
-          
-        });
+        .catch(loadNationalEvents);
         
       });
     }

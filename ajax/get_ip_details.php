@@ -14,10 +14,11 @@ require_once __DIR__ . '/../inc/geoip.php';
 header('Content-Type: application/json');
 header('Cache-Control: private, max-age=86400');
 
+$fallback = ['city' => 'Austin', 'state' => 'TX', 'lat' => '30.29710', 'lng' => '-97.81810'];
 $ip = get_client_ip();
 $geo = geoIpLookup($ip);
 if (!$geo || $geo['city'] === '') {
-    echo json_encode([]);
+    echo json_encode($fallback);
     exit;
 }
 echo json_encode(['city' => $geo['city'], 'state' => $geo['state'], 'lat' => $geo['lat'], 'lng' => $geo['lng']]);

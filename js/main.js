@@ -218,7 +218,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   
     const locationLabel = DOM.locationSelectorText;
-    const showPrompt = () => { soSetLocText(''); };
+    const showPrompt = () => {
+        soSetLocText('');
+        window.locationReady = true;
+        document.dispatchEvent(new CustomEvent('so:location', { detail: { lat: '', lng: '', label: '' } }));
+        if (typeof reloadActiveTab === 'function') {
+            reloadActiveTab('', {});
+        }
+        if (typeof loadNearbyVenues === 'function') {
+            loadNearbyVenues();
+        }
+    };
     const applyLocation = (lat, lng, label, labelCookie) => {
         setCookie('so_lat', encodeURIComponent(lat));
         setCookie('so_lng', encodeURIComponent(lng));
@@ -259,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function () {
     .then(data => {
         // The lookup can legitimately come back empty (visitor's address not in the database, no location headers from
         // the CDN): never save or show a half-empty "undefined, undefined" label, try the allowed device location instead.
-        if (!data || !data.city || !data.state) {
+        if (!data || !data.city || !data.state || !data.lat || !data.lng) {
             tryAllowedDeviceLocation();
             return;
         }
