@@ -7603,7 +7603,7 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-more__panel[hidden] { display: none; }
 @keyframes so-more-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
 .so-more__inner > * + * { margin-top: 24px; }
-.so-more__panel .tab-section.content-section-detail, .so-more__panel .so-seo-copy__inner, .so-more__panel .so-cseo__wrap { max-width: none; margin-left: 0; margin-right: 0; padding: clamp(24px, 4vw, 52px); border-radius: 28px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 24px 60px -38px rgba(0, 0, 0, .3); }
+.so-more__panel .tab-section.content-section-detail, .so-more__panel .so-guarantee, .so-more__panel .so-seo-copy__inner, .so-more__panel .so-cseo__wrap { max-width: none; margin-left: 0; margin-right: 0; padding: clamp(24px, 4vw, 52px); border-radius: 28px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 24px 60px -38px rgba(0, 0, 0, .3); }
 .so-more__panel .so-seo-copy { background: transparent; border: 0; padding: 0 0 24px; }
 .so-more__panel .so-seo-copy .container { padding-left: 12px; padding-right: 12px; }
 .so-more__panel h2, .so-more__panel .so-heading { font-size: clamp(24px, 3.2vw, 34px); line-height: 1.12; font-weight: 700; letter-spacing: -.025em; color: #1d1d1f; margin: 0 0 14px; }
@@ -7618,7 +7618,7 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-more__panel .so-more__ad { padding: 0 12px; }
 @media (max-width: 575.98px) {
   .so-more__bar { padding-top: 20px; }
-  .so-more__panel .tab-section.content-section-detail, .so-more__panel .so-seo-copy__inner, .so-more__panel .so-cseo__wrap { border-radius: 22px; }
+  .so-more__panel .tab-section.content-section-detail, .so-more__panel .so-guarantee, .so-more__panel .so-seo-copy__inner, .so-more__panel .so-cseo__wrap { border-radius: 22px; }
 }
 @media (prefers-reduced-motion: reduce) { .so-more__panel { animation: none; } .so-more__btn, .so-more__btn svg { transition: none; } .so-more__btn:hover { transform: none; } }
 
@@ -7708,7 +7708,7 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-sources a:hover{color:#0071e3}
 
 /* Buyer Guarantee section (inc/trust-block.php): artist, event, venue, category and hub pages */
-.so-guarantee{margin:2rem 0;padding:1.5rem;border:1px solid #e5e5ea;border-radius:18px;background:#fbfbfd;color:#1d1d1f}
+.so-guarantee{margin:30px auto;padding:30px;border-radius:20px;background:#fff;color:#1d1d1f;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 18px 40px -30px rgba(0,0,0,.25)}
 .so-guarantee__head{display:flex;gap:1rem;align-items:center;margin-bottom:1rem}
 .so-guarantee__badge{flex:0 0 auto;width:52px;height:auto}
 .so-guarantee__title{margin:0 0 .25rem;font-size:1.375rem;font-weight:700;letter-spacing:-.01em;line-height:1.25}

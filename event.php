@@ -305,7 +305,7 @@ $evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $
           <li><span><strong>Check out and go.</strong> Pay securely and get your tickets before the event.</span></li>
         </ol>
 
-        <?php soGuaranteeBlock(['events' => [$event]]); ?>
+        <?php soBuyerGuaranteeSection(['events' => [$event]]); ?>
 
         <h2>Questions about <?php echo $h($evNm); ?> tickets</h2>
         <div class="so-evfaq">

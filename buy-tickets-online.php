@@ -70,7 +70,7 @@ soRenderListingPage([
 		</div>
 		<?php if (!empty($faqs)) { ?>
 			<div class="tab-section content-section-detail">
-				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Events</h2>
+				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Live event tickets FAQ</h2>
 				<div class="accordion" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;

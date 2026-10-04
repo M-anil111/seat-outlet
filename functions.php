@@ -4491,7 +4491,7 @@ function renderLocationCategoryLinks(string $dimension, $locationValue, string $
     if (!$links) return;
     ?>
     <div class="tab-section content-section-detail" id="browse-<?php echo htmlspecialchars($dimension, ENT_QUOTES, 'UTF-8'); ?>">
-        <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+        <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
         <div class="so-linkchips">
             <?php foreach ($links as $l) { ?>
                 <a href="<?php echo htmlspecialchars($l['href'], ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip"><?php echo htmlspecialchars($l['text'], ENT_QUOTES, 'UTF-8'); ?></a>
@@ -4808,11 +4808,11 @@ function renderCategoryCityLinksBlock(array $events, string $urlPrefix, string $
     }
     ?>
     <div class="tab-section content-section-detail" id="cities">
-        <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> Tickets by City</h2>
+        <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets by city</h2>
         <div class="so-linkchips">
             <?php foreach ($cities as $city) { ?>
                 <a href="/<?php echo htmlspecialchars($urlPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
-                    <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
+                    <?php echo htmlspecialchars(['Concert' => 'Concerts', 'Festival' => 'Festivals'][$categoryLabel] ?? $categoryLabel, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             <?php } ?>
         </div>
@@ -5126,7 +5126,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
-                    <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <h2 class="so-heading mb-3"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> FAQ</h2>
                     <div class="accordion" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
@@ -5168,7 +5168,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             <?php $whereEvents = $allPerformerEvents ?? $events; renderPerformerWhere($artistName, (int) $performerId, $whereEvents, count($whereEvents)); ?>
             <?php if (!empty($relatedPerformers)) { ?>
                 <div class="tab-section content-section-detail" id="fans">
-                    <h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Fans Also Love</h2>
+                    <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Fans of <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> also love</h2>
                     <?php renderRelatedPerformersGrid($relatedPerformers, 8); ?>
                 </div>
             <?php } ?>
@@ -5404,7 +5404,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
 
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
-                    <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <h2 class="so-heading mb-3"><?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> FAQ</h2>
                     <div class="accordion" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
@@ -6134,7 +6134,7 @@ require_once __DIR__ . '/inc/category-tiles.php';   // soRenderCategoryTiles(): 
 require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-capture form
 require_once __DIR__ . '/inc/request-guard.php';   // soClientIp(), soRateHit(), soQs(): shared request helpers
 require_once __DIR__ . '/inc/entity-facts.php';   // soEntityFacts(): Wikidata, Wikipedia and official site for performers and venues (cached, looked up after the response)
-require_once __DIR__ . '/inc/trust-block.php';   // soGuaranteeBlock(): Buyer Guarantee section with the refund terms and live ticket count
+require_once __DIR__ . '/inc/trust-block.php';   // soBuyerGuaranteeSection(): Buyer Guarantee section with the refund terms and live ticket count
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
 require_once __DIR__ . '/inc/entity-pages.php';     // slug rule, strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages

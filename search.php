@@ -329,7 +329,7 @@ $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="c
 		</div>
 		<?php if (!empty($faqs)) { ?>
 			<div class="tab-section content-section-detail" id="faqs">
-				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Events</h2>
+				<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets FAQ</h2>
 				<div class="accordion" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;

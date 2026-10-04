@@ -30,7 +30,7 @@ function soRenderPromoBlock(): void {
     <?php };
     ?>
     <div class="tab-section content-section-detail mb-0" id="promocode">
-        <h2 class="so-heading fw-bold fs-4 mb-4 text-black">Exclusive Discounts on Event Tickets</h2>
+        <h2 class="so-heading fw-bold fs-4 mb-4 text-black">Ticket promo codes</h2>
         <p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
         <div class="row g-3 mt-2"><?php $pill(5, 'TAKE5'); $pill(10, 'TAKE10'); ?></div>
     </div>
@@ -277,7 +277,7 @@ function soRenderEntityListing(array $c): void {
                         </div>
                     <?php } ?>
                     <?php renderLocationCategoryLinks($kind, $c['id'], $label); ?>
-                    <?php soGuaranteeBlock(['events' => $events]); ?>
+                    <?php soBuyerGuaranteeSection(['events' => $events]); ?>
                     <?php
                     $soAddr = trim((string) ($c['entity']['address']['text']['address1'] ?? ''));
                     $soWhere = $kind === 'venue'

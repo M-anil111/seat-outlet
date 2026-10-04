@@ -183,9 +183,11 @@ include 'header.php';
 			<li class="nav-item">
 				<button class="nav-link" type="button" data-target="promocode" onclick="scrollToElement('promocode')">Promocode</button>
 			</li>
+			<?php if (trim(strip_tags((string) $performer_bio)) !== '') { ?>
 			<li class="nav-item">
 				<button class="nav-link" type="button" data-target="about" onclick="scrollToElement('about')">About</button>
 			</li>
+			<?php } ?>
 			<li class="nav-item">
 				<button class="nav-link" type="button"  data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
 			</li>
@@ -385,7 +387,7 @@ include 'header.php';
 					</div>	
 
 					<div class="tab-section content-section-detail mb-0" id="promocode">
-						<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Ticket Promo Codes</h2>
+						<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> ticket promo codes</h2>
 						<p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
 						<div class="row g-3 mt-2">
 							<div class="col-md-6">
@@ -529,7 +531,8 @@ include 'header.php';
 			<p class="so-tourtable__more">Looking for something else? Browse <a href="<?php echo htmlspecialchars($breadcrumbs[1]['url'] ?? '/buy-tickets-online', ENT_QUOTES, 'UTF-8'); ?>">more <?php echo htmlspecialchars(strtolower($breadcrumbs[1]['label'] ?? 'event'), ENT_QUOTES, 'UTF-8'); ?> tickets</a>, see <a href="/city-events">events by city</a>, or read how our <a href="/worry-free-guarantee">100% guarantee</a> and <a href="/ticket-buyer-protection">buyer protection</a> work.</p>
 		</div>
 		<?php } ?>
-		<?php soGuaranteeBlock(['subject' => $artistName, 'events' => $events]); ?>
+		<?php soBuyerGuaranteeSection(['subject' => $artistName, 'events' => $events]); ?>
+		<?php if (trim(strip_tags((string) $performer_bio)) !== '') { /* no bio: no About block (it used to show an empty column) */ ?>
 		<div class="tab-section content-section-detail" id="about">
 			<div class="row">
 				<div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
@@ -552,10 +555,11 @@ include 'header.php';
 				</div>				
 			</div>
 		</div>
+		<?php } ?>
 		<?php if (!empty($faqs)) { ?>
 			<?php $faqVisible = 5; // FAQs shown before "Show more" ?>
 			<div class="tab-section content-section-detail" id="faqs">
-				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">FAQs about <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Events</h2>
+				<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets FAQ</h2>
 				<div class="accordion" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;
@@ -621,7 +625,7 @@ include 'header.php';
 		<?php renderPerformerWhere($artistName, (int) $id, $events ?? [], (int) $total_count); ?>
 		<?php if (!empty($relatedPerformers)) { $i = 0; ?>
 			<div class="tab-section content-section-detail" id="fans">
-				<h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Fans Also Love</h2>
+				<h2 class="so-heading fw-bold fs-4 mb-3 text-black">Fans of <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> also love</h2>
 				<?php renderRelatedPerformersGrid($relatedPerformers, 8); ?>
 			</div>
 		<?php } ?>

@@ -1,6 +1,6 @@
 <?php
 /**
- * soGuaranteeBlock(): the "Buyer Guarantee" section shown on artist, event, venue, category and hub pages.
+ * soBuyerGuaranteeSection(): the "Buyer Guarantee" section shown on artist, event, venue, category and hub pages.
  *
  * Only facts the site can stand behind: the TicketNetwork 100% guarantee as published on /worry-free-guarantee,
  * the refund terms in bold, and a live inventory line computed from the same API rows the page lists
@@ -12,6 +12,8 @@
  *   'id'      => 'guarantee',        // anchor id
  * ]
  */
+require_once __DIR__ . '/guarantee.php';   // SO_TN_POLICY_URL and the guarantee wording live there
+
 function soInventoryLine(array $events): string {
     $tickets = 0; $dates = 0;
     foreach ($events as $ev) {
@@ -23,7 +25,7 @@ function soInventoryLine(array $events): string {
     return count($events) === 1 ? "$t listed for this event right now" : "$t listed across $dates " . ($dates === 1 ? 'date' : 'dates') . " on this page right now";
 }
 
-function soGuaranteeBlock(array $o = []): void {
+function soBuyerGuaranteeSection(array $o = []): void {
     $h = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
     $subject = trim((string) ($o['subject'] ?? ''));
     $inventory = soInventoryLine($o['events'] ?? []);
@@ -50,7 +52,7 @@ function soGuaranteeBlock(array $o = []): void {
             <a href="/worry-free-guarantee">How the 100% guarantee works</a>
             <a href="/ticket-buyer-protection">Buyer protection terms</a>
             <a href="/how-to-buy-tickets-online">How to buy tickets online</a>
-            <a href="https://www.ticketnetwork.com/policies" rel="noopener" target="_blank">TicketNetwork policies<span class="visually-hidden"> (opens in a new tab)</span></a>
+            <a href="<?php echo $h(SO_TN_POLICY_URL); ?>" rel="noopener" target="_blank">TicketNetwork policies<span class="visually-hidden"> (opens in a new tab)</span></a>
         </p>
     </section>
     <?php
