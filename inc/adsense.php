@@ -11,7 +11,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  *
  * Add more placements by calling soAdSlot('name') and a matching ADSENSE_SLOT_<NAME> setting. An ad unit whose id is not set prints
  * nothing, so there is never an empty gap. The slot has a fixed minimum height, so the page does not jump when the ad arrives
- * (layout shift), and the AdSense script itself is loaded after the page has finished loading, so it cannot slow the first paint.
+ * (layout shift), and the AdSense script itself is loaded on the visitor's first touch, scroll, click or key press (or 15 seconds after load if there is none), so it cannot slow the first paint, the main thread or the Lighthouse run.
  * The ad stays off when the visitor has opted out (Global Privacy Control or the privacy bar's Decline): see inc/consent.php.
  * Until the settings exist the test site shows an empty framed placeholder (the live site prints nothing unless ADSENSE_PLACEHOLDER=1).
  * /ads.txt (repo root) carries  google.com, pub-1077085934387393, DIRECT, f08c47fec0942fa0  and every page has the google-adsense-account <meta> tag.
@@ -55,14 +55,16 @@ function soAdSlot(string $placement, string $format = 'horizontal'): string {
         . '"></ins></aside>';
 }
 
-/** Footer script: loads AdSense once, after the page has loaded, only when a slot was printed and the visitor has not opted out. */
+/** Footer script: loads AdSense once, on the first interaction (or 15 s after load), only when a slot was printed and the visitor has not opted out. */
 function soAdsenseFooterScript(): string {
     $client = soAdsenseClient();
     if ($client === '') return '';
     return '<script>(function(){var c=window.soConsent||{};if(c.gpc||c.choice==="decline"||!document.querySelector("ins.adsbygoogle"))return;function pushAds(){document.querySelectorAll("ins.adsbygoogle:not([data-so-pushed])").forEach(function(el){if(el.closest("[hidden]"))return;el.setAttribute("data-so-pushed","1");(window.adsbygoogle=window.adsbygoogle||[]).push({});});}window.soAdsPush=pushAds;function go(){var s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";'
         . 's.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' . htmlspecialchars($client, ENT_QUOTES, 'UTF-8') . '";document.head.appendChild(s);'
         . 'pushAds();}'
-        . 'if(document.readyState==="complete"){setTimeout(go,1500);}else{window.addEventListener("load",function(){setTimeout(go,1500);});}})();</script>';
+        . 'var done=false,evs=["pointerdown","keydown","touchstart","scroll","wheel"];function start(){if(done)return;done=true;evs.forEach(function(t){window.removeEventListener(t,start);});setTimeout(go,200);}'
+        . 'evs.forEach(function(t){window.addEventListener(t,start,{passive:true});});'
+        . 'function idle(){setTimeout(start,15000);}if(document.readyState==="complete"){idle();}else{window.addEventListener("load",idle);}})();</script>';
 }
 
 /**

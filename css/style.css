@@ -612,7 +612,7 @@ h3,
 
 
 .tm-footer {
-  background: radial-gradient(circle at top, #1b1b1b, #000);
+  background: radial-gradient(circle at top, #1b1b1b, #000) #000;   /* solid color after the gradient: contrast checkers read it as the footer background */
   color: #fff;
   padding: 60px 5% 20px 5%;
   font-family: Arial, sans-serif;
@@ -5248,7 +5248,7 @@ a.common-btn:hover{
    heights so the scrollbar does not jump; 'auto' remembers the real size once a row has been shown. Not applied to
    anything that contains a carousel (slick measures its width on init). */
 .performer-event-item { content-visibility: auto; contain-intrinsic-size: auto 96px; }
-.tm-footer { content-visibility: auto; contain-intrinsic-size: auto 560px; }
+/* No content-visibility on the footer: while it is skipped, contrast checkers cannot hit-test it and read the page background behind it instead (about 25 false contrast failures). */
 
 /* ==========================================================================
    Header refresh: keyword strip (the page's H1), static trust bar, separate
@@ -6792,7 +6792,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [role="button"]:fo
 .so-trust { background: #f5f7fb; border-top: 1px solid #e6e9ef; border-bottom: 1px solid #e6e9ef; padding: 36px 0; }
 .so-trust__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
 .so-trust__title { font-size: clamp(22px, 3vw, 28px); font-weight: 700; margin: 0; color: #0b1120; }
-.so-trust__cta { margin: 0; min-height: 44px; display: inline-flex; align-items: center; }
+a.so-trust__cta { margin: 0; min-height: 44px; display: inline-flex; align-items: center; color: #0a58ca; }
 .so-trust__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .so-trust__grid li { display: flex; gap: 12px; align-items: flex-start; }
 .so-trust__grid i { flex: none; width: 40px; height: 40px; border-radius: 12px; background: #2556e0; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; }
@@ -7133,9 +7133,9 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-evc { --evc: #2563eb; --evc-bg: #eaf1ff; position: relative; display: flex; flex-direction: column; gap: 10px; height: 100%; min-width: 0; padding: 14px 16px 14px; background: #fff; border-radius: 16px; border: 1px solid #e6e8ee; box-shadow: 0 1px 2px rgba(16,24,40,.04); overflow: hidden; transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease; }
 .so-evc::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--evc); }
 .so-evc:hover { box-shadow: 0 10px 28px rgba(16,24,40,.12); transform: translateY(-2px); border-color: #d5d9e4; }
-.so-evc--sports { --evc: #16a34a; --evc-bg: #e8f8ee; }
+.so-evc--sports { --evc: #15803d; --evc-bg: #e8f8ee; }
 .so-evc--theater { --evc: #7c3aed; --evc-bg: #f1eaff; }
-.so-evc--festival { --evc: #ea580c; --evc-bg: #fff0e6; }
+.so-evc--festival { --evc: #c2410c; --evc-bg: #fff0e6; }
 .so-evc__top { display: flex; align-items: center; gap: 8px; margin-top: 4px; min-height: 34px; }
 .so-evc__badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 9px; border-radius: 980px; background: var(--evc-bg); color: var(--evc); font-size: 13px; font-weight: 700; line-height: 1; }
 .so-evc__status { padding: 5px 10px; border-radius: 980px; background: #f2f3f7; color: #3a3a3c; font-size: 12px; font-weight: 700; line-height: 1; white-space: nowrap; }
@@ -7266,7 +7266,7 @@ body.so-home .tm-header .container-fluid { padding-bottom: 0 !important; }
 .so-topp__grid { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -12px; padding: 4px 12px 14px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .so-topp__grid::-webkit-scrollbar { display: none; }
 .so-topc { --tc: #2563eb; --tc-bg: #eaf1ff; flex: 0 0 min(84vw, 340px); scroll-snap-align: start; display: flex; flex-direction: column; background: #fff; border-radius: 22px; border: 1px solid #e6e8ee; overflow: hidden; box-shadow: 0 2px 8px rgba(16,24,40,.06); }
-.so-topc--sports { --tc: #16a34a; --tc-bg: #e8f8ee; }
+.so-topc--sports { --tc: #15803d; --tc-bg: #e8f8ee; }
 .so-topc--theater { --tc: #7c3aed; --tc-bg: #f1eaff; }
 .so-topc__hero { position: relative; aspect-ratio: 16 / 8; color: #fff; overflow: hidden; }
 .so-topc__hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -7398,7 +7398,7 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-feed__all--arrow { display: inline-flex; align-items: center; gap: 6px; }
 .so-popweek { padding-top: 14px; }
 .so-popweek__wrap { position: relative; }
-.so-popweek .so-feed__track { gap: 14px; padding-top: 6px; }
+.so-popweek .so-feed__track { gap: 14px; padding-top: 6px; min-height: 330px; }   /* room for the cards: the row is on the page from the first paint, so it cannot push the sections below it down (layout shift) */
 .so-popweek__next { position: absolute; right: -8px; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border-radius: 50%; border: 1px solid #d9dde7; background: #fff; color: #111827; display: none; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(16,24,40,.18); cursor: pointer; z-index: 3; }
 .so-popweek__next:hover { background: #f4f6fb; }
 @media (min-width: 992px) { .so-popweek__next { display: inline-flex; } }
@@ -7485,7 +7485,7 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
    Advertisement banner (AdSense): a quiet, rounded card under the hero on every page
    ========================================================================== */
 .so-ad { position: relative; max-width: 1242px; margin: 26px auto 14px; padding: 0 12px; text-align: left; }
-.so-ad__label { display: block; margin: 0 0 9px 6px; font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #8e8e93; line-height: 1; }
+.so-ad__label { display: block; margin: 0 0 9px 6px; font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #6e6e73; line-height: 1; }
 .so-ad .adsbygoogle, .so-ad__ph { display: block; position: relative; min-height: 96px; margin: 0; border-radius: 22px; overflow: hidden; background: #fff; border: 1px solid rgba(60, 60, 67, .12); box-shadow: 0 1px 1px rgba(0, 0, 0, .03), 0 14px 34px -14px rgba(0, 0, 0, .2); }
 .so-ad__ph { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 18px; text-align: center; background: radial-gradient(120% 140% at 0% 0%, #ffffff 0%, #f4f6fb 55%, #eceff6 100%); isolation: isolate; }
 .so-ad__ph strong { font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: #1d1d1f; }
@@ -7542,8 +7542,8 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-hero2__inner { padding-top: 44px; padding-bottom: 44px; }
 .so-hero2__title { font-size: clamp(36px, 5.4vw, 66px); line-height: 1.02; margin: 0 0 14px; max-width: 11em; }
 .so-hero2__sub { max-width: 30em; margin: 0 0 26px; }
-.so-hero2__btn { display: inline-flex; align-items: center; gap: 12px; height: 58px; padding: 0 30px; border: 0; border-radius: 999px; background: #2f6bff; color: #fff; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 12px 30px -10px rgba(47, 107, 255, .8); transition: transform .15s ease, background .15s ease; }
-.so-hero2__btn:hover { background: #1f58ea; transform: translateY(-1px); }
+.so-hero2__btn { display: inline-flex; align-items: center; gap: 12px; height: 58px; padding: 0 30px; border: 0; border-radius: 999px; background: #2858e0; color: #fff; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 12px 30px -10px rgba(40, 88, 224, .8); transition: transform .15s ease, background .15s ease; }
+.so-hero2__btn:hover { background: #1f48c4; transform: translateY(-1px); }
 @media (max-width: 767.98px) {
   .so-hero2 { min-height: 400px; align-items: flex-end; }
   .so-hero2__bg { object-position: 62% 30%; }
