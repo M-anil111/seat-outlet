@@ -17,7 +17,12 @@ if ($file !== null) {
     header('Content-Type: application/xml; charset=utf-8');
     header('Cache-Control: public, max-age=' . ($name === 'sitemap-index' ? 600 : 1800));
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', (int) filemtime($file)) . ' GMT');
-    readfile($file);
+    // Files built before the stylesheet existed get it added on the way out, so every sitemap is readable in a browser.
+    $xml = (string) file_get_contents($file);
+    if (strpos($xml, '<?xml-stylesheet') === false) {
+        $xml = preg_replace('/^(<\?xml[^>]*\?>\s*)/', '$1<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>' . "\n", $xml, 1);
+    }
+    echo $xml;
     exit;
 }
 if (isset($_GET['f'])) {

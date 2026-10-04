@@ -1,5 +1,8 @@
 # Cloudflare go-live fixes (need Cloudflare dashboard access)
 
+> **Preferred route, no paid plan:** follow `docs/production-cutover.md`. It gives live its own site and removes the Worker, so
+> items 1 and 2 below (Workers plan, Worker code patch) are not needed. Use this page only if you keep the Worker.
+
 The live site seatoutlet.com is served by the Worker `seatoutlet-blog-proxy`, which fetches every page from
 beta.seatoutlet.com. The site code already covers what it can (www redirect, noindex on non-page paths, live always gets
 the deployed main/home JavaScript). The four items below can only be done in Cloudflare.
