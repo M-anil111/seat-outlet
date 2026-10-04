@@ -409,11 +409,13 @@ function toApiDate(dateObj) {
     DATE PICKER LIBRARY (loaded on demand)
 ===================================================== */
 // flatpickr (50 KB script + 16 KB CSS) is only needed once someone touches a date field, so it is not on every page load.
-// header.php prefetches both files at idle priority; this loads them (from the cache by then) and resolves when ready.
-// Warm the browser cache once the page has fully loaded and the browser is idle (not in the <head>: an early prefetch competes
-// with the render-blocking CSS and the hero image for bandwidth, which measurably delayed first paint on slow connections).
-window.addEventListener('load', function () {
-    var warm = function () {
+// Both files are prefetched on the first interaction (below); this loads them (from the cache by then) and resolves when ready.
+(function () {
+    var warmed = false;
+    function warm() {
+        if (warmed) return;
+        warmed = true;
+        ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (t) { window.removeEventListener(t, warm); });
         var assets = window.SO_ASSETS || {};
         [[assets.flatpickrJs, 'script'], [assets.flatpickrCss, 'style']].forEach(function (a) {
             if (!a[0]) return;
@@ -421,9 +423,11 @@ window.addEventListener('load', function () {
             l.rel = 'prefetch'; l.as = a[1]; l.href = a[0];
             document.head.appendChild(l);
         });
-    };
-    if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 5000 }); else setTimeout(warm, 3000);
-});
+    }
+    // On the visitor's first touch, scroll or key press (not on page load): a page that is only being read, measured or crawled never
+    // requests the date picker files, and an early prefetch would also compete with the page itself.
+    ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (t) { window.addEventListener(t, warm, { passive: true }); });
+})();
 window.soLoadFlatpickr = (function () {
     var pending = null;
     return function () {
@@ -1346,4 +1350,46 @@ document.addEventListener('error', function (e) {
   }
   openForHash();
   window.addEventListener('hashchange', openForHash);
+})();
+
+/* =====================================================
+    SLIDERS: hidden slides must not be focusable
+===================================================== */
+// Slick marks off-screen slides aria-hidden="true" but leaves the slide (and the links inside it) in the tab order, which breaks the
+// ARIA rule that hidden content cannot take focus (axe: aria-hidden-focus). Hidden slides and everything focusable inside them get
+// tabindex="-1" (marked with data-so-ti so it is undone when the slide becomes visible again).
+(function () {
+    var FOCUSABLE = 'a[href],button,input,select,textarea,[tabindex]';
+    function fix(slider) {
+        slider.querySelectorAll('.slick-slide').forEach(function (slide) {
+            var hidden = slide.getAttribute('aria-hidden') === 'true';
+            var nodes = [slide].concat(Array.prototype.slice.call(slide.querySelectorAll(FOCUSABLE)));
+            nodes.forEach(function (el) {
+                if (hidden) {
+                    if (el.getAttribute('tabindex') !== '-1') { el.setAttribute('data-so-ti', el.getAttribute('tabindex') === null ? '' : el.getAttribute('tabindex')); el.setAttribute('tabindex', '-1'); }
+                } else if (el.hasAttribute('data-so-ti')) {
+                    var prev = el.getAttribute('data-so-ti');
+                    if (prev === '') el.removeAttribute('tabindex'); else el.setAttribute('tabindex', prev);
+                    el.removeAttribute('data-so-ti');
+                }
+            });
+        });
+    }
+    var watched = typeof WeakSet === 'function' ? new WeakSet() : null;
+    function watch(slider) {
+        // Slick rewrites tabindex/aria-hidden after its own events, so the rule is re-applied whenever those attributes change.
+        if (!window.MutationObserver || (watched && watched.has(slider))) return;
+        if (watched) watched.add(slider);
+        var queued = false;
+        new MutationObserver(function () {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(function () { queued = false; fix(slider); });
+        }).observe(slider, { attributes: true, attributeFilter: ['aria-hidden', 'tabindex'], subtree: true });
+    }
+    function all() { document.querySelectorAll('.slick-slider').forEach(function (sl) { fix(sl); watch(sl); }); }
+    if (window.jQuery) {
+        window.jQuery(document).on('init reInit afterChange setPosition breakpoint', '.slick-slider', function () { fix(this); watch(this); });
+    }
+    window.addEventListener('load', function () { all(); setTimeout(all, 600); });
 })();
