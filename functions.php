@@ -331,6 +331,25 @@ function tnGrace($ttl) {
 /** Longest a stale entry may stand in for a failed live call. */
 const TN_STALE_ON_ERROR = 86400;
 
+/** Thrown by helpers that need live API data when the API is down or throttling us; the outage alert has already been sent. */
+class SoTnUnavailable extends RuntimeException {}
+
+/**
+ * Tells Sentry the TicketNetwork API is down or throttling us: one warning (not an error) per 10 minutes. Before, every failed request
+ * sent its own error, so a short throttle window (a crawler, a traffic spike) sent a burst of "high priority" emails.
+ */
+function soTnAlert($message) {
+    if (!function_exists('\Sentry\captureMessage')) return;
+    $f = rtrim(sys_get_temp_dir(), '/') . '/seatoutlet_tn_alert_' . md5(BASE_URL) . '.txt';
+    if (is_file($f) && (time() - (int) @filemtime($f)) < 600) return;
+    @touch($f);
+    \Sentry\withScope(function ($scope) use ($message) {
+        $scope->setLevel(\Sentry\Severity::warning());
+        $scope->setFingerprint(['tn-api-unavailable']);
+        \Sentry\captureMessage($message);
+    });
+}
+
 function tnBreakerFile() {
     return rtrim(sys_get_temp_dir(), '/') . '/seatoutlet_tn_breaker_' . md5(BASE_URL) . '.txt';
 }
@@ -355,9 +374,7 @@ function tnBreakerTrip($why, $seconds = TN_BREAKER_SECONDS) {
     }
     @file_put_contents(tnBreakerFile(), (string) (int) $seconds);
     @touch(tnBreakerFile());
-    if (function_exists('\Sentry\captureMessage')) {
-        \Sentry\captureMessage('TicketNetwork API unavailable, circuit opened for ' . (int) $seconds . 's: ' . $why);
-    }
+    soTnAlert('TicketNetwork API unavailable, circuit opened for ' . (int) $seconds . 's: ' . $why);
 }
 
 /**
@@ -528,7 +545,7 @@ function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
 
     if (!$r['ok']) {
         tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
-        \Sentry\captureMessage('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
+        soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
         if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
         tnMarkDegraded();
@@ -830,6 +847,8 @@ function getTnPerformers(array $params = []) {
 
     $data = tnRequest('/catalog/v2/performers', $params, 'GET', 6 * 3600);
     if (!is_array($data) || !array_key_exists('results', $data)) {
+        // API down or throttling (already alerted by the circuit breaker) versus an unexpected answer (worth an error report).
+        if (tnBreakerOpen() || !empty($GLOBALS['tn_degraded'])) throw new SoTnUnavailable('TicketNetwork performers request failed');
         throw new RuntimeException('TicketNetwork performers request failed');
     }
     return $data;

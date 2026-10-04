@@ -59,7 +59,7 @@ try {
         'hasMore'     => $hasMore,
     ]);
 } catch (Throwable $e) {
-    \Sentry\captureException($e);
+    if (!($e instanceof SoTnUnavailable)) \Sentry\captureException($e);   // an API outage was already reported once by the circuit breaker
     http_response_code(500);
     header('Cache-Control: no-store');
     echo json_encode([
