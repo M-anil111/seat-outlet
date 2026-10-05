@@ -166,3 +166,7 @@ Check: `curl -sI https://<host>/ | grep -i cf-cache-status` should read `MISS` o
 
 ## Security headers
 The app sends `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin` and `Permissions-Policy: camera=(), microphone=(), geolocation=(self)` on every public page (`soSendSecurityHeaders()` in `functions.php`). Static files (CSS, JS, images, fonts) do not go through PHP, so add the same first three in nginx or a Cloudflare Transform Rule if you want them there too. HSTS is a Cloudflare setting. There is no Content-Security-Policy yet: AdSense, GTM and the ticket widgets load from many hosts, so run one in report-only mode first.
+
+## Static file caching and CSP report-only (added with the Worker)
+- The Worker file now sets `Cache-Control: public, max-age=31536000, immutable` on `/fonts/`, `/lib/` and `*.min.css|js` (bundles carry a `?v=` stamp), `max-age=2592000` on `/images/` files, and adds `X-Content-Type-Options` and `Referrer-Policy` to static files. Redeploy the Worker to apply it. After cutover (Worker removed) use the nginx lines in "Caching and compression" above.
+- Pages send `Content-Security-Policy-Report-Only`. Nothing is blocked. The browser posts violations to `/ajax/csp-report.php`, which writes one line each to the PHP error log (`grep csp-report-only`). After about a week, add the hosts that appear, then rename the header to `Content-Security-Policy` in `soSendSecurityHeaders()` (`functions.php`).

@@ -7882,3 +7882,6 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 
 /* Links inside running text are underlined (WCAG 1.4.1: not only a color change). */
 main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Tap targets: venue and place links in event rows are at least 24px tall (WCAG 2.5.8) without moving the text. */
+.event-row-all .ev-venue a, .event-row-all .ev-place a, .event-row-all .ev-name a { padding: 5px 0; }

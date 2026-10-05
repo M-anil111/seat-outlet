@@ -2510,6 +2510,8 @@ function soSendSecurityHeaders() {
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=(self)');
+    // Report-only: nothing is blocked. Violations go to ajax/csp-report.php (PHP error log). Read the log for a week, add the missing hosts, then switch the header name to Content-Security-Policy.
+    header("Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googlesyndication.com https://*.doubleclick.net https://cloudflareinsights.com; frame-src 'self' https://*.googlesyndication.com https://*.doubleclick.net https://www.googletagmanager.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; report-uri /ajax/csp-report.php");
 }
 
 function sendPageCacheHeaders() {
@@ -5404,13 +5406,14 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     // --- SEO: computed before including header.php so the <head> can use real data ---
     // Keyword per category, from search data: "concerts in dallas" (27k/month) beats "concert tickets in dallas", so the phrase leads.
     $soLocShort = preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
+    $soLocTiny = ((string) $soLocShort === 'United States of America') ? 'the US' : (string) $soLocShort;   // keeps the country titles inside the title budget
     $soKwWord = ['concerts' => 'Concerts', 'sports' => 'Sports events', 'theater' => 'Theater', 'theatre' => 'Theater', 'festivals' => 'Music festivals', 'events' => 'Events'][$categoryKey] ?? $categoryLabel;
     $soKwPrep = $dimension === 'venue' ? 'at' : 'in';
     $pageFocusKeyword    = "$soKwWord $soKwPrep $soLocShort";
     $soKwHook = ['concerts' => 'Tickets and Dates', 'sports' => 'Schedule and Tickets', 'theater' => 'Shows, Dates and Tickets', 'theatre' => 'Shows, Dates and Tickets', 'festivals' => 'Dates and Passes'][$categoryKey] ?? 'Tickets and Dates';
     // Spec wording: "Buy Tickets to <Concerts> in <City, ST>" keeps the search phrase whole; the urgency line is added when events are listed.
     $pageTitleMax        = 70;
-    $pageMetaTitle       = soTitleUpTo(70, "Buy Tickets to " . ucwords($soKwWord) . " $soKwPrep $locationLabel", "Buy Tickets to " . ucwords($soKwWord) . " $soKwPrep $soLocShort", "$pageFocusKeyword $soKwHook", $pageFocusKeyword, "$categoryLabel Tickets in $soLocShort");
+    $pageMetaTitle       = soTitleUpTo(70, "Buy Tickets to " . ucwords($soKwWord) . " $soKwPrep $locationLabel", "Buy Tickets to " . ucwords($soKwWord) . " $soKwPrep $soLocShort", "Buy Tickets to " . ucwords($soKwWord) . " $soKwPrep $soLocTiny", "$pageFocusKeyword $soKwHook", $pageFocusKeyword, "$categoryLabel Tickets in $soLocShort");
     $pageMetaDescription = $total_count > 0
         ? soSpecPick(155,
             "Buy tickets to " . strtolower($soKwWord) . " $soKwPrep $locationLabel. Find great seats and book your tickets online today at Seat Outlet before they sell out.",
