@@ -120,16 +120,13 @@
                     </p>
                     <p>
                         Seat Outlet<br>
-                        [Company legal name, registered address]<br>
-                        [CIN / company number, if applicable]<br>
-                        [Email: privacy@seatoutlet.com]<br>
-                        [Phone: +1-XXX-XXXXXXX]
+                        Email: <a href="mailto:info@seatoutlet.com">info@seatoutlet.com</a>
                     </p>
                     <p>
                         For most activities described in this Privacy Policy, Seat Outlet acts as an independent “controller” (or “business” under certain U.S. state laws) of your personal information. In some cases, we may act as a “processor” (or “service provider”) on behalf of event organizers or partners, in which case their privacy policies may also apply.
                     </p>
                     <p>
-                        If you have any questions or concerns about this Privacy Policy or our data practices, you can contact us at privacy@seatoutlet.com​.
+                        If you have any questions or concerns about this Privacy Policy or our data practices, you can contact us at info@seatoutlet.com​.
                     </p>
                     <p>
                         If you are located in the European Economic Area (EEA), the United Kingdom (UK), or other regions with data protection laws, we may appoint a local representative as required by law; details will be provided on request.
@@ -618,7 +615,7 @@
 </ul>
 
                     <p>
-                        To exercise these rights or submit a privacy request, please contact us at privacy@seatoutlet.com or through any privacy request tools we provide on the Platform. We may need to verify your identity before responding.
+                        To exercise these rights or submit a privacy request, please contact us at info@seatoutlet.com or through any privacy request tools we provide on the Platform. We may need to verify your identity before responding.
                     </p>
                     <p>
                         For marketing communications, you can also:
@@ -665,7 +662,7 @@
                         Our Platform is not intended for children under the minimum age required by applicable law. We do not knowingly collect personal information from children without appropriate parental or guardian consent where required.
                     </p>
                     <p>
-                        If you believe that a child has provided us with personal information without consent, please contact us at privacy@seatoutlet.com and we will take appropriate steps to delete such information where required by law.
+                        If you believe that a child has provided us with personal information without consent, please contact us at info@seatoutlet.com and we will take appropriate steps to delete such information where required by law.
                     </p>
                 </div>
 
@@ -738,17 +735,12 @@
                     <ul class="contact-info">
     <li>
         <strong>Email:</strong> 
-        <a href="mailto:privacy@seatoutlet.com">privacy@seatoutlet.com</a>
+        <a href="mailto:info@seatoutlet.com">info@seatoutlet.com</a>
     </li>
 
-    <li>
-        <strong>Postal Address:</strong> 
-        [Insert Full Registered Address]
-    </li>
-
-    <li>
+        <li>
         <strong>Contact Form:</strong> 
-        Available via the <a href="/ticket-customer-service">Contact Us</a> or <a href="#">Privacy</a> section of the Platform.
+        Available via the <a href="/ticket-customer-service">Contact Us</a> page.
     </li>
 </ul>
 

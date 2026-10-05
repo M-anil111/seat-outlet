@@ -121,6 +121,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
   <div class="policies">
   <ul>
     <li><a href="/privacy-policy">Privacy Policy</a></li>
+    <li><a href="/policies">Ticket Policies</a></li>
     <li><a href="/terms-and-conditions">Terms of Use</a></li>
     <li><a href="/cookie-policy">Cookie Policy</a></li>
     <li><a href="/sitemap">Sitemap</a></li>

@@ -50,7 +50,7 @@ const SO_CSS_GROUPS = [
     'content' => [
         'templates' => ['about*.php', 'terms*.php', 'privacy*.php', 'cookie-policy.php', 'faq.php', 'ticket-*.php', 'contact*.php', '*reviews.php', 'testimonials.php',
             'customer-testimonials.php', 'guarantee.php', 'worry-free-guarantee.php', 'buyer-protection.php', 'why-*.php', 'what-we-do.php', 'trust.php', 'our-network.php',
-            'bbb.php', 'seat-outlet-bbb.php', 'how-to-buy-tickets-online.php', 'tickets-promo-code.php', 'deals-promotions.php', 'image-credits.php', '404.php', 'sitemap.php', 'sitemap-page.php'],
+            'bbb.php', 'seat-outlet-bbb.php', 'how-to-buy-tickets-online.php', 'tickets-promo-code.php', 'deals-promotions.php', 'image-credits.php', 'policies.php', '404.php', 'sitemap.php', 'sitemap-page.php'],
         'js' => [],
         'ajax' => [],
         'seo_copy' => true,

@@ -129,9 +129,6 @@
                     <div class="policy-body">
                         <p>Seat Outlet is an online marketplace that enables users to discover and buy tickets and related services for live events organized and operated by third parties ("Event Organizers"), such as venues, promoters, artists, sports teams, and other partners.</p>
                         <p>Seat Outlet<br>
-                        [Company legal name]<br>
-                        [Registered address]<br>
-                        [Company number / registration ID]<br>
                         [Email:[<a href="mailto:support@seatoutlet.com" title="support@seatoutlet.com">support@seatoutlet.com</a>]</p>
                         <p>Unless otherwise stated, references to "Seat Outlet", "we", "us", or "our" in these Terms mean the Seat Outlet entity responsible for operating the Platform in your region.</p>
                     </div>
