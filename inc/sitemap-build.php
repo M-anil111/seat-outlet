@@ -329,6 +329,7 @@ function soSitemapBuildFiles(string $tmp): array {
         }
         // A city's all-events, concert, festival, sports and theater pages join its /city/ page, but only where the city has at least
         // SO_SITEMAP_CITYPAGE_MIN upcoming events of that kind: the page works for any city, a one-event page is not worth a crawl.
+        $holidayList = [];   // the holiday pages get a sitemap of their own: holiday-events-N.xml
         if ($group === 'cities') {
             $cp = [];
             foreach (@file($tmp . '/citypages.tsv', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
@@ -347,10 +348,12 @@ function soSitemapBuildFiles(string $tmp): array {
                 [$kind, $id] = explode("\t", $k);
                 $slug = soSlug('city', $name, (int) $id);
                 $loc = strpos($kind, 'holiday:') === 0 ? $base . '/' . substr($kind, 8) . '-in-' . $slug : $base . '/' . $kind . '/' . $slug;
-                if ($keep($loc)) $list[] = [$loc, $lm !== '' ? $lm : null];
+                if (!$keep($loc)) continue;
+                if (strpos($kind, 'holiday:') === 0) $holidayList[] = [$loc, $lm !== '' ? $lm : null]; else $list[] = [$loc, $lm !== '' ? $lm : null];
             }
         }
         $emit($group, $list);
+        if ($group === 'cities') $emit('holiday-events', $holidayList);
     }
 
     $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . SO_SITEMAP_STYLE_PI . "\n" . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";

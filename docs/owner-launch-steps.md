@@ -62,7 +62,7 @@ location = /sitemap.xsl { default_type text/xsl; expires 1d; }   # the styleshee
 
 There are two sitemaps and only two: the XML one for search engines at `/sitemaps/sitemap.xml` and the page for people at `/sitemap`. **Do not** add a rule that redirects `/sitemap.php`: `/sitemap` is served by `sitemap.php` internally, so a `location = /sitemap.php` rule would break it. If you added one earlier, remove it. The page itself sends any visit to `/sitemap.php` or `/sitemap-page` to `/sitemap`.
 
-The Worker currently answers `/sitemap.xml` with 410 and serves the index itself with a fixed list of 17 child files. That is fine until cutover. After cutover (docs/production-cutover.md) the Worker is deleted and the site serves its own index.
+**The Worker is what made the sitemaps static.** The deployed Cloudflare Worker `seatoutlet-blog-proxy` answers `/sitemap` with a hand-written HTML page (7 blog posts typed in), `/sitemaps/sitemap.xml` with a fixed list of 17 child files, and 410s the old addresses. It overrides the site's dynamic code, so new files such as `holiday-events-1.xml` never appear. Fix: deploy `deploy/cloudflare-worker/seatoutlet-blog-proxy.js` (Cloudflare dashboard, Workers, seatoutlet-blog-proxy, Edit code, paste, Deploy; or `npx wrangler deploy`). It passes `/sitemap`, `/sitemaps/*.xml` and `/sitemap.xsl` through to the site, 301s the retired addresses, and keeps robots.txt with the Disallow list. After cutover (docs/production-cutover.md) the Worker is deleted.
 
 ## 4. Rebuild the sitemaps so they list clean URLs (server access, 2 minutes)
 
