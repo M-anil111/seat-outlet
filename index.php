@@ -288,9 +288,15 @@ foreach ($fallbackCategories as $key => $list) {
 
 <section class="so-trust" aria-labelledby="soTrustTitle">
   <div class="container">
+    <div class="so-trust__layout">
     <div class="so-trust__head">
+      <svg class="so-trust__art" viewBox="0 0 380 270" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <g transform="translate(18 150) rotate(-33)"><path d="M14 0H206a12 12 0 0 1 12 12V36a16 16 0 0 0 0 32V92a12 12 0 0 1-12 12H14A12 12 0 0 1 2 92V68a16 16 0 0 0 0-32V12A12 12 0 0 1 14 0Z"/><path d="M160 6V98" stroke-dasharray="7 9"/></g>
+        <g transform="translate(70 128) rotate(-9)"><path d="M14 0H206a12 12 0 0 1 12 12V36a16 16 0 0 0 0 32V92a12 12 0 0 1-12 12H14A12 12 0 0 1 2 92V68a16 16 0 0 0 0-32V12A12 12 0 0 1 14 0Z" fill="#0b1736"/><path d="M160 6V98" stroke-dasharray="7 9"/><path d="M42 44H118M48 70H92"/></g>
+        <path d="M318 46L304 84M352 72L322 98M362 128H330"/>
+      </svg>
       <h2 id="soTrustTitle" class="so-trust__title">Why buy on Seat Outlet</h2>
-      <a href="/buy-tickets-online" class="btn common-btn so-trust__cta">Browse events</a>
+      <a href="/buy-tickets-online" class="btn common-btn so-trust__cta">Browse events <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
     <ul class="so-trust__grid">
       <li><i class="bi bi-currency-exchange" aria-hidden="true"></i><div><strong>Compare seats and prices</strong><span>See listings from many sellers side by side before you buy.</span></div></li>
@@ -298,6 +304,7 @@ foreach ($fallbackCategories as $key => $list) {
       <li><i class="bi bi-calendar-event" aria-hidden="true"></i><div><strong>Live events in one place</strong><span>Concerts, sports, theater and festivals across the country.</span></div></li>
       <li><i class="bi bi-telephone" aria-hidden="true"></i><div><strong>Real people to help</strong><span>Reach our team by phone or email if plans change. <a href="/ticket-customer-service">Contact us</a></span></div></li>
     </ul>
+    </div>
     <p class="so-trust__note"><i class="bi bi-info-circle" aria-hidden="true"></i><span>Seat Outlet is a resale marketplace: sellers set the prices, which can be above or below face value. Review the full price, including any fees and taxes, before you pay.</span></p>
   </div>
 </section>
