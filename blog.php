@@ -53,12 +53,13 @@ $pageJsonLdNodes = array_values(array_filter([
     buildBreadcrumbListSchema([['label' => 'Home', 'url' => HOME_URL]], 'Blog'),
 ]));
 
+if ($page === 1 && !empty($posts) && !empty($posts[0]['featured_image'])) { $pagePreloadImage = $posts[0]['featured_image']; }   // the largest thing on screen: found early, not lazy
 include 'header.php';
 
 $soReadMins = function (array $p) { return max(1, (int) ceil(str_word_count(strip_tags((string) ($p['content'] ?? ''))) / 220)); };
-$soCardImg = function (array $p, int $w, int $h) {
+$soCardImg = function (array $p, int $w, int $h, bool $first = false) {
     return !empty($p['featured_image'])
-        ? '<img src="' . htmlspecialchars($p['featured_image'], ENT_QUOTES, 'UTF-8') . '" alt="' . htmlspecialchars((string) ($p['featured_image_alt'] ?? ''), ENT_QUOTES, 'UTF-8') . '" width="' . $w . '" height="' . $h . '" loading="lazy" decoding="async">'
+        ? '<img src="' . htmlspecialchars($p['featured_image'], ENT_QUOTES, 'UTF-8') . '" alt="' . htmlspecialchars((string) ($p['featured_image_alt'] ?? ''), ENT_QUOTES, 'UTF-8') . '" width="' . $w . '" height="' . $h . '" ' . ($first ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"') . '>'
         : '<span class="so-np__ph" aria-hidden="true"></span>';
 };
 // Category label, headline, summary and author line. No posting dates are shown.
@@ -105,7 +106,7 @@ $featured = ($page === 1 && !empty($posts)) ? array_shift($posts) : null;
 
         <?php if ($featured) { ?>
         <a class="so-np__feature" href="/blog/<?php echo htmlspecialchars($featured['slug'], ENT_QUOTES, 'UTF-8'); ?>">
-            <span class="so-np__media"><?php echo $soCardImg($featured, 1200, 630); ?></span>
+            <span class="so-np__media"><?php echo $soCardImg($featured, 1200, 630, true); ?></span>
             <span class="so-np__fbody"><?php echo $soCardText($featured); ?></span>
         </a>
         <?php } ?>

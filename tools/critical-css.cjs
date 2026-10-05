@@ -155,7 +155,11 @@ async function fetchText(url) { const res = await fetch(url); if (!res.ok) throw
       s.root.walkAtRules(/keyframes$/i, at => { if (!new RegExp('animation[^;{}]*\\b' + at.params.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(used.replace(at.toString(), ''))) at.remove(); });
       out += s.root.toString() + '\n';
     }
-    const min = new CleanCSS({ level: 1 }).minify(out).styles;
+    // Before the full stylesheets arrive, things that are only laid out right by their (non-critical) rules can be wider than the screen,
+    // which makes a phone zoom the page out and then jump back. Clipping sideways overflow at the root prevents that; "clip" (unlike
+    // "hidden") does not turn the body into a scroll container, so sticky headers keep working.
+    out = 'html,body{overflow-x:clip}\n' + out;
+    const min = new CleanCSS({ level: 1, specialComments: 0 }).minify(out.replace(/@charset "[^"]*";/g, '')).styles;
     fs.writeFileSync(path.join(outDir, group + '.css'), min);
     console.log(group + ': ' + paths.length + ' pages, ' + keep.size + ' rules kept, ' + min.length + ' bytes');
   }
