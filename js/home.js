@@ -630,6 +630,25 @@ document.addEventListener('DOMContentLoaded', function () {
   // "Popular this weekend": the same text-only card as everywhere else, with a soft category-colored header.
   function popCard(ev) { return window.soEvCard(ev, { tint: true }); }
 
+  // The row's arrow (desktop): one page of whole cards per click (the cards fill the row exactly from 992px); back to
+  // the start after the last page.
+  function bindNext(box, track) {
+    const nx = box.querySelector('[data-so-feed-next]');
+    if (!nx) return;
+    // No arrow when every card already fits (a row with few events).
+    const fit = function () { nx.hidden = track.scrollWidth <= track.clientWidth + 2; };
+    requestAnimationFrame(fit);
+    if (nx.dataset.bound) return;
+    nx.dataset.bound = '1';
+    window.addEventListener('resize', fit, { passive: true });
+    nx.addEventListener('click', function () {
+      const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+      const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+      if (atEnd) track.scrollTo({ left: 0, behavior: 'smooth' });
+      else track.scrollBy({ left: track.clientWidth + gap, behavior: 'smooth' });
+    });
+  }
+
   function render(box, kind, data, label) {
     const track = box.querySelector('[data-so-feed-track]');
     const title = box.querySelector('.so-feed__title');
@@ -640,17 +659,7 @@ document.addEventListener('DOMContentLoaded', function () {
       box.hidden = false;
       track.innerHTML = events.map(popCard).join('');
       track.scrollLeft = 0;
-      const nx = box.querySelector('[data-so-feed-next]');
-      if (nx && !nx.dataset.bound) {
-        nx.dataset.bound = '1';
-        // One page of whole cards per click (the cards fill the row exactly on desktop); back to the start after the last page.
-        nx.addEventListener('click', function () {
-          const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
-          const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
-          if (atEnd) track.scrollTo({ left: 0, behavior: 'smooth' });
-          else track.scrollBy({ left: track.clientWidth + gap, behavior: 'smooth' });
-        });
-      }
+      bindNext(box, track);
       return;
     }
     // "This weekend near you" only makes sense for events really close by (not the "nearest anywhere" fallback).
@@ -674,6 +683,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     track.innerHTML = events.map((ev, i) => card(ev, i, kind)).join('');
     track.scrollLeft = 0;
+    bindNext(box, track);
     if (window.soBatchLoadImages) window.soBatchLoadImages(track, '.event-dynamic-image', () => true);
   }
 
