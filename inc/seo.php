@@ -115,6 +115,7 @@ foreach ($eventFiles as $file) {
           "description" => trim($event['name'] . ' tickets on ' . date('l, F j, Y', $event['edate']) . (!empty($event['venue']) ? ' at ' . $event['venue'] : '') . ($city !== '' ? ' in ' . $city . ($state !== '' ? ', ' . $state : '') : '') . '. Compare seats and prices from many sellers on Seat Outlet.'),
           "image" => [HOME_URL . (['concerts' => '/images/event-concert.jpg', 'sports' => '/images/team-event.webp', 'theatre' => '/images/loews-theatre.webp', 'festival' => '/images/festival-1.webp'][$tab] ?? '/images/crowd-at-concert-or-event.webp')],
           "eventStatus" => "https://schema.org/EventScheduled",
+          "organizer" => ["@type" => "Organization", "name" => (string) ($event['venue'] ?? 'Venue')],
 
           "location" => [
               "@type" => "Place",
