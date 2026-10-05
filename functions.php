@@ -978,7 +978,7 @@ function buildCategoryBreadcrumb($defaultCategory) {
             } elseif ($ancestor['depth'] == 2) {
                 $depth2[] = [
                     'label' => ucwords(strtolower($ancestor['text']['name'])),
-                    'url'   => '/category/' . sanitize_title($ancestor['text']['name']) . '-' . stripCategoryRootPath($ancestor['path'])
+                    'url'   => '/category/' . soSlug('category', (string) $ancestor['text']['name'], (int) ($ancestor['id'] ?? stripCategoryRootPath($ancestor['path'])))
                 ];
             }
         }
@@ -987,7 +987,7 @@ function buildCategoryBreadcrumb($defaultCategory) {
     if(count($breadcrumb) < 3) {
         $breadcrumb[] = [
             'label' => ucwords(strtolower($defaultCategory['text']['name'])),
-            'url'   => '/category/' . sanitize_title($defaultCategory['text']['name']) . '-' . stripCategoryRootPath($defaultCategory['path'])
+            'url'   => '/category/' . soSlug('category', (string) $defaultCategory['text']['name'], (int) ($defaultCategory['id'] ?? stripCategoryRootPath($defaultCategory['path'])))
         ];
     }
 
@@ -3213,7 +3213,7 @@ function getTopPerformersByCategory($categoryPath) {
             $performers[] = [
                 'id'   => $item['id'] ?? '',
                 'name' => $item['text']['name'] ?? '',
-                'slug' => strtolower($item['uriComponent']) ?? ''
+                'slug' => soSlug('performer', (string) ($item['text']['name'] ?? ''), (int) ($item['id'] ?? 0))
             ];
         }
     }
@@ -4886,7 +4886,7 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
         <?php foreach ($related as $rel) {
             if ($n >= $limit) break;
             $name = trim((string) ($rel['text']['name'] ?? ''));
-            $uri  = strtolower((string) ($rel['uriComponent'] ?? ''));
+            $uri  = $name !== '' && !empty($rel['id']) ? soSlug('performer', $name, (int) $rel['id']) : '';   // clean slug, not the API's name-and-id form
             if ($name === '' || $uri === '') continue;
             $n++;
             $cat  = $rel['defaultCategory'] ?? [];

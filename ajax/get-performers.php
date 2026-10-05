@@ -46,6 +46,7 @@ try {
         $performers[] = [
             'name'         => $name,
             'uriComponent' => rawurlencode($uriComponent),
+            'slug'         => soSlug('performer', (string) $name, (int) ($performer['id'] ?? 0)),
             'genre'        => getPerformerGenreLabel($defaultCategory),
             'image'        => $image,
         ];
