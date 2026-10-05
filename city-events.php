@@ -6,10 +6,10 @@ require_once 'functions.php';
 // list this page used to have (every entry was href="#" and there was no
 // real city ID behind any of them to link to safely). See getTopCities()
 // in functions.php.
-$topCities = getTopCities(60);
+$topCities = getTopCities(150);   // United States and Canada
 
 // Cities grouped by state, biggest states (most events on sale) first, with the event counts the API reports.
-$soStates = ['AL'=>'Alabama','AK'=>'Alaska','AZ'=>'Arizona','AR'=>'Arkansas','CA'=>'California','CO'=>'Colorado','CT'=>'Connecticut','DE'=>'Delaware','DC'=>'District of Columbia','FL'=>'Florida','GA'=>'Georgia','HI'=>'Hawaii','ID'=>'Idaho','IL'=>'Illinois','IN'=>'Indiana','IA'=>'Iowa','KS'=>'Kansas','KY'=>'Kentucky','LA'=>'Louisiana','ME'=>'Maine','MD'=>'Maryland','MA'=>'Massachusetts','MI'=>'Michigan','MN'=>'Minnesota','MS'=>'Mississippi','MO'=>'Missouri','MT'=>'Montana','NE'=>'Nebraska','NV'=>'Nevada','NH'=>'New Hampshire','NJ'=>'New Jersey','NM'=>'New Mexico','NY'=>'New York','NC'=>'North Carolina','ND'=>'North Dakota','OH'=>'Ohio','OK'=>'Oklahoma','OR'=>'Oregon','PA'=>'Pennsylvania','RI'=>'Rhode Island','SC'=>'South Carolina','SD'=>'South Dakota','TN'=>'Tennessee','TX'=>'Texas','UT'=>'Utah','VT'=>'Vermont','VA'=>'Virginia','WA'=>'Washington','WV'=>'West Virginia','WI'=>'Wisconsin','WY'=>'Wyoming'];
+$soStates = ['AL'=>'Alabama','AK'=>'Alaska','AZ'=>'Arizona','AR'=>'Arkansas','CA'=>'California','CO'=>'Colorado','CT'=>'Connecticut','DE'=>'Delaware','DC'=>'District of Columbia','FL'=>'Florida','GA'=>'Georgia','HI'=>'Hawaii','ID'=>'Idaho','IL'=>'Illinois','IN'=>'Indiana','IA'=>'Iowa','KS'=>'Kansas','KY'=>'Kentucky','LA'=>'Louisiana','ME'=>'Maine','MD'=>'Maryland','MA'=>'Massachusetts','MI'=>'Michigan','MN'=>'Minnesota','MS'=>'Mississippi','MO'=>'Missouri','MT'=>'Montana','NE'=>'Nebraska','NV'=>'Nevada','NH'=>'New Hampshire','NJ'=>'New Jersey','NM'=>'New Mexico','NY'=>'New York','NC'=>'North Carolina','ND'=>'North Dakota','OH'=>'Ohio','OK'=>'Oklahoma','OR'=>'Oregon','PA'=>'Pennsylvania','RI'=>'Rhode Island','SC'=>'South Carolina','SD'=>'South Dakota','TN'=>'Tennessee','TX'=>'Texas','UT'=>'Utah','VT'=>'Vermont','VA'=>'Virginia','WA'=>'Washington','WV'=>'West Virginia','WI'=>'Wisconsin','WY'=>'Wyoming','AB'=>'Alberta','BC'=>'British Columbia','MB'=>'Manitoba','NB'=>'New Brunswick','NL'=>'Newfoundland and Labrador','NS'=>'Nova Scotia','NT'=>'Northwest Territories','NU'=>'Nunavut','ON'=>'Ontario','PE'=>'Prince Edward Island','QC'=>'Quebec','SK'=>'Saskatchewan','YT'=>'Yukon'];
 $byState = [];
 foreach ($topCities as $c) {
     $st = (string) ($c['state'] ?? '');
@@ -18,7 +18,7 @@ foreach ($topCities as $c) {
 }
 uasort($byState, function ($a, $b) { return $b['events'] <=> $a['events']; });
 
-$cityLinks = ['Concerts' => 'concerts-city', 'Sports' => 'sports-city', 'Theater' => 'theater-city', 'Festivals' => 'festivals-city'];
+$cityLinks = ['Events' => 'event-city', 'Concerts' => 'concerts-city', 'Sports' => 'sports-city', 'Theater' => 'theater-city', 'Festivals' => 'festivals-city'];
 $h = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); };
 
 include 'header.php';
@@ -30,7 +30,7 @@ include 'header.php';
             <div class="row justify-content-center text-center">
                 <div class="col-lg-9 hero-inner">
                     <h1 class="hero-title">City Events</h1>
-                    <p class="hero-subtitle">Pick your city to browse city events, from concerts and sports to theater and festivals.</p>
+                    <p class="hero-subtitle">Pick your city in the United States or Canada to browse events, from concerts and sports to theater and festivals.</p>
                 </div>
             </div>
         </div>
@@ -57,7 +57,7 @@ include 'header.php';
                             <?php foreach ($info['cities'] as $city) {
                                 $citySlug = soSlug('city', $city['label'], $city['id']); ?>
                                 <div class="so-citycard">
-                                    <a class="so-citycard__main" href="/event-city/<?php echo $h($citySlug); ?>">
+                                    <a class="so-citycard__main" href="/event-city/<?php echo $h($citySlug); ?>" title="Events in <?php echo $h($city['name']); ?>">
                                         <strong><?php echo $h($city['label']); ?></strong>
                                         <span><?php echo number_format((int) $city['eventCount']); ?> events</span>
                                     </a>

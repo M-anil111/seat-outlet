@@ -343,60 +343,9 @@ soPageHero([
 						<?php } ?>
 					</div>	
 
-					<div class="tab-section content-section-detail mb-0" id="promocode">
-						<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> ticket promo codes</h2>
-						<p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
-						<div class="row g-3 mt-2">
-							<div class="col-md-6">
-								<div class="offer-pill d-flex align-items-center justify-content-between">
-									<div class="d-flex align-items-center">
-										<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-											<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-												<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
-													stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-												<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-											</svg>
-										</div>
-										<div class="offer-text">
-											<div class="offer-title">5% OFF</div>
-											<div class="offer-subtitle">TAKE5</div>
-										</div>
-									</div>
-									<div class="offer-copy text-end">
-										<button type="button"
-											class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
-											data-code="TAKE5">
-											Copy
-										</button>
-									</div>
-								</div>
-							</div>
-							<div class="col-md-6">
-								<div class="offer-pill d-flex align-items-center justify-content-between">
-									<div class="d-flex align-items-center">
-										<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-											<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-												<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z"
-													stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
-												<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
-											</svg>
-										</div>
-										<div class="offer-text">
-											<div class="offer-title">10% OFF</div>
-											<div class="offer-subtitle">TAKE10</div>
-										</div>
-									</div>
-									<div class="offer-copy text-end">
-										<button type="button"
-											class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill"
-											data-code="TAKE10">
-											Copy
-										</button>
-									</div>
-								</div>
-							</div>
-						</div>				
-					</div>				
+					<div class="tab-section content-section-detail mb-0">
+						<?php echo soSpecPromoHtml('Promo codes for ' . $artistName . ' tickets', $artistName); ?>
+					</div>
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">
 					<div class="sticky-top sidebar-inner">

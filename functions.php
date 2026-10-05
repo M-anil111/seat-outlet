@@ -1298,7 +1298,7 @@ function getTopVenues($limit = 20) {
  * for free, just deduplicated by city id.
  */
 function getTopCities($limit = 60) {
-    $cacheKey = 'top_cities';
+    $cacheKey = 'top_cities_v2';   // v2: United States and Canada, each city carries its country
     $cached = cache_get($cacheKey, 12 * 3600);
     if (is_array($cached) && count($cached) >= min($limit, 10)) {
         return array_slice($cached, 0, $limit);
@@ -1309,7 +1309,7 @@ function getTopCities($limit = 60) {
     // "top cities" is the API's own answer rather than a derivation from the
     // top-venues list (which put one-venue towns next to New York).
     $data = tnRequest('/catalog/v2/cities', [
-        'filter'           => "country/alphaCode eq 'US' and _metadata/hasTickets eq true",
+        'filter'           => "(country/alphaCode eq 'US' or country/alphaCode eq 'CA') and _metadata/hasTickets eq true",
         'sort'             => '-salesRank',
         'salesRankOptions' => '{"interval":"week","metric":"ticketVolume"}',
         'perPage'          => min(200, $limit * 2),
@@ -1331,6 +1331,7 @@ function getTopCities($limit = 60) {
             'stateId'    => (int) ($city['stateProvince']['id'] ?? 0),
             'label'      => trim($cityName . ', ' . $stateAbbr, ', '),
             'eventCount' => (int) ($city['_metadata']['eventCount'] ?? 0),
+            'country'    => (string) ($city['country']['alphaCode'] ?? 'US'),
         ];
         if (count($cities) >= $limit) break;
     }
@@ -4039,7 +4040,7 @@ function soEventNode(array $event, array $opts = []) {
     }
     $place['address'] = $address;
     $node = [
-        '@type' => 'Event',
+        '@type' => !empty($opts['type']) ? (string) $opts['type'] : 'Event',   // MusicEvent, SportsEvent, TheaterEvent, ComedyEvent or Festival: all are Events to Google
         '@id' => $url . '#event',
         'name' => $name,
         'startDate' => (string) ($event['date']['datetimeOffset'] ?? ($event['date']['datetime'] ?? ($event['date']['date'] ?? ''))),
@@ -4049,6 +4050,9 @@ function soEventNode(array $event, array $opts = []) {
         'location' => $place,
         'performer' => buildEventPerformerSchema($event),
     ];
+    $node['inLanguage'] = 'en-US';
+    $node['isAccessibleForFree'] = false;
+    if (!empty($opts['competitors']) && is_array($opts['competitors'])) $node['competitor'] = $opts['competitors'];   // SportsEvent: the two teams
     $node['image'] = [!empty($opts['image']) ? (string) $opts['image'] : soEventSchemaImage($event)];
     $node['description'] = !empty($opts['description']) ? (string) $opts['description'] : soEventSchemaDescription($event);
     if ($venueName !== '') {
@@ -5059,25 +5063,37 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     }, $faqsRaw);
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
-    $pageFocusKeyword    = "$artistName Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
+    // Spec: this page owns "<Performer> Concert Tickets in <City>" (Tickets in <City> for sports, shows and festivals); the dated event pages
+    // under it own their venue and day, and /artist/ owns "<Performer> Tickets".
+    $soKind  = soSpecKind((string) ($performer['defaultCategory']['path'] ?? ''));
+    $soLabel = soSpecLabel($artistName, $soKind);
+    $soTix   = soSpecTickets($soLabel, $soKind);
     $soLocShort = preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
-    $pageMetaTitle       = soTitle("$artistName Tickets in $locationLabel " . date('Y') . " Dates", "$artistName Tickets in $locationLabel", "$artistName Tickets in $soLocShort", "$artistName Tickets");
-    $pageMetaDescription = soMetaFit("Buy $artistName {$noun['noun']} tickets in $locationLabel. Compare prices from many sellers, pick seats on live seat maps. Orders carry the TicketNetwork guarantee.", 'Secure checkout and on time delivery.');
+    $pageFocusKeyword    = "$soTix in $soLocShort";
+    $pageTitleMax        = 70;   // header.php otherwise clamps every title to 59 characters
+    $pageMetaTitle       = soTitleUpTo(70, "Buy $soTix in $locationLabel " . date('Y'), "Buy $soTix in $locationLabel", "Buy $soTix in $soLocShort", "$soTix in $soLocShort", "Buy $soTix", "$soLabel Tickets");
+    $pageMetaDescription = $total_count > 0
+        ? soSpecPick(155,
+            "Buy $soTix in $locationLabel. Find great seats and book your tickets online today at Seat Outlet before they sell out.",
+            "Buy $soTix in $locationLabel. Book online at Seat Outlet before they sell out.",
+            "Buy $soTix at Seat Outlet before they sell out.")
+        : soMetaFit("Get alerts for $soLabel {$noun['noun']} tickets in $locationLabel. Compare prices from many sellers when dates go on sale. Orders carry the TicketNetwork guarantee.", 'Secure checkout and on time delivery.', 'Prices from many sellers in one place.');
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema(array_map(fn($c) => ['label' => $c['label'], 'url' => null], $breadcrumbs), "$artistName in $locationLabel"),
         buildFaqPageSchema($faqs),
+        $events ? soEventItemList($events, HOME_URL . '/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug) : null,
     ]));
 
     include 'header.php';
     soPageHero([
         'crumbs'     => array_merge(array_map(fn($c) => ['label' => (string) $c['label'], 'url' => (string) ($c['url'] ?? '')], $breadcrumbs), [['label' => $artistName, 'url' => '/artist/' . $canonArtistSlug], ['label' => $locationLabel]]),
-        'image'      => $hasRealImage ? ['url' => $performer_image, 'alt' => "$artistName {$noun['nounCap']} tickets in $locationLabel"] : null,
+        'image'      => $hasRealImage ? ['url' => $performer_image, 'alt' => soSpecAlt($soLabel, $soKind, $locationLabel)] : null,
         'credit'     => $hasRealImage ? $performerImg : null,
         'name'       => $artistName,
         'eyebrow'    => $categoryLabel,
         'eyebrowUrl' => (string) (end($breadcrumbs)['url'] ?? ''),
-        'title'      => "$artistName Tickets in $locationLabel",
+        'title'      => "$soTix in $locationLabel",
         'stats'      => ['<span id="results_count">' . number_format($total_count) . ' ' . ($total_count === 1 ? 'result' : 'results') . '</span>'],
     ]);
     ?>
@@ -5109,6 +5125,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
                         <div class="list-category-bg pb-3">
+                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Buy <?php echo htmlspecialchars("$soTix in $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
                             <?php if (!empty($events)) { ?>
                                 <div id="eventsSection" class="section-artist-content event-row-all">
                                     <?php foreach ($events as $event) {
@@ -5195,17 +5212,21 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                 </div>
             </div>
 
+            <div class="tab-section content-section-detail">
+                <?php echo soSpecPromoHtml(soSpecPromoHeading($soLabel, $soKind, $soLocShort, preg_match('/,\s*([A-Z]{2})$/', (string) $locationLabel, $soSm) ? $soSm[1] : ''), $soLabel); ?>
+            </div>
+
             <div class="tab-section content-section-detail" id="about">
                 <div class="row">
                     <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
                         <div class="so-about-text me-md-3">
-                            <h2 class="so-heading mb-3">About <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <h2 class="so-heading mb-3"><?php echo htmlspecialchars('About ' . $soLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
                             <?php renderBioBlock($performer_bio); ?>
                         </div>
                     </div>
                     <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
                         <div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-                            <?php if ($hasRealImage) { ?><img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars("About $artistName in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" /><?php renderImageCredit($performerImg, 'img-credit'); } else { echo soTileHtml($artistName, 'so-tile so-tile--about'); } ?>
+                            <?php if ($hasRealImage) { ?><img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars(soSpecAlt($soLabel, $soKind, $locationLabel), ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" /><?php renderImageCredit($performerImg, 'img-credit'); } else { echo soTileHtml($artistName, 'so-tile so-tile--about'); } ?>
                         </div>
                     </div>
                 </div>
@@ -5213,7 +5234,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
-                    <h2 class="so-heading mb-3"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> FAQ</h2>
+                    <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars("$soLabel Tickets in $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
                     <div class="accordion" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
@@ -5244,6 +5265,36 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                     </div>
                 </div>
             <?php } ?>
+
+            <?php
+            // Spec sections after the FAQs, each from data this page holds; a section with nothing behind it is left out.
+            $soCityData = ($dimension === 'city') ? soSpecCityEvents($soKind, $locationValue) : [];
+            $soStateAbbr = preg_match('/,\s*([A-Z]{2})$/', (string) $locationLabel, $soSm2) ? $soSm2[1] : '';
+            $soHere = array_map('intval', array_column($events, 'id'));
+            $soOtherDates = array_values(array_filter($allPerformerEvents, fn($oe) => !in_array((int) ($oe['id'] ?? 0), $soHere, true)));
+            $soCountry = (string) ($allPerformerEvents[0]['country']['alphaCode'] ?? 'US');
+            $soCountryName = ['US' => 'the United States', 'CA' => 'Canada'][$soCountry] ?? (string) ($allPerformerEvents[0]['country']['text']['name'] ?? 'the United States');
+            $soLow = null; $soTicketCount = 0;
+            foreach ($events as $oe) { $lv = $oe['pricingInfo']['lowPrice']['value'] ?? null; if (is_numeric($lv) && ($soLow === null || (float) $lv < $soLow)) { $soLow = (float) $lv; } $soTicketCount += (int) ($oe['_metadata']['ticketCount'] ?? 0); }
+            $soFirst = $events[0] ?? null;
+            $soFirstTs = ($soFirst && !empty($soFirst['date']['date'])) ? strtotime($soFirst['date']['date']) : false;
+            echo soSpecCityInfoHtml($soLocShort, $soStateAbbr, $soCityData, $soKind, ($dimension === 'city') ? '/' . getCategoryCityLinkPrefix((string) ($performer['defaultCategory']['path'] ?? '')) . '/' . $canonLocSlug : '/city-events');
+            if ($soKind === 'concert' && $soOtherDates) {
+                echo '<div class="tab-section content-section-detail"><h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . htmlspecialchars($soLabel . ' Tour Dates Across ' . $soCountryName, ENT_QUOTES, 'UTF-8') . '</h2>' . soSpecEventList($soOtherDates, [], 6) . '<p><a href="/artist/' . htmlspecialchars($canonArtistSlug, ENT_QUOTES, 'UTF-8') . '">See all ' . htmlspecialchars($soLabel, ENT_QUOTES, 'UTF-8') . ' tour dates</a></p></div>';
+            }
+            if ($total_count > 0 && $soFirst) {
+                echo '<div class="tab-section content-section-detail">' . soSpecGuideHtml(soSpecGuideHeading($soLabel, $soKind, $soLocShort, $soStateAbbr), $soLabel, [
+                    'when' => $soFirstTs ? 'next date ' . date('l, F j, Y', $soFirstTs) : '',
+                    'venue' => (string) ($soFirst['venue']['text']['name'] ?? ''),
+                    'venueHref' => !empty($soFirst['venue']['id']) ? '/venue/' . soVenueSlug((string) $soFirst['venue']['text']['name'], (int) $soFirst['venue']['id'], $locationLabel) : '',
+                    'tickets' => $soTicketCount, 'low' => $soLow !== null ? '$' . number_format($soLow, 0) : '', 'dates' => $total_count,
+                ]) . '</div>';
+            }
+            $soSimilar = soSpecEventList(array_values(array_filter($soCityData['events'] ?? [], function ($oe) use ($performerId) { foreach (($oe['performers'] ?? []) as $pp) { if ((int) ($pp['id'] ?? 0) === (int) $performerId) return false; } return true; })), [], 6);
+            if ($soSimilar !== '') {
+                echo '<div class="tab-section content-section-detail"><h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . htmlspecialchars(soSpecSimilarHeading($soKind, $soLocShort, $soStateAbbr), ENT_QUOTES, 'UTF-8') . '</h2>' . $soSimilar . '</div>';
+            }
+            ?>
 
             <div class="tab-section content-section-detail" id="more-tickets">
                 <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets</h2>
@@ -6198,6 +6249,7 @@ require_once __DIR__ . '/inc/page-hero.php';   // soPageHero(): the one page hea
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
 require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/css-groups.php';        // soCssBundleFiles(): the stylesheet files for this page type
+require_once __DIR__ . '/inc/page-spec.php';   // titles, headings, promo block and sections for event and performer-in-location pages
 require_once __DIR__ . '/inc/slugs.php';             // url_slugs table: ids never appear in URLs (soSlug, soEventSlug, soSlugResolve)
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages
 register_shutdown_function('soTopPerformersMaybeRun');   // keeps the home Top performers cards fresh

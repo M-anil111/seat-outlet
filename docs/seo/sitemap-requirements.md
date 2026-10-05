@@ -26,3 +26,8 @@ Why `/sitemaps/events-9.xml` looked broken: it is a static file the builder wrot
 ## Open item (not fixable in code)
 
 While live is served through the Cloudflare Worker, `https://seatoutlet.com/robots.txt` says `Sitemap: https://seatoutlet.com/sitemaps/sitemap.xml`, and the Worker answers `/sitemap.xml` with its own list of about 20 URLs, not the real index. Until the Worker is removed (see docs/production-cutover.md) or its robots.txt and `/sitemap.xml` are changed to point at `/sitemaps/sitemap.xml`, submit `https://seatoutlet.com/sitemaps/sitemap.xml` directly in Search Console.
+
+City pages (United States and Canada)
+- Every city page works for any city the ticket API knows (`/event-city/`, `/concerts-city/`, `/festivals-city/`, `/sports-city/`, `/theater-city/` plus the slug). A page with no upcoming events is `noindex` and kept out of the sitemap.
+- The sitemap crawl covers United States and Canada events. For each event it records the city and which pages the event belongs to (all events, concerts, festivals, sports, theater; festivals also count as concerts, as on the pages themselves). A city's page of a kind is listed in `cities-N.xml` only when the city has at least `SO_SITEMAP_CITYPAGE_MIN` (3) upcoming events of that kind.
+- `/city-events` lists up to 150 top cities (United States and Canada, grouped by state or province), each with links to all five city pages.

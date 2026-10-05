@@ -107,7 +107,7 @@ include_once 'functions.php';
     ob_start('soPublicCanonical');   // canonical + og:url name the public address, whatever host served the page
     // Keep titles and descriptions inside what a search result shows.
     if (!empty($pageCanonicalUrl)) { $GLOBALS['pageCanonicalUrl'] = $pageCanonicalUrl; }   // pages rendered inside a function: the output filters read it
-    if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle); }
+    if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle, !empty($pageTitleMax) ? (int) $pageTitleMax : 59); }   // a page may allow a longer title ($pageTitleMax), e.g. a performer in a city
     if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription($pageMetaDescription); }
 ?>
 
