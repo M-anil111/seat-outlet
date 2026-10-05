@@ -7885,3 +7885,13 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 
 /* Tap targets: venue and place links in event rows are at least 24px tall (WCAG 2.5.8) without moving the text. */
 .event-row-all .ev-venue a, .event-row-all .ev-place a, .event-row-all .ev-name a { padding: 5px 0; }
+
+/* Read more: long text stays in the HTML, clamped for visitors with JavaScript (inc/readmore.php). */
+.so-clamp--js:not(.is-open) .so-clamp__body { max-height: calc(var(--so-lines, 4) * 1.65em); overflow: hidden; -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+.so-clamp__btn { margin-top: 8px; padding: 6px 0; border: 0; background: none; color: #0056d6; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.so-clamp__btn:focus-visible { outline: 2px solid #0056d6; outline-offset: 2px; border-radius: 4px; }
+/* Event rows: the first rows show, the rest open with "Show all". Without JavaScript every row shows. */
+.so-rows--js.so-rows--capped > :nth-child(n+11) { display: none !important; }
+.so-rows__lm-hold { display: none !important; }
+/* Blog on phones: only three more-guide cards until "Show more guides". */
+.so-art__more-grid.so-cap3 > :nth-child(n+4) { display: none; }

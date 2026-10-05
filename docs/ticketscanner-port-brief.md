@@ -6,6 +6,22 @@ Everything here exists and works in the Seat Outlet repository (github.com/M-ani
 
 ---
 
+## 0A. Answers already given by the owner (these override anything below)
+
+- **Currency:** always US dollars (USD), even for Canadian locations. Show "$" amounts and say USD where it matters. Do not convert to CAD.
+- **Locations:** both United States and Canada, with every holiday rule for both countries (US and Canadian holidays both stay).
+- **Promo codes:** TAKE5 (5% off orders of $199 or more) and TAKE10 (10% off orders of $349 or more) still work on TicketScanner.ca.
+- **Contact email:** info@ticketscanner.ca (no phone, no postal address, no company-number placeholders).
+- **Ticket partner script:** `<script type="text/javascript" src="https://tickettransaction.com/?https=true&bid=9250&sitenumber=30&tid=600"></script>` on the `/policies` page (Seat Outlet values were bid 9250, site number 30, tid 600; the owner states the TicketNetwork code and id are provided already for this site, so confirm they apply to TicketScanner.ca before launch).
+- **Extra products:** TicketScanner.ca also sells flights, hotels, car rentals and activities. City pages and holiday pages must also include those (for example "Flights to <City>", "Hotels in <City>", "Car rentals in <City>", "Things to do in <City>" blocks and links, and the same for each holiday page, such as hotels for the holiday weekend). Each block links to the matching product search page, uses only data the site actually holds (no invented prices, ratings or availability), and carries its own heading, alt text and schema where the data allows (for example `Hotel`/`LodgingBusiness` and `Offer` only when real data exists).
+- **Rules and systems:** one keyword per page, readable slugs with no numeric ids, no invented facts, honest urgency, thin pages out of search: confirmed. All systems in this brief (sections 3 to 16) are to be built.
+- **Build order and acceptance checks:** follow the recommendation in section 18.
+- **Newer Seat Outlet features to include** (added after the first version of this brief): clamped "Read more" blocks (a long text stays in the HTML, shows 3 to 4 lines with a button, button appears only when the text is longer than the clamp, works without JavaScript); event lists on city, state, country and venue pages show the first 10 rows with a "Show all N events" button; a data-driven "About events in <place>" text built only from the page's own events; "<Performer> dates at a glance" text; promo page FAQ and collapsed tips; blog on phones: contents list closed and three more-guide cards until "Show more guides".
+
+Where the sections below say "Canada first", read it as "United States and Canada, both, in USD".
+
+---
+
 ## 0. Answers I must give first (the new chat must ask for these before building)
 
 1. Where do events, prices, venues and performers come from on TicketScanner.ca (API, feed, database)? Seat Outlet uses the TicketNetwork catalog API. Every page below depends on this data. Fields needed per event: name, date and time, venue name and address, city, state/province, country, category path, performer(s), lowest price, whether tickets are listed, event URL for checkout.

@@ -462,6 +462,12 @@ soPageHero([
 			</div>
 		</div>
 		<?php } ?>
+		<?php $soGlance = soPerformerGlanceHtml($artistName, $events ?? []); if ($soGlance !== '') { ?>
+		<div class="tab-section content-section-detail" id="glance">
+			<h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> dates at a glance</h2>
+			<?php echo soReadMoreBlock($soGlance, 'glance-text', 3); ?>
+		</div>
+		<?php } ?>
 		<?php if (!empty($faqs)) { ?>
 			<?php $faqVisible = 5; // FAQs shown before "Show more" ?>
 			<div class="tab-section content-section-detail" id="faqs">

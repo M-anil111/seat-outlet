@@ -92,7 +92,7 @@ include 'header.php';
         <div class="container">
             <div class="row justify-content-center text-center">
                 <div class="col-lg-9 hero-inner">
-                    <h1 class="hero-title">Deals & Promotions</h1>
+                    <h1 class="hero-title">Ticket Promo Codes and Deals</h1>
                     <p class="hero-subtitle">Find a tickets promo code for concerts, sports and theater, plus tips on using it at checkout.
                     </p>
                 </div>
@@ -119,7 +119,7 @@ include 'header.php';
 								<div class="offer-pill d-flex align-items-center justify-content-between px-3">
 									<div class="d-flex align-items-center">
 										<div class="offer-icon me-3 d-flex align-items-center justify-content-center ">
-											<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+											<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
 												<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
 												<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
 											</svg>
@@ -141,7 +141,7 @@ include 'header.php';
 								<div class="offer-pill d-flex align-items-center justify-content-between">
 									<div class="d-flex align-items-center">
 										<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-											<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+											<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
 												<path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path>
 												<circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle>
 											</svg>
@@ -178,12 +178,16 @@ include 'header.php';
                 <!-- 4 -->
                 <div class="policy-section" id="section-4">
                     <h2>Ways to pay less that do not need a code</h2>
+                    <?php ob_start(); ?>
                     <ul>
                         <li>Compare sections and rows for the same event. Prices differ a lot between listings.</li>
                         <li>Check the <a href="/ticket-deals">ticket deals page</a> for lower-priced events.</li>
                         <li>Be flexible on dates when you can.</li>
                         <li>Read why <a href="/why-are-concert-tickets-so-expensive">concert tickets cost what they do</a> so you know what you are paying for.</li>
+                        <li>Look at the all-in price before you choose a listing, not only the price per ticket.</li>
+                        <li>Set a price alert on an event you want, and we email you if the price drops.</li>
                     </ul>
+                    <?php echo soReadMoreBlock((string) ob_get_clean(), 'pay-less-list', 3, 'Show all ways to pay less', 'Show fewer'); ?>
                 </div>
 
                 <!-- 5 -->
@@ -191,6 +195,13 @@ include 'header.php';
                     <h2>Get ticket alerts by email</h2>
                     <?php echo soLeadForm(['source' => 'promo', 'title' => 'Get ticket alerts and new guides in your inbox', 'text' => 'Tour announcements, on-sale news and plain-English ticket advice. We cannot promise promo codes.', 'class' => 'so-nl--inline']); ?>
                 </div>
+
+                <?php soMiniFaq('Promo code questions', [
+                    ['Which promo codes can I use?', 'We list TAKE5 (5% off orders of $199 or more) and TAKE10 (10% off orders of $349 or more). Whether a code applies to your order is decided at checkout.'],
+                    ['Where do I enter a promo code?', 'At checkout, in the promo code field, when the checkout shows one. Check the new total before you pay.'],
+                    ['Why did my promo code not work?', 'Codes apply only where the checkout accepts them, the order must meet the minimum shown next to the code, and codes cannot be combined with other offers. If it still fails, contact customer service with your order details.'],
+                    ['Can I use a promo code on any event?', 'Not always. Some events or listings may not accept codes, and codes can change or stop working without notice.'],
+                ]); ?>
 
                 <!-- 6 -->
                 <div class="policy-section" id="section-6">
