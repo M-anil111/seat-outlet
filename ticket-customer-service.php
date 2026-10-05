@@ -293,7 +293,7 @@ include 'header.php';
     border-color: #2556e0;
 }
 
-.contact-us-page .help-card h4 {
+.contact-us-page .help-card h3 {
     font-size: 16px;
     margin-bottom: 8px;
     display: flex;
@@ -301,7 +301,7 @@ include 'header.php';
     gap: 8px;
 }
 
-.contact-us-page .help-card h4::before {
+.contact-us-page .help-card h3::before {
     content: '?';
     width: 24px;
     height: 24px;
@@ -428,19 +428,19 @@ include 'header.php';
             <div class="row g-3 g-md-4">
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="help-card">
-                        <h4>Find your order</h4>
+                        <h3>Find your order</h3>
                         <p>Your order confirmation email has your order number and delivery details. Include the order number when you write to us.</p>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="help-card">
-                        <h4>Guarantee and refunds</h4>
+                        <h3>Guarantee and refunds</h3>
                         <p><?php echo soContactH(soGuaranteeSentence()); ?> <a href="/worry-free-guarantee">Read the full guarantee</a>.</p>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="help-card">
-                        <h4>Business enquiries</h4>
+                        <h3>Business enquiries</h3>
                         <p>Choose "Partnership" as the topic in the form above, or see the <a href="/ticket-partner-program">partner page</a>.</p>
                     </div>
                 </div>

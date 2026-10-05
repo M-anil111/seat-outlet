@@ -41,13 +41,15 @@ function soAdSlot(string $placement, string $format = 'horizontal'): string {
     if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing'], true)) $slot = (string) getenv('ADSENSE_SLOT_BANNER');   // one banner ad unit can serve every banner position
     if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing'], true)) $slot = (string) getenv('ADSENSE_SLOT_HOME');     // the home banner setting from before banners were on every page
     if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing'], true)) $slot = SO_ADSENSE_DEFAULT_SLOT;
+    $GLOBALS['soAdSeq'] = ($GLOBALS['soAdSeq'] ?? 0) + 1;   // each ad landmark gets its own name
+    $adName = 'Advertisement ' . $GLOBALS['soAdSeq'];
     if ($client === '' || !preg_match('/^\d{6,20}$/', $slot)) {
         // Not set up yet: on the test site (or with ADSENSE_PLACEHOLDER=1) show where the ad will go. On the live site nothing is printed.
         if (!(defined('SITE_INDEXABLE') && !SITE_INDEXABLE) && getenv('ADSENSE_PLACEHOLDER') !== '1') return '';
-        return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . ' so-ad--placeholder" aria-label="Advertisement"><span class="so-ad__label">Advertisement</span><div class="so-ad__ph"><strong>AdSense Banner</strong><span>(' . (in_array($placement, ['listing', 'side2'], true) ? 'Medium rectangle 300 &times; 250' : 'Leaderboard 728 &times; 90') . ')</span></div></aside>';
+        return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . ' so-ad--placeholder" aria-label="' . $adName . '"><span class="so-ad__label">Advertisement</span><div class="so-ad__ph"><strong>AdSense Banner</strong><span>(' . (in_array($placement, ['listing', 'side2'], true) ? 'Medium rectangle 300 &times; 250' : 'Leaderboard 728 &times; 90') . ')</span></div></aside>';
     }
     $GLOBALS['soAdsenseUsed'] = true;
-    return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . '" aria-label="Advertisement" data-so-ad>'
+    return '<aside class="so-ad so-ad--' . htmlspecialchars($placement, ENT_QUOTES, 'UTF-8') . '" aria-label="' . $adName . '" data-so-ad>'
         . '<span class="so-ad__label">Advertisement</span>'
         // Fixed sizes picked by CSS (320x100, 468x60, 728x90 for banners; 300x250 for boxes). The "full width responsive" mode is off on
         // purpose: it makes the AdSense script size the ad to the whole screen, which pushed the sidebar below the page.

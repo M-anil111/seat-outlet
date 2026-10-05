@@ -398,7 +398,7 @@ soPageHero([
 		<div class="tab-section content-section-detail so-tourtable" id="dates">
 			<h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars($soNoun[0] === 'games' ? 'Schedule & Game Dates' : ($soNoun[0] === 'shows' ? 'Schedule & Show Dates' : 'Schedule & Tour Dates'), ENT_QUOTES, 'UTF-8'); ?></h2>
 			<p class="so-tourtable__lead">Every upcoming <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars(strtolower($soNoun[1]), ENT_QUOTES, 'UTF-8'); ?> on Seat Outlet, with the lowest price listed today. Pick a date to compare seats.</p>
-			<div class="so-table-wrap">
+			<div class="so-table-wrap" tabindex="0" role="region" aria-label="Tour dates, scrollable">
 				<table>
 					<thead><tr><th>Date</th><th>City</th><th>Venue</th><th>From</th><th><span class="visually-hidden">Tickets</span></th></tr></thead>
 					<tbody>
