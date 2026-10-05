@@ -308,7 +308,7 @@ foreach ($fallbackCategories as $key => $list) {
         'source' => 'home', 'names' => true, 'id' => 'homeAlerts', 'class' => 'so-nl--home',
         'title' => 'Get alerts for tours and on-sales',
         'text' => 'Join the Seat Outlet list for tour announcements, on-sale news and ticket tips, sent to your inbox. Free, and you can unsubscribe any time.',
-        'button' => 'Get alerts',
+        'button' => 'Get alerts', 'layout' => 'split',
     ]); ?>
   </div>
 </section>
