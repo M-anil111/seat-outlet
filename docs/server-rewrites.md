@@ -14,6 +14,9 @@ The site's own sitemap and the `/cities` page link to the `*-city` URLs, so 150 
 # One slug: /event-city/las-vegas-nv-2355 -> /event-city.php?slug=las-vegas-nv-2355
 rewrite ^/(event-city|concerts-city|concerts-state|concert-country|concert-venue|events-state|festivals-city|festivals-country|festivals-state|festivals-venue|sports-city|sports-state|theater-city|theater-country|theater-state|theater-venue|theatre-city|theatre-country|theatre-state|theatre-venue|state|country)/([^/]+)/?$ /$1.php?slug=$2 last;
 
+# City holiday pages: /july-4th-events-in-austin-tx -> /holiday-city.php?holiday=july-4th-events&slug=austin-tx
+rewrite ^/(christmas-shows-near-me|new-years-eve-events|valentines-day-events|st-patricks-day-events|easter-weekend-events|mothers-day-weekend-events|memorial-day-weekend-events|victoria-day-weekend-events|fathers-day-weekend-events|canada-day-events|july-4th-events|labor-day-weekend-events|labour-day-weekend-events|halloween-events|thanksgiving-weekend-events|canadian-thanksgiving-weekend-events|boxing-day-events)-in-([^/]+)/?$ /holiday-city.php?holiday=$1&slug=$2 last;
+
 # City discovery pages: /last-minute-tickets/austin-tx -> /last-minute-tickets.php?slug=austin-tx
 rewrite ^/(last-minute-tickets|weekend-events|cheap-tickets|best-events)/([^/]+)/?$ /$1.php?slug=$2 last;
 

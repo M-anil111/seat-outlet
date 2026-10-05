@@ -43,7 +43,7 @@ const SO_CSS_GROUPS = [
     'browse' => [
         'templates' => ['category.php', 'concert*.php', 'buy-*.php', 'game-day-tickets.php', '*-tickets.php', '*-city.php', '*-state.php', '*-country.php', '*-venue.php',
             'search.php', 'city-events.php', 'cities.php', 'venues.php', 'performers.php', 'upcoming-music-festivals.php', 'festival*.php', 'christmas-shows-near-me.php',
-            'last-minute-tickets.php', 'weekend-events.php', 'cheap-tickets.php', 'best-events.php'],
+            'last-minute-tickets.php', 'weekend-events.php', 'cheap-tickets.php', 'best-events.php', 'holiday-city.php', 'holiday-events.php'],
         'js' => ['events-listing', 'near-you', 'search'],
         'ajax' => ['load-events', 'load-more-events', 'get-location-category-events'],
     ],

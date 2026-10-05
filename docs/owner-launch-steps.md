@@ -42,7 +42,13 @@ In the same `server { }` block add the rule from docs/server-rewrites.md that se
 rewrite ^/(last-minute-tickets|weekend-events|cheap-tickets|best-events)/([^/]+)/?$ /$1.php?slug=$2 last;
 ```
 
-Check: `curl -s -o /dev/null -w "%{http_code}\n" https://beta.seatoutlet.com/best-events/austin-tx` answers 200.
+Also add the holiday page rule (the line under "City holiday pages" in docs/server-rewrites.md, one rewrite that lists every holiday):
+
+```nginx
+rewrite ^/(christmas-shows-near-me|new-years-eve-events|valentines-day-events|st-patricks-day-events|easter-weekend-events|mothers-day-weekend-events|memorial-day-weekend-events|victoria-day-weekend-events|fathers-day-weekend-events|canada-day-events|july-4th-events|labor-day-weekend-events|labour-day-weekend-events|halloween-events|thanksgiving-weekend-events|canadian-thanksgiving-weekend-events|boxing-day-events)-in-([^/]+)/?$ /holiday-city.php?holiday=$1&slug=$2 last;
+```
+
+Check: `curl -s -o /dev/null -w "%{http_code}\n" https://beta.seatoutlet.com/best-events/austin-tx` and `https://beta.seatoutlet.com/july-4th-events-in-austin-tx` both answer 200 (a page with few events is still 200 and says noindex).
 
 ## 3. One sitemap address (server access, nginx, 3 minutes)
 

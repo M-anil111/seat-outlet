@@ -267,6 +267,8 @@ function soRenderEntityListing(array $c): void {
                         $soCl = [];
                         foreach (['concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals'] as $pp => $ll) { $soCl[] = '<a href="/' . $pp . '/' . $h($soCs) . '">' . $ll . ' in ' . $h($name) . '</a>'; }
                         foreach (SO_DISCOVERY as $kk => $cc) { $soCl[] = '<a href="/' . $kk . '/' . $h($soCs) . '">' . $h($cc['what']) . ' in ' . $h($name) . '</a>'; }
+                        // The next two holidays that apply to the city's country (inc/holidays.php).
+                        foreach (array_slice(soHolidaysForCountry((string) ($c['entity']['country']['alphaCode'] ?? 'US')), 0, 2) as $hk) { $soCl[] = '<a href="/' . $hk . '-in-' . $h($soCs) . '">' . $h(SO_HOLIDAYS[$hk]['label']) . ' in ' . $h($name) . '</a>'; }
                         echo '<nav class="pb-3" aria-label="More in ' . $h($name) . '"><p class="mb-0"><strong>More in ' . $h($name) . ':</strong> ' . implode(' &middot; ', $soCl) . '</p></nav>';
                     } ?>
                 </div>

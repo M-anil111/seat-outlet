@@ -24,7 +24,7 @@ const SO_SITEMAP_PER_PAGE  = 200;
 const SO_SITEMAP_MAX_PAGES = 250;    // 50,000 events; the catalog is far below this
 const SO_SITEMAP_PAUSE_US  = 700000; // between API requests, so the crawl never competes with visitors for the API
 const SO_SITEMAP_CITYPAGE_MIN = 3;   // upcoming events a city needs, per kind of event, for its page to be listed in the sitemap
-const SO_SITEMAP_FORMAT    = 5;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
+const SO_SITEMAP_FORMAT    = 6;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
 const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>';   // a static file; the web server sends it as text/xsl (docs/server-rewrites.md)
 
 /** Paths robots.txt disallows (robots.php prints them); the sitemap never lists a page under one of them. */
@@ -227,6 +227,7 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
                         if ($wk && $evDay >= $wk[0] && $evDay <= $wk[1]) $kinds[] = 'last-minute-tickets';
                         if ($we && $evDay >= $we[0] && $evDay <= $we[1]) $kinds[] = 'weekend-events';
                     }
+                    foreach (soHolidayKindsForEvent($e) as $hk) $kinds[] = 'holiday:' . $hk;   // /<holiday>-in-<city> (inc/holidays.php)
                     foreach ($kinds as $kind) $cpg .= (int) $e['city']['id'] . "\t" . $cityLabel . "\t" . $kind . "\t" . $lm . "\n";
                 }
             }
@@ -344,7 +345,8 @@ function soSitemapBuildFiles(string $tmp): array {
             foreach ($cp as $k => [$name, $lm, $n]) {
                 if ($n < SO_SITEMAP_CITYPAGE_MIN) continue;
                 [$kind, $id] = explode("\t", $k);
-                $loc = $base . '/' . $kind . '/' . soSlug('city', $name, (int) $id);
+                $slug = soSlug('city', $name, (int) $id);
+                $loc = strpos($kind, 'holiday:') === 0 ? $base . '/' . substr($kind, 8) . '-in-' . $slug : $base . '/' . $kind . '/' . $slug;
                 if ($keep($loc)) $list[] = [$loc, $lm !== '' ? $lm : null];
             }
         }

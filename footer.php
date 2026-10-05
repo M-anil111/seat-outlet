@@ -97,6 +97,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
     <li><a href="/sports-teams">Sports Teams</a></li>
     <li><a href="/broadway-shows">Broadway Shows</a></li>
     <li><a href="/city-events">Cities</a></li>
+    <li><a href="/holiday-events">Holiday Events</a></li>
     <li><a href="/tickets-promo-code">Deals & Promotions</a></li>
     <li><a href="/our-network">Our Network</a></li>
   </ul>

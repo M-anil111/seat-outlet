@@ -27,7 +27,7 @@ foreach ($mustHave as $p) { if (!in_array($p, $paths, true)) $errors[] = "missin
 
 // Never a page.
 $never = ['/robots', '/sitemap', '/sitemap-page', '/search', '/checkout', '/order-confirmation', '/thank-you', '/unsubscribe', '/newsletter-email', '/404', '/header', '/footer', '/functions',
-    '/performer', '/venue', '/event', '/city', '/state', '/country', '/category', '/artist-city', '/concerts-city', '/event-city', '/best-events', '/cheap-tickets', '/last-minute-tickets', '/weekend-events'];
+    '/performer', '/venue', '/event', '/city', '/state', '/country', '/category', '/artist-city', '/concerts-city', '/event-city', '/best-events', '/cheap-tickets', '/last-minute-tickets', '/weekend-events', '/holiday-city'];
 foreach ($never as $p) { if (in_array($p, $paths, true)) $errors[] = "listed but not a page: $p"; }
 
 foreach ($paths as $p) {
