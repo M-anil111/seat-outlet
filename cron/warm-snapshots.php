@@ -11,7 +11,7 @@ require_once __DIR__ . '/../inc/cli-guard.php';
  *   php cron/warm-snapshots.php --limit=1000    more pages per run
  *   php cron/warm-snapshots.php --delay=2       seconds between requests (default 1)
  *   php cron/warm-snapshots.php --max-age=12    a snapshot younger than this many hours is left alone (default 12)
- *   php cron/warm-snapshots.php --types=pages,cities,venues,performers,events   which sitemap groups (default: all except events)
+ *   php cron/warm-snapshots.php --types=pages,cities,venues,performers,events   which sitemap groups (default: pages, cities, holiday-events, venues, performers)
  *   php cron/warm-snapshots.php --status        counts only
  *
  * Schedule: every 30 minutes (see docs/reliability.md). The load is the delay setting, not the number of pages: at the default one
@@ -26,11 +26,11 @@ foreach (array_slice($argv, 1) as $a) {
 $limit  = max(1, (int) ($opts['limit'] ?? 400));
 $delay  = max(0.2, (float) ($opts['delay'] ?? 1));
 $maxAge = max(1, (float) ($opts['max-age'] ?? 12)) * 3600;
-$types  = array_filter(explode(',', (string) ($opts['types'] ?? 'pages,cities,venues,performers')));
+$types  = array_filter(explode(',', (string) ($opts['types'] ?? 'pages,cities,holiday-events,venues,performers')));
 
 $urls = [];
 foreach ($types as $t) {
-    foreach (glob(__DIR__ . '/../sitemaps/' . preg_replace('/[^a-z]/', '', $t) . '-*.xml') ?: [] as $file) {
+    foreach (glob(__DIR__ . '/../sitemaps/' . preg_replace('/[^a-z-]/', '', $t) . '-*.xml') ?: [] as $file) {
         if (preg_match_all('#<loc>([^<]+)</loc>#', (string) file_get_contents($file), $m)) {
             foreach ($m[1] as $u) $urls[] = html_entity_decode($u, ENT_QUOTES | ENT_XML1);
         }
