@@ -2904,7 +2904,7 @@ h3,
   
   .venue-location {
     font-size: 15px;
-    color: #8c97a8;
+    color: #5f6b7c;
   }
 
   /* ========== REASONS TO LOVE ========== */
@@ -7879,3 +7879,6 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 
 /* Event page H1: the venue, day and time after the event name, smaller and lighter so the name still leads. */
 .so-evhero__title .so-evhero__sub { display: block; margin-top: 6px; font-size: .5em; font-weight: 500; letter-spacing: 0; line-height: 1.3; color: #6e6e73; }
+
+/* Links inside running text are underlined (WCAG 1.4.1: not only a color change). */
+main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text-decoration: underline; text-underline-offset: 2px; }

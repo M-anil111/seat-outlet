@@ -163,3 +163,6 @@ Dashboard steps (Caching, then Cache Rules; about 10 minutes, nothing to deploy)
 4. **Purge after a deploy** that changes HTML only (CSS and JS bundles are versioned): Caching, Configuration, Purge Everything, or purge by URL. With the 2 minute edge TTL pages refresh by themselves within about 2 to 12 minutes anyway.
 
 Check: `curl -sI https://<host>/ | grep -i cf-cache-status` should read `MISS` once and then `HIT` (or `REVALIDATED`/`UPDATING` inside the stale window).
+
+## Security headers
+The app sends `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin` and `Permissions-Policy: camera=(), microphone=(), geolocation=(self)` on every public page (`soSendSecurityHeaders()` in `functions.php`). Static files (CSS, JS, images, fonts) do not go through PHP, so add the same first three in nginx or a Cloudflare Transform Rule if you want them there too. HSTS is a Cloudflare setting. There is no Content-Security-Policy yet: AdSense, GTM and the ticket widgets load from many hosts, so run one in report-only mode first.

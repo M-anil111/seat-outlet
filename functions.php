@@ -1631,7 +1631,7 @@ function cache_set($key, $data) {
 function renderSkeletonCardsEvents($count = 8) {
     for ($i = 0; $i < $count; $i++) {
         echo '
-        <a href="javascript:void(0)" class="team-link skeleton-link">
+        <div class="team-link skeleton-link" aria-hidden="true">
             <article class="event-card skeleton-card">
                 <div class="event-card__img skeleton-img"></div>
                 <div class="event-card__body">
@@ -1644,7 +1644,7 @@ function renderSkeletonCardsEvents($count = 8) {
                     <div class="skeleton-line skeleton-price"></div>
                 </div>
             </article>
-        </a>';
+        </div>';
     }
 }
 
@@ -1655,11 +1655,11 @@ function generateTeamSkeleton($count = 6) {
     for ($i = 0; $i < $count; $i++) {
 
         $html .= '
-        <a href="javascript:void(0)" class="team-link skeleton-link">
+        <div class="team-link skeleton-link" aria-hidden="true">
             <div class="team-card team-card-skeleton">
                 <span class="skeleton-line skeleton-team-name"></span>
             </div>
-        </a>
+        </div>
         ';
     }
 
@@ -2503,8 +2503,18 @@ function sendSecurityHeaders() {
  * (default 120, 0 = send nothing). Prices and inventory shown in cached HTML can be that many seconds old;
  * the hosted checkout always re-prices. Pages that must never be cached can set $pageNoCache = true first.
  */
+/** Security headers for public pages. No CSP on purpose: AdSense, GTM and the ticket widgets load scripts and frames from many hosts, so a policy needs a report-only trial first. HSTS stays a Cloudflare setting (docs/lighthouse-and-cloudflare.md). */
+function soSendSecurityHeaders() {
+    if (headers_sent()) return;
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=(self)');
+}
+
 function sendPageCacheHeaders() {
     if (headers_sent()) return;
+    soSendSecurityHeaders();
     $path = rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/') ?: '/';
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $never = ['/checkout', '/order-confirmation', '/thank-you'];

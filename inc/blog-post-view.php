@@ -87,7 +87,7 @@ $published = !empty($post['published_at']) ? strtotime($post['published_at']) : 
     <div class="container so-art__wrap so-art__main">
         <?php echo soBlogTocHtml($toc); ?>
         <div class="blog-post-content">
-            <?php echo $articleHtml; ?>
+            <?php $soTblN = 0; echo preg_replace_callback('#<div class="so-table-wrap">#', function () use (&$soTblN) { return '<div class="so-table-wrap" tabindex="0" role="region" aria-label="Table ' . (++$soTblN) . ', scrollable">'; }, $articleHtml); ?>
         </div>
 
         <?php if ($live !== '') { echo soBlogEventsBlock(['performer' => $live, 'limit' => 6]); } ?>
