@@ -11,32 +11,6 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 | convention renderCategoryLocationPage() uses).
 */
 
-/** The TAKE5 / TAKE10 block that every entity page carried. Unchanged copy, one place. */
-function soRenderPromoBlock(): void {
-    $pill = function ($pct, $code) { ?>
-        <div class="col-md-6">
-            <div class="offer-pill d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <div class="offer-icon me-3 d-flex align-items-center justify-content-center">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path><circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle></svg>
-                    </div>
-                    <div class="offer-text"><div class="offer-title"><?php echo (int) $pct; ?>% OFF</div><div class="offer-subtitle"><?php echo htmlspecialchars($code, ENT_QUOTES, 'UTF-8'); ?></div></div>
-                </div>
-                <div class="offer-copy text-end">
-                    <button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="<?php echo htmlspecialchars($code, ENT_QUOTES, 'UTF-8'); ?>">Copy</button>
-                </div>
-            </div>
-        </div>
-    <?php };
-    ?>
-    <div class="tab-section content-section-detail mb-0" id="promocode">
-        <h2 class="so-heading fw-bold fs-4 mb-4 text-black">Ticket promo codes</h2>
-        <p>Have a promo code? Enter it in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, and savings vary by event.</p>
-        <div class="row g-3 mt-2"><?php $pill(5, 'TAKE5'); $pill(10, 'TAKE10'); ?></div>
-    </div>
-    <?php
-}
-
 /** Links out of an empty or sparse page: bigger places, nearby venues, popular cities. */
 function soRenderEntityAlternatives(array $c, array $nearby): void {
     $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
@@ -108,21 +82,29 @@ function soRenderEntityListing(array $c): void {
 
     // ---- head: titles follow "<place> <what> | <what you get>" and never repeat the word Tickets twice
     if ($kind === 'venue') {
-        $pageMetaTitle = $c['cityLabel'] !== ''
-            ? soTitle("$name Tickets in {$c['cityLabel']} Events & Seats", "$name Tickets in {$c['cityLabel']}", "$name Tickets and Seats", "$name Tickets")
-            : soTitle("$name Tickets Events & Seating", "$name Tickets");
+        // Spec wording: "Buy <venue> Tickets in <city>", and the urgency line when events are on sale (inc/page-spec.php).
+        $pageTitleMax = 70;
+        $pageMetaTitle = soTitleUpTo(70, $c['cityLabel'] !== '' ? "Buy $name Tickets in {$c['cityLabel']}" : '', "Buy $name Tickets", "$name Tickets");
         $pageMetaDescription = $total > 0
-            ? soMetaFit("Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ($cheap ? ", from {$cheap['formatted']}" : '') . '. Pick seats on live seat maps. Orders carry the TicketNetwork guarantee.', 'Prices from many sellers in one place.')
+            ? soSpecPick(155,
+                "Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ". Find great seats and book your tickets online today at Seat Outlet before they sell out.",
+                "Buy tickets to events at $name. Find great seats and book online at Seat Outlet before they sell out.",
+                "Buy $name tickets at Seat Outlet before they sell out.")
             : soMetaFit("See upcoming events at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . '. Nothing is on sale right now: get a price alert or browse nearby venues on Seat Outlet.', 'Every order has a 100% buyer guarantee.');
         $pageFocusKeyword = "$name Tickets";
-        $h1 = "$name Tickets";
+        $h1 = $c['cityLabel'] !== '' && stripos($name, (string) preg_replace('/,\s*[A-Z]{2}$/', '', $c['cityLabel'])) === false ? "$name Tickets in {$c['cityLabel']}" : "$name Tickets";
     } else {
         // "events in dallas" (9.9k/month) is the search; the phrase leads, the state suffix ("Dallas, TX") is dropped.
         $soCityShort = preg_replace('/,\s*[A-Z]{2}$/', '', $label);
         $pageFocusKeyword = "Events in $soCityShort";
-        $pageMetaTitle = soTitle("Events in $soCityShort for Concerts, Sports and Shows", "Events in $soCityShort Concerts and Sports", "Events in $soCityShort " . date('Y'), "Events in $soCityShort", "$soCityShort Tickets");
+        // Spec wording: "Buy Tickets for Events in <place>" keeps the search phrase whole, and the urgency line is added when events are on sale.
+        $pageTitleMax = 70;
+        $pageMetaTitle = soTitleUpTo(70, "Buy Tickets for Events in $label", "Buy Tickets for Events in $soCityShort", "Events in $soCityShort Concerts and Sports", "Events in $soCityShort", "$soCityShort Tickets");
         $pageMetaDescription = $total > 0
-            ? soMetaFit("Find tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ': concerts, sports and theater. Compare prices. Orders carry the TicketNetwork guarantee.', 'Live seat maps and secure checkout.')
+            ? soSpecPick(155,
+                "Buy tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ". Find great seats and book your tickets online today at Seat Outlet before they sell out.",
+                "Buy tickets to " . soCountWord($total, 'upcoming event') . " in $label. Book online at Seat Outlet before they sell out.",
+                "Buy tickets for events in $label at Seat Outlet before they sell out.")
             : soMetaFit("Find concert, sports and theater tickets in $label. Nothing is on sale right now: browse nearby places on Seat Outlet.", 'Every order has a 100% buyer guarantee.', 'New listings are added every day.');
         $h1 = "$label Event Tickets";
     }
@@ -195,7 +177,7 @@ function soRenderEntityListing(array $c): void {
                         <div class="d-flex justify-content-between align-items-center results-header">
                             <div class="results-title">
                                 <span class="active-indicator"></span>
-                                <h2><?php echo $kind === 'venue' ? 'Upcoming events at ' : 'Upcoming events in '; ?><?php echo $h($name); ?> <span class="dot">·</span>
+                                <h2><?php echo $kind === 'venue' ? 'Buy tickets for upcoming events at ' : 'Buy tickets for upcoming events in '; ?><?php echo $h($name); ?> <span class="dot">·</span>
                                     <span class="count" id="results_count"><?php echo number_format($total); ?> <?php echo $total === 1 ? 'result' : 'results'; ?></span>
                                 </h2>
                             </div>
@@ -245,7 +227,7 @@ function soRenderEntityListing(array $c): void {
 
                     <?php if ($top['performers']) { ?>
                         <div class="tab-section content-section-detail" id="top-performers">
-                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Top performers <?php echo $kind === 'venue' ? 'at' : 'in'; ?> <?php echo $h($name); ?></h2>
+                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo $kind === 'venue' ? 'Top Upcoming Performances' : 'Top performers'; ?> <?php echo $kind === 'venue' ? 'at' : 'in'; ?> <?php echo $h($name); ?></h2>
                             <div class="so-linkchips">
                                 <?php foreach ($top['performers'] as $p) { ?><a class="so-linkchip" href="/artist/<?php echo $h(soSlug('performer', $p['name'], $p['id'])); ?>"><?php echo $h($p['name']); ?></a><?php } ?>
                             </div>
@@ -266,14 +248,27 @@ function soRenderEntityListing(array $c): void {
                     $soWhere = $kind === 'venue'
                         ? [ "Where is $name?", $name . ($soAddr !== '' ? " is at $soAddr" : '') . ($c['cityLabel'] !== '' ? ($soAddr !== '' ? ', ' : ' is in ') . $c['cityLabel'] : '') . '. Check the event page for the start time and any venue rules before you go.' ]
                         : [ "What events are on in $name?", $total > 0 ? 'There are ' . soCountWord($total, 'upcoming event') . " in $name on Seat Outlet right now, including concerts, sports and theater. Use the date and price filters above to narrow the list." : "Nothing is on sale in $name right now. New dates are added every day, so leave your email above and we will tell you when tickets go on sale." ];
-                    soMiniFaq(($kind === 'venue' ? $name : $label) . ' tickets FAQ', array_values(array_filter([
+                    if ($kind === 'venue') {
+                        // Spec: "About <Venue> in <City>, <ST>": address, directions, transit, official site and weather, no invented policies.
+                        echo '<div class="tab-section content-section-detail">' . soSpecVenueInfoHtml('About ' . $name . ($c['cityLabel'] !== '' ? ' in ' . $c['cityLabel'] : ''), $name,
+                            (string) ($c['entity']['city']['text']['name'] ?? ''), (string) ($c['entity']['stateProvince']['text']['abbr'] ?? ''), '', is_array($c['entity'] ?? null) ? $c['entity'] : [], $soEntityFacts, $total) . '</div>';
+                    }
+                    soMiniFaq('FAQs about ' . ($kind === 'venue' ? $name : $label) . ' Tickets', array_values(array_filter([
                         $soWhere,
                         [ ($kind === 'venue' ? "How do I buy tickets for events at $name?" : "How do I buy event tickets in $name?"), 'Pick a date above, choose how many tickets you need, compare sections and prices on the seat map and check out securely. Tickets ship in time for at least one delivery attempt before the event.' ],
                         ($kind === 'venue' ? [ "Where can I see the $name seating chart?", "Open any upcoming event at $name above. Its seat map shows every section with the tickets listed for sale and their prices, so you can compare views before you buy." ] : null),
                         [ 'What happens if an event is canceled?', 'You get a full refund (delivery fees excluded). If the event is rescheduled, your tickets stay valid for the new date. Every order is covered by our 100% guarantee.' ],
                     ])));
                     ?>
-                    <?php soRenderPromoBlock(); ?>
+                    <?php echo soSpecPromoHtml(($kind === 'venue' ? 'Promo codes for ' . $name . ' tickets' : 'Latest promo codes for ' . $label . ' event tickets'), ($kind === 'venue' ? $name : $label . ' event')); ?>
+                    <?php if ($kind === 'city') {
+                        // Links that tie the city to its category and discovery pages (inc/discovery-pages.php).
+                        $soCs = basename((string) $c['path']);   // the city's own slug, from /city/<slug>
+                        $soCl = [];
+                        foreach (['concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals'] as $pp => $ll) { $soCl[] = '<a href="/' . $pp . '/' . $h($soCs) . '">' . $ll . ' in ' . $h($name) . '</a>'; }
+                        foreach (SO_DISCOVERY as $kk => $cc) { $soCl[] = '<a href="/' . $kk . '/' . $h($soCs) . '">' . $h($cc['what']) . ' in ' . $h($name) . '</a>'; }
+                        echo '<nav class="pb-3" aria-label="More in ' . $h($name) . '"><p class="mb-0"><strong>More in ' . $h($name) . ':</strong> ' . implode(' &middot; ', $soCl) . '</p></nav>';
+                    } ?>
                 </div>
                 <div id="secondary" class="sidebar col-sm-12 col-md-4">
                     <div class="sticky-top sidebar-inner">
