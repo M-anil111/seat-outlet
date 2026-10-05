@@ -16,30 +16,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($emailValue === '' || $password === '') {
             $errors[] = 'Please enter both your email address and password.';
         } elseif (!filter_var($emailValue, FILTER_VALIDATE_EMAIL)) {
+            admin_login_failed($emailValue);
             $errors[] = 'Invalid email or password.';
+        } elseif (admin_login_locked($emailValue)) {
+            $errors[] = 'Too many sign-in attempts. Please wait 15 minutes and try again.';
         } else {
             $admin = admin_find_by_email($emailValue);
 
             if (!$admin || !password_verify($password, $admin['password'])) {
+                admin_login_failed($emailValue);
                 $errors[] = 'Invalid email or password.';
             } else {
-                session_regenerate_id(true);
-                $_SESSION['admin_id'] = (int)$admin['ID'];
-                $_SESSION['admin_name'] = $admin['name'];
-                $_SESSION['admin_email'] = $admin['email'];
-
-                if ($keepSignedIn) {
-                    $params = session_get_cookie_params();
-                    setcookie(session_name(), session_id(), [
-                        'expires' => time() + (30 * 24 * 60 * 60),
-                        'path' => $params['path'],
-                        'domain' => $params['domain'],
-                        'secure' => $params['secure'],
-                        'httponly' => true,
-                        'samesite' => 'Lax',
-                    ]);
-                }
-
+                admin_sign_in($admin, $keepSignedIn);
                 header('Location: dashboard');
                 exit;
             }

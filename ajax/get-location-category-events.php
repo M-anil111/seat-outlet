@@ -7,10 +7,10 @@ header('Content-Type: application/json');
    VALIDATE INPUT
 ============================== */
 
-$tab  = $_GET['tab']  ?? '';
-$type = $_GET['type'] ?? '';
-$loc1 = $_GET['loc1'] ?? '';
-$loc2 = $_GET['loc2'] ?? '';
+$tab  = soQs('tab');
+$type = soQs('type');
+$loc1 = soQs('loc1');
+$loc2 = soQs('loc2');
 
 /* ==============================
    MAP TAB TO TN CATEGORY PATH
@@ -69,6 +69,9 @@ if (!empty($events)) {
             'defaultCategory' => $event['defaultCategory'] ?? [],
             'placeholder'     => getCategoryFallbackImage($event['defaultCategory'] ?? [], $tab),
             'edate'           => $timestamp ? $timestamp : '',
+            'slug'            => soEventSlug($event),
+            'iso'             => $timestamp ? date('Y-m-d', $timestamp) : '',
+            'time'            => (string)$time,
         ];
     }
 }
@@ -85,6 +88,9 @@ if (empty($output) && $type !== '') {
     }
 }
 
+// Same day: events whose performer has a stored picture come first (the date order itself is kept).
+$output = soImageFirst($output, function ($o) { return [imageEntityTypeForPerformer($o['defaultCategory'] ?? []), $o['performer'] !== '' ? $o['performer'] : $o['name'], $o['defaultCategory'] ?? []]; },
+    function ($o) { return $o['edate'] !== '' ? date('Y-m-d', (int) $o['edate']) : null; });
 header('Cache-Control: public, max-age=86400');
 header('X-Cache: HIT');
 echo json_encode($output);

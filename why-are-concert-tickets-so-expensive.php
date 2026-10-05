@@ -237,13 +237,12 @@
             <div class="row justify-content-center align-items-center">
                 <div class="col-lg-7 col-md-8">
                     <h1 class="hero-title text-center">
-                        <span class="hero-title-white">TICKETING</span> 
-                        <span class="hero-title-blue">TRUTHS</span>
+                        <span class="hero-title-white">Why Concert Tickets</span> 
+                        <span class="hero-title-blue">Cost What They Do</span>
                     </h1>
                     <p class="hero-subtitle">
-                        Why are concert tickets so expensive? Here is a straightforward look at how ticketing really works:
-                        who sets prices, where the fees go, and how money flows
-                        across primary and resale ticket marketplaces.
+                        A straightforward look at how ticket prices work: who sets them, how resale changes them,
+                        and why fees and taxes can make the final cost higher than the listed price.
                     </p>
                 </div>
             </div>
@@ -275,7 +274,7 @@
                         <div class="section-image-wrapper">
                             <img
                                 src="/images/ticket-trusted.webp"
-                                alt="Live event crowd" width="750" height="875" decoding="async"/>
+                                alt="Singer performing outdoors in front of a crowd" width="750" height="875" decoding="async"/>
                         </div>
                     </div>
                 </div>
@@ -291,7 +290,7 @@
                         <div class="section-image-wrapper img-left">
                             <img
                                 src="/images/stage.webp"
-                                alt="Stage performance" width="750" height="843" decoding="async"/>
+                                alt="Musicians performing on a stage lit by beams of light" width="750" height="843" decoding="async"/>
                         </div>
                     </div>
 
@@ -306,7 +305,7 @@
                         <div class="trusted-question">
                             <h2 class="section-heading">What does SeatOutlet do?</h2>
                             <p class="section-body">
-                            SeatOutlet connects fans with verified event tickets through a secure and user-friendly platform. We simplify ticket discovery, provide reliable purchasing options, and help customers find seats for their favorite events quickly and safely.
+                            Seat Outlet is a resale marketplace. We list tickets from the TicketNetwork marketplace so you can compare seats and prices in one place. Checkout is hosted by TicketNetwork, and orders are covered by its 100% guarantee.
                             </p>
                         </div>
                     </div>
@@ -323,7 +322,7 @@
                         <div class="trusted-question">
                             <h2 class="section-heading">Who sets the ticket prices?</h2>
                             <p class="section-body">
-                            Ticket pricing is determined by event organizers, performers, or promoters. Prices may vary based on demand, seat location, event popularity, and availability.
+                            On a resale marketplace like Seat Outlet, sellers set the price, so a ticket can cost more or less than its face value. Prices move with demand, seat location, event popularity and availability. The original face value is set by the event organizer, performer or promoter.
                             </p>
                         </div>
                         <div class="trusted-question">
@@ -339,7 +338,7 @@
                         <div class="section-image-wrapper">
                             <img
                                 src="/images/ticket-trusted.webp"
-                                alt="Box office staff" width="750" height="875" decoding="async"/>
+                                alt="Singer performing outdoors in front of a crowd" width="750" height="875" decoding="async"/>
                         </div>
                     </div>
                 </div>
@@ -355,7 +354,7 @@
                         <div class="section-image-wrapper img-left">
                             <img
                                 src="/images/stage.webp"
-                                alt="Fans cheering" width="750" height="843" decoding="async"/>
+                                alt="Musicians performing on a stage lit by beams of light" width="750" height="843" decoding="async"/>
                         </div>
                     </div>
 
@@ -364,13 +363,13 @@
                         <div class="trusted-question">
                             <h2 class="section-heading">Who receives the revenue from ticket sales?</h2>
                             <p class="section-body">
-                            Most ticket revenue goes to the event organizers, performers, and promoters. Ticketing platforms like SeatOutlet provide the marketplace and services that help connect buyers and sellers.
+                            On the original sale, ticket revenue goes mostly to the organizers, performers and promoters. On a resale marketplace like Seat Outlet, the seller sets the price, and the marketplace provides the listings and the checkout that connect buyers and sellers.
                             </p>
                         </div>
                         <div class="trusted-question">
                             <h2 class="section-heading">Who sets service and processing fees?</h2>
                             <p class="section-body">
-                            Service and processing fees help cover payment processing, customer support, platform maintenance, and security systems. These fees ensure safe and reliable transactions for buyers and sellers.
+                            Fees and taxes can be added on top of the ticket price at checkout, for example service or delivery fees. Prices are set by sellers and fees are added at checkout, so the price on a listing is not always the final cost. Review the full cost at checkout before you pay.
                             </p>
                         </div>
                     </div>
@@ -387,13 +386,13 @@
                         <div class="trusted-question">
                             <h2 class="section-heading">Why are some tickets available on resale marketplaces?</h2>
                             <p class="section-body">
-                            Sometimes ticket holders cannot attend events and choose to resell their tickets. Resale marketplaces allow fans to safely transfer tickets to other buyers, often based on market demand and availability.
+                            Sometimes ticket holders cannot attend events and choose to resell their tickets. Resale marketplaces let fans pass those tickets to other buyers, usually at a price set by the seller based on demand and availability.
                             </p>
                         </div>
                         <div class="trusted-question">
                             <h2 class="section-heading">Do artists or event organizers receive money from resale tickets?</h2>
                             <p class="section-body">
-                            In most cases, resale transactions are handled between ticket holders and buyers. Policies may vary depending on the event organizer and regional regulations.
+                            Policies vary by event organizer and by state or country. In general, the seller sets the resale price and receives the proceeds, and whether an organizer shares in resale proceeds depends on the event.
                             </p>
                         </div>
                     </div>
@@ -403,7 +402,7 @@
                         <div class="section-image-wrapper">
                             <img
                                 src="/images/ticket-trusted.webp"
-                                alt="Support staff" width="750" height="875" decoding="async"/>
+                                alt="Singer performing outdoors in front of a crowd" width="750" height="875" decoding="async"/>
                         </div>
                     </div>
                 </div>
@@ -416,7 +415,7 @@
                <div class="cta-content">
                <h2 class="cta-title">Want to Find Your Next Event?</h2>
                 <p class="cta-text">
-                Explore thousands of verified tickets and discover unforgettable live experiences with SeatOutlet.
+                Compare seats and prices for upcoming concerts, sports, theater and festivals.
                 </p>
                 <a class="btn btn-cta" href="/concert-tickets-for-sale">Browse Tickets</a>
                </div>

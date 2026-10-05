@@ -1,5 +1,19 @@
 <?php // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; } ?>
+<?php if (!empty($GLOBALS['soMoreOpen'])) { echo '</div></div>'; $GLOBALS['soMoreOpen'] = false; }   // closes the Read more panel opened by soRenderListingPage ?>
+<?php
+// "Browse by category" tiles at the foot of the pages people land on from search: artist, venue, city, state, country, category, event and the listing hubs.
+// The home page prints its own copy; a page can opt out with $soCatTilesSkip = true.
+$soCtPath = trim((string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/'), '/');
+$soCtSeg = explode('/', $soCtPath)[0];
+if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtPath !== ''
+    && (in_array($soCtSeg, ['artist', 'performer', 'venue', 'city', 'state', 'country', 'category', 'event', 'search', 'concerts', 'sports', 'theater', 'theatre', 'festival', 'festivals'], true)
+        || preg_match('/-tickets$|^(buy-tickets-online|city-events|game-day-tickets|buy-broadway-tickets|upcoming-music-festivals|concert-tickets-for-sale)$/', $soCtSeg))
+    && !in_array($soCtSeg, ['tickets-promo-code', 'ticket-deals', 'ticket-faq', 'ticket-scanner', 'ticket-customer-service', 'ticket-buyer-protection', 'ticket-partner-program', 'ticketing-truths', 'checkout', 'thank-you', 'order-confirmation'], true)) {
+    echo soRenderCategoryTiles(['class' => 'so-cattiles--foot', 'title' => 'Browse more tickets by category']);
+}
+?>
+</main><!--so-main-end-->
 <footer class="tm-footer">
 
   <div class="tm-footer-top">
@@ -10,13 +24,13 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 
       <p class="section-title">Let’s connect</p>
       <div class="social-icons">
-        <a href="https://www.facebook.com/profile.php?id=61588886945534" aria-label="Facebook" target="_blank"><i class="bi bi-facebook fs-4"></i></a>
-        <a href="https://www.youtube.com/@SeatOutlet" aria-label="Youtube" target="_blank"><i class="bi bi-youtube fs-4"></i></a>
-        <a href="https://www.instagram.com/seatoutlet/" aria-label="Instagram" target="_blank"><i class="bi bi-instagram fs-4"></i></a>
+        <a href="https://www.facebook.com/profile.php?id=61588886945534" aria-label="Facebook" target="_blank"><i class="bi bi-facebook fs-4"></i><span class="visually-hidden">Facebook</span></a>
+        <a href="https://www.youtube.com/@SeatOutlet" aria-label="Youtube" target="_blank"><i class="bi bi-youtube fs-4"></i><span class="visually-hidden">Youtube</span></a>
+        <a href="https://www.instagram.com/seatoutlet/" aria-label="Instagram" target="_blank"><i class="bi bi-instagram fs-4"></i><span class="visually-hidden">Instagram</span></a>
         <a href="https://linktr.ee/seatoutlet" aria-label="Linktree" class="google-icon" target="_blank"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="30" height="25" id="Layer_1" x="0px" y="0px" viewBox="0 0 80 97.7" style="fill: #e0e0e0;" xml:space="preserve">
  <path d="M0.2,33.1h24.2L7.1,16.7l9.5-9.6L33,23.8V0h14.2v23.8L63.6,7.1l9.5,9.6L55.8,33H80v13.5H55.7l17.3,16.7l-9.5,9.4L40,49.1  L16.5,72.7L7,63.2l17.3-16.7H0V33.1H0.2z M33.1,65.8h14.2v32H33.1V65.8z">
  </path>
-</svg></a>
+</svg><span class="visually-hidden">Linktree</span></a>
       </div>
      
 
@@ -37,7 +51,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
     <li><a href="/customer-testimonials">Testimonials</a></li>
     <li><a href="/seat-outlet-reviews">Reviews</a></li>
     <li><a href="/seat-outlet-bbb">BBB</a></li>
-    <li><a href="/ticket-partner-program">Why Us</a></li>
+    <li><a href="/about-seat-outlet">Why Us</a></li>
   </ul>
 </div>
 
@@ -51,6 +65,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
     <li><a href="/hunt-tickets">Hunt Tickets</a></li>
     <li><a href="/ticket-scanner">Ticket Scanner</a></li>
     <li><a href="/ticket-buyer-protection">Buyer Protection</a></li>
+    <li><a href="/ticket-partner-program">Partner Program</a></li>
   </ul>
 </div>
 
@@ -78,6 +93,9 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
     <li><a href="/buy-broadway-tickets">Theater</a></li>
     <li><a href="/upcoming-music-festivals">Festivals</a></li>
     <li><a href="/all-artists-and-teams">Artists &amp; Teams</a></li>
+    <li><a href="/concert-artists">Artists on Tour</a></li>
+    <li><a href="/sports-teams">Sports Teams</a></li>
+    <li><a href="/broadway-shows">Broadway Shows</a></li>
     <li><a href="/city-events">Cities</a></li>
     <li><a href="/tickets-promo-code">Deals & Promotions</a></li>
     <li><a href="/our-network">Our Network</a></li>
@@ -90,7 +108,8 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
     <li><a href="/privacy-policy">Privacy Policy</a></li>
     <li><a href="/terms-and-conditions">Terms of Use</a></li>
     <li><a href="/cookie-policy">Cookie Policy</a></li>
-    <li><a href="/sitemap.php">Sitemap</a></li>
+    <li><a href="/sitemaps/sitemap.xml">Sitemap</a></li>
+    <?php if (GTM_ID !== '') { ?><li><button type="button" class="so-privacy-link" data-so-privacy aria-haspopup="true">Your privacy choices</button></li><?php } ?>
   </ul>
   </div>
   <!-- Divider -->
@@ -100,7 +119,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
       <div class="d-flex align-items-center">
         <div class="copyright me-2">
             <span class="link-tag"> © <?php echo date('Y'); ?> SeatOutlet. All rights reserved.</span>
-            <span class="link-tag geo-attribution d-block small">This product includes GeoLite2 data created by MaxMind, available from <a href="https://www.maxmind.com" rel="nofollow noopener" target="_blank">https://www.maxmind.com</a>.</span>
+            <span class="link-tag geo-attribution d-block small">This product includes GeoLite2 data created by MaxMind, available from <a href="https://www.maxmind.com" rel="noopener" target="_blank">https://www.maxmind.com</a>.</span>
         </div>
         <div class="tm-country">
             <button type="button" class="btn btn-link">
@@ -122,12 +141,12 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
       <div class="d-flex align-items-center flex-wrap creater">
         <div class="space-between d-flex pe-2">
           Website Designed by 
-          <a class="px-2 footer-bottom-logo" style="color: #e1c24e;" href="https://www.jaymehta.co/" target="_blank" title="Jay Mehta Digital">
-            <img src="/images/jm.webp" alt="Website Design Service by Jay Mehta Digital" style="max-width:100px;" width="100" height="19">
+          <a class="px-2 footer-bottom-logo" style="color: #e1c24e;" href="https://www.jaymehta.co/" target="_blank" title="JM Digital">
+            <img src="/images/jm.webp" alt="JM Digital" style="max-width:100px;" width="100" height="19">
           </a> | 
         </div> 
         <div class="space-between d-flex">
-          Developed & Maintained by 
+          Developed by 
           <a class="px-2 footer-bottom-logo" title="Mindshare Consulting" href="https://www.mindshare.consulting/" target="_blank" > 
             <img src="/images/mindshare-logo-230.webp" alt="Mindshare Consulting" style="max-width:100px;" width="100" height="22" loading="lazy">
           </a>
@@ -148,9 +167,15 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 $soPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $soIsHome = ($soPath === '/' || $soPath === '/index.php');
 $soIsSearch = ($soPath === '/search');
-$soHasEventList = (bool) preg_match('#^/(search|buy-tickets-online|concert-tickets-for-sale|game-day-tickets|buy-broadway-tickets|upcoming-music-festivals)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath);
+$soHasEventList = (bool) preg_match('#^/(search|buy-tickets-online|concert-tickets-for-sale|game-day-tickets|buy-broadway-tickets|upcoming-music-festivals)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath) || isset($soGenreSlug);   // clean genre URLs (/hip-hop-tickets) are category pages too
 ?>
+<?php
+// jQuery (37 KB, a long task on a phone) only where something still needs it: the carousels (slick) on the home, search and about pages,
+// those pages' own scripts, and pages that set $soNeedsJquery for an inline script of their own. Everything else is plain JavaScript.
+$soNeedsJquery = !empty($soNeedsJquery) || $soIsHome || $soIsSearch || $soPath === '/about-seat-outlet';
+if ($soNeedsJquery) { ?>
 <script src="/lib/jquery/3.7.1/jquery.min.js" defer></script>
+<?php } ?>
 <script src="/lib/bootstrap/5.3.8/bootstrap.bundle.min.js" defer></script>
 <script>window.SO_ASSETS = { flatpickrJs: "/lib/flatpickr/4.6.13/flatpickr.min.js", flatpickrCss: "/lib/flatpickr/4.6.13/flatpickr.min.css" };</script>
 <?php if ($soIsHome || $soIsSearch || $soPath === '/about-seat-outlet') { ?>
@@ -171,6 +196,28 @@ window.addEventListener('load', function () {
 <?php } ?>
 <?php if (strpos($soPath, '/event/') === 0) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/event-actions.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/saved-events.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/event-widget.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
+    <script src="<?php echo htmlspecialchars(soAsset('js/event-qty.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php } ?>
+<script>
+// Offline fallback page (sw.js). Registered after the page has loaded so it never competes with first paint; not on admin pages.
+if ('serviceWorker' in navigator && location.pathname.indexOf('/admin') !== 0) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+}
+</script>
+<?php if (is_file(__DIR__ . '/js/site-extras.min.js')) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/site-extras.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php if (GTM_ID !== '') { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/consent.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php } ?>
+<?php } else { foreach (['nav-feedback', 'install-prompt', 'menu-near', 'analytics-events'] as $soJs) { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/' . $soJs . '.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php } ?>
+<?php if (GTM_ID !== '') { ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/consent.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php } ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/lead-capture.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
 <?php if (preg_match('#^/(event|artist)/#', $soPath)) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/idle-nudge.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
@@ -213,22 +260,9 @@ window.addEventListener('load', function () {
 
 		return mapsPromise;
 	}        
-  <?php if (strpos($_SERVER['REQUEST_URI'], '/event/') === 0) { ?>
-    Seatics.config.checkoutUrl = <?php echo json_encode(TN_CHECKOUT_URL); ?>;
-    Seatics.config.enableLegalDisclosureMobile = true;
-    Seatics.config.preCheckoutButtonHtml = 'Continue to Payment';
-    Seatics.config.buyButtonContentHtml = '<div class="buy-btn">' + 'Buy Now' + '</div>';
-    Seatics.config.defaultSort = Seatics.SortOptions.PriceAsc;
-    Seatics.config.tgMarkTooltipText = 'We recommend this seller&#039;s tickets.';
-    Seatics.config.enableMyList = true;
-    Seatics.config.showCents = false;
-    Seatics.config.skipPrecheckoutMobile = true;
-    Seatics.config.showZoomControls = true;
-    Seatics.config.ticketListOnRight = true;
-    Seatics.config.legendExpanded = true;
-    Seatics.config.skipPrecheckoutDesktop = true;
-  <?php } ?>
+  // Event pages: the widget settings (checkout address, quantity sheet, sort order, precheckout) live in js/event-widget.js, which loads the widget.
 </script>
     
-  </body>
+  <?php echo function_exists('soAdsenseFooterScript') ? soAdsenseFooterScript() : ''; ?>
+</body>
 </html>

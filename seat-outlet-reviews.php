@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+$soNeedsJquery = true;   // this page's inline script uses jQuery (see footer.php)
 // SEO: this page previously relied on header.php's generic fallback
 // title/canonical. Kept noindex (header.php's site-wide default) since
 // the visible content is still illustrative sample reviews - see the
@@ -373,9 +374,9 @@ include 'header.php';
             <main class="col-md-8">
                 <!-- Page Header -->
                 <div class="mb-4">
-                    <p class="text-uppercase text-muted small">DISCOVER LIVE EVENTS</p>
+                    
                     <h1 class="reviews-title mt-2 mb-lg-4 mb-3">Seat Outlet Reviews: Customer Feedback</h1>
-                    <h2 class="reviews-subtitle">Customer Reviews &amp; Feedback – SeatOutlet</h2>
+                    <h2 class="reviews-subtitle">What we can show you today</h2>
                 </div>
 
                 <section class="mb-4">
@@ -389,23 +390,15 @@ include 'header.php';
                 <div class="sidebar-sticky">
                     <!-- Crowd/Event Image -->
                     <div class="sidebar-image mb-4">
-                        <img src="/images/crowd-at-concert-or-event.webp" alt="Fans who left customer reviews at a live event" class="img-fluid rounded" width="442" height="442" decoding="async">
-                    </div>
-                    <!-- Trust Badges Panel -->
-                    <div class="trust-panel mb-4 bg-white border-0">
-                        <div class="trust-item">
-                            <img src="/images/secure-payment-p3.png" alt="Secure Payment Gateway" class="img-fluid" width="65" height="68" decoding="async">
-                            <span class="fw-bold text-uppercase">Secure Payment Gateway</span>
-                        </div>
+                        <img src="/images/crowd-at-concert-or-event.webp" alt="Fans cheering at a live event" class="img-fluid rounded" width="442" height="442" decoding="async">
                     </div>
                     <!-- Mascot & Social Share -->
                     <div class="mascot-panel">
-                        <p class="mascot-text mb-2 fw-semibold">Ask your friend to go with you!</p>
+                        <p class="mascot-text mb-2 fw-semibold">Follow Seat Outlet</p>
                         <div class="social-icons">
-                            <a href="https://www.facebook.com/profile.php?id=61588886945534" target="_blank"><i class="bi bi-facebook fs-4"></i></a>
-                            <a href="#"><i class="bi bi-twitter-x fs-4"></i></a>
-                            <a href="https://www.youtube.com/@SeatOutlet" target="_blank"><i class="bi bi-youtube fs-4"></i></a>
-                            <a href="https://www.instagram.com/seatoutlet/" target="_blank"><i class="bi bi-instagram fs-4"></i></a>
+                            <a href="https://www.facebook.com/profile.php?id=61588886945534" target="_blank" rel="noopener" aria-label="Seat Outlet on Facebook"><i class="bi bi-facebook fs-4"></i></a>
+                                                        <a href="https://www.youtube.com/@SeatOutlet" target="_blank" rel="noopener" aria-label="Seat Outlet on YouTube"><i class="bi bi-youtube fs-4"></i></a>
+                            <a href="https://www.instagram.com/seatoutlet/" target="_blank" rel="noopener" aria-label="Seat Outlet on Instagram"><i class="bi bi-instagram fs-4"></i></a>
                         </div>
                     </div>
                 </div>

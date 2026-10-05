@@ -21,7 +21,7 @@ include 'header.php';
 <section class="section-padding">
     <div class="container" style="max-width: 900px;">
         <h2 class="mb-3">About Dotbooker</h2>
-        <p>Dotbooker is an all-in-one cloud-based booking management platform that combines appointment scheduling, payment processing, membership management, inventory control, and customer analytics into a single integrated system. It's built for service-based businesses - fitness studios, salons, spas, physical therapy centers, nutritionists, dance studios, and other wellness providers - that need to manage bookings, staff scheduling, payments, and customer data without juggling multiple tools.</p>
+        <p>Dotbooker is an all-in-one cloud-based booking management platform that combines appointment scheduling, payment processing, membership management, inventory control, and customer analytics into a single integrated system. It's built for service-based businesses such as fitness studios, salons, spas, physical therapy centers, nutritionists, dance studios, and other wellness providers that need to manage bookings, staff scheduling, payments, and customer data without juggling multiple tools.</p>
 
         <h2 class="mt-5 mb-3">What Dotbooker Offers</h2>
         <ul>

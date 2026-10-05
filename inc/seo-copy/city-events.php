@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>City events: how to find the right show in the right town</h2>
 <p>The directory above lists city events by category, so you can jump from a city name straight to its upcoming concerts, sports, theater and festivals. Pick the city you will be in, choose the type of outing you want, and compare tickets from sellers on the Seat Outlet marketplace. This page explains how to use city events listings, how local factors affect prices, and how to plan a trip around a show.</p>
 <p>Prefer to browse by type instead of place? Head to <a href="/concert-tickets-for-sale">concert tickets for sale</a>, <a href="/game-day-tickets">game day tickets</a>, <a href="/buy-broadway-tickets">theater tickets</a> or <a href="/upcoming-music-festivals">upcoming music festivals</a>.</p>
@@ -78,3 +79,6 @@
 <details class="so-faq"><summary>What kinds of city events can I find?</summary><p>The directory covers concerts, sports, theater and festivals, plus a general Events group that brings them together by city.</p></details>
 <details class="so-faq"><summary>What if my city is not in the list?</summary><p>Search the <a href="/all-artists-and-teams">artists and teams directory</a> for the performer or team you want, then check where they are playing next.</p></details>
 <details class="so-faq"><summary>What happens if one of the city events is canceled?</summary><p>If an event is canceled and not rescheduled, you receive a full refund for your ticket purchase under our buyer protection.</p></details>
+
+<h2>Events near me today</h2>
+<p>To find events near you today, pick your city above, then use the date filter to show what is on now. Each city page lists upcoming concerts, games and shows with seat maps and prices from many sellers.</p>

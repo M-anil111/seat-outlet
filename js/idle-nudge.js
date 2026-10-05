@@ -48,16 +48,48 @@
     return { kicker: 'Still scrolling?', head: 'Catch ' + who + ' live', text: 'Compare seats and prices for every ' + who + ' date. Every order is backed by our 100% guarantee.', tag: '', cta: 'See dates', target: '#eventsSection, .performer-event-item' };
   }
 
+  /* Everything else on the page is made inert while the dialog is open, so screen readers and the keyboard stay inside it. */
+  function setInert(on) {
+    Array.prototype.forEach.call(document.body.children, function (el) {
+      if (el.id === 'soNudge' || el.tagName === 'SCRIPT') return;
+      if (on) { if (!el.hasAttribute('inert')) { el.setAttribute('inert', ''); el.setAttribute('data-nudge-inert', '1'); } }
+      else if (el.getAttribute('data-nudge-inert')) { el.removeAttribute('inert'); el.removeAttribute('data-nudge-inert'); }
+    });
+  }
   function close() {
     var box = document.getElementById('soNudge');
+    setInert(false);
     if (box) box.remove();
     document.removeEventListener('keydown', onKey);
     if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} }
   }
-  function onKey(e) { if (e.key === 'Escape') close(); }
+  function onKey(e) {
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key !== 'Tab') return;
+    // Keep Tab inside the card while it is open (it is a modal dialog).
+    var box = document.getElementById('soNudge');
+    if (!box) return;
+    var f = Array.prototype.slice.call(box.querySelectorAll('button:not([disabled])'));
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (!box.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
 
+  /* Event pages: no nudge when the page has no tickets to point at, or while the visitor is looking at the seat map (that is the decision moment). */
+  function blocked() {
+    if (!isEvent) return false;
+    if (document.documentElement.classList.contains('so-ev-empty')) return true;
+    var m = document.getElementById('tn-maps');
+    if (!m || !m.offsetHeight) return false;
+    var r = m.getBoundingClientRect(), vh = window.innerHeight || document.documentElement.clientHeight;
+    var visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+    return visible > vh * 0.4;
+  }
   function show() {
-    if (shown || anotherDialogOpen() || document.hidden) { schedule(); return; }
+    if (isEvent && document.documentElement.classList.contains('so-ev-empty')) return;
+    if (shown || anotherDialogOpen() || document.hidden || blocked()) { schedule(); return; }
     shown = true;
     try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
     var c = content();
@@ -79,6 +111,7 @@
     box.querySelector('.so-nudge__text').textContent = c.text;
     box.querySelector('.so-nudge__cta').textContent = c.cta;
     document.body.appendChild(box);
+    setInert(true);
     push('idle_nudge_shown');
     box.addEventListener('click', function (e) { if (e.target === box) close(); });
     box.querySelector('.so-nudge__x').addEventListener('click', close);

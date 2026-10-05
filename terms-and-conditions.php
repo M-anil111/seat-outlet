@@ -115,8 +115,10 @@
 
                 <div class="policy-section">
                     <div class="policy-body">
-                        <p><strong>Overview:</strong> these are the Seat Outlet terms and conditions, published under the title Terms of Use. They explain what you agree to when you browse events or buy, sell, transfer and use tickets on our websites and apps. The full text below is the version that applies; the summary at the bottom of the page is only a plain-English guide.</p>
-                        <p>These Terms of Use ("Terms") govern your access to and use of the Seat Outlet websites, mobile applications, and related services (collectively, the "Platform"), including your purchase, sale, transfer, and use of tickets and related products or services (together, the "Services").</p>
+                        <p><strong>Last updated: October 2, 2026</strong></p>
+                        <p>Seat Outlet is an independent resale marketplace and is not affiliated with any venue, team or artist.</p>
+                        <p><strong>Overview:</strong> these are the Seat Outlet terms and conditions, published under the title Terms of Use. They explain what you agree to when you browse events or buy and use tickets on our website. The full text below is the version that applies; the summary at the bottom of the page is only a plain-English guide.</p>
+                        <p>These Terms of Use ("Terms") govern your access to and use of the Seat Outlet website and related services (collectively, the "Platform"), including your purchase and use of tickets and related products or services (together, the "Services").</p>
                         <p>By accessing or using the Platform, you agree to be bound by these Terms and our Privacy Policy and Cookies Policy, which are incorporated by reference. If you do not agree to these Terms, do not use the Platform.</p>
                     </div>
                 </div>
@@ -125,7 +127,7 @@
                     
                     <h2 class="policy-heading"><span class="policy-num">1.</span> Who we are</h2>
                     <div class="policy-body">
-                        <p>Seat Outlet is an online marketplace that enables users to discover, buy, and sell tickets and related services for live events organized and operated by third parties ("Event Organizers"), such as venues, promoters, artists, sports teams, and other partners.</p>
+                        <p>Seat Outlet is an online marketplace that enables users to discover and buy tickets and related services for live events organized and operated by third parties ("Event Organizers"), such as venues, promoters, artists, sports teams, and other partners.</p>
                         <p>Seat Outlet<br>
                         [Company legal name]<br>
                         [Registered address]<br>
@@ -139,7 +141,7 @@
                     
                     <h2 class="policy-heading"><span class="policy-num">2.</span> Acceptance of these Terms</h2>
                     <div class="policy-body">
-                        <p>By accessing or using the Platform, creating an account, or purchasing or selling tickets via the Platform, you acknowledge that you:</p>
+                        <p>By accessing or using the Platform, or purchasing tickets via the Platform, you acknowledge that you:</p>
                         <ul>
                             <li>Have read and understood these Terms.</li>
                             <li>Are legally capable of entering into binding contracts.</li>
@@ -165,7 +167,7 @@
 
                 <div class="policy-section">
                     
-                    <h2 class="policy-heading"><span class="policy-num">4.</span> Eligibility and user accounts</h2>
+                    <h2 class="policy-heading"><span class="policy-num">4.</span> Eligibility</h2>
                     <div class="policy-body">
                         <p class="sub-heading">4.1 Eligibility</p>
                         <p>You may only use the Platform if you:</p>
@@ -174,15 +176,7 @@
                             <li>Have not been previously suspended or banned from using the Platform.</li>
                         </ul>
                         <p>Certain events may have additional age or eligibility requirements imposed by Event Organizers or venues (for example, age restrictions or ID checks); you are responsible for meeting these requirements.</p>
-                        <p class="sub-heading">4.2 Account registration</p>
-                        <p>To access certain features (such as purchasing or selling tickets), you may need to create a Seat Outlet account. You agree to:</p>
-                        <ul>
-                            <li>Provide accurate, current, and complete information during registration.</li>
-                            <li>Keep your login credentials confidential and secure.</li>
-                            <li>Promptly update your account details if they change.</li>
-                        </ul>
-                        <p>You are responsible for all activity that occurs under your account, whether or not you authorized it. If you suspect unauthorized use of your account, you must notify us promptly.</p>
-                    </div>
+                        </div>
                 </div>
 
                 <div class="policy-section">
@@ -230,7 +224,7 @@
                             <li>Issuance of a credit or replacement ticket</li>
                             <li>No refund where events are rescheduled and your ticket remains valid, if allowed by law</li>
                         </ul>
-                        <p>We will make reasonable efforts to inform you of cancellations or changes using the contact details associated with your account or order.</p>
+                        <p>We will make reasonable efforts to inform you of cancellations or changes using the contact details associated with your order.</p>
                     </div>
                 </div>
 
@@ -399,10 +393,8 @@
                     
                     <h2 class="policy-heading"><span class="policy-num">19.</span> Governing law and dispute resolution</h2>
                     <div class="policy-body">
-                        <p>Specify your preferred governing law and dispute method here, for example:</p>
                         <p>These Terms and any dispute arising out of or relating to them or your use of the Platform will be governed by the laws of Austin, Texas without regard to its conflict‑of‑laws rules.</p>
                         <p>You and Seat Outlet agree to submit to the exclusive jurisdiction of the courts of Austin, Texas (except where mandatory local consumer protection laws provide otherwise).</p>
-                        <p>You may include any mandatory consumer rights language for the EU/UK or other jurisdictions as required.</p>
                     </div>
                 </div>
 
@@ -425,7 +417,6 @@
                         <div class="contact-box">
                             <p><strong>Seat Outlet</strong></p>
                             <p><strong>Email:</strong> <a href="mailto:support@seatoutlet.com" title="support@seatoutlet.com">support@seatoutlet.com</a></p>
-                            <p><strong>Postal address:</strong> [Insert full registered address]</p>
                         </div>
                     </div>
                 </div>

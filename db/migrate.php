@@ -29,28 +29,7 @@ require_once __DIR__ . '/config.php';
 /** @var mysqli $mysqli */
 $mysqli = MYSQLI;
 
-function migrate_run_sql_file(mysqli $mysqli, string $path): void {
-    $sql = file_get_contents($path);
-    if ($sql === false || trim($sql) === '') {
-        throw new RuntimeException("Could not read $path");
-    }
-
-    if (!$mysqli->multi_query($sql)) {
-        throw new RuntimeException("Error in $path: " . $mysqli->error);
-    }
-
-    // multi_query() runs statements one at a time - drain all results (and
-    // surface the first error, if any) before this connection can be used
-    // for anything else.
-    do {
-        if ($result = $mysqli->store_result()) {
-            $result->free();
-        }
-        if ($mysqli->errno) {
-            throw new RuntimeException("Error in $path: " . $mysqli->error);
-        }
-    } while ($mysqli->more_results() && $mysqli->next_result());
-}
+require_once __DIR__ . '/migrate-lib.php';
 
 $mysqli->query(
     'CREATE TABLE IF NOT EXISTS `schema_migrations` (

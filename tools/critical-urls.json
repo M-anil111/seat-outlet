@@ -1,0 +1,10 @@
+{
+  "home": ["/"],
+  "event": ["/event/brad-williams-corpus-christi-tx-2027-11-06"],
+  "entity": ["/artist/1-reggaeton-space-latin-dance-party", "/artist-city/1-reggaeton-space-latin-dance-party/new-york-ny", "/venue/selena-auditorium", "/city/austin-tx", "/state/texas", "/country/united-states-of-america"],
+  "browse": ["/concert-tickets-for-sale", "/game-day-tickets", "/buy-broadway-tickets", "/upcoming-music-festivals", "/hip-hop-tickets", "/christmas-shows-near-me", "/category/basketball", "/theater-city/new-york-ny", "/city-events", "/search?keywordHeader=adele"],
+  "directory": ["/all-artists-and-teams", "/concert-artists", "/sports-teams", "/broadway-shows"],
+  "content": ["/about-seat-outlet", "/ticket-faq", "/privacy-policy", "/terms-and-conditions", "/worry-free-guarantee", "/ticket-customer-service"],
+  "blog": ["/blog", "/blog/how-to-avoid-ticket-scams"],
+  "checkout": ["/checkout"]
+}

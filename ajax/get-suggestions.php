@@ -4,8 +4,7 @@ require_once __DIR__ . '/../functions.php';
 header('Content-Type: application/json');
 header('Cache-Control: public, max-age=3600');
 
-$q = $_GET['q'] ?? '';
-$q = trim($q);
+$q = mb_substr(soQs('q'), 0, 100);
 
 if (!$q) {
     echo json_encode([]);
@@ -63,7 +62,7 @@ if(!empty($artists)) {
         $response[] = [
             'type' => 'artist',
             'name' => $artistItem['name'],
-            'slug' => '/artist/' . createSlug($artistItem['name'], $artistItem['id']),
+            'slug' => '/artist/' . soSlug('performer', $artistItem['name'], $artistItem['id']),
             'image' => getCategoryFallbackImage($defaultCategory, $cat),
             'meta' => $subcat,
             'category' => $defaultCategory
@@ -78,7 +77,7 @@ if(!empty($venues)) {
         $response[] = [
             'type' => 'venue',
             'name' => $venueItem['name'],
-            'slug' => '/venue/' . createSlug($venueItem['name'], $venueItem['id']),
+            'slug' => '/venue/' . soSlug('venue', $venueItem['name'], $venueItem['id']),
             'image' => "/images/venue-480.webp",
             'meta' => $venueItem['city'] . ', ' . $venueItem['state']
             //'category' => $defaultCategory

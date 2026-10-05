@@ -24,14 +24,42 @@ Test after reloading nginx: `/event-city/las-vegas-nv-2355`, `/concerts-city/new
 
 ## Keep repo files out of the web root
 
-The whole repository was copied into the web root, so `docs/`, `deploy/`, `composer.lock`, `.env.example` and `CONTRIBUTING.md` are downloadable. None contain secrets, but they are not meant to be public. Preferred fix: in nginx, add
+The deploy used to copy the whole repository into the web root, so `docs/`, `deploy/`, `composer.json`, `composer.lock`, `.github/`, `db/migrations/*.sql`, `vendor/composer/installed.json`, `cache/*.json` and `CONTRIBUTING.md` were downloadable (they show exact dependency versions, the schema and CI details; none holds a password). `deploy/pull-deploy.sh` now stops copying `.github`, `docs`, `CONTRIBUTING.md`, `composer.json/lock` and `.env.example`, but copies already on the server stay until removed once by hand. Block everything below in nginx either way (add inside the `server { }` block, before the `location ~ \.php$` block):
 
 ```nginx
-location ~ ^/(docs|deploy|tools|db/migrations|db/seeds|\.github)/ { return 404; }
-location ~ \.(md|lock|example)$ { return 404; }
+# Folders that are never meant to be requested by a browser.
+location ~ ^/(docs|deploy|tools|db|cron|cache|vendor|phpmailer|\.git|\.github|inc)(/|$) { return 404; }
+# Dependency and config files at the top level, and anything that looks like a secrets or backup file.
+location ~* ^/(composer\.(json|lock)|\.env.*|CONTRIBUTING\.md|README.*)$ { return 404; }
+location ~* \.(md|lock|example|sql|bak|old|orig|swp|log)$ { return 404; }
 ```
 
-Maintenance scripts (`cron/*`, `db/migrate.php`, `tools/*`) now refuse web requests in the code itself (`inc/cli-guard.php`): run them with `php`, not by URL.
+Notes: `inc/` holds include-only PHP files that already answer 404 when requested directly, and `inc/env.local.php` holds every secret; if PHP-FPM stops or a vhost edit makes nginx serve `.php` as text, that file would be readable, so also move it one level above the web root (`db/config.php` already looks there, as `../../inc/env.local.php`) or keep the `inc` block above. `ajax/` and the page files must stay reachable. `cron/*`, `db/migrate.php` and `tools/*` also refuse web requests in the code itself (`inc/cli-guard.php`): run them with `php`, not by URL.
+
+If the hosting panel allows it, set the web root to a `public/` subfolder in a later restructure: that removes this whole class of problem.
+
+## Unsubscribe, sign-up and other clean URLs
+
+`/unsubscribe` (file `unsubscribe.php`) is a normal clean URL like `/thank-you`: it needs the same `try_files $uri $uri.php` style rule that the other top-level pages already use. Test with `curl -sI https://<host>/unsubscribe?t=x` (expect 200 and `X-Robots-Tag`/`noindex` in the page). The sign-up endpoint is `/ajax/subscribe.php` (POST only).
+
+## Rate limit /ajax/ (the quickest protection for the ticket API quota)
+
+The app limits sign-ups, image requests and live feed builds per visitor itself, but a server-level limit stops floods before PHP starts. In `http { }` (CloudPanel: global nginx settings) add the zone, then use it in the site:
+
+```nginx
+limit_req_zone $binary_remote_addr zone=so_ajax:10m rate=10r/s;
+```
+
+```nginx
+location ^~ /ajax/ {
+    limit_req zone=so_ajax burst=30 nodelay;
+    limit_req_status 429;
+    try_files $uri =404;
+    # then the same fastcgi/PHP handling as the site's `location ~ \.php$` block
+}
+```
+
+Behind Cloudflare, `$binary_remote_addr` is Cloudflare's address unless the real client address is restored first (`set_real_ip_from` for each Cloudflare range plus `real_ip_header CF-Connecting-IP;`), otherwise everyone shares one bucket. Cloudflare can also do this without nginx: Security, WAF, Rate limiting rules, path starts with `/ajax/`, for example 120 requests per minute per IP. Not tested against your server: apply on a copy first.
 
 ## robots.txt and sitemap
 
@@ -41,16 +69,51 @@ Maintenance scripts (`cron/*`, `db/migrate.php`, `tools/*`) now refuse web reque
 location = /robots.txt { rewrite ^ /robots.php last; }
 ```
 
-Beta/staging/dev hosts then return `Disallow: /`; the production host returns the normal rules plus `Sitemap: https://<host>/sitemap.php`. `sitemap.php` now lists top performers, venues and categories as well as events, cities and static pages (about 3,500 URLs); submit it in Google Search Console and Bing Webmaster Tools after launch.
+Beta/staging/dev hosts then return `Disallow: /`; the production host returns the normal rules plus a `Sitemap:` line for the sitemap index. The sitemap is a **sitemap index** (`/sitemaps/sitemap.xml`) pointing at typed files (`pages-1`, `events-1..N`, `performers-1..N`, `venues-1..N`, `cities-1..N`, 5,000 URLs each). The site builds and refreshes them itself in the background (see `inc/sitemap-build.php`; a fresh crawl every 6 hours on the live host, 24 on beta, `<lastmod>` from TicketNetwork's own update times). It writes static files into `<web root>/sitemaps/` when that folder is writable by PHP (nothing else to configure; the web server serves them as plain files) and otherwise into `cache/sitemaps/`, served through `/sitemap.php` and `/sitemap-serve.php?f=NAME`. Optional: `php cron/build-sitemaps.php` from cron does the same crawl without waiting for page traffic (`--status` shows progress). Until the first crawl finishes, `/sitemap.php` serves the older single-file sitemap.
+
+### One sitemap address: /sitemaps/sitemap.xml
+
+The only index is `/sitemaps/sitemap.xml`, a static file the site writes itself (robots.txt, the footer and Search Console all use it). The old names are retired: `/sitemaps/sitemap-index.xml` is deleted by the next build, and the root `/sitemap.php` and `/sitemap.xml` should 301 to the new address. Add inside the `server { }` block, then reload nginx:
+
+```nginx
+location = /sitemap.xml { return 301 /sitemaps/sitemap.xml; }
+location = /sitemap.php { return 301 /sitemaps/sitemap.xml; }
+location = /sitemaps/sitemap-index.xml { return 301 /sitemaps/sitemap.xml; }
+```
+
+If the Cloudflare Worker still answers `/sitemap.xml` itself (the old 21-URL list), remove that route from the Worker, or have it 301 to `/sitemaps/sitemap.xml`.
+
+## Blog: one entry point, /blog
+
+`blog.php` is the whole blog: `/blog` is the list and `/blog/<slug>` is an article. There is no separate article script and no `?slug=` address to share; `/blog-post` and `/blog-post.php?slug=x` answer 301 to `/blog/x`.
+
+The web server needs one rule so `/blog/<slug>` reaches `blog.php` (without it, `/blog/upcoming-concert-tours` answers 404 "File not found." on beta, and the Cloudflare Worker `seatoutlet-blog-proxy` then replaces the article with its own short placeholder page, which is what seatoutlet.com showed). Add inside the `server { }` block, before the `location ~ \.php$` block, and reload nginx:
+
+```nginx
+rewrite ^/blog/([a-z0-9-]+)/?$ /blog.php?slug=$1 last;
+```
+
+Test: `curl -s -o /dev/null -w "%{http_code}\n" https://beta.seatoutlet.com/blog/upcoming-concert-tours` prints 200 and the page has an `<h1>` and many `<h2>` headings.
+
+If the rule cannot be added yet, `https://beta.seatoutlet.com/blog.php/upcoming-concert-tours` already works (PATH_INFO), so the Worker can fetch that address for every `/blog/<slug>`. The Worker is deleted at cutover (docs/production-cutover.md), after which only the nginx rule matters.
 
 ## Caching and compression (server settings the code cannot set)
 
-- Versioned, never-changing files can be cached for a year: `/lib/`, `/fonts/` (the file name or path changes when the content does), and `*.min.css` / `*.min.js` (they carry `?v=` stamps).
+- Versioned, never-changing files can be cached for a year: `/lib/`, `/fonts/` (the file name or path changes when the content does), the minified bundles `*.min.css` / `*.min.js` (they carry `?v=` stamps) and `/images/`:
 
   ```nginx
   location ~ ^/(lib|fonts)/ { add_header Cache-Control "public, max-age=31536000, immutable"; }
+  location ~* \.min\.(css|js)$ { add_header Cache-Control "public, max-age=31536000, immutable"; }
+  location ~* ^/images/.*\.(webp|png|jpg|jpeg|svg|gif|ico)$ { add_header Cache-Control "public, max-age=2592000"; }
   ```
-- Turn on gzip or brotli for `text/html`, `text/css`, `application/javascript`, `application/json` and `image/svg+xml`. Local lab runs have no compression; with it the CSS, JS and HTML shrink by 70% or more. Cloudflare does this automatically when it proxies the site.
+  (an `add_header` inside a `location` replaces the ones set outside it, so repeat any security headers you add at server level.)
+- The web app manifest must be served as `application/manifest+json` (today it is typically `application/octet-stream`):
+
+  ```nginx
+  types { application/manifest+json webmanifest; }
+  ```
+- Turn on gzip or brotli for `text/html`, `text/css`, `application/javascript`, `application/json`, `application/manifest+json` and `image/svg+xml`. Local lab runs have no compression; with it the CSS, JS and HTML shrink by 70% or more. Cloudflare does this automatically when it proxies the site. Verify: `curl -sI -H 'Accept-Encoding: br, gzip' https://<host>/css/style.min.css` shows `content-encoding`.
+- Branded 404 for files nginx cannot find (the app already shows its own 404 for page URLs): `error_page 404 /404.php;` inside the `server { }` block. Test with `curl -si https://<host>/missing.png` (expect status 404 with the site layout).
 
 ## Caching the HTML at Cloudflare (the biggest remaining speed gain)
 
@@ -70,3 +133,27 @@ Cloudflare ignores these for HTML unless a cache rule says otherwise. Setup (Clo
 - Cache eligibility: **Eligible for cache**; Edge TTL: **Use cache-control header if present**; Browser TTL: **Respect origin**.
 
 Notes: shown prices and inventory can be up to 2 minutes old (the hosted checkout always re-prices); purge the cache after each deploy (Caching, Purge Everything) so new code shows at once; `HTML_EDGE_CACHE_SECONDS` in `inc/env.local.php` changes the 120 seconds (0 turns the headers off). Test with `curl -sI https://<host>/concerts` and look for `cf-cache-status: HIT` on the second request.
+
+## Branded 404 for unknown URLs
+
+Unknown URLs on the server currently print the bare web server "File not found." page. The app has a branded 404 page (`/404.php`: HTTP 404, noindex, search box and category links). Add inside the `server { }` block:
+
+```nginx
+error_page 404 /404.php;
+location = /404.php { internal; fastcgi_param REDIRECT_STATUS 404; include fastcgi_params; fastcgi_pass <same upstream as the other .php locations>; fastcgi_param SCRIPT_FILENAME $document_root/404.php; }
+```
+
+Also make sure `fastcgi_intercept_errors on;` is set if PHP answers 404 for a missing script. Test: `curl -I https://<host>/no-such-page` must return 404 with the branded body, and `curl -I https://<host>/404` must also return 404 (it no longer returns 200).
+
+## CDN (Cloudflare): what is cached today and the rules that cache the rest
+
+Checked on beta on 2026-10-03 with `curl -I`. Cloudflare already caches static files by extension (images, `.css`, `.js`, fonts: `cf-cache-status: HIT` after the first request). It does **not** cache HTML or the JSON feeds: every page shows `cf-cache-status: DYNAMIC`, even though the app already sends `Cache-Control: public, max-age=0, s-maxage=120, stale-while-revalidate=600, stale-if-error=3600` on public pages. Cloudflare ignores those headers for HTML until a Cache Rule makes the page eligible.
+
+Dashboard steps (Caching, then Cache Rules; about 10 minutes, nothing to deploy):
+
+1. **HTML and feeds.** Rule "Cache public pages": when the request URI path does not start with `/admin`, `/checkout`, `/ajax/` (add a second rule for `/ajax/get-home-feed.php`, `/ajax/get-location-category-events.php`, `/ajax/get-top-performers.php`), `/unsubscribe`, `/thank-you`, `/order-confirmation`, `/search`, `/newsletter` and the method is GET: **Eligible for cache**, Edge TTL **Use cache-control header if present**, Browser TTL **Respect origin**. The origin headers then decide: pages 2 minutes at the edge, served stale for 10 more while it refreshes, and kept for an hour if the origin is down. The app sets no session cookie on public pages (checked), so there is nothing to bypass on.
+2. **Static files.** Rule "Static files": path starts with `/css/`, `/js/`, `/fonts/`, `/lib/`, `/images/`: Edge TTL 1 month, Browser TTL respect origin. (The `?v=` stamp on our bundles changes with the content, so nothing stale is served after a deploy.) For the browser side, also add the nginx rules in "Caching and compression" above: `*.min.css` and `*.min.js` are currently `max-age=2592000` without `immutable`.
+3. **Speed settings** (Speed, Optimization): Brotli on, HTTP/3 on, Early Hints on, 0-RTT on. Leave Rocket Loader OFF (it breaks the seat-map widget) and Auto Minify off (the build already minifies).
+4. **Purge after a deploy** that changes HTML only (CSS and JS bundles are versioned): Caching, Configuration, Purge Everything, or purge by URL. With the 2 minute edge TTL pages refresh by themselves within about 2 to 12 minutes anyway.
+
+Check: `curl -sI https://<host>/ | grep -i cf-cache-status` should read `MISS` once and then `HIT` (or `REVALIDATED`/`UPDATING` inside the stale window).

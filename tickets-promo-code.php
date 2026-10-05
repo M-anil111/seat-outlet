@@ -3,7 +3,7 @@ require_once 'functions.php';
 // SEO: this page previously relied on header.php's generic fallback
 // title/canonical.
 $pageMetaTitle       = 'Deals & Promotions – Ticket Discount Codes | Seat Outlet';
-$pageMetaDescription = 'Save on concert, sports, and event tickets with exclusive Seat Outlet promo codes. Browse the latest discount codes and tips to maximize your savings.';
+$pageMetaDescription = 'Promo codes listed for Seat Outlet orders, how to try one at checkout, and honest tips for paying less on concert, sports and theater tickets.';
 $pageCanonicalUrl    = HOME_URL . '/tickets-promo-code';
 include 'header.php';
 ?>
@@ -107,30 +107,9 @@ include 'header.php';
 
                 <!-- 1 -->
                 <div class="policy-section" id="section-1">
-                    <img src="/images/cta-banner.webp" class="img-fluid rounded mb-3" alt="Seat Outlet promo codes for concerts, sports and events" loading="lazy" width="1920" height="600" decoding="async">
-                    <h2> Exclusive Promo Codes for Concerts, Sports & Events</h2>
-                    <p>
-                    <p>Save more on every event you love with our exclusive <strong>ticket promo codes</strong>. Whether you're booking tickets for <strong>concerts, sports games, or theater shows, our deals</strong> help you get the best seats at the best prices - see our full
-                    <a href="/buy-tickets-online">ticket listings</a> to get started.</p>
-<p>Welcome to the official <strong>Deals &amp; Promotions</strong> page of Seat Outlet, where affordable entertainment meets unforgettable experiences. We believe live events should be accessible to everyone, which is why we <strong>regularly offer verified promo codes</strong> to help you save on your next booking.</p>
-<p>From <strong>high-energy concerts and sold-out sports events</strong> to <strong>family-friendly shows and theater performances</strong>, our<strong> discount codes</strong> are designed to make every moment more affordable without compromising on experience.</p>
-
-                </div>
-
-                <!-- 2 -->
-                <div class="policy-section" id="section-2">
-                    <h2>Why Use Our Promo Codes?</h2>
-                    <p>When it comes to buying tickets, every dollar saved counts. Our exclusive <strong>promo codes</strong> are carefully curated to provide maximum value across a <strong>wide range of events</strong>.</p>
-                    <ul>
-                    <li>Save instantly on <strong>ticket purchases</strong></li>
-                    <li>Access exclusive<strong> limited-time discounts</strong></li>
-                    <li>Enjoy deals on <strong>concerts, sports, and theater</strong></li>
-                    <li>Get more value on <strong>group bookings and special occasions</strong></li>
-                    <li><strong>Updated regularly</strong> with fresh offers</li>
-                    </ul>
-                    <p>Whether you're planning a weekend outing, a <strong>date night, or a big group event</strong>, our <strong>deals make it easier to enjoy premium</strong> experiences for less - the same
-                    <a href="https://en.wikipedia.org/wiki/Coupon" target="_blank" rel="noopener">discount-code approach</a> used across retail.</p>
-
+                    <h2>Promo codes for concerts, sports and events</h2>
+                    <p>Below are the promo codes we list for orders placed through Seat Outlet. Whether a code applies is decided at checkout, which is hosted by TicketNetwork, so we cannot promise that a code will work on every event or every order. If a code does not apply, nothing is charged extra: you simply pay the price shown.</p>
+                    <p>Seat Outlet is a resale marketplace. Prices are set by sellers and may be above or below face value, so comparing seats usually saves more than any code. See all <a href="/buy-tickets-online">ticket listings</a> to get started.</p>
                 </div>
                 <div class="tab-section content-section-detail mb-0" id="promocode">
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Latest Ticket Promo Codes</h2>
@@ -183,86 +162,45 @@ include 'header.php';
 						</div>
                         <p></p>	
                             </br>
-                        <p>Enter a promo code in the promo code field at checkout when one is offered; codes apply only where the checkout accepts them, and savings vary by event. Be sure to use them before they expire.</p>			
+                        <p>Enter a promo code in the promo code field at checkout when one is offered. Codes apply only where the checkout accepts them, minimum order amounts apply as shown, and codes can change or stop working without notice.</p>			
 					</div>
                 <!-- 3 -->
                 <div class="policy-section" id="section-3">
-                    <h2>How to Use Your Promo Code</h2>
-                    <p>Applying your discount is quick and simple:</p>
-<ul>
-<li>Browse through our <strong>wide selection of events</strong></li>
-<li>Select your <strong>preferred tickets</strong> and add them to <strong>your cart</strong></li>
-<li>Enter your <strong>promo code during checkout</strong></li>
-<li>Watch your <strong>total price drop instantly</strong></li>
-<li>Complete your <strong>purchase and enjoy</strong> your <strong>event</strong></li>
-</ul>
+                    <h2>How to try a promo code</h2>
+                    <ol>
+                        <li>Pick your event and your seats on the event page.</li>
+                        <li>Continue to checkout.</li>
+                        <li>If the checkout shows a promo code field, enter the code and check the new total.</li>
+                        <li>Review the full cost before you pay.</li>
+                    </ol>
                 </div>
 
                 <!-- 4 -->
                 <div class="policy-section" id="section-4">
-                    <div class="d-flex flex-wrap gap-3 mb-3">
-                        <img src="/images/event-concert.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Concert tickets available with our promo codes" loading="lazy" width="800" height="512" decoding="async">
-                        <img src="/images/event-basketball.jpg" class="img-fluid rounded" style="max-width:200px;" alt="Sports tickets available with our promo codes" loading="lazy" width="800" height="512" decoding="async">
-                        <img src="/images/stage.webp" class="img-fluid rounded" style="max-width:200px;" alt="Theater and live show tickets with our promo codes" loading="lazy" width="750" height="843" decoding="async">
-                    </div>
-                    <h2>Tips to Maximize Your Savings</h2>
-                    <p>To get the most out of our deals, keep these tips in mind:</p>
-<ul>
-<li>Book early for better <strong>availability and pricing</strong></li>
-<li><strong>Check the terms</strong> on each promo code before you order</li>
-<li>Choose <strong>flexible dates</strong> when possible</li>
-<li>Check back <strong>frequently</strong> for new offers</li>
-<li>Subscribe to our newsletter for <strong>exclusive deals</strong></li>
-</ul>
+                    <h2>Ways to pay less that do not need a code</h2>
+                    <ul>
+                        <li>Compare sections and rows for the same event. Prices differ a lot between listings.</li>
+                        <li>Check the <a href="/ticket-deals">ticket deals page</a> for lower-priced events.</li>
+                        <li>Be flexible on dates when you can.</li>
+                        <li>Read why <a href="/why-are-concert-tickets-so-expensive">concert tickets cost what they do</a> so you know what you are paying for.</li>
+                    </ul>
                 </div>
 
                 <!-- 5 -->
                 <div class="policy-section" id="section-5">
-                    <h2>Stay Updated with the Latest Deals</h2>
-                    <p>Our promotions are updated regularly, so you never miss out on new opportunities to save. Make sure to:</p>
-<ul>
-<li>Bookmark this page</li>
-<li>Sign up for our newsletter</li>
-<li>Follow us for real-time deal updates</li>
-</ul>
-<p>Limited-time offers can expire quickly, so staying informed gives you the advantage.</p>
+                    <h2>Get ticket alerts by email</h2>
+                    <?php echo soLeadForm(['source' => 'promo', 'title' => 'Get ticket alerts and new guides in your inbox', 'text' => 'Tour announcements, on-sale news and plain-English ticket advice. We cannot promise promo codes.', 'class' => 'so-nl--inline']); ?>
                 </div>
 
                 <!-- 6 -->
                 <div class="policy-section" id="section-6">
-                    <h2>Important Terms & Conditions</h2>
+                    <h2>Terms</h2>
                     <ul>
-<li>Only one promo code can be used per order</li>
-<li>Promo codes cannot be combined with other offers</li>
-<li>Minimum purchase requirements may apply</li>
-<li>Discounts apply only at checkout</li>
-<li>Offers are subject to change without notice</li>
-</ul>
-
-                </div>
-
-                <!-- 7 -->
-                <div class="policy-section" id="section-7">
-                    <h2>Why Choose Seat Outlet?</h2>
-
-<p>At Seat Outlet, we go beyond just selling tickets. We help you experience more while spending less.</p>
-<ul>
-<li>Wide selection of events across categories</li>
-<li>Secure and easy checkout process</li>
-<li>Reliable ticket availability</li>
-<li>Dedicated customer support</li>
-<li>Regular promotions and exclusive deals</li>
-</ul>
-<p>We are committed to making your ticket-buying experience smooth, affordable, and enjoyable from start to finish.</p>
-
-                </div>
-                <!-- 10 -->
-                <div class="policy-section" id="section-10">
-                    <h2>Start Saving on Your Next Event Today</h2>
-                    <p>There’s no better time to grab your tickets and save big. Whether you're attending a concert, cheering for your favorite team, or enjoying a live performance, our promo codes ensure you get the best value.
-                    </p>
-<p>Explore events, apply your code, and create unforgettable memories without overspending.
-</p>
+                        <li>Codes apply only at checkout and only where the checkout accepts them.</li>
+                        <li>Minimum order amounts apply as shown next to each code.</li>
+                        <li>Codes may not be combined with other offers.</li>
+                        <li>Codes can change or stop working without notice.</li>
+                    </ul>
                 </div>
             </div>
         </div>

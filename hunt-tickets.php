@@ -169,7 +169,7 @@ include 'header.php';
                 <!-- 6 -->
                 <div class="policy-section" id="section-6">
                     <h2>Built for Speed and Convenience </h2>
-                    <p>Hunt Tickets is designed with user experience in mind. This <strong>event ticket search marketplace</strong> ensures that every step—from search to selection—is smooth and efficient.</p>
+                    <p>Hunt Tickets is designed with user experience in mind. This <strong>event ticket search marketplace</strong> ensures that every step, from search to selection, is smooth and efficient.</p>
                         <p>Key features include:</p>
                         <ul>
                         <li>Fast-loading search results</li>
@@ -197,7 +197,7 @@ include 'header.php';
                 <!-- 8 -->
                 <div class="policy-section" id="section-8">
                     <h2>Why Choose Hunt Tickets</h2>
-                    <p>Hunt Tickets stands out by focusing on what matters most—helping users find the right tickets quickly. As a reliable <strong>event ticket search marketplace</strong>, it offers:</p>
+                    <p>Hunt Tickets stands out by focusing on what matters most: helping users find the right tickets quickly. As a reliable <strong>event ticket search marketplace</strong>, it offers:</p>
                         <ul>
                         <li>Comprehensive ticket search capabilities</li>
                         <li>Easy tools to <strong>compare ticket prices online</strong></li>

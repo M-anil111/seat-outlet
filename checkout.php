@@ -36,7 +36,7 @@ $eventDate  = !empty($event['date']['date']) ? strtotime($event['date']['date'])
 $eventTime  = $event['date']['text']['time'] ?? '';
 $venueName  = $event['venue']['text']['name'] ?? '';
 $cityLabel  = trim(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
-$eventSlug  = $hasEvent ? createSlug($eventName, $eventId) : '';
+$eventSlug  = $hasEvent ? soEventSlug($event) : '';
 
 $handoff = TN_CHECKOUT_URL . '/?' . http_build_query(array_filter([
     'tgid' => $tgid !== '' ? $tgid : null,
@@ -49,6 +49,7 @@ $pageMetaTitle       = 'Secure Checkout | Seat Outlet';
 $pageMetaDescription = 'Review your ticket selection and continue to secure checkout.';
 $pageCanonicalUrl    = HOME_URL . '/checkout';
 $pageRobots          = 'noindex, nofollow';
+$GLOBALS['soNoAds'] = true;   // no ads on the pages where someone is paying or has paid
 include 'header.php';
 ?>
 

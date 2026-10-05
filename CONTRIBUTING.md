@@ -2,10 +2,13 @@
 
 ## Local setup
 
-1. Copy `.env.example` to `.env` and fill in real values (TicketNetwork
-   sandbox credentials, a local MySQL database, etc.) - this is for local
-   development only. Production/beta never reads `.env`; see **Deploy**
-   below.
+1. Create `inc/env.local.php` from `deploy/env.local.php.example` and fill
+   in real values (TicketNetwork sandbox credentials, a local MySQL
+   database, etc.). That file is the only place the PHP reads settings
+   from (`putenv()` lines, loaded by `db/config.php`); it is git-ignored and
+   the deploy never overwrites it. Nothing reads a `.env` file;
+   `.env.example` only lists the setting names. Run `php tools/check-env.php`
+   to see what is still missing or on a beta/sandbox default.
 2. Install PHP dependencies: `composer install`.
 3. Apply the database schema: `php db/migrate.php` (see **Database
    migrations**).
@@ -29,7 +32,10 @@ composer validate --no-check-publish --no-check-all
 composer audit
 ```
 
-All four should come back clean. `tools/check-arg-counts.php` and
+All of them should come back clean. CI also runs the icon subset check
+(`python3 tools/build-icons.py --check`) and the minified-asset check
+(rebuild with `bash tools/build-assets.sh`; the generated `*.min.*` files are
+not committed by feature branches). `tools/check-arg-counts.php` and
 `tools/check-undefined-functions.php` are exactly what found the bug where
 25 listing pages were fatal-erroring before this repo had any CI at all -
 run them, they're fast.
@@ -68,9 +74,14 @@ reach beta.
   checks above, validates `composer.lock`, runs `composer audit`, and
   applies every migration (twice, to prove idempotency) plus the sample
   seed against a throwaway MySQL service container.
-- **`.github/workflows/deploy.yml`** runs on push to `main`: lints again as
-  a final gate, then deploys to beta over SFTP using the secrets below.
-  This is the only workflow that touches the real server.
+- **`.github/workflows/deploy.yml`** is started by hand only
+  (`workflow_dispatch`): it lints, builds and uploads over SFTP, and is kept as a
+  manual fallback. A merge to `main` is NOT deployed by it. Beta is deployed by
+  `deploy/pull-deploy.sh`, which runs from cron on the server every 2 minutes,
+  pulls `main` and applies migrations (see `docs/pull-deploy.md`); it also
+  removes files that were deleted in git. There is no CI gate in front of it, so
+  keep `main` protected (required status checks and a pull request review).
+  Both workflows declare `permissions: contents: read`.
 - **`.github/workflows/lighthouse.yml`** runs weekly (or on demand from the
   Actions tab): fetches the live sitemap and runs real Google Lighthouse
   (Performance/Accessibility/Best Practices/SEO) against every URL in it
@@ -93,9 +104,15 @@ Optional: `SENTRY_DSN`, `SENTRY_ENVIRONMENT` - error monitoring is simply
 not initialized if these are left unset.
 
 Optional: `SMTP_USER`, `SMTP_PASS` (Brevo SMTP) - without them no email is
-sent: newsletter signups are still saved to `newsletter_leads` but neither
-the team notification nor the subscriber confirmation goes out, and the
-admin "forgot password" email is skipped (logged to the PHP error log).
+sent: sign-ups are still saved to the `leads` table but the welcome email
+and the performer alerts do not go out, and the admin "forgot password"
+email is skipped (logged to the PHP error log). `BREVO_API_KEY` (and
+`BREVO_LIST_ID`) additionally copy every sign-up to Brevo as a contact;
+`SO_MAIL_ADDRESS` is the postal address printed in marketing email footers;
+`SO_LEAD_NOTIFY_TO` gets a note per new sign-up. The full list of settings,
+including the ones that default to beta/sandbox values (`HOME_URL`,
+`BASE_URL`, `DB_NAME`, `HOME_PATH`), is in `deploy/env.local.php.example`;
+`php tools/check-env.php --production` reports what is still wrong.
 
 ### GitHub Actions variables (Settings → Secrets and variables → Actions → Variables tab)
 
@@ -107,7 +124,12 @@ address), which is why it's a repository *variable* rather than a secret.
 ## Admin panel
 
 `/admin` is a small custom PHP admin (session auth, CSRF-protected forms,
-parameterized queries throughout - see `admin/includes/auth.php`), styled
+parameterized queries throughout - see `admin/includes/auth.php`). Sign-in
+is throttled (5 failures per email or 20 per address in 15 minutes locks the
+form for the rest of the window), every admin page sends frame, sniffing and
+referrer headers, sessions live in a private folder with a real lifetime (2 hours
+idle, 30 days with "Keep me signed in"), a password change signs out every other
+session, and reset links are built from `HOME_URL`. The admin is styled
 with [Tabler](https://tabler.io) (MIT-licensed, Bootstrap-5-based) for the
 post-login dashboard shell. Self-registration at `/admin/register` is a
 one-time bootstrap step: it only works when zero admin accounts exist yet
@@ -163,8 +185,10 @@ Crons (all safe to run concurrently with traffic):
 |---|---|---|
 | `cron/home-events.php`, `home-top-performers.php`, `home-venues.php`, `home-categories.php` | hourly | homepage feeds |
 | `cron/warm-listings.php` | every 5 min | keeps /tickets, /concerts, /sports, /theater, /festival, top category and top city feeds warm so no visitor waits on the API |
+| `cron/warm-snapshots.php` | every 30 min | visits the sitemap URLs slowly (1 per second, 400 per run) so every page has a stored last good copy, served instead of an error when TicketNetwork throttles or is down (docs/reliability.md) |
 | `cron/resolve-images.php` | every 10–15 min | entity image queue |
 | `cron/prune-vitals.php` | weekly | deletes real-user speed measurements older than 90 days |
+| `cron/send-alerts.php` | daily (for example 14:00 server time) | emails people who asked for alerts about a performer: at most one alert per performer per 7 days, up to 5 events with tickets, unsubscribe link in every mail. `--dry-run` lists what would be sent without sending or marking anything; `--limit`, `--pause-ms`, `--max-performers` bound a run (defaults 40 mails, 1 second apart, 40 performers) |
 
 Card images on the homepage and search suggestions load through one
 batched `POST /ajax/get-images.php` per slider (was one GET per card,
@@ -258,7 +282,7 @@ what is stored (or the category fallback) and queues the entity. Single
 entity pages (`performer.php`, `venue.php`) resolve synchronously with
 6-second timeouts so the first visitor gets a real image.
 
-Run `php cron/resolve-images.php` every 10–15 minutes. It pre-warms
+Run `php cron/resolve-images.php` every 10 minutes (default batch 60; `php cron/resolve-images.php 100` for a backlog). If the cron job is missing, the site works the queue itself: after a public page has been sent, at most every 5 minutes and only with work waiting, it resolves a batch of 10 (`imageWorkerMaybeRun`, needs PHP-FPM; turn off with `IMAGE_WEB_WORKER=0`). The cron job is still the right setup. It pre-warms
 everything in the homepage caches and works the queue in a bounded batch
 with a pause between entities (Wikimedia allows 200 req/min with a
 User-Agent that carries contact info; the agent string is
@@ -303,6 +327,13 @@ optional.
   file or script? Just rebuild and commit the result (CI fails when it is stale). A class that is only assembled at runtime
   (`'btn-' + name`) cannot be found: write it out in full somewhere, or add it to the safelist in that config. Classes typed into
   blog posts or editable page blocks (stored in the database) also need to be in the safelist.
+- **Site CSS.** `css/style.css` is the readable source and is never trimmed; `css/style.min.css` is built from it with the rules for classes
+  the site never uses removed (`tools/purgecss-style.config.cjs`, same approach as Bootstrap above, scanning PHP, `js/*.js` and the SQL seeds).
+  Same rule: a class assembled at runtime (`'so-chipx--' . $kind`) is invisible to the scan, so write it out in full somewhere or add it to
+  that config's safelist. Classes that third-party scripts add (slick, flatpickr, Google Places) are already safelisted. Backup of the full
+  pre-trim state: branch `backup/before-css-optimization-2026-10-03`.
+- **Auto-migration (beta).** `inc/auto-migrate.php` applies pending `db/migrations/*.sql` after a public page request on hosts that are not
+  indexable (beta, staging); it is off on the live host unless `SO_AUTO_MIGRATE=1`. Result and any failure: `/ajax/health.php`.
 - **Sentry check.** `php tools/sentry-test.php` on the server sends one test message and says whether delivery worked.
 - **Icons.** Only the Bootstrap Icons the code uses are shipped (`fonts/bootstrap-icons-subset.woff2` + `css/icons.css`, folded into
   `style.min.css`). Using a new `bi-*` icon? Run `python3 tools/build-icons.py` (needs `pip install fonttools brotli`) then

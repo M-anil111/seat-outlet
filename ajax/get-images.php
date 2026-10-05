@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../inc/image-guard.php';
 
 header('Content-Type: application/json');
 
@@ -17,18 +18,19 @@ $items = is_array($body['items'] ?? null) ? array_slice($body['items'], 0, 40) :
 
 $out = [];
 foreach ($items as $item) {
-    $artist = trim((string) ($item['artist'] ?? ''));
-    $venue  = trim((string) ($item['venue'] ?? ''));
-    $tab    = trim((string) ($item['tab'] ?? ''));
+    if (!is_array($item)) { $out[] = ['image' => '', 'credit' => '', 'real' => false, 'type' => 'artist']; continue; }
+    $artist = is_string($item['artist'] ?? null) ? trim($item['artist']) : '';
+    $venue  = is_string($item['venue'] ?? null) ? trim($item['venue']) : '';
+    $tab    = is_string($item['tab'] ?? null) ? trim($item['tab']) : '';
     $category = is_array($item['category'] ?? null) ? $item['category'] : [];
 
     $type = 'artist';
     if ($artist !== '') {
         $type = imageEntityTypeForPerformer($category);
-        $img = getEntityImage($type, $artist, ['category' => $category, 'tab' => $tab]);
+        $img = soGuardedEntityImage($type, $artist, ['category' => $category, 'tab' => $tab]);
     } elseif ($venue !== '') {
         $type = 'venue';
-        $img = getEntityImage('venue', $venue);
+        $img = soGuardedEntityImage('venue', $venue);
     } else {
         $img = ['url' => $tab !== '' ? getCategoryFallbackImage($category, $tab) : '', 'credit' => '', 'status' => 'fallback'];
     }

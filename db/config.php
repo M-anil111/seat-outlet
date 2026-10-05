@@ -9,6 +9,9 @@
 // deploy/pull-deploy.sh expect it), then one level up (the older SFTP layout). The
 // second is still read when the first exists but does not set DB_PASS (an incomplete
 // copy in the site folder must not hide the complete file one level up).
+// Loaded once: some pages include this file from two places (admin/includes/auth.php and functions.php).
+if (defined('MYSQLI')) { return; }
+
 foreach ([__DIR__ . '/../inc/env.local.php', __DIR__ . '/../../inc/env.local.php'] as $envLocalFile) {
     if (file_exists($envLocalFile)) {
         require_once $envLocalFile;
@@ -24,6 +27,7 @@ foreach ([__DIR__ . '/../inc/env.local.php', __DIR__ . '/../../inc/env.local.php
  * 503 (so search engines retry later instead of indexing an error as a normal page), never the
  * raw error: it can name the database host and user. The detail goes to the server error log.
  */
+if (!function_exists('soDbUnavailable')) {
 function soDbUnavailable($detail) {
     error_log('Database unavailable: ' . $detail);
     if (PHP_SAPI === 'cli') {
@@ -43,6 +47,7 @@ function soDbUnavailable($detail) {
        . '<h1 style="font-size:24px;margin:0 0 8px">We will be right back</h1>'
        . '<p style="margin:0;color:#5b6573">Seat Outlet is temporarily unavailable. Please try again in a minute.</p></body></html>';
     exit;
+}
 }
 
 define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
@@ -68,4 +73,4 @@ if ($mysqli->connect_error) {
 $mysqli->set_charset('utf8mb4');
 
 
-define('MYSQLI', getenv('MYSQLI') ?: $mysqli);
+define('MYSQLI', $mysqli);   // never taken from the environment (an env var could swap the handle for a string)

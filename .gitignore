@@ -64,4 +64,16 @@ cache/tn_*.json
 *.mmdb
 cache/sitemap_xml.json
 cache/search_vocab.json
+cache/image_worker.*
 cache/home_feed_*.json
+
+# Generated at runtime by inc/sitemap-build.php (static sitemap files served from the web root)
+/sitemaps/
+
+# Runtime caches written by the site (zero-event bookkeeping, Wikidata lookups)
+cache/so_zero_pages.json
+cache/wdfacts_*
+cache/tn_*
+
+# Page snapshots (last good copy of each page, see docs/reliability.md)
+cache/pages/

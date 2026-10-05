@@ -57,7 +57,7 @@ include __DIR__ . '/includes/app-header.php';
                     <div class="mb-3">
                         <label class="form-label">URL path</label>
                         <input type="text" name="url_path" class="form-control" required
-                            placeholder="/concerts-city/austin-tx-123"
+                            placeholder="/concerts-city/austin-tx"
                             value="<?php echo htmlspecialchars($values['url_path'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                         <small class="form-hint">Path only - no domain, no query string. Must match the page's REQUEST_URI exactly.</small>
                     </div>

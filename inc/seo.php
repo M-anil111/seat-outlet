@@ -1,19 +1,19 @@
 <?php // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; } ?>
-<title>Seat Outlet: Verified Ticket Marketplace for Concerts &amp; Sports</title>
-<meta name="description" content="Seat Outlet is a verified ticket marketplace network to buy concert, sports, and event tickets online. Compare prices, find deals, and book securely.">
-<meta name="keywords" content="Verified Ticket Marketplace Network, buy event tickets online, concert tickets online, sports tickets marketplace, compare ticket prices online">
+<title>Buy Event Tickets&#x2014;Concerts, Sports &amp; Theater&#x2014;Seat Outlet</title>
+<meta name="description" content="Buy event tickets for concerts, sports, theater and festivals. Compare seats and prices side by side, check out securely and get our 100% guarantee.">
+<meta name="keywords" content="Buy event tickets online, concert tickets online, sports tickets marketplace, compare ticket prices online">
 <link rel="canonical" href="<?php echo HOME_URL; ?>/">
 
-<meta property="og:title" content="Verified Ticket Marketplace Network | Seat Outlet">
-<meta property="og:description" content="Seat Outlet is a verified ticket marketplace network to buy concert, sports, and event tickets online. Compare prices, find deals, and book securely.">
+<meta property="og:title" content="Buy Event Tickets&#x2014;Concerts, Sports &amp; Theater&#x2014;Seat Outlet">
+<meta property="og:description" content="Buy event tickets for concerts, sports, theater and festivals. Compare seats and prices side by side, check out securely and get our 100% guarantee.">
 <meta property="og:url" content="<?php echo HOME_URL; ?>/">
 <meta property="og:type" content="website">
 <meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Seat Outlet Ticket Marketplace">
-<meta name="twitter:description" content="Seat Outlet is a verified ticket marketplace network to buy concert, sports, and event tickets online. Compare prices, find deals, and book securely.">
+<meta name="twitter:title" content="Buy Event Tickets&#x2014;Concerts, Sports &amp; Theater&#x2014;Seat Outlet">
+<meta name="twitter:description" content="Buy event tickets for concerts, sports, theater and festivals. Compare seats and prices side by side, check out securely and get our 100% guarantee.">
 <meta name="twitter:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
 
 <?php
@@ -131,7 +131,7 @@ foreach ($eventFiles as $file) {
           ],
 
       ];
-      $offer = seoOffer(HOME_URL . "/event/" . createSlug($event['name'], $event['id']), $price);
+      $offer = seoOffer(HOME_URL . "/event/" . soEventSlug($event), $price);
       if ($offer) {
           $eventsSchema[array_key_last($eventsSchema)]["offers"] = $offer;
       }
@@ -191,22 +191,9 @@ $popularCities = [
     "@type" => "ItemList",
     "name" => "Popular Cities",
     "itemListElement" => [
-        ["@type" => "ListItem", "position" => 1, "item" => ["@type" => "Place", "name" => "New York, NY", "url" => HOME_URL . "/city/new-york-3027"]],
-        ["@type" => "ListItem", "position" => 2, "item" => ["@type" => "Place", "name" => "Los Angeles, CA", "url" => HOME_URL . "/city/los-angeles-2551"]],
-        ["@type" => "ListItem", "position" => 3, "item" => ["@type" => "Place", "name" => "Chicago, IL", "url" => HOME_URL . "/city/chicago-915"]],
-        ["@type" => "ListItem", "position" => 4, "item" => ["@type" => "Place", "name" => "Houston, TX", "url" => HOME_URL . "/city/houston-2013"]],
-        ["@type" => "ListItem", "position" => 5, "item" => ["@type" => "Place", "name" => "Phoenix, AZ", "url" => HOME_URL . "/city/phoenix-3396"]],
-        ["@type" => "ListItem", "position" => 6, "item" => ["@type" => "Place", "name" => "Philadelphia, PA", "url" => HOME_URL . "/city/philadelphia-3394"]],
-        ["@type" => "ListItem", "position" => 7, "item" => ["@type" => "Place", "name" => "San Antonio, TX", "url" => HOME_URL . "/city/san-antonio-3846"]],
-        ["@type" => "ListItem", "position" => 8, "item" => ["@type" => "Place", "name" => "San Diego, CA", "url" => HOME_URL . "/city/san-diego-3854"]],
-        ["@type" => "ListItem", "position" => 9, "item" => ["@type" => "Place", "name" => "Dallas, TX", "url" => HOME_URL . "/city/dallas-1121"]],
-        ["@type" => "ListItem", "position" => 10, "item" => ["@type" => "Place", "name" => "Jacksonville, FL", "url" => HOME_URL . "/city/jacksonville-2108"]],
-        ["@type" => "ListItem", "position" => 11, "item" => ["@type" => "Place", "name" => "Fort Worth, TX", "url" => HOME_URL . "/city/fort-worth-1558"]],
-        ["@type" => "ListItem", "position" => 12, "item" => ["@type" => "Place", "name" => "San Jose, CA", "url" => HOME_URL . "/city/san-jose-3862"]],
-        ["@type" => "ListItem", "position" => 13, "item" => ["@type" => "Place", "name" => "Austin, TX", "url" => HOME_URL . "/city/austin-247"]],
-        ["@type" => "ListItem", "position" => 14, "item" => ["@type" => "Place", "name" => "Charlotte, NC", "url" => HOME_URL . "/city/charlotte-880"]],
-        ["@type" => "ListItem", "position" => 15, "item" => ["@type" => "Place", "name" => "Columbus, OH", "url" => HOME_URL . "/city/columbus-1025"]],
-        ["@type" => "ListItem", "position" => 16, "item" => ["@type" => "Place", "name" => "Indianapolis, IN", "url" => HOME_URL . "/city/indianapolis-2061"]],
+        // Clean registry slugs (no ids in URLs): [label, ticket API city id]
+        ...array_map(fn($c, $i) => ["@type" => "ListItem", "position" => $i + 1, "item" => ["@type" => "Place", "name" => $c[0], "url" => HOME_URL . "/city/" . soSlug('city', $c[0], $c[1])]],
+            $soPopularCityDefs = [["New York, NY", 3027], ["Los Angeles, CA", 2551], ["Chicago, IL", 915], ["Houston, TX", 2013], ["Phoenix, AZ", 3396], ["Philadelphia, PA", 3394], ["San Antonio, TX", 3846], ["San Diego, CA", 3854], ["Dallas, TX", 1121], ["Jacksonville, FL", 2108], ["Fort Worth, TX", 1558], ["San Jose, CA", 3862], ["Austin, TX", 247], ["Charlotte, NC", 880], ["Columbus, OH", 1025], ["Indianapolis, IN", 2061]], array_keys($soPopularCityDefs)),
     ],
 ];
 
@@ -245,7 +232,7 @@ $webPageSchema = [
     "@type" => "WebPage",
     "@id" => HOME_URL . "/#webpage",
     "url" => HOME_URL . "/",
-    "name" => "Verified Ticket Marketplace Network for Concerts & Sports Tickets",
+    "name" => "Buy Event Tickets for Concerts, Sports & Theater",
     "isPartOf" => ["@id" => HOME_URL . "/#website"],
     "about" => ["@id" => HOME_URL . "/#organization"],
     "primaryImageOfPage" => [

@@ -15,8 +15,14 @@ if (!empty($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '?') !== 
     }
     unset($so_original_query);
 }
+// Array-typed parameters (?q[]=a) are never used by this site; handing one to a string function threw a TypeError and answered an
+// empty 500. Dropping them makes the page behave as if the parameter was not sent.
+foreach ($_GET as $so_key => $so_val) {
+    if (is_array($so_val)) { unset($_GET[$so_key], $_REQUEST[$so_key]); }
+}
+unset($so_key, $so_val);
 
-include 'db/config.php';
+include_once __DIR__ . '/db/config.php';
 include 'inc/constants.php';
 require 'vendor/autoload.php';
 
@@ -61,33 +67,62 @@ function getS3Client() {
     return $client;
 }
 
-function downloadImage($url) {
-    if (!preg_match('#^https?://#i', (string) $url)) return '';
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_MAXREDIRS      => 3,
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_SSL_VERIFYHOST => 2,
-        CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_USERAGENT      => imageUserAgent(),
-        // Was `die("cURL Error: ...")` on failure, which turned a JSON
-        // endpoint into plain text and killed whatever page called it.
-        CURLOPT_NOPROGRESS     => false,
-        CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
-            return ($dlTotal > IMAGE_MAX_DOWNLOAD_BYTES || $dlNow > IMAGE_MAX_DOWNLOAD_BYTES) ? 1 : 0;
-        },
-    ]);
-    $data = curl_exec($ch);
-    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $err  = curl_errno($ch);
-    curl_close($ch);
-    if ($err || $code !== 200 || $data === false || $data === '') {
-        return '';
+/**
+ * Resolve a URL's host and say whether it is a public internet address (https/http on port 80/443, no credentials, no private,
+ * loopback, link-local or metadata address). Returns the first public IP, or '' when the URL must not be fetched.
+ */
+function soPublicHostIp($url) {
+    $p = parse_url((string) $url);
+    if (!$p || empty($p['host']) || isset($p['user']) || isset($p['pass'])) return '';
+    if (!in_array(strtolower($p['scheme'] ?? ''), ['http', 'https'], true)) return '';
+    $port = $p['port'] ?? (strtolower($p['scheme']) === 'https' ? 443 : 80);
+    if (!in_array((int) $port, [80, 443], true)) return '';
+    $host = trim($p['host'], '[]');
+    $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
+    if (!$ips) return '';
+    foreach ($ips as $ip) {
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return '';
     }
-    return $data;
+    return $ips[0];
+}
+
+function downloadImage($url) {
+    // Admin-supplied URL fetched by the server: every hop (redirects are followed by hand) must be a public address, and the connection
+    // is pinned to the address that was checked, so a DNS answer cannot change between the check and the fetch.
+    $url = (string) $url;
+    for ($hop = 0; $hop <= 3; $hop++) {
+        $ip = soPublicHostIp($url);
+        if ($ip === '') return '';
+        $p = parse_url($url);
+        $port = $p['port'] ?? (strtolower($p['scheme']) === 'https' ? 443 : 80);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_RESOLVE        => [$p['host'] . ':' . $port . ':' . $ip],
+            CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_USERAGENT      => imageUserAgent(),
+            // Was `die("cURL Error: ...")` on failure, which turned a JSON
+            // endpoint into plain text and killed whatever page called it.
+            CURLOPT_NOPROGRESS     => false,
+            CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
+                return ($dlTotal > IMAGE_MAX_DOWNLOAD_BYTES || $dlNow > IMAGE_MAX_DOWNLOAD_BYTES) ? 1 : 0;
+            },
+        ]);
+        $data = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_errno($ch);
+        $next = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+        curl_close($ch);
+        if (!$err && in_array($code, [301, 302, 303, 307, 308], true) && $next !== '') { $url = $next; continue; }
+        if ($err || $code !== 200 || $data === false || $data === '') return '';
+        return $data;
+    }
+    return '';
 }
 
 // Nearly every page on the site calls this (indirectly, via tnRequest())
@@ -239,7 +274,7 @@ function getTnAccessToken($rejected = '') {
 | per HTTP request with every call, cache hit/miss and milliseconds.
 */
 
-const TN_CACHE_SWEEP_AGE = 172800; // 2 days: must exceed TN_STALE_ON_ERROR (24h)
+const TN_CACHE_SWEEP_AGE = 1296000; // 15 days: must exceed TN_STALE_ON_ERROR (14 days)
 
 function tnDefaultTtl($endpoint, array $params) {
     $e = trim($endpoint, '/');
@@ -293,8 +328,27 @@ function tnGrace($ttl) {
     return (int) min($ttl * 3, 86400);
 }
 
-/** Longest a stale entry may stand in for a failed live call. */
-const TN_STALE_ON_ERROR = 86400;
+/** Longest a stale entry may stand in for a failed live call (the API throttling us must not empty a page that was fine yesterday). */
+const TN_STALE_ON_ERROR = 1209600;   // 14 days
+
+/** Thrown by helpers that need live API data when the API is down or throttling us; the outage alert has already been sent. */
+class SoTnUnavailable extends RuntimeException {}
+
+/**
+ * Tells Sentry the TicketNetwork API is down or throttling us: one warning (not an error) per 10 minutes. Before, every failed request
+ * sent its own error, so a short throttle window (a crawler, a traffic spike) sent a burst of "high priority" emails.
+ */
+function soTnAlert($message) {
+    if (!function_exists('\Sentry\captureMessage')) return;
+    $f = rtrim(sys_get_temp_dir(), '/') . '/seatoutlet_tn_alert_' . md5(BASE_URL) . '.txt';
+    if (is_file($f) && (time() - (int) @filemtime($f)) < 600) return;
+    @touch($f);
+    \Sentry\withScope(function ($scope) use ($message) {
+        $scope->setLevel(\Sentry\Severity::warning());
+        $scope->setFingerprint(['tn-api-unavailable']);
+        \Sentry\captureMessage($message);
+    });
+}
 
 function tnBreakerFile() {
     return rtrim(sys_get_temp_dir(), '/') . '/seatoutlet_tn_breaker_' . md5(BASE_URL) . '.txt';
@@ -320,9 +374,7 @@ function tnBreakerTrip($why, $seconds = TN_BREAKER_SECONDS) {
     }
     @file_put_contents(tnBreakerFile(), (string) (int) $seconds);
     @touch(tnBreakerFile());
-    if (function_exists('\Sentry\captureMessage')) {
-        \Sentry\captureMessage('TicketNetwork API unavailable, circuit opened for ' . (int) $seconds . 's: ' . $why);
-    }
+    soTnAlert('TicketNetwork API unavailable, circuit opened for ' . (int) $seconds . 's: ' . $why);
 }
 
 /**
@@ -363,6 +415,12 @@ function tnParseResult($ch, $response) {
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $decoded = json_decode((string) $response, true);
     if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+        // A 4xx without a JSON body (for example a gateway answering 400/404 for a junk id) is an answer about THAT request,
+        // not an outage: it must not open the circuit for every visitor.
+        if ($code >= 400 && $code < 500 && $code !== 429) {
+            return ['ok' => true, 'data' => ['Message' => $code === 404 ? 'The requested resource was not found.' : 'The request was rejected (HTTP ' . $code . ').'],
+                    'cacheable' => false, 'error' => '', 'http' => $code];
+        }
         return ['ok' => false, 'data' => [], 'cacheable' => false, 'error' => 'invalid JSON (HTTP ' . $code . ')'];
     }
     if ($code >= 500) {
@@ -374,7 +432,7 @@ function tnParseResult($ch, $response) {
         return ['ok' => false, 'data' => $decoded, 'cacheable' => false, 'error' => 'throttled (HTTP ' . $code . ')', 'throttled' => true];
     }
     $cacheable = $code === 200 && !isset($decoded['code']) && !isset($decoded['Message']);
-    return ['ok' => true, 'data' => $decoded, 'cacheable' => $cacheable, 'error' => '', 'auth' => $code === 401];
+    return ['ok' => true, 'data' => $decoded, 'cacheable' => $cacheable, 'error' => '', 'auth' => $code === 401, 'http' => $code];
 }
 
 /** One live call, no caching. A 401 (rotated token) refreshes the token and retries once. */
@@ -428,8 +486,63 @@ function tnScheduleRefresh($endpoint, array $params, $method, $key) {
     });
 }
 
+/** How long an "it does not exist" answer is remembered, so junk ids and bots do not each cost a live API call. */
+const TN_NEGATIVE_TTL = 300;
+
+/** The largest id TicketNetwork's int32 ids can hold; anything above is a made-up id and never reaches the API. */
+const TN_MAX_ID = 2147483647;
+
+/** True when the endpoint ends in a numeric id the API cannot have (/catalog/v2/performers/99999999999). */
+function tnIdOutOfRange($endpoint) {
+    return preg_match('#/(\d{10,})/?$#', (string) $endpoint, $m) && (float) $m[1] > TN_MAX_ID;
+}
+
+/**
+ * Every TicketNetwork call goes through here: the raw answer (tnRequestRaw) with display names cleaned up.
+ * TicketNetwork joins name parts with " - " ("The Fillmore - Detroit", "Water For Elephants - The Musical"); the site
+ * shows them without dashes. Slugs do not change, because soSlug() drops the punctuation either way.
+ */
 function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
+    $data = tnRequestRaw($endpoint, $params, $method, $ttl);
+    return is_array($data) ? soCleanTnNames($data, strpos((string) $endpoint, '/venues') !== false ? 'venue' : '') : $data;
+}
+
+/** One TicketNetwork name without dashes: venues "The Fillmore, Detroit"; events and performers "Water For Elephants: The Musical". */
+function soCleanTnName(string $name, string $ctx = ''): string {
+    if (!preg_match('/\s[-\x{2013}\x{2014}]\s/u', $name)) return $name;
+    $parts = preg_split('/\s+[-\x{2013}\x{2014}]\s+/u', trim($name));
+    $parts = array_values(array_filter(array_map('trim', $parts), 'strlen'));
+    if (count($parts) < 2) return trim($parts[0] ?? $name, " -");
+    if ($ctx === 'venue' || strpos($parts[0], ':') !== false) return implode(', ', $parts);
+    return array_shift($parts) . ': ' . implode(', ', $parts);
+}
+
+/** Walk an API answer and clean every text.name; anything under a "venue" key uses the venue rule. */
+function soCleanTnNames(array $d, string $ctx = ''): array {
+    foreach ($d as $k => $v) {
+        if (!is_array($v)) continue;
+        if ($k === 'text' && isset($v['name']) && is_string($v['name'])) {
+            $d[$k]['name'] = soCleanTnName($v['name'], $ctx);
+            continue;
+        }
+        if ($k === 'performers') {   // event rows list performers as {name, id, role}
+            foreach ($v as $i => $perf) {
+                if (is_array($perf) && isset($perf['name']) && is_string($perf['name'])) $v[$i]['name'] = soCleanTnName($perf['name']);
+            }
+        }
+        $childCtx = $ctx;
+        if ($k === 'venue' || $k === 'venues') $childCtx = 'venue';
+        elseif (is_string($k) && in_array($k, ['performer', 'performers', 'city', 'stateProvince', 'country', 'defaultCategory', 'categories', 'category', 'parent'], true)) $childCtx = '';
+        $d[$k] = soCleanTnNames($v, $childCtx);
+    }
+    return $d;
+}
+
+function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
     $params = is_array($params) ? $params : [];
+    if (tnIdOutOfRange($endpoint)) {
+        return ['Message' => 'The requested resource was not found.'];
+    }
     $ttl = $ttl === null ? tnDefaultTtl($endpoint, $params) : (int) $ttl;
     $key = null;
     $entry = null;
@@ -453,6 +566,15 @@ function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
         }
     }
 
+    // Remembered "not found": answer from the short negative cache.
+    if ($key !== null && $entry === null) {
+        $neg = cache_get($key . '_nf', TN_NEGATIVE_TTL);
+        if ($neg !== false) {
+            tnProfile($endpoint, true, 0);
+            return $neg;
+        }
+    }
+
     // Circuit open: do not queue more 20s timeouts behind a dead API.
     if (tnBreakerOpen()) {
         if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
@@ -464,7 +586,7 @@ function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
 
     if (!$r['ok']) {
         tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
-        \Sentry\captureMessage('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
+        soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
         if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
         tnMarkDegraded();
@@ -473,9 +595,11 @@ function tnRequest($endpoint, $params = [], $method = 'GET', $ttl = null) {
 
     if ($key !== null && $r['cacheable']) {
         cache_set($key, $r['data']);
-        if (mt_rand(1, 200) === 1) {
-            tnCacheSweep();
-        }
+    } elseif ($key !== null && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) {
+        cache_set($key . '_nf', $r['data']);   // a definite "no such thing": remember it briefly
+    }
+    if ($key !== null && mt_rand(1, 200) === 1) {
+        tnCacheSweep();
     }
     return $r['data'];
 }
@@ -502,6 +626,8 @@ function tnRequestMulti(array $requests) {
             $out[$i] = $entry['data'];
             continue;
         }
+        if (tnIdOutOfRange($endpoint)) { $out[$i] = ['Message' => 'The requested resource was not found.']; continue; }
+        if ($entry === null && $ttl > 0 && ($neg = cache_get($key . '_nf', TN_NEGATIVE_TTL)) !== false) { $out[$i] = $neg; continue; }
         $out[$i] = ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
         $todo[$i] = [$endpoint, $params, $ttl, $key];
     }
@@ -537,6 +663,7 @@ function tnRequestMulti(array $requests) {
         if ($r['ok']) {
             $out[$i] = $r['data'];
             if ($ttl > 0 && $r['cacheable']) cache_set($key, $r['data']);
+            elseif ($ttl > 0 && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) cache_set($key . '_nf', $r['data']);
         } else {
             tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
             if (empty($out[$i])) tnMarkDegraded();
@@ -548,14 +675,28 @@ function tnRequestMulti(array $requests) {
     return $out;
 }
 
-/** Delete stale tn_*.json response files so cache/ doesn't grow unbounded. */
+/**
+ * Keep cache/ bounded. Visitor-driven families are swept by age (tn_ responses 2 days, home_feed_ 1 day), leftovers of
+ * interrupted writes (.tmp_, .lock) after an hour, and a family is also capped by file count (oldest first), because the
+ * key space comes from coordinates and filters that visitors choose. Fixed files (top_*.json, teams_*.json, bios) are untouched.
+ */
 function tnCacheSweep() {
-    $cutoff = time() - TN_CACHE_SWEEP_AGE;
-    foreach (glob(cache_dir() . 'tn_*.json') ?: [] as $file) {
-        if (@filemtime($file) < $cutoff) {
-            @unlink($file);
+    $dir = cache_dir();
+    $now = time();
+    foreach (['tn_' => [TN_CACHE_SWEEP_AGE, 20000], 'home_feed_' => [86400, 4000]] as $prefix => [$maxAge, $maxFiles]) {
+        $files = glob($dir . $prefix . '*.json') ?: [];
+        $alive = [];
+        foreach ($files as $file) {
+            $mt = (int) @filemtime($file);
+            if ($mt < $now - $maxAge) { @unlink($file); } else { $alive[$file] = $mt; }
+        }
+        if (count($alive) > $maxFiles) {
+            asort($alive);
+            foreach (array_slice(array_keys($alive), 0, count($alive) - $maxFiles) as $file) { @unlink($file); }
         }
     }
+    foreach ((glob($dir . '*.json.tmp_*') ?: []) as $file) { if ((int) @filemtime($file) < $now - 3600) @unlink($file); }
+    foreach ((glob($dir . '*.lock') ?: []) as $file) { if ((int) @filemtime($file) < $now - 3600) @unlink($file); }
 }
 
 /** Kept for existing callers; tnRequest() itself now caches. */
@@ -631,50 +772,25 @@ function performerPriceSnapshot(array $events) {
 }
 
 /** BreadcrumbList + one Event node per listed event, for the performer page. */
-function buildPerformerPageJsonLd(string $artistName, int $performerId, array $events, array $breadcrumbs, string $imageUrl = '') {
+function buildPerformerPageJsonLd(string $artistName, int $performerId, array $events, array $breadcrumbs, string $imageUrl = '', string $catPath = '', array $sameAs = []) {
     $nodes = [];
     $crumbs = [];
     foreach ($breadcrumbs as $i => $crumb) {
         $crumbs[] = ['@type' => 'ListItem', 'position' => $i + 1, 'name' => $crumb['label'] ?? '', 'item' => $crumb['url'] ?? HOME_URL];
     }
-    $crumbs[] = ['@type' => 'ListItem', 'position' => count($crumbs) + 1, 'name' => $artistName . ' Tickets', 'item' => HOME_URL . '/artist/' . createSlug($artistName, $performerId)];
+    $crumbs[] = ['@type' => 'ListItem', 'position' => count($crumbs) + 1, 'name' => $artistName . ' Tickets', 'item' => HOME_URL . '/artist/' . soSlug('performer', $artistName, $performerId)];
     $nodes[] = ['@type' => 'BreadcrumbList', 'itemListElement' => $crumbs];
 
+    // The performer the page is about. Events below point at it through the same @id.
+    $artistUrl = HOME_URL . '/artist/' . soSlug('performer', $artistName, $performerId);
+    $perf = ['@type' => soPerformerSchemaType($catPath), '@id' => $artistUrl . '#performer', 'name' => $artistName, 'url' => $artistUrl];
+    if ($imageUrl !== '') $perf['image'] = $imageUrl;
+    if ($sameAs) $perf['sameAs'] = array_values($sameAs);
+    $nodes[] = $perf;
+
     foreach (array_slice($events, 0, 20) as $event) {
-        $startDate = $event['date']['datetime'] ?? $event['date']['date'] ?? '';
-        if ($startDate === '') continue;
-        $price = $event['pricingInfo']['lowPrice']['value'] ?? null;
-        $node = [
-            '@type'       => 'Event',
-            'name'        => $event['text']['name'] ?? $artistName,
-            'startDate'   => $startDate,
-            'eventStatus' => 'https://schema.org/EventScheduled',
-            'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
-            'url'         => HOME_URL . '/event/' . createSlug($event['text']['name'] ?? '', $event['id'] ?? 0),
-            'location'    => [
-                '@type'   => 'Place',
-                'name'    => $event['venue']['text']['name'] ?? '',
-                'address' => [
-                    '@type'           => 'PostalAddress',
-                    'addressLocality' => $event['city']['text']['name'] ?? '',
-                    'addressRegion'   => $event['stateProvince']['text']['abbr'] ?? '',
-                    'addressCountry'  => $event['country']['alphaCode'] ?? 'US',
-                ],
-            ],
-            'performer'   => buildEventPerformerSchema($event),
-        ];
-        if ($imageUrl !== '') $node['image'] = $imageUrl;
-        if ($price !== null && (float) $price > 0) {
-            $node['offers'] = [
-                '@type'         => 'Offer',
-                'url'           => $node['url'],
-                'price'         => (string) $price,
-                'priceCurrency' => 'USD',
-                'availability'  => !empty($event['_metadata']['hasTickets']) ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
-                'validFrom'     => date('Y-m-d'),
-            ];
-        }
-        $nodes[] = $node;
+        if (empty($event['date']['date']) && empty($event['date']['datetime'])) continue;
+        $nodes[] = soEventNode($event, ['image' => $imageUrl]);
     }
     return $nodes;
 }
@@ -747,6 +863,8 @@ function getTnPerformers(array $params = []) {
 
     $data = tnRequest('/catalog/v2/performers', $params, 'GET', 6 * 3600);
     if (!is_array($data) || !array_key_exists('results', $data)) {
+        // API down or throttling (already alerted by the circuit breaker) versus an unexpected answer (worth an error report).
+        if (tnBreakerOpen() || !empty($GLOBALS['tn_degraded'])) throw new SoTnUnavailable('TicketNetwork performers request failed');
         throw new RuntimeException('TicketNetwork performers request failed');
     }
     return $data;
@@ -787,7 +905,7 @@ function soEventRedirectTarget($event, int $eventId): string {
             // The table may not exist yet: carry on with the category data above.
         }
     }
-    if ($perfId > 0 && $perfName !== '') return '/artist/' . createSlug($perfName, $perfId);
+    if ($perfId > 0 && $perfName !== '') return '/artist/' . soSlug('performer', $perfName, $perfId);
     if (strpos($path, '.1988.') !== false) return '/game-day-tickets';
     if (strpos($path, '.1989.') !== false) return '/buy-broadway-tickets';
     if (strpos($path, '.1877.') !== false || strpos($path, '.2065.') !== false) return '/upcoming-music-festivals';
@@ -873,6 +991,18 @@ function buildCategoryBreadcrumb($defaultCategory) {
         ];
     }
 
+    // Point every step at the page's real address (the old /concerts and /category/<name>-<id> addresses redirect):
+    // the category hubs, and the clean genre / league pages (/comedy-show-tickets, /nba-tickets). Comedy sits under Theater.
+    $hubs = ['/concerts' => ['Concerts', '/concert-tickets-for-sale'], '/sports' => ['Sports', '/game-day-tickets'], '/theater' => ['Theater', '/buy-broadway-tickets'], '/theatre' => ['Theater', '/buy-broadway-tickets']];
+    $isComedy = strpos((string) ($defaultCategory['path'] ?? ''), '.1872.') !== false;
+    foreach ($breadcrumb as $i => $c) {
+        $u = (string) ($c['url'] ?? '');
+        if (isset($hubs[$u])) {
+            $breadcrumb[$i] = ['label' => $isComedy ? 'Theater' : $hubs[$u][0], 'url' => $isComedy ? '/buy-broadway-tickets' : $hubs[$u][1]];
+        } elseif (preg_match('#^/category/.+-(\d+)$#', $u, $m) && function_exists('soGenreById') && ($g = soGenreById((int) $m[1]))) {
+            $breadcrumb[$i]['url'] = '/' . $g['slug'];
+        }
+    }
     return $breadcrumb;
 }
 
@@ -1244,6 +1374,15 @@ function getKeywordSearchSuggestions($q) {
 
     if (!$data) return [];
 
+    // The links the search box builds: a clean slug per suggestion (no ids in URLs, see inc/slugs.php).
+    foreach (['performers' => 'performer', 'venues' => 'venue', 'cities' => 'city'] as $kind => $slugType) {
+        foreach ($data[$kind]['results'] ?? [] as $i => $item) {
+            if (empty($item['id']) || !isset($item['name'])) continue;
+            $label = $slugType === 'city' && !empty($item['state']) ? $item['name'] . ', ' . $item['state'] : $item['name'];
+            $data[$kind]['results'][$i]['slug'] = soSlug($slugType, $label, (int) $item['id']);
+        }
+    }
+
     // TicketNetwork's suggest is a prefix matcher: "adelle" finds nothing, and
     // "carot top" only unrelated venues. No performer match on a real-looking
     // word is the signal to offer close names.
@@ -1527,22 +1666,10 @@ function generateTeamSkeleton($count = 6) {
 }
 
 function buildVenueSkeleton($count = 8) {
-
     $html = '';
-
     for ($i = 0; $i < $count; $i++) {
-
-        $html .= '
-            <div class="venue-card-skeleton">
-                <div class="skeleton-img shimmer"></div>
-                <div class="venue-content text-center p-3">
-                    <div class="skeleton-line skeleton-title shimmer"></div>
-                    <div class="skeleton-line skeleton-location shimmer"></div>
-                </div>
-            </div>
-        ';
+        $html .= '<div class="so-vc-slide"><div class="so-vc so-vc--' . ($i % 4) . ' so-vc--skeleton" aria-hidden="true"><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></div></div>';
     }
-
     return $html;
 }
 
@@ -1611,10 +1738,12 @@ function listingSortParams($sort) {
 }
 
 /** Listing query for any OData location/category fragment, with when/sort applied. */
-function locationListingParams($fragment, $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
+function locationListingParams($fragment, $perPage = 20, $page = 1, $when = '', $sort = 'popular', $maxPrice = 0) {
     $range = listingDateRange($when);
     $from = $range ? $range[0] : date('Y-m-d');
     $filter = $fragment . " and date/date ge $from" . ($range ? " and date/date le {$range[1]}" : '') . ' and _metadata/hasTickets eq true';
+    // "Under $X": the events API filters on the event's lowest listed price (pricingInfo/lowPrice/value, verified in the sandbox).
+    if ((int) $maxPrice > 0) $filter .= ' and pricingInfo/lowPrice/value le ' . (int) $maxPrice;
     return ['filter' => $filter] + listingSortParams($sort) + [
         'perPage'           => (int) $perPage,
         'page'              => (int) $page,
@@ -1622,11 +1751,11 @@ function locationListingParams($fragment, $perPage = 20, $page = 1, $when = '', 
     ];
 }
 
-function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
+function categoryListingParams($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular', $maxPrice = 0) {
     $fragment = $categoryPath !== ''
         ? "startswith(defaultCategory/path, '" . tnEscapeFilterValue($categoryPath) . "')"
         : "country/alphaCode eq 'US'";
-    return locationListingParams($fragment, $perPage, $page, $when, $sort);
+    return locationListingParams($fragment, $perPage, $page, $when, $sort, $maxPrice);
 }
 
 function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1, $when = '', $sort = 'popular') {
@@ -1678,7 +1807,7 @@ function soWeekendGroups(array $events): array {
     foreach ($groups as $i => &$grp) {
         $grp['label'] = 'Weekend ' . ($i + 1);
         $a = date('M d', strtotime($grp['from'])); $b = date('M d', strtotime($grp['to']));
-        $grp['range'] = $a === $b ? $a : $a . ' - ' . $b;
+        $grp['range'] = $a === $b ? $a : $a . ' to ' . $b;
     }
     unset($grp);
     return $groups;
@@ -1700,23 +1829,61 @@ const SO_EXPLORE_HUBS = [
 function renderExploreBar($basePath, array $opts = []) {
     if (isset($opts['catId'])) {
         // A single category page: its own TicketNetwork category id and name.
-        $cat = 'all'; $noun = (string) ($opts['noun'] ?? 'events'); $heroImg = '/images/crowd-at-concert-or-event.webp';
+        $cat = 'all'; $noun = (string) ($opts['noun'] ?? 'events'); $heroImg = (string) ($opts['hero'] ?? '/images/crowd-at-concert-or-event.webp');
         $catId = (int) $opts['catId'];
     } elseif (isset(SO_EXPLORE_HUBS[$basePath])) {
         [$cat, $noun, $heroImg] = SO_EXPLORE_HUBS[$basePath];
         $catId = 0;
     } else {
-        return;
+        return false;
     }
     $tabs = ['/buy-tickets-online' => 'All events', '/game-day-tickets' => 'Sports', '/concert-tickets-for-sale' => 'Concerts', '/buy-broadway-tickets' => 'Theater', '/upcoming-music-festivals' => 'Festivals'];
+    // One filter state for the whole page, read from the address so a filtered view can be shared: the chips below drive both
+    // the near-you grid and the national list. Labels are printed from it here, so they are right before any script runs.
+    $when = (string) ($opts['when'] ?? '');
+    $sortIn = (string) ($_GET['sort'] ?? '');
+    $nearSorts = ['distance' => 'Nearest first', 'popular' => 'Best sellers', 'soonest' => 'Soonest', 'price' => 'Lowest price'];
+    $sort = isset($nearSorts[$sortIn]) ? $sortIn : 'distance';
+    $radiusIn = (int) ($_GET['radius'] ?? 0);
+    $radius = in_array($radiusIn, [25, 50, 100, 250], true) ? $radiusIn : 0;
+    $max = (int) ($opts['max'] ?? soListingMaxPrice());
     ?>
-    <div class="so-explore" data-so-explore data-hero="<?php echo htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8'); ?>" data-when="<?php echo htmlspecialchars((string) ($opts['when'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-catid="<?php echo (int) $catId; ?>" data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
+    <div class="so-explore" data-so-explore data-hero="<?php echo htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8'); ?>" data-when="<?php echo htmlspecialchars($when, ENT_QUOTES, 'UTF-8'); ?>" data-sort="<?php echo htmlspecialchars($sort, ENT_QUOTES, 'UTF-8'); ?>" data-radius="<?php echo (int) $radius; ?>" data-max="<?php echo (int) $max; ?>" data-catid="<?php echo (int) $catId; ?>" data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>" data-noun="<?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?>">
+        <?php
+        // Sub-categories come from the API's category tree (inc/category-tree.php); the hubs without one (all events, festivals) have none.
+        // The hub this page belongs to: itself, or the family a single genre / league page sits in (concerts, sports, theater).
+        $hub = isset($opts['family']) && isset($tabs[$opts['family']]) ? $opts['family'] : $basePath;
+        ?>
         <nav class="so-cattabs" aria-label="Event categories">
-            <?php foreach ($tabs as $href => $label) { ?>
-                <a href="<?php echo $href; ?>" <?php echo $href === $basePath ? 'class="active" aria-current="page"' : ''; ?>><?php echo $label; ?></a>
+            <?php $tabIcons = ['/buy-tickets-online' => 'ticket', '/game-day-tickets' => 'trophy', '/concert-tickets-for-sale' => 'mic', '/buy-broadway-tickets' => 'masks', '/upcoming-music-festivals' => 'tent'];
+            foreach ($tabs as $href => $label) { ?>
+                <a href="<?php echo $href; ?>" <?php echo $href === $hub ? 'class="active"' . ($href === $basePath ? ' aria-current="page"' : '') : ''; ?>><?php echo function_exists('soCategoryTileIcon') ? soCategoryTileIcon($tabIcons[$href] ?? 'ticket') : ''; ?><span><?php echo $label; ?></span></a>
             <?php } ?>
         </nav>
-        <div class="so-chips">
+        <?php
+        // Sub-categories: links to pages that exist (each a genre or league page). The page you are on comes first and is
+        // highlighted; "All ..." and the rest follow, and the row has previous / next buttons when it is wider than the screen.
+        $hubSubs = isset(SO_HUB_ROOTS[$hub]) ? soHubSubcategories($hub) : [];
+        if ($hubSubs) {
+            $allLabel = soHubAllLabel($hub);
+            $curId = (int) ($opts['catId'] ?? 0);
+            $items = [['id' => 0, 'label' => $allLabel, 'href' => $hub]];
+            foreach ($hubSubs as $sub) { $items[] = $sub; }
+            // A category that belongs to this tab but is not in its API list (Comedy under Theater) still gets its own selected pill.
+            if ($curId > 0 && !in_array($curId, array_column($hubSubs, 'id'), true) && !empty($opts['label'])) { $items[] = ['id' => $curId, 'label' => (string) $opts['label'], 'href' => $basePath]; }
+            // The page you are on first (matched by category id, or by address for the hub itself), the rest keep their order.
+            $isCurrent = function ($it) use ($curId, $basePath) { return ($curId > 0 && $it['id'] === $curId) || ($curId === 0 && $it['href'] === $basePath) || $it['href'] === $basePath; };
+            usort($items, function ($x, $y) use ($isCurrent) { return ((int) $isCurrent($y)) <=> ((int) $isCurrent($x)); });
+            ?>
+        <div class="so-subcats-wrap" data-so-subs>
+            <button type="button" class="so-subcats__arrow so-subcats__arrow--prev" data-so-subs-prev aria-label="Previous categories" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+            <nav class="so-subcats" aria-label="<?php echo htmlspecialchars($allLabel, ENT_QUOTES, 'UTF-8'); ?> by type" data-so-subs-track>
+                <?php foreach ($items as $it) { $on = $isCurrent($it); ?><a class="so-subcat<?php echo $on ? ' so-subcat--on' : ''; ?>" href="<?php echo htmlspecialchars($it['href'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo $on ? ' aria-current="page"' : ''; ?>><?php echo htmlspecialchars($it['label'], ENT_QUOTES, 'UTF-8'); ?></a><?php } ?>
+            </nav>
+            <button type="button" class="so-subcats__arrow so-subcats__arrow--next" data-so-subs-next aria-label="More categories" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+        <?php } ?>
+        <div class="so-chips so-chips--one" role="group" aria-label="Filters">
             <div class="so-chip-wrap">
                 <button type="button" class="so-chip so-chip--on" data-so-loc aria-haspopup="dialog" aria-expanded="false">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
@@ -1729,25 +1896,50 @@ function renderExploreBar($basePath, array $opts = []) {
                     <button type="button" class="so-pop__row" data-so-loc-here>Use my current location</button>
                 </div>
             </div>
+            <?php
+            $dd = function ($key, $icon, $label, array $dopts, $current) {
+                $cur = isset($dopts[$current]) ? $current : (string) array_key_first($dopts);
+                echo '<details class="so-dd so-dd--near" data-so-dd="' . $key . '"><summary class="so-chip' . ($key !== 'sort' && (string) $cur !== '' && (string) $cur !== '0' ? ' so-chip--on' : '') . '" aria-label="' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '">' . $icon
+                    . '<span data-so-dd-label>' . htmlspecialchars($dopts[$cur], ENT_QUOTES, 'UTF-8') . '</span><svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="so-dd__menu">';
+                foreach ($dopts as $v => $l) {
+                    echo '<button type="button" class="so-pop__row' . ((string) $v === (string) $cur ? ' is-active' : '') . '" data-val="' . htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($l, ENT_QUOTES, 'UTF-8') . '</button>';
+                }
+                echo '</div></details>';
+            };
+            $icCal = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
+            $icDist = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>';
+            $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>';
+            $icPrice = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M16 7.5c0-1.7-1.8-3-4-3s-4 1.1-4 3 1.8 2.6 4 3.2 4 1.3 4 3.2-1.8 3-4 3-4-1.3-4-3"/></svg>';
+            $dd('when', $icCal, 'Dates', ['' => 'All dates'] + LISTING_WHEN, $when);
+            $dd('radius', $icDist, 'Distance', ['0' => 'Any distance', '25' => 'Within 25 miles', '50' => 'Within 50 miles', '100' => 'Within 100 miles', '250' => 'Within 250 miles'], (string) $radius);
+            $dd('max', $icPrice, 'Price', ['0' => 'Any price'] + array_map('strval', LISTING_PRICE), (string) $max);
+            $dd('sort', $icSort, 'Sort', $nearSorts, $sort);
+            ?>
         </div>
         <section class="so-near" data-so-near hidden aria-live="polite">
             <h2 class="so-near__title" data-so-near-title>Explore <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> near you</h2>
-            <div class="so-near__grid" data-so-near-grid></div>
+            <div class="list-category-bg so-near__card"><div class="section-artist-content event-row-all so-near__list" data-so-near-grid></div></div>
             <button type="button" class="so-near__more" data-so-near-more hidden>See more</button>
         </section>
+        <?php echo function_exists('soAdSlot') ? soAdSlot('mid') : ''; ?>
         <h2 class="so-allhead">All <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> in the USA</h2>
     </div>
     <?php
+    return true;
 }
 
 function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'popular', array $explore = []) {
-    $url = function ($w, $s) use ($basePath, $defaultSort) {
-        $q = array_filter(['when' => $w, 'sort' => $s === $defaultSort ? '' : $s]);
+    $max = (int) ($explore['max'] ?? 0);
+    $url = function ($w, $s) use ($basePath, $defaultSort, $max) {
+        $q = array_filter(['when' => $w, 'sort' => $s === $defaultSort ? '' : $s, 'max' => $max ?: '']);
         return htmlspecialchars($basePath . ($q ? '?' . http_build_query($q) : ''), ENT_QUOTES, 'UTF-8');
     };
-    renderExploreBar($basePath, $explore + ['when' => $when]);
+    $explored = renderExploreBar($basePath, $explore + ['when' => $when]);
     $whenLabel = $when !== '' ? LISTING_WHEN[$when] : 'All dates';
     $sortLabel = LISTING_SORT[$sort] ?? 'Best sellers';
+    // With the explore bar present its chips are the one set of filters (they also drive this list); the plain links below stay
+    // as the no-JavaScript fallback.
+    if ($explored) echo '<noscript>';
     ?>
     <div class="so-filterbar" role="group" aria-label="Filter and sort events">
         <details class="so-dd">
@@ -1757,9 +1949,9 @@ function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'p
                 <svg class="so-chip__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <div class="so-dd__menu">
-                <a class="so-pop__row<?php echo $when === '' ? ' is-active' : ''; ?>" href="<?php echo $url('', $sort); ?>"<?php echo $when === '' ? ' aria-current="true"' : ''; ?>>All dates</a>
+                <button type="button" class="so-pop__row<?php echo $when === '' ? ' is-active' : ''; ?>" data-go="<?php echo $url('', $sort); ?>"<?php echo $when === '' ? ' aria-current="true"' : ''; ?>>All dates</button>
                 <?php foreach (LISTING_WHEN as $key => $label) { ?>
-                    <a class="so-pop__row<?php echo $when === $key ? ' is-active' : ''; ?>" href="<?php echo $url($key, $sort); ?>"<?php echo $when === $key ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+                    <button type="button" class="so-pop__row<?php echo $when === $key ? ' is-active' : ''; ?>" data-go="<?php echo $url($key, $sort); ?>"<?php echo $when === $key ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></button>
                 <?php } ?>
             </div>
         </details>
@@ -1771,15 +1963,16 @@ function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'p
             </summary>
             <div class="so-dd__menu">
                 <?php foreach (LISTING_SORT as $key => $label) { ?>
-                    <a class="so-pop__row<?php echo $sort === $key ? ' is-active' : ''; ?>" href="<?php echo $url($when, $key); ?>"<?php echo $sort === $key ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+                    <button type="button" class="so-pop__row<?php echo $sort === $key ? ' is-active' : ''; ?>" data-go="<?php echo $url($when, $key); ?>"<?php echo $sort === $key ? ' aria-current="true"' : ''; ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></button>
                 <?php } ?>
             </div>
         </details>
-        <?php if ((int) $total === 0 && $when !== '') { ?>
-            <p class="listing-filter-empty">No events match <strong><?php echo htmlspecialchars(strtolower(LISTING_WHEN[$when]), ENT_QUOTES, 'UTF-8'); ?></strong>. <a href="<?php echo $url('', $sort); ?>">Show all dates</a>.</p>
+        <?php if (!$explored && (int) $total === 0 && $when !== '') { ?>
+            <p class="listing-filter-empty">No events match <strong><?php echo htmlspecialchars(strtolower(LISTING_WHEN[$when]), ENT_QUOTES, 'UTF-8'); ?></strong>. <button type="button" class="btn btn-link p-0 align-baseline" data-go="<?php echo $url('', $sort); ?>">Show all dates</button>.</p>
         <?php } ?>
     </div>
     <?php
+    if ($explored) echo '</noscript>';
 }
 
 function getAllEvents() {
@@ -1896,7 +2089,7 @@ function getTopSubcategories($rootPath, $limit = 8) {
         $rows[] = [
             'id'          => $id,
             'name'        => ucwords(strtolower($name)),
-            'slug'        => createSlug($name, $id),
+            'slug'        => soSlug('category', $name, $id),
             'ticketCount' => (int) ($cat['_metadata']['ticketCount'] ?? 0),
             'eventCount'  => (int) ($cat['_metadata']['eventCount'] ?? 0),
         ];
@@ -1985,17 +2178,13 @@ function getStoredImageUrl($name, $type) {
     return '';
 }
 
-function processAndStoreImage($imageUrl, $name, $type) {
+function processAndStoreImage($imageUrl, $name, $type, $storeKey = '') {
 
     if (!$imageUrl || !$name) return '';
 
-    $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
-    $clean = trim($slug, '-');
-    $key  = "{$type}/{$clean}.webp";
-
-    if (s3ObjectExists($key)) {
-        return getS3PublicUrl($key);
-    }
+    // Keyed by the imgkey hash (see imageStoreKey()), not by the entity slug. An object that already exists there is NOT
+    // adopted: the file is always the one the source just gave us, so the licence on the row is the licence of the file.
+    $key = $storeKey !== '' ? $storeKey : ($type . '/' . md5($type . '|' . trim((string) $name)) . '.webp');
 
     $imageContent = downloadImage($imageUrl);
     if (!$imageContent) return '';
@@ -2124,30 +2313,28 @@ function seoOffer($url, $price) {
     ];
 }
 
-/** Trim a <title> to ~60 characters at a word boundary, keeping the brand suffix when it fits. */
-function seoClampTitle($title, $max = 62) {
-    $title = trim(preg_replace('/\s+/', ' ', (string) $title));
-    if (mb_strlen($title) <= $max) return $title;
-    $brand = ' | Seat Outlet';
-    $base = $title;
-    if (mb_substr($title, -mb_strlen($brand)) === $brand) {
-        $base = mb_substr($title, 0, -mb_strlen($brand));
-        if (mb_strlen($base) + mb_strlen($brand) <= $max) return $title;
-    } else {
-        $brand = '';
+require_once __DIR__ . '/inc/title.php';   // soNormalizeTitle(), soTitle(), seoClampTitle(), SO_TITLE_BRAND
+
+
+/**
+ * A meta description of 120 to 155 characters: the main sentence, then the extra sentences in order while it is shorter
+ * than 120 characters (search results show about 155; a short one wastes the space a reason to click could use).
+ */
+function soMetaFit($text, ...$extras) {
+    $text = trim(preg_replace('/\s+/', ' ', (string) $text));
+    foreach ($extras as $x) {
+        if (mb_strlen($text) >= 120) break;
+        $x = trim((string) $x);
+        if ($x !== '' && mb_strlen($text . ' ' . $x) <= 155) $text .= ' ' . $x;
     }
-    $room = $max - mb_strlen($brand);
-    if (mb_strlen($base) > $room) {
-        $cut = mb_substr($base, 0, $room - 1);
-        $sp = mb_strrpos($cut, ' ');
-        $base = rtrim(($sp !== false && $sp > $room * 0.6) ? mb_substr($cut, 0, $sp) : $cut, " ,:;-\u{2013}") . "\u{2026}";
-    }
-    return $base . $brand;
+    return seoClampDescription($text);
 }
 
 /** Trim a meta description to ~155 characters at a word boundary. */
-function seoClampDescription($desc, $max = 158) {
+function seoClampDescription($desc, $max = 155) {
     $desc = trim(preg_replace('/\s+/', ' ', (string) $desc));
+    // No dashes in descriptions: " - ", " – " and " — " read as a pause, a comma says the same.
+    $desc = preg_replace('/\s+(?:-|\x{2013}|\x{2014})\s+|\x{2014}/u', ', ', $desc);
     if (mb_strlen($desc) <= $max) return $desc;
     $cut = mb_substr($desc, 0, $max - 1);
     $sp = mb_strrpos($cut, ' ');
@@ -2181,24 +2368,33 @@ function tnEntityUnavailable($r) {
     return !isset($r['id']) && !isset($r['alphaCode']) && !tnEntityDefinitelyMissing($r);
 }
 
-/** Friendly "not found" content with ways back to inventory (no header/footer). */
+/**
+ * Friendly "not found" content with a search box and ways back to inventory (no header/footer).
+ * Used by renderNotFoundPage() and 404.php, so every not-found answer on the site looks the same.
+ */
 function notFoundBlockHtml($what) {
     $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
-    return '<div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' not found</h1>'
-        . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place.</p>'
-        . '<div class="d-flex flex-wrap justify-content-center gap-2">'
-        . '<a class="btn btn-primary" href="/buy-tickets-online">Browse all events</a>'
-        . '<a class="so-linkchip" href="/concert-tickets-for-sale">Concerts</a>'
-        . '<a class="so-linkchip" href="/game-day-tickets">Sports</a>'
-        . '<a class="so-linkchip" href="/buy-broadway-tickets">Theater</a>'
-        . '<a class="so-linkchip" href="/city-events">Cities</a>'
+    $chips = [['/concert-tickets-for-sale', 'Concerts'], ['/game-day-tickets', 'Sports'], ['/buy-broadway-tickets', 'Theater'],
+              ['/upcoming-music-festivals', 'Festivals'], ['/city-events', 'Cities'], ['/all-artists-and-teams', 'Artists and teams']];
+    $links = '';
+    foreach ($chips as [$href, $label]) { $links .= '<a class="so-linkchip" href="' . $href . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>'; }
+    return '<div class="container py-5 text-center so-404">'
+        . '<p class="so-404__code" aria-hidden="true">404</p>'
+        . '<h1 class="fs-3 fw-bold mb-2">' . $w . ' not found</h1>'
+        . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place. Search for what you wanted, or pick a category below.</p>'
+        . '<form class="so-404__search" method="get" action="/search" role="search">'
+        . '<label class="visually-hidden" for="so404Q">Search for an artist, team, show or venue</label>'
+        . '<input id="so404Q" type="search" name="keywordHeader" placeholder="Artist, team, show or venue" autocomplete="off" maxlength="80">'
+        . '<button type="submit" class="btn btn-primary">Search</button></form>'
+        . '<div class="d-flex flex-wrap justify-content-center gap-2 mt-4">'
+        . '<a class="btn btn-primary" href="/buy-tickets-online">Browse all events</a>' . $links
         . '</div></div>';
 }
 
 /** "Try again in a moment" content for when the ticket feed failed (no header/footer). */
 function unavailableBlockHtml($what) {
     $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
-    return '<div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' temporarily unavailable</h1>'
+    return '<meta http-equiv="refresh" content="15"><div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' temporarily unavailable</h1>'
         . '<p class="text-muted mb-4">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
         . '<div class="d-flex flex-wrap justify-content-center gap-2">'
         . '<a class="btn btn-primary" href="">Try again</a>'
@@ -2211,10 +2407,11 @@ function unavailableBlockHtml($what) {
 
 /** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, noindex, never cached. */
 function renderUnavailablePage($what) {
+    soSnapshotServe();   // the last good copy of this very page beats an error page
     http_response_code(503);
     header('Retry-After: 30');
     $pageRobots = 'noindex, follow';
-    $pageMetaTitle = $what . ' temporarily unavailable | Seat Outlet';
+    $pageMetaTitle = soTitle($what . ' Temporarily Unavailable');
     $pageMetaDescription = 'This page is temporarily unavailable. Please try again in a moment.';
     include 'header.php';
     echo unavailableBlockHtml($what);
@@ -2229,12 +2426,15 @@ function renderUnavailablePage($what) {
  * never tell search engines that live pages are gone.
  */
 function renderNotFoundPage($what, $apiResponse = null) {
-    if ($apiResponse !== null && tnEntityUnavailable($apiResponse)) {
+    // Callers that do not hand over the API response (category, state, country pages): a request that already
+    // failed in this process (throttled, down, circuit open) marks the page degraded, and that is a retryable
+    // 503, never a 404 that would drop live menu pages from search engines.
+    if (($apiResponse !== null && tnEntityUnavailable($apiResponse)) || ($apiResponse === null && !empty($GLOBALS['tn_degraded']))) {
         renderUnavailablePage($what);
     }
     http_response_code(404);
     $pageRobots = 'noindex, follow';
-    $pageMetaTitle = $what . ' not found | Seat Outlet';
+    $pageMetaTitle = soTitle($what . ' Not Found');
     $pageMetaDescription = 'The page you were looking for could not be found. Browse concerts, sports, theater and festival tickets on Seat Outlet.';
     include 'header.php';
     echo notFoundBlockHtml($what);
@@ -2255,6 +2455,12 @@ function soAsset($rel) {
     $min = preg_replace('/\.(css|js)$/', '.min.$1', $rel);
     $file = __DIR__ . '/' . $min;
     if ($min !== $rel && is_file($file)) {
+        // The live Cloudflare Worker answers exactly /js/main.min.js and /js/home.min.js itself, from a fixed GitHub commit,
+        // so later deploys of those two files would never reach seatoutlet.com. "/js//main.min.js" is the same file on the
+        // server (nginx merges slashes) but not a path the Worker intercepts, so live always gets the deployed version.
+        if (in_array($min, ['js/main.min.js', 'js/home.min.js'], true)) {
+            return rtrim(HOME_URL, '/') . '/js//' . basename($min) . '?v=' . filemtime($file);
+        }
         return rtrim(HOME_URL, '/') . '/' . $min . '?v=' . filemtime($file);
     }
     $file = __DIR__ . '/' . $rel;
@@ -2369,7 +2575,7 @@ function soSeoPlan($path = null) {
     return [
         'keyword' => $kw,
         'title' => $title !== null ? str_replace('{Y}', date('Y'), $title) : null,
-        'description' => $desc,
+        'description' => $desc !== null ? str_replace('{Y}', date('Y'), $desc) : null,
         'volume' => $vol, 'difficulty' => $kd, 'scored' => $scored,
     ];
 }
@@ -2402,7 +2608,7 @@ function soFocusKeyword() {
 }
 
 /**
- * Output filter for the page body. The keyword strip is the page's one <h1>; any other <h1> a page template prints
+ * Output filter for the page body. The page's first <h1> (the keyword strip; on event pages the event title) is its one <h1>; any other <h1> a page template prints
  * becomes an <h2 class="h1 ..."> so it keeps its look (css/style.css styles ".h1" like "h1") and the page has a
  * single H1. Turn off with KEYWORD_H1=0 in the environment.
  */
@@ -2413,7 +2619,7 @@ function soSingleH1($html) {
             if ($demoted) { $demoted = false; return '</h2>'; }
             return $m[0];
         }
-        if (!$stripSeen && strpos($m[2], 'so-keyword-h1') !== false) { $stripSeen = true; return $m[0]; }
+        if (!$stripSeen) { $stripSeen = true; return $m[0]; }   // the first h1 on the page (the keyword strip, or the event title where there is no strip) stays
         $demoted = true;
         $attrs = $m[2];
         if (preg_match('/\bclass\s*=\s*(["\'])(.*?)\1/i', $attrs)) {
@@ -2430,6 +2636,48 @@ function soSingleH1($html) {
  * /event.php?id=123 and /event?id=123 forms. Send visitors and crawlers to the one real address with a permanent
  * redirect; before this they got a duplicate page titled "Performers.php" or "Event.php".
  */
+/**
+ * One public host. www.seatoutlet.com used to answer with the whole site (and canonical tags pointing at www), so search
+ * engines saw two copies. Requests for a www host get a 301 to the same path on the bare domain. The live Cloudflare Worker
+ * forwards the visitor's host in X-Forwarded-Host (it fetches from the beta origin), so that header is checked first.
+ */
+function soRedirectWwwHost() {
+    if (PHP_SAPI === 'cli' || headers_sent()) return;
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
+    $host = strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? ''))[0]));
+    $host = preg_replace('/:\d+$/', '', $host);
+    if (strpos($host, 'www.') !== 0 || !preg_match('/^www\.[a-z0-9.-]+$/', $host)) return;
+    header('Location: https://' . substr($host, 4) . ((string) ($_SERVER['REQUEST_URI'] ?? '/')), true, 301);
+    header('Cache-Control: public, max-age=86400');
+    exit;
+}
+
+/**
+ * Paths that are not pages for search results: data endpoints, checkout, newsletter forms, admin. robots.txt is supposed to
+ * keep crawlers out of them, but the live Worker serves its own robots.txt without those rules, so the responses themselves
+ * say noindex (a header, which works for JSON too and survives the Worker).
+ */
+function soNoindexPrivatePaths() {
+    if (PHP_SAPI === 'cli' || headers_sent()) return;
+    $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+    if (preg_match('#^/(ajax|admin|cron|tools|checkout|newsletter|unsubscribe|order-confirmation|thank-you)(/|\.php|$)#', $path)) {
+        header('X-Robots-Tag: noindex, nofollow');
+    }
+}
+
+/** Output filter: canonical and og:url point at SO_PUBLIC_ORIGIN instead of this server's own HOME_URL. */
+function soPublicCanonical($html) {
+    // Cloudflare's email obfuscation rewrites every address into a /cdn-cgi/l/email-protection link, which answers 404 to a crawler.
+    // Cloudflare skips whatever sits between these two comments, so addresses (and mailto links) stay as written.
+    if (stripos($html, '<body') !== false && strpos($html, 'email_off') === false) {
+        $html = preg_replace('#(<body\b[^>]*>)#i', '$1<!--email_off-->', $html, 1);
+        $html = preg_replace('#</body>#i', '<!--/email_off--></body>', $html, 1);
+    }
+    $from = rtrim(HOME_URL, '/');
+    if ($from === SO_PUBLIC_ORIGIN) return $html;
+    return preg_replace('#(<link rel="canonical" href="|<meta property="og:url" content=")' . preg_quote($from, '#') . '#', '$1' . SO_PUBLIC_ORIGIN, $html);
+}
+
 function soRedirectLegacyUrl() {
     if (PHP_SAPI === 'cli' || headers_sent()) return;
     if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
@@ -2440,7 +2688,7 @@ function soRedirectLegacyUrl() {
     if (($path === '/event.php' || $path === '/event') && isset($_GET['id']) && ctype_digit((string) $_GET['id']) && (int) $_GET['id'] > 0) {
         $ev = getTnEventById((int) $_GET['id']);
         if (!tnEntityMissing($ev) && !empty($ev['text']['name'])) {
-            $to = '/event/' . createSlug($ev['text']['name'], (int) $_GET['id']);
+            $to = '/event/' . soEventSlug($ev);
             $qs = '';   // the id is now in the path
         } elseif (tnEntityDefinitelyMissing($ev)) {
             http_response_code(404);   // an id that does not exist is a real 404, not a 200 page that says "not found"
@@ -2452,16 +2700,120 @@ function soRedirectLegacyUrl() {
     if ($to === null) return;
     http_response_code(301);
     header('Location: ' . $to . ($qs !== '' ? '?' . $qs : ''));
+    // A redirect that carries an email address, or leads to a private page, must not sit in a shared cache.
+    $privateTarget = in_array($to, ['/checkout', '/order-confirmation', '/thank-you', '/unsubscribe'], true) || stripos($qs, 'email') !== false;
+    header('Cache-Control: ' . ($privateTarget ? 'private, no-store' : 'public, max-age=3600'));
+    exit;
+}
+
+/**
+ * Addresses people (and old links) commonly guess for pages that exist under another name: a permanent redirect to the real page
+ * instead of a 404. Each guessed address is a tiny file in the web root that calls this with its target (terms-of-use.php, venues.php ...),
+ * so it works with the web server's plain "try the .php file" rule; 404.php also calls it with no target for servers that send unknown
+ * addresses there.
+ */
+function soAliasRedirect($to = null) {
+    if (PHP_SAPI === 'cli' || headers_sent()) return;
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
+    if ($to === null) {
+        $path = rtrim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+        $aliases = [
+            '/terms' => '/terms-and-conditions', '/terms-of-use' => '/terms-and-conditions', '/terms-of-service' => '/terms-and-conditions',
+            '/terms-conditions' => '/terms-and-conditions', '/privacy' => '/privacy-policy', '/venues' => '/city-events', '/about' => '/about-seat-outlet',
+            '/contact-us' => '/ticket-customer-service', '/artists' => '/all-artists-and-teams',
+        ];
+        $to = $aliases[$path] ?? null;
+    }
+    if ($to === null || !is_file(__DIR__ . '/' . ltrim($to, '/') . '.php')) return;
+    http_response_code(301);
+    header('Location: ' . $to);
     header('Cache-Control: public, max-age=3600');
     exit;
 }
 
-/** Output-buffer callback: a page that rendered without API data is never CDN-cached. */
-function soDegradedGuard($buffer) {
+/**
+ * Output-buffer callback: a page that rendered without API data is never CDN-cached; a page that rendered fully (200, with data) is
+ * kept as a snapshot, so a later TicketNetwork outage or throttling window can serve it instead of an error page.
+ */
+function soDegradedGuard($buffer, $phase = null) {
     if (!empty($GLOBALS['tn_degraded']) && !headers_sent()) {
         header('Cache-Control: no-store');
     }
+    if (empty($GLOBALS['tn_degraded']) && (http_response_code() ?: 200) === 200
+        && ($phase === null || (($phase & PHP_OUTPUT_HANDLER_START) && ($phase & PHP_OUTPUT_HANDLER_FINAL)))) {
+        soSnapshotStore($buffer);
+    }
     return $buffer;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Page snapshots: the last good copy of a page, served when the live one cannot be built
+|--------------------------------------------------------------------------
+| TicketNetwork throttles (HTTP 429) or goes down now and then. A page that is not in the data cache then used to answer "temporarily
+| unavailable". Now every page that renders completely is also stored here (gzip, one file per URL under cache/pages/), and
+| renderUnavailablePage() serves that copy, up to 14 days old, instead of an error. Only a page that was never rendered before and
+| cannot be built right now still answers 503 (never cached, retried by the visitor and by search engines). cron/warm-snapshots.php
+| visits the sitemap URLs slowly so that case stays rare.
+*/
+const SO_SNAPSHOT_MAX_AGE = 1209600;   // 14 days
+const SO_SNAPSHOT_MIN_BYTES = 15000;   // anything smaller is a fragment or an error page, never kept
+
+/** The snapshot file for this request, or null when the request is not one we keep (not a plain GET, filtered, private). */
+function soSnapshotFile(?string $uri = null): ?string {
+    if (PHP_SAPI === 'cli' && $uri === null) return null;
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET' && $uri === null) return null;
+    $uri = $uri ?? (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $path = rtrim((string) parse_url($uri, PHP_URL_PATH), '/') ?: '/';
+    parse_str((string) parse_url($uri, PHP_URL_QUERY), $q);
+    unset($q['slug'], $q['loc']);
+    if ($q && array_keys($q) !== ['page']) return null;   // filters, sorts, tracking tags: not the page
+    if (preg_match('#^/(admin|ajax|cron|checkout|order-confirmation|thank-you|unsubscribe|search|newsletter)(/|$)#', $path)) return null;
+    $key = sha1(strtolower($path) . ($q ? '?page=' . (int) $q['page'] : ''));
+    $dir = __DIR__ . '/cache/pages/' . substr($key, 0, 2);
+    return $dir . '/' . $key . '.html.gz';
+}
+
+function soSnapshotStore(string $html): void {
+    if (strlen($html) < SO_SNAPSHOT_MIN_BYTES || stripos($html, '<html') === false) return;
+    // A page that tells search engines not to index it (an empty listing, an error) is not a page worth showing in place of a good one.
+    if (preg_match('/<meta[^>]+name=["\']robots["\'][^>]+content=["\'][^"\']*noindex/i', $html)) return;
+    $file = soSnapshotFile();
+    if ($file === null) return;
+    // Rewrite at most every 10 minutes per page: the cost is a gzip and a file write, not worth doing on every view.
+    if (is_file($file) && (time() - (int) @filemtime($file)) < 600) return;
+    $dir = dirname($file);
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) return;
+    $tmp = $file . '.' . getmypid() . '.tmp';
+    $gz = @gzencode($html, 6);
+    if ($gz !== false && @file_put_contents($tmp, $gz, LOCK_EX) !== false) { @rename($tmp, $file); } else { @unlink($tmp); }
+    if (mt_rand(1, 400) === 1) soSnapshotSweep();
+}
+
+/** Delete snapshots older than the serve window. */
+function soSnapshotSweep(): void {
+    $cut = time() - SO_SNAPSHOT_MAX_AGE - 86400;
+    foreach (glob(__DIR__ . '/cache/pages/*/*.html.gz') ?: [] as $f) {
+        if ((int) @filemtime($f) < $cut) @unlink($f);
+    }
+}
+
+/** Serve this request's snapshot (HTTP 200, short CDN lifetime, marked stale) and stop. Returns false when there is none. */
+function soSnapshotServe(): bool {
+    if (headers_sent()) return false;
+    $file = soSnapshotFile();
+    if ($file === null || !is_file($file) || (time() - (int) @filemtime($file)) > SO_SNAPSHOT_MAX_AGE) return false;
+    $gz = @file_get_contents($file);
+    $html = $gz === false ? false : @gzdecode($gz);
+    if (!is_string($html) || $html === '') return false;
+    while (ob_get_level() > 0) { @ob_end_clean(); }
+    http_response_code(200);
+    header('Content-Type: text/html; charset=UTF-8');
+    header('Cache-Control: public, max-age=0, s-maxage=60');
+    header('X-Page-Snapshot: stale');
+    header_remove('Retry-After');
+    echo $html;
+    exit;
 }
 
 function getTnCityEvents($cityId = 0, $params = []) {
@@ -2581,15 +2933,6 @@ function getTopFestivalPerformers() {
     return $data['performers']['results'] ?? [];
 }
 
-function createSlug($name, $id) {
-    $name = strtolower(trim($name));
-    $name = preg_replace('/[^a-z0-9\s-]/', '', $name);
-    $name = preg_replace('/\s+/', '-', $name);
-    $name = preg_replace('/-+/', '-', $name);
-    $slug = $name . '-' . $id;
-    return $slug;
-}
-
 function getTnCityById($cityId) {
     $endpoint = "/catalog/v2/cities/" . (int) $cityId;
     return tnRequest($endpoint);
@@ -2623,7 +2966,18 @@ function getTnCatEventsCount($catId = 0, $params = []) {
 function getTnCatById($catId) {
     $params['filter'] = "contains(path, '." . (int) $catId . ".') and depth eq 2";
     $params['perPage'] = 1;
-    return tnRequest("/catalog/v2/categories/", $params);
+    $r = tnRequest("/catalog/v2/categories/", $params);
+    if (!empty($r['results'])) return $r;
+    // Deeper categories (the MLB, NBA, NHL and MLS ones sit under their sport, named "Professional (MLB)"): look at any depth
+    // and take the entry whose path ends with this id, so a descendant is never mistaken for it.
+    $r = tnRequest("/catalog/v2/categories/", ['filter' => "contains(path, '." . (int) $catId . ".')", 'perPage' => 10]);
+    foreach ($r['results'] ?? [] as $c) {
+        if (substr((string) ($c['path'] ?? ''), -strlen('.' . (int) $catId . '.')) === '.' . (int) $catId . '.') {
+            $r['results'] = [$c];
+            return $r;
+        }
+    }
+    return ['results' => []];
 }
 
 
@@ -3090,7 +3444,7 @@ function getContentBlock($pagePath, $blockKey, $defaultHtml, $mysqli = MYSQLI) {
     if (function_exists('apcu_fetch')) {
         $cached = apcu_fetch($cacheKey, $success);
         if ($success) {
-            return $cached !== null && $cached !== '' ? $cached : $defaultHtml;
+            return $cached !== null && $cached !== '' ? soNoDashes((string) $cached) : $defaultHtml;
         }
     }
 
@@ -3112,7 +3466,7 @@ function getContentBlock($pagePath, $blockKey, $defaultHtml, $mysqli = MYSQLI) {
         apcu_store($cacheKey, $content, CONTENT_BLOCK_CACHE_TTL);
     }
 
-    return $content !== null && $content !== '' ? $content : $defaultHtml;
+    return $content !== null && $content !== '' ? soNoDashes((string) $content) : $defaultHtml;
 }
 
 function contentBlockCacheForget($pagePath, $blockKey) {
@@ -3287,7 +3641,7 @@ function deletePageContentBlock($id, $mysqli = MYSQLI) {
  * Blog (blog_posts table - db/migrations/0004_blog_posts.sql). Same CRUD
  * shape as page_rules above: list/get/save/delete, admin-facing, no caching
  * layer (unlike page_rules this isn't hit on every single front-end page
- * load, just blog.php/blog-post.php, so it doesn't need one).
+ * load, just blog.php (list and article), so it doesn't need one).
  */
 function blogGenerateUniqueSlug($title, ?int $excludeId = null, $mysqli = MYSQLI) {
     $base = sanitize_title($title);
@@ -3361,22 +3715,29 @@ function getBlogPostBySlug($slug, bool $onlyPublished = true, $mysqli = MYSQLI) 
     return $row ?: null;
 }
 
-function countPublishedBlogPosts($mysqli = MYSQLI) {
-    $result = $mysqli->query(
-        'SELECT COUNT(*) AS c FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()'
-    );
-    $row = $result->fetch_assoc();
+function countPublishedBlogPosts(?string $category = null, $mysqli = MYSQLI) {
+    $sql = 'SELECT COUNT(*) AS c FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()'
+         . ($category !== null ? ' AND category = ?' : '');
+    $stmt = $mysqli->prepare($sql);
+    if ($category !== null) $stmt->bind_param('s', $category);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
     return (int) ($row['c'] ?? 0);
 }
 
-function listPublishedBlogPosts(int $page = 1, int $perPage = 10, $mysqli = MYSQLI) {
+function listPublishedBlogPosts(int $page = 1, int $perPage = 10, ?string $category = null, $mysqli = MYSQLI) {
     $page = max(1, $page);
     $offset = ($page - 1) * $perPage;
     $stmt = $mysqli->prepare(
-        'SELECT * FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()
-         ORDER BY published_at DESC LIMIT ? OFFSET ?'
+        'SELECT * FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()'
+        . ($category !== null ? ' AND category = ?' : '') . ' ORDER BY published_at DESC LIMIT ? OFFSET ?'
     );
-    $stmt->bind_param('ii', $perPage, $offset);
+    if ($category !== null) {
+        $stmt->bind_param('sii', $category, $perPage, $offset);
+    } else {
+        $stmt->bind_param('ii', $perPage, $offset);
+    }
     $stmt->execute();
     $result = $stmt->get_result();
     $rows = [];
@@ -3387,6 +3748,24 @@ function listPublishedBlogPosts(int $page = 1, int $perPage = 10, $mysqli = MYSQ
     return $rows;
 }
 
+/** Categories that have at least one published post, largest first: [['name' => 'City Guides', 'slug' => 'city-guides', 'count' => 3], ...] */
+function listBlogCategories($mysqli = MYSQLI) {
+    try {
+        $res = $mysqli->query(
+            'SELECT category, COUNT(*) AS c FROM blog_posts WHERE status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW()
+             AND category IS NOT NULL AND category <> \'\' GROUP BY category ORDER BY c DESC, category ASC'
+        );
+        $out = [];
+        while ($res && ($r = $res->fetch_assoc())) {
+            $out[] = ['name' => $r['category'], 'slug' => sanitize_title($r['category']), 'count' => (int) $r['c']];
+        }
+        return $out;
+    } catch (Throwable $e) {   // the category column comes from a migration: a site where it has not run yet should still show the blog
+        error_log('listBlogCategories: ' . $e->getMessage());
+        return [];
+    }
+}
+
 function saveBlogPost(array $data, $mysqli = MYSQLI) {
     $id              = (int) ($data['id'] ?? 0);
     $title           = trim((string) ($data['title'] ?? ''));
@@ -3395,6 +3774,8 @@ function saveBlogPost(array $data, $mysqli = MYSQLI) {
     $content         = (string) ($data['content'] ?? '');
     $featuredImage   = trim((string) ($data['featured_image'] ?? '')) ?: null;
     $authorName      = trim((string) ($data['author_name'] ?? '')) ?: null;
+    $category        = mb_substr(trim((string) ($data['category'] ?? '')), 0, 60) ?: null;
+    $liveSearch      = mb_substr(trim((string) ($data['live_search'] ?? '')), 0, 120) ?: null;
     $metaTitle       = trim((string) ($data['meta_title'] ?? '')) ?: null;
     $metaDescription = trim((string) ($data['meta_description'] ?? '')) ?: null;
     $status          = ($data['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
@@ -3435,24 +3816,24 @@ function saveBlogPost(array $data, $mysqli = MYSQLI) {
     if ($id > 0) {
         $stmt = $mysqli->prepare(
             'UPDATE blog_posts SET title = ?, focus_keyword = ?, slug = ?, excerpt = ?, content = ?, featured_image = ?,
-             author_name = ?, meta_title = ?, meta_description = ?, status = ?, published_at = ?, updated_at = NOW()
+             category = ?, live_search = ?, author_name = ?, meta_title = ?, meta_description = ?, status = ?, published_at = ?, updated_at = NOW()
              WHERE ID = ?'
         );
         $stmt->bind_param(
-            'sssssssssssi',
+            'sssssssssssssi',
             $title, $focusKeyword, $slug, $excerpt, $content, $featuredImage,
-            $authorName, $metaTitle, $metaDescription, $status, $publishedAt, $id
+            $category, $liveSearch, $authorName, $metaTitle, $metaDescription, $status, $publishedAt, $id
         );
     } else {
         $stmt = $mysqli->prepare(
             'INSERT INTO blog_posts
-             (title, focus_keyword, slug, excerpt, content, featured_image, author_name, meta_title, meta_description, status, published_at, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+             (title, focus_keyword, slug, excerpt, content, featured_image, category, live_search, author_name, meta_title, meta_description, status, published_at, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
         );
         $stmt->bind_param(
-            'sssssssssss',
+            'sssssssssssss',
             $title, $focusKeyword, $slug, $excerpt, $content, $featuredImage,
-            $authorName, $metaTitle, $metaDescription, $status, $publishedAt
+            $category, $liveSearch, $authorName, $metaTitle, $metaDescription, $status, $publishedAt
         );
     }
     $ok = $stmt->execute();
@@ -3460,6 +3841,19 @@ function saveBlogPost(array $data, $mysqli = MYSQLI) {
     $stmt->close();
     if (!$ok) {
         throw new RuntimeException($error ?: 'Could not save this post.');
+    }
+
+    // Featured image alt text lives in a column added by migration 0036; a site where it has not run yet still saves.
+    if (array_key_exists('featured_image_alt', $data)) {
+        try {
+            $alt = mb_substr(trim((string) $data['featured_image_alt']), 0, 255) ?: null;
+            $st = $mysqli->prepare('UPDATE blog_posts SET featured_image_alt = ? WHERE slug = ?');
+            $st->bind_param('ss', $alt, $slug);
+            $st->execute();
+            $st->close();
+        } catch (Throwable $e) {
+            error_log('saveBlogPost: featured_image_alt not saved (run db/migrate.php): ' . $e->getMessage());
+        }
     }
 
     return true;
@@ -3505,22 +3899,127 @@ function deleteBlogPost($id, $mysqli = MYSQLI) {
  */
 function buildEventPerformerSchema(array $event) {
     $performers = $event['performers'] ?? [];
+    $type = soPerformerSchemaType((string) ($event['defaultCategory']['path'] ?? ($event['categories'][0]['path'] ?? '')));
     if (empty($performers)) {
-        return [
-            "@type" => "PerformingGroup",
-            "name" => $event['text']['name'] ?? '',
-        ];
+        return ["@type" => $type, "name" => $event['text']['name'] ?? ''];
     }
-    if (count($performers) === 1) {
-        return [
-            "@type" => "PerformingGroup",
-            "name" => $performers[0]['name'] ?? ($event['text']['name'] ?? ''),
-        ];
+    $nodes = array_map(function ($p) use ($type) {
+        $name = (string) ($p['name'] ?? '');
+        $node = ["@type" => $type, "name" => $name];
+        if (!empty($p['id']) && $name !== '') {
+            $artistUrl = HOME_URL . '/artist/' . soSlug('performer', $name, (int) $p['id']);
+            $node['@id'] = $artistUrl . '#performer';
+            $node['url'] = $artistUrl;
+        }
+        return $node;
+    }, $performers);
+    return count($nodes) === 1 ? $nodes[0] : $nodes;
+}
+
+/** Breadcrumb step for a category hub path (the tab a genre or league sits under). */
+function soFamilyCrumb($hubPath) {
+    $names = ['/concert-tickets-for-sale' => 'Concerts', '/game-day-tickets' => 'Sports', '/buy-broadway-tickets' => 'Theater', '/upcoming-music-festivals' => 'Festivals'];
+    $hubPath = isset($names[$hubPath]) ? $hubPath : '/buy-tickets-online';
+    return ['label' => $names[$hubPath] ?? 'Events', 'url' => HOME_URL . $hubPath];
+}
+
+/** ItemList of up to 20 Event nodes for a listing page, or null when there is nothing listed. */
+function soEventItemList(array $events, $pageUrl) {
+    $items = [];
+    foreach (array_slice($events, 0, 20) as $ev) {
+        if (empty($ev['text']['name']) || (empty($ev['date']['date']) && empty($ev['date']['datetime']))) continue;
+        $items[] = ['@type' => 'ListItem', 'position' => count($items) + 1, 'item' => soEventNode($ev)];
     }
-    return array_map(fn($p) => [
-        "@type" => "PerformingGroup",
-        "name" => $p['name'] ?? '',
-    ], $performers);
+    if (!$items) return null;
+    $list = ['@type' => 'ItemList', 'itemListOrder' => 'https://schema.org/ItemListOrderAscending', 'numberOfItems' => count($items), 'itemListElement' => $items];
+    if ($pageUrl !== '') $list['@id'] = rtrim((string) $pageUrl, '/') . '#events';
+    return $list;
+}
+
+/** schema.org event status from TicketNetwork's scheduleStatus ("On Schedule", "Rescheduled", "Indefinitely Postponed", "Cancelled"). */
+function soEventStatusUrl(array $event) {
+    $st = strtolower((string) ($event['scheduleStatus'] ?? ''));
+    if (strpos($st, 'cancel') !== false) return 'https://schema.org/EventCancelled';
+    if (strpos($st, 'postpone') !== false) return 'https://schema.org/EventPostponed';
+    if (strpos($st, 'reschedul') !== false) return 'https://schema.org/EventRescheduled';
+    return 'https://schema.org/EventScheduled';
+}
+
+/** schema.org type for a performer, from the TicketNetwork category path: a team for sports, a theater group for shows, else a music group. */
+function soPerformerSchemaType($catPath) {
+    $catPath = (string) $catPath;
+    if (strpos($catPath, '.1872.') !== false) return 'PerformingGroup';   // comedy: a comedian or a comedy show, not a music group
+    if (defined('TN_CATEGORY_PATH_SPORTS') && strpos($catPath, TN_CATEGORY_PATH_SPORTS) === 0) return 'SportsTeam';
+    if (defined('TN_CATEGORY_PATH_THEATER') && strpos($catPath, TN_CATEGORY_PATH_THEATER) === 0) return 'TheaterGroup';
+    if (defined('TN_CATEGORY_PATH_CONCERTS') && strpos($catPath, TN_CATEGORY_PATH_CONCERTS) === 0) return 'MusicGroup';
+    return 'PerformingGroup';
+}
+
+/**
+ * One schema.org Event node for a TicketNetwork event, the same everywhere (event page, artist page, listings).
+ * Offers are TicketNetwork's own live figures: lowest and highest listed price and the number of tickets listed, never estimated.
+ * $venue: the venue's own record (street address, postal code, geo) when the caller has it.
+ * No "organizer": Seat Outlet resells tickets, it does not organize the event, and the API does not name the promoter.
+ */
+function soEventNode(array $event, array $opts = []) {
+    $name = (string) ($event['text']['name'] ?? '');
+    $id = (int) ($event['id'] ?? 0);
+    $url = HOME_URL . '/event/' . soEventSlug($event);
+    $venueName = (string) ($event['venue']['text']['name'] ?? '');
+    $venueId = (int) ($event['venue']['id'] ?? 0);
+    $place = ['@type' => 'Place', 'name' => $venueName];
+    if ($venueId > 0 && $venueName !== '') {
+        $place['@id'] = HOME_URL . '/venue/' . soVenueSlug($venueName, $venueId, soPlaceLabel($event)) . '#place';
+        $place['url'] = HOME_URL . '/venue/' . soVenueSlug($venueName, $venueId, soPlaceLabel($event));
+    }
+    $address = [
+        '@type' => 'PostalAddress',
+        'addressLocality' => (string) ($event['city']['text']['name'] ?? ''),
+        'addressRegion' => (string) ($event['stateProvince']['text']['abbr'] ?? ''),
+        'addressCountry' => (string) ($event['country']['alphaCode'] ?? 'US'),
+    ];
+    $v = $opts['venue'] ?? null;
+    if (is_array($v)) {
+        $street = trim((string) ($v['address']['text']['address1'] ?? ''));
+        if ($street !== '') $address['streetAddress'] = $street;
+        $zip = (string) ($v['address']['postalCode'] ?? ($v['postalCode'] ?? ''));
+        if (is_string($zip) && $zip !== '' && $zip !== '00000') $address['postalCode'] = $zip;
+        $geo = $v['geoLocation'] ?? ($v['address']['geoLocation'] ?? []);
+        if (isset($geo['latitude'], $geo['longitude']) && (float) $geo['latitude'] != 0.0) {
+            $place['geo'] = ['@type' => 'GeoCoordinates', 'latitude' => (float) $geo['latitude'], 'longitude' => (float) $geo['longitude']];
+        }
+    }
+    $place['address'] = $address;
+    $node = [
+        '@type' => 'Event',
+        '@id' => $url . '#event',
+        'name' => $name,
+        'startDate' => (string) ($event['date']['datetimeOffset'] ?? ($event['date']['datetime'] ?? ($event['date']['date'] ?? ''))),
+        'eventStatus' => soEventStatusUrl($event),
+        'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
+        'url' => $url,
+        'location' => $place,
+        'performer' => buildEventPerformerSchema($event),
+    ];
+    if (!empty($opts['image'])) $node['image'] = [(string) $opts['image']];
+    if (!empty($opts['description'])) $node['description'] = (string) $opts['description'];
+    $low = (float) ($event['pricingInfo']['lowPrice']['value'] ?? 0);
+    if (!empty($event['_metadata']['hasTickets']) && $low > 0) {
+        $offer = [
+            '@type' => 'AggregateOffer',
+            'url' => $url,
+            'lowPrice' => number_format($low, 2, '.', ''),
+            'priceCurrency' => 'USD',
+            'availability' => 'https://schema.org/InStock',
+            'seller' => ['@id' => HOME_URL . '/#organization'],
+        ];
+        $high = (float) ($event['pricingInfo']['highPrice']['value'] ?? 0);
+        if ($high >= $low) $offer['highPrice'] = number_format($high, 2, '.', '');
+        $count = (int) ($event['_metadata']['ticketCount'] ?? 0);
+        if ($count > 0) $offer['offerCount'] = $count;
+        $node['offers'] = $offer;
+    }
+    return $node;
 }
 
 function buildOrganizationSchema() {
@@ -3543,7 +4042,15 @@ function buildOrganizationSchema() {
             "url" => HOME_URL . "/images/seatoutlet-logo.webp"
         ],
         "image" => HOME_URL . "/images/seatoutlet-logo.webp",
-        "description" => "Verified ticket marketplace network to buy concert, sports, theater, and live event tickets online.",
+        "description" => "Independent resale ticket marketplace for concerts, sports, theater and festivals. Listings come from the TicketNetwork marketplace and every order is backed by a 100% guarantee.",
+        "email" => "support@seatoutlet.com",
+        "contactPoint" => [
+            "@type" => "ContactPoint",
+            "contactType" => "customer service",
+            "email" => "support@seatoutlet.com",
+            "url" => HOME_URL . "/ticket-customer-service",
+            "availableLanguage" => ["English"],
+        ],
         "sameAs" => [
             "https://www.facebook.com/profile.php?id=61588886945534",
             "https://www.instagram.com/seatoutlet/",
@@ -3559,9 +4066,16 @@ function buildWebsiteSchema() {
         "@id" => HOME_URL . "/#website",
         "url" => HOME_URL . "/",
         "name" => "Seat Outlet",
+        "inLanguage" => "en-US",
         "publisher" => [
             "@id" => HOME_URL . "/#organization"
-        ]
+        ],
+        // The site search box: /search?keywordHeader=<what you typed>.
+        "potentialAction" => [
+            "@type" => "SearchAction",
+            "target" => ["@type" => "EntryPoint", "urlTemplate" => HOME_URL . "/search?keywordHeader={search_term_string}"],
+            "query-input" => "required name=search_term_string",
+        ],
     ];
 }
 
@@ -3635,9 +4149,15 @@ function buildFaqPageSchema(array $faqs) {
  *                     and $url its real, canonical public URL.
  */
 function buildArticleSchema(array $post, string $url) {
+    // Absolute image URL: structured data and link previews need one, and the featured image is stored as a site path.
+    $img = trim((string) ($post['featured_image'] ?? ''));
+    if ($img !== '' && !preg_match('#^https?://#i', $img)) {
+        $img = rtrim(HOME_URL, '/') . '/' . ltrim($img, '/');
+    }
     $node = [
         "@type" => "Article",
         "@id" => $url . '#article',
+        // The page itself is described right here, so the reference does not point at a node that is not in the graph.
         "mainEntityOfPage" => ["@id" => $url . '#webpage'],
         "headline" => $post['title'] ?? '',
         "description" => $post['meta_description'] ?? ($post['excerpt'] ?? ''),
@@ -3645,13 +4165,128 @@ function buildArticleSchema(array $post, string $url) {
         "dateModified" => !empty($post['updated_at']) ? date('c', strtotime($post['updated_at'])) : null,
         "publisher" => ["@id" => HOME_URL . '/#organization'],
     ];
-    if (!empty($post['author_name'])) {
-        $node['author'] = ["@type" => "Person", "name" => $post['author_name']];
+    if (!empty($post['author_name']) && ($person = soAuthorPerson($post['author_name']))) {
+        $node['author'] = ['@id' => $person['@id']];
     }
-    if (!empty($post['featured_image'])) {
-        $node['image'] = $post['featured_image'];
+    if ($img !== '') {
+        $node['image'] = [$img];
     }
     return $node;
+}
+
+/**
+ * Authors with a public profile (blog bylines). Only real, stated facts: the name on the byline, the person's own website and role.
+ * No Wikidata item exists for them, so none is claimed.
+ */
+const SO_AUTHORS = [
+    'Jay Mehta' => ['url' => 'https://jaymehta.co', 'jobTitle' => 'Founder and CEO, Mindshare Consulting Inc.', 'sameAs' => ['https://jaymehta.co']],
+];
+
+/** schema.org Person node for a byline (with an @id so pages can point at it), or null for an unknown name. */
+function soAuthorPerson($name) {
+    $name = trim((string) $name);
+    if ($name === '') return null;
+    $node = ['@type' => 'Person', '@id' => HOME_URL . '/#author-' . trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($name)), '-'), 'name' => $name];
+    if (isset(SO_AUTHORS[$name])) $node += SO_AUTHORS[$name];
+    $node['worksFor'] = ['@id' => HOME_URL . '/#organization'];
+    return $node;
+}
+
+/** Page type for the WebPage node, by address (the default is WebPage). */
+function soPageSchemaType($path) {
+    $path = rtrim((string) $path, '/') ?: '/';
+    if (in_array($path, ['/about-seat-outlet', '/our-network'], true)) return 'AboutPage';
+    if ($path === '/ticket-customer-service') return 'ContactPage';
+    if ($path === '/search') return 'SearchResultsPage';
+    if (in_array($path, ['/', '/concert-tickets-for-sale', '/game-day-tickets', '/buy-broadway-tickets', '/upcoming-music-festivals', '/buy-tickets-online', '/city-events', '/all-artists-and-teams', '/blog', '/ticket-deals'], true)) return 'CollectionPage';
+    if (preg_match('#^/(artist|venue|city|state|country|category)/#', $path) || preg_match('#^/[a-z0-9-]+-(city|state|country|venue)/#', $path) || preg_match('#^/[a-z0-9-]+-tickets$#', $path)) return 'CollectionPage';
+    if (strpos($path, '/event/') === 0) return 'ItemPage';
+    return 'WebPage';
+}
+
+/**
+ * Completes a page's @graph: gives the breadcrumb and FAQ nodes stable ids, adds a breadcrumb trail for pages that have none
+ * (Home > page, or Home > Our Network > page for partner sites) and adds the WebPage node that ties the page to the site,
+ * the organization, its breadcrumb, its main entity, its picture and its author.
+ * $ctx: url, name, description, image, type, mainEntity (an @id), author (an @id), crumbLabel.
+ */
+function soCompletePageGraph(array $nodes, array $ctx) {
+    $url = (string) ($ctx['url'] ?? '');
+    if ($url === '') return $nodes;
+    $hasPage = false; $crumbId = null;
+    foreach ($nodes as $i => $n) {
+        if (!is_array($n)) continue;
+        $t = $n['@type'] ?? '';
+        if ($t === 'BreadcrumbList') { $nodes[$i]['@id'] = $nodes[$i]['@id'] ?? $url . '#breadcrumb'; $crumbId = $nodes[$i]['@id']; }
+        if ($t === 'FAQPage') { $nodes[$i]['@id'] = $nodes[$i]['@id'] ?? $url . '#faq'; }
+        if (in_array($t, ['WebPage', 'CollectionPage', 'ItemPage', 'AboutPage', 'ContactPage', 'SearchResultsPage'], true)) $hasPage = true;
+    }
+    $path = rtrim((string) parse_url($url, PHP_URL_PATH), '/') ?: '/';
+    if ($crumbId === null && $path !== '/') {
+        $label = trim((string) ($ctx['crumbLabel'] ?? ''));
+        if ($label !== '') {
+            $trail = [['label' => 'Home', 'url' => HOME_URL . '/']];
+            if (in_array($path, ['/dotbooker', '/wingcms', '/salespeep', '/signs-n-more', '/it-sprinkles', '/austin-sign-masters', '/viralpep', '/mindshare-consulting', '/hunt-tickets', '/grab-tickets-now', '/ticket-scanner'], true)) {
+                $trail[] = ['label' => 'Our Network', 'url' => HOME_URL . '/our-network'];
+            }
+            $bc = buildBreadcrumbListSchema($trail, $label);
+            $bc['@id'] = $url . '#breadcrumb';
+            $bc['itemListElement'][count($bc['itemListElement']) - 1]['item'] = $url;
+            $nodes[] = $bc;
+            $crumbId = $bc['@id'];
+        }
+    }
+    if (!$hasPage) {
+        $page = [
+            '@type' => $ctx['type'] ?? soPageSchemaType($path),
+            '@id' => $url . '#webpage',
+            'url' => $url,
+            'name' => (string) ($ctx['name'] ?? ''),
+            'isPartOf' => ['@id' => HOME_URL . '/#website'],
+            'publisher' => ['@id' => HOME_URL . '/#organization'],
+            'inLanguage' => 'en-US',
+        ];
+        if (!empty($ctx['description'])) $page['description'] = (string) $ctx['description'];
+        if ($crumbId !== null) $page['breadcrumb'] = ['@id' => $crumbId];
+        if (!empty($ctx['mainEntity'])) $page['mainEntity'] = ['@id' => $ctx['mainEntity']];
+        $page['author'] = ['@id' => !empty($ctx['author']) ? $ctx['author'] : HOME_URL . '/#organization'];
+        if (!empty($ctx['image']) && strpos((string) $ctx['image'], 'seatoutlet-logo') === false) {
+            $page['primaryImageOfPage'] = ['@type' => 'ImageObject', 'url' => (string) $ctx['image']];
+        }
+        $nodes[] = $page;
+    }
+    return $nodes;
+}
+
+/**
+ * FAQPage structured data for pages whose FAQ is written in the page itself (accordions and <details> blocks) and that do not
+ * already describe one: the questions and answers are read from the finished HTML, so the markup always matches what is shown.
+ * Called on the page body by the output filter (inc/consent.php).
+ */
+function soInjectFaqSchema($html) {
+    if (!empty($GLOBALS['soHasFaqSchema']) || stripos($html, '"FAQPage"') !== false) return $html;
+    $clean = function ($x) { return trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) $x), ENT_QUOTES | ENT_HTML5, 'UTF-8'))); };
+    $pairs = [];
+    if (preg_match_all('#<details[^>]*class="[^"]*\bso-faq\b[^"]*"[^>]*>\s*<summary[^>]*>(.*?)</summary>(.*?)</details>#is', $html, $m, PREG_SET_ORDER)) {
+        foreach ($m as $x) $pairs[] = [$clean($x[1]), $clean($x[2])];
+    }
+    if (!$pairs && preg_match_all('#class="accordion-button[^"]*"[^>]*>(.*?)</button>#is', $html, $q) && preg_match_all('#class="accordion-body[^"]*"[^>]*>(.*?)</div>#is', $html, $a)
+        && count($q[1]) === count($a[1])) {
+        foreach ($q[1] as $i => $qq) $pairs[] = [$clean($qq), $clean($a[1][$i])];
+    }
+    $items = [];
+    foreach ($pairs as [$qq, $aa]) {
+        if ($qq === '' || mb_strlen($aa) < 10 || mb_strpos($qq, '[') !== false) continue;
+        $items[] = ['@type' => 'Question', 'name' => $qq, 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $aa]];
+        if (count($items) >= 25) break;
+    }
+    if (count($items) < 2) return $html;
+    $url = (string) ($GLOBALS['pageCanonicalUrl'] ?? '');
+    $node = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $items];
+    if ($url !== '') { $node['@id'] = $url . '#faq'; $node['isPartOf'] = ['@id' => $url . '#webpage']; }
+    $tag = '<script type="application/ld+json">' . json_encode($node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+    $pos = strripos($html, '</body>');
+    return $pos !== false ? substr($html, 0, $pos) . $tag . substr($html, $pos) : $html . $tag;
 }
 
 /**
@@ -3662,6 +4297,7 @@ function buildArticleSchema(array $post, string $url) {
 function outputJsonLdGraph(array $nodes) {
     $nodes = array_values(array_filter($nodes));
     if (empty($nodes)) return;
+    foreach ($nodes as $n) { if (($n['@type'] ?? '') === 'FAQPage') $GLOBALS['soHasFaqSchema'] = true; }   // the body filter must not add a second one
 
     echo '<script type="application/ld+json">' . "\n";
     echo json_encode([
@@ -3696,8 +4332,8 @@ function outputJsonLdGraph(array $nodes) {
  * duplicated inline (explode('-') + end()) in every page that needed it.
  */
 function extractTrailingId(string $slug): int {
-    $parts = explode('-', trim($slug, '/'));
-    return (int) end($parts);
+    [$id] = soSlugResolve('performer', $slug);   // a performer slug: the stored one, or the old name-and-id form
+    return (int) ($id ?? 0);
 }
 
 const LOCATION_CATEGORY_PATHS = [
@@ -3721,17 +4357,9 @@ const LOCATION_CATEGORY_PATHS = [
  *                          country, or null if the slug doesn't match.
  */
 function parseLocationSlug(string $dimension, string $slug) {
-    $slug = trim($slug, '/');
-    $parts = explode('-', $slug);
-    if (empty($parts)) return null;
-
-    if ($dimension === 'country') {
-        $code = strtoupper(end($parts));
-        return preg_match('/^[A-Z]{2}$/', $code) ? $code : null;
-    }
-
-    $id = (int) end($parts);
-    return $id > 0 ? $id : null;
+    if (!in_array($dimension, ['city', 'state', 'venue', 'country'], true)) return null;
+    [$id] = soSlugResolve($dimension, $slug);   // stored slug, or the old name-and-id form (country: the two letter code)
+    return $id;
 }
 
 /**
@@ -3754,10 +4382,11 @@ function getLocationFilterFragment(string $dimension, $locationValue): ?string {
  * country, whose display name comes back on the same countries/{code}
  * lookup used for the filter.
  */
-function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
+function getLocationDisplayInfo(string $dimension, $locationValue, &$raw = null): ?array {
+    // $raw receives the API answer, so callers can tell "not found" (404) from "API down" (503).
     switch ($dimension) {
         case 'city':
-            $city = getTnCityById((int) $locationValue);
+            $city = $raw = getTnCityById((int) $locationValue);
             if (tnEntityMissing($city)) return null;
             return [
                 'name' => $city['text']['name'] ?? '',
@@ -3765,7 +4394,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
                 'label' => trim(($city['text']['name'] ?? '') . ', ' . ($city['stateProvince']['text']['abbr'] ?? ''), ', '),
             ];
         case 'state':
-            $state = getTnStateById((int) $locationValue);
+            $state = $raw = getTnStateById((int) $locationValue);
             if (tnEntityMissing($state)) return null;
             return [
                 'name' => $state['text']['name'] ?? '',
@@ -3773,7 +4402,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
                 'label' => $state['text']['name'] ?? '',
             ];
         case 'venue':
-            $venue = getTnVenueById((int) $locationValue);
+            $venue = $raw = getTnVenueById((int) $locationValue);
             if (tnEntityMissing($venue)) return null;
             return [
                 'name' => $venue['text']['name'] ?? '',
@@ -3781,7 +4410,7 @@ function getLocationDisplayInfo(string $dimension, $locationValue): ?array {
                 'label' => $venue['text']['name'] ?? '',
             ];
         case 'country':
-            $country = getTnCountryByCode((string) $locationValue);
+            $country = $raw = getTnCountryByCode((string) $locationValue);
             if (tnEntityMissing($country) || ($country['text']['name'] ?? 'n/a') === 'n/a') return null;
             return [
                 'name' => $country['text']['name'] ?? '',
@@ -3906,7 +4535,7 @@ function getPerformerNounForPath($categoryPath): array {
 | Internal links between the location pages
 |--------------------------------------------------------------------------
 | The 24 category/performer x location pages are excluded from the sitemap
-| (see sitemap.php) so they are only discoverable through links. These two
+| (see sitemap.xml) so they are only discoverable through links. These two
 | helpers put those links on every page that has the data for them.
 */
 
@@ -3924,7 +4553,7 @@ const LOCATION_CATEGORY_PAGES = [
 function renderLocationCategoryLinks(string $dimension, $locationValue, string $locationLabel, string $currentPrefix = ''): void {
     $conf = LOCATION_CATEGORY_PAGES[$dimension] ?? null;
     if (!$conf || $locationLabel === '' || $locationValue === null || $locationValue === '') return;
-    $slug = createSlug($locationLabel, $locationValue);
+    $slug = soSlug($dimension, $locationLabel, $locationValue);
     $links = [];
     if ($currentPrefix !== '') {
         $links[] = ['href' => '/' . $conf['plain'] . '/' . $slug, 'text' => 'All events in ' . $locationLabel];
@@ -3937,7 +4566,7 @@ function renderLocationCategoryLinks(string $dimension, $locationValue, string $
     if (!$links) return;
     ?>
     <div class="tab-section content-section-detail" id="browse-<?php echo htmlspecialchars($dimension, ENT_QUOTES, 'UTF-8'); ?>">
-        <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+        <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
         <div class="so-linkchips">
             <?php foreach ($links as $l) { ?>
                 <a href="<?php echo htmlspecialchars($l['href'], ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip"><?php echo htmlspecialchars($l['text'], ENT_QUOTES, 'UTF-8'); ?></a>
@@ -3953,7 +4582,7 @@ function renderLocationCategoryLinks(string $dimension, $locationValue, string $
  * artist-state. Used by performer.php and the artist location renderer.
  */
 function renderPerformerLocationLinks(string $artistName, int $performerId, array $events, string $skipDimension = ''): void {
-    $performerSlug = createSlug($artistName, $performerId);
+    $performerSlug = soSlug('performer', $artistName, $performerId);
     $dims = [
         'city'  => ['prefix' => 'artist-city',  'heading' => 'by City'],
         'venue' => ['prefix' => 'artist-venue', 'heading' => 'by Venue'],
@@ -3987,7 +4616,7 @@ function renderPerformerLocationLinks(string $artistName, int $performerId, arra
             <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets <?php echo $conf['heading']; ?></h2>
             <div class="so-linkchips">
                 <?php foreach ($items as $it) { ?>
-                    <a href="/<?php echo $conf['prefix']; ?>/<?php echo htmlspecialchars($performerSlug, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($it['label'], $it['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
+                    <a href="/<?php echo $conf['prefix']; ?>/<?php echo htmlspecialchars($performerSlug, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(soSlug($dim, $it['label'], $it['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
                         <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> <?php echo $dim === 'venue' ? 'at' : 'in'; ?> <?php echo htmlspecialchars($it['label'], ENT_QUOTES, 'UTF-8'); ?>
                     </a>
                 <?php } ?>
@@ -4039,7 +4668,7 @@ function performerWhereGroups(array $events): array {
 function renderPerformerWhere(string $artistName, int $performerId, array $events, int $totalCount): void {
     $groups = performerWhereGroups(performerWhereEvents($performerId, $events, $totalCount));
     if (!$groups['city'] && !$groups['venue'] && !$groups['state']) return;
-    $slug = createSlug($artistName, $performerId);
+    $slug = soSlug('performer', $artistName, $performerId);
     $dims = [
         'city'  => ['label' => 'Cities', 'prefix' => 'artist-city',  'word' => 'in'],
         'venue' => ['label' => 'Venues', 'prefix' => 'artist-venue', 'word' => 'at'],
@@ -4062,7 +4691,7 @@ function renderPerformerWhere(string $artistName, int $performerId, array $event
                 <ul class="so-list">
                     <?php foreach ($rows as $i => $it) { ?>
                         <li class="so-list__item<?php echo $i >= $visible ? ' so-list__item--extra' : ''; ?>"<?php echo $i >= $visible ? ' hidden' : ''; ?>>
-                            <a class="so-list__link" href="/<?php echo $conf['prefix']; ?>/<?php echo $e($slug); ?>/<?php echo $e(createSlug($it['label'], $it['id'])); ?>" title="<?php echo $e($artistName . ' ' . $conf['word'] . ' ' . $it['label']); ?>">
+                            <a class="so-list__link" href="/<?php echo $conf['prefix']; ?>/<?php echo $e($slug); ?>/<?php echo $e(soSlug($dim, $it['label'], $it['id'])); ?>" title="<?php echo $e($artistName . ' ' . $conf['word'] . ' ' . $it['label']); ?>">
                                 <span class="so-list__name"><?php echo $e($it['label']); ?></span>
                                 <span class="so-list__meta"><?php echo (int) $it['count']; ?> <?php echo $it['count'] === 1 ? 'date' : 'dates'; ?></span>
                                 <i class="bi bi-chevron-right so-list__chev" aria-hidden="true"></i>
@@ -4098,8 +4727,33 @@ function renderPerformerWhere(string $artistName, int $performerId, array $event
 }
 
 /** Artist biography: first lines, then "Read more" (the full text stays in the page for search engines and no-JS visitors). */
+/**
+ * Copy without dashes, the site's house style: "1990–2001" becomes "1990 to 2001", a spaced dash or an em dash between
+ * words becomes a comma. Works on HTML: only text between tags changes, and script/style/pre/code blocks are left alone.
+ */
+function soNoDashes(string $html): string {
+    if (!preg_match('/[\x{2013}\x{2014}]|\s-\s|&[mn]dash;/u', $html)) return $html;
+    $parts = preg_split('/(<(script|style|pre|code)\b.*?<\/\2>|<[^>]+>)/is', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+    $out = '';
+    for ($i = 0, $n = count($parts); $i < $n; $i++) {
+        $p = $parts[$i];
+        if ($p === '' ) continue;
+        if ($p[0] === '<') {
+            $out .= $p;
+            if (isset($parts[$i + 1]) && preg_match('/^(script|style|pre|code)$/i', $parts[$i + 1])) $i++;   // skip the captured tag name
+            continue;
+        }
+        $t = str_replace(['&mdash;', '&ndash;'], ["\u{2014}", "\u{2013}"], $p);
+        $t = preg_replace('/(\d)\s*[\x{2013}\x{2014}]\s*(\d)/u', '$1 to $2', $t);
+        $t = preg_replace('/\s*[\x{2013}\x{2014}]\s*|\s+-\s+/u', ', ', $t);
+        $t = preg_replace('/,\s*([,.;:!?)])/u', '$1', $t);
+        $out .= $t;
+    }
+    return $out;
+}
+
 function renderBioBlock($bio): void {
-    $bio = (string) $bio;
+    $bio = soNoDashes((string) $bio);
     if (trim($bio) === '') return;
     $long = mb_strlen(strip_tags($bio)) > 420;
     ?>
@@ -4140,6 +4794,8 @@ function soInitials($name): string {
 function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
     $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
     $n = 0;
+    // Performers with a real picture first, so the first row of cards is not a row of initials tiles.
+    $related = soImageFirst(array_values($related), function ($r) { return [imageEntityTypeForPerformer($r['defaultCategory'] ?? []), trim((string) ($r['text']['name'] ?? '')), $r['defaultCategory'] ?? []]; });
     ?>
     <div class="so-related" data-so-related>
         <?php foreach ($related as $rel) {
@@ -4158,6 +4814,7 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
                 <span class="so-related__media" style="--so-hue:<?php echo (int) $hue; ?>">
                     <?php if ($real) { ?>
                         <img src="<?php echo $e($img['url']); ?>" alt="<?php echo $e($name); ?>" loading="lazy" width="400" height="300">
+                        <?php if (imageCreditShort($img) !== '') { ?><span class="so-related__credit" title="<?php echo $e($img['credit']); ?>"><?php echo $e(imageCreditShort($img)); ?></span><?php } ?>
                     <?php } else { ?>
                         <span class="so-related__initials" aria-hidden="true"><?php echo $e(soInitials($name)); ?></span>
                     <?php } ?>
@@ -4167,6 +4824,7 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
             </a>
         <?php } ?>
     </div>
+    <p class="so-related__credits"><a href="/image-credits">Photo credits</a></p>
     <script>
     (function () {
         var grid = document.querySelector('[data-so-related]');
@@ -4183,8 +4841,14 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
                     (data.images || []).forEach(function (url, i) {
                         if (!url) return;
                         var media = pending[i].querySelector('.so-related__media');
+                        var cr = (data.credits || [])[i];
                         var img = new Image(); img.alt = pending[i].dataset.name; img.width = 400; img.height = 300;
-                        img.onload = function () { media.innerHTML = ''; media.appendChild(img); };
+                        img.onload = function () {
+                            media.innerHTML = ''; media.appendChild(img);
+                            if (cr && cr.text) {   // late pictures carry their credit too
+                                var c = document.createElement('span'); c.className = 'so-related__credit'; c.title = cr.full || ''; c.textContent = cr.text; media.appendChild(c);
+                            }
+                        };
                         img.src = url;
                     });
                 }).catch(function () {});
@@ -4219,11 +4883,11 @@ function renderCategoryCityLinksBlock(array $events, string $urlPrefix, string $
     }
     ?>
     <div class="tab-section content-section-detail" id="cities">
-        <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> Tickets by City</h2>
+        <h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets by city</h2>
         <div class="so-linkchips">
             <?php foreach ($cities as $city) { ?>
-                <a href="/<?php echo htmlspecialchars($urlPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
-                    <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
+                <a href="/<?php echo htmlspecialchars($urlPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(soSlug('city', $city['label'], $city['id']), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">
+                    <?php echo htmlspecialchars(['Concert' => 'Concerts', 'Festival' => 'Festivals'][$categoryLabel] ?? $categoryLabel, ENT_QUOTES, 'UTF-8'); ?> in <?php echo htmlspecialchars($city['label'], ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             <?php } ?>
         </div>
@@ -4243,14 +4907,13 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
     $perPage = 20;
 
-    $performerId   = extractTrailingId($_GET['slug'] ?? '');
-    $locationValue = parseLocationSlug($dimension, $_GET['loc'] ?? '');
+    $requestedSlug = (string) ($_GET['slug'] ?? '');
+    $requestedLoc  = (string) ($_GET['loc'] ?? '');
+    $performerId   = extractTrailingId($requestedSlug);               // strict ids: junk never reaches the API
+    $locationValue = parseLocationSlug($dimension, $requestedLoc);
 
     if ($performerId <= 0 || $locationValue === null) {
-        include 'header.php';
-        echo '<div class="container py-5"><p>Invalid performer or location.</p></div>';
-        include 'footer.php';
-        return;
+        renderNotFoundPage('Page');
     }
 
     // Independent requests go out together; the normal calls below then hit
@@ -4265,17 +4928,19 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     tnRequestMulti($prefetch);
 
     $performer = getTnPerformerById($performerId);
-    $location  = getLocationDisplayInfo($dimension, $locationValue);
-
-    if (empty($performer) || empty($performer['defaultCategory']) || empty($location)) {
-        include 'header.php';
-        echo '<div class="container py-5"><p>Performer or location not found.</p></div>';
-        include 'footer.php';
-        return;
+    if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
+        renderNotFoundPage('Performer', $performer);   // 404 when the API says not found, 503 when it failed
+    }
+    $location  = getLocationDisplayInfo($dimension, $locationValue, $rawLocation);
+    if (empty($location)) {
+        renderNotFoundPage('Location', $rawLocation);
     }
 
     $artistName    = $performer['text']['name'];
     $locationLabel = $location['label'];
+    $canonArtistSlug = soSlug('performer', $artistName, $performerId);
+    $canonLocSlug    = soSlug($dimension, $locationLabel, $locationValue);
+    soRedirectToCanonicalSlug($urlPrefix, $requestedSlug, $canonArtistSlug, $requestedLoc, $canonLocSlug);
 
     $eventsResponse = getPerformerEventsByLocation($performerId, $dimension, $locationValue, [
         'page'    => $page,
@@ -4283,7 +4948,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
         'includeTotalCount' => 'true',
     ]);
 
-    $total_count = $eventsResponse['totalCount'] ?? 0;
+    $total_count = (int) ($eventsResponse['totalCount'] ?? 0);
     $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
     $events      = $eventsResponse['results'] ?? [];
     $count       = $eventsResponse['count'] ?? count($events);
@@ -4299,7 +4964,16 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
     $relatedPerformers = getRelatedPerformers($performer['defaultCategory']['path'], $performerId);
     $performer_bio   = getArtistBio($artistName, $performerId);
-    $performer_image = getArtistImage($artistName, $performer['defaultCategory']);
+    // Serve-only: the stored licensed photo, or an initials tile. No lookup inside the page request.
+    $performerImg    = getEntityImage(imageEntityTypeForPerformer($performer['defaultCategory']), $artistName, ['category' => $performer['defaultCategory'], 'resolve' => false]);
+    $performer_image = $performerImg['url'];
+    $hasRealImage    = soImageIsReal($performerImg);
+
+    // A failed feed is a 503 (retry), never a thin 200. A page with no events is noindex,follow and kept out of the sitemap.
+    if ($total_count === 0 && !$events && soApiDegraded()) { renderUnavailablePage('Tickets'); }
+    $isZero = ($total_count === 0);
+    if ($isZero) { $pageRobots = 'noindex, follow'; }
+    soZeroPageNote('/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug, $isZero);
 
     // Same generic "tickets" wording read fine for a music artist ("Taylor
     // Swift tickets") but flat for other performer types - a sports team's
@@ -4321,65 +4995,27 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
     $pageFocusKeyword    = "$artistName Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
-    $pageMetaTitle       = "$artistName {$noun['nounCap']} Tickets in $locationLabel | Seat Outlet";
-    $pageMetaDescription = "Buy verified $artistName {$noun['noun']} tickets in $locationLabel. Compare prices across sellers and find upcoming $artistName {$noun['noun']}s near you on Seat Outlet.";
-    $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($artistName, $performerId) . '/' . createSlug($locationLabel, $locationValue);
+    $soLocShort = preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
+    $pageMetaTitle       = soTitle("$artistName Tickets in $locationLabel " . date('Y') . " Dates", "$artistName Tickets in $locationLabel", "$artistName Tickets in $soLocShort", "$artistName Tickets");
+    $pageMetaDescription = soMetaFit("Buy $artistName {$noun['noun']} tickets in $locationLabel. Compare prices from many sellers, pick seats on live seat maps. Orders carry the TicketNetwork guarantee.", 'Secure checkout and on time delivery.');
+    $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema(array_map(fn($c) => ['label' => $c['label'], 'url' => null], $breadcrumbs), "$artistName in $locationLabel"),
         buildFaqPageSchema($faqs),
     ]));
 
     include 'header.php';
+    soPageHero([
+        'crumbs'     => array_merge(array_map(fn($c) => ['label' => (string) $c['label'], 'url' => (string) ($c['url'] ?? '')], $breadcrumbs), [['label' => $artistName, 'url' => '/artist/' . $canonArtistSlug], ['label' => $locationLabel]]),
+        'image'      => $hasRealImage ? ['url' => $performer_image, 'alt' => "$artistName {$noun['nounCap']} tickets in $locationLabel"] : null,
+        'credit'     => $hasRealImage ? $performerImg : null,
+        'name'       => $artistName,
+        'eyebrow'    => $categoryLabel,
+        'eyebrowUrl' => (string) (end($breadcrumbs)['url'] ?? ''),
+        'title'      => "$artistName Tickets in $locationLabel",
+        'stats'      => ['<span id="results_count">' . number_format($total_count) . ' ' . ($total_count === 1 ? 'result' : 'results') . '</span>'],
+    ]);
     ?>
-
-    <section class="section-featured-header text-sm-center text-md-start">
-        <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-            style="background-image: url('<?php echo HOME_URL; ?>/images/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-            <div class="container mx-xl-5 mx-lg-5 mx-md-3">
-                <div class="row">
-                    <div class="col-12 mb-4">
-                        <div class="section-content">
-                            <nav class="breadcrumb justify-content-sm-center justify-content-md-start">
-                                <?php foreach ($breadcrumbs as $index => $item) { ?>
-                                    <?php if ($index > 0) { ?>
-                                        <?php echo $sep; ?>
-                                    <?php } ?>
-                                    <a href="<?php echo htmlspecialchars($item['url'] ?? '#', ENT_QUOTES, 'UTF-8'); ?>">
-                                        <?php echo htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8'); ?>
-                                    </a>
-                                <?php } ?>
-                                <?php echo $sep; ?>
-                                <span class="current">
-                                    <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?>
-                                </span>
-                            </nav>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="row align-items-center text-center text-md-start">
-                            <div class="col-md-3">
-                                <div class="img-artist">
-                                    <img src="<?php echo $performer_image; ?>" alt="<?php echo htmlspecialchars("$artistName $noun[nounCap] tickets in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" class="img-fluid rounded artist-img" />
-                                </div>
-                            </div>
-                            <div class="col-md-9 text-white">
-                                <div class="artist-heading text-center text-md-start text-lg-start text-xl-start text-xxl-start">
-                                    <div class="artist-category">
-                                        <a href="<?php echo htmlspecialchars(sanitize_title($categoryLabel), ENT_QUOTES, 'UTF-8'); ?>">
-                                            <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?>
-                                        </a>
-                                    </div>
-                                    <h1 class="artist-title">
-                                        <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?>
-                                    </h1>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <section class="so-tabs sticky-tabs">
         <div class="artist-tabs tabs-wrapper">
@@ -4407,30 +5043,16 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             <div class="tab-section section-performer-content" id="default">
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
-                        <div class="mb-3 mb-md-4 mb-lg-4">
-                            <div class="d-flex justify-content-between align-items-center results-header">
-                                <div class="results-title">
-                                    <span class="active-indicator"></span>
-                                    <h2>
-                                        <?php echo htmlspecialchars(strtoupper($artistName), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN <?php echo htmlspecialchars(strtoupper($locationLabel), ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
-                                        <span class="count" id="results_count">
-                                            <?php echo (int) $count; ?>
-                                            <?php echo $count > 1 ? 'RESULTS' : 'RESULT'; ?>
-                                        </span>
-                                    </h2>
-                                </div>
-                            </div>
-                        </div>
                         <div class="list-category-bg pb-3">
                             <?php if (!empty($events)) { ?>
                                 <div id="eventsSection" class="section-artist-content event-row-all">
                                     <?php foreach ($events as $event) {
                                         $eventDateRaw = $event['date']['date'] ?? '';
                                         $timestamp    = $eventDateRaw ? strtotime($eventDateRaw) : false;
-                                        $eventSlug    = createSlug($event['text']['name'] ?? '', $event['id'] ?? 0);
+                                        $eventSlug    = soEventSlug($event);
                                         $evtCityLabel = trim(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
-                                        $evtCitySlug  = !empty($event['city']['id']) ? createSlug($evtCityLabel, $event['city']['id']) : null;
-                                        $evtVenueSlug = !empty($event['venue']['id']) ? createSlug($event['venue']['text']['name'] ?? '', $event['venue']['id']) : null;
+                                        $evtCitySlug  = !empty($event['city']['id']) ? soSlug('city', $evtCityLabel, $event['city']['id']) : null;
+                                        $evtVenueSlug = !empty($event['venue']['id']) ? soVenueSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'], $evtCityLabel) : null;
                                     ?>
                                         <div class="d-flex align-items-center justify-content-between performer-event-item">
                                             <div class="date-box text-center me-3">
@@ -4484,9 +5106,14 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
-                                    No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets found in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now.
-                                </h3>
+                                <div class="so-empty" role="status">
+                                    <h3 class="so-empty__title">No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
+                                    <p>Dates are added as they are announced. Leave your email and we will tell you when <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> announces dates.</p>
+                                    <?php
+                                    echo soLeadForm(['source' => 'artist-empty', 'class' => 'so-nl--compact', 'title' => 'Get alerts when ' . $artistName . ' announces dates', 'text' => 'One email when new dates go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'performer', 'interest_id' => (int) $performerId, 'interest_name' => $artistName, 'names' => false]);
+                                    soRenderEntityAlternatives(['parent' => ['url' => '/artist/' . $canonArtistSlug, 'text' => 'All ' . $artistName . ' tickets']], []);
+                                    ?>
+                                </div>
                             <?php } ?>
                         </div>
                     <div id="secondary" class="sidebar col-sm-12 col-md-4">
@@ -4513,7 +5140,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                     </div>
                     <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
                         <div class="so-about mt-3 mt-sm-3 mt-md-0 mt-lg-0 mt-xl-0 mt-xxl-0">
-                            <img src="<?php echo $performer_image; ?>" alt="<?php echo htmlspecialchars("About $artistName in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" />
+                            <?php if ($hasRealImage) { ?><img src="<?php echo htmlspecialchars($performer_image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars("About $artistName in $locationLabel", ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" /><?php renderImageCredit($performerImg, 'img-credit'); } else { echo soTileHtml($artistName, 'so-tile so-tile--about'); } ?>
                         </div>
                     </div>
                 </div>
@@ -4521,7 +5148,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
-                    <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <h2 class="so-heading mb-3"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> FAQ</h2>
                     <div class="accordion" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
@@ -4529,7 +5156,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                             $isFirst = ($index === 0);
                         ?>
                             <div class="accordion-item">
-                                <h2 class="accordion-header" id="<?php echo $headingId; ?>">
+                                <h3 class="accordion-header" id="<?php echo $headingId; ?>">
                                     <button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>"
                                             type="button"
                                             data-bs-toggle="collapse"
@@ -4538,7 +5165,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                             aria-controls="<?php echo $collapseId; ?>">
                                         <?php echo htmlspecialchars($faq['question'], ENT_QUOTES, 'UTF-8'); ?>
                                     </button>
-                                </h2>
+                                </h3>
                                 <div id="<?php echo $collapseId; ?>"
                                     class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>"
                                     aria-labelledby="<?php echo $headingId; ?>"
@@ -4556,14 +5183,14 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             <div class="tab-section content-section-detail" id="more-tickets">
                 <h2 class="so-heading fw-bold fs-4 mb-4 text-black">More <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Tickets</h2>
                 <div class="so-linkchips">
-                    <a href="/artist/<?php echo htmlspecialchars(createSlug($artistName, $performerId), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">All <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets</a>
-                    <a href="/<?php echo htmlspecialchars(LOCATION_CATEGORY_PAGES[$dimension]['plain'] ?? $dimension, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(createSlug($locationLabel, $locationValue), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">All events in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+                    <a href="/artist/<?php echo htmlspecialchars(soSlug('performer', $artistName, $performerId), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">All <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets</a>
+                    <a href="/<?php echo htmlspecialchars(LOCATION_CATEGORY_PAGES[$dimension]['plain'] ?? $dimension, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(soSlug($dimension, $locationLabel, $locationValue), ENT_QUOTES, 'UTF-8'); ?>" class="so-linkchip">All events in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>
             </div>
             <?php $whereEvents = $allPerformerEvents ?? $events; renderPerformerWhere($artistName, (int) $performerId, $whereEvents, count($whereEvents)); ?>
             <?php if (!empty($relatedPerformers)) { ?>
                 <div class="tab-section content-section-detail" id="fans">
-                    <h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> Fans Also Love</h2>
+                    <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Fans of <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> also love</h2>
                     <?php renderRelatedPerformersGrid($relatedPerformers, 8); ?>
                 </div>
             <?php } ?>
@@ -4588,23 +5215,24 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
     $perPage = 20;
 
-    $locationValue = parseLocationSlug($dimension, $_GET['slug'] ?? '');
+    // theatre-* is the same page as theater-* (the sitemap and menus use theater-*): one URL, one canonical.
+    if (strpos($urlPrefix, 'theatre-') === 0) {
+        soRedirect301('/theater-' . substr($urlPrefix, 8) . '/' . rawurlencode(trim((string) ($_GET['slug'] ?? ''), '/')));
+    }
+    $requestedSlug = (string) ($_GET['slug'] ?? '');
+    $locationValue = parseLocationSlug($dimension, $requestedSlug);   // strict: junk ids never reach the API
 
     if ($locationValue === null) {
-        include 'header.php';
-        echo '<div class="container py-5"><p>Invalid location.</p></div>';
-        include 'footer.php';
-        return;
+        renderNotFoundPage('Location');
     }
 
-    $location = getLocationDisplayInfo($dimension, $locationValue);
+    $location = getLocationDisplayInfo($dimension, $locationValue, $rawLocation);
 
     if (empty($location)) {
-        include 'header.php';
-        echo '<div class="container py-5"><p>Location not found.</p></div>';
-        include 'footer.php';
-        return;
+        renderNotFoundPage('Location', $rawLocation);   // 404 when the API says not found, 503 when it failed
     }
+
+    soRedirectToCanonicalSlug($urlPrefix, $requestedSlug, soSlug($dimension, $location['label'], $locationValue));
 
     $locationLabel = $location['label'];
 
@@ -4614,17 +5242,25 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
         'includeTotalCount' => 'true',
     ]);
 
-    $total_count = $eventsResponse['totalCount'] ?? 0;
+    $total_count = (int) ($eventsResponse['totalCount'] ?? 0);
     $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
     $events      = $eventsResponse['results'] ?? [];
     $count       = $eventsResponse['count'] ?? count($events);
     $percent     = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
     $year        = date('Y');
 
+    // A failed feed is a 503 (retry), never a thin 200. A page with no events is noindex,follow and kept out of the sitemap.
+    if ($total_count === 0 && !$events && soApiDegraded()) { renderUnavailablePage($categoryLabel . ' tickets'); }
+    $canonSlug = soSlug($dimension, $locationLabel, $locationValue);
+    $isZero = ($total_count === 0);
+    if ($isZero) { $pageRobots = 'noindex, follow'; }
+    soZeroPageNote('/' . $urlPrefix . '/' . $canonSlug, $isZero);
+
     $sep = '<span class="separator"><strong> / </strong></span>';
     $breadcrumbs = [
         ['label' => 'Home', 'url' => HOME_URL],
-        ['label' => $categoryLabel, 'url' => HOME_URL . '/' . sanitize_title($categoryLabel)],
+        // The hub page for this category (the old /concert and /theatre links were 404s).
+        ['label' => $categoryLabel, 'url' => HOME_URL . (['concerts' => '/concert-tickets-for-sale', 'sports' => '/game-day-tickets', 'theater' => '/buy-broadway-tickets', 'theatre' => '/buy-broadway-tickets', 'festivals' => '/upcoming-music-festivals'][$categoryKey] ?? '/buy-tickets-online')],
     ];
 
     $faqsRaw = getFaqs($categoryKey);
@@ -4636,77 +5272,49 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     }, $faqsRaw);
 
     // --- SEO: computed before including header.php so the <head> can use real data ---
-    $pageFocusKeyword    = "$categoryLabel Tickets in " . preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
-    $pageMetaTitle       = "Buy $categoryLabel Tickets in $locationLabel | Seat Outlet";
-    $pageMetaDescription = "Buy $categoryLabel tickets in $locationLabel. Compare prices across sellers, browse upcoming events, and find great seats on Seat Outlet.";
-    $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . createSlug($locationLabel, $locationValue);
+    // Keyword per category, from search data: "concerts in dallas" (27k/month) beats "concert tickets in dallas", so the phrase leads.
+    $soLocShort = preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
+    $soKwWord = ['concerts' => 'Concerts', 'sports' => 'Sports events', 'theater' => 'Theater', 'theatre' => 'Theater', 'festivals' => 'Music festivals', 'events' => 'Events'][$categoryKey] ?? $categoryLabel;
+    $soKwPrep = $dimension === 'venue' ? 'at' : 'in';
+    $pageFocusKeyword    = "$soKwWord $soKwPrep $soLocShort";
+    $soKwHook = ['concerts' => 'Tickets and Dates', 'sports' => 'Schedule and Tickets', 'theater' => 'Shows, Dates and Tickets', 'theatre' => 'Shows, Dates and Tickets', 'festivals' => 'Dates and Passes'][$categoryKey] ?? 'Tickets and Dates';
+    $pageMetaTitle       = $categoryKey === 'events'
+        ? soTitle("$pageFocusKeyword for Concerts, Sports and Shows", "$pageFocusKeyword Concerts and Sports", "$pageFocusKeyword " . date('Y'), $pageFocusKeyword)
+        : soTitle("$pageFocusKeyword " . date('Y') . " $soKwHook", "$pageFocusKeyword $soKwHook", $pageFocusKeyword, "$categoryLabel Tickets in $soLocShort");
+    $pageMetaDescription = soMetaFit("$pageFocusKeyword: browse upcoming dates, compare prices from many sellers. Orders carry the TicketNetwork guarantee.", 'Live seat maps and secure checkout.', 'Prices change often, so check back for new listings.');
+    $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema($breadcrumbs, "$categoryLabel in $locationLabel"),
         buildFaqPageSchema($faqs),
     ]));
 
     include 'header.php';
+    soPageHero([
+        'crumbs'     => array_merge($breadcrumbs, [['label' => $locationLabel]]),
+        'image'      => ['url' => '/images/event-so.webp', 'alt' => "$categoryLabel tickets in $locationLabel"],
+        'name'       => $categoryLabel,
+        'eyebrow'    => $categoryLabel,
+        'eyebrowUrl' => $breadcrumbs[1]['url'],
+        'title'      => "$categoryLabel Tickets in $locationLabel",
+        'stats'      => ['<span id="results_count">' . number_format($total_count) . ' ' . ($total_count === 1 ? 'result' : 'results') . '</span>'],
+    ]);
     ?>
-
-    <section class="section-featured-header text-sm-center text-md-start">
-        <div class="container-fluid min-vh-50 d-flex align-items-center justify-content-center text-white all-sports-events"
-            style="background-image: url('<?php echo HOME_URL; ?>/images/event-so.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-            <div class="container mx-xl-5 mx-lg-5 mx-md-3">
-                <div class="row">
-                    <div class="col-12 mb-4">
-                        <div class="section-content">
-                            <nav class="breadcrumb justify-content-sm-center justify-content-md-start">
-                                <?php foreach ($breadcrumbs as $item) { ?>
-                                    <a href="<?php echo htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8'); ?>">
-                                        <?php echo htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8'); ?>
-                                    </a>
-                                    <?php echo $sep; ?>
-                                <?php } ?>
-                                <span class="current">
-                                    <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?>
-                                </span>
-                            </nav>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <h1 class="artist-title text-white">
-                            <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?>
-                        </h1>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <section>
         <div class="container">
             <div class="tab-section section-performer-content" id="default">
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
-                        <div class="mb-3 mb-md-4 mb-lg-4">
-                            <div class="d-flex justify-content-between align-items-center results-header">
-                                <div class="results-title">
-                                    <span class="active-indicator"></span>
-                                    <h2>
-                                        <?php echo htmlspecialchars(strtoupper($categoryLabel), ENT_QUOTES, 'UTF-8'); ?> TICKETS IN <?php echo htmlspecialchars(strtoupper($locationLabel), ENT_QUOTES, 'UTF-8'); ?> <span class="dot">·</span>
-                                        <span class="count" id="results_count">
-                                            <?php echo (int) $total_count; ?>
-                                            <?php echo $total_count > 1 ? 'RESULTS' : 'RESULT'; ?>
-                                        </span>
-                                    </h2>
-                                </div>
-                            </div>
-                        </div>
                         <div class="list-category-bg pb-3">
                             <?php if (!empty($events)) { ?>
                                 <div id="eventsSection" class="section-artist-content event-row-all">
                                     <?php foreach ($events as $event) {
                                         $eventDateRaw = $event['date']['date'] ?? '';
                                         $timestamp    = $eventDateRaw ? strtotime($eventDateRaw) : false;
-                                        $eventSlug    = createSlug($event['text']['name'] ?? '', $event['id'] ?? 0);
+                                        $eventSlug    = soEventSlug($event);
                                         $eventCityLabel = trim(($event['city']['text']['name'] ?? '') . ', ' . ($event['stateProvince']['text']['abbr'] ?? ''), ', ');
-                                        $eventCitySlug  = createSlug($eventCityLabel, $event['city']['id'] ?? 0);
-                                        $eventVenueSlug = createSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'] ?? 0);
+                                        $eventCitySlug  = soSlug('city', $eventCityLabel, $event['city']['id'] ?? 0);
+                                        $eventVenueSlug = soVenueSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'] ?? 0, $eventCityLabel);
                                     ?>
                                         <div class="d-flex align-items-center justify-content-between performer-event-item">
                                             <div class="date-box text-center me-3">
@@ -4761,9 +5369,16 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <h3 style="padding: 20px; font-size: 1.25rem; font-weight: 400;">
-                                    No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets found in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now.
-                                </h3>
+                                <div class="so-empty" role="status">
+                                    <h3 class="so-empty__title">No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
+                                    <p>New dates are added all the time.<?php echo $dimension === 'city' ? ' Leave your email and we will tell you when tickets go on sale.' : ''; ?></p>
+                                    <?php
+                                    if ($dimension === 'city') {
+                                        echo soLeadForm(['source' => 'city-empty', 'class' => 'so-nl--compact', 'title' => 'Get an alert for new events in ' . $locationLabel, 'text' => 'One email when tickets go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'city', 'interest_id' => (int) $locationValue, 'interest_name' => $locationLabel, 'names' => false]);
+                                    }
+                                    soRenderEntityAlternatives(['parent' => ['url' => '/' . (LOCATION_CATEGORY_PAGES[$dimension]['plain'] ?? $dimension) . '/' . $canonSlug, 'text' => 'All events in ' . $locationLabel]], []);
+                                    ?>
+                                </div>
                             <?php } ?>
                         </div>
                         <?php renderLocationCategoryLinks($dimension, $locationValue, $locationLabel, $urlPrefix); ?>
@@ -4783,7 +5398,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
 
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
-                    <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> Tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <h2 class="so-heading mb-3"><?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> FAQ</h2>
                     <div class="accordion" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
@@ -4791,7 +5406,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                             $isFirst = ($index === 0);
                         ?>
                             <div class="accordion-item">
-                                <h2 class="accordion-header" id="<?php echo $headingId; ?>">
+                                <h3 class="accordion-header" id="<?php echo $headingId; ?>">
                                     <button class="accordion-button <?php echo $isFirst ? '' : 'collapsed'; ?>"
                                             type="button"
                                             data-bs-toggle="collapse"
@@ -4800,7 +5415,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                             aria-controls="<?php echo $collapseId; ?>">
                                         <?php echo htmlspecialchars($faq['question'], ENT_QUOTES, 'UTF-8'); ?>
                                     </button>
-                                </h2>
+                                </h3>
                                 <div id="<?php echo $collapseId; ?>"
                                     class="accordion-collapse collapse <?php echo $isFirst ? 'show' : ''; ?>"
                                     aria-labelledby="<?php echo $headingId; ?>"
@@ -4855,23 +5470,61 @@ const SEO_POWER_WORDS = [
  * with real TicketNetwork data where applicable, exactly like Rank Math
  * analyzes the rendered post rather than the raw editor markup.
  */
+/**
+ * The admin SEO tool fetches a page of this site by path. The path must be a plain site path: a full URL is accepted only
+ * for this site's own host, and anything that could change the host the request goes to (userinfo or "@", backslashes,
+ * "//" at the start, control characters, a colon in the first segment) is refused. Returns the path or null.
+ */
+function soSafeLocalPagePath($input) {
+    $input = trim((string) $input);
+    if ($input === '' || preg_match('/[\x00-\x20\x7F\\\\]/', $input)) return null;
+    $own = strtolower((string) parse_url(HOME_URL, PHP_URL_HOST));
+    if (preg_match('#^[a-z][a-z0-9+.-]*://#i', $input) || substr($input, 0, 2) === '//') {
+        $parts = parse_url(substr($input, 0, 2) === '//' ? 'https:' . $input : $input);
+        if (!$parts || isset($parts['user']) || isset($parts['pass']) || strtolower((string) ($parts['host'] ?? '')) !== $own) return null;
+        $input = ($parts['path'] ?? '/') . (isset($parts['query']) ? '?' . $parts['query'] : '');
+    }
+    if ($input[0] !== '/' || substr($input, 0, 2) === '//' || strpos($input, '@') !== false) return null;
+    $path = normalizePagePath($input);
+    if ($path === '' || $path[0] !== '/' || strpos($path, '..') !== false || strpos($path, '@') !== false) return null;
+    return $path;
+}
+
+/** True when an IP address is loopback, private, link-local or otherwise not a public address. */
+function soIsPrivateIp($ip) {
+    return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+}
+
 function fetchRenderedPageHtml($pagePath) {
-    $pagePath = normalizePagePath($pagePath);
+    $pagePath = soSafeLocalPagePath($pagePath);
+    if ($pagePath === null) return null;
+    $ownHost = strtolower((string) parse_url(HOME_URL, PHP_URL_HOST));
     $url = rtrim(HOME_URL, '/') . $pagePath;
 
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_MAXREDIRS => 3,
-        CURLOPT_TIMEOUT => 10,
-        CURLOPT_HTTPHEADER => ['User-Agent: SeatOutletSeoScorer/1.0'],
-    ]);
-    $html = curl_exec($ch);
-    $ok = $html !== false && curl_getinfo($ch, CURLINFO_HTTP_CODE) === 200;
-    curl_close($ch);
-
-    return $ok ? $html : null;
+    // Redirects are followed by hand so each hop can be checked: a page of this site must never be able to send the
+    // scorer to another host or to a private address.
+    $ownIsPrivate = soIsPrivateIp((string) gethostbyname($ownHost));
+    for ($hop = 0; $hop <= 3; $hop++) {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        if ($host !== $ownHost || parse_url($url, PHP_URL_USER) !== null) return null;
+        if (!$ownIsPrivate && soIsPrivateIp((string) gethostbyname($host))) return null;
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_HTTPHEADER => ['User-Agent: SeatOutletSeoScorer/1.0'],
+        ]);
+        $html = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $loc = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+        curl_close($ch);
+        if ($html === false) return null;
+        if ($code >= 300 && $code < 400 && $loc !== '') { $url = $loc; continue; }
+        return $code === 200 ? $html : null;
+    }
+    return null;
 }
 
 /**
@@ -5169,6 +5822,8 @@ function computeSeoScore(array $signals, $focusKeyword, $urlPath) {
             $longestParagraph <= 120,
             'No paragraph is longer than 120 words.',
             "The longest paragraph is $longestParagraph words - break it up for readability.");
+
+        foreach (seoReadabilityChecks($bodyText, $keywordLower) as $info) { $checks[] = $info; }
     }
 
     // --- Cross-page: keyword reuse (informational, not scored) ---
@@ -5199,21 +5854,95 @@ function keywordInFirstPercentOfContent($bodyTextLower, $keywordLower) {
     return str_contains(implode(' ', $words), $keywordLower);
 }
 
-/** Same boundaries as Rank Math's keywordDensity.js: fail <0.5% or >2.5%, fair 0.5-0.75%, good 0.76-1.0%, best otherwise. */
+/**
+ * Keyword density. Rank Math's boundaries (fail below 0.5% or above 2.5%) with the reward capped near 1%: it used to
+ * give full marks all the way up to 2.5%, which taught writers to repeat the phrase in every other sentence. Now the
+ * full 6 points are for 0.76-1.2%, and anything above that loses points step by step.
+ */
 function scoreKeywordDensity($density, $occurrences) {
     if ($density < 0.5) {
         return [0, 'fail', "Keyword density is {$density}% (appears $occurrences time(s)), which is low - aim for around 1%."];
     }
     if ($density > 2.5) {
-        return [0, 'fail', "Keyword density is {$density}% (appears $occurrences time(s)), which is high - this can look like keyword stuffing."];
+        return [0, 'fail', "Keyword density is {$density}% (appears $occurrences time(s)), which is high - this reads as keyword stuffing. Use the phrase less often and vary the wording."];
     }
-    if ($density >= 0.5 && $density <= 0.75) {
+    if ($density <= 0.75) {
         return [2, 'warning', "Keyword density is {$density}% (appears $occurrences time(s)) - fair, could be a bit higher."];
     }
-    if ($density >= 0.76 && $density <= 1.0) {
-        return [3, 'pass', "Keyword density is {$density}% (appears $occurrences time(s)) - good."];
+    if ($density <= 1.2) {
+        return [6, 'pass', "Keyword density is {$density}% (appears $occurrences time(s)) - good, natural-sounding."];
     }
-    return [6, 'pass', "Keyword density is {$density}% (appears $occurrences time(s)) - best."];
+    if ($density <= 2.0) {
+        return [4, 'warning', "Keyword density is {$density}% (appears $occurrences time(s)) - a little high. Aim for about 1% and use synonyms or pronouns instead."];
+    }
+    return [2, 'warning', "Keyword density is {$density}% (appears $occurrences time(s)) - too high. Readers notice repeated phrases; cut some of them."];
+}
+
+/**
+ * Informational (zero-weight) checks about how the text reads: how many sentences carry the focus keyword, the most
+ * repeated phrase, and a readability hint. They never change the score, so the admin screens' contract (checks,
+ * weights, SEO_SCORE_MAX_RAW) is untouched.
+ */
+function seoReadabilityChecks($bodyText, $keywordLower) {
+    $checks = [];
+    $text = trim(preg_replace('/\s+/', ' ', (string) $bodyText));
+    $sentences = array_values(array_filter(array_map('trim', preg_split('/(?<=[.!?])\s+/', $text)), function ($x) { return str_word_count($x) >= 3; }));
+    $n = count($sentences);
+    if ($n < 5) return $checks;
+
+    // Keyword spread: share of sentences that contain it, and sentences that repeat it.
+    if ($keywordLower !== '') {
+        $with = 0; $twice = 0;
+        foreach ($sentences as $sen) {
+            $c = substr_count(mb_strtolower($sen), $keywordLower);
+            if ($c >= 1) $with++;
+            if ($c >= 2) $twice++;
+        }
+        $share = round($with / $n * 100);
+        $bad = $share > 15 || $twice > 0;
+        $checks[] = [
+            'key' => 'keyword_repetition', 'label' => 'Focus Keyword repetition', 'weight' => 0, 'earned' => 0,
+            'status' => $bad ? 'warning' : 'pass',
+            'message' => "The Focus Keyword is in $with of $n sentences ($share%)" . ($twice > 0 ? " and repeats inside $twice sentence(s)" : '')
+                . ($bad ? ' - too repetitive. Aim for under about 15% of sentences, and never twice in one sentence.' : ' - natural.'),
+        ];
+    }
+
+    // Most repeated four-word phrase.
+    $words = preg_split('/[^\p{L}\p{N}\']+/u', mb_strtolower($text), -1, PREG_SPLIT_NO_EMPTY);
+    $total = count($words);
+    if ($total >= 200) {
+        $grams = [];
+        for ($i = 0; $i + 3 < $total; $i++) { $g = $words[$i] . ' ' . $words[$i + 1] . ' ' . $words[$i + 2] . ' ' . $words[$i + 3]; $grams[$g] = ($grams[$g] ?? 0) + 1; }
+        arsort($grams);
+        $top = key($grams); $topN = (int) current($grams);
+        $limit = max(8, (int) round($total / 250));
+        $checks[] = [
+            'key' => 'repeated_phrases', 'label' => 'Repeated phrases', 'weight' => 0, 'earned' => 0,
+            'status' => $topN > $limit ? 'warning' : 'pass',
+            'message' => $topN > $limit ? "The phrase \"$top\" appears $topN times. Vary the wording; repeated phrases read as filler."
+                                        : "No phrase is repeated more than $topN time(s) - good variety.",
+        ];
+    }
+
+    // Readability: average sentence length and a Flesch reading-ease estimate.
+    $syll = 0; $wc = 0;
+    foreach ($words as $w) {
+        $wc++;
+        $syll += max(1, preg_match_all('/[aeiouy]+/', preg_replace('/(?:[^laeiouy]es|ed|[^laeiouy]e)$/', '', $w), $m));
+    }
+    if ($wc >= 100) {
+        $avg = round($wc / $n, 1);
+        $flesch = round(206.835 - 1.015 * ($wc / $n) - 84.6 * ($syll / $wc));
+        $hard = $avg > 22 || $flesch < 50;
+        $checks[] = [
+            'key' => 'readability', 'label' => 'Readability', 'weight' => 0, 'earned' => 0,
+            'status' => $hard ? 'warning' : 'pass',
+            'message' => "Average sentence length is $avg words; Flesch reading ease is about $flesch (60-70 is plain English)."
+                . ($hard ? ' Shorter sentences and everyday words will make this easier to read.' : ' Easy to read.'),
+        ];
+    }
+    return $checks;
 }
 
 /** Same boundaries as Rank Math's lengthContent.js. */
@@ -5390,3 +6119,25 @@ function seoScoreBadgeClass($score) {
 
 // Entity image layer (performers, teams, venues, festivals, cities).
 require_once __DIR__ . '/inc/images.php';
+require_once __DIR__ . '/inc/top-performers.php';
+require_once __DIR__ . '/inc/category-tree.php';   // sub-categories of the concert, sports and theater hubs, from the API's category tree
+require_once __DIR__ . '/inc/adsense.php';   // AdSense slots (print nothing until ADSENSE_CLIENT is set)
+require_once __DIR__ . '/inc/auto-migrate.php';   // beta: applies pending db/migrations after deploys, see the file
+require_once __DIR__ . '/inc/sitemap-build.php';   // XML sitemap index + typed files, kept current by a background crawl
+require_once __DIR__ . '/inc/category-tiles.php';   // soRenderCategoryTiles(): blue category tile grid
+require_once __DIR__ . '/inc/leads.php';   // soLeadForm(): the shared email-capture form
+require_once __DIR__ . '/inc/request-guard.php';   // soClientIp(), soRateHit(), soQs(): shared request helpers
+require_once __DIR__ . '/inc/entity-facts.php';   // soEntityFacts(): Wikidata, Wikipedia and official site for performers and venues (cached, looked up after the response)
+require_once __DIR__ . '/inc/trust-block.php';   // soBuyerGuaranteeSection(): Buyer Guarantee section with the refund terms and live ticket count
+require_once __DIR__ . '/inc/page-hero.php';   // soPageHero(): the one page header card (artist, venue, city, search, category, hubs)
+require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
+require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
+require_once __DIR__ . '/inc/css-groups.php';        // soCssBundleFiles(): the stylesheet files for this page type
+require_once __DIR__ . '/inc/slugs.php';             // url_slugs table: ids never appear in URLs (soSlug, soEventSlug, soSlugResolve)
+require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages
+register_shutdown_function('soTopPerformersMaybeRun');   // keeps the home Top performers cards fresh
+register_shutdown_function('soAutoMigrateMaybeRun');   // beta only: keep the schema in step with the code
+register_shutdown_function('soSitemapMaybeRun');   // background sitemap crawl, see inc/sitemap-build.php
+register_shutdown_function('imageWorkerMaybeRun');   // background image queue, see inc/images.php
+
+soNoindexPrivatePaths();

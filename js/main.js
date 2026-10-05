@@ -34,25 +34,49 @@ function escapeHtml(str) {
 }
 
 function getCookie(name) {
-    const v = document.cookie.split('; ').find(row => row.startsWith(name + '='));
-    return v ? decodeURIComponent(v.split('=')[1]) : '';
+    // Cut at the FIRST "=" only: a value may contain "=" itself (split('=')[1] used to truncate it).
+    const prefix = name + '=';
+    const row = document.cookie.split('; ').find(r => r.startsWith(prefix));
+    if (!row) return '';
+    const raw = row.slice(prefix.length);
+    try { return decodeURIComponent(raw); } catch (e) { return raw; }
 }
 
 function setCookie(name, value) {
+    // Values are always stored URL-encoded, so text with ";" or "=" or a comma cannot corrupt the cookie. Callers that already
+    // encoded their value are fine: it is decoded once first, then encoded once, never twice.
+    let v = String(value == null ? '' : value);
+    try { v = decodeURIComponent(v); } catch (e) { /* a literal "%": keep as typed */ }
     // Lax + Secure (on https) + 30-day expiry; these were session cookies with no SameSite flag.
     const secure = location.protocol === 'https:' ? ';Secure' : '';
-    document.cookie = name + '=' + value + ';path=/;max-age=2592000;SameSite=Lax' + secure;
+    document.cookie = name + '=' + encodeURIComponent(v) + ';path=/;max-age=2592000;SameSite=Lax' + secure;
 }
 
-function equalHeightSlider(sectionClass, cardClass) { 
-    var maxHeight = 0;     
+/* Paints the visitor's location on the home page "Top picks" heading and its location chip.
+   label: a place name, '' (nothing known: "Top picks across the US" + "Set location"), or null with state 'finding'. */
+function soSetLocText(label, state) {
+    const chip = document.getElementById('locationSelectorText');
+    const title = document.getElementById('topPicksTitle');
+    const caret = ' <i class="bi bi-chevron-down" aria-hidden="true"></i>';
+    if (chip) {
+        if (state === 'finding') chip.innerHTML = 'Finding your location...' + caret;
+        else if (label) chip.innerHTML = 'Near ' + escapeHtml(label) + caret;
+        else chip.innerHTML = 'Set location' + caret;
+    }
+    if (title) title.textContent = (label || state === 'finding') ? 'Top picks' : 'Top picks across the US';
+}
+
+function equalHeightSlider(sectionClass, cardClass) {
+    if (!window.jQuery) return;   // only the pages that load jQuery (search) have this slider
+    var $ = window.jQuery;
+    var maxHeight = 0;
     const sectionSelector = '.' + sectionClass + ' .' + cardClass;
     $(sectionSelector).css('height','auto');
     $(sectionSelector).each(function(){
         if($(this).height() > maxHeight){
             maxHeight = $(this).height();
         }
-    });     
+    });
     $(sectionSelector).height(maxHeight);
 }
 
@@ -103,9 +127,7 @@ function initLocationSearch(inputId, type = '') {
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();  
         if(type == 'home') {   
-            if (DOM.locationSelectorText.textContent !== input.value) {
-                DOM.locationSelectorText.textContent = input.value;
-            }
+            soSetLocText(input.value);
             if (DOM.locationPanel) DOM.locationPanel.classList.remove('show');  
             setCookie('so_label', input.value);
             setCookie('so_lat', lat);
@@ -179,7 +201,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const savedLng = getCookie('so_lng');
     const savedLabel = getCookie('so_label');  
     if (savedLabel) {
-        if (DOM.locationSelectorText) DOM.locationSelectorText.innerHTML = savedLabel + ' <i class="bi bi-chevron-down"></i>';
+        soSetLocText(savedLabel);
+    }
+    // Header search: show the saved place as a hint in the location field (it is applied only when the visitor taps it).
+    if (savedLabel && DOM.inputHeader && !DOM.inputHeader.value) {
+        DOM.inputHeader.placeholder = 'Near ' + savedLabel;
     }
   
     if (savedLat && savedLng) {
@@ -194,12 +220,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   
     const locationLabel = DOM.locationSelectorText;
-    const showPrompt = () => { if (locationLabel) locationLabel.innerHTML = 'Select your location <i class="bi bi-chevron-down"></i>'; };
+    const showPrompt = () => {
+        soSetLocText('');
+        window.locationReady = true;
+        document.dispatchEvent(new CustomEvent('so:location', { detail: { lat: '', lng: '', label: '' } }));
+        if (typeof reloadActiveTab === 'function') {
+            reloadActiveTab('', {});
+        }
+        if (typeof loadNearbyVenues === 'function') {
+            loadNearbyVenues();
+        }
+    };
     const applyLocation = (lat, lng, label, labelCookie) => {
         setCookie('so_lat', encodeURIComponent(lat));
         setCookie('so_lng', encodeURIComponent(lng));
         setCookie('so_label', labelCookie || label);
-        if (locationLabel) locationLabel.innerHTML = label + ' <i class="bi bi-chevron-down"></i>';
+        soSetLocText(label);
+        if (DOM.inputHeader && !DOM.inputHeader.value) DOM.inputHeader.placeholder = 'Near ' + label;
         window.locationReady = true;
         document.dispatchEvent(new CustomEvent('so:location', { detail: { lat: lat, lng: lng, label: label } }));
         if (typeof reloadActiveTab === 'function') {
@@ -226,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }).catch(showPrompt);
     };
 
-    if (locationLabel) locationLabel.innerHTML = 'Finding your location... <i class="bi bi-chevron-down"></i>';
+    soSetLocText(null, 'finding');
     // If nothing has answered after a few seconds (for example the permission prompt is still open), go back to the plain prompt.
     setTimeout(() => { if (locationLabel && /^Finding/.test(locationLabel.textContent.trim())) showPrompt(); }, 4000);
     fetch('/ajax/get_ip_details.php')
@@ -234,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
     .then(data => {
         // The lookup can legitimately come back empty (visitor's address not in the database, no location headers from
         // the CDN): never save or show a half-empty "undefined, undefined" label, try the allowed device location instead.
-        if (!data || !data.city || !data.state) {
+        if (!data || !data.city || !data.state || !data.lat || !data.lng) {
             tryAllowedDeviceLocation();
             return;
         }
@@ -266,11 +303,17 @@ if (DOM.inputHeader) {
     DOM.inputHeader.addEventListener('click', function () {
         const q = this.value.trim();
         if (q.length === 0) {
-            DOM.resultsHeader.innerHTML = `
+            const savedPlace = getCookie('so_label'), sLat = getCookie('so_lat'), sLng = getCookie('so_lng');
+            DOM.resultsHeader.innerHTML = (savedPlace && sLat && sLng ? `
+                <div class="current-location">
+                    <i class="bi bi-geo-alt ms-1 me-2"></i> <span class="ms-4 ps-2" id="useSavedLocationHeader" role="button" tabindex="0"></span>
+                </div>` : '') + `
                 <div class="current-location">
                     <i class="bi bi-send ms-1 me-2"></i> <span class="ms-4 ps-2" id="useCurrentLocationHeader"> Current location </span>  
                 </div>
             `;
+            const sp = document.getElementById('useSavedLocationHeader');
+            if (sp) sp.textContent = 'Near ' + savedPlace;
             return;
         }
     });
@@ -280,6 +323,18 @@ if(DOM.resultsHeader) {
     DOM.resultsHeader.addEventListener('click', function (e) {  
         if (e.target.id === 'useCurrentLocationHeader') {
             getCurrentLocationHeader();
+            return;
+        }
+        if (e.target.id === 'useSavedLocationHeader') {
+            // One tap: use the place the site already knows (the clear button next to the field removes it again).
+            DOM.inputHeader.value = getCookie('so_label');
+            DOM.latHeader.value = getCookie('so_lat');
+            DOM.lngHeader.value = getCookie('so_lng');
+            DOM.resultsHeader.innerHTML = '';
+            if (DOM.resetLocHeader) {
+                DOM.resetLocHeader.classList.remove('d-none');
+                DOM.resetLocHeader.onclick = function () { DOM.inputHeader.value = ''; this.classList.add('d-none'); DOM.latHeader.value = ''; DOM.lngHeader.value = ''; };
+            }
             return;
         }
     });
@@ -356,11 +411,13 @@ function toApiDate(dateObj) {
     DATE PICKER LIBRARY (loaded on demand)
 ===================================================== */
 // flatpickr (50 KB script + 16 KB CSS) is only needed once someone touches a date field, so it is not on every page load.
-// header.php prefetches both files at idle priority; this loads them (from the cache by then) and resolves when ready.
-// Warm the browser cache once the page has fully loaded and the browser is idle (not in the <head>: an early prefetch competes
-// with the render-blocking CSS and the hero image for bandwidth, which measurably delayed first paint on slow connections).
-window.addEventListener('load', function () {
-    var warm = function () {
+// Both files are prefetched on the first interaction (below); this loads them (from the cache by then) and resolves when ready.
+(function () {
+    var warmed = false;
+    function warm() {
+        if (warmed) return;
+        warmed = true;
+        ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (t) { window.removeEventListener(t, warm); });
         var assets = window.SO_ASSETS || {};
         [[assets.flatpickrJs, 'script'], [assets.flatpickrCss, 'style']].forEach(function (a) {
             if (!a[0]) return;
@@ -368,9 +425,11 @@ window.addEventListener('load', function () {
             l.rel = 'prefetch'; l.as = a[1]; l.href = a[0];
             document.head.appendChild(l);
         });
-    };
-    if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 5000 }); else setTimeout(warm, 3000);
-});
+    }
+    // On the visitor's first touch, scroll or key press (not on page load): a page that is only being read, measured or crawled never
+    // requests the date picker files, and an early prefetch would also compete with the page itself.
+    ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (t) { window.addEventListener(t, warm, { passive: true }); });
+})();
 window.soLoadFlatpickr = (function () {
     var pending = null;
     return function () {
@@ -386,7 +445,15 @@ window.soLoadFlatpickr = (function () {
             js.src = assets.flatpickrJs || '/lib/flatpickr/4.6.13/flatpickr.min.js';
             js.async = true;
             js.onload = function () { resolve(window.flatpickr); };
-            js.onerror = function () { pending = null; reject(new Error('flatpickr failed to load')); };
+            js.onerror = function () {
+                // One retry (a different address, so a failed answer is not reused) before giving up.
+                var again = document.createElement('script');
+                again.src = js.src + (js.src.indexOf('?') === -1 ? '?r=1' : '&r=1');
+                again.async = true;
+                again.onload = function () { resolve(window.flatpickr); };
+                again.onerror = function () { pending = null; reject(new Error('flatpickr failed to load')); };
+                setTimeout(function () { document.head.appendChild(again); }, 800);
+            };
             document.head.appendChild(js);
         });
         return pending;
@@ -507,7 +574,10 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
         DOM.keywordResultsHeader.style.display = 'block';
     }
   
-    function createSlug(name, id) {
+    // Slugs come from the server (no ids in URLs). The name-and-id form is only the fallback for an answer without a slug; the server
+    // understands it and redirects to the clean URL.
+    function createSlug(name, id, slug) {
+        if (slug) return slug;
         return `${name}-${id}`
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')
@@ -550,7 +620,7 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
                 performers.results.forEach(item => {
                     html += `
                     <li class="result-item" id="suggestion-${s}" role="option">
-                        <a href="/artist/${createSlug(item.name, item.id)}">
+                        <a href="/artist/${createSlug(item.name, item.id, item.slug)}">
                         ${escapeHtml(item.name)}
                         </a>
                     </li>`;
@@ -563,7 +633,7 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
                 cities.results.forEach(item => {
                     html += `
                     <li class="result-item" id="suggestion-${s}" role="option">
-                        <a href="/city/${createSlug(item.name, item.id)}">
+                        <a href="/city/${createSlug(item.name, item.id, item.slug)}">
                         ${escapeHtml(item.name)}, ${escapeHtml(item.state || '')}
                         </a>
                     </li>`;
@@ -576,7 +646,7 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
                 venues.results.forEach(item => {
                     html += `
                     <li class="result-item" id="suggestion-${s}" role="option">
-                        <a href="/venue/${createSlug(item.name, item.id)}">
+                        <a href="/venue/${createSlug(item.name, item.id, item.slug)}">
                         ${escapeHtml(item.name)}
                         </a>
                     </li>`;
@@ -667,12 +737,18 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
             return;
         }  
         if (!items.length) return;  
-        if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+        // Arrow keys move through the suggestions. Tab is NOT used for that: it moves on to the next control and closes the list
+        // (a keyboard user could not leave the field while any suggestion was showing).
+        if (e.key === 'Tab') {
+            closeSuggestions();
+            return;
+        }
+        if (e.key === 'ArrowDown') {
             e.preventDefault();
             activeIndex = (activeIndex + 1) % items.length;
             updateActive(items);
         }  
-        if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+        if (e.key === 'ArrowUp') {
             e.preventDefault();
             activeIndex = (activeIndex - 1 + items.length) % items.length;
             updateActive(items);
@@ -680,6 +756,12 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
         if (e.key === 'Enter') {
             if (activeIndex >= 0 && items[activeIndex]) {
             e.preventDefault();
+            if (window.soTrack) {
+                const row = items[activeIndex].parentElement;
+                let group = '', n = 0;
+                Array.prototype.forEach.call(row.parentElement.children, function (c, i) { if (c.classList.contains('suggestion-label') && i < Array.prototype.indexOf.call(row.parentElement.children, row)) group = c.textContent; if (c === row) n = i; });
+                window.soTrack('suggestion_click', { suggestion_group: group.toLowerCase().replace(/\s+/g, '_'), suggestion_position: n + 1, via: 'keyboard' });
+            }
             window.location.href = items[activeIndex].href;
             }
         }
@@ -732,7 +814,7 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
             activeIndex = -1;
         };
         if (trendingCache) { build(trendingCache); return; }
-        fetch('/cache/top_performers.json', { cache: 'force-cache' })
+        fetch('/ajax/get-top-performers.php', { cache: 'force-cache' })
             .then(r => r.ok ? r.json() : {})
             .then(d => {
                 const pick = [];
@@ -754,34 +836,28 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
     });  
 }
 
-$(document).ready(function(){
-    $('.open-submenu').click(function(e){
-        e.preventDefault();
-        let target = $(this).data('target');
-        $('#' + target).addClass('active');
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.open-submenu').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            var target = document.getElementById(btn.getAttribute('data-target'));
+            if (target) target.classList.add('active');
+        });
     });
-    $('.back-btn').click(function(){
-        $(this).closest('.submenu-panel').removeClass('active');
+    document.querySelectorAll('.back-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var panel = btn.closest('.submenu-panel');
+            if (panel) panel.classList.remove('active');
+        });
     });
-
 
     var currentPath = window.location.pathname.replace(/\/$/, "");
-
-    $('footer a').each(function () {
-  
-      var href = $(this).attr('href');
-  
-      if (!href || href === '#' || href.startsWith('#')) return;
-  
-      var linkPath = new URL(this.href).pathname.replace(/\/$/, "");
-  
-      if (currentPath === linkPath) {
-        $(this).addClass('active');
-      }
-  
+    document.querySelectorAll('footer a').forEach(function (a) {
+        var href = a.getAttribute('href');
+        if (!href || href === '#' || href.indexOf('#') === 0) return;
+        var linkPath = new URL(a.href).pathname.replace(/\/$/, "");
+        if (currentPath === linkPath) a.classList.add('active');
     });
-  
-  
 });
 
 /* =====================================================
@@ -820,7 +896,11 @@ window.soResolveLater = function (pending, round) {
           var url = (data.images || [])[i];
           if (!url) { left.push(p); return; }
           var t = new Image();
-          t.onload = function () { p.img.src = url; p.img.classList.remove('so-img-tile'); };
+          var cr = (data.credits || [])[i];
+          t.onload = function () {
+            p.img.src = url; p.img.classList.remove('so-img-tile');
+            if (cr && cr.text) { p.img.title = cr.full || cr.text; p.img.setAttribute('data-credit', cr.text); }   // the licence notice travels with the picture
+          };
           t.src = url;
         });
         window.soResolveLater(left.concat(pending.slice(8)), round + 1);
@@ -868,6 +948,7 @@ window.soBatchLoadImages = async function (container, selector, isCurrent) {
       img.style.transition = 'opacity 0.3s ease';
       const reveal = () => {
         if (typeof isCurrent === 'function' && !isCurrent()) return;
+        if (!img.dataset.soFallback) img.dataset.soFallback = img.getAttribute('src') || '';
         img.src = r.image;
         if (r.credit) img.title = r.credit;
         requestAnimationFrame(() => { img.style.opacity = '1'; img.classList.add('loaded'); });
@@ -943,23 +1024,21 @@ document.addEventListener('DOMContentLoaded', function () {
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const catJson = cat => esc(JSON.stringify(cat ? { path: cat } : {}));
   let html = '';
+  const kindOf = cat => /\.1988\./.test(cat || '') ? 'sports' : /\.1989\./.test(cat || '') ? 'theatre' : 'concerts';
   evs.forEach(function (ev) {
-    const when = ev.date ? new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
-    const who = ev.performer || ev.name;
-    html += '<a class="so-feed-card" href="/event/' + esc(ev.slug) + '" data-recent-event="' + esc(ev.id) + '">' +
-      '<div class="so-feed-card__img"><img class="event-dynamic-image blur-image" src="' + window.soTile(who) + '" alt="' + esc(ev.name) + '" width="260" height="260" loading="lazy" data-artist="' + encodeURIComponent(who) + '" data-category=\'' + catJson(ev.cat) + '\'><span class="so-feed-card__badge">Event</span></div>' +
-      '<h3 class="so-feed-card__name">' + esc(ev.name) + '</h3>' +
-      '<p class="so-feed-card__meta">' + esc([when, ev.city].filter(Boolean).join(' - ')) + '</p></a>';
+    html += '<div class="so-recent__slide" data-recent-event="' + esc(ev.id) + '">' + window.soEvCard({ id: ev.id, name: ev.name, iso: ev.date, loc: ev.city, venue: ev.venue, tab: kindOf(ev.cat) }, { status: 'Viewed', href: '/event/' + ev.slug, noTime: true }) + '</div>';
   });
   items.forEach(function (it) {
-    html += '<a class="so-feed-card" href="/artist/' + esc(it.slug) + '">' +
-      '<div class="so-feed-card__img"><img class="' + (it.img ? '' : 'event-dynamic-image blur-image') + '" src="' + (it.img ? esc(it.img) : window.soTile(it.name)) + '" alt="' + esc(it.name) + '" width="260" height="260" loading="lazy"' + (it.img ? '' : ' data-artist="' + encodeURIComponent(it.name) + '"') + '></div>' +
-      '<h3 class="so-feed-card__name">' + esc(it.name) + '</h3><p class="so-feed-card__meta">View tickets</p></a>';
+    const ini = String(it.name).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    let h = 0; for (let i = 0; i < it.name.length; i++) h = (h * 31 + it.name.charCodeAt(i)) % 360;
+    html += '<div class="so-recent__slide"><a class="so-rp" href="/artist/' + esc(it.slug) + '">' +
+      (it.img ? '<img class="so-topc__avatar" src="' + esc(it.img) + '" alt="" width="44" height="44" loading="lazy">' : '<span class="so-topc__avatar so-topc__avatar--init" style="--so-hue:' + h + '">' + esc(ini) + '</span>') +
+      '<span class="so-rp__txt"><strong>' + esc(it.name) + '</strong><small>View tickets</small></span>' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a></div>';
   });
   track.innerHTML = html;
   box.classList.remove('d-none');
   track.addEventListener('click', function (e) { var a = e.target.closest('[data-recent-event]'); if (a) (window.dataLayer = window.dataLayer || []).push({ event: 'recent_event_click', event_id: a.getAttribute('data-recent-event') }); });
-  if (window.soBatchLoadImages) window.soBatchLoadImages(track, '.event-dynamic-image', function () { return true; });
   const clear = box.querySelector('[data-so-recent-clear]');
   if (clear) clear.addEventListener('click', function () {
     try { localStorage.removeItem('so_recent_viewed'); localStorage.removeItem('so_recent_events'); } catch (e) {}
@@ -973,6 +1052,16 @@ document.addEventListener('DOMContentLoaded', function () {
   const input = document.getElementById('keywordHeader');
   if (form && input && window.soLocal) {
     form.addEventListener('submit', function () { window.soLocal.addSearch(input.value); });
+  }
+  // Keep the results URL short and shareable: fields left empty are not sent (/search?keywordHeader=taylor instead of six parameters).
+  // The browser reads the form after this handler runs, so disabling is enough; the fields come back right after, for the back button.
+  if (form) {
+    form.addEventListener('submit', function () {
+      const off = [];
+      form.querySelectorAll('input[name]').forEach(function (el) { if (!el.disabled && String(el.value).trim() === '') { el.disabled = true; off.push(el); } });
+      setTimeout(function () { off.forEach(function (el) { el.disabled = false; }); }, 0);
+    });
+    window.addEventListener('pageshow', function () { form.querySelectorAll('input[name]').forEach(function (el) { el.disabled = false; }); });
   }
 });
 
@@ -1004,14 +1093,13 @@ document.addEventListener('DOMContentLoaded', function () {
 })();
 
 /* =====================================================
-    PHONES: search icon folds the header search open and closed
+    Search: the header's Search button (an icon on phones) and the home hero's "Search Events" button fold the header search open and closed
 ===================================================== */
 (function () {
     var btn = document.querySelector('.so-search-toggle');
     var form = document.getElementById('soSearch');
     if (!btn || !form) return;
-    btn.addEventListener('click', function () {
-        var open = form.hasAttribute('data-so-collapsed');
+    function setOpen(open) {
         if (open) { form.removeAttribute('data-so-collapsed'); } else { form.setAttribute('data-so-collapsed', ''); }
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
         btn.classList.toggle('is-open', open);
@@ -1019,6 +1107,13 @@ document.addEventListener('DOMContentLoaded', function () {
             var field = document.getElementById('keywordHeader');
             if (field) { try { field.focus({ preventScroll: true }); } catch (e) { field.focus(); } }
         }
+    }
+    btn.addEventListener('click', function () { setOpen(form.hasAttribute('data-so-collapsed')); });
+    document.querySelectorAll('[data-so-open-search]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            window.scrollTo({ top: 0, behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+            setOpen(true);
+        });
     });
 })();
 
@@ -1048,7 +1143,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     var tops = document.querySelectorAll('.so-mega-top');
     if (!tops.length) return;
-    var openKey = null, timer = null;
+    var openKey = null, timer = null, skipFocusOpen = false;
     function panelOf(a) { return document.getElementById('so-mega-' + a.getAttribute('data-so-mega')); }
     function closeAll() {
         tops.forEach(function (a) { var p = panelOf(a); if (p) p.hidden = true; a.setAttribute('aria-expanded', 'false'); a.classList.remove('is-open'); });
@@ -1069,12 +1164,249 @@ document.addEventListener('DOMContentLoaded', function () {
         var item = a.closest('.so-mega-item');
         item.addEventListener('mouseenter', function () { later(function () { open(a); }, openKey ? 40 : 110); });
         item.addEventListener('mouseleave', function () { later(closeAll, 140); });
-        a.addEventListener('focus', function () { open(a); });
+        a.addEventListener('focus', function () { if (!skipFocusOpen) open(a); });
+        // Touch screens (no hover): the first tap opens the panel, the second tap follows the link.
+        a.addEventListener('click', function (e) {
+            if (window.matchMedia && matchMedia('(hover: none)').matches && openKey !== a.getAttribute('data-so-mega')) { e.preventDefault(); open(a); }
+        });
         a.addEventListener('keydown', function (e) {
             if (e.key === 'ArrowDown') { var first = panelOf(a).querySelector('a'); if (first) { e.preventDefault(); open(a); first.focus(); } }
         });
         item.addEventListener('focusout', function (e) { if (!item.contains(e.relatedTarget)) later(closeAll, 60); });
     });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || openKey === null) return;
+        // Focus inside the panel would be lost when it hides: put it back on the menu's top link.
+        var active = document.activeElement, owner = active && active.closest ? active.closest('.so-mega-item') : null;
+        var top = owner ? owner.querySelector('.so-mega-top') : null;
+        closeAll();
+        if (top && active !== top) { skipFocusOpen = true; try { top.focus({ preventScroll: true }); } catch (err) { top.focus(); } skipFocusOpen = false; }
+    });
     document.addEventListener('click', function (e) { if (!e.target.closest('.so-mega-item')) closeAll(); });
+})();
+
+/* Header search: leave empty fields out of the address (/search?keywordHeader=adele instead of five empty parameters). */
+(function () {
+    var f = document.getElementById('soSearch');
+    if (!f) return;
+    f.addEventListener('submit', function () {
+        f.querySelectorAll('input[name]').forEach(function (i) { if (i.value.trim() === '') i.disabled = true; });
+        setTimeout(function () { f.querySelectorAll('input[name]').forEach(function (i) { i.disabled = false; }); }, 1500);
+    });
+})();
+
+
+/* =====================================================
+    Expired or deleted picture: never show a broken image.
+    A stored artist or venue picture can disappear from storage (file removed, link expired). The image error does not bubble, so it is
+    caught here in the capture phase and the tile goes back to the category placeholder it started with (data-so-fallback), once.
+===================================================== */
+document.addEventListener('error', function (e) {
+  const img = e.target;
+  if (!img || img.tagName !== 'IMG' || img.dataset.soFailed) return;
+  img.dataset.soFailed = '1';
+  const fb = img.dataset.soFallback || img.getAttribute('data-fallback') || '';
+  if (fb && img.getAttribute('src') !== fb) { img.src = fb; img.classList.add('loaded'); img.style.opacity = '1'; return; }
+  img.style.visibility = 'hidden';   // nothing better to show: keep the card's layout, lose the broken-image icon
+}, true);
+
+/* =====================================================
+    Event cards (text only, no pictures): one card for every event list on the site.
+    soEvCard(ev, opts) returns the HTML; ev is what the feed endpoints return
+    { id, name, iso 'YYYY-MM-DD', date (text, fallback), time, venue, loc, price, tab, dist }.
+    opts.status = a small chip such as "Tomorrow" or "Popular". The heart saves the event on this device only
+    (same localStorage list the event page uses, key so_saved_events).
+===================================================== */
+(function () {
+  var KEY = 'so_saved_events';
+  var ICONS = {
+    concert: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>',
+    sports: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H4.5a2 2 0 0 0 2 3.5M16 6h3.5a2 2 0 0 1-2 3.5M12 13v4M8.5 20h7"/></svg>',
+    theater: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5.5h10v6a5 5 0 0 1-10 0v-6zM6.5 9h.01M10.5 9h.01M6.5 13c1 1 3 1 4 0"/><path d="M10.5 18.5a5 5 0 0 0 10-1.5v-6h-5.5M15.5 14h.01M19 14h.01"/></svg>',
+    festival: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v1.5h18V16a2 2 0 0 0 0-4v0a2 2 0 0 0 0-4V6.5H3V8zM14 6.5v11"/></svg>'
+  };
+  var LABEL = { concert: 'Concert', sports: 'Sports', theater: 'Theater', festival: 'Festival' };
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function kind(tab) {
+    tab = String(tab || '').toLowerCase();
+    return tab === 'sports' ? 'sports' : (tab === 'theatre' || tab === 'theater') ? 'theater' : tab === 'festival' ? 'festival' : 'concert';
+  }
+  function dateText(ev, noTime) {
+    var out = '';
+    if (/^\d{4}-\d{2}-\d{2}/.test(ev.iso || '')) {
+      var p = ev.iso.slice(0, 10).split('-').map(Number);
+      out = new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    } else {
+      out = String(ev.date || '');
+    }
+    var t = String(ev.time || '').trim();
+    if (out && !noTime && /^\d{4}-\d{2}-\d{2}/.test(ev.iso || '')) out += ' • ' + (t && !/^tba$/i.test(t) ? esc(t) : 'Time TBA').replace(/&amp;/g, '&');
+    return out;
+  }
+  function slugOf(v) { return (typeof normalizeKey === 'function') ? normalizeKey(v) : String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+  function storeOk() { try { localStorage.getItem(KEY); return true; } catch (e) { return false; } }
+  function savedIds() {
+    try { var a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a.map(function (x) { return String(x && x.id); }) : []; } catch (e) { return []; }
+  }
+
+  window.soEvCard = function (ev, opts) {
+    opts = opts || {};
+    var k = kind(ev.tab);
+    var slug = ev.slug || (slugOf(ev.name) + '-' + ev.id);   // the server sends the clean slug
+    var href = opts.href || ('/event/' + slug);
+    var saved = storeOk() && savedIds().indexOf(String(ev.id)) !== -1;
+    var place = ev.loc ? '<small>' + esc(ev.loc) + (ev.dist != null ? ' · ' + (ev.dist < 3 ? 'nearby' : ev.dist + ' mi') : '') + '</small>' : '';
+    return '<article class="so-evc so-evc--' + k + (opts.tint ? ' so-evc--tint' : '') + '">' +
+      '<div class="so-evc__top"><span class="so-evc__badge">' + ICONS[k] + LABEL[k] + '</span>' +
+        (opts.status ? '<span class="so-evc__status' + (/^Popular/.test(opts.status) ? ' so-evc__status--hot' : '') + '">' + esc(opts.status) + '</span>' : '') +
+        (storeOk() ? '<button type="button" class="so-evc__save' + (saved ? ' is-saved' : '') + '" aria-pressed="' + (saved ? 'true' : 'false') + '" aria-label="Save ' + esc(ev.name) + '" data-so-evc-save data-id="' + esc(ev.id) + '" data-slug="' + esc(slug) + '" data-name="' + esc(ev.name) + '" data-iso="' + esc(ev.iso || '') + '" data-city="' + esc(ev.loc || '') + '" data-venue="' + esc(ev.venue || '') + '" data-price="' + esc(ev.price || '') + '"><svg width="20" height="20" viewBox="0 0 24 24" fill="' + (saved ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.3C1.7 8 3.6 5 6.7 5c1.9 0 3.5 1 5.3 3 1.8-2 3.4-3 5.3-3 3.1 0 5 3 3.9 6.2-1.7 4.7-9.2 9.3-9.2 9.3z"/></svg></button>' : '') +
+      '</div>' +
+      '<h3 class="so-evc__name"><a class="so-evc__link" href="' + href + '">' + esc(ev.name) + '</a></h3>' +
+      '<ul class="so-evc__meta">' +
+        '<li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg><span>' + esc(dateText(ev, opts.noTime)) + '</span></li>' +
+        (ev.venue ? '<li><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12zm0-9.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6z"/></svg><span>' + esc(ev.venue) + place + '</span></li>' : '') +
+      '</ul>' +
+      '<div class="so-evc__foot">' + (ev.price ? '<span class="so-evc__price">From <strong>' + esc(ev.price) + '</strong></span>' : '<span class="so-evc__price so-evc__price--none">View tickets</span>') +
+        '<span class="so-evc__go" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>' +
+    '</article>';
+  };
+  window.soEvCardSkeleton = function (n) {
+    var h = '';
+    for (var i = 0; i < (n || 4); i++) h += '<article class="so-evc so-evc--skeleton" aria-hidden="true"><div class="so-evc__top"><span class="so-evc__sk so-evc__sk--badge"></span></div><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></article>';
+    return h;
+  };
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-so-evc-save]') : null;
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var list;
+    try { list = JSON.parse(localStorage.getItem(KEY) || '[]'); if (!Array.isArray(list)) list = []; } catch (x) { return; }
+    var id = String(b.getAttribute('data-id'));
+    var had = list.some(function (x) { return String(x && x.id) === id; });
+    if (had) list = list.filter(function (x) { return String(x && x.id) !== id; });
+    else list.unshift({ id: id, name: b.getAttribute('data-name'), slug: b.getAttribute('data-slug'), date: b.getAttribute('data-iso'), city: b.getAttribute('data-city'), venue: b.getAttribute('data-venue'), price: b.getAttribute('data-price'), savedAt: Date.now() });
+    try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, 40))); } catch (x) { return; }
+    b.classList.toggle('is-saved', !had);
+    b.setAttribute('aria-pressed', had ? 'false' : 'true');
+    var svg = b.querySelector('svg'); if (svg) svg.setAttribute('fill', had ? 'none' : 'currentColor');
+  });
+})();
+
+/* Sideways scrollers (sub-category row, "Browse by category" tiles): previous / next buttons appear only when there is more to scroll. */
+(function () {
+  function setup(wrap) {
+    var track = wrap.querySelector('[data-so-subs-track]');
+    var prev = wrap.querySelector('[data-so-subs-prev]');
+    var next = wrap.querySelector('[data-so-subs-next]');
+    if (!track || !prev || !next) return;
+    function sync() {
+      var max = track.scrollWidth - track.clientWidth;
+      prev.hidden = !(max > 4 && track.scrollLeft > 4);
+      next.hidden = !(max > 4 && track.scrollLeft < max - 4);
+    }
+    function by(dir) { track.scrollBy({ left: dir * Math.max(200, track.clientWidth * 0.8), behavior: 'smooth' }); }
+    prev.addEventListener('click', function () { by(-1); });
+    next.addEventListener('click', function () { by(1); });
+    track.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync);
+    sync();
+    setTimeout(sync, 400);
+  }
+  function init() { document.querySelectorAll('[data-so-subs]').forEach(setup); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+
+/* "Read more" under the newsletter on listing pages: opens everything below it, closes it again. */
+(function () {
+  var wrap = document.querySelector('[data-so-more]');
+  if (!wrap) return;
+  var btn = wrap.querySelector('[data-so-more-toggle]');
+  var panel = document.getElementById('soMorePanel');
+  var label = wrap.querySelector('[data-so-more-label]');
+  if (!btn || !panel) return;
+  function set(open, scroll) {
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (label) label.textContent = open ? 'Show less' : 'Read more';
+    wrap.classList.toggle('is-open', open);
+    if (open && typeof window.soAdsPush === 'function') window.soAdsPush();   // ads inside the panel are only requested once they are visible
+    if (scroll) {
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var target = open ? panel : btn;
+      var top = target.getBoundingClientRect().top + window.pageYOffset - (open ? 90 : 220);
+      window.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+    }
+  }
+  btn.addEventListener('click', function () { set(panel.hidden, true); });
+  // A link to something inside the panel (a #hash) opens it first.
+  function openForHash() {
+    if (!location.hash || location.hash.length < 2) return;
+    var t = null;
+    try { t = document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch (e) {}
+    if (t && panel.contains(t)) set(true, false);
+  }
+  openForHash();
+  window.addEventListener('hashchange', openForHash);
+})();
+
+/* =====================================================
+    SLIDERS: hidden slides must not be focusable
+===================================================== */
+// Slick marks off-screen slides aria-hidden="true" but leaves the slide (and the links inside it) in the tab order, which breaks the
+// ARIA rule that hidden content cannot take focus (axe: aria-hidden-focus). Hidden slides and everything focusable inside them get
+// tabindex="-1" (marked with data-so-ti so it is undone when the slide becomes visible again).
+(function () {
+    var FOCUSABLE = 'a[href],button,input,select,textarea,[tabindex]';
+    function fix(slider) {
+        slider.querySelectorAll('.slick-slide').forEach(function (slide) {
+            var hidden = slide.getAttribute('aria-hidden') === 'true';
+            var nodes = [slide].concat(Array.prototype.slice.call(slide.querySelectorAll(FOCUSABLE)));
+            nodes.forEach(function (el) {
+                if (hidden) {
+                    if (el.getAttribute('tabindex') !== '-1') { el.setAttribute('data-so-ti', el.getAttribute('tabindex') === null ? '' : el.getAttribute('tabindex')); el.setAttribute('tabindex', '-1'); }
+                } else if (el.hasAttribute('data-so-ti')) {
+                    var prev = el.getAttribute('data-so-ti');
+                    if (prev === '') el.removeAttribute('tabindex'); else el.setAttribute('tabindex', prev);
+                    el.removeAttribute('data-so-ti');
+                }
+            });
+        });
+    }
+    var watched = typeof WeakSet === 'function' ? new WeakSet() : null;
+    function watch(slider) {
+        // Slick rewrites tabindex/aria-hidden after its own events, so the rule is re-applied whenever those attributes change.
+        if (!window.MutationObserver || (watched && watched.has(slider))) return;
+        if (watched) watched.add(slider);
+        var queued = false;
+        new MutationObserver(function () {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(function () { queued = false; fix(slider); });
+        }).observe(slider, { attributes: true, attributeFilter: ['aria-hidden', 'tabindex'], subtree: true });
+    }
+    function all() { document.querySelectorAll('.slick-slider').forEach(function (sl) { fix(sl); watch(sl); }); }
+    if (window.jQuery) {
+        window.jQuery(document).on('init reInit afterChange setPosition breakpoint', '.slick-slider', function () { fix(this); watch(this); });
+    }
+    window.addEventListener('load', function () { all(); setTimeout(all, 600); });
+})();
+
+// Filter and "See all" controls that change the listing (date, sort) carry their target in data-go instead of an href: they are
+// choices on the page, not pages of their own, so crawlers do not list every filtered copy of a page.
+(function () {
+    function go(el) {
+        var to = el.getAttribute('data-go');
+        if (to && to.charAt(0) === '/') window.location.href = to;
+    }
+    document.addEventListener('click', function (e) {
+        var el = e.target.closest && e.target.closest('[data-go]');
+        if (el) { e.preventDefault(); go(el); }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        var el = e.target.closest && e.target.closest('[data-go]');
+        if (el && el.tagName !== 'BUTTON') { e.preventDefault(); go(el); }
+    });
 })();

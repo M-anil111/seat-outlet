@@ -1,3 +1,4 @@
+<?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Ticket Scanner: Planning the Trip Around Your Event</h2>
 <p>Ticket Scanner is part of the Seat Outlet network and is described on this page as an online travel booking website for flights, hotels and cars. If you are heading out of town for a concert, game or festival, this is where the travel side of the plan comes in.</p>
 <p>Ticket Scanner is a travel site, so it is not where you buy event tickets. For those, browse Seat Outlet's <a href="/buy-tickets-online">event tickets</a>, then come back to sort out flights, a place to stay and a rental car.</p>

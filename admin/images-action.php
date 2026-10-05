@@ -23,5 +23,20 @@ if ($id > 0 && $do === 'retry') {
     admin_flash_set('success', 'Queued for re-resolution.');
 }
 
+if ($do === 'resolve_now') {
+    // Work 25 queue rows right now (signed-in admin, CSRF-checked above). Bounded: 25 rows, 0.8s apart, 50s deadline.
+    @set_time_limit(90);
+    $r = imageWorkQueue(25, 800000, time() + 50);
+    admin_flash_set($r['processed'] === 0 ? 'success' : ($r['resolved'] > 0 ? 'success' : 'error'),
+        sprintf('Processed %d: %d resolved, %d no image found%s.', $r['processed'], $r['resolved'], $r['miss'], $r['rateLimited'] >= 3 ? ', stopped early because a source is rate limiting us' : ''));
+}
+
+if ($do === 'requeue_legacy') {
+    // Pictures stored before licences were recorded: queue them again so each is re-checked and re-labelled (or replaced by the initials tile).
+    MYSQLI->query("UPDATE images SET status = 'pending', expires_at = NULL, source = NULL, source_url = NULL, license = NULL, attribution = NULL
+                    WHERE entity_type IS NOT NULL AND status = 'ok' AND store_key IS NULL AND (source IS NULL OR source <> 'admin')");
+    admin_flash_set('success', 'Queued ' . (int) MYSQLI->affected_rows . ' older pictures for re-verification.');
+}
+
 header('Location: images');
 exit;

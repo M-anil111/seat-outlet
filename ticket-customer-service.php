@@ -1,4 +1,9 @@
-<?php include 'header.php'; ?>
+<?php
+require_once __DIR__ . '/inc/contact.php';
+require_once __DIR__ . '/inc/guarantee.php';
+soContactRoute();   // handles the form POST before any output
+include 'header.php';
+?>
 
 <style>
         
@@ -393,9 +398,9 @@
                     <div class="row contact-info">
                         <div class="col-12 col-sm-12 col-lg-12 mb-lg-4 mb-3 mt-0">
                             <h2 class="contact-title">Ways to Reach Us</h2>
-                            <p>Choose the contact method that works best for you. Email, call, or visit our office. Our support team is here to help with ticket issues, order questions, account support, and anything else you need.</p>
+                            <p>Email us or use the form. Our support team can help with ticket delivery, order questions and event changes. Include your order ID from the confirmation email so we can find your order faster.</p>
                         </div>
-                        <div class="col-12 col-sm-12 col-lg-6">
+                        <div class="col-12 col-sm-12 col-lg-12">
                             <div class="info-card">
                                 <div class="icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="35" height="35" x="0" y="0" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M467 76H45C20.137 76 0 96.262 0 121v270c0 24.885 20.285 45 45 45h422c24.655 0 45-20.03 45-45V121c0-24.694-20.057-45-45-45zm-6.302 30L287.82 277.967c-8.5 8.5-19.8 13.18-31.82 13.18s-23.32-4.681-31.848-13.208L51.302 106h409.396zM30 384.894V127.125L159.638 256.08 30 384.894zM51.321 406l129.587-128.763 22.059 21.943c14.166 14.166 33 21.967 53.033 21.967s38.867-7.801 53.005-21.939l22.087-21.971L460.679 406H51.321zM482 384.894 352.362 256.08 482 127.125v257.769z" fill="#ffffff" opacity="1" data-original="#ffffff" class=""></path></g></svg>
@@ -405,79 +410,13 @@
                                 <a href="mailto:support@seatoutlet.com">support@seatoutlet.com</a>
                             </div>
                         </div>
-                        <div class="col-12 col-sm-12 col-lg-6">
-                            <div class="info-card">
-                                <div class="icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="35" height="35" x="0" y="0" viewBox="0 0 32 32" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><g data-name="Layer 3"><path d="M30.035 22.594c-.053-.044-6.049-4.316-7.668-4.049-.781.138-1.227.671-2.122 1.737a30.54 30.54 0 0 1-.759.876 12.458 12.458 0 0 1-1.651-.672 13.7 13.7 0 0 1-6.321-6.321 12.458 12.458 0 0 1-.672-1.651c.294-.269.706-.616.882-.764 1.061-.89 1.593-1.337 1.731-2.119.283-1.619-4.005-7.613-4.049-7.667A2.289 2.289 0 0 0 7.7 1C5.962 1 1 7.436 1 8.521c0 .063.091 6.467 7.988 14.5C17.012 30.909 23.416 31 23.479 31 24.563 31 31 26.038 31 24.3a2.291 2.291 0 0 0-.965-1.706Zm-6.667 6.4c-.868-.074-6.248-.783-12.968-7.384C3.767 14.857 3.076 9.468 3.007 8.633a27.054 27.054 0 0 1 4.706-5.561c.04.04.093.1.161.178a35.391 35.391 0 0 1 3.574 6.063 11.886 11.886 0 0 1-1.016.911 10.033 10.033 0 0 0-1.512 1.422 1 1 0 0 0-.171.751 11.418 11.418 0 0 0 .965 2.641 15.71 15.71 0 0 0 7.248 7.247 11.389 11.389 0 0 0 2.641.966 1 1 0 0 0 .751-.171 10.075 10.075 0 0 0 1.427-1.518c.314-.374.733-.873.892-1.014a35.146 35.146 0 0 1 6.076 3.578c.083.07.142.124.181.159a27.036 27.036 0 0 1-5.562 4.707Z" fill="#ffffff" opacity="1" data-original="#ffffff" class=""></path><path d="M17 9a6.006 6.006 0 0 1 6 6 1 1 0 0 0 2 0 8.009 8.009 0 0 0-8-8 1 1 0 0 0 0 2Z" fill="#ffffff" opacity="1" data-original="#ffffff" class=""></path><path d="M17 4a11.013 11.013 0 0 1 11 11 1 1 0 0 0 2 0A13.015 13.015 0 0 0 17 2a1 1 0 0 0 0 2Z" fill="#ffffff" opacity="1" data-original="#ffffff" class=""></path></g></g></svg>
-                                </div>
-                                <h3>Call Us</h3>
-                                <p>Mon–Fri, 9am–8pm EST</p>
-                                <a href="tel:+18001234567">1-800-123-4567</a>
-                            </div>
-                        </div>
-                        <div class="col-12 col-sm-12 col-lg-12 mt-lg-4 mt-3">
-                            <div class="info-card">
-                                <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="35" height="35" x="0" y="0" viewBox="0 0 682.667 682.667" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><defs><clipPath id="a"ffffffclipPathUnits="userSpaceOnUse"><path d="M0 512h512V0H0Z" fill="#ffffff" opacity="1" data-original="#ffffff" class=""></path></clipPath></defs><g clip-path="url(#a)" transform="matrix(1.33333 0 0 -1.33333 0 682.667)"><path d="M0 0c71.358-3.844 125.297-21.563 125.297-42.841 0-24.088-69.123-43.615-154.39-43.615-85.268 0-154.39 19.527-154.39 43.615 0 21.278 53.938 38.997 125.296 42.841" style="stroke-width:30;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1" transform="translate(285.093 162.987)" fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-dasharray="none" stroke-opacity="" data-original="#ffffff" opacity="1"></path><path d="M0 0c-22.75-12.498-35.894-27.228-35.894-43.003 0-45.221 107.9-81.879 241-81.879 133.101 0 241 36.658 241 81.879 0 15.775-13.143 30.505-35.893 43.003" style="stroke-width:30;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1" transform="translate(50.894 139.882)" fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-dasharray="none" stroke-opacity="" data-original="#ffffff" opacity="1"></path><path d="M0 0c-22.669 0-41.046 18.377-41.046 41.045 0 22.669 18.377 41.046 41.046 41.046s41.046-18.377 41.046-41.046C41.046 18.377 22.669 0 0 0Zm0 155.911c-68.727 0-124.441-55.713-124.441-124.438 0-47.721 69.724-167.798 104.791-225.172 8.984-14.698 30.316-14.698 39.3 0C54.717-136.325 124.441-16.248 124.441 31.473c0 68.725-55.714 124.438-124.441 124.438z" style="stroke-width:30;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1" transform="translate(256 341.089)" fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-dasharray="none" stroke-opacity="" data-original="#ffffff" opacity="1"></path></g></g></svg></div>
-                                <h3>Visit Us</h3>
-                                <p>123 Ticket Plaza, Suite 400<br>New York, NY 10001</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
                 <!-- Contact Form -->
                 <div class="col-12 col-md-6">
                     <div class="contact-form-wrapper">
-                        <form class="contact-form">
-                            <h2>Send a Message</h2>
-                            <p class="subtitle">Fill out the form below and we'll get back to you within 24 hours.</p>
-                            
-                            <div class="row g-3 form-row">
-                                <div class="col-12 col-sm-6 form-group">
-                                    <label for="firstName">First Name</label>
-                                    <input type="text" id="firstName" name="firstName" class="form-control" placeholder="John" required>
-                                </div>
-                                <div class="col-12 col-sm-6 form-group">
-                                    <label for="lastName">Last Name</label>
-                                    <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Doe" required>
-                                </div>
-                            </div>
-
-                            <div class="row g-3 form-row mt-2">
-                                <div class="col-12 col-sm-6 form-group">
-                                    <label for="email">Email Address</label>
-                                    <input type="email" id="email" name="email" class="form-control" placeholder="john@example.com" required>
-                                </div>
-                                <div class="col-12 col-sm-6 form-group">
-                                    <label for="phone">Phone Number</label>
-                                    <input type="tel" id="phone" name="phone" class="form-control" placeholder="+1 (555) 000-0000">
-                                </div>
-                            </div>
-
-                            <div class="form-group mt-3">
-                                <label for="orderId">Order ID (if applicable)</label>
-                                <input type="text" id="orderId" name="orderId" class="form-control" placeholder="e.g. SO-12345678">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="subject">Subject</label>
-                                <select id="subject" name="subject" class="form-control" required>
-                                    <option value="">Select a topic</option>
-                                    <option value="order">Order Inquiry</option>
-                                    <option value="refund">Refund Request</option>
-                                    <option value="technical">Technical Support</option>
-                                    <option value="partnership">Partnership</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="message">Message</label>
-                                <textarea id="message" name="message" class="form-control" placeholder="How can we help you?" required></textarea>
-                            </div>
-
-                            <button type="submit" class="submit-btn btn w-100">Send Message</button>
-                        </form>
+                        <?php echo soContactForm(['title' => 'Send a Message', 'intro' => 'Fill out the form and a member of our team will reply to you by email.']); ?>
                     </div>
                 </div>
             </div>
@@ -489,20 +428,20 @@
             <div class="row g-3 g-md-4">
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="help-card">
-                        <h4>Track your order</h4>
-                        <p>Check the status of your ticket delivery in your account dashboard or via the confirmation email.</p>
+                        <h4>Find your order</h4>
+                        <p>Your order confirmation email has your order number and delivery details. Include the order number when you write to us.</p>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="help-card">
-                        <h4>Refund policy</h4>
-                        <p>Refunds are processed within 5-10 business days. Event cancellations qualify for full refunds.</p>
+                        <h4>Guarantee and refunds</h4>
+                        <p><?php echo soContactH(soGuaranteeSentence()); ?> <a href="/worry-free-guarantee">Read the full guarantee</a>.</p>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="help-card">
-                        <h4>Resell tickets</h4>
-                        <p>List your tickets on our marketplace. Visit "Sell Tickets" in your account to get started.</p>
+                        <h4>Business enquiries</h4>
+                        <p>Choose "Partnership" as the topic in the form above, or see the <a href="/ticket-partner-program">partner page</a>.</p>
                     </div>
                 </div>
             </div>
@@ -510,5 +449,6 @@
     </section>
 </main>
 
+<script src="<?php echo soContactH(soAsset('js/contact-form.js')); ?>" defer></script>
 <?php soSeoCopy('ticket-customer-service'); ?>
 <?php include 'footer.php'; ?>

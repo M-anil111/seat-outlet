@@ -3,8 +3,9 @@ require_once 'functions.php';
 // SEO: this page previously relied on header.php's generic fallback
 // title/canonical.
 $pageMetaTitle       = 'Our Guarantee | Seat Outlet';
-$pageMetaDescription = 'Seat Outlet stands behind every order with a Buyer Protection Guarantee: valid tickets, on-time delivery, secure payments, and a full refund if an event is canceled.';
+$pageMetaDescription = 'Seat Outlet orders are covered by the TicketNetwork 100% guarantee: authentic and valid tickets, delivery before the event, the tickets you ordered or better, and a refund if the event is canceled.';
 $pageCanonicalUrl    = HOME_URL . '/worry-free-guarantee';
+require_once __DIR__ . '/inc/guarantee.php';
 include 'header.php';
 ?>
 
@@ -426,32 +427,20 @@ include 'header.php';
                     <span class="guarantee-badge">100% Guarantee</span>
                     <h2 class="section-heading">Every Order Is Backed by a 100% Guarantee</h2>
                     <p class="guarantee-lead">
-                        Seat Outlet orders are fulfilled through the TicketNetwork marketplace and covered by its
-                        100% guarantee, in plain language:
+                        <?php echo htmlspecialchars(soGuaranteeLead(), ENT_QUOTES, 'UTF-8'); ?>
                     </p>
 
                     <ul class="guarantee-bullets">
+                        <?php foreach (soGuaranteePoints() as $point) { ?>
                         <li>
                             <span class="icon"></span>
-                            Your tickets will be authentic and valid for entry
+                            <?php echo htmlspecialchars($point, ENT_QUOTES, 'UTF-8'); ?>
                         </li>
-                        <li>
-                            <span class="icon"></span>
-                            Your tickets will be shipped in time for at least one delivery attempt before the event
-                        </li>
-                        <li>
-                            <span class="icon"></span>
-                            You receive the tickets you ordered, or better
-                        </li>
-                        <li>
-                            <span class="icon"></span>
-                            A full refund (delivery fees excluded) if the event is canceled
-                        </li>
+                        <?php } ?>
                     </ul>
                     <p class="small text-muted mt-3 mb-0">
-                        Resale ticket prices may be above or below face value. The guarantee covers your order, not the price.
-                        Read the full terms in <a href="https://www.ticketnetwork.com/policies" target="_blank" rel="noopener">TicketNetwork's policies</a>
-                        and our <a href="/ticket-buyer-protection">ticket buyer protection</a> page.
+                        <?php echo htmlspecialchars(soGuaranteeLimits(), ENT_QUOTES, 'UTF-8'); ?>
+                        <?php echo soGuaranteeLinks(); ?>
                     </p>
                 </div>
 
@@ -459,7 +448,7 @@ include 'header.php';
                     <div class="guarantee-image-frame">
                         <img
                             src="/images/ticket-trusted.webp"
-                            alt="Customers backed by our 100% ticket guarantee" width="750" height="875" decoding="async"/>
+                            alt="Singer performing outdoors in front of a crowd" width="750" height="875" decoding="async"/>
                         <div class="guarantee-sticker">
                             <span>Backed by</span>
                             <small>100% Guarantee</small>
@@ -525,7 +514,7 @@ include 'header.php';
                         <div class="section-image-wrapper">
                             <img
                                 src="/images/ticket-trusted.webp"
-                                alt="Box office staff" width="750" height="875" decoding="async"/>
+                                alt="Singer performing outdoors in front of a crowd" width="750" height="875" decoding="async"/>
                         </div>
                     </div>
                 </div>

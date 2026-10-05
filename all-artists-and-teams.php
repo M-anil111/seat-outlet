@@ -1,37 +1,66 @@
 <?php
 require_once 'functions.php';
+require_once __DIR__ . '/inc/directories.php';
+$soDirKey = $soDirKey ?? 'all';          // a stub file (concert-artists.php ...) sets this before including the page
+$soDir = soDirectoryConfig($soDirKey);
 
 // Page name: this is the A-Z directory of every artist, team and show, so it is called "Artists, Teams & Shows" (nav label: "Artists & Teams").
-$pageMetaTitle       = 'Artists, Teams & Shows A-Z | Seat Outlet';
-$pageMetaDescription = 'Browse every artist, team and show on Seat Outlet, A to Z. Find upcoming events, compare prices and buy tickets with a 100% Worry-Free Guarantee.';
-$pageCanonicalUrl    = HOME_URL . '/all-artists-and-teams';
+$perPage = 48;
+$letterIn = strtoupper(trim((string) ($_GET['letter'] ?? '')));
+$letter = (preg_match('/^[A-Z]$/', $letterIn) || $letterIn === '0-9') ? $letterIn : '';
+$page = max(1, min(500, (int) ($_GET['page'] ?? 1)));
+
+// Page name: this is the A-Z directory of every artist, team and show, so it is called "Artists, Teams & Shows" (nav label: "Artists & Teams").
+// Every letter is its own crawlable address (?letter=A, ?letter=0-9) rendered on the server, with numbered pages.
+$soDirShort = $soDir['short'];
+$letterTitle = $letter === '' ? $soDir['h1'] : ($letter === '0-9' ? "$soDirShort Starting With a Number" : "$soDirShort Starting With $letter");
+$soKeepOwnMeta       = $letter !== '' || $page > 1;   // the plain A to Z page takes its title from the keyword plan
+$pageMetaTitle       = $letter === ''
+	? soTitle(...($soDir['titles'] ?? [$soDir['h1'] . ($page > 1 ? ", Page $page" : '')]))
+	: soTitle($letterTitle . " with Tickets" . ($page > 1 ? ", Page $page" : ''), $letterTitle . ($page > 1 ? ", Page $page" : ''), $letterTitle);
+$pageMetaDescription = $letter === ''
+	? soMetaFit($soDir['desc'] ?? 'Browse every artist, team and show on Seat Outlet, A to Z. Find upcoming events, compare prices. Orders carry the TicketNetwork guarantee.')
+	: soMetaFit(ucfirst($soDir['noun']) . ' ' . ($letter === '0-9' ? 'starting with a number' : 'starting with ' . $letter) . ' with tickets on sale at Seat Outlet. Compare seats and prices. Orders carry the TicketNetwork guarantee.');
+$soDirBase = $soDir['path'];
+$soDirUrl = function ($l, $pg = 1) use ($soDirBase) {
+	$q = [];
+	if ($l !== '') { $q['letter'] = $l; }
+	if ($pg > 1) { $q['page'] = $pg; }
+	return $soDirBase . ($q ? '?' . http_build_query($q) : '');
+};
+$pageCanonicalUrl    = HOME_URL . $soDirUrl($letter, $page);
 $pageSearchPlaceholder = 'Artists, teams or shows';
+if ($soDirKey !== 'all') { $pageFocusKeyword = $soDir['focus']; }
 include 'header.php';
 
-$perPage = 24;
-$initialParams = [
-	'page'              => 1,
-	'perPage'           => $perPage,
-	'includeTotalCount' => 'true',
-	'sort'              => 'text/name',
-];
+$filters = [];
+if ($letter === '0-9') {
+	$filters[] = '(' . implode(' or ', array_map(function ($d) { return "startswith(text/name,'$d')"; }, range(0, 9))) . ')';
+} elseif ($letter !== '') {
+	$filters[] = "startswith(text/name,'" . tnEscapeFilterValue($letter) . "')";
+}
+if (!empty($soDir['category'])) { $filters[] = "startswith(defaultCategory/path, '" . tnEscapeFilterValue($soDir['category']) . "')"; }
+$params = ['page' => $page, 'perPage' => $perPage, 'includeTotalCount' => 'true', 'sort' => 'text/name'];
+if ($filters) { $params['filter'] = implode(' and ', $filters); }
 
 $performers  = [];
 $totalCount  = 0;
-$hasMore     = false;
+$totalPages  = 0;
 $apiError    = false;
 
-try {
-	$response   = getTnPerformers($initialParams);
-	$totalCount = (int) ($response['totalCount'] ?? 0);
-	$totalPages = $perPage > 0 ? (int) ceil($totalCount / $perPage) : 0;
-	$results    = $response['results'] ?? [];
-	$hasMore    = (1 < $totalPages);
+// Test and placeholder entries ("000000_TL", names with no letters or with an underscore) are not artists, teams or shows.
+$soIsJunk = function ($name) {
+	return !preg_match('/\p{L}/u', $name) || strpos($name, '_') !== false || preg_match('/^0{3,}/', $name);
+};
 
-	foreach ($results as $performer) {
-		$name = $performer['text']['name'] ?? '';
+try {
+	$response   = getTnPerformers($params);
+	$totalCount = (int) ($response['totalCount'] ?? 0);
+	$totalPages = (int) ceil($totalCount / $perPage);
+	foreach ($response['results'] ?? [] as $performer) {
+		$name = trim((string) ($performer['text']['name'] ?? ''));
 		$uriComponent = $performer['uriComponent'] ?? '';
-		if ($name === '' || $uriComponent === '') {
+		if ($name === '' || $uriComponent === '' || $soIsJunk($name)) {
 			continue;
 		}
 		$defaultCategory = $performer['defaultCategory'] ?? [];
@@ -47,12 +76,15 @@ try {
 		];
 	}
 } catch (Throwable $e) {
-	\Sentry\captureException($e);
+	if (!($e instanceof SoTnUnavailable)) \Sentry\captureException($e);   // an API outage was already reported once by the circuit breaker
 	$apiError = true;
 }
 ?>
 
 <style>
+	.so-dir__types { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 6px; }
+	.so-dir__types a { display: inline-block; padding: 7px 14px; border-radius: 999px; background: #eef1f6; color: #1d1d1f; font-size: 14px; font-weight: 600; text-decoration: none; }
+	.so-dir__types a:hover { background: #dfe6f3; }
 	.performers-hero-section {
 		position: relative;
 		overflow: hidden;
@@ -65,15 +97,6 @@ try {
 		inset: 0;
 		background: radial-gradient(60% 130% at 88% 0%, rgba(255, 255, 255, .24) 0%, rgba(255, 255, 255, 0) 62%);
 		pointer-events: none;
-	}
-	.performers-hero-section .hero-bg-photo {
-		position: absolute;
-		inset: 0;
-		background-image: url('<?php echo HOME_URL; ?>/images/crowd-at-concert-or-event.webp');
-		background-size: cover;
-		background-position: center;
-		opacity: .07;
-		mix-blend-mode: luminosity;
 	}
 	.performers-hero-section .container { position: relative; z-index: 1; }
 	.performers-hero-section .hero-inner { padding: 56px 0 60px; max-width: 640px; }
@@ -239,12 +262,11 @@ try {
 </style>
 
 <section class="performers-hero-section">
-	<div class="hero-bg-photo"></div>
 	<div class="container">
 		<div class="hero-inner">
-			<span class="hero-eyebrow">A to Z</span>
-			<h1 class="hero-title">Artists, Teams &amp; Shows</h1>
-			<p class="hero-subtitle">Browse all artists, teams and shows on Seat Outlet, from A to Z. Pick a letter to jump straight in.</p>
+			<span class="hero-eyebrow"><?php echo htmlspecialchars($soDir['eyebrow'], ENT_QUOTES, 'UTF-8'); ?></span>
+			<h1 class="hero-title"><?php echo htmlspecialchars($soDir['h1'], ENT_QUOTES, 'UTF-8'); ?></h1>
+			<p class="hero-subtitle"><?php echo htmlspecialchars($soDir['lead'], ENT_QUOTES, 'UTF-8'); ?></p>
 		</div>
 	</div>
 </section>
@@ -252,159 +274,64 @@ try {
 <section class="py-4 py-lg-5">
 	<div class="container">
 
-		<div class="performer-filter-row" id="performerFilterRow">
-			<div class="performer-filter-wrap" id="performerFilterBar" role="group" aria-label="Show artists, teams and shows starting with">
-				<button type="button" class="performer-filter-btn is-all active" data-letter="ALL" aria-pressed="true">All</button>
-				<?php foreach (range('A', 'Z') as $letter) { ?>
-					<button type="button" class="performer-filter-btn" data-letter="<?php echo $letter; ?>" aria-pressed="false"><?php echo $letter; ?></button>
+		<nav class="performer-filter-row" id="performerFilterRow" aria-label="<?php echo htmlspecialchars(ucfirst($soDir['noun']), ENT_QUOTES, 'UTF-8'); ?> starting with">
+			<div class="performer-filter-wrap" id="performerFilterBar">
+				<a class="performer-filter-btn is-all<?php echo $letter === '' ? ' active' : ''; ?>" href="<?php echo $soDirBase; ?>"<?php echo $letter === '' ? ' aria-current="page"' : ''; ?>>All</a>
+				<a class="performer-filter-btn<?php echo $letter === '0-9' ? ' active' : ''; ?>" href="<?php echo htmlspecialchars($soDirUrl('0-9'), ENT_QUOTES, 'UTF-8'); ?>"<?php echo $letter === '0-9' ? ' aria-current="page"' : ''; ?>>0-9</a>
+				<?php foreach (range('A', 'Z') as $l) { ?>
+					<a class="performer-filter-btn<?php echo $letter === $l ? ' active' : ''; ?>" href="<?php echo htmlspecialchars($soDirUrl($l), ENT_QUOTES, 'UTF-8'); ?>"<?php echo $letter === $l ? ' aria-current="page"' : ''; ?>><?php echo $l; ?></a>
 				<?php } ?>
 			</div>
-		</div>
+		</nav>
 
-		<div class="performers-error-state<?php echo $apiError ? '' : ' d-none'; ?>" id="performersErrorState">
-			We couldn't load the list right now. Please try again shortly.
-		</div>
-		<div class="performers-empty-state<?php echo ($apiError || !empty($performers)) ? ' d-none' : ''; ?>" id="performersEmptyState">
-			Nothing starts with that letter yet.
-		</div>
+		<nav class="so-dir__types" aria-label="Browse by type">
+			<?php foreach (soDirectoryLinks($soDirKey) as [$soTypeHref, $soTypeLabel]) { ?><a href="<?php echo htmlspecialchars($soTypeHref, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($soTypeLabel, ENT_QUOTES, 'UTF-8'); ?></a><?php } ?>
+			<?php if (!empty($soDir['league'])) { ?><a href="<?php echo htmlspecialchars($soDir['league'], ENT_QUOTES, 'UTF-8'); ?>">Schedule and tickets</a><?php } ?>
+		</nav>
+
+		<?php if ($letter !== '') { ?><h2 class="so-dir__heading"><?php echo $letter === '0-9' ? 'Starting with a number' : 'Starting with ' . htmlspecialchars($letter, ENT_QUOTES, 'UTF-8'); ?> <span><?php echo number_format($totalCount); ?> with tickets on sale</span></h2><?php } ?>
+
+		<?php if ($apiError) { ?>
+			<div class="performers-error-state">We couldn't load the list right now. Please try again shortly.</div>
+		<?php } elseif (empty($performers)) { ?>
+			<div class="performers-empty-state">Nothing with tickets on sale starts with that letter yet. <a href="<?php echo $soDirBase; ?>">Browse all</a>.</div>
+		<?php } else { ?>
 			<div class="row g-4" id="performerGrid">
 				<?php foreach ($performers as $performer) { ?>
 					<div class="col-12 col-sm-6 col-md-4 col-lg-3 performer-col">
-						<div class="performer-card">
+						<div class="performer-card so-dircard">
 							<div class="performer-img-wrap">
 								<img src="<?php echo htmlspecialchars($performer['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" onerror="this.src='<?php echo HOME_URL; ?>/images/placeholder.webp'">
 							</div>
 							<div class="performer-body">
 								<div>
-									<div class="performer-name"><?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?></div>
+									<div class="performer-name"><a class="so-dircard__link" href="/artist/<?php echo htmlspecialchars(strtolower($performer['uriComponent']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?><span class="visually-hidden"> tickets</span></a></div>
 									<?php if ($performer['genre'] !== '') { ?>
 										<div class="performer-genre"><?php echo htmlspecialchars($performer['genre'], ENT_QUOTES, 'UTF-8'); ?></div>
 									<?php } ?>
 								</div>
-								<a href="/artist/<?php echo strtolower($performer['uriComponent']); ?>" class="btn-view-performer">View tickets</a>
+								<span class="btn-view-performer" aria-hidden="true">View tickets</span>
 							</div>
 						</div>
 					</div>
 				<?php } ?>
 			</div>
 
-		<div class="text-center mt-4 <?php echo (!$hasMore || $apiError) ? 'd-none' : ''; ?>" id="loadMorePerformersWrap">
-			<button type="button" class="btn-load-more-performers" id="loadMorePerformersBtn"
-				data-page="1" data-perpage="<?php echo (int) $perPage; ?>" data-letter="ALL">Show more</button>
-		</div>
+			<?php if ($totalPages > 1) {
+				$from = max(1, $page - 2); $to = min($totalPages, $page + 2); ?>
+				<nav class="so-dir__pager" aria-label="Pages">
+					<?php if ($page > 1) { ?><a rel="prev" href="<?php echo htmlspecialchars($soDirUrl($letter, $page - 1), ENT_QUOTES, 'UTF-8'); ?>">Previous</a><?php } ?>
+					<?php if ($from > 1) { ?><a href="<?php echo htmlspecialchars($soDirUrl($letter, 1), ENT_QUOTES, 'UTF-8'); ?>">1</a><?php if ($from > 2) { ?><span>...</span><?php } } ?>
+					<?php for ($i = $from; $i <= $to; $i++) { ?><a href="<?php echo htmlspecialchars($soDirUrl($letter, $i), ENT_QUOTES, 'UTF-8'); ?>"<?php echo $i === $page ? ' class="is-current" aria-current="page"' : ''; ?>><?php echo $i; ?></a><?php } ?>
+					<?php if ($to < $totalPages) { if ($to < $totalPages - 1) { ?><span>...</span><?php } ?><a href="<?php echo htmlspecialchars($soDirUrl($letter, $totalPages), ENT_QUOTES, 'UTF-8'); ?>"><?php echo $totalPages; ?></a><?php } ?>
+					<?php if ($page < $totalPages) { ?><a rel="next" href="<?php echo htmlspecialchars($soDirUrl($letter, $page + 1), ENT_QUOTES, 'UTF-8'); ?>">Next</a><?php } ?>
+				</nav>
+			<?php } ?>
+		<?php } ?>
 
 	</div>
 </section>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-	var filterBar    = document.getElementById('performerFilterBar');
-	var grid          = document.getElementById('performerGrid');
-	var emptyState    = document.getElementById('performersEmptyState');
-	var errorState    = document.getElementById('performersErrorState');
-	var loadMoreBtn   = document.getElementById('loadMorePerformersBtn');
-	var loadMoreWrap  = document.getElementById('loadMorePerformersWrap');
 
-	function performerCardHtml(p) {
-		var genreHtml = p.genre ? '<div class="performer-genre">' + escapeHtml(p.genre) + '</div>' : '';
-		return '' +
-			'<div class="col-12 col-sm-6 col-md-4 col-lg-3 performer-col">' +
-				'<div class="performer-card">' +
-					'<div class="performer-img-wrap">' +
-						'<img src="' + escapeHtml(p.image) + '" alt="' + escapeHtml(p.name) + '" loading="lazy" onerror="this.src=\'<?php echo HOME_URL; ?>/images/placeholder.webp\'">' +
-					'</div>' +
-					'<div class="performer-body">' +
-						'<div>' +
-							'<div class="performer-name">' + escapeHtml(p.name) + '</div>' +
-							genreHtml +
-						'</div>' +
-						'<a href="/artist/' + String(p.uriComponent).toLowerCase() + '" class="btn-view-performer">View tickets</a>' +
-					'</div>' +
-				'</div>' +
-			'</div>';
-	}
-
-	function escapeHtml(str) {
-		return String(str == null ? '' : str)
-			.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-	}
-
-	var requestSeq = 0;
-
-	function fetchPerformers(letter, page, append) {
-		var seq = ++requestSeq;
-		var perPage = loadMoreBtn.dataset.perpage || 24;
-		var url = '/ajax/get-performers.php?letter=' + encodeURIComponent(letter) + '&page=' + page + '&perPage=' + perPage;
-
-		return fetch(url).then(function (res) {
-			if (!res.ok) throw new Error('HTTP ' + res.status);
-			return res.json();
-		}).then(function (data) {
-			if (seq !== requestSeq) return data; // a newer letter was clicked meanwhile
-			errorState.classList.add('d-none');
-			if (!append) {
-				grid.innerHTML = '';
-			}
-			(data.performers || []).forEach(function (p) {
-				grid.insertAdjacentHTML('beforeend', performerCardHtml(p));
-			});
-
-			emptyState.classList.toggle('d-none', grid.children.length > 0);
-
-			loadMoreBtn.dataset.letter = letter;
-			if (data.hasMore) {
-				loadMoreBtn.dataset.page = data.nextPage;
-				loadMoreWrap.classList.remove('d-none');
-			} else {
-				loadMoreWrap.classList.add('d-none');
-			}
-			loadMoreBtn.disabled = false;
-			return data;
-		}).catch(function () {
-			if (seq !== requestSeq) return;
-			if (!append) {
-				grid.innerHTML = '';
-				errorState.classList.remove('d-none');
-				emptyState.classList.add('d-none');
-				loadMoreWrap.classList.add('d-none');
-			}
-			loadMoreBtn.disabled = false;
-		});
-	}
-
-	filterBar.addEventListener('click', function (e) {
-		var btn = e.target.closest('.performer-filter-btn');
-		if (!btn) return;
-
-		filterBar.querySelectorAll('.performer-filter-btn').forEach(function (b) { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
-		btn.classList.add('active');
-		btn.setAttribute('aria-pressed', 'true');
-		if (btn.scrollIntoView) { btn.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); }
-
-		var letter = btn.getAttribute('data-letter');
-		loadMoreBtn.disabled = true;
-		fetchPerformers(letter, 1, false);
-	});
-
-	loadMoreBtn.addEventListener('click', function () {
-		loadMoreBtn.disabled = true;
-		var letter = loadMoreBtn.dataset.letter || 'ALL';
-		var page = parseInt(loadMoreBtn.dataset.page, 10) || 2;
-		fetchPerformers(letter, page, true);
-	});
-
-	// Edge fades on the swipe row: only on a side that has more to scroll to.
-	function updateFilterFades() {
-		var maxScroll = filterBar.scrollWidth - filterBar.clientWidth;
-		filterBar.style.setProperty('--fade-l', filterBar.scrollLeft > 1 ? '22px' : '0px');
-		filterBar.style.setProperty('--fade-r', (maxScroll > 1 && filterBar.scrollLeft < maxScroll - 1) ? '22px' : '0px');
-	}
-	filterBar.addEventListener('scroll', updateFilterFades, { passive: true });
-	window.addEventListener('resize', updateFilterFades);
-	updateFilterFades();
-});
-</script>
-
-<?php soSeoCopy('all-artists-and-teams'); ?>
+<?php soSeoCopy($soDir['copy'] ?? 'all-artists-and-teams'); ?>
 <?php include 'footer.php'; ?>

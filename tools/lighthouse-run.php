@@ -9,7 +9,7 @@ require_once __DIR__ . '/../inc/cli-guard.php';
  * Usage:
  *   php tools/lighthouse-run.php https://beta.seatoutlet.com > data/lighthouse-scores.json
  *
- * Deliberately skips every /event/... URL: sitemap.php lists every
+ * Deliberately skips every /event/... URL: sitemap.xml lists every
  * currently-live TicketNetwork event, which can be hundreds of URLs and
  * changes daily as events sell out or new ones are listed - not a stable,
  * meaningful set to track Lighthouse scores for, and running a full
@@ -26,15 +26,15 @@ if ($argc < 2 || trim($argv[1]) === '') {
 
 $siteUrl = rtrim($argv[1], '/');
 
-$sitemapXml = @file_get_contents($siteUrl . '/sitemap.php');
+$sitemapXml = @file_get_contents($siteUrl . '/sitemaps/sitemap.xml');
 if ($sitemapXml === false) {
-    fwrite(STDERR, "Could not fetch $siteUrl/sitemap.php\n");
+    fwrite(STDERR, "Could not fetch $siteUrl/sitemaps/sitemap.xml\n");
     exit(1);
 }
 
 $sitemap = @simplexml_load_string($sitemapXml);
 if ($sitemap === false) {
-    fwrite(STDERR, "Could not parse sitemap XML from $siteUrl/sitemap.php\n");
+    fwrite(STDERR, "Could not parse sitemap XML from $siteUrl/sitemaps/sitemap.xml\n");
     exit(1);
 }
 

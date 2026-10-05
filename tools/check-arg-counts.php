@@ -59,7 +59,7 @@ foreach ($files as $file) {
         foreach ($params as $p) {
             $p = trim($p);
             if ($p === '') continue;
-            if (strpos($p, '=') === false) $required++;
+            if (strpos($p, '=') === false && strpos($p, '...') === false) $required++;   // a variadic (...$rest) is never required
         }
 
         // If a name is defined more than once (rare, but possible in a

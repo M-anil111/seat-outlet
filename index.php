@@ -1,4 +1,5 @@
 <?php
+$soHomeHero = true;   // marks the home page for the header (body class)
 include 'header.php';
 $festivalNames = getTopFestivalPerformers();
 
@@ -48,35 +49,67 @@ foreach ($fallbackCategories as $key => $list) {
     }
 }
 ?>
-<section class="top-hero-slider">
+<section class="so-hero2" aria-label="Find tickets">
+  <img class="so-hero2__bg" src="/images/home-slider-1440.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w" sizes="100vw" alt="Crowd in a large theater watching a live show on stage" width="1440" height="700" fetchpriority="high" decoding="async">
+  <div class="so-hero2__shade" aria-hidden="true"></div>
+  <div class="container so-hero2__inner">
+    <h1 class="so-hero2__title">Experience <span>live events</span>,<br class="d-none d-md-block"> made easy.</h1>
+    <p class="so-hero2__sub">Concerts, sports, theater and more. Compare seats and prices from sellers across our marketplace.</p>
+    <button type="button" class="so-hero2__btn" data-so-open-search>Search Events <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
+</section>
 
 
-  <div class="hero_slider">
-
-    <!-- Slide 1 – Concert / Event -->
-    <div class="slide">
-      <img src="/images/home-slider-1024.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w, /images/home-slider.webp 1920w" sizes="100vw" width="1920" height="1100" alt="Ticket Marketplace - Live Concert Event" loading="eager" fetchpriority="high" />
-      <div class="slide-overlay"></div>
-      <div class="slide-caption">
-        <h1>Live events,<br>made easy.</h1>
-        <p>Buy event tickets for sold-out concerts, must-see sports and theater shows. Compare seats and prices from sellers across our ticket marketplace network.</p>
-        <div class="so-hero-cta"><a href="/buy-tickets-online" class="btn-slide">Explore events</a><a href="/city-events" class="so-hero-link">Browse by city</a></div>
+<section class="so-feed so-popweek" id="soFeedPopWeekend" data-so-feed="popweekend" aria-labelledby="soFeedPopWeekendTitle">
+  <div class="container">
+    <div class="so-feed__head">
+      <div>
+        <h2 id="soFeedPopWeekendTitle" class="so-feed__title">Popular this weekend</h2>
+        <p class="so-feed__sub">Top events across the U.S. this weekend. Don't miss what's happening.</p>
       </div>
+      <a class="so-feed__all so-feed__all--arrow" role="link" tabindex="0" data-go="/buy-tickets-online?when=weekend">See all events <span aria-hidden="true">&rarr;</span></a>
     </div>
+    <div class="so-popweek__wrap">
+      <div class="so-feed__track" data-so-feed-track><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div></div>
+      <button type="button" class="so-popweek__next" data-so-feed-next aria-label="Show more events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+</section>
 
+<section class="so-feed" id="soFeedLastMinute" data-so-feed="lastminute" aria-labelledby="soFeedLastMinuteTitle">
+  <div class="container">
+    <div class="so-feed__head">
+      <div>
+        <h2 id="soFeedLastMinuteTitle" class="so-feed__title">Last-minute tickets</h2>
+        <p class="so-feed__sub" data-so-feed-sub>Events in the next 7 days with tickets listed</p>
+      </div>
+      <a class="so-feed__all" href="/buy-tickets-online">See all</a>
+    </div>
+    <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><?php } ?></div>
+  </div>
+</section>
 
-
-  </div><!-- /.hero-slider -->
+<section class="so-feed" id="soFeedWeekend" data-so-feed="weekend" aria-labelledby="soFeedWeekendTitle" hidden>
+  <div class="container">
+    <div class="so-feed__head">
+      <div>
+        <h2 id="soFeedWeekendTitle" class="so-feed__title">This weekend near you</h2>
+        <p class="so-feed__sub" data-so-feed-sub>Events within 50 miles, Friday to Sunday</p>
+      </div>
+      <a class="so-feed__all" role="link" tabindex="0" data-go="/buy-tickets-online?when=weekend">See all</a>
+    </div>
+    <div class="so-feed__track" data-so-feed-track></div>
+  </div>
 </section>
 
 <!-- Top Picks Section -->
 <section class="container pt-md-5 pt-4">
   <div class="mb-lg-4 mb-3 pb-2">
     <div class="location-selector-wrapper d-flex flex-wrap align-items-center">
-      <h2 class="fw-bold fs-4 mb-0">Our Top Picks Near </h2>
+      <h2 class="fw-bold fs-4 mb-0" id="topPicksTitle">Top picks across the US</h2>
       <div class="so-right-searchbar ps-md-0 ps-2">
-      <button type="button" class="location-selector" id="locationToggleBtn">
-        <span class="location-selector-link" id="locationSelectorText">Select your location <i class="bi bi-chevron-down"></i></span>
+      <button type="button" class="location-selector" id="locationToggleBtn" aria-expanded="false" aria-controls="locationPanel">
+        <span class="location-selector-link" id="locationSelectorText">Set location <i class="bi bi-chevron-down" aria-hidden="true"></i></span>
       </button>
 
       <!-- Location dropdown panel -->
@@ -85,8 +118,8 @@ foreach ($fallbackCategories as $key => $list) {
 
         <div class="location-panel-input-row">
           <div class="location-input-shell">
-            <input type="text" class="location-input locationInputField" id="cityLocationInput" autocomplete="off" placeholder="Austin, TX" />
-            <button type="button" class="location-input-clear" id="locationClearBtn" aria-label="Clear location">✕</button>
+            <input type="text" class="location-input locationInputField" id="cityLocationInput" autocomplete="off" placeholder="Austin, TX" aria-label="City or zip code" />
+            <button type="button" class="location-input-clear" id="locationClearBtn" aria-label="Clear location">&#10005;</button>
             <div id="cityLocationDd" class="cityLocationDd w-100 locationInputFieldWrapper" style="display:none;"></div>
           </div>
         </div>
@@ -100,6 +133,7 @@ foreach ($fallbackCategories as $key => $list) {
         </button>
       </div>
       </div>
+      <a class="so-picks-all" href="/buy-tickets-online">See all events <span aria-hidden="true">&rsaquo;</span></a>
     </div>
   </div>
 
@@ -148,48 +182,6 @@ foreach ($fallbackCategories as $key => $list) {
 
 </section>
 
-<section class="py-3">
-  <div class="container my-lg-5 my-4">
-    <div class="experience-section">
-      <h3 class="fw-bold mb-lg-4 mb-3 so-experieance">Your Ticket Marketplace for Live Events, with Confidence</h3>
-      <?php
-      $soPanelItems = [
-        ['bi-currency-exchange', 'Compare seats and prices', 'See listings from many sellers side by side before you buy.'],
-        ['bi-shield-check', 'Worry-free guarantee', 'Every order is backed by our guarantee. Read the terms before you buy.'],
-        ['bi-calendar-event', 'Live events in one place', 'Concerts, sports, theater and festivals across the country.'],
-        ['bi-telephone-fill', 'Real people to help', 'Reach our team by phone or email if plans change.'],
-      ];
-      ?>
-      <div class="so-marquee" role="region" aria-label="Why shop on Seat Outlet">
-        <div class="so-marquee__track">
-          <?php foreach ([false, true] as $soDup) { foreach ($soPanelItems as $soItem) { ?>
-          <div class="feature-box d-flex"<?php echo $soDup ? ' aria-hidden="true"' : ''; ?>>
-            <i class="bi <?php echo $soItem[0]; ?> text-white feature-icon" aria-hidden="true"></i>
-            <div>
-              <div class="fw-bold"><?php echo $soItem[1]; ?></div>
-              <small><?php echo $soItem[2]; ?></small>
-            </div>
-          </div>
-          <?php } } ?>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="so-feed" id="soFeedLastMinute" data-so-feed="lastminute" aria-labelledby="soFeedLastMinuteTitle">
-  <div class="container">
-    <div class="so-feed__head">
-      <div>
-        <h2 id="soFeedLastMinuteTitle" class="so-feed__title">Last-minute tickets</h2>
-        <p class="so-feed__sub" data-so-feed-sub>Events in the next 7 days with tickets listed</p>
-      </div>
-      <a class="so-feed__all" href="/buy-tickets-online">See all</a>
-    </div>
-    <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><?php } ?></div>
-  </div>
-</section>
-
 <section class="so-feed" id="soFeedTrending" data-so-feed="trending" aria-labelledby="soFeedTrendingTitle">
   <div class="container">
     <div class="so-feed__head">
@@ -203,273 +195,111 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
-<section id="recentlyViewed" class="so-feed so-recent d-none" aria-labelledby="recentlyViewedHeading">
+<section id="recentlyViewed" class="so-recent d-none" aria-labelledby="recentlyViewedHeading">
   <div class="container">
-    <div class="so-feed__head">
-      <div>
-        <h2 id="recentlyViewedHeading" class="so-feed__title">Pick up where you left off</h2>
-        <p class="so-feed__sub">Artists and events you looked at on this device</p>
+    <div class="so-recent__head">
+      <div class="so-sechead">
+        <p class="so-sechead__eyebrow">Welcome back</p>
+        <h2 id="recentlyViewedHeading" class="so-sechead__title so-recent__title">Pick up where you left off</h2>
+        <p class="so-sechead__sub">Artists and events you looked at on this device</p>
       </div>
-      <button type="button" class="so-feed__all so-recent__clear" data-so-recent-clear>Clear</button>
+      <button type="button" class="so-recent__clear" data-so-recent-clear>Clear</button>
     </div>
-    <div class="so-feed__track" data-so-recent-track></div>
+    <div class="so-recent__track" data-so-recent-track></div>
   </div>
 </section>
 
-<section class="section top_performers bg-white categories teams-nearby py-5" id="topPerformersSection">
-  <div class="container so-tabs" data-so-tabs data-so-tab-labels="Concerts|Sports|Theater">
-    <div class="categories__grid">
-
-      <div class="categories__col">
-        <h3 class="categories__heading">Top Concert Performers</h3>
-        <ul class="categories__list" id="concerts-list"></ul>
-        <a href="/concert-tickets-for-sale" class="common-btn">View All Concerts</a>
-      </div>
-
-      <div class="categories__col">
-        <h3 class="categories__heading">Top Sports Performers</h3>
-        <ul class="categories__list" id="sports-list"></ul>
-        <a href="/game-day-tickets" class="common-btn">View All Sports</a>
-      </div>
-
-      <div class="categories__col">
-        <h3 class="categories__heading">Top Theater Performers</h3>
-        <ul class="categories__list" id="theater-list"></ul>
-        <a href="/buy-broadway-tickets" class="common-btn">View All Theatre</a>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<section class="section categories teams-nearby py-5">
-  <div class="container so-tabs" data-so-tabs data-so-tab-labels="Concerts|Sports|Theater|Festivals">
-    <h2 class="section__title section__title--center fw-bold fs-4 mb-3">
-      Browse by Categories
-    </h2>
-    <p class="text-center mb-4 so-section-intro">
-      Concerts, sports, theater and festivals across the country. Pick a category to compare seats and prices before you buy.
-    </p>
-    <div class="categories__grid">
-      <div class="categories__col">
-        <h3 class="categories__heading">Concerts</h3>
-        <ul class="categories__list">
-          <?php foreach ($topCategories['concerts'] as $topCat) { ?>
-            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
-          <?php } ?>
-        </ul>
-        <a href="/concert-tickets-for-sale" class="common-btn">View All Concerts</a>
-        
-      </div>
-      <div class="categories__col">
-        <h3 class="categories__heading">Sports</h3>
-        <ul class="categories__list">
-          <?php foreach ($topCategories['sports'] as $topCat) { ?>
-            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
-          <?php } ?>
-        </ul>
-        <a href="/game-day-tickets" class="common-btn">View All Sports</a>
-      </div>
-      <div class="categories__col">
-        <h3 class="categories__heading">Theatre</h3>
-        <ul class="categories__list">
-          <?php foreach ($topCategories['theater'] as $topCat) { ?>
-            <li><a href="/category/<?php echo htmlspecialchars($topCat['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topCat['name'], ENT_QUOTES, 'UTF-8'); ?></a></li>
-          <?php } ?>
-        </ul>
-        <a href="/buy-broadway-tickets" class="common-btn">View All Theatre</a>
-      </div>
-      <div class="categories__col">
-        <h3 class="categories__heading">Festivals</h3>
-        <?php if(!empty($festivalNames)) { ?>
-          <ul class="categories__list">
-            <?php foreach($festivalNames as $festivalName) { ?>
-              <li><a href="/artist/<?php echo createSlug($festivalName['name'],$festivalName['id']); ?>"><?php echo $festivalName['name']; ?></a></li>
-            <?php } ?>
-          </ul>   
-        <?php } ?>  
-        <a href="/upcoming-music-festivals" class="common-btn">View All Festivals</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section categories bg-white teams-nearby py-md-5 py-4" aria-labelledby="cities-heading">
+<section class="so-topp" id="topPerformersSection" aria-labelledby="soToppTitle">
   <div class="container">
-    <h2 id="cities-heading" class="section__title section__title--center fw-bold fs-4 mb-4">
-      Popular Cities
-    </h2>
+    <div class="so-topp__head">
+      <span class="so-topp__pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.8l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17.4 6.1 20.6l1.3-6.5L2.5 9.6l6.6-.8L12 2.8z"/></svg>Top performers</span>
+      <h2 id="soToppTitle" class="so-topp__title">Who fans are buying right now</h2>
+      <p class="so-topp__sub">The acts, teams and shows with the most recent ticket sales on the marketplace.</p>
+    </div>
+    <div class="so-topp__grid">
+      <?php foreach ([
+          ['concerts', 'Top Concert Performers', 'Live music. Unforgettable nights.', '/concert-tickets-for-sale', 'View all concerts', 'music'],
+          ['sports', 'Top Sports Performers', 'Big games. Bigger moments.', '/game-day-tickets', 'View all sports', 'trophy'],
+          ['theater', 'Top Theater Performers', 'Broadway. Classics. Family favorites.', '/buy-broadway-tickets', 'View all theater', 'masks'],
+      ] as [$tk, $tt, $tg, $th, $tc, $ti]) { ?>
+      <article class="so-topc so-topc--<?php echo $tk; ?>">
+        <header class="so-topc__hero">
+          <img class="so-topc__bg" src="/images/home-top-<?php echo $tk; ?>.webp" alt="<?php echo htmlspecialchars(['concerts' => 'Guitarist on stage under red and blue concert lights with fans cheering', 'sports' => 'Football stadium at night with floodlights and a packed crowd', 'theater' => 'Empty theater with a red stage curtain and rows of seats'][$tk] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="720" height="300" loading="lazy" decoding="async">
+          <div class="so-topc__shade" aria-hidden="true"></div>
+          <span class="so-topc__icon"><?php echo soCategoryTileIcon($ti); ?></span>
+          <h3 class="so-topc__title"><?php echo $tt; ?></h3>
+          <span class="so-topc__from" data-so-from="<?php echo $tk; ?>" hidden></span>
+          <p class="so-topc__tag"><?php echo $tg; ?></p>
+        </header>
+        <ul class="so-topc__list" id="<?php echo $tk; ?>-list" aria-label="<?php echo $tt; ?>">
+          <?php for ($i = 0; $i < 5; $i++) { ?><li class="so-topc__row so-topc__row--skeleton" aria-hidden="true"><span class="so-topc__avatar"></span><span class="so-topc__name"></span></li><?php } ?>
+        </ul>
+        <a href="<?php echo $th; ?>" class="so-topc__cta"><?php echo $tc; ?><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a>
+      </article>
+      <?php } ?>
+    </div>
+  </div>
+</section>
+
+<?php echo soRenderCategoryTiles(['class' => 'so-cattiles--home', 'intro' => 'Concerts, sports, theater and festivals across the country. Pick a category to compare seats and prices before you buy.']); ?>
+
+<section class="section categories so-cities teams-nearby py-md-5 py-4" aria-labelledby="cities-heading">
+  <div class="container">
+    <div class="so-sechead">
+      <p class="so-sechead__eyebrow">Explore events</p>
+      <h2 id="cities-heading" class="so-sechead__title">Popular Cities</h2>
+      <p class="so-sechead__sub">Find concerts, sports, theater and more in the most popular cities across the U.S.</p>
+    </div>
     <div id="browseCitiesWrapper">
-      <div class="row g-3 cities-row">
-          <div class="col-auto">
-              <a href="/city/new-york-ny-3027" class="city-pill">New York, NY</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/los-angeles-ca-2551" class="city-pill">Los Angeles, CA</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/chicago-il-915" class="city-pill">Chicago, IL</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/houston-tx-2013" class="city-pill">Houston, TX</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/phoenix-az-3396" class="city-pill">Phoenix, AZ</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/philadelphia-pa-3394" class="city-pill">Philadelphia, PA</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/san-antonio-tx-3846" class="city-pill">San Antonio, TX</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/san-diego-ca-3854" class="city-pill">San Diego, CA</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/dallas-tx-1121" class="city-pill">Dallas, TX</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/jacksonville-fl-2108" class="city-pill">Jacksonville, FL</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/fort-worth-tx-1558" class="city-pill">Fort Worth, TX</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/san-jose-ca-3862" class="city-pill">San Jose, CA</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/austin-tx-247" class="city-pill">Austin, TX</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/charlotte-nc-880" class="city-pill">Charlotte, NC</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/columbus-oh-1025" class="city-pill">Columbus, OH</a>
-          </div>
-          <div class="col-auto">
-              <a href="/city/indianapolis-in-2061" class="city-pill">Indianapolis, IN</a>
-          </div>
-      </div>
+      <ul class="so-city-pills list-unstyled">
+        <?php
+        $soCities = [[3027, 'New York, NY'], [2551, 'Los Angeles, CA'], [915, 'Chicago, IL'], [2013, 'Houston, TX'], [3396, 'Phoenix, AZ'], [3394, 'Philadelphia, PA'], [3846, 'San Antonio, TX'], [3854, 'San Diego, CA'], [1121, 'Dallas, TX'], [2108, 'Jacksonville, FL'], [1558, 'Fort Worth, TX'], [3862, 'San Jose, CA'], [247, 'Austin, TX'], [880, 'Charlotte, NC'], [1025, 'Columbus, OH'], [2061, 'Indianapolis, IN']];
+        foreach ($soCities as $ci => [$soCityId, $soCityName]) { $soCitySlug = soSlug('city', $soCityName, $soCityId); ?>
+        <li<?php echo $ci >= 8 ? ' class="so-city-extra"' : ''; ?>><a href="/city/<?php echo htmlspecialchars($soCitySlug, ENT_QUOTES, 'UTF-8'); ?>" class="city-pill"><?php echo htmlspecialchars($soCityName, ENT_QUOTES, 'UTF-8'); ?></a></li>
+        <?php } ?>
+        <li><a href="/city-events" class="city-pill city-pill--all">All cities <span aria-hidden="true">&rarr;</span></a></li>
+      </ul>
     </div>
   </div>
 </section>
 
 <section class="container new-slider venue-section left-right-btn py-md-5 py-4">
-  <h2 class="fw-bold fs-4 mb-4">Top Venues</h2>
+  <div class="so-sechead">
+    <p class="so-sechead__eyebrow" id="venueEyebrow">Popular venues</p>
+    <h2 class="so-sechead__title">Top Venues</h2>
+    <p class="so-sechead__sub">Discover popular venues for concerts, sports, comedy and more.</p>
+  </div>
   <div class="venue-slider">    
     <?php echo buildVenueSkeleton(4); ?>
   </div>
 </section>
 
-<section id="policies" class="py-5" style="background-color: #fff;">
+<section class="so-trust" aria-labelledby="soTrustTitle">
   <div class="container">
-    <div class="row g-5 align-items-start">
-      <div class="col-lg-4">
-        <span class="section-label">Why Choose Seat Outlet</span>
-        <h2 class="section-title fs-4">Your Tickets, Confidently Bought.</h2>
-        <div class="section-divider"></div>
-        <p class="text-muted">Compare prices, check out securely and shop with our worry-free guarantee.
-        Everything you need for a smooth ticket buying experience.</p>
-        <a href="/ticket-partner-program" class="btn common-btn mt-3">Get Your Tickets</a>
-      </div>
-      <div class="col-lg-8">
-        <div class="row g-4">
-          <div class="col-sm-6">
-            <div class="feature-card">
-              <div class="feature-icon"><i class="bi bi-patch-check-fill"></i></div>
-              <h4>Trusted providers</h4>
-              <p>Listings come from our network of ticket partners.</p>
-            </div>
-          </div>
-          <div class="col-sm-6">
-            <div class="feature-card">
-              <div class="feature-icon"> <i class="bi bi-shield-lock-fill"></i></div>
-              <h4>Secure checkout</h4>
-              <p>Reliable payment options, no hidden surprises.</p>
-            </div>
-          </div>
-          <div class="col-sm-6">
-            <div class="feature-card">
-              <div class="feature-icon"><i class="bi bi-currency-exchange"></i></div>
-              <h4>Easy price compare</h4>
-              <p>Compare prices and seats side by side.</p>
-            </div>
-          </div>
-          <div class="col-sm-6">
-            <div class="feature-card">
-              <div class="feature-icon"><i class="bi bi-calendar-event"></i></div>
-              <h4>Wide event selection</h4>
-              <p>Sports, concerts, theater and festivals in one place.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="so-trust__head">
+      <h2 id="soTrustTitle" class="so-trust__title">Why buy on Seat Outlet</h2>
+      <a href="/buy-tickets-online" class="btn common-btn so-trust__cta">Browse events</a>
     </div>
+    <ul class="so-trust__grid">
+      <li><i class="bi bi-currency-exchange" aria-hidden="true"></i><div><strong>Compare seats and prices</strong><span>See listings from many sellers side by side before you buy.</span></div></li>
+      <li><i class="bi bi-shield-check" aria-hidden="true"></i><div><strong>Worry-free guarantee</strong><span>Every order is backed by our guarantee. <a href="/worry-free-guarantee">Read the terms</a> before you buy.</span></div></li>
+      <li><i class="bi bi-calendar-event" aria-hidden="true"></i><div><strong>Live events in one place</strong><span>Concerts, sports, theater and festivals across the country.</span></div></li>
+      <li><i class="bi bi-telephone" aria-hidden="true"></i><div><strong>Real people to help</strong><span>Reach our team by phone or email if plans change. <a href="/ticket-customer-service">Contact us</a></span></div></li>
+    </ul>
+    <p class="so-trust__note">Seat Outlet is a resale marketplace: sellers set the prices, which can be above or below face value. Review the full price, including any fees and taxes, before you pay.</p>
   </div>
 </section>
 
-<section class="section reasons teams-nearby py-md-5 py-4 aria-labelledby="reasons-heading">
+<section class="so-home-lead" aria-label="Ticket alerts">
   <div class="container">
-    <h2 id="reasons-heading" class="section__title section__title--center fw-bold fs-4 mb-lg-5 mb-4">The Seat Outlet Advantage</h2>
-    <p class="text-center mb-4">Here's why fans choose our ticket marketplace for every concert, game, and show.</p>
-    <div class="reasons__grid">
-      <article class="reason-card">
-        <div class="reason-card__icon">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--clr-primary)" stroke-width="1.5">
-            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-          </svg>
-        </div>
-        <h3 class="reason-card__title">No Hidden Fees</h3>
-        <p class="reason-card__desc">See the total cost upfront, with no hidden fees added at checkout.</p>
-      </article>
-      <article class="reason-card">
-        <div class="reason-card__icon">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--clr-primary)" stroke-width="1.5">
-            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <h3 class="reason-card__title">Backed by our guarantee</h3>
-        <p class="reason-card__desc">Every order is covered by our worry-free guarantee, with delivery options shown at checkout.</p>
-      </article>
-      <article class="reason-card">
-        <div class="reason-card__icon">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--clr-primary)" stroke-width="1.5">
-            <path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2 2 2 0 010 4 2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 00-2-2 2 2 0 010-4 2 2 0 002-2V7a2 2 0 00-2-2H5z" />
-          </svg>
-        </div>
-        <h3 class="reason-card__title">Premium seating</h3>
-        <p class="reason-card__desc">Browse premium and VIP listings for select events, where sellers offer them.</p>
-      </article>
-    </div>
+    <?php echo soLeadForm([
+        'source' => 'home', 'names' => true, 'id' => 'homeAlerts', 'class' => 'so-nl--home',
+        'title' => 'Get alerts for tours and on-sales',
+        'text' => 'Join the Seat Outlet list for tour announcements, on-sale news and ticket tips, sent to your inbox. Free, and you can unsubscribe any time.',
+        'button' => 'Get alerts',
+    ]); ?>
   </div>
 </section>
-
-<section class="so-news-wrap" aria-labelledby="soNewsTitle">
-  <div class="container">
-    <details class="so-news">
-      <summary class="so-news__summary">
-        <span class="so-news__icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg></span>
-        <span class="so-news__title" id="soNewsTitle">Get an alert when your favorite artists announce tour dates</span>
-        <span class="so-news__btn">Subscribe</span>
-      </summary>
-      <div class="so-news__body">
-        <p class="so-news__lead">Enter your details and we will send tour alerts and ticket news to your inbox.</p>
-        <form method="POST" action="/newsletter-email.php" id="newsletterForm" class="so-news__form">
-          <!-- Honeypot -->
-          <input type="text" name="company" value="" style="display:none" autocomplete="off" tabindex="-1">
-          <input type="hidden" name="token" id="recaptchaToken">
-          <div class="so-news__fields">
-            <input name="fname" type="text" class="form-control newsletter-input" placeholder="First name" aria-label="First name" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />
-            <input name="lname" type="text" class="form-control newsletter-input" placeholder="Last name" aria-label="Last name" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />
-            <input name="email" type="email" class="form-control newsletter-input" placeholder="Email" aria-label="Email" maxlength="70" oninput="this.value = this.value.replace(/\s/g, '')" required />
-            <button type="submit" class="so-news__submit">Sign me up</button>
-          </div>
-        </form>
-        <div class="so-news__error d-none" id="form_error" role="alert"></div>
-      </div>
-    </details>
-  </div>
-</section> 
 
 <section class="partners-section teams-nearby py-5">
   <div class="container">
@@ -545,5 +375,10 @@ foreach ($fallbackCategories as $key => $list) {
   </div>
 </section>
 
-<?php soSeoCopy('home'); ?>
+<?php
+// The long text for search engines and curious readers: all of it stays in the HTML, shown clamped behind "Read more" (js/home.js).
+ob_start();
+soSeoCopy('home');
+echo str_replace('<section class="so-seo-copy"', '<section class="so-seo-copy so-readmore" data-so-readmore', ob_get_clean());
+?>
 <?php include 'footer.php'; ?>

@@ -7,6 +7,9 @@ name: CI
 # overlap between the two is fine; this one is the one that actually
 # blocks a PR.)
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches: [main]
@@ -40,6 +43,21 @@ jobs:
 
       - name: Check for calls to undefined functions
         run: php tools/check-undefined-functions.php .
+
+      - name: SEO titles and descriptions follow the site rules
+        run: php tools/check-seo-titles.php
+
+      - name: Page type stylesheets and critical CSS are in place and under the size limits
+        run: php tools/check-css-groups.php
+
+      - name: No ticket API id in any URL (slugs come from soSlug only)
+        run: php tools/check-url-slugs.php
+
+      - name: No function is defined twice
+        run: |
+          # Two top-level functions with the same name only fail at runtime, on the pages that load both files.
+          dupes=$(grep -rhoP '^\s*function\s+\K\w+(?=\s*\()' --include=*.php --exclude-dir=vendor --exclude-dir=phpmailer --exclude-dir=node_modules . | sort | uniq -d)
+          if [ -n "$dupes" ]; then echo "::error::Functions defined more than once: $dupes"; exit 1; fi
 
       - name: Icon subset covers every bi-* class used
         run: python3 tools/build-icons.py --check
@@ -98,6 +116,9 @@ jobs:
 
       - name: Apply again (must be a no-op - proves idempotency)
         run: php db/migrate.php
+
+      - name: URL slug registry (clean slugs, collisions, old form still resolves)
+        run: php tools/test-slugs.php
 
       - name: Apply the sample seed (must also be safe to run twice)
         run: |

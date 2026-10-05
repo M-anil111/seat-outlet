@@ -11,15 +11,16 @@ require_once __DIR__ . '/../inc/cli-guard.php';
  *      between entities so we stay far under Wikimedia's 200 req/min and
  *      TheSportsDB's 30 req/min free-tier limits.
  *
- * Schedule every 10-15 minutes. Safe to run concurrently with page traffic;
+ * Schedule every 10 minutes. If it is never scheduled, the site still works the queue itself in small batches after
+ * page responses (imageWorkerMaybeRun in inc/images.php), just much more slowly. Safe to run concurrently with page traffic;
  * a page that needs an unresolved image serves the fallback and queues it.
  *
- *   php cron/resolve-images.php            default batch (25)
+ *   php cron/resolve-images.php            default batch (60)
  *   php cron/resolve-images.php 60         larger batch
  */
 require_once __DIR__ . '/../functions.php';
 
-$batch = isset($argv[1]) ? max(1, min(200, (int) $argv[1])) : (isset($_GET['batch']) ? max(1, min(100, (int) $_GET['batch'])) : 25);
+$batch = isset($argv[1]) ? max(1, min(200, (int) $argv[1])) : (isset($_GET['batch']) ? max(1, min(100, (int) $_GET['batch'])) : 60);
 $pauseMicros = 1500000; // 1.5s between entities (each may cost 2-3 requests)
 
 /* ---- 1. pre-warm from the homepage feeds ---- */
@@ -42,31 +43,8 @@ foreach (cache_get('top_venues', 30 * 86400) ?: [] as $v) {
 }
 
 /* ---- 2. work the queue ---- */
-$mysqli = MYSQLI;
-$res = $mysqli->query("
-    SELECT imgkey, entity_type, entity_name, url, status
-      FROM images
-     WHERE entity_type IS NOT NULL AND entity_name IS NOT NULL
-       AND (status = 'pending' OR (status = 'fallback' AND (expires_at IS NULL OR expires_at <= NOW())))
-     ORDER BY (status = 'pending') DESC, updated_at ASC
-     LIMIT " . (int) $batch
-);
-$rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-
-$ok = 0; $miss = 0; $rateLimited = 0;
-foreach ($rows as $i => $row) {
-    if ($i > 0) usleep($pauseMicros);
-    $before = imageRecordGet($row['imgkey']);
-    $result = resolveEntityImage($row['entity_type'], $row['entity_name'], [], $row['url'] ?: imageFallbackUrl($row['entity_type']));
-    if ($result) { $ok++; continue; }
-    $after = imageRecordGet($row['imgkey']);
-    // A short expiry means the chain saw a 429; stop hammering for this run.
-    if ($after && !empty($after['expires_at']) && strtotime($after['expires_at']) - time() < IMAGE_ERROR_TTL_MINUTES * 60 + 60) {
-        $rateLimited++;
-        if ($rateLimited >= 3) { echo "rate limited by a source, stopping early\n"; break; }
-    }
-    $miss++;
-}
+$r = imageWorkQueue($batch, $pauseMicros);
+if ($r['rateLimited'] >= 3) echo "rate limited by a source, stopping early\n";
 
 printf("images: queued %d new, processed %d (resolved %d, no image %d, rate-limited %d) on %s\n",
-    $queued, count($rows), $ok, $miss, $rateLimited, date('Y-m-d H:i:s'));
+    $queued, $r['processed'], $r['resolved'], $r['miss'], $r['rateLimited'], date('Y-m-d H:i:s'));

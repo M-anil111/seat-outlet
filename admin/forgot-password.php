@@ -14,10 +14,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $emailValue = trim((string)($_POST['email'] ?? ''));
 
-        if ($emailValue !== '' && filter_var($emailValue, FILTER_VALIDATE_EMAIL)) {
+        // A reset mail goes to the account owner, so the form is limited per address and per email (the page answers the same either way).
+        $allowed = soRateHit('admin-reset-ip', soIpHash(soClientIp()), 6, 3600) && soRateHit('admin-reset-email', strtolower($emailValue), 3, 3600);
+        if ($allowed && $emailValue !== '' && filter_var($emailValue, FILTER_VALIDATE_EMAIL)) {
             $admin = admin_find_by_email($emailValue);
 
             if ($admin) {
+                // Older unused links for this account stop working as soon as a new one is requested.
+                $stmt = MYSQLI->prepare('UPDATE admin_password_resets SET used_at = NOW() WHERE admin_id = ? AND used_at IS NULL');
+                $oldAdminId = (int)$admin['ID'];
+                $stmt->bind_param('i', $oldAdminId);
+                $stmt->execute();
+                $stmt->close();
+
                 $token = bin2hex(random_bytes(32));
                 $tokenHash = hash('sha256', $token);
                 $expiresAt = date('Y-m-d H:i:s', time() + 30 * 60);
@@ -30,8 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute();
                 $stmt->close();
 
-                $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-                $resetLink = $scheme . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']) . '/reset-password?token=' . $token;
+                // Built from the configured site address, never from the Host header (a forged Host would mail the admin a link to another site).
+                $resetLink = rtrim(HOME_URL, '/') . '/admin/reset-password?token=' . $token;
 
                 admin_send_password_reset_email($admin['email'], $admin['name'], $resetLink);
             }

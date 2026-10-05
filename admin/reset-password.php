@@ -14,7 +14,7 @@ if ($token !== '' && $reset && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $confirmPassword = (string)($_POST['confirm_password'] ?? '');
 
         if (!admin_password_meets_policy($password)) {
-            $errors[] = 'Password must be at least 8 characters and include letters, numbers and a special character.';
+            $errors[] = 'Password must be at least 12 characters and include letters, numbers and a special character.';
         } elseif ($password !== $confirmPassword) {
             $errors[] = 'Passwords do not match.';
         } else {
@@ -25,8 +25,10 @@ if ($token !== '' && $reset && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute();
             $stmt->close();
 
-            $stmt = MYSQLI->prepare('UPDATE admin_password_resets SET used_at = NOW() WHERE ID = ?');
-            $stmt->bind_param('i', $reset['reset_id']);
+            // Every outstanding link for this account is spent. Sessions signed in with the old password end by themselves:
+            // their stored password fingerprint no longer matches (see admin_is_logged_in()).
+            $stmt = MYSQLI->prepare('UPDATE admin_password_resets SET used_at = NOW() WHERE admin_id = ? AND used_at IS NULL');
+            $stmt->bind_param('i', $reset['admin_id']);
             $stmt->execute();
             $stmt->close();
 
@@ -80,7 +82,7 @@ include __DIR__ . '/includes/header.php';
 
             <div class="admin-hint">
                 <i class="bi bi-info-circle"></i>
-                <span>Password must be at least 8 characters and include letters, numbers and a special character.</span>
+                <span>Password must be at least 12 characters and include letters, numbers and a special character.</span>
             </div>
 
             <button type="submit" class="admin-btn">Update Password <i class="bi bi-arrow-right"></i></button>

@@ -1,49 +1,43 @@
 <?php
-include __DIR__ . '/../db/config.php';
-include __DIR__ . '/../inc/constants.php';
+/**
+ * Step one of the legacy two-step newsletter form (js/home.js, js/blog-article.js): validate the email, verify the reCAPTCHA
+ * token on the server and report whether the address is already subscribed. The sign-up itself happens in newsletter-email.php.
+ * New forms use soLeadForm() and /ajax/subscribe.php instead. Answers JSON {status: success|duplicate|invalid|recaptcha|rate}.
+ */
+ini_set('display_errors', '0');
+require_once __DIR__ . '/../db/config.php';
+require_once __DIR__ . '/../inc/constants.php';
+require_once __DIR__ . '/../inc/leads-core.php';
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: no-store');
 
-$email = trim((string) ($_POST['email'] ?? ''));
-$recaptchaSecret  = RECAPTCHA_SECRET_KEY;
-$recaptchaResponse = $_POST['token'] ?? $_POST['g-recaptcha-response'] ?? '';
-
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo json_encode(["status" => "invalid"]);
+function soCheckEmailAnswer($status) {
+    echo json_encode(['status' => $status]);
     exit;
 }
 
-// Was file_get_contents() - relies on allow_url_fopen being enabled, which
-// many managed/shared PHP hosts disable by default, and has no timeout, so
-// a slow reCAPTCHA response would hang this request indefinitely. curl is
-// what the rest of this app already uses for every other outbound call.
-$ch = curl_init('https://www.google.com/recaptcha/api/siteverify');
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST           => true,
-    CURLOPT_POSTFIELDS     => http_build_query([
-        'secret'   => $recaptchaSecret,
-        'response' => $recaptchaResponse,
-    ]),
-    CURLOPT_TIMEOUT        => 10,
-]);
-$verify = curl_exec($ch);
-curl_close($ch);
-
-$captcha = $verify !== false ? json_decode($verify, true) : null;
-
-if (empty($captcha['success'])) {
-    echo json_encode(["status" => "recaptcha"]);
-    exit;
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    http_response_code(405);
+    soCheckEmailAnswer('invalid');
 }
+try {
+    $email = soLeadEmail(soPost('email'));
+    if ($email === null) soCheckEmailAnswer('invalid');
+    $ip = soClientIp();
+    if (!soRateHit('lead-ip', soIpHash($ip), 12, 3600)) { http_response_code(429); soCheckEmailAnswer('rate'); }
+    $token = soPost('token') !== '' ? soPost('token') : soPost('g-recaptcha-response');
+    if (!soLeadVerifyRecaptcha($token, $ip)) soCheckEmailAnswer('recaptcha');
 
-$mysqli = MYSQLI;
-$stmt = $mysqli->prepare("SELECT ID FROM newsletter_leads WHERE email = ?");
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$stmt->store_result();
-$isDuplicate = $stmt->num_rows > 0;
-$stmt->close();
-
-echo json_encode(["status" => $isDuplicate ? "duplicate" : "success"]);
-exit;
+    $stmt = MYSQLI->prepare('SELECT 1 FROM leads WHERE email = ?');
+    $stmt->bind_param('s', $email);
+    $stmt->execute();
+    $stmt->store_result();
+    $dup = $stmt->num_rows > 0;
+    $stmt->close();
+    soCheckEmailAnswer($dup ? 'duplicate' : 'success');
+} catch (\Throwable $e) {
+    error_log('check-email failed: ' . $e->getMessage());
+    http_response_code(500);
+    soCheckEmailAnswer('error');
+}

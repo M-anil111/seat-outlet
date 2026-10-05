@@ -39,10 +39,11 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 |   wikidata     wbsearchentities -> P31/P106 type check -> P18 -> Commons
 |                imageinfo (license, artist, 1200px thumb; SVGs come back as
 |                PNG). People, notable venues, cities, big festivals.
-|   thesportsdb  team fanart/banner/badge + stadium thumb. Free key "3" is
-|                their public test key (30 req/min); set THESPORTSDB_KEY for
-|                a paid key. Images are user-contributed; logos are
-|                trademarks whichever API supplies them - see the PR notes.
+|   thesportsdb  team fanart/banner + stadium thumb. ONLY used when
+|                THESPORTSDB_KEY is set to a real (paid) key: their public test
+|                key is not for commercial use, the art is user-contributed
+|                and logos are trademarks, so the badge is never used and
+|                teams fall back to Wikidata. See docs/launch-checklist.md.
 |   openverse    CC0 / CC BY / CC BY-SA photos with the attribution string
 |                Openverse builds. Festivals (Wikimedia rarely has them).
 |   pexels       optional, only when PEXELS_API_KEY is set. City skylines.
@@ -98,33 +99,57 @@ function imageFallbackUrl($type, $defaultCategory = [], $tab = '') {
 
 /* -------------------------------------------------------------- storage */
 
+/**
+ * Image storage is decoration: if the database is behind the code (a migration that did not run yet) or briefly unavailable,
+ * the page shows the initials tile instead of failing. Every helper below that touches the images table therefore
+ * catches the database error, logs it once per request and answers "nothing stored".
+ */
+function imageDbFailed(\Throwable $e) {
+    static $logged = false;
+    if (!$logged) { $logged = true; error_log('images table unavailable (run php db/migrate.php --status): ' . $e->getMessage()); }
+}
+
 function imageRecordGet($key, $mysqli = MYSQLI) {
-    $stmt = $mysqli->prepare('SELECT * FROM images WHERE imgkey = ? LIMIT 1');
-    if (!$stmt) return null;
-    $stmt->bind_param('s', $key);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-    return $row ?: null;
+    try {
+        $stmt = $mysqli->prepare('SELECT * FROM images WHERE imgkey = ? LIMIT 1');
+        if (!$stmt) return null;
+        $stmt->bind_param('s', $key);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row ?: null;
+    } catch (\Throwable $e) {
+        imageDbFailed($e);
+        return null;
+    }
 }
 
 function imageRecordUpsert(array $r, $mysqli = MYSQLI) {
+    try {
+        return imageRecordUpsertRun($r, $mysqli);
+    } catch (\Throwable $e) {
+        imageDbFailed($e);
+        return false;
+    }
+}
+
+function imageRecordUpsertRun(array $r, $mysqli) {
     $stmt = $mysqli->prepare('
-        INSERT INTO images (imgkey, entity_type, entity_name, url, status, source, source_url, license, attribution, attempts, resolved_at, expires_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO images (imgkey, entity_type, entity_name, url, status, source, source_url, license, attribution, store_key, attempts, resolved_at, expires_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
             entity_type = VALUES(entity_type), entity_name = VALUES(entity_name),
             url = VALUES(url), status = VALUES(status), source = VALUES(source),
-            source_url = VALUES(source_url), license = VALUES(license), attribution = VALUES(attribution),
+            source_url = VALUES(source_url), license = VALUES(license), attribution = VALUES(attribution), store_key = VALUES(store_key),
             attempts = VALUES(attempts), resolved_at = VALUES(resolved_at), expires_at = VALUES(expires_at)
     ');
     if (!$stmt) return false;
     $key = $r['imgkey']; $type = $r['entity_type'] ?? null; $name = $r['entity_name'] ?? null;
     $url = (string) ($r['url'] ?? ''); $status = $r['status'] ?? 'ok';
     $source = $r['source'] ?? null; $sourceUrl = $r['source_url'] ?? null;
-    $license = $r['license'] ?? null; $attribution = $r['attribution'] ?? null;
+    $license = $r['license'] ?? null; $attribution = $r['attribution'] ?? null; $storeKey = $r['store_key'] ?? null;
     $attempts = (int) ($r['attempts'] ?? 0); $resolvedAt = $r['resolved_at'] ?? null; $expiresAt = $r['expires_at'] ?? null;
-    $stmt->bind_param('sssssssssiss', $key, $type, $name, $url, $status, $source, $sourceUrl, $license, $attribution, $attempts, $resolvedAt, $expiresAt);
+    $stmt->bind_param('ssssssssssiss', $key, $type, $name, $url, $status, $source, $sourceUrl, $license, $attribution, $storeKey, $attempts, $resolvedAt, $expiresAt);
     $ok = $stmt->execute();
     $stmt->close();
     return $ok;
@@ -135,12 +160,17 @@ function imageQueue($type, $name, $fallbackUrl = '', $mysqli = MYSQLI) {
     $name = trim((string) $name);
     if ($name === '') return false;
     $key = imageEntityKey($type, $name);
-    $stmt = $mysqli->prepare('INSERT IGNORE INTO images (imgkey, entity_type, entity_name, url, status) VALUES (?, ?, ?, ?, \'pending\')');
-    if (!$stmt) return false;
-    $stmt->bind_param('ssss', $key, $type, $name, $fallbackUrl);
-    $ok = $stmt->execute();
-    $stmt->close();
-    return $ok;
+    try {
+        $stmt = $mysqli->prepare('INSERT IGNORE INTO images (imgkey, entity_type, entity_name, url, status) VALUES (?, ?, ?, ?, \'pending\')');
+        if (!$stmt) return false;
+        $stmt->bind_param('ssss', $key, $type, $name, $fallbackUrl);
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
+    } catch (\Throwable $e) {
+        imageDbFailed($e);
+        return false;
+    }
 }
 
 /* --------------------------------------------------------------- public */
@@ -164,6 +194,7 @@ function getEntityImage($type, $name, array $opts = []) {
         return imageRowToResult($row);
     }
     if ($row && $row['status'] === 'fallback' && !empty($row['expires_at']) && strtotime($row['expires_at']) > time()) {
+        imageNoteMiss($row['imgkey']);
         return $out; // known miss, not due for retry yet
     }
     if (!empty($opts['resolve'])) {
@@ -178,8 +209,58 @@ function getEntityImage($type, $name, array $opts = []) {
     }
     if (!$row) {
         imageQueue($type, $name, $fallback);
+    } else {
+        imageNoteMiss($row['imgkey']);
     }
     return $out;
+}
+
+/**
+ * "Pictures first": reorder a list so items whose performer, team or venue has a real stored picture come before the ones that
+ * would show an initials tile. Stable, and it only reads what is already stored (no lookups, no network).
+ *   $describe($item) => [type, name, category]       what to look the picture up by
+ *   $primary($item)  => scalar|null                  optional sort key that still wins: pictures only break ties
+ *                                                    (distance, date, price), so a "nearest first" list stays nearest first
+ * An image database that is behind or down ranks nobody, so the original order is kept.
+ */
+function soImageFirst(array $items, callable $describe, ?callable $primary = null): array {
+    if (count($items) < 2) return $items;
+    $has = [];
+    foreach ($items as $i => $item) {
+        $has[$i] = 0;
+        try {
+            [$type, $name, $cat] = $describe($item);
+            if ((string) $name !== '') {
+                $info = getEntityImage($type, $name, ['category' => $cat ?: [], 'resolve' => false]);
+                $has[$i] = (in_array($info['status'] ?? '', ['ok', 'manual'], true) && ($info['url'] ?? '') !== '') ? 1 : 0;
+            }
+        } catch (\Throwable $e) { /* decoration only */ }
+    }
+    if (!array_filter($has)) return $items;
+    $idx = array_keys($items);
+    usort($idx, function ($a, $b) use ($items, $has, $primary) {
+        $pa = $primary ? ($primary($items[$a]) ?? PHP_INT_MAX) : 0;
+        $pb = $primary ? ($primary($items[$b]) ?? PHP_INT_MAX) : 0;
+        return [$pa, -$has[$a], $a] <=> [$pb, -$has[$b], $b];
+    });
+    return array_map(function ($i) use ($items) { return $items[$i]; }, $idx);
+}
+
+/**
+ * Count (sampled 1 in 10, so a busy page costs almost no writes) that a page was served the initials tile for this key.
+ * The admin "misses" view sorts by it: the gaps people actually see come first.
+ */
+function imageNoteMiss($key, $mysqli = MYSQLI) {
+    if (mt_rand(1, 10) !== 1) return;
+    try {
+        $stmt = $mysqli->prepare('UPDATE images SET miss_hits = miss_hits + 10 WHERE imgkey = ? AND status IN (\'pending\', \'fallback\')');
+        if (!$stmt) return;
+        $stmt->bind_param('s', $key);
+        $stmt->execute();
+        $stmt->close();
+    } catch (\Throwable $e) {
+        imageDbFailed($e);
+    }
 }
 
 function imageRowToResult(array $row) {
@@ -189,6 +270,7 @@ function imageRowToResult(array $row) {
         'license' => (string) ($row['license'] ?? ''),
         'source'  => (string) ($row['source'] ?? ''),
         'status'  => (string) ($row['status'] ?? ''),
+        'source_url' => (string) ($row['source_url'] ?? ''),
     ];
 }
 
@@ -222,7 +304,8 @@ function resolveEntityImage($type, $name, $defaultCategory = [], $fallbackUrl = 
 
     $storeFailed = false;
     if ($found) {
-        $cdnUrl = processAndStoreImage($found['image_url'], $name, imageStorageFolder($type));
+        $storeKey = imageStoreKey($type, $key);
+        $cdnUrl = processAndStoreImage($found['image_url'], $name, imageStorageFolder($type), $storeKey);
         $storeFailed = ($cdnUrl === '');
         if ($cdnUrl) {
             $row = [
@@ -231,6 +314,7 @@ function resolveEntityImage($type, $name, $defaultCategory = [], $fallbackUrl = 
                 'source_url' => mb_substr((string) ($found['source_url'] ?? ''), 0, 1000),
                 'license' => mb_substr((string) ($found['license'] ?? ''), 0, 100),
                 'attribution' => mb_substr((string) ($found['attribution'] ?? ''), 0, 500),
+                'store_key' => $storeKey,
                 'attempts' => $attempts, 'resolved_at' => date('Y-m-d H:i:s'), 'expires_at' => null,
             ];
             imageRecordUpsert($row);
@@ -248,6 +332,17 @@ function resolveEntityImage($type, $name, $defaultCategory = [], $fallbackUrl = 
         'attempts' => $attempts, 'resolved_at' => null, 'expires_at' => date('Y-m-d H:i:s', strtotime($ttl)),
     ]);
     return null;
+}
+
+/**
+ * Where a resolved file is stored: "<folder>/<hash>.webp", the hash being the imgkey's md5 (type + name). Never the slug:
+ * two entities that slugify alike can no longer share a file, and an existing object is never adopted under a new
+ * licence label (processAndStoreImage always downloads what the source gave us and writes it here). Rows resolved before
+ * this change keep their old slug-keyed url and are still served; "Re-verify legacy" in admin queues them again.
+ */
+function imageStoreKey($type, $imgKey) {
+    $hash = strpos((string) $imgKey, 'so_img_') === 0 ? substr((string) $imgKey, 7) : md5((string) $imgKey);
+    return imageStorageFolder($type) . '/' . $hash . '.webp';
 }
 
 function imageStorageFolder($type) {
@@ -277,6 +372,8 @@ function imageHttpGet($url, array $headers = []) {
 }
 
 function imageHttpJson($url, array $headers = []) {
+    // Test seam: a CLI test can answer the Wikidata / Commons calls without the network.
+    if (isset($GLOBALS['so_image_http_stub']) && is_callable($GLOBALS['so_image_http_stub'])) return ($GLOBALS['so_image_http_stub'])($url);
     [$code, $body] = imageHttpGet($url, $headers);
     if ($code === 429) return 'RATE_LIMITED';
     if ($code !== 200) return null;
@@ -300,7 +397,7 @@ function imageLicenseIsUsable($license) {
 function imageCleanName($name) {
     $n = preg_replace('/\s*\(.*?\)/', '', (string) $name);
     $n = preg_replace('/\s+(feat\.?|featuring|with|vs\.?|&|and)\s+.*$/i', '', $n);
-    $n = preg_replace('/\s+-\s+.*$/', '', $n);
+    $n = preg_replace('/(?:\s+-\s+|:\s+).*$/', '', $n);   // "& Juliet - Musical", shown as "& Juliet: Musical" since soCleanTnName()
     return trim($n);
 }
 
@@ -314,8 +411,51 @@ const WD_TYPES_CITY  = ['Q515', 'Q1093829', 'Q3957', 'Q1549591', 'Q62049', 'Q152
 const WD_TYPES_FESTIVAL = ['Q868557', 'Q132241', 'Q1751626', 'Q2416217'];   // music festival, festival, art festival, theatre festival
 const WD_TYPES_REJECT = ['Q11424', 'Q7889', 'Q482994', 'Q7366', 'Q571', 'Q5398426', 'Q13442814', 'Q4167410', 'Q134556', 'Q8261']; // film, video game, album, song, book, TV series, article, disambiguation, single, novel
 
+const IMAGE_STATE_NAMES = [
+    'AL' => 'Alabama', 'AK' => 'Alaska', 'AZ' => 'Arizona', 'AR' => 'Arkansas', 'CA' => 'California', 'CO' => 'Colorado', 'CT' => 'Connecticut',
+    'DE' => 'Delaware', 'DC' => 'Washington, D.C.', 'FL' => 'Florida', 'GA' => 'Georgia', 'HI' => 'Hawaii', 'ID' => 'Idaho', 'IL' => 'Illinois',
+    'IN' => 'Indiana', 'IA' => 'Iowa', 'KS' => 'Kansas', 'KY' => 'Kentucky', 'LA' => 'Louisiana', 'ME' => 'Maine', 'MD' => 'Maryland',
+    'MA' => 'Massachusetts', 'MI' => 'Michigan', 'MN' => 'Minnesota', 'MS' => 'Mississippi', 'MO' => 'Missouri', 'MT' => 'Montana',
+    'NE' => 'Nebraska', 'NV' => 'Nevada', 'NH' => 'New Hampshire', 'NJ' => 'New Jersey', 'NM' => 'New Mexico', 'NY' => 'New York',
+    'NC' => 'North Carolina', 'ND' => 'North Dakota', 'OH' => 'Ohio', 'OK' => 'Oklahoma', 'OR' => 'Oregon', 'PA' => 'Pennsylvania',
+    'RI' => 'Rhode Island', 'SC' => 'South Carolina', 'SD' => 'South Dakota', 'TN' => 'Tennessee', 'TX' => 'Texas', 'UT' => 'Utah',
+    'VT' => 'Vermont', 'VA' => 'Virginia', 'WA' => 'Washington', 'WV' => 'West Virginia', 'WI' => 'Wisconsin', 'WY' => 'Wyoming',
+    'PR' => 'Puerto Rico', 'AB' => 'Alberta', 'BC' => 'British Columbia', 'MB' => 'Manitoba', 'NB' => 'New Brunswick',
+    'NL' => 'Newfoundland and Labrador', 'NS' => 'Nova Scotia', 'ON' => 'Ontario', 'PE' => 'Prince Edward Island', 'QC' => 'Quebec', 'SK' => 'Saskatchewan',
+];
+
+/**
+ * Is this Wikidata item inside the named state? Follows "located in the administrative territorial entity" (P131) up to
+ * three levels (city -> county -> state), because many cities point at a county, not the state. Costs one request per level.
+ * Without this "Springfield, MO" accepted the first Springfield on the list.
+ */
+function imageWdLocatedInState(array $ent, $stateName) {
+    $want = strtolower((string) $stateName);
+    $ids = imageWdIds($ent, 'P131');
+    for ($level = 0; $level < 3 && $ids; $level++) {
+        $data = imageHttpJson('https://www.wikidata.org/w/api.php?' . http_build_query([
+            'action' => 'wbgetentities', 'ids' => implode('|', array_slice($ids, 0, 5)), 'props' => 'labels|claims', 'languages' => 'en', 'format' => 'json',
+        ]));
+        if (!is_array($data)) return false;
+        $next = [];
+        foreach ($data['entities'] ?? [] as $e) {
+            if (strtolower((string) ($e['labels']['en']['value'] ?? '')) === $want) return true;
+            $next = array_merge($next, imageWdIds($e, 'P131'));
+        }
+        $ids = array_values(array_unique($next));
+    }
+    return false;
+}
+
 function imageSourceWikidata($type, $name, $defaultCategory = []) {
     $query = $type === 'city' ? $name : imageCleanName($name);
+    $stateName = '';
+    if ($type === 'city' && preg_match('/^(.*\S)\s*,\s*([A-Za-z]{2})$/', $name, $m)) {
+        // "Springfield, MO": search the city name, then require the match to lie in Missouri.
+        $query = trim($m[1]);
+        $stateName = IMAGE_STATE_NAMES[strtoupper($m[2])] ?? '';
+        if ($stateName === '') return null;   // a state we cannot verify: no picture beats the wrong city's picture
+    }
     if ($query === '') return null;
 
     $search = imageHttpJson('https://www.wikidata.org/w/api.php?' . http_build_query([
@@ -355,7 +495,8 @@ function imageSourceWikidata($type, $name, $defaultCategory = []) {
         }
         // A human with no performer-ish occupation/description (e.g. a
         // politician sharing the name) is not a match.
-        if ($type === 'artist' && in_array('Q5', $p31, true) && !$descMatch && !$p106) $typeMatch = false;
+        // A person must have an occupation (P106): a politician or athlete sharing a band's name is not the band.
+        if ($type === 'artist' && in_array('Q5', $p31, true) && !$p106) continue;
         if (!$typeMatch && !$descMatch) continue;
         // Label must at least start with the query for anything but exact hits.
         $label = strtolower((string) ($hit['label'] ?? ''));
@@ -363,6 +504,7 @@ function imageSourceWikidata($type, $name, $defaultCategory = []) {
 
         $file = $ent['claims']['P18'][0]['mainsnak']['datavalue']['value'] ?? '';
         if ($file === '') continue;
+        if ($stateName !== '' && !imageWdLocatedInState($ent, $stateName)) continue;   // right name, wrong state
 
         $info = imageCommonsFileInfo($file);
         if ($info === 'RATE_LIMITED') return 'RATE_LIMITED';
@@ -435,24 +577,29 @@ function imageCommonsFileInfo($file) {
 
 /* ----------------------------------------------------------- thesportsdb */
 
+/**
+ * The TheSportsDB key, or '' when none usable is configured. Their free/test keys ("3", "1", "123") are not licensed for
+ * a commercial site, so without a real THESPORTSDB_KEY this source is skipped and teams use Wikidata only.
+ */
 function imageTheSportsDbKey() {
-    $k = getenv('THESPORTSDB_KEY');
-    return $k !== false && $k !== '' ? $k : '3';
+    $k = trim((string) getenv('THESPORTSDB_KEY'));
+    return ($k === '' || in_array($k, ['1', '2', '3', '123'], true)) ? '' : $k;
 }
 
 function imageSourceTheSportsDb($name) {
+    if (imageTheSportsDbKey() === '') return null;
     $data = imageHttpJson('https://www.thesportsdb.com/api/v1/json/' . rawurlencode(imageTheSportsDbKey()) . '/searchteams.php?t=' . rawurlencode(imageCleanName($name)));
     if ($data === 'RATE_LIMITED') return 'RATE_LIMITED';
     $want = strtolower(imageCleanName($name));
     foreach ($data['teams'] ?? [] as $team) {
         if (strtolower((string) ($team['strTeam'] ?? '')) !== $want) continue;
-        // Photo-style assets first; the badge/logo is a trademark and only a last resort.
-        foreach (['strFanart1', 'strBanner', 'strStadiumThumb', 'strBadge'] as $field) {
+        // Photo-style assets only. The badge/logo is a trademark: never used, not even as a last resort.
+        foreach (['strFanart1', 'strBanner', 'strStadiumThumb'] as $field) {
             if (!empty($team[$field])) {
                 return [
                     'image_url'   => $team[$field],
                     'source_url'  => 'https://www.thesportsdb.com/team/' . ($team['idTeam'] ?? ''),
-                    'license'     => 'TheSportsDB (user-contributed)' . ($field === 'strBadge' ? ' - logo' : ''),
+                    'license'     => 'TheSportsDB (user-contributed)',
                     'attribution' => 'Image: TheSportsDB.com',
                 ];
             }
@@ -462,6 +609,7 @@ function imageSourceTheSportsDb($name) {
 }
 
 function imageSourceTheSportsDbVenue($name) {
+    if (imageTheSportsDbKey() === '') return null;   // test key: not licensed for commercial use
     // Venue search is a paid-tier endpoint; on the free key it returns
     // nothing and we fall through. Teams carry their home stadium thumb, so
     // try the venue name against team stadiums as a cheap second chance.
@@ -522,9 +670,158 @@ function imageSourcePexels($name, $type) {
 
 /* --------------------------------------------------------------- render */
 
-/** Small visible credit under an image, for CC BY / BY-SA compliance. */
+/** URL of the licence text for the licence strings we store ("CC BY-SA 4.0", "CC0", "Pexels License"), or ''. */
+function imageLicenseUrl($license) {
+    $l = strtolower(trim((string) $license));
+    if (preg_match('/^cc[ -]?0|public domain|pd\b/', $l)) return 'https://creativecommons.org/publicdomain/zero/1.0/';
+    if (preg_match('/^cc[ -]?by(-sa)?[ -]?(\d\.\d)/', $l, $m)) return 'https://creativecommons.org/licenses/by' . ($m[1] ? '-sa' : '') . '/' . $m[2] . '/';
+    if (preg_match('/^cc[ -]?by(-sa)?\b/', $l, $m)) return 'https://creativecommons.org/licenses/by' . ($m[1] ? '-sa' : '') . '/4.0/';
+    if (strpos($l, 'pexels') === 0) return 'https://www.pexels.com/license/';
+    return '';
+}
+
+/**
+ * Visible credit under an image: "Photo: creator, <licence link>, <source link>. Cropped and resized." CC BY and BY-SA
+ * need the creator, a link to the licence, and a note that the file was changed (we resize and re-encode). Used wherever
+ * the image appears (hero, About copy, venue and city heroes). Manual and legacy rows without a licence show the credit
+ * text alone. Cards use imageCreditShort().
+ */
 function renderImageCredit(array $img, $class = 'img-credit') {
-    if (empty($img['credit']) || empty($img['url'])) return;
-    $credit = htmlspecialchars($img['credit'], ENT_QUOTES, 'UTF-8');
-    echo '<div class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '">' . $credit . '</div>';
+    if (empty($img['url']) || (empty($img['credit']) && empty($img['license']))) return;
+    $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $credit  = trim((string) ($img['credit'] ?? ''));
+    $license = trim((string) ($img['license'] ?? ''));
+    $licUrl  = imageLicenseUrl($license);
+    if (mb_strlen($credit) > 160) { $credit = rtrim(mb_substr($credit, 0, 157)) . '...'; }
+    $html = '';
+    if ($license !== '' && $licUrl !== '' && ($pos = stripos($credit, $license)) !== false) {
+        // The stored credit already names the licence ("Author / Wikimedia Commons, CC BY-SA 4.0"): link that part.
+        $html = $h(substr($credit, 0, $pos)) . '<a href="' . $h($licUrl) . '" rel="license noopener nofollow" target="_blank">' . $h(substr($credit, $pos, strlen($license))) . '</a>' . $h(substr($credit, $pos + strlen($license)));
+    } else {
+        $html = $h($credit);
+        if ($license !== '') {
+            $html .= ($html !== '' ? ', ' : '') . ($licUrl !== '' ? '<a href="' . $h($licUrl) . '" rel="license noopener nofollow" target="_blank">' . $h($license) . '</a>' : $h($license));
+        }
+    }
+    $src = trim((string) ($img['source_url'] ?? ''));
+    if ($src !== '' && preg_match('#^https?://#i', $src)) {
+        $html .= ' <a href="' . $h($src) . '" rel="noopener nofollow" target="_blank">Source</a>';
+    }
+    $changed = ($license !== '' && $licUrl !== '') ? ' Cropped and resized.' : '';
+    echo '<div class="' . $h($class) . '">Photo: ' . $html . '.' . $changed . ' <a href="/image-credits">All photo credits</a></div>';
+}
+
+/** Short text for a card caption / tooltip: "Photo: CC BY-SA 4.0". Cards link to /image-credits for the full notice. */
+function imageCreditShort(array $img) {
+    $license = trim((string) ($img['license'] ?? ''));
+    if ($license !== '') return 'Photo: ' . $license;
+    $credit = trim((string) ($img['credit'] ?? ''));
+    return $credit !== '' ? 'Photo: ' . mb_substr($credit, 0, 60) : '';
+}
+
+
+/**
+ * Numbers for the admin Images screen and dashboard: rows by status, the age of the oldest queued row (a growing age means
+ * the cron / background worker is not keeping up), the share of resolved rows, and how many "ok" rows are legacy objects
+ * (stored under the old slug key, resolved before licences were recorded).
+ */
+function imageQueueStats($mysqli = MYSQLI) {
+    $out = ['ok' => 0, 'manual' => 0, 'fallback' => 0, 'pending' => 0, 'total' => 0, 'oldest_pending_age' => null, 'legacy_ok' => 0, 'resolved_pct' => 0];
+    $res = $mysqli->query("SELECT status, COUNT(*) AS c FROM images WHERE entity_type IS NOT NULL GROUP BY status");
+    while ($res && ($r = $res->fetch_assoc())) { $out[$r['status']] = (int) $r['c']; $out['total'] += (int) $r['c']; }
+    $res = $mysqli->query("SELECT TIMESTAMPDIFF(SECOND, MIN(created_at), NOW()) AS age FROM images WHERE entity_type IS NOT NULL AND status = 'pending'");
+    $row = $res ? $res->fetch_assoc() : null;
+    if ($row && $row['age'] !== null) $out['oldest_pending_age'] = (int) $row['age'];
+    $res = $mysqli->query("SELECT COUNT(*) AS c FROM images WHERE entity_type IS NOT NULL AND status = 'ok' AND store_key IS NULL AND (source IS NULL OR source <> 'admin')");
+    $row = $res ? $res->fetch_assoc() : null;
+    $out['legacy_ok'] = (int) ($row['c'] ?? 0);
+    $denom = $out['ok'] + $out['manual'] + $out['fallback'] + $out['pending'];
+    $out['resolved_pct'] = $denom > 0 ? (int) round(100 * ($out['ok'] + $out['manual']) / $denom) : 0;
+    return $out;
+}
+
+/** "3 days", "5 hours", "12 minutes" for an age in seconds. */
+function imageHumanAge($seconds) {
+    $seconds = (int) $seconds;
+    if ($seconds >= 172800) return floor($seconds / 86400) . ' days';
+    if ($seconds >= 7200) return floor($seconds / 3600) . ' hours';
+    return max(1, (int) floor($seconds / 60)) . ' minutes';
+}
+
+/* ------------------------------------------------------------------ the queue worker */
+
+/**
+ * Work the image queue: pending rows first, then fallbacks whose retry time has passed, oldest first. Stops early when a
+ * source rate-limits us, or when the deadline (unix time) is reached. Shared by cron/resolve-images.php and the
+ * self-scheduling web worker below.
+ *
+ * @return array ['processed' => n, 'resolved' => n, 'miss' => n, 'rateLimited' => n]
+ */
+function imageWorkQueue($batch, $pauseMicros = 1500000, $deadline = null, $mysqli = MYSQLI) {
+    $out = ['processed' => 0, 'resolved' => 0, 'miss' => 0, 'rateLimited' => 0];
+    $res = $mysqli->query("
+        SELECT imgkey, entity_type, entity_name, url, status
+          FROM images
+         WHERE entity_type IS NOT NULL AND entity_name IS NOT NULL
+           AND (status = 'pending' OR (status = 'fallback' AND (expires_at IS NULL OR expires_at <= NOW())))
+         ORDER BY (status = 'pending') DESC, ID ASC
+         LIMIT " . (int) $batch);
+    $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    foreach ($rows as $i => $row) {
+        if ($deadline !== null && time() >= $deadline) break;
+        if ($i > 0) usleep($pauseMicros);
+        $out['processed']++;
+        if (resolveEntityImage($row['entity_type'], $row['entity_name'], [], $row['url'] ?: imageFallbackUrl($row['entity_type']))) { $out['resolved']++; continue; }
+        $after = imageRecordGet($row['imgkey']);
+        // A short expiry means the chain saw a 429; stop hammering for this run.
+        if ($after && !empty($after['expires_at']) && strtotime($after['expires_at']) - time() < IMAGE_ERROR_TTL_MINUTES * 60 + 60) {
+            $out['rateLimited']++;
+            if ($out['rateLimited'] >= 3) break;
+        }
+        $out['miss']++;
+    }
+    return $out;
+}
+
+/**
+ * Self-scheduling worker, so pictures keep resolving even if nobody has set up the cron job.
+ *
+ * Runs as a shutdown function on public page requests, AFTER the page has been sent to the visitor (fastcgi_finish_request;
+ * without it, e.g. the PHP built-in server, it does nothing so no visitor is ever kept waiting). At most one run every
+ * IMAGE_WORKER_INTERVAL seconds across all requests (a stamp file, plus a lock so two requests never overlap), and only when
+ * the queue has work. The scheduled cron job stays the better option; this is the safety net. Turn it off with the
+ * environment variable IMAGE_WEB_WORKER=0.
+ */
+const IMAGE_WORKER_INTERVAL = 60;    // seconds between runs (it only runs when something is queued)
+const IMAGE_WORKER_BATCH    = 15;
+const IMAGE_WORKER_BUDGET   = 40;    // seconds of work after the response has been sent
+
+function imageWorkerMaybeRun($forTest = false) {
+    if (!$forTest) {   // $forTest skips only the environment checks, so the scheduling rules below can be tested from the command line
+        if (PHP_SAPI === 'cli' || getenv('IMAGE_WEB_WORKER') === '0' || !function_exists('fastcgi_finish_request')) return;
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
+    }
+    $dir = __DIR__ . '/../cache';
+    if (!is_dir($dir) || !is_writable($dir)) return;
+    $stamp = $dir . '/image_worker.stamp';
+    if (is_file($stamp) && time() - (int) @filemtime($stamp) < IMAGE_WORKER_INTERVAL) return;
+    $lock = @fopen($dir . '/image_worker.lock', 'c');
+    if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) return;
+    clearstatcache(true, $stamp);
+    if (is_file($stamp) && time() - (int) @filemtime($stamp) < IMAGE_WORKER_INTERVAL) { flock($lock, LOCK_UN); return; }
+    @touch($stamp);   // even when the queue is empty: look again in a few minutes, not on every request
+    try {
+        $has = MYSQLI->query("SELECT 1 FROM images WHERE entity_type IS NOT NULL AND entity_name IS NOT NULL AND (status = 'pending' OR (status = 'fallback' AND (expires_at IS NULL OR expires_at <= NOW()))) LIMIT 1");
+        if (!$has || !$has->fetch_row()) { flock($lock, LOCK_UN); return; }
+        ignore_user_abort(true);
+        @set_time_limit(IMAGE_WORKER_BUDGET + 20);
+        fastcgi_finish_request();   // the visitor already has the whole page; everything below is background work
+        $t0 = microtime(true);
+        $stats = imageWorkQueue(IMAGE_WORKER_BATCH, 1200000, time() + IMAGE_WORKER_BUDGET);
+        // Shown by /ajax/health.php: how the last run went (so a slow or rate-limited queue is visible without server access).
+        @file_put_contents($dir . '/image_worker_last.json', json_encode($stats + ['at' => time(), 'seconds' => round(microtime(true) - $t0, 1)]));
+    } catch (Throwable $e) {
+        error_log('image worker: ' . $e->getMessage());
+    }
+    flock($lock, LOCK_UN);
 }
