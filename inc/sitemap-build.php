@@ -24,7 +24,7 @@ const SO_SITEMAP_PER_PAGE  = 200;
 const SO_SITEMAP_MAX_PAGES = 250;    // 50,000 events; the catalog is far below this
 const SO_SITEMAP_PAUSE_US  = 700000; // between API requests, so the crawl never competes with visitors for the API
 const SO_SITEMAP_CITYPAGE_MIN = 3;   // upcoming events a city needs, per kind of event, for its page to be listed in the sitemap
-const SO_SITEMAP_FORMAT    = 6;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
+const SO_SITEMAP_FORMAT    = 7;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
 const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>';   // a static file; the web server sends it as text/xsl (docs/server-rewrites.md)
 
 /** Paths robots.txt disallows (robots.php prints them); the sitemap never lists a page under one of them. */
@@ -312,6 +312,7 @@ function soSitemapBuildFiles(string $tmp): array {
     $emit('events', $entries);
 
     // Performers, venues and cities: every one on those events, with the newest update among its events as <lastmod>.
+    $cityN = [];
     foreach (['performers' => ['/artist/', 'performer'], 'venues' => ['/venue/', 'venue'], 'cities' => ['/city/', 'city']] as $group => [$prefix, $slugType]) {
         $ents = [];
         foreach (@file($tmp . '/' . $group . '.tsv', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
@@ -320,6 +321,7 @@ function soSitemapBuildFiles(string $tmp): array {
             if ($id <= 0 || $name === '') continue;
             if (!isset($ents[$id])) $ents[$id] = [$name, $lm];
             elseif ($lm > $ents[$id][1]) $ents[$id][1] = $lm;
+            if ($group === 'cities') $cityN[$id] = ($cityN[$id] ?? 0) + 1;   // upcoming events per city, for the county pages
         }
         $list = [];
         soSlugWarm(array_map(fn($i) => [$slugType, $i], array_keys($ents)));
@@ -352,8 +354,26 @@ function soSitemapBuildFiles(string $tmp): array {
                 if (strpos($kind, 'holiday:') === 0) $holidayList[] = [$loc, $lm !== '' ? $lm : null]; else $list[] = [$loc, $lm !== '' ? $lm : null];
             }
         }
+        $countyList = [];
+        if ($group === 'cities') {
+            // US counties: queue every US city for a county lookup (cron/resolve-counties.php), then list the counties that are known and
+            // have at least SO_SITEMAP_CITYPAGE_MIN upcoming events across their cities. Empty until the lookups have run.
+            try {
+                $q = []; foreach ($ents as $cid => [$cname]) $q[] = [$cid, $cname];
+                soCountyEnqueue($q); soCountySetCounts($cityN);
+                $tot = []; $lab = [];
+                $cr = MYSQLI->query("SELECT city_id, county_fips, county_name, state_abbr FROM city_counties WHERE status = 'ok'");
+                while ($cr && ($row = $cr->fetch_assoc())) { $f = (int) $row['county_fips']; $tot[$f] = ($tot[$f] ?? 0) + ($cityN[(int) $row['city_id']] ?? 0); $lab[$f] = $row['county_name'] . ', ' . $row['state_abbr']; }
+                ksort($tot);
+                foreach ($tot as $f => $n) {
+                    if ($n < SO_SITEMAP_CITYPAGE_MIN) continue;
+                    $loc = $base . '/county/' . soSlug('county', $lab[$f], $f);
+                    if ($keep($loc)) $countyList[] = [$loc, null];
+                }
+            } catch (Throwable $e) { /* the county table is missing until migration 0044 has run */ }
+        }
         $emit($group, $list);
-        if ($group === 'cities') $emit('holiday-events', $holidayList);
+        if ($group === 'cities') { $emit('holiday-events', $holidayList); $emit('counties', $countyList); }
     }
 
     $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . SO_SITEMAP_STYLE_PI . "\n" . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";

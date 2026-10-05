@@ -978,7 +978,7 @@ function buildCategoryBreadcrumb($defaultCategory) {
             } elseif ($ancestor['depth'] == 2) {
                 $depth2[] = [
                     'label' => ucwords(strtolower($ancestor['text']['name'])),
-                    'url'   => '/category/' . sanitize_title($ancestor['text']['name']) . '-' . stripCategoryRootPath($ancestor['path'])
+                    'url'   => '/category/' . soSlug('category', (string) $ancestor['text']['name'], (int) ($ancestor['id'] ?? stripCategoryRootPath($ancestor['path'])))
                 ];
             }
         }
@@ -987,7 +987,7 @@ function buildCategoryBreadcrumb($defaultCategory) {
     if(count($breadcrumb) < 3) {
         $breadcrumb[] = [
             'label' => ucwords(strtolower($defaultCategory['text']['name'])),
-            'url'   => '/category/' . sanitize_title($defaultCategory['text']['name']) . '-' . stripCategoryRootPath($defaultCategory['path'])
+            'url'   => '/category/' . soSlug('category', (string) $defaultCategory['text']['name'], (int) ($defaultCategory['id'] ?? stripCategoryRootPath($defaultCategory['path'])))
         ];
     }
 
@@ -3213,7 +3213,7 @@ function getTopPerformersByCategory($categoryPath) {
             $performers[] = [
                 'id'   => $item['id'] ?? '',
                 'name' => $item['text']['name'] ?? '',
-                'slug' => strtolower($item['uriComponent']) ?? ''
+                'slug' => soSlug('performer', (string) ($item['text']['name'] ?? ''), (int) ($item['id'] ?? 0))
             ];
         }
     }
@@ -4886,7 +4886,7 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
         <?php foreach ($related as $rel) {
             if ($n >= $limit) break;
             $name = trim((string) ($rel['text']['name'] ?? ''));
-            $uri  = strtolower((string) ($rel['uriComponent'] ?? ''));
+            $uri  = $name !== '' && !empty($rel['id']) ? soSlug('performer', $name, (int) $rel['id']) : '';   // clean slug, not the API's name-and-id form
             if ($name === '' || $uri === '') continue;
             $n++;
             $cat  = $rel['defaultCategory'] ?? [];
@@ -6276,6 +6276,7 @@ require_once __DIR__ . '/inc/page-hero.php';   // soPageHero(): the one page hea
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
 require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/css-groups.php';        // soCssBundleFiles(): the stylesheet files for this page type
+require_once __DIR__ . '/inc/counties.php';   // county pages (US): city to county from the Census geocoder
 require_once __DIR__ . '/inc/readmore.php';   // clamped "Read more" blocks and the data-driven place text
 require_once __DIR__ . '/inc/page-spec.php';   // titles, headings, promo block and sections for event and performer-in-location pages
 require_once __DIR__ . '/inc/holidays.php';   // /<holiday>-in-<city> pages for the US and Canadian holidays and the /holiday-events hub

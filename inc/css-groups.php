@@ -31,7 +31,7 @@ const SO_CSS_GROUPS = [
         'ajax' => ['load-events', 'load-more-events'],
     ],
     'entity' => [
-        'templates' => ['performer.php', 'venue.php', 'city.php', 'state.php', 'country.php', 'artist-*.php'],
+        'templates' => ['performer.php', 'venue.php', 'city.php', 'county.php', 'state.php', 'country.php', 'artist-*.php'],
         'js' => ['events-listing', 'near-you', 'performer', 'idle-nudge'],
         'ajax' => ['load-events', 'load-more-events', 'get-location-category-events'],
     ],

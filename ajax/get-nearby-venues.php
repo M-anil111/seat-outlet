@@ -11,7 +11,7 @@ $output = [];
 if(!empty($nearbyVenues)) {
     foreach ($nearbyVenues as $venue) { 
         $output[] = [
-            'slug'  => strtolower($venue['uriComponent'] ?? ''),
+            'slug'  => soVenueSlug((string) ($venue['text']['name'] ?? ''), (int) ($venue['id'] ?? 0), trim((string) ($venue['city']['text']['name'] ?? '') . ', ' . (string) ($venue['stateProvince']['text']['abbr'] ?? ''), ', ')),
             'name'  => $venue['text']['name'] ?? '',
             'city'  => $venue['city']['text']['name'] ?? '',
             'state' => $venue['stateProvince']['text']['abbr'] ?? '',

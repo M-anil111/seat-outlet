@@ -65,13 +65,14 @@ function soRenderEntityListing(array $c): void {
     $totalPages = $total > 0 ? (int) ceil($total / $perPage) : 0;
     $percent = $total > 0 ? ($perPage / $total) * 100 : 0;
     $isZero = $total === 0 && empty($c['isFiltered']) && ($c['when'] ?? '') === '';
-    $kindNoun = ['venue' => 'Venue', 'city' => 'City', 'state' => 'State', 'country' => 'Country'][$kind];
+    $kindNoun = ['venue' => 'Venue', 'city' => 'City', 'county' => 'County', 'state' => 'State', 'country' => 'Country'][$kind];
 
     // A feed that failed is not an empty page: 503 (the API counted as down), never a thin 200 that gets indexed or noindexed.
     if ($total === 0 && $events === [] && soApiDegraded()) { renderUnavailablePage($kindNoun); }
 
     $pageRobots = null;
     if ($isZero || !empty($c['isFiltered'])) { $pageRobots = 'noindex, follow'; }
+    if ($kind === 'county' && $total < SO_SITEMAP_CITYPAGE_MIN) { $pageRobots = 'noindex, follow'; }   // thin county pages stay out of search
     if (empty($c['isFiltered'])) { soZeroPageNote($c['path'], $isZero); }
 
     $top = soTopFromEvents($events, 6);
@@ -95,7 +96,7 @@ function soRenderEntityListing(array $c): void {
         $h1 = $c['cityLabel'] !== '' && stripos($name, (string) preg_replace('/,\s*[A-Z]{2}$/', '', $c['cityLabel'])) === false ? "$name Tickets in {$c['cityLabel']}" : "$name Tickets";
     } else {
         // "events in dallas" (9.9k/month) is the search; the phrase leads, the state suffix ("Dallas, TX") is dropped.
-        $soCityShort = preg_replace('/,\s*[A-Z]{2}$/', '', $label);
+        $soCityShort = $kind === 'county' ? $label : preg_replace('/,\s*[A-Z]{2}$/', '', $label);   // a county keeps its state: "Washington County" exists in 30 states
         $pageFocusKeyword = "Events in $soCityShort";
         // Spec wording: "Buy Tickets for Events in <place>" keeps the search phrase whole, and the urgency line is added when events are on sale.
         $pageTitleMax = 70;
@@ -254,7 +255,25 @@ function soRenderEntityListing(array $c): void {
                             </div>
                         </div>
                     <?php } ?>
-                    <?php renderLocationCategoryLinks($kind, $c['id'], $label); ?>
+                    <?php if ($kind === 'city' && !empty($c['parent'])) { ?>
+                        <div class="tab-section content-section-detail" id="county-link">
+                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black">More events nearby</h2>
+                            <div class="so-linkchips"><a class="so-linkchip" href="<?php echo $h($c['parent']['url']); ?>"><?php echo $h($c['parent']['text']); ?></a></div>
+                        </div>
+                    <?php } ?>
+                    <?php
+                    if ($kind === 'state') {
+                        $soAbbr = (string) ($events[0]['stateProvince']['text']['abbr'] ?? '');
+                        $soCounties = $soAbbr !== '' ? soCountiesInState($soAbbr) : [];
+                        if ($soCounties) { ?>
+                        <div class="tab-section content-section-detail" id="counties">
+                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Counties in <?php echo $h($label); ?></h2>
+                            <div class="so-linkchips">
+                                <?php foreach ($soCounties as [$cf, $cl]) { ?><a class="so-linkchip" href="/county/<?php echo $h(soSlug('county', $cl, $cf)); ?>"><?php echo $h($cl); ?></a><?php } ?>
+                            </div>
+                        </div>
+                    <?php } } ?>
+                    <?php if ($kind !== 'county') { renderLocationCategoryLinks($kind, $c['id'], $label); } ?>
                     <?php soBuyerGuaranteeSection(['events' => $events]); ?>
                     <?php
                     $soAddr = trim((string) ($c['entity']['address']['text']['address1'] ?? ''));

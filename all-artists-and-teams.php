@@ -71,6 +71,7 @@ try {
 		$performers[] = [
 			'name'         => $name,
 			'uriComponent' => rawurlencode($uriComponent),
+			'slug'         => soSlug('performer', $name, (int) ($performer['id'] ?? 0)),   // the clean address (the API's uriComponent is the old name-and-id form)
 			'genre'        => getPerformerGenreLabel($defaultCategory),
 			'image'        => $image,
 		];
@@ -305,7 +306,7 @@ try {
 							</div>
 							<div class="performer-body">
 								<div>
-									<div class="performer-name"><a class="so-dircard__link" href="/artist/<?php echo htmlspecialchars(strtolower($performer['uriComponent']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?><span class="visually-hidden"> tickets</span></a></div>
+									<div class="performer-name"><a class="so-dircard__link" href="/artist/<?php echo htmlspecialchars($performer['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($performer['name'], ENT_QUOTES, 'UTF-8'); ?><span class="visually-hidden"> tickets</span></a></div>
 									<?php if ($performer['genre'] !== '') { ?>
 										<div class="performer-genre"><?php echo htmlspecialchars($performer['genre'], ENT_QUOTES, 'UTF-8'); ?></div>
 									<?php } ?>
