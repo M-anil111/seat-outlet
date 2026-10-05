@@ -7230,6 +7230,8 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 #topPicksTitle { font-size: clamp(22px, 3.2vw, 30px); font-weight: 800 !important; letter-spacing: -.02em; color: #111827; }
 .location-selector-wrapper { gap: 10px 12px; }
 .location-selector-wrapper .so-right-searchbar { padding-left: 0 !important; position: relative; }
+/* Location dropdown opens right under the "Near …" pill, left-aligned with it, and never wider than the screen */
+.location-selector-wrapper .so-right-searchbar .location-panel { top: 100%; left: 0 !important; right: auto; margin-top: 8px; max-width: calc(100vw - 24px); }
 .location-selector { display: inline-flex; align-items: center; background: #eaf1ff; border: 1px solid #cddcff; border-radius: 980px; padding: 8px 14px; color: #1c47c7; font-weight: 700; font-size: 15px; line-height: 1.1; cursor: pointer; transition: background .15s ease; }
 .location-selector:hover { background: #dce8ff; }
 .location-selector-link { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
