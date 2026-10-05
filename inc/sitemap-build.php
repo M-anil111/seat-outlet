@@ -24,7 +24,7 @@ const SO_SITEMAP_PER_PAGE  = 200;
 const SO_SITEMAP_MAX_PAGES = 250;    // 50,000 events; the catalog is far below this
 const SO_SITEMAP_PAUSE_US  = 700000; // between API requests, so the crawl never competes with visitors for the API
 const SO_SITEMAP_CITYPAGE_MIN = 3;   // upcoming events a city needs, per kind of event, for its page to be listed in the sitemap
-const SO_SITEMAP_FORMAT    = 3;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
+const SO_SITEMAP_FORMAT    = 4;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
 const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap-style.php"?>';
 
 function soSitemapStaticPaths(): array {
@@ -247,6 +247,16 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
                     if (strpos($cPath, TN_CATEGORY_PATH_FESTIVAL) === 0) $kinds[] = 'festivals-city';
                     if (strpos($cPath, TN_CATEGORY_PATH_SPORTS) === 0) $kinds[] = 'sports-city';
                     if (strpos($cPath, TN_CATEGORY_PATH_THEATER) === 0) $kinds[] = 'theater-city';
+                    // The city discovery pages (inc/discovery-pages.php): best and cheap are views of all the city's events; last minute and
+                    // weekend only count events inside their date window (measured when the crawl runs).
+                    $kinds[] = 'cheap-tickets'; $kinds[] = 'best-events';
+                    $evDay = (string) ($e['date']['date'] ?? '');
+                    $evDay = $evDay !== '' ? substr($evDay, 0, 10) : '';
+                    if ($evDay !== '') {
+                        $wk = listingDateRange('week'); $we = listingDateRange('weekend');
+                        if ($wk && $evDay >= $wk[0] && $evDay <= $wk[1]) $kinds[] = 'last-minute-tickets';
+                        if ($we && $evDay >= $we[0] && $evDay <= $we[1]) $kinds[] = 'weekend-events';
+                    }
                     foreach ($kinds as $kind) $cpg .= (int) $e['city']['id'] . "\t" . $cityLabel . "\t" . $kind . "\t" . $lm . "\n";
                 }
             }

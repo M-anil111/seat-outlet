@@ -2588,7 +2588,10 @@ function soFocusKeyword() {
     if ($kw !== null) return $kw;
     $clean = function ($v) {
         $v = trim(preg_replace('/\s+/', ' ', strip_tags((string) $v)));
-        if (function_exists('mb_substr') && mb_strlen($v) > 70) $v = rtrim(mb_substr($v, 0, 70), " ,.;:-|");
+        if (function_exists('mb_substr') && mb_strlen($v) > 90) {   // a long keyword is cut at a word, never in the middle of one
+        $cut = mb_substr($v, 0, 90); $sp = mb_strrpos($cut, ' ');
+        $v = rtrim($sp !== false && $sp > 45 ? mb_substr($cut, 0, $sp) : $cut, " ,.;:-|");
+    }
         return $v;
     };
     $rule = $GLOBALS['pageRule'] ?? null;
@@ -5069,15 +5072,16 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     $soLabel = soSpecLabel($artistName, $soKind);
     $soTix   = soSpecTickets($soLabel, $soKind);
     $soLocShort = preg_replace('/,\s*[A-Z]{2}$/', '', (string) $locationLabel);
-    $pageFocusKeyword    = "$soTix in $soLocShort";
+    $soPrep = ($dimension === 'venue') ? 'at' : 'in';   // "Tickets at <Venue>", "Tickets in <City>"
+    $pageFocusKeyword    = "$soTix $soPrep $soLocShort";
     $pageTitleMax        = 70;   // header.php otherwise clamps every title to 59 characters
-    $pageMetaTitle       = soTitleUpTo(70, "Buy $soTix in $locationLabel " . date('Y'), "Buy $soTix in $locationLabel", "Buy $soTix in $soLocShort", "$soTix in $soLocShort", "Buy $soTix", "$soLabel Tickets");
+    $pageMetaTitle       = soTitleUpTo(70, "Buy $soTix $soPrep $locationLabel " . date('Y'), "Buy $soTix $soPrep $locationLabel", "Buy $soTix $soPrep $soLocShort", "$soTix $soPrep $soLocShort", "Buy $soTix", "$soLabel Tickets");
     $pageMetaDescription = $total_count > 0
         ? soSpecPick(155,
-            "Buy $soTix in $locationLabel. Find great seats and book your tickets online today at Seat Outlet before they sell out.",
-            "Buy $soTix in $locationLabel. Book online at Seat Outlet before they sell out.",
+            "Buy $soTix $soPrep $locationLabel. Find great seats and book your tickets online today at Seat Outlet before they sell out.",
+            "Buy $soTix $soPrep $locationLabel. Book online at Seat Outlet before they sell out.",
             "Buy $soTix at Seat Outlet before they sell out.")
-        : soMetaFit("Get alerts for $soLabel {$noun['noun']} tickets in $locationLabel. Compare prices from many sellers when dates go on sale. Orders carry the TicketNetwork guarantee.", 'Secure checkout and on time delivery.', 'Prices from many sellers in one place.');
+        : soMetaFit("Get alerts for $soLabel {$noun['noun']} tickets $soPrep $locationLabel. Compare prices from many sellers when dates go on sale. Orders carry the TicketNetwork guarantee.", 'Secure checkout and on time delivery.', 'Prices from many sellers in one place.');
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema(array_map(fn($c) => ['label' => $c['label'], 'url' => null], $breadcrumbs), "$artistName in $locationLabel"),
@@ -5093,7 +5097,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
         'name'       => $artistName,
         'eyebrow'    => $categoryLabel,
         'eyebrowUrl' => (string) (end($breadcrumbs)['url'] ?? ''),
-        'title'      => "$soTix in $locationLabel",
+        'title'      => "$soTix $soPrep $locationLabel",
         'stats'      => ['<span id="results_count">' . number_format($total_count) . ' ' . ($total_count === 1 ? 'result' : 'results') . '</span>'],
     ]);
     ?>
@@ -5125,7 +5129,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
                         <div class="list-category-bg pb-3">
-                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Buy <?php echo htmlspecialchars("$soTix in $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Buy <?php echo htmlspecialchars("$soTix $soPrep $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
                             <?php if (!empty($events)) { ?>
                                 <div id="eventsSection" class="section-artist-content event-row-all">
                                     <?php foreach ($events as $event) {
@@ -5213,7 +5217,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             </div>
 
             <div class="tab-section content-section-detail">
-                <?php echo soSpecPromoHtml(soSpecPromoHeading($soLabel, $soKind, $soLocShort, preg_match('/,\s*([A-Z]{2})$/', (string) $locationLabel, $soSm) ? $soSm[1] : ''), $soLabel); ?>
+                <?php echo soSpecPromoHtml(($dimension === 'venue' ? "$soLabel Promo Codes for $locationLabel event" : soSpecPromoHeading($soLabel, $soKind, $soLocShort, preg_match('/,\s*([A-Z]{2})$/', (string) $locationLabel, $soSm) ? $soSm[1] : '')), $soLabel); ?>
             </div>
 
             <div class="tab-section content-section-detail" id="about">
@@ -5234,7 +5238,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
 
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
-                    <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars("$soLabel Tickets in $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars("$soLabel Tickets $soPrep $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
                     <div class="accordion" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
@@ -5394,10 +5398,15 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     $soKwPrep = $dimension === 'venue' ? 'at' : 'in';
     $pageFocusKeyword    = "$soKwWord $soKwPrep $soLocShort";
     $soKwHook = ['concerts' => 'Tickets and Dates', 'sports' => 'Schedule and Tickets', 'theater' => 'Shows, Dates and Tickets', 'theatre' => 'Shows, Dates and Tickets', 'festivals' => 'Dates and Passes'][$categoryKey] ?? 'Tickets and Dates';
-    $pageMetaTitle       = $categoryKey === 'events'
-        ? soTitle("$pageFocusKeyword for Concerts, Sports and Shows", "$pageFocusKeyword Concerts and Sports", "$pageFocusKeyword " . date('Y'), $pageFocusKeyword)
-        : soTitle("$pageFocusKeyword " . date('Y') . " $soKwHook", "$pageFocusKeyword $soKwHook", $pageFocusKeyword, "$categoryLabel Tickets in $soLocShort");
-    $pageMetaDescription = soMetaFit("$pageFocusKeyword: browse upcoming dates, compare prices from many sellers. Orders carry the TicketNetwork guarantee.", 'Live seat maps and secure checkout.', 'Prices change often, so check back for new listings.');
+    // Spec wording: "Buy Tickets to <Concerts> in <City, ST>" keeps the search phrase whole; the urgency line is added when events are listed.
+    $pageTitleMax        = 70;
+    $pageMetaTitle       = soTitleUpTo(70, "Buy Tickets to " . ucwords($soKwWord) . " $soKwPrep $locationLabel", "Buy Tickets to " . ucwords($soKwWord) . " $soKwPrep $soLocShort", "$pageFocusKeyword $soKwHook", $pageFocusKeyword, "$categoryLabel Tickets in $soLocShort");
+    $pageMetaDescription = $total_count > 0
+        ? soSpecPick(155,
+            "Buy tickets to " . strtolower($soKwWord) . " $soKwPrep $locationLabel. Find great seats and book your tickets online today at Seat Outlet before they sell out.",
+            "Buy tickets to " . strtolower($soKwWord) . " $soKwPrep $locationLabel. Book online at Seat Outlet before they sell out.",
+            "Buy $categoryLabel tickets at Seat Outlet before they sell out.")
+        : soMetaFit("$pageFocusKeyword: browse upcoming dates, compare prices from many sellers. Orders carry the TicketNetwork guarantee.", 'Live seat maps and secure checkout.', 'Prices change often, so check back for new listings.');
     $pageCanonicalUrl    = HOME_URL . '/' . $urlPrefix . '/' . $canonSlug;
     $pageJsonLdNodes = array_values(array_filter([
         buildBreadcrumbListSchema($breadcrumbs, "$categoryLabel in $locationLabel"),
@@ -5512,9 +5521,13 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                 </div>
             </div>
 
+            <div class="tab-section content-section-detail">
+                <?php echo soSpecPromoHtml('Latest ' . $categoryLabel . ' promo codes ' . $soKwPrep . ' ' . $locationLabel, $soLocShort . ' ' . strtolower($categoryLabel)); ?>
+            </div>
+
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
-                    <h2 class="so-heading mb-3"><?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> FAQ</h2>
+                    <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars("$categoryLabel Tickets $soKwPrep $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
                     <div class="accordion" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
@@ -6250,6 +6263,7 @@ require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, 
 require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/css-groups.php';        // soCssBundleFiles(): the stylesheet files for this page type
 require_once __DIR__ . '/inc/page-spec.php';   // titles, headings, promo block and sections for event and performer-in-location pages
+require_once __DIR__ . '/inc/discovery-pages.php';   // /last-minute-tickets, /weekend-events, /cheap-tickets and /best-events for a city
 require_once __DIR__ . '/inc/slugs.php';             // url_slugs table: ids never appear in URLs (soSlug, soEventSlug, soSlugResolve)
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages
 register_shutdown_function('soTopPerformersMaybeRun');   // keeps the home Top performers cards fresh

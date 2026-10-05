@@ -232,7 +232,7 @@ function soCategorySeo(array $cfg, array $d) {
     foreach ($focus['faqs'] ?? [] as [$fq, $fa]) $faqs[] = ['question' => $fq, 'answer' => $fa];
 
     $o .= '<h2>' . $h($label) . ' tickets FAQ</h2><div class="so-cseo__faq">';
-    foreach ($faqs as $f) $o .= '<details class="so-faq"><summary>' . $h($f['question']) . '</summary><p>' . $h($f['answer']) . '</p></details>';
+    foreach ($faqs as $f) $o .= '<details class="so-faq"><summary><h3 style="display:inline;font:inherit;margin:0">' . $h($f['question']) . '</h3></summary><p>' . $h($f['answer']) . '</p></details>';
     $o .= '</div>';
 
     // 6. Keep exploring: internal + external links

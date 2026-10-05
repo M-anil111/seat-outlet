@@ -65,7 +65,7 @@ function soMiniFaq(string $title, array $faqs): void {
     ?>
     <div class="tab-section content-section-detail so-minifaq">
         <h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo $h($title); ?></h2>
-        <?php foreach ($faqs as [$q, $a]) { ?><details class="so-faq"><summary><?php echo $h($q); ?></summary><p><?php echo $h($a); ?></p></details><?php } ?>
+        <?php foreach ($faqs as [$q, $a]) { ?><details class="so-faq"><summary><h3 style="display:inline;font:inherit;margin:0"><?php echo $h($q); ?></h3></summary><p><?php echo $h($a); ?></p></details><?php } ?>
     </div>
     <?php
 }

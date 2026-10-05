@@ -34,6 +34,16 @@ Without this rule the server answers 404 for every article, and the Cloudflare W
 
 If you cannot touch nginx yet, the Worker can fetch `https://beta.seatoutlet.com/blog.php/<slug>` instead (that address already works). That is a Worker edit, so the nginx rule is the better fix.
 
+## 2b. City discovery pages (server access, nginx, 2 minutes)
+
+In the same `server { }` block add the rule from docs/server-rewrites.md that serves `/last-minute-tickets/<city>`, `/weekend-events/<city>`, `/cheap-tickets/<city>` and `/best-events/<city>`:
+
+```nginx
+rewrite ^/(last-minute-tickets|weekend-events|cheap-tickets|best-events)/([^/]+)/?$ /$1.php?slug=$2 last;
+```
+
+Check: `curl -s -o /dev/null -w "%{http_code}\n" https://beta.seatoutlet.com/best-events/austin-tx` answers 200.
+
 ## 3. One sitemap address (server access, nginx, 3 minutes)
 
 In the same `server { }` block add:
