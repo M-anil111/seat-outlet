@@ -1012,6 +1012,25 @@ window.soLocal = (function () {
   };
 })();
 
+// Home card rows' arrow (desktop): one page of whole cards per click (the cards fill the row exactly from 992px); back to
+// the start after the last page.
+window.soRowArrow = function (box, track) {
+  const nx = box.querySelector('[data-so-feed-next]');
+  if (!nx) return;
+  // No arrow when every card already fits (a row with few events).
+  const fit = function () { nx.hidden = track.scrollWidth <= track.clientWidth + 2; };
+  requestAnimationFrame(fit);
+  if (nx.dataset.bound) return;
+  nx.dataset.bound = '1';
+  window.addEventListener('resize', fit, { passive: true });
+  nx.addEventListener('click', function () {
+    const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+    const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+    if (atEnd) track.scrollTo({ left: 0, behavior: 'smooth' });
+    else track.scrollBy({ left: track.clientWidth + gap, behavior: 'smooth' });
+  });
+};
+
 // Homepage: "Pick up where you left off": the events and performers this browser viewed, as picture cards.
 // Every card shows a picture: the stored one, the artist's picture when it can be found, or an initials tile.
 document.addEventListener('DOMContentLoaded', function () {
@@ -1038,6 +1057,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   track.innerHTML = html;
   box.classList.remove('d-none');
+  window.soRowArrow(box, track);
   track.addEventListener('click', function (e) { var a = e.target.closest('[data-recent-event]'); if (a) (window.dataLayer = window.dataLayer || []).push({ event: 'recent_event_click', event_id: a.getAttribute('data-recent-event') }); });
   const clear = box.querySelector('[data-so-recent-clear]');
   if (clear) clear.addEventListener('click', function () {
