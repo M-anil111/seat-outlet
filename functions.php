@@ -4775,7 +4775,7 @@ function renderPerformerWhere(string $artistName, int $performerId, array $event
             <div class="so-where__panel" id="so-where-<?php echo $dim; ?>" role="tabpanel" aria-labelledby="so-seg-<?php echo $dim; ?>"<?php echo $first === $dim ? '' : ' hidden'; ?>>
                 <ul class="so-list">
                     <?php foreach ($rows as $i => $it) { ?>
-                        <li class="so-list__item<?php echo $i >= $visible ? ' so-list__item--extra' : ''; ?>"<?php echo $i >= $visible ? ' hidden' : ''; ?>>
+                        <li class="so-list__item<?php echo $i >= $visible ? ' so-list__item--extra' : ''; ?>">
                             <a class="so-list__link" href="/<?php echo $conf['prefix']; ?>/<?php echo $e($slug); ?>/<?php echo $e(soSlug($dim, $it['label'], $it['id'])); ?>" title="<?php echo $e($artistName . ' ' . $conf['word'] . ' ' . $it['label']); ?>">
                                 <span class="so-list__name"><?php echo $e($it['label']); ?></span>
                                 <span class="so-list__meta"><?php echo (int) $it['count']; ?> <?php echo $it['count'] === 1 ? 'date' : 'dates'; ?></span>
@@ -4800,9 +4800,11 @@ function renderPerformerWhere(string $artistName, int $performerId, array $event
                 box.querySelectorAll('.so-where__panel').forEach(function (p) { p.hidden = p.id !== 'so-where-' + btn.dataset.soSeg; });
             });
         });
+        // The extra links stay in the page (crawlers and visitors without JavaScript see all of them); with JavaScript the list is capped until "Show all".
+        box.querySelectorAll('.so-where__panel').forEach(function (p) { if (p.querySelector('.so-list__item--extra')) p.classList.add('so-list--js'); });
         box.querySelectorAll('[data-so-more]').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                btn.parentNode.querySelectorAll('.so-list__item--extra').forEach(function (li) { li.hidden = false; });
+                btn.parentNode.classList.remove('so-list--js');
                 btn.remove();
             });
         });
