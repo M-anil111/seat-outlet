@@ -6276,6 +6276,7 @@ require_once __DIR__ . '/inc/page-hero.php';   // soPageHero(): the one page hea
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
 require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/css-groups.php';        // soCssBundleFiles(): the stylesheet files for this page type
+require_once __DIR__ . '/inc/readmore.php';   // clamped "Read more" blocks and the data-driven place text
 require_once __DIR__ . '/inc/page-spec.php';   // titles, headings, promo block and sections for event and performer-in-location pages
 require_once __DIR__ . '/inc/holidays.php';   // /<holiday>-in-<city> pages for the US and Canadian holidays and the /holiday-events hub
 require_once __DIR__ . '/inc/discovery-pages.php';   // /last-minute-tickets, /weekend-events, /cheap-tickets and /best-events for a city

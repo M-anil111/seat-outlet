@@ -186,9 +186,16 @@ function soRenderEntityListing(array $c): void {
                     <?php renderListingFilters($c['path'], $c['when'], $c['sort'], $total, $c['defaultSort']); ?>
                     <div class="list-category-bg pb-3">
                         <?php if (!empty($events)) { ?>
-                            <div id="eventsSection" class="section-artist-content event-row-all">
+                            <?php $soCap = 10; $soCapped = count($events) > $soCap + 2; ?>
+                            <div id="eventsSection" class="section-artist-content event-row-all<?php echo $soCapped ? ' so-rows--capped' : ''; ?>"<?php echo $soCapped ? ' data-so-cap="' . $soCap . '"' : ''; ?>>
                                 <?php foreach ($events as $event) { soRenderEventRow($event, ['cheapestId' => $cheapestId, 'showVenue' => true, 'showPlace' => true]); } ?>
                             </div>
+                            <?php if ($soCapped) { ?>
+                            <div class="text-center mt-3 so-rows__more" data-so-rows-more hidden>
+                                <button type="button" class="btn more-events-btn d-inline-flex align-items-center gap-2" data-so-rows-toggle aria-controls="eventsSection" aria-expanded="false"><span class="btn-text">Show all <?php echo (int) $total; ?> events</span><i class="bi bi-chevron-down" aria-hidden="true"></i></button>
+                            </div>
+                            <script>(function(){var s=document.getElementById("eventsSection");if(!s)return;var w=document.querySelector("[data-so-rows-more]");if(!w)return;s.classList.add("so-rows--js");w.hidden=false;w.querySelector("[data-so-rows-toggle]").addEventListener("click",function(){s.classList.remove("so-rows--capped","so-rows--js");w.remove();var lm=document.querySelector(".load-more-wrapper");if(lm)lm.classList.remove("so-rows__lm-hold");});var lm=document.querySelector(".load-more-wrapper");if(lm)lm.classList.add("so-rows__lm-hold");})();</script>
+                            <?php } ?>
                             <?php if ($totalPages > 1) { ?>
                                 <div class="load-more-wrapper text-center mt-5">
                                     <div class="load-progress mx-auto mb-3">
@@ -225,6 +232,12 @@ function soRenderEntityListing(array $c): void {
                         <?php } ?>
                     </div>
 
+                    <?php $soAbout = soPlaceAboutHtml($kind, $kind === 'venue' ? $name : $label, $events, $total, $top, $cheap); if ($soAbout !== '') { ?>
+                        <div class="tab-section content-section-detail" id="about-place">
+                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black">About events <?php echo $kind === 'venue' ? 'at' : 'in'; ?> <?php echo $h($kind === 'venue' ? $name : $label); ?></h2>
+                            <?php echo soReadMoreBlock($soAbout, 'about-place-text', 4); ?>
+                        </div>
+                    <?php } ?>
                     <?php if ($top['performers']) { ?>
                         <div class="tab-section content-section-detail" id="top-performers">
                             <h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo $kind === 'venue' ? 'Top Upcoming Performances' : 'Top performers'; ?> <?php echo $kind === 'venue' ? 'at' : 'in'; ?> <?php echo $h($name); ?></h2>
