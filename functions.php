@@ -2300,17 +2300,19 @@ function convertToFloat($value) {
  * and wrote prices like "$10" with the currency symbol, which is invalid and
  * claims prices the page does not show. $price may be 7350, "7350.00" or "$1,250".
  */
-function seoOffer($url, $price) {
+function seoOffer($url, $price, $validFrom = '') {
     if ($price === null || $price === '') return null;
     $num = (float) str_replace([',', '$', ' '], '', (string) $price);
     if ($num <= 0) return null;
-    return [
+    $offer = [
         "@type"         => "Offer",
         "url"           => $url,
         "price"         => number_format($num, 2, '.', ''),
         "priceCurrency" => "USD",
         "availability"  => "https://schema.org/InStock",
     ];
+    if ($validFrom !== '') $offer["validFrom"] = $validFrom;
+    return $offer;
 }
 
 require_once __DIR__ . '/inc/title.php';   // soNormalizeTitle(), soTitle(), seoClampTitle(), SO_TITLE_BRAND
@@ -3955,11 +3957,53 @@ function soPerformerSchemaType($catPath) {
     return 'PerformingGroup';
 }
 
+/** ISO 8601 time TicketNetwork created the event record (the earliest tickets can have been offered), or '' when it is not given. */
+function soEventListedFrom(array $event): string {
+    $t = !empty($event['createdAt']) ? strtotime((string) $event['createdAt']) : false;
+    return $t ? date('c', $t) : '';
+}
+
+/**
+ * The picture for an event's structured data: the performer's own picture when the image job already found one, else the
+ * category photo the site uses for that kind of event (concert stage, arena, theater). Always an absolute address.
+ */
+function soEventSchemaImage(array $event): string {
+    static $memo = [];
+    $who = (string) ($event['performers'][0]['name'] ?? '');
+    if ($who !== '' && function_exists('getEntityImage')) {
+        if (!isset($memo[$who])) {
+            $memo[$who] = '';
+            try {
+                $im = getEntityImage('artist', $who, ['resolve' => false]);
+                if (!empty($im['real']) && !empty($im['url'])) $memo[$who] = (string) $im['url'];
+            } catch (Throwable $e) { /* fall back to the category photo */ }
+        }
+        if ($memo[$who] !== '') return strpos($memo[$who], 'http') === 0 ? $memo[$who] : rtrim(HOME_URL, '/') . '/' . ltrim($memo[$who], '/');
+    }
+    $path = function_exists('soCategoryHero') ? soCategoryHero(0, (string) ($event['defaultCategory']['path'] ?? '')) : '/images/crowd-at-concert-or-event.webp';
+    return rtrim(HOME_URL, '/') . '/' . ltrim($path, '/');
+}
+
+/** A plain description from the event's own facts (name, day, venue, place); no prices or promises that could go stale. */
+function soEventSchemaDescription(array $event): string {
+    $name = (string) ($event['text']['name'] ?? '');
+    $venue = (string) ($event['venue']['text']['name'] ?? '');
+    $city = (string) ($event['city']['text']['name'] ?? '');
+    $st = (string) ($event['stateProvince']['text']['abbr'] ?? '');
+    $day = (string) ($event['date']['text']['date'] ?? '');
+    $time = (string) ($event['date']['text']['time'] ?? '');
+    $place = trim($city . ($st !== '' ? ', ' . $st : ''));
+    $d = $name . ' tickets' . ($day !== '' ? ' for ' . $day . ($time !== '' && ($event['date']['time'] ?? '') !== '00:00:00' ? ' at ' . $time : '') : '')
+        . ($venue !== '' ? ' at ' . $venue : '') . ($place !== '' ? ' in ' . $place : '') . '. Compare seats and prices from many sellers on Seat Outlet.';
+    return $d;
+}
+
 /**
  * One schema.org Event node for a TicketNetwork event, the same everywhere (event page, artist page, listings).
  * Offers are TicketNetwork's own live figures: lowest and highest listed price and the number of tickets listed, never estimated.
  * $venue: the venue's own record (street address, postal code, geo) when the caller has it.
- * No "organizer": Seat Outlet resells tickets, it does not organize the event, and the API does not name the promoter.
+ * No "organizer" and no end time for a timed event: Seat Outlet does not organize the event, and the API names neither the promoter nor an end time.
+ * Image, description and offer start (validFrom) are always filled from the event's own data.
  */
 function soEventNode(array $event, array $opts = []) {
     $name = (string) ($event['text']['name'] ?? '');
@@ -4001,8 +4045,12 @@ function soEventNode(array $event, array $opts = []) {
         'location' => $place,
         'performer' => buildEventPerformerSchema($event),
     ];
-    if (!empty($opts['image'])) $node['image'] = [(string) $opts['image']];
-    if (!empty($opts['description'])) $node['description'] = (string) $opts['description'];
+    $node['image'] = [!empty($opts['image']) ? (string) $opts['image'] : soEventSchemaImage($event)];
+    $node['description'] = !empty($opts['description']) ? (string) $opts['description'] : soEventSchemaDescription($event);
+    // TicketNetwork gives a start time but no end time. An event with no time of day (all day or date only) ends on its start date;
+    // for a timed event the end is not published anywhere, so none is made up.
+    $startDate = (string) $node['startDate'];
+    if ($startDate !== '' && (($event['date']['time'] ?? '') === '' || ($event['date']['time'] ?? '') === '00:00:00')) $node['endDate'] = substr($startDate, 0, 10);
     $low = (float) ($event['pricingInfo']['lowPrice']['value'] ?? 0);
     if (!empty($event['_metadata']['hasTickets']) && $low > 0) {
         $offer = [
@@ -4017,6 +4065,8 @@ function soEventNode(array $event, array $opts = []) {
         if ($high >= $low) $offer['highPrice'] = number_format($high, 2, '.', '');
         $count = (int) ($event['_metadata']['ticketCount'] ?? 0);
         if ($count > 0) $offer['offerCount'] = $count;
+        $from = soEventListedFrom($event);
+        if ($from !== '') $offer['validFrom'] = $from;
         $node['offers'] = $offer;
     }
     return $node;

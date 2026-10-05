@@ -111,6 +111,9 @@ foreach ($eventFiles as $file) {
           "@type" => "Event",
           "name" => $event['name'],
           "startDate" => $startDate,
+          "endDate" => $startDate,   // the feed has the day only: an event with no time of day ends on its day
+          "description" => trim($event['name'] . ' tickets on ' . date('l, F j, Y', $event['edate']) . (!empty($event['venue']) ? ' at ' . $event['venue'] : '') . ($city !== '' ? ' in ' . $city . ($state !== '' ? ', ' . $state : '') : '') . '. Compare seats and prices from many sellers on Seat Outlet.'),
+          "image" => [HOME_URL . (['concerts' => '/images/event-concert.jpg', 'sports' => '/images/team-event.webp', 'theatre' => '/images/loews-theatre.webp', 'festival' => '/images/festival-1.webp'][$tab] ?? '/images/crowd-at-concert-or-event.webp')],
           "eventStatus" => "https://schema.org/EventScheduled",
 
           "location" => [
