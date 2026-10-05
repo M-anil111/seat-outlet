@@ -19,6 +19,8 @@ rewrite ^/(christmas-shows-near-me|new-years-eve-events|valentines-day-events|st
 
 # City discovery pages: /last-minute-tickets/austin-tx -> /last-minute-tickets.php?slug=austin-tx
 rewrite ^/(last-minute-tickets|weekend-events|cheap-tickets|best-events)/([^/]+)/?$ /$1.php?slug=$2 last;
+# County pages (US): /county/travis-county-tx -> /county.php?slug=travis-county-tx
+rewrite ^/county/([^/]+)/?$ /county.php?slug=$1 last;
 
 # Two parts: /artist-city/taylor-swift-1234/austin-tx-247 -> slug (performer) + loc (location)
 rewrite ^/(artist-city|artist-state|artist-country|artist-venue)/([^/]+)/([^/]+)/?$ /$1.php?slug=$2&loc=$3 last;
@@ -172,3 +174,11 @@ The app sends `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, 
 - Pages send `Content-Security-Policy-Report-Only`. Nothing is blocked. The browser posts violations to `/ajax/csp-report.php`, which writes one line each to the PHP error log (`grep csp-report-only`). After about a week, add the hosts that appear, then rename the header to `Content-Security-Policy` in `soSendSecurityHeaders()` (`functions.php`).
 
 To enforce the CSP: after about a week, run `php tools/csp-report-summary.php <php-error.log>` on the server, add any host you recognise to the policy in `soSendSecurityHeaders()`, then set `putenv('CSP_ENFORCE=1');` in `inc/env.local.php`. Set it back to remove enforcement if something breaks.
+
+
+## County pages (US only)
+`/county/<slug>` (for example `/county/travis-county-tx`) lists the events of the cities in a county. The ticket API has no county, so each US city is placed in a county once from its coordinates with the free U.S. Census Bureau geocoder (no key), stored in `city_counties` (migration 0044, applied by the deploy). Setup on the server:
+1. Add the `rewrite ^/county/...` line above to the nginx vhost.
+2. The sitemap build queues every US city. Then run `php cron/resolve-counties.php` (150 cities per run, one lookup per second), or add it to cron every 30 minutes until `still pending` reaches 0. New cities are picked up on the next sitemap build.
+3. `php cron/build-sitemaps.php --force` writes `counties-N.xml` (counties with at least 3 upcoming events). A county page with fewer events is noindex.
+4. `php tools/test-counties.php` checks the helpers offline. Canada has no counties; Canadian cities are never queued.

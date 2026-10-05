@@ -34,6 +34,6 @@ soRenderEntityListing([
 	'perPage' => $perPage, 'params' => $params, 'when' => $when, 'sort' => $sort, 'defaultSort' => 'popular', 'isFiltered' => $isFiltered,
 	'trail' => $trail, 'entity' => $city, 'cityId' => $id, 'cityLabel' => $cityLabel,
 	'image' => getEntityImage('city', $cityLabel, ['resolve' => false]),   // serve-only; never blocks the page
-	'parent' => null,
+	'parent' => ($soCounty = soCountyOfCity((int) $id)) ? ['url' => '/county/' . soSlug('county', $soCounty[1], $soCounty[0]), 'text' => 'Events in ' . $soCounty[1]] : null,
 	'stateParent' => $stateId > 0 && $stateName !== '' ? ['url' => '/state/' . soSlug('state', $stateName, $stateId), 'text' => "Events in $stateName"] : null,
 ]);

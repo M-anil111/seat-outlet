@@ -25,7 +25,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 | on id-suffixed paths in templates.
 */
 
-const SO_SLUG_TYPES = ['performer', 'venue', 'city', 'state', 'country', 'category', 'event'];
+const SO_SLUG_TYPES = ['performer', 'venue', 'city', 'state', 'country', 'category', 'event', 'county'];
 const SO_SLUG_MAX = 120;
 
 /** Lower case words joined by single hyphens: accents folded, everything that is not a letter, digit, space or hyphen removed. */
