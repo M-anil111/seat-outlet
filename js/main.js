@@ -66,15 +66,17 @@ function soSetLocText(label, state) {
     if (title) title.textContent = (label || state === 'finding') ? 'Top picks' : 'Top picks across the US';
 }
 
-function equalHeightSlider(sectionClass, cardClass) { 
-    var maxHeight = 0;     
+function equalHeightSlider(sectionClass, cardClass) {
+    if (!window.jQuery) return;   // only the pages that load jQuery (search) have this slider
+    var $ = window.jQuery;
+    var maxHeight = 0;
     const sectionSelector = '.' + sectionClass + ' .' + cardClass;
     $(sectionSelector).css('height','auto');
     $(sectionSelector).each(function(){
         if($(this).height() > maxHeight){
             maxHeight = $(this).height();
         }
-    });     
+    });
     $(sectionSelector).height(maxHeight);
 }
 
@@ -834,34 +836,28 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
     });  
 }
 
-$(document).ready(function(){
-    $('.open-submenu').click(function(e){
-        e.preventDefault();
-        let target = $(this).data('target');
-        $('#' + target).addClass('active');
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.open-submenu').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            var target = document.getElementById(btn.getAttribute('data-target'));
+            if (target) target.classList.add('active');
+        });
     });
-    $('.back-btn').click(function(){
-        $(this).closest('.submenu-panel').removeClass('active');
+    document.querySelectorAll('.back-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var panel = btn.closest('.submenu-panel');
+            if (panel) panel.classList.remove('active');
+        });
     });
-
 
     var currentPath = window.location.pathname.replace(/\/$/, "");
-
-    $('footer a').each(function () {
-  
-      var href = $(this).attr('href');
-  
-      if (!href || href === '#' || href.startsWith('#')) return;
-  
-      var linkPath = new URL(this.href).pathname.replace(/\/$/, "");
-  
-      if (currentPath === linkPath) {
-        $(this).addClass('active');
-      }
-  
+    document.querySelectorAll('footer a').forEach(function (a) {
+        var href = a.getAttribute('href');
+        if (!href || href === '#' || href.indexOf('#') === 0) return;
+        var linkPath = new URL(a.href).pathname.replace(/\/$/, "");
+        if (currentPath === linkPath) a.classList.add('active');
     });
-  
-  
 });
 
 /* =====================================================

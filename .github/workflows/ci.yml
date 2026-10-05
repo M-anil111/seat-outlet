@@ -47,6 +47,9 @@ jobs:
       - name: SEO titles and descriptions follow the site rules
         run: php tools/check-seo-titles.php
 
+      - name: Page type stylesheets and critical CSS are in place and under the size limits
+        run: php tools/check-css-groups.php
+
       - name: No ticket API id in any URL (slugs come from soSlug only)
         run: php tools/check-url-slugs.php
 

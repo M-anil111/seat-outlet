@@ -169,7 +169,13 @@ $soIsHome = ($soPath === '/' || $soPath === '/index.php');
 $soIsSearch = ($soPath === '/search');
 $soHasEventList = (bool) preg_match('#^/(search|buy-tickets-online|concert-tickets-for-sale|game-day-tickets|buy-broadway-tickets|upcoming-music-festivals)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath) || isset($soGenreSlug);   // clean genre URLs (/hip-hop-tickets) are category pages too
 ?>
+<?php
+// jQuery (37 KB, a long task on a phone) only where something still needs it: the carousels (slick) on the home, search and about pages,
+// those pages' own scripts, and pages that set $soNeedsJquery for an inline script of their own. Everything else is plain JavaScript.
+$soNeedsJquery = !empty($soNeedsJquery) || $soIsHome || $soIsSearch || $soPath === '/about-seat-outlet';
+if ($soNeedsJquery) { ?>
 <script src="/lib/jquery/3.7.1/jquery.min.js" defer></script>
+<?php } ?>
 <script src="/lib/bootstrap/5.3.8/bootstrap.bundle.min.js" defer></script>
 <script>window.SO_ASSETS = { flatpickrJs: "/lib/flatpickr/4.6.13/flatpickr.min.js", flatpickrCss: "/lib/flatpickr/4.6.13/flatpickr.min.css" };</script>
 <?php if ($soIsHome || $soIsSearch || $soPath === '/about-seat-outlet') { ?>
