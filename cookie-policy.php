@@ -318,8 +318,7 @@
                     <div class="policy-body">
                         <p>If you have any questions or concerns about our use of cookies and similar technologies, you can contact us at:</p>
                         <div class="contact-box">
-                            <p><strong>Email:</strong>  <p><strong>Email:</strong> <a href="mailto:privacy@seatoutlet.com" title="privacy@seatoutlet.com">privacy@seatoutlet.com</a></p></p>
-                            <p><strong>Postal address:</strong> [Insert full registered address]</p>
+                            <p><strong>Email:</strong> <a href="mailto:info@seatoutlet.com" title="info@seatoutlet.com">info@seatoutlet.com</a></p>
                             <p><strong>In‑app or web contact form:</strong> available via the "Contact Us" or "Privacy" section of the Platform</p>
                             <p style="margin-top: 12px; margin-bottom: 0;">You may also have the right to raise concerns with your local data protection authority if you believe your rights have been infringed.</p>
                         </div>

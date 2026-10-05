@@ -100,6 +100,8 @@ $SEO_PLAN = [
         'Seat Outlet terms and conditions for using our website and buying tickets for live events through our resale marketplace, including orders and refunds.', 9900, 77, true],
     '/privacy-policy' => ['privacy policy', 'Privacy Policy and How We Use Your Data',
         'The Seat Outlet privacy policy explains how we collect, use, share and protect your personal information when you use our site and buy event tickets.', 22400, 97, true],
+    '/policies' => ['ticket policies', 'Ticket Policies for Orders on Seat Outlet',
+        'Read the ticket purchase, delivery and refund policies that apply to orders placed on Seat Outlet before you check out and pay.', null, null, true],
     '/cookie-policy' => ['cookie policy', 'Cookie Policy and How We Use Cookies',
         'The Seat Outlet cookie policy explains how we use cookies and similar technologies on our website, what each type does and how to change your choices.', 810, 55, true],
     '/blog' => ['ticket buying tips', 'Ticket Buying Tips, Guides and Event Picks',
