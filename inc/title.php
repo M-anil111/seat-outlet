@@ -47,6 +47,20 @@ function soTitle(...$candidates) {
     return seoClampTitle(soNormalizeTitle((string) end($candidates)));
 }
 
+/**
+ * Like soTitle() for pages whose title should carry more of the page (event pages, a performer in a city): the first candidate that fits
+ * $max characters (default 70) with the brand. A search result may cut the end of a title past about 60 characters, so put the words that
+ * matter first. The last candidate is shortened at a word boundary when nothing fits.
+ */
+function soTitleUpTo($max, ...$candidates) {
+    $candidates = array_values(array_filter(array_map('strval', $candidates), 'strlen'));
+    foreach ($candidates as $c) {
+        $full = soNormalizeTitle($c);
+        if (mb_strlen($full) <= $max) return $full;
+    }
+    return seoClampTitle(soNormalizeTitle((string) end($candidates)), $max);
+}
+
 /** Shorten a title to $max characters without an ellipsis: whole words only, never a dangling "at", and "Tickets" is always kept. */
 function seoClampTitle($title, $max = 59) {
     $title = soNormalizeTitle($title);
