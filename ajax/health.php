@@ -13,6 +13,7 @@ header('Cache-Control: no-store');
 $out = ['ok' => true, 'time' => gmdate('c')];
 $stamp = @file_get_contents(__DIR__ . '/../.deployed-commit');
 $out['commit'] = $stamp !== false ? substr(trim($stamp), 0, 8) : null;
+$out['commitAgeSeconds'] = $stamp !== false ? max(0, time() - (int) @filemtime(__DIR__ . '/../.deployed-commit')) : null;   // null commit = the deploy marker is not in this folder: the deploy job writes somewhere else or has never run
 
 try {
     $files = glob(__DIR__ . '/../db/migrations/*.sql') ?: [];

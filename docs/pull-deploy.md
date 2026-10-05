@@ -38,3 +38,7 @@ After that, every merge to `main` reaches beta within about two minutes with no 
 - The deploy key is read-only, so a stolen server cannot push to the repo.
 - No inbound firewall change and no self-hosted runner.
 - `inc/env.local.php` lives only on the server.
+
+## Is the latest merge live? (no server access needed)
+Open `https://beta.seatoutlet.com/ajax/health.php`. `commit` is the first 8 characters of the commit the deploy job last finished, `commitAgeSeconds` is how long ago. Compare `commit` with the newest commit on `main` (`git log -1 --format=%h`). If `commit` is `null`, the deploy marker `.deployed-commit` is not in the folder the site is served from: the cron job deploys into a different folder (`DEPLOY_WEBROOT`) than the web server uses, or it has never run. If `commit` is old, read `~/deploy/deploy.log` on the server; the last lines say why (a failed fetch, a full disk, a failed migration, or `another deploy is running` from a stuck lock in `~/deploy/.lock`).
+Quick check from a computer: `curl -s https://beta.seatoutlet.com/policies -o /dev/null -w "%{http_code}\n"` prints 404 until a page that was added to the repo has been deployed.

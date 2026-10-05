@@ -263,9 +263,21 @@ function imageNoteMiss($key, $mysqli = MYSQLI) {
     }
 }
 
+/**
+ * Team pictures stored before the hash-keyed layout have a slug-keyed address under /artistteams/, but the files for many teams (all
+ * of the NBA) live under /teams/ (the SE Ranking audit counted 157 broken images). A slug-keyed /artistteams/ address is served from
+ * /teams/ instead; hash-keyed files (32 hex characters) stay where processAndStoreImage wrote them.
+ */
+function imageNormalizeUrl(string $url): string {
+    if (preg_match('#^(.*)/artistteams/([a-z0-9-]+)\.webp$#', $url, $m) && !preg_match('/^[0-9a-f]{32}$/', $m[2])) {
+        return $m[1] . '/teams/' . $m[2] . '.webp';
+    }
+    return $url;
+}
+
 function imageRowToResult(array $row) {
     return [
-        'url'     => (string) $row['url'],
+        'url'     => imageNormalizeUrl((string) $row['url']),
         'credit'  => (string) ($row['attribution'] ?? ''),
         'license' => (string) ($row['license'] ?? ''),
         'source'  => (string) ($row['source'] ?? ''),
