@@ -126,3 +126,39 @@ function soDirectoryLinks(string $currentKey): array {
     }
     return $out;
 }
+
+/**
+ * The directories that belong with a category path (a page's own place in the TicketNetwork category tree), most specific first:
+ * the ones on the same branch above it (an MLB team page: MLB teams, then all sports teams) and the ones below it (the sports hub:
+ * sports teams, then each league). The combined A to Z list is never in the result; callers add it last.
+ *
+ * @return array<int, array> directory configs (SO_DIRECTORIES entries) with their key added as 'key'
+ */
+function soDirectoriesForPath(string $path, int $max = 6): array {
+    $path = trim($path);
+    if ($path === '') return [];
+    $above = []; $below = [];
+    foreach (SO_DIRECTORIES as $key => $cfg) {
+        $prefix = (string) ($cfg['category'] ?? '');
+        if ($prefix === '') continue;
+        $cfg['key'] = $key;
+        if (strpos($path, $prefix) === 0) $above[strlen($prefix)] = $cfg;               // same branch, at or above the page
+        elseif (strpos($prefix, $path) === 0) $below[] = $cfg;                          // same branch, below the page
+    }
+    krsort($above);
+    return array_slice(array_merge(array_values($above), $below), 0, $max);
+}
+
+/**
+ * A short "Browse A to Z" line linking the directories that fit a category path, then the combined list. Plain bootstrap classes only,
+ * so it renders the same on every page type without touching the page-type stylesheets. Returns '' when nothing fits.
+ */
+function soDirectoryLinksHtml(string $path, int $max = 6): string {
+    $dirs = soDirectoriesForPath($path, $max);
+    if (!$dirs) return '';
+    $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $links = [];
+    foreach ($dirs as $d) $links[] = '<a href="' . $h($d['path']) . '">' . $h($d['short']) . ' A to Z</a>';
+    $links[] = '<a href="' . $h(SO_DIRECTORIES['all']['path']) . '">All artists, teams and shows</a>';
+    return '<nav class="container py-4" aria-label="Browse by name, A to Z"><p class="mb-0"><strong>Browse by name:</strong> ' . implode(' &middot; ', $links) . '</p></nav>';
+}

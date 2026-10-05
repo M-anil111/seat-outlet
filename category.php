@@ -3,6 +3,7 @@ require_once 'functions.php';
 require_once __DIR__ . '/inc/genre-pages.php';
 require_once __DIR__ . '/inc/seo-category.php';
 require_once __DIR__ . '/inc/genre-focus.php';
+require_once __DIR__ . '/inc/directories.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -108,4 +109,5 @@ soRenderListingPage([
 ]);
 ?>
 <?php echo $soCatSeo['html']; ?>
+<?php echo soDirectoryLinksHtml($soCatPath, 4); ?>
 <?php include 'footer.php'; ?>

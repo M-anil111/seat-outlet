@@ -24,3 +24,10 @@ How it works
 - The category filter is `startswith(defaultCategory/path, ...)`, the same field the events endpoint filters on. If TicketNetwork ever rejects it for performers, the page shows its normal "could not load" state and the CI check still passes: verify a directory on live after any API change.
 - Every directory page links to all the others ("Browse by type"), the menu has a column for each group, and the footer links the main three.
 - `tools/check-seo-titles.php` (CI) checks every directory title (59 characters, no pipe, dash or colon) and description (120 to 155 characters).
+
+Internal links to the directories
+- Footer: a "Browse by name" row with the ten lists (artists, comedians, Broadway, festivals, sports teams, five leagues), on every page.
+- Main menu: the "Artists & Teams" column. The HTML sitemap (`/sitemap-page`) is built from the menu, so it lists them too.
+- Category, genre and hub pages (`category.php`, concerts, sports, theater and festivals hubs): a "Browse by name" line from `soDirectoryLinksHtml()` in `inc/directories.php`. It picks the directories on the page's branch of the category tree, most specific first, then the combined list.
+- Artist and team pages (`performer.php`): the same line, so an MLB team links to MLB teams and sports teams.
+- Check after a deploy (needs the real API keys, run on the server): `php tools/check-directory-api.php`. It requests each directory's filter once and exits 1 if one fails or comes back empty.

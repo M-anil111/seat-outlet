@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+require_once __DIR__ . '/inc/directories.php';
 // SEO: this page previously rendered with no <title>/canonical at all.
 $pageMetaTitle       = 'Concert Tickets | Seat Outlet';
 $pageMetaDescription = 'Buy concert tickets for upcoming shows and tours. Compare prices and book securely on Seat Outlet.';
@@ -39,4 +40,5 @@ soRenderListingPage([
 ?>
 
 <?php soSeoCopy('concert-tickets-for-sale'); ?>
+<?php echo soDirectoryLinksHtml('.1859.1986.', 7); ?>
 <?php include 'footer.php'; ?>
