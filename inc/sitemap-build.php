@@ -23,7 +23,8 @@ const SO_SITEMAP_CHUNK     = 5000;   // URLs per file (the protocol allows 50,00
 const SO_SITEMAP_PER_PAGE  = 200;
 const SO_SITEMAP_MAX_PAGES = 250;    // 50,000 events; the catalog is far below this
 const SO_SITEMAP_PAUSE_US  = 700000; // between API requests, so the crawl never competes with visitors for the API
-const SO_SITEMAP_FORMAT    = 2;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
+const SO_SITEMAP_CITYPAGE_MIN = 3;   // upcoming events a city needs, per kind of event, for its page to be listed in the sitemap
+const SO_SITEMAP_FORMAT    = 3;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
 const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap-style.php"?>';
 
 function soSitemapStaticPaths(): array {
@@ -203,7 +204,7 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
         $rebuild = $force || !$s || $stale;
         if ($rebuild) {
             if ((int) ($s['fmt'] ?? 0) !== SO_SITEMAP_FORMAT) soSitemapRestyleExisting();   // readable now, rebuilt with full timestamps below
-            foreach (['events', 'performers', 'venues', 'cities'] as $k) { @unlink($tmp . '/' . $k . '.tsv'); }
+            foreach (['events', 'performers', 'venues', 'cities', 'citypages'] as $k) { @unlink($tmp . '/' . $k . '.tsv'); }
             $s = ['phase' => 'crawl', 'startedAt' => time(), 'page' => 1, 'pages' => null, 'fails' => 0, 'builtAt' => (int) ($s['builtAt'] ?? 0), 'counts' => $s['counts'] ?? [], 'fmt' => (int) ($s['fmt'] ?? 0)];
             soSitemapSaveState($s);
         }
@@ -213,17 +214,17 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
         $clean = function ($v) { return str_replace(["\t", "\r", "\n"], ' ', (string) $v); };
         while (microtime(true) < $deadline && $s['page'] <= ($s['pages'] ?? SO_SITEMAP_MAX_PAGES)) {
             if (function_exists('tnBreakerOpen') && tnBreakerOpen()) { $s['note'] = 'api paused (rate limited)'; break; }
-            $params = ['filter' => "date/date ge $today and _metadata/hasTickets eq true and country/alphaCode eq 'US'",
+            $params = ['filter' => "date/date ge $today and _metadata/hasTickets eq true and (country/alphaCode eq 'US' or country/alphaCode eq 'CA')",
                 'sort' => 'date/date', 'perPage' => SO_SITEMAP_PER_PAGE, 'page' => $s['page']];
             if ($s['page'] === 1) $params['includeTotalCount'] = 'true';
             $r = tnRequest('/catalog/v2/events/', $params, 'GET', 0);   // ttl 0: a crawl page is read once, never cached
             if (!is_array($r) || !isset($r['results']) || !is_array($r['results'])) {
-                if (++$s['fails'] >= 12) { $s['phase'] = 'crawl'; $s['page'] = 1; $s['fails'] = 0; $s['note'] = 'restarted after repeated API failures'; foreach (['events', 'performers', 'venues', 'cities'] as $k) { @unlink($tmp . '/' . $k . '.tsv'); } }
+                if (++$s['fails'] >= 12) { $s['phase'] = 'crawl'; $s['page'] = 1; $s['fails'] = 0; $s['note'] = 'restarted after repeated API failures'; foreach (['events', 'performers', 'venues', 'cities', 'citypages'] as $k) { @unlink($tmp . '/' . $k . '.tsv'); } }
                 break;
             }
             $s['fails'] = 0;
             if ($s['page'] === 1) $s['pages'] = min(SO_SITEMAP_MAX_PAGES, max(1, (int) ceil(((int) ($r['totalCount'] ?? 0)) / SO_SITEMAP_PER_PAGE)));
-            $ev = $per = $ven = $cit = '';
+            $ev = $per = $ven = $cit = $cpg = '';
             soSlugWarmEvents($r['results']);   // one query per kind for the whole page, not one per link
             foreach ($r['results'] as $e) {
                 $id = (int) ($e['id'] ?? 0);
@@ -236,13 +237,24 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
                 }
                 if (!empty($e['venue']['id']) && !empty($e['venue']['text']['name'])) $ven .= (int) $e['venue']['id'] . "\t" . $clean($e['venue']['text']['name']) . "\t" . $lm . "\n";
                 if (!empty($e['city']['id']) && !empty($e['city']['text']['name'])) {
-                    $cit .= (int) $e['city']['id'] . "\t" . $clean(trim($e['city']['text']['name'] . ', ' . ($e['stateProvince']['text']['abbr'] ?? ''), ', ')) . "\t" . $lm . "\n";
+                    $cityLabel = $clean(trim($e['city']['text']['name'] . ', ' . ($e['stateProvince']['text']['abbr'] ?? ''), ', '));
+                    $cit .= (int) $e['city']['id'] . "\t" . $cityLabel . "\t" . $lm . "\n";
+                    // The city's page for each kind of event it has: all events, plus the concert, festival, sports and theater pages
+                    // this event belongs to (festivals sit under concerts, the same nesting the pages themselves use).
+                    $cPath = (string) ($e['defaultCategory']['path'] ?? '');
+                    $kinds = ['event-city'];
+                    if (strpos($cPath, TN_CATEGORY_PATH_CONCERTS) === 0) $kinds[] = 'concerts-city';
+                    if (strpos($cPath, TN_CATEGORY_PATH_FESTIVAL) === 0) $kinds[] = 'festivals-city';
+                    if (strpos($cPath, TN_CATEGORY_PATH_SPORTS) === 0) $kinds[] = 'sports-city';
+                    if (strpos($cPath, TN_CATEGORY_PATH_THEATER) === 0) $kinds[] = 'theater-city';
+                    foreach ($kinds as $kind) $cpg .= (int) $e['city']['id'] . "\t" . $cityLabel . "\t" . $kind . "\t" . $lm . "\n";
                 }
             }
             file_put_contents($tmp . '/events.tsv', $ev, FILE_APPEND);
             file_put_contents($tmp . '/performers.tsv', $per, FILE_APPEND);
             file_put_contents($tmp . '/venues.tsv', $ven, FILE_APPEND);
             file_put_contents($tmp . '/cities.tsv', $cit, FILE_APPEND);
+            file_put_contents($tmp . '/citypages.tsv', $cpg, FILE_APPEND);
             $s['page']++;
             $last = count($r['results']) < SO_SITEMAP_PER_PAGE;
             if ($last) $s['pages'] = $s['page'] - 1;
@@ -295,10 +307,6 @@ function soSitemapBuildFiles(string $tmp): array {
         $loc = $base . '/blog/' . $post['slug'];
         $pages[$loc] = [$loc, gmdate('c', strtotime($post['updated_at'] ?? $post['published_at']))];
     }
-    foreach (getTopCities(60) as $i => $city) {
-        $slug = soSlug('city', $city['label'], $city['id']);
-        foreach (($i < 30 ? ['concerts-city', 'sports-city', 'theater-city'] : []) as $prefix) { $pages[$base . '/' . $prefix . '/' . $slug] = [$base . '/' . $prefix . '/' . $slug, null]; }
-    }
     foreach ((cache_get('top_categories', 30 * 86400) ?: []) as $bucket) {
         foreach ((array) $bucket as $cat) { if (!empty($cat['slug'])) { $loc = $base . '/category/' . $cat['slug']; $pages[$loc] = [$loc, null]; } }
     }
@@ -337,6 +345,28 @@ function soSitemapBuildFiles(string $tmp): array {
         foreach ($ents as $id => [$name, $lm]) {
             $loc = $base . $prefix . soSlug($slugType, $name, $id);
             if ($keep($loc)) $list[] = [$loc, $lm !== '' ? $lm : null];
+        }
+        // A city's all-events, concert, festival, sports and theater pages join its /city/ page, but only where the city has at least
+        // SO_SITEMAP_CITYPAGE_MIN upcoming events of that kind: the page works for any city, a one-event page is not worth a crawl.
+        if ($group === 'cities') {
+            $cp = [];
+            foreach (@file($tmp . '/citypages.tsv', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+                [$id, $name, $kind, $lm] = array_pad(explode("\t", $line), 4, '');
+                $id = (int) $id;
+                if ($id <= 0 || $name === '' || $kind === '') continue;
+                $k = $kind . "\t" . $id;
+                if (!isset($cp[$k])) $cp[$k] = [$name, $lm, 0];
+                $cp[$k][2]++;
+                if ($lm > $cp[$k][1]) $cp[$k][1] = $lm;
+            }
+            soSlugWarm(array_map(fn($k) => ['city', (int) explode("\t", $k)[1]], array_keys($cp)));
+            ksort($cp);
+            foreach ($cp as $k => [$name, $lm, $n]) {
+                if ($n < SO_SITEMAP_CITYPAGE_MIN) continue;
+                [$kind, $id] = explode("\t", $k);
+                $loc = $base . '/' . $kind . '/' . soSlug('city', $name, (int) $id);
+                if ($keep($loc)) $list[] = [$loc, $lm !== '' ? $lm : null];
+            }
         }
         $emit($group, $list);
     }

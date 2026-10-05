@@ -1298,7 +1298,7 @@ function getTopVenues($limit = 20) {
  * for free, just deduplicated by city id.
  */
 function getTopCities($limit = 60) {
-    $cacheKey = 'top_cities';
+    $cacheKey = 'top_cities_v2';   // v2: United States and Canada, each city carries its country
     $cached = cache_get($cacheKey, 12 * 3600);
     if (is_array($cached) && count($cached) >= min($limit, 10)) {
         return array_slice($cached, 0, $limit);
@@ -1309,7 +1309,7 @@ function getTopCities($limit = 60) {
     // "top cities" is the API's own answer rather than a derivation from the
     // top-venues list (which put one-venue towns next to New York).
     $data = tnRequest('/catalog/v2/cities', [
-        'filter'           => "country/alphaCode eq 'US' and _metadata/hasTickets eq true",
+        'filter'           => "(country/alphaCode eq 'US' or country/alphaCode eq 'CA') and _metadata/hasTickets eq true",
         'sort'             => '-salesRank',
         'salesRankOptions' => '{"interval":"week","metric":"ticketVolume"}',
         'perPage'          => min(200, $limit * 2),
@@ -1331,6 +1331,7 @@ function getTopCities($limit = 60) {
             'stateId'    => (int) ($city['stateProvince']['id'] ?? 0),
             'label'      => trim($cityName . ', ' . $stateAbbr, ', '),
             'eventCount' => (int) ($city['_metadata']['eventCount'] ?? 0),
+            'country'    => (string) ($city['country']['alphaCode'] ?? 'US'),
         ];
         if (count($cities) >= $limit) break;
     }
