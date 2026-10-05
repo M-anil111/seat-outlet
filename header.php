@@ -304,9 +304,9 @@ include_once 'functions.php';
         <div class="keyword-topbar">
             <svg class="so-strip-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v1.5h18V16a2 2 0 0 0 0-4v0a2 2 0 0 0 0-4V6.5H3V8zM14 6.5v11"/></svg>
             <?php if ($soKeywordH1) { ?>
-            <h1 class="so-keyword-h1"><?php echo htmlspecialchars(soKeywordLabel($soFocusKw), ENT_QUOTES, 'UTF-8'); ?></h1>
+            <h1 class="so-keyword-h1" id="so-page-title"><?php echo htmlspecialchars(soKeywordLabel($soFocusKw), ENT_QUOTES, 'UTF-8'); ?></h1>
             <?php } else { ?>
-            <p class="so-keyword-h1"><?php echo htmlspecialchars(soKeywordLabel($soFocusKw), ENT_QUOTES, 'UTF-8'); ?></p>
+            <p class="so-keyword-h1" id="so-page-title"><?php echo htmlspecialchars(soKeywordLabel($soFocusKw), ENT_QUOTES, 'UTF-8'); ?></p>
             <?php } ?>
             <a href="/worry-free-guarantee" class="so-strip-guarantee d-lg-none">100% Guarantee</a>
         </div>
@@ -482,4 +482,4 @@ include_once 'functions.php';
     </div>
     <?php // The page's one landmark: skip link target. Pages that print their own <main> get a <div> instead (soSingleMain in inc/consent.php); footer.php closes this one. ?>
     <?php ob_start('soSingleMain'); ?>
-    <main id="main" tabindex="-1" data-so-main>
+    <main id="main" tabindex="-1" data-so-main<?php if (strpos($soReqPath, '/event/') !== 0) echo ' aria-labelledby="so-page-title"'; ?>>
