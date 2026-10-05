@@ -6132,6 +6132,7 @@ require_once __DIR__ . '/inc/trust-block.php';   // soBuyerGuaranteeSection(): B
 require_once __DIR__ . '/inc/page-hero.php';   // soPageHero(): the one page header card (artist, venue, city, search, category, hubs)
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
 require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
+require_once __DIR__ . '/inc/css-groups.php';        // soCssBundleFiles(): the stylesheet files for this page type
 require_once __DIR__ . '/inc/slugs.php';             // url_slugs table: ids never appear in URLs (soSlug, soEventSlug, soSlugResolve)
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages
 register_shutdown_function('soTopPerformersMaybeRun');   // keeps the home Top performers cards fresh

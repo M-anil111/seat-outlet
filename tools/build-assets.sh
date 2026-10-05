@@ -4,6 +4,7 @@
 #   css/event.min.css   = css/event.css, minified
 #   css/style.min.css   = css/fonts.css + css/style.css + css/skeleton.css, with the rules for classes the site never uses removed
 #                         (tools/purgecss-style.config.cjs), + css/icons.css (icon subset, tools/build-icons.py), minified
+#   css/style.<page type>.min.css = the site stylesheet reduced to one page type (inc/css-groups.php, tools/css-split.php), in files under 110 KB
 #   js/<name>.min.js    = each js/<name>.js, compressed and mangled
 #   js/site-extras.min.js = nav-feedback, install-prompt, menu-near, analytics-events and lead-capture in one file
 #   css/bootstrap.min.css = lib/bootstrap/5.3.8/bootstrap.min.css reduced to the classes the site uses
@@ -40,6 +41,22 @@ cp "$OUT/purged/bootstrap.min.css" "$OUT/bootstrap.purged.css"
 npx --yes purgecss@6.0.0 --config tools/purgecss-style.config.cjs --css "$OUT/style-src/style.css" --output "$OUT/style-purged/" >/dev/null
 cat "$OUT/style-purged/style.css" css/icons.css | npx --yes clean-css-cli@5.6.3 -O1 -o "$OUT/style.min.css"
 
+# One stylesheet per page type (inc/css-groups.php): the same rules in the same order, minus what that page type cannot use.
+# Each file stays under 110 KB (SE Ranking flags a CSS file over 150 KB), split in source order when needed.
+mkdir -p "$OUT/groups" "$OUT/groups-css"
+php tools/css-split.php "$OUT/groups" 2>/dev/null
+for txt in "$OUT"/groups/*.txt; do
+  g="$(basename "$txt" .txt)"
+  mkdir -p "$OUT/groups-purged/$g"
+  SO_CSS_CONTENT="$txt" npx --yes purgecss@6.0.0 --config tools/purgecss-group.config.cjs --css "$OUT/style-src/style.css" --output "$OUT/groups-purged/$g/" >/dev/null
+  cat "$OUT/groups-purged/$g/style.css" css/icons.css | npx --yes clean-css-cli@5.6.3 -O1 -o "$OUT/groups-css/$g.min.css"
+  python3 tools/css-chunk.py "$OUT/groups-css/$g.min.css" "$OUT/groups-css/style.$g" 110000 >/dev/null
+  rm -f "$OUT/groups-css/$g.min.css"
+done
+
+# "full": the whole stylesheet for pages that belong to no page type, also split so no file passes the limit
+python3 tools/css-chunk.py "$OUT/style.min.css" "$OUT/groups-css/style.full" 110000 >/dev/null
+
 status=0
 install_or_compare() {
   src="$1"; dest="$2"
@@ -53,5 +70,11 @@ install_or_compare "$OUT/style.min.css" css/style.min.css
 install_or_compare "$OUT/event.min.css" css/event.min.css
 install_or_compare "$OUT/bootstrap.purged.css" css/bootstrap.min.css
 for f in "$OUT"/*.min.js; do install_or_compare "$f" "js/$(basename "$f")"; done
+for f in "$OUT"/groups-css/style.*.min.css; do install_or_compare "$f" "css/$(basename "$f")"; done
+# page type files that no longer come out of the build
+for f in css/style.*.min.css; do
+  [ -e "$OUT/groups-css/$(basename "$f")" ] && continue
+  if [ "$CHECK" = 1 ]; then echo "STALE: $f (no longer built; run tools/build-assets.sh and commit)"; status=1; else rm -f "$f"; fi
+done
 [ "$CHECK" = 1 ] && [ "$status" = 0 ] && echo "assets up to date"
 exit $status

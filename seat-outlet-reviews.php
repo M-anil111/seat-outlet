@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+$soNeedsJquery = true;   // this page's inline script uses jQuery (see footer.php)
 // SEO: this page previously relied on header.php's generic fallback
 // title/canonical. Kept noindex (header.php's site-wide default) since
 // the visible content is still illustrative sample reviews - see the
