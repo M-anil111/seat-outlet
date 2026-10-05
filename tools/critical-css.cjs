@@ -55,7 +55,11 @@ function matchOnScreen(rules) {
   // first screen's markup even when it is hidden or positioned off screen (the skip link, a menu in the header), so its rules are
   // critical; a modal printed at the end of the page is after it and is not.
   let lastOnScreen = null;
-  for (const el of document.body.querySelectorAll('*')) { if (onScreen(el)) lastOnScreen = el; }
+  // Fixed bars (the consent banner is printed at the very end of the page) do not count: they would pull the whole page in.
+  const fixedSet = new Set();
+  for (const el of document.body.querySelectorAll('*')) { if (getComputedStyle(el).position === 'fixed') fixedSet.add(el); }
+  const underFixed = el => { for (let a = el; a && a !== document.body; a = a.parentElement) { if (fixedSet.has(a)) return true; } return false; };
+  for (const el of document.body.querySelectorAll('*')) { if (onScreen(el) && !underFixed(el)) lastOnScreen = el; }
   const count = el => {
     if (el === document.documentElement || el === document.body) return true;
     if (rendered(el) && onScreen(el)) return true;
