@@ -412,6 +412,9 @@ $evSimilarHtml = ($evOtherList !== '' && $eventVenueName !== '') ? '<h2>' . $h($
 
 <script type="application/json" id="so-event-data"><?php echo json_encode($soEventData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES); ?></script>
 <?php /* The seat-map widget script is loaded synchronously right here, exactly as before, and js/event-widget.js (a plain script in the footer, no defer) applies the settings immediately after it, before the page finishes loading, so the settings are in place when the widget starts. If the script is blocked (ad blocker, network), event-widget.js tries once more asynchronously and shows a visible message when that fails too. */ ?>
+<?php /* The widget is asked not to bring its own jQuery (includeJQuery=false), so the page must provide it, and before the widget
+   script runs. footer.php only loads jQuery on the home, search and about pages, so event pages load it here (once, not deferred). */ ?>
+<script src="/lib/jquery/3.7.1/jquery.min.js"></script>
 <script src="<?php echo htmlspecialchars($mapScriptUrl, ENT_QUOTES, 'UTF-8'); ?>"></script>
 
 <?php include 'footer.php'; ?>
