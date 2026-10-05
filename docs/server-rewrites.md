@@ -14,6 +14,9 @@ The site's own sitemap and the `/cities` page link to the `*-city` URLs, so 150 
 # One slug: /event-city/las-vegas-nv-2355 -> /event-city.php?slug=las-vegas-nv-2355
 rewrite ^/(event-city|concerts-city|concerts-state|concert-country|concert-venue|events-state|festivals-city|festivals-country|festivals-state|festivals-venue|sports-city|sports-state|theater-city|theater-country|theater-state|theater-venue|theatre-city|theatre-country|theatre-state|theatre-venue|state|country)/([^/]+)/?$ /$1.php?slug=$2 last;
 
+# City discovery pages: /last-minute-tickets/austin-tx -> /last-minute-tickets.php?slug=austin-tx
+rewrite ^/(last-minute-tickets|weekend-events|cheap-tickets|best-events)/([^/]+)/?$ /$1.php?slug=$2 last;
+
 # Two parts: /artist-city/taylor-swift-1234/austin-tx-247 -> slug (performer) + loc (location)
 rewrite ^/(artist-city|artist-state|artist-country|artist-venue)/([^/]+)/([^/]+)/?$ /$1.php?slug=$2&loc=$3 last;
 ```

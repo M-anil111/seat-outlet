@@ -92,7 +92,7 @@ function soRenderEntityListing(array $c): void {
                 "Buy $name tickets at Seat Outlet before they sell out.")
             : soMetaFit("See upcoming events at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . '. Nothing is on sale right now: get a price alert or browse nearby venues on Seat Outlet.', 'Every order has a 100% buyer guarantee.');
         $pageFocusKeyword = "$name Tickets";
-        $h1 = "$name Tickets";
+        $h1 = $c['cityLabel'] !== '' && stripos($name, (string) preg_replace('/,\s*[A-Z]{2}$/', '', $c['cityLabel'])) === false ? "$name Tickets in {$c['cityLabel']}" : "$name Tickets";
     } else {
         // "events in dallas" (9.9k/month) is the search; the phrase leads, the state suffix ("Dallas, TX") is dropped.
         $soCityShort = preg_replace('/,\s*[A-Z]{2}$/', '', $label);
@@ -227,7 +227,7 @@ function soRenderEntityListing(array $c): void {
 
                     <?php if ($top['performers']) { ?>
                         <div class="tab-section content-section-detail" id="top-performers">
-                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Top performers <?php echo $kind === 'venue' ? 'at' : 'in'; ?> <?php echo $h($name); ?></h2>
+                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black"><?php echo $kind === 'venue' ? 'Top Upcoming Performances' : 'Top performers'; ?> <?php echo $kind === 'venue' ? 'at' : 'in'; ?> <?php echo $h($name); ?></h2>
                             <div class="so-linkchips">
                                 <?php foreach ($top['performers'] as $p) { ?><a class="so-linkchip" href="/artist/<?php echo $h(soSlug('performer', $p['name'], $p['id'])); ?>"><?php echo $h($p['name']); ?></a><?php } ?>
                             </div>
@@ -248,6 +248,11 @@ function soRenderEntityListing(array $c): void {
                     $soWhere = $kind === 'venue'
                         ? [ "Where is $name?", $name . ($soAddr !== '' ? " is at $soAddr" : '') . ($c['cityLabel'] !== '' ? ($soAddr !== '' ? ', ' : ' is in ') . $c['cityLabel'] : '') . '. Check the event page for the start time and any venue rules before you go.' ]
                         : [ "What events are on in $name?", $total > 0 ? 'There are ' . soCountWord($total, 'upcoming event') . " in $name on Seat Outlet right now, including concerts, sports and theater. Use the date and price filters above to narrow the list." : "Nothing is on sale in $name right now. New dates are added every day, so leave your email above and we will tell you when tickets go on sale." ];
+                    if ($kind === 'venue') {
+                        // Spec: "About <Venue> in <City>, <ST>": address, directions, transit, official site and weather, no invented policies.
+                        echo '<div class="tab-section content-section-detail">' . soSpecVenueInfoHtml('About ' . $name . ($c['cityLabel'] !== '' ? ' in ' . $c['cityLabel'] : ''), $name,
+                            (string) ($c['entity']['city']['text']['name'] ?? ''), (string) ($c['entity']['stateProvince']['text']['abbr'] ?? ''), '', is_array($c['entity'] ?? null) ? $c['entity'] : [], $soEntityFacts, $total) . '</div>';
+                    }
                     soMiniFaq('FAQs about ' . ($kind === 'venue' ? $name : $label) . ' Tickets', array_values(array_filter([
                         $soWhere,
                         [ ($kind === 'venue' ? "How do I buy tickets for events at $name?" : "How do I buy event tickets in $name?"), 'Pick a date above, choose how many tickets you need, compare sections and prices on the seat map and check out securely. Tickets ship in time for at least one delivery attempt before the event.' ],
@@ -256,6 +261,14 @@ function soRenderEntityListing(array $c): void {
                     ])));
                     ?>
                     <?php echo soSpecPromoHtml(($kind === 'venue' ? 'Promo codes for ' . $name . ' tickets' : 'Latest promo codes for ' . $label . ' event tickets'), ($kind === 'venue' ? $name : $label . ' event')); ?>
+                    <?php if ($kind === 'city') {
+                        // Links that tie the city to its category and discovery pages (inc/discovery-pages.php).
+                        $soCs = basename((string) $c['path']);   // the city's own slug, from /city/<slug>
+                        $soCl = [];
+                        foreach (['concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals'] as $pp => $ll) { $soCl[] = '<a href="/' . $pp . '/' . $h($soCs) . '">' . $ll . ' in ' . $h($name) . '</a>'; }
+                        foreach (SO_DISCOVERY as $kk => $cc) { $soCl[] = '<a href="/' . $kk . '/' . $h($soCs) . '">' . $h($cc['what']) . ' in ' . $h($name) . '</a>'; }
+                        echo '<nav class="pb-3" aria-label="More in ' . $h($name) . '"><p class="mb-0"><strong>More in ' . $h($name) . ':</strong> ' . implode(' &middot; ', $soCl) . '</p></nav>';
+                    } ?>
                 </div>
                 <div id="secondary" class="sidebar col-sm-12 col-md-4">
                     <div class="sticky-top sidebar-inner">

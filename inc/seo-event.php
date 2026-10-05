@@ -37,36 +37,27 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
       // Showings of one event in one city share a name, so the time of day is part of the first choice: no two pages get the same title.
       $evClock = ($evTs && date('H:i', $evTs) !== '00:00') ? date('g:i A', $evTs) : '';
       $evShortT = trim($evShort . ($evClock !== '' ? ' ' . $evClock : ''));
-      // Spec: "Buy <Performer> Concert Tickets in <City>, <ST>" plus the day; the brand is added once ("at Seat Outlet"), never a pipe.
-      // Up to 70 characters: longer than a plain title so the result still says what the page is. The time of day goes first to go.
+      // Spec (inc/page-spec.php, soSpecEventText): "Buy <Performer> Tickets for <Venue> Show in <City>, <ST>" and the equivalents for games,
+      // shows and festivals. The brand is added once ("at Seat Outlet"), never a pipe. Up to 70 characters; the day goes first to go.
       $evKind  = soSpecKind((string) ($event['defaultCategory']['path'] ?? ''));
       $evLabel = soSpecLabel($evName, $evKind);
-      $evBuy   = 'Buy ' . soSpecTickets($evLabel, $evKind);
-      $metaTitle = soTitleUpTo(70,
-          ($evPlace !== '' && $evShortT !== '') ? "$evBuy in $evPlace on $evShortT" : '',
-          ($evPlace !== '' && $evShort !== '') ? "$evBuy in $evPlace on $evShort" : '',
-          $evPlace !== '' ? "$evBuy in $evPlace" : '',
-          $evShort !== '' ? "$evBuy on $evShort" : '',
-          $evBuy,
-          "$evLabel Tickets"
-      );
+      $evCountryName = ['US' => 'the United States', 'CA' => 'Canada'][(string) ($event['country']['alphaCode'] ?? '')] ?? (trim((string) ($event['country']['text']['name'] ?? '')) ?: 'the United States');
+      $evSpec = soSpecEventText($evKind, [
+          'label' => $evLabel, 'perf' => (string) ($event['performers'][0]['name'] ?? $evLabel), 'venue' => $evVenue, 'city' => $evCity, 'state' => $evState,
+          'day' => $evShort, 'cat' => soCategoryDisplayName((string) ($event['defaultCategory']['text']['name'] ?? '')), 'country' => $evCountryName,
+          'hasTickets' => !empty($event['_metadata']['hasTickets']),
+      ]);
+      $metaTitle = soTitleUpTo(70, ...$evSpec['titles']);
   }
   $evKind  = $evKind ?? soSpecKind((string) ($event['defaultCategory']['path'] ?? ''));
   $evLabel = $evLabel ?? soSpecLabel($evName, $evKind);
-  // One keyword, one page: the performer in this city owns "<Performer> Concert Tickets in <City>"; this event owns its venue and day.
-  if ($evName !== '' && empty($pageFocusKeyword)) { $pageFocusKeyword = $evLabel . ' Tickets' . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evTs ? ' on ' . date('M j', $evTs) : ''); }   // shown in the strip above the header and the footer
+  // One keyword, one page: the performer in a city owns "<Performer> Concert Tickets in <City>"; this event owns its venue.
+  if ($evName !== '' && empty($pageFocusKeyword)) { $pageFocusKeyword = $evSpec['focus'] ?? ($evLabel . ' Tickets'); }   // shown in the strip above the header and the footer
   $evDay = $evTs ? date('D, M j, Y', $evTs) : '';
-  // Spec wording, with the urgency line only when tickets are listed (the page cannot "sell out" with nothing on it).
+  // Spec wording; the urgency line is only in when tickets are listed (the page cannot "sell out" with nothing on it).
   $evHasTickets = !empty($event['_metadata']['hasTickets']);
-  $evNounLc = soSpecTickets($evLabel, $evKind);
-  $evDayShort = $evTs ? date('M j, Y', $evTs) : '';
-  if ($evHasTickets) {
-      $metaDescription = soSpecPick(155,
-          "Buy $evNounLc in $evPlace" . ($evDayShort !== '' ? " on $evDayShort" : '') . ". Find great seats and book your tickets online today at Seat Outlet before they sell out.",
-          "Buy $evNounLc in $evPlace" . ($evDayShort !== '' ? " on $evDayShort" : '') . ". Book online at Seat Outlet before they sell out.",
-          "Buy $evNounLc at Seat Outlet before they sell out. Find great seats and book online today.",
-          "Buy $evNounLc at Seat Outlet before they sell out."
-      );
+  if ($evHasTickets && !empty($evSpec['descs'])) {
+      $metaDescription = soSpecPick(155, ...$evSpec['descs']);
   } else {
       $metaDescription = soMetaFit(
           $evName . ' tickets' . ($evDay !== '' ? ' for ' . $evDay . (($evClock ?? '') !== '' ? ' at ' . $evClock : '') : '') . ($evVenue !== '' ? ' at ' . $evVenue : '') . ($evPlace !== '' ? ' in ' . $evPlace : '')
@@ -114,6 +105,8 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 $eventSchema = null;
 // The city's other events of this kind: feeds the "similar events" section and its ItemList. Cached by the API layer; [] when the feed is down.
 $evCityData = (!empty($event) && $evName !== '') ? soSpecCityEvents($evKind, $event['city']['id'] ?? 0) : [];
+// The venue's other events (sports and theater: the same kind; concerts and festivals: everything there). The sections read "Top Upcoming Performances at <Venue>" and the like.
+$evVenueData = (!empty($event) && $evName !== '') ? soSpecVenueEvents(in_array($evKind, ['sports', 'theater'], true) ? $evKind : '', $event['venue']['id'] ?? 0) : [];
 if (!empty($event) && $evName !== '') {
     // The venue's own record adds the street address, postal code and map position (cached a day: venues rarely change).
     $evVenueId = (int) ($event['venue']['id'] ?? 0);
@@ -161,8 +154,8 @@ $webPageSchema = [
 ];
 if ($eventSchema) { $webPageSchema['mainEntity'] = ['@id' => $eventSchema['@id']]; $webPageSchema['about'] = ['@id' => $eventSchema['@id']]; }
 $evSimilarNode = null;
-if (!empty($evCityData['events'])) {
-    $evSimilar = array_values(array_filter($evCityData['events'], fn($oe) => (int) ($oe['id'] ?? 0) !== (int) $id));
+if (!empty($evVenueData['events']) || !empty($evCityData['events'])) {
+    $evSimilar = array_values(array_filter($evVenueData['events'] ?? $evCityData['events'], fn($oe) => (int) ($oe['id'] ?? 0) !== (int) $id));
     if ($evSimilar) $evSimilarNode = soEventItemList(array_slice($evSimilar, 0, 6), $evUrl);
 }
 if ($evOgImg !== '' && strpos($evOgImg, 'seatoutlet-logo') === false) $webPageSchema['primaryImageOfPage'] = ['@type' => 'ImageObject', 'url' => $evOgImg];

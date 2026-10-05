@@ -45,4 +45,12 @@
     if (siblings) { for (var i = 0; i < siblings.length; i++) { if (siblings[i] === card) { pos = i + 1; break; } } }
     track('feed_card_click', { feed_row: kind || 'other', feed_position: pos || undefined });
   });
+
+  // Promo codes and buy buttons: which code was copied, and which "Buy Tickets" button on a listing was used (no personal data).
+  document.addEventListener('click', function (e) {
+    var copy = e.target.closest('.offer-copy-btn');
+    if (copy) { track('promo_copy', { promo_code: clean(copy.getAttribute('data-code')), page_type: location.pathname.split('/')[1] || 'home' }); return; }
+    var buy = e.target.closest('a.btn-primary[href^="/event/"]');
+    if (buy) track('buy_click', { page_type: location.pathname.split('/')[1] || 'home' });
+  });
 })();

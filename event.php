@@ -95,7 +95,7 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
     <div class="so-evhero__card">
       <div class="so-evhero__media" style="--so-hue:<?php echo (int) $evHue; ?>">
         <?php if ($evReal) { ?>
-          <img src="<?php echo $h($evImg['url']); ?>" alt="<?php echo $h(soSpecAlt($evLabel, $evKind, (string) $eventCityName)); ?>" width="480" height="480" fetchpriority="high" decoding="async">
+          <img src="<?php echo $h($evImg['url']); ?>" alt="<?php echo $h($evSpec['alt']); ?>" width="480" height="480" fetchpriority="high" decoding="async">
         <?php } else { ?>
           <span class="so-evhero__initials" aria-hidden="true"><?php echo $h(soInitials($evWho)); ?></span>
         <?php } ?>
@@ -107,8 +107,8 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
         <h1 class="ev-title so-evhero__title"><?php
           // The page's one H1 (no keyword strip on event pages): the spec's "<Performer> Concert Tickets in <City>, <ST>". Showings of one event
           // share a name, so venue, day and time follow it: each page gets its own heading.
-          echo $h(soSpecTickets($evLabel, $evKind) . ($eventCityLabel !== '' ? ' in ' . $eventCityLabel : ''));
-          $evH1Bits = array_filter([(string) ($event['venue']['text']['name'] ?? ''), $eventTimestamp ? date('M j, Y', $eventTimestamp) . ($eventTimeText !== '' ? ', ' . $eventTimeText : '') : '']);
+          echo $h($evSpec['h1']);
+          $evH1Bits = array_filter([$eventTimestamp ? date('M j, Y', $eventTimestamp) . ($eventTimeText !== '' ? ', ' . $eventTimeText : '') : '']);
           if ($evH1Bits) { echo ' <span class="so-evhero__sub">' . $h(implode(', ', $evH1Bits)) . '</span>'; }
         ?></h1>
         <?php
@@ -299,30 +299,29 @@ $evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $
 <?php
 // Spec sections (inc/page-spec.php): every one is built from data this page already holds and is left out when there is none.
 $evStateAbbr = (string) ($event['stateProvince']['text']['abbr'] ?? '');
-$evTicketsPhrase = soSpecTickets($evLabel, $evKind);
 $evPerfName = (string) ($primaryPerformer['name'] ?? $evLabel);
-$evCountryName = ['US' => 'the United States', 'CA' => 'Canada'][(string) ($event['country']['alphaCode'] ?? '')] ?? (trim((string) ($event['country']['text']['name'] ?? '')) ?: 'the United States');
-$evCityEvents = $evCityData['events'] ?? [];
+$evH2 = $evSpec['h2'];
+$evVenueEvents = $evVenueData['events'] ?? [];
 $evShownIds = [(int) $id];
+$evVenueHref = $eventVenueId ? '/venue/' . soVenueSlug($eventVenueName, $eventVenueId, $eventCityLabel) : '';
 // About: a game always has its own facts; the rest need a stored biography or Wikidata description.
 if ($evKind === 'sports') {
   $evAboutText = $evLabel . ($evWhenLong !== '' ? ' is on ' . $evWhenLong . ($eventTimeText !== '' ? ' at ' . $eventTimeText : '') : ' is scheduled') . ($eventVenueName !== '' ? ' at ' . $eventVenueName : '') . ($evPlaceFull !== '' ? ' in ' . $evPlaceFull : '') . '. Compare seats and prices from many sellers on Seat Outlet.';
 } else {
   $evAboutText = soSpecAboutText((int) ($primaryPerformer['id'] ?? 0), $evPerfName);
 }
-// The section that differs by kind: tour dates, games in the city, shows in the city, or the festival lineup.
+// The section that differs by kind: tour dates, the venue's events of the same kind, or the festival lineup.
 $evKindSection = '';
 $evSubPrefix = '.' . implode('.', array_slice(array_filter(explode('.', (string) $eventCategoryPath), 'strlen'), 0, 3)) . '.';
 if ($evKind === 'concert' && $evOther) {
-  $evKindSection = '<h2>' . $h($evPerfName) . ' Tour Dates Across ' . $h($evCountryName) . '</h2>' . soSpecEventList($evOther, [(int) $id], 6)
+  $evKindSection = '<h2>' . $h($evH2['kind']) . '</h2>' . soSpecEventList($evOther, [(int) $id], 6)
     . (!empty($primaryPerformer['id']) ? '<p><a href="/artist/' . $h(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id'])) . '">See all ' . $h($evPerfName) . ' tour dates</a></p>' : '');
   foreach ($evOther as $oe) { $evShownIds[] = (int) ($oe['id'] ?? 0); }
 } elseif (in_array($evKind, ['sports', 'theater'], true)) {
-  $evSameSub = array_values(array_filter($evCityEvents, fn($oe) => strpos((string) ($oe['defaultCategory']['path'] ?? ''), $evSubPrefix) === 0));
+  $evSameSub = array_values(array_filter($evVenueEvents, fn($oe) => strpos((string) ($oe['defaultCategory']['path'] ?? ''), $evSubPrefix) === 0));
   $evList = soSpecEventList($evSameSub, $evShownIds, 6);
-  $evSubName = soCategoryDisplayName((string) ($event['defaultCategory']['text']['name'] ?? ''));
-  if ($evList !== '' && $evSubName !== '' && $eventCityName !== '') {
-    $evKindSection = '<h2>' . ($evKind === 'sports' ? 'Upcoming ' . $h($evSubName) . ' Games in ' . $h($eventCityName) : 'Popular ' . $h($evSubName) . ' Shows in ' . $h($eventCityName)) . '</h2>' . $evList;
+  if ($evList !== '' && $eventVenueName !== '') {
+    $evKindSection = '<h2>' . $h($evH2['kind']) . '</h2>' . $evList;
     foreach ($evSameSub as $oe) { $evShownIds[] = (int) ($oe['id'] ?? 0); }
   }
 } elseif ($evKind === 'festival' && count($event['performers'] ?? []) > 1) {
@@ -331,22 +330,25 @@ if ($evKind === 'concert' && $evOther) {
     if (empty($lp['name'])) continue;
     $evLineup .= '<li>' . (!empty($lp['id']) ? '<a href="/artist/' . $h(soSlug('performer', (string) $lp['name'], (int) $lp['id'])) . '">' . $h($lp['name']) . '</a>' : $h($lp['name'])) . '</li>';
   }
-  if ($evLineup !== '') $evKindSection = '<h2>' . $h($evLabel) . ' Lineup and Performers</h2><ul class="so-speclist">' . $evLineup . '</ul>';
+  if ($evLineup !== '') $evKindSection = '<h2>' . $h($evH2['kind']) . '</h2><ul class="so-speclist">' . $evLineup . '</ul>';
 }
-$evGuideHtml = soSpecGuideHtml(soSpecGuideHeading($evLabel, $evKind, (string) $eventCityName, $evStateAbbr), $evLabel, [
+// Venue info: address, directions, transit, the official site and the weather, from the venue record and Wikidata (no policies are stated).
+$evVenueFacts = $eventVenueName !== '' ? soEntityFacts($eventVenueName, 'venue', (string) $eventCityName) : [];
+$evVenueInfoHtml = soSpecVenueInfoHtml($evH2['venue'], (string) $eventVenueName, (string) $eventCityName, $evStateAbbr, $evVenueHref, is_array($evVenueRec ?? null) ? $evVenueRec : [], $evVenueFacts, (int) ($evVenueData['total'] ?? 0));
+$evGuideHtml = soSpecGuideHtml($evH2['guide'], $evLabel, [
   'when' => $evWhenLong !== '' ? $evWhenLong . ($eventTimeText !== '' ? ' at ' . $eventTimeText : '') : '',
-  'venue' => $eventVenueName, 'venueHref' => $eventVenueId ? '/venue/' . soVenueSlug($eventVenueName, $eventVenueId, $eventCityLabel) : '',
+  'venue' => $eventVenueName, 'venueHref' => $evVenueHref,
   'address' => (string) (($evVenueRec['address']['text']['address1'] ?? '') ?: ''),
   'tickets' => (int) ($event['_metadata']['ticketCount'] ?? 0), 'low' => $eventLowPrice,
 ]);
-$evSimilarList = soSpecEventList($evCityEvents, $evShownIds, 6);
-$evSimilarHtml = ($evSimilarList !== '' && $eventCityName !== '') ? '<h2>' . $h(soSpecSimilarHeading($evKind, (string) $eventCityName, $evStateAbbr)) . '</h2>' . $evSimilarList : '';
+$evOtherList = soSpecEventList($evVenueEvents ?: ($evCityData['events'] ?? []), $evShownIds, 6);
+$evSimilarHtml = ($evOtherList !== '' && $eventVenueName !== '') ? '<h2>' . $h($evH2['other']) . '</h2>' . $evOtherList : '';
 ?>
 <section class="so-evinfo">
   <div class="container">
     <div class="so-evinfo__grid">
       <div class="so-evinfo__main">
-        <h2>Buy <?php echo $h($evTicketsPhrase); ?><?php echo $evPlaceFull !== '' ? ' in ' . $h($evPlaceFull) : ''; ?></h2>
+        <h2><?php echo $h($evH2['tickets']); ?></h2>
         <p>Looking for <?php echo $h($evNm); ?> tickets<?php echo $evPlaceFull !== '' ? ' in ' . $h($evPlaceFull) : ''; ?>? Seat Outlet lets you compare seats and prices for this event in one place<?php echo $eventLowPrice !== '' ? ', with tickets listed from <strong>' . $h($eventLowPrice) . '</strong> per ticket' : ''; ?>. Pick your quantity, choose a section on the map and check out securely, backed by our <a href="/worry-free-guarantee">100% guarantee</a>.</p>
         <p>This is a resale marketplace, so prices are set by sellers and may be above or below face value. Read how <a href="/ticket-buyer-protection">ticket buyer protection</a> works, or see <a href="/how-to-buy-tickets-online">how to buy tickets online</a>.</p>
 
@@ -357,24 +359,24 @@ $evSimilarHtml = ($evSimilarList !== '' && $eventCityName !== '') ? '<h2>' . $h(
           <li><span><strong>Check out and go.</strong> Pay securely and get your tickets before the event.</span></li>
         </ol>
 
-        <?php echo soSpecPromoHtml(soSpecPromoHeading($evLabel, $evKind, (string) $eventCityName, $evStateAbbr), $evLabel); ?>
+        <?php echo soSpecPromoHtml($evH2['promo'], $evKind === 'concert' ? $evPerfName : $evLabel); ?>
 
         <?php if ($evAboutText !== '') { ?>
-        <h2><?php echo $h(soSpecAboutHeading($evKind === 'sports' ? $evLabel : $evPerfName, $evKind)); ?></h2>
+        <h2><?php echo $h($evH2['about']); ?></h2>
         <p><?php echo $h($evAboutText); ?></p>
         <?php } ?>
 
         <?php soBuyerGuaranteeSection(['events' => [$event]]); ?>
 
-        <h2>FAQs about <?php echo $h($evLabel); ?> Tickets<?php echo $evPlaceFull !== '' ? ' in ' . $h($evPlaceFull) : ''; ?></h2>
+        <h2><?php echo $h($evH2['faqs']); ?></h2>
         <div class="so-evfaq">
           <?php foreach ($evFaqs as $fq) { ?>
-          <details class="so-faq"><summary><?php echo $h($fq['q']); ?></summary><p><?php echo $h($fq['a']); ?></p></details>
+          <details class="so-faq"><summary><h3 style="display:inline;font:inherit;margin:0"><?php echo $h($fq['q']); ?></h3></summary><p><?php echo $h($fq['a']); ?></p></details>
           <?php } ?>
         </div>
       </div>
 
-        <?php echo soSpecCityInfoHtml((string) $eventCityName, $evStateAbbr, $evCityData ?? [], $evKind, $eventCityId ? '/' . $categoryCityPrefix . '/' . soSlug('city', $eventCityLabel, $eventCityId) : '/city-events'); ?>
+        <?php echo $evVenueInfoHtml; ?>
         <?php echo $evKindSection; ?>
         <?php echo $evGuideHtml; ?>
         <?php echo $evSimilarHtml; ?>

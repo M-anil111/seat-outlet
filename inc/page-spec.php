@@ -200,3 +200,117 @@ function soSpecAboutText(int $performerId, string $name): string {
 function soSpecAboutHeading(string $label, string $kind): string {
     return $kind === 'sports' ? $label . ' Game Overview' : 'About ' . $label;
 }
+
+/**
+ * Event page wording by kind, with the venue in it (the owner's venue sheet): focus keyword, H1, title and description candidates,
+ * image alt text and the H2 of every section. $c keys: label, perf, venue, city, state, day (e.g. "May 5"), cat (sub-category name),
+ * country, hasTickets. A page without a venue falls back to the city. Nothing here is a fact about the event beyond those fields.
+ *
+ * @return array{focus:string,h1:string,titles:string[],descs:string[],alt:string,h2:array<string,string>}
+ */
+function soSpecEventText(string $kind, array $c): array {
+    $L = (string) $c['label']; $P = (string) ($c['perf'] ?? $L); $V = (string) ($c['venue'] ?? ''); $City = (string) ($c['city'] ?? ''); $St = (string) ($c['state'] ?? '');
+    $place = $City . ($St !== '' ? ', ' . $St : '');
+    $day = (string) ($c['day'] ?? ''); $cat = (string) ($c['cat'] ?? ''); $country = (string) ($c['country'] ?? 'the United States');
+    $at = $V !== '' ? $V : $place;                       // "at <venue>" falls back to the city
+    $sell = !empty($c['hasTickets']) ? ' before they sell out' : '';
+    $out = ['h2' => []];
+    switch ($kind) {
+        case 'sports':
+            $out['focus'] = "$L Game Tickets at $at";
+            $out['h1'] = "Buy $L Game Tickets at $at";
+            $out['titles'] = array_filter([$day !== '' ? "Buy $L Game Tickets at $at on $day" : '', "Buy $L Game Tickets at $at", $City !== '' ? "Buy $L Tickets in $City" : '', "$L Tickets"]);
+            $out['descs'] = [
+                "Buy $L game tickets at $at. Explore available seats and reserve your spot now at Seat Outlet$sell.",
+                "Buy $L game tickets at $at. Reserve your spot now at Seat Outlet$sell.",
+                "Buy $L tickets at Seat Outlet$sell.",
+            ];
+            $out['alt'] = "$L game at $at";
+            $out['h2'] = ['tickets' => "Get Tickets for $L Game at $at", 'promo' => "$L Promo Codes for $at Game", 'about' => "$L Match Preview", 'faqs' => "FAQs about $L Tickets at $at",
+                'venue' => "What to Know Before Attending at $at" . ($place !== '' ? " in $place" : ''), 'kind' => $cat !== '' ? "Upcoming $cat Events at $at" : "Upcoming Events at $at",
+                'guide' => "Game Day Tips for $L at $at", 'other' => "Other Upcoming Games at $at"];
+            break;
+        case 'theater':
+            $out['focus'] = "$L Tickets at $at";
+            $out['h1'] = "Buy $L Tickets at $at" . ($City !== '' && $V !== '' ? ", $City" : '');
+            $out['titles'] = array_filter([$day !== '' ? "Buy $L Tickets at $at, $City on $day" : '', $V !== '' && $City !== '' ? "Buy $L Tickets at $V, $City" : '', "Buy $L Tickets at $at", "$L Tickets"]);
+            $out['descs'] = [
+                "Get $L tickets at $at" . ($City !== '' && $V !== '' ? " in $City" : '') . ". Find available seats, book online easily, and secure your spot for this must-see theater show$sell.",
+                "Get $L tickets at $at. Find available seats and book online at Seat Outlet$sell.",
+                "Get $L tickets at Seat Outlet$sell.",
+            ];
+            $out['alt'] = "$L theater show at $at";
+            $out['h2'] = ['tickets' => "Get $L Tickets at $at Performances", 'promo' => "$L Ticket Promo Codes for $at", 'about' => "About $L", 'faqs' => "FAQs about $L Tickets at $at",
+                'venue' => "About $at" . ($place !== '' && $V !== '' ? " in $place" : ''), 'kind' => $cat !== '' ? "Upcoming $cat Events at $at" : "Upcoming Events at $at",
+                'guide' => "What to Expect at $L at $at", 'other' => "Upcoming Theater Events at $at"];
+            break;
+        case 'festival':
+            $out['focus'] = "$L Passes for $at";
+            $out['h1'] = "Buy $L Passes for $at" . ($City !== '' && $V !== '' ? ", $City" : '');
+            $out['titles'] = array_filter([$day !== '' ? "Buy $L Passes for $at on $day" : '', $V !== '' && $City !== '' ? "Buy $L Passes for $V, $City" : '', "Buy $L Passes for $at", "$L Tickets"]);
+            $out['descs'] = [
+                "Get $L passes for $at. Secure your festival access today and enjoy all the live performances and experiences at Seat Outlet$sell.",
+                "Get $L passes for $at. Secure your festival access today at Seat Outlet$sell.",
+                "Get $L passes at Seat Outlet$sell.",
+            ];
+            $out['alt'] = "$L festival at $at";
+            $out['h2'] = ['tickets' => "Get $L Passes for $at", 'promo' => "$L Ticket Promo Codes at $at", 'about' => "About $L", 'faqs' => "FAQs about $L Tickets at $at",
+                'venue' => "About $at" . ($place !== '' && $V !== '' ? " in $place" : ''), 'kind' => "$L Lineup and Performers",
+                'guide' => "Ultimate Guide to $L at $at", 'other' => "More Events at $at"];
+            break;
+        default: // concert
+            $out['focus'] = "$P Tickets for $at Show" . ($City !== '' && $V !== '' ? " in $City" : '');
+            $out['h1'] = "Buy $P Tickets for $at Show" . ($place !== '' && $V !== '' ? " in $place" : '');
+            $out['titles'] = array_filter([
+                $day !== '' && $V !== '' ? "Buy $P Tickets for $V Show in $place on $day" : '',
+                $V !== '' && $place !== '' ? "Buy $P Tickets for $V Show in $place" : '',
+                $V !== '' && $City !== '' ? "Buy $P Tickets for $V Show in $City" : '',
+                "Buy $P Tickets at $at", "Buy $P Concert Tickets", "$P Tickets"]);
+            $out['descs'] = [
+                "Buy $P tickets for $at show" . ($City !== '' && $V !== '' ? " in $City" : '') . ". Find great seats and secure your tickets online today at Seat Outlet$sell.",
+                "Buy $P tickets for $at show. Secure your tickets online today at Seat Outlet$sell.",
+                "Buy $P tickets at Seat Outlet$sell.",
+            ];
+            $out['alt'] = $P . ' live' . ($V !== '' ? " at $V" : '') . ($City !== '' ? " in $City" : '');
+            $out['h2'] = ['tickets' => "Get $P Tickets for $at Show" . ($place !== '' && $V !== '' ? " in $place" : ''), 'promo' => "$P Promo Codes for $at event", 'about' => "About $P Performing at $at",
+                'faqs' => "FAQs about $P Tickets at $at", 'venue' => "About $at" . ($place !== '' && $V !== '' ? " in $place" : ''), 'kind' => "$P Tour Dates Across $country",
+                'guide' => "Complete $P Concert Guide at $at", 'other' => "Top Upcoming Performances at $at"];
+    }
+    $out['titles'] = array_values($out['titles']);
+    return $out;
+}
+
+/** Events at one venue for the "other events" sections: [] on a failed feed. $kind '' lists every kind of event there. */
+function soSpecVenueEvents(string $kind, $venueId, int $limit = 24): array {
+    if ((int) $venueId <= 0) return [];
+    try {
+        $r = getCategoryEventsByLocation($kind === '' ? 'events' : soSpecCategoryKey($kind), 'venue', (int) $venueId, ['perPage' => $limit, 'page' => 1, 'sort' => 'date/date', 'includeTotalCount' => 'true']);
+    } catch (Throwable $t) { return []; }
+    return ['events' => is_array($r['results'] ?? null) ? $r['results'] : [], 'total' => (int) ($r['totalCount'] ?? 0)];
+}
+
+/**
+ * "About <Venue> in <City>": what the ticket API and Wikidata give about the venue, and the links a visitor needs (directions, the
+ * official site for parking, bag and entry rules). Nothing about parking or policies is stated: we do not hold those facts.
+ * $venueRec is the venue's own record (address, geo), $facts is soEntityFacts() for the venue.
+ */
+function soSpecVenueInfoHtml(string $heading, string $venue, string $city, string $state, string $venueHref, array $venueRec, array $facts, int $upcoming): string {
+    if ($venue === '') return '';
+    $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $street = trim((string) ($venueRec['address']['text']['address1'] ?? ''));
+    $place = $city . ($state !== '' ? ', ' . $state : '');
+    $desc = trim((string) ($facts['description'] ?? ''));
+    $p = '<p>' . $e($venue) . ($desc !== '' ? ' is ' . (preg_match('/^[aeiou]/i', $desc) ? 'an ' : 'a ') . $e($desc) . '' : '') . ($place !== '' ? ($desc !== '' ? ', in ' : ' is in ') . $e($place) : '') . '.'
+        . ($street !== '' ? ' The address is ' . $e($street) . ($place !== '' ? ', ' . $e($place) : '') . '.' : '')
+        . ($upcoming > 0 ? ' Seat Outlet lists ' . number_format($upcoming) . ' upcoming event' . ($upcoming === 1 ? '' : 's') . ' there.' : '') . '</p>';
+    $q = rawurlencode(trim($venue . ' ' . $street . ' ' . $place));
+    $links = ['<a href="https://www.google.com/maps/dir/?api=1&amp;destination=' . $q . '" target="_blank" rel="noopener">Directions to ' . $e($venue) . '</a>',
+        '<a href="https://www.google.com/maps/dir/?api=1&amp;destination=' . $q . '&amp;travelmode=transit" target="_blank" rel="noopener">Public transit to ' . $e($venue) . '</a>'];
+    if (!empty($facts['website'])) $links[] = '<a href="' . $e($facts['website']) . '" target="_blank" rel="noopener">Official website for parking, bag and entry rules</a>';
+    if ($venueHref !== '') $links[] = '<a href="' . $e($venueHref) . '">All events at ' . $e($venue) . '</a>';
+    $geo = $venueRec['geoLocation'] ?? ($venueRec['address']['geoLocation'] ?? []);
+    if (($state !== '' || true) && isset($geo['latitude'], $geo['longitude']) && (float) $geo['latitude'] != 0.0 && ($venueRec['country']['alphaCode'] ?? ($venueRec['address']['country']['alphaCode'] ?? 'US')) === 'US') {
+        $links[] = '<a href="https://forecast.weather.gov/MapClick.php?lat=' . rawurlencode((string) round((float) $geo['latitude'], 4)) . '&amp;lon=' . rawurlencode((string) round((float) $geo['longitude'], 4)) . '" target="_blank" rel="noopener">Weather forecast for ' . $e($city) . '</a>';
+    }
+    return '<h2>' . $e($heading) . '</h2>' . $p . '<ul class="so-speclist"><li>' . implode('</li><li>', $links) . '</li></ul>';
+}
