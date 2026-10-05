@@ -51,15 +51,18 @@ function matchOnScreen(rules) {
   const H = window.innerHeight;
   const rendered = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
   const onScreen = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < H; };
-  // a hidden element counts when the closest box around it is on screen and is not most of the page (a menu in the header, not a modal in the footer)
-  const hiddenInView = el => {
-    let a = el.parentElement;
-    while (a && !rendered(a)) a = a.parentElement;
-    if (!a) return false;
-    const r = a.getBoundingClientRect();
-    return r.bottom > 0 && r.top < H && r.height < H * 0.8;
+  // The last element, in page order, that is on screen. Everything that comes before it in the page (or contains it) is part of the
+  // first screen's markup even when it is hidden or positioned off screen (the skip link, a menu in the header), so its rules are
+  // critical; a modal printed at the end of the page is after it and is not.
+  let lastOnScreen = null;
+  for (const el of document.body.querySelectorAll('*')) { if (onScreen(el)) lastOnScreen = el; }
+  const count = el => {
+    if (el === document.documentElement || el === document.body) return true;
+    if (rendered(el) && onScreen(el)) return true;
+    if (!lastOnScreen) return false;
+    const pos = el.compareDocumentPosition(lastOnScreen);
+    return !!(pos & (Node.DOCUMENT_POSITION_FOLLOWING | Node.DOCUMENT_POSITION_CONTAINED_BY));
   };
-  const count = el => (rendered(el) ? onScreen(el) : hiddenInView(el));
   const strip = sel => sel
     .replace(/::?(?:before|after|first-line|first-letter|placeholder|selection|marker|backdrop|file-selector-button|-[a-z-]+)(\([^)]*\))?/gi, '')
     .replace(/:(?:hover|focus|focus-within|focus-visible|active|visited|link|target|any-link|autofill|-webkit-autofill|user-invalid|user-valid)\b/gi, '');
