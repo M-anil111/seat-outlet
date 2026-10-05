@@ -298,7 +298,7 @@ foreach ($fallbackCategories as $key => $list) {
       <li><i class="bi bi-calendar-event" aria-hidden="true"></i><div><strong>Live events in one place</strong><span>Concerts, sports, theater and festivals across the country.</span></div></li>
       <li><i class="bi bi-telephone" aria-hidden="true"></i><div><strong>Real people to help</strong><span>Reach our team by phone or email if plans change. <a href="/ticket-customer-service">Contact us</a></span></div></li>
     </ul>
-    <p class="so-trust__note">Seat Outlet is a resale marketplace: sellers set the prices, which can be above or below face value. Review the full price, including any fees and taxes, before you pay.</p>
+    <p class="so-trust__note"><i class="bi bi-info-circle" aria-hidden="true"></i><span>Seat Outlet is a resale marketplace: sellers set the prices, which can be above or below face value. Review the full price, including any fees and taxes, before you pay.</span></p>
   </div>
 </section>
 
