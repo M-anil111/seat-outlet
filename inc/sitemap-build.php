@@ -24,81 +24,51 @@ const SO_SITEMAP_PER_PAGE  = 200;
 const SO_SITEMAP_MAX_PAGES = 250;    // 50,000 events; the catalog is far below this
 const SO_SITEMAP_PAUSE_US  = 700000; // between API requests, so the crawl never competes with visitors for the API
 const SO_SITEMAP_CITYPAGE_MIN = 3;   // upcoming events a city needs, per kind of event, for its page to be listed in the sitemap
-const SO_SITEMAP_FORMAT    = 4;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
-const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap-style.php"?>';
+const SO_SITEMAP_FORMAT    = 6;      // bump to rebuild every file once: 2 = full W3C datetimes in <lastmod> and the browser stylesheet in every file
+const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>';   // a static file; the web server sends it as text/xsl (docs/server-rewrites.md)
 
+/** Paths robots.txt disallows (robots.php prints them); the sitemap never lists a page under one of them. */
+const SO_ROBOTS_DISALLOW = ['/admin/', '/ajax/', '/cache/', '/vendor/', '/db/', '/tools/', '/cron/', '/deploy/', '/docs/', '/inc/', '/search', '/checkout', '/newsletter', '/unsubscribe', '/thank-you', '/order-confirmation'];
+
+/** Script names in the web root that are not pages of their own (templates behind a slug, the frame, endpoints, utility pages). */
+const SO_SITEMAP_NOT_PAGES = ['404', 'header', 'footer', 'functions', 'robots', 'sitemap', 'sitemap-page', 'search', 'checkout', 'order-confirmation', 'thank-you', 'unsubscribe', 'newsletter-email'];
+
+/** Pages that are real but that the scan cannot tell from a template behind a slug: the home page and the blog index. */
+const SO_SITEMAP_EXTRA_PATHS = ['/', '/blog'];
+
+/**
+ * The site's own pages, found by looking at the web root instead of keeping a list: a script is a page when it prints the page frame
+ * (header.php) or is a small stub that sets which list or genre to show ($soDirKey, $soGenreSlug), and it is not a template that reads a
+ * slug from the address (performer, venue, city, the *-city and *-state families, the discovery pages), not a redirect, not a page that sets
+ * "noindex" for itself and not on the robots.txt disallow list. A new page file therefore appears in the sitemap with the next rebuild.
+ * tools/check-sitemap-pages.php (CI) fails when the scan returns something that is not a page.
+ *
+ * @return string[] paths such as /about-seat-outlet, the home page first
+ */
 function soSitemapStaticPaths(): array {
-    return [
-    '/',
-    '/about-seat-outlet',
-    '/ticket-partner-program',
-    '/how-to-buy-tickets-online',
-    '/ticket-buyer-protection',
-    '/worry-free-guarantee',
-    '/customer-testimonials',
-    '/seat-outlet-reviews',
-    '/seat-outlet-bbb',
-    '/why-are-concert-tickets-so-expensive',
-    '/ticket-faq',
-    '/ticket-customer-service',
-    '/city-events',
-    '/buy-tickets-online',
-    '/all-artists-and-teams',
-    '/blog',
-    '/concert-tickets-for-sale',
-    '/hip-hop-tickets',
-    '/country-music-tickets',
-    '/pop-rock-concert-tickets',
-    '/rnb-soul-concert-tickets',
-    '/latin-music-tickets',
-    '/alternative-concert-tickets',
-    '/metal-concert-tickets',
-    '/jazz-and-blues-tickets',
-    '/electronic-music-tickets',
-    '/comedy-show-tickets',
-    '/classical-music-tickets',
-    '/nba-tickets',
-    '/nfl-tickets',
-    '/mlb-tickets',
-    '/nhl-tickets',
-    '/mls-tickets',
-    '/soccer-tickets',
-    '/tennis-tickets',
-    '/racing-tickets',
-    '/boxing-tickets',
-    '/las-vegas-shows-tickets',
-    '/christmas-shows-near-me',
-    '/game-day-tickets',
-    '/concert-artists',
-    '/sports-teams',
-    '/nfl-teams',
-    '/nba-teams',
-    '/mlb-teams',
-    '/nhl-teams',
-    '/mls-teams',
-    '/broadway-shows',
-    '/comedians-on-tour',
-    '/music-festivals-list',
-    '/buy-broadway-tickets',
-    '/upcoming-music-festivals',
-    '/tickets-promo-code',
-    '/ticket-deals',
-    '/hunt-tickets',
-    '/ticket-scanner',
-    '/grab-tickets-now',
-    '/our-network',
-    '/dotbooker',
-    '/wingcms',
-    '/salespeep',
-    '/signs-n-more',
-    '/it-sprinkles',
-    '/austin-sign-masters',
-    '/viralpep',
-    '/mindshare-consulting',
-    '/terms-and-conditions',
-    '/privacy-policy',
-    '/cookie-policy',
-    ];
+    static $paths = null;
+    if ($paths !== null) return $paths;
+    $found = [];
+    foreach (glob(dirname(__DIR__) . '/*.php') ?: [] as $file) {
+        $base = basename($file, '.php');
+        if (in_array($base, SO_SITEMAP_NOT_PAGES, true)) continue;
+        $src = (string) @file_get_contents($file);
+        $framed = preg_match('/header\.php/', $src) || preg_match('/\$soDirKey\s*=|\$soGenreSlug\s*=/', $src);
+        if (!$framed) continue;                                                                                          // a redirect, an endpoint or an include
+        $stub = preg_match('/\$_GET\[[\'"]slug[\'"]\]\s*=\s*[\'"]/', $src);                                              // sets its own slug: a genre page
+        if (!$stub && preg_match('/\$_GET\[[\'"](slug|id|loc)[\'"]\]\s*(\?\?|\)|;|,|\.|\])/', $src)) continue;              // reads a slug from the address
+        if (preg_match('/render(Category|Artist)LocationPage|renderCityDiscoveryPage|renderCityHolidayPage/', $src)) continue;
+        if (preg_match('/^\s*\$pageRobots\s*=\s*[\'"]noindex/m', $src)) continue;                                           // noindex for itself
+        $found[] = $base === 'index' ? '/' : '/' . $base;
+    }
+    $all = array_unique(array_merge($found, SO_SITEMAP_EXTRA_PATHS));
+    $all = array_values(array_filter($all, function ($p) {
+        foreach (SO_ROBOTS_DISALLOW as $d) { if ($p !== '/' && strpos($p, rtrim($d, '/')) === 0) return false; }
+        return true;
+    }));
+    sort($all);
+    array_unshift($all, '/');
+    return $paths = array_values(array_unique($all));
 }
 
 function soSitemapCacheDir(): string { return dirname(__DIR__) . '/cache'; }
@@ -257,6 +227,7 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
                         if ($wk && $evDay >= $wk[0] && $evDay <= $wk[1]) $kinds[] = 'last-minute-tickets';
                         if ($we && $evDay >= $we[0] && $evDay <= $we[1]) $kinds[] = 'weekend-events';
                     }
+                    foreach (soHolidayKindsForEvent($e) as $hk) $kinds[] = 'holiday:' . $hk;   // /<holiday>-in-<city> (inc/holidays.php)
                     foreach ($kinds as $kind) $cpg .= (int) $e['city']['id'] . "\t" . $cityLabel . "\t" . $kind . "\t" . $lm . "\n";
                 }
             }
@@ -374,7 +345,8 @@ function soSitemapBuildFiles(string $tmp): array {
             foreach ($cp as $k => [$name, $lm, $n]) {
                 if ($n < SO_SITEMAP_CITYPAGE_MIN) continue;
                 [$kind, $id] = explode("\t", $k);
-                $loc = $base . '/' . $kind . '/' . soSlug('city', $name, (int) $id);
+                $slug = soSlug('city', $name, (int) $id);
+                $loc = strpos($kind, 'holiday:') === 0 ? $base . '/' . substr($kind, 8) . '-in-' . $slug : $base . '/' . $kind . '/' . $slug;
                 if ($keep($loc)) $list[] = [$loc, $lm !== '' ? $lm : null];
             }
         }

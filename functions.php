@@ -6263,6 +6263,7 @@ require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, 
 require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/css-groups.php';        // soCssBundleFiles(): the stylesheet files for this page type
 require_once __DIR__ . '/inc/page-spec.php';   // titles, headings, promo block and sections for event and performer-in-location pages
+require_once __DIR__ . '/inc/holidays.php';   // /<holiday>-in-<city> pages for the US and Canadian holidays and the /holiday-events hub
 require_once __DIR__ . '/inc/discovery-pages.php';   // /last-minute-tickets, /weekend-events, /cheap-tickets and /best-events for a city
 require_once __DIR__ . '/inc/slugs.php';             // url_slugs table: ids never appear in URLs (soSlug, soEventSlug, soSlugResolve)
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages

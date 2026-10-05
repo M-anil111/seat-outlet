@@ -29,7 +29,7 @@ foreach (array_merge(array_keys(SO_CSS_GROUPS), ['full']) as $g) {
 
 // Scripts that keep the whole stylesheet on purpose: not pages people land on, redirects, or tiny partners' pages.
 $full = ['404.php', 'austin-sign-masters.php', 'dotbooker.php', 'footer.php', 'functions.php', 'grab-tickets-now.php', 'header.php', 'it-sprinkles.php',
-    'mindshare-consulting.php', 'newsletter-email.php', 'robots.php', 'salespeep.php', 'signs-n-more.php', 'sitemap-style.php', 'sports.php', 'theater.php',
+    'mindshare-consulting.php', 'newsletter-email.php', 'robots.php', 'salespeep.php', 'signs-n-more.php', 'sports.php', 'theater.php',
     'ticketing-truths.php', 'tickets.php', 'viralpep.php', 'wingcms.php'];
 foreach (glob($root . '/*.php') as $p) {
     $b = basename($p);

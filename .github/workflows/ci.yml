@@ -50,6 +50,12 @@ jobs:
       - name: Page type stylesheets and critical CSS are in place and under the size limits
         run: php tools/check-css-groups.php
 
+      - name: Holiday dates (Easter, Thanksgiving, long weekends) are right for 2026 to 2028
+        run: php tools/test-holidays.php
+
+      - name: The sitemap's automatic page list finds every page and only pages
+        run: php tools/check-sitemap-pages.php
+
       - name: No ticket API id in any URL (slugs come from soSlug only)
         run: php tools/check-url-slugs.php
 

@@ -312,7 +312,7 @@ Focus keyword: **photo credits**
 | 2 | Photo Credits—Seat Outlet Image Library | 39 | See where each Seat Outlet image comes from, who owns it and which license allows us to use it, with links back to the original source. | 135 |
 | 3 | Photo Credits—Who Took Our Pictures—Seat Outlet | 47 | Image credits and licenses for Seat Outlet artist, venue and event pictures, listed with the source and rights holder for each photo. | 133 |
 
-### `/sitemap-page`
+### `/sitemap`
 
 Focus keyword: **seat outlet sitemap**
 

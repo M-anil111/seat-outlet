@@ -42,7 +42,13 @@ In the same `server { }` block add the rule from docs/server-rewrites.md that se
 rewrite ^/(last-minute-tickets|weekend-events|cheap-tickets|best-events)/([^/]+)/?$ /$1.php?slug=$2 last;
 ```
 
-Check: `curl -s -o /dev/null -w "%{http_code}\n" https://beta.seatoutlet.com/best-events/austin-tx` answers 200.
+Also add the holiday page rule (the line under "City holiday pages" in docs/server-rewrites.md, one rewrite that lists every holiday):
+
+```nginx
+rewrite ^/(christmas-shows-near-me|new-years-eve-events|valentines-day-events|st-patricks-day-events|easter-weekend-events|mothers-day-weekend-events|memorial-day-weekend-events|victoria-day-weekend-events|fathers-day-weekend-events|canada-day-events|july-4th-events|labor-day-weekend-events|labour-day-weekend-events|halloween-events|thanksgiving-weekend-events|canadian-thanksgiving-weekend-events|boxing-day-events)-in-([^/]+)/?$ /holiday-city.php?holiday=$1&slug=$2 last;
+```
+
+Check: `curl -s -o /dev/null -w "%{http_code}\n" https://beta.seatoutlet.com/best-events/austin-tx` and `https://beta.seatoutlet.com/july-4th-events-in-austin-tx` both answer 200 (a page with few events is still 200 and says noindex).
 
 ## 3. One sitemap address (server access, nginx, 3 minutes)
 
@@ -50,9 +56,11 @@ In the same `server { }` block add:
 
 ```nginx
 location = /sitemap.xml { return 301 /sitemaps/sitemap.xml; }
-location = /sitemap.php { return 301 /sitemaps/sitemap.xml; }
 location = /sitemaps/sitemap-index.xml { return 301 /sitemaps/sitemap.xml; }
+location = /sitemap.xsl { default_type text/xsl; expires 1d; }   # the stylesheet that makes the XML sitemaps readable in a browser
 ```
+
+There are two sitemaps and only two: the XML one for search engines at `/sitemaps/sitemap.xml` and the page for people at `/sitemap`. **Do not** add a rule that redirects `/sitemap.php`: `/sitemap` is served by `sitemap.php` internally, so a `location = /sitemap.php` rule would break it. If you added one earlier, remove it. The page itself sends any visit to `/sitemap.php` or `/sitemap-page` to `/sitemap`.
 
 The Worker currently answers `/sitemap.xml` with 410 and serves the index itself with a fixed list of 17 child files. That is fine until cutover. After cutover (docs/production-cutover.md) the Worker is deleted and the site serves its own index.
 
