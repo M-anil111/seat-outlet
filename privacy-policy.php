@@ -116,10 +116,6 @@
                 <div class="policy-section" id="section-1">
                     <h2><span class="policy-num">1.</span> Who we are and contact details</h2>
                     <p>
-                        Seat Outlet is operated by:
-                    </p>
-                    <p>
-                        Seat Outlet<br>
                         Email: <a href="mailto:info@seatoutlet.com">info@seatoutlet.com</a>
                     </p>
                     <p>
