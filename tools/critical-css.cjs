@@ -60,8 +60,17 @@ function matchOnScreen(rules) {
   for (const el of document.body.querySelectorAll('*')) { if (getComputedStyle(el).position === 'fixed') fixedSet.add(el); }
   const underFixed = el => { for (let a = el; a && a !== document.body; a = a.parentElement) { if (fixedSet.has(a)) return true; } return false; };
   for (const el of document.body.querySelectorAll('*')) { if (onScreen(el) && !underFixed(el)) lastOnScreen = el; }
+  // Anything wider than the screen (an off-canvas panel, a carousel track) and everything that clips or contains it: without their
+  // rules the page would be wider than the screen until the full stylesheet arrives, then jump back.
+  const W = window.innerWidth;
+  const wide = new Set();
+  for (const el of document.body.querySelectorAll('*')) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && (r.right > W + 1 || r.left < -1)) { for (let a = el; a && a !== document.body; a = a.parentElement) wide.add(a); }
+  }
   const count = el => {
     if (el === document.documentElement || el === document.body) return true;
+    if (wide.has(el)) return true;
     if (rendered(el) && onScreen(el)) return true;
     if (!lastOnScreen) return false;
     const pos = el.compareDocumentPosition(lastOnScreen);
