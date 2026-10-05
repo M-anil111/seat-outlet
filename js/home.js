@@ -641,7 +641,16 @@ document.addEventListener('DOMContentLoaded', function () {
       track.innerHTML = events.map(popCard).join('');
       track.scrollLeft = 0;
       const nx = box.querySelector('[data-so-feed-next]');
-      if (nx && !nx.dataset.bound) { nx.dataset.bound = '1'; nx.addEventListener('click', function () { track.scrollBy({ left: Math.max(260, track.clientWidth * 0.8), behavior: 'smooth' }); }); }
+      if (nx && !nx.dataset.bound) {
+        nx.dataset.bound = '1';
+        // One page of whole cards per click (the cards fill the row exactly on desktop); back to the start after the last page.
+        nx.addEventListener('click', function () {
+          const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+          const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+          if (atEnd) track.scrollTo({ left: 0, behavior: 'smooth' });
+          else track.scrollBy({ left: track.clientWidth + gap, behavior: 'smooth' });
+        });
+      }
       return;
     }
     // "This weekend near you" only makes sense for events really close by (not the "nearest anywhere" fallback).

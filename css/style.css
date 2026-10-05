@@ -7405,6 +7405,15 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-popweek__next { position: absolute; right: -8px; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border-radius: 50%; border: 1px solid #d9dde7; background: #fff; color: #111827; display: none; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(16,24,40,.18); cursor: pointer; z-index: 3; }
 .so-popweek__next:hover { background: #f4f6fb; }
 @media (min-width: 992px) { .so-popweek__next { display: inline-flex; } }
+/* Desktop: whole cards only. The cards were a fixed 300px, so 4 of them plus the gaps (1242px) did not fit the
+   container and the last one was sliced at the edge. Size them to fill the row exactly (3 per row from 992px, 4 from
+   1200px), snap to card edges, and let the arrow move one page of whole cards (js/home.js). */
+@media (min-width: 992px) {
+  .so-popweek .so-feed__track { --so-pw-n: 3; scroll-snap-type: x mandatory; scroll-padding-left: 0; }
+  .so-popweek .so-feed__track .so-evc { flex: 0 0 calc((100% - (var(--so-pw-n) - 1) * 14px) / var(--so-pw-n)); min-width: 0; }
+  .so-popweek__next { right: -23px; }
+}
+@media (min-width: 1200px) { .so-popweek .so-feed__track { --so-pw-n: 4; } }
 @media (max-width: 1279.98px) {
   .top-picks .custom-slider.new-slider .slick-prev { left: 4px; }
   .top-picks .custom-slider.new-slider .slick-next { right: 4px; }
