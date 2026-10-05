@@ -165,8 +165,8 @@ include_once 'functions.php';
     <link rel="preload" href="/fonts/bootstrap-icons-subset.woff2?v=<?php echo substr((string) @md5_file(__DIR__ . '/fonts/bootstrap-icons-subset.woff2'), 0, 10); ?>" as="font" type="font/woff2" crossorigin>
     <?php $soNeedsSlick = in_array($soReqPath, ['/', '/index.php', '/search', '/about-seat-outlet'], true) || strpos($soReqPath, '/event/') === 0; // carousel CSS: pages with a carousel, plus event pages (the Seatics seat-map widget uses slick classes) ?>
     <?php if ($soNeedsSlick) { ?>
-    <link rel="preload" href="/lib/slick-carousel/1.8.1/slick.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="/lib/slick-carousel/1.8.1/slick-theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/lib/slick-carousel/1.8.1/slick.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/lib/slick-carousel/1.8.1/slick-theme.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <?php } ?>
 
     <!-- Inter is self-hosted (css/fonts.css, folded into style.min.css). Deliberately NOT preloaded: on a slow connection the 47 KB preload
@@ -176,8 +176,8 @@ include_once 'functions.php';
 
     <noscript>
         <?php if ($soNeedsSlick) { ?>
-        <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick.css">
-        <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick-theme.css">
+        <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick.min.css">
+        <link rel="stylesheet" href="/lib/slick-carousel/1.8.1/slick-theme.min.css">
         <?php } ?>
     </noscript>
     <?php if ($pageRule && !empty($pageRule['meta_title'])) { ?>
@@ -299,7 +299,7 @@ include_once 'functions.php';
     ?>
     <div class="header-top-section">
         <?php if (strpos($soReqPath, '/event/') !== 0) { /* no keyword strip on event pages: the event title is the page's heading */ ?>
-        <div class="so-topstrip">
+        <div class="so-topstrip" role="region" aria-label="Page topic and buyer guarantee">
         <!-- Top keyword strip -->
         <div class="keyword-topbar">
             <svg class="so-strip-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v1.5h18V16a2 2 0 0 0 0-4v0a2 2 0 0 0 0-4V6.5H3V8zM14 6.5v11"/></svg>

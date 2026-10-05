@@ -2510,6 +2510,8 @@ function soSendSecurityHeaders() {
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=(self)');
+    // Report-only: nothing is blocked. Violations go to ajax/csp-report.php (PHP error log). Read the log for a week, add the missing hosts, then switch the header name to Content-Security-Policy.
+    header("Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googlesyndication.com https://*.doubleclick.net https://cloudflareinsights.com; frame-src 'self' https://*.googlesyndication.com https://*.doubleclick.net https://www.googletagmanager.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; report-uri /ajax/csp-report.php");
 }
 
 function sendPageCacheHeaders() {

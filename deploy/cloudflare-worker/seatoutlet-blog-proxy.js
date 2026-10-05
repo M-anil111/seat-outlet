@@ -200,9 +200,21 @@ async function readLocationJson(response) {
 function hasLocation(data) {
   return data && data.city && data.state && data.lat && data.lng;
 }
+// Long browser cache for static files. Bundles carry a ?v= stamp that changes with the content, so a year is safe; fonts and libraries never change in place.
+function applyStaticCache(headers, pathname, status) {
+  if (status !== 200) return;
+  if (/^\/(fonts|lib)\//.test(pathname) || /\.min\.(css|js)$/.test(pathname)) {
+    headers.set("cache-control", "public, max-age=31536000, immutable");
+  } else if (/^\/images\/.+\.(webp|png|jpe?g|svg|gif|ico|avif)$/i.test(pathname)) {
+    headers.set("cache-control", "public, max-age=2592000");
+  }
+}
 async function rewriteResponse(response, requestUrl) {
   const headers = new Headers(response.headers);
   rewriteLocationHeader(headers, requestUrl);
+  if (!headers.has("x-content-type-options")) headers.set("x-content-type-options", "nosniff");
+  if (!headers.has("referrer-policy")) headers.set("referrer-policy", "strict-origin-when-cross-origin");
+  applyStaticCache(headers, requestUrl.pathname, response.status);
   const contentType = headers.get("content-type") || "";
   if (!isTextResponse(contentType)) {
     return new Response(response.body, {
