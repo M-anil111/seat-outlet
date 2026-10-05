@@ -1325,7 +1325,12 @@ document.addEventListener('error', function (e) {
       prev.hidden = !(max > 4 && track.scrollLeft > 4);
       next.hidden = !(max > 4 && track.scrollLeft < max - 4);
     }
-    function by(dir) { track.scrollBy({ left: dir * Math.max(200, track.clientWidth * 0.8), behavior: 'smooth' }); }
+    // The category grid pages by whole columns (its columns fill the width exactly); other rows move 80% of the width.
+    var paged = wrap.classList.contains('so-cattiles__wrap');
+    function by(dir) {
+      var step = paged ? track.clientWidth + (parseFloat(getComputedStyle(track).columnGap) || 0) : Math.max(200, track.clientWidth * 0.8);
+      track.scrollBy({ left: dir * step, behavior: 'smooth' });
+    }
     prev.addEventListener('click', function () { by(-1); });
     next.addEventListener('click', function () { by(1); });
     track.addEventListener('scroll', sync, { passive: true });
