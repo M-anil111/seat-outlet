@@ -6811,13 +6811,13 @@ a.so-trust__cta { margin: 0; min-height: 44px; display: inline-flex; align-items
 }
 
 /* Home: email capture with a stated benefit (shared soLeadForm) */
-.so-home-lead { margin: 28px 0 8px; padding: 0; background: linear-gradient(135deg, #eef3fd, #f4f7fe); }
+.so-home-lead { margin: 0; padding: 0; background: linear-gradient(180deg, #f3f7ff 0%, #eaf1fd 100%); }
 .so-home-lead .so-nl { margin: 0; }
 .so-nl--home .so-nl__title { font-size: clamp(20px, 3vw, 26px); font-weight: 700; margin: 0 0 6px; color: #0b1120; }
 .so-nl--home .so-nl__sub { margin: 0 0 14px; color: #3a3f48; max-width: 640px; }
 .so-nl--home input[type=email] { min-height: 48px; }
 .so-nl--home button[type=submit] { min-height: 48px; }
-/* Home "Get alerts for tours and on-sales": a full-width pale blue band (background on .so-home-lead, content in the
+/* Home "Get alerts for tours and on-sales": a full-width pale blue band (background on .so-home-lead, same as Popular cities, content in the
    container, no border or radius), bell icon, heading and text on the left, the form on the right (labelled white fields, full-width blue button with an arrow); stacked on phones and small tablets. */
 .so-nl--split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); align-items: center; padding: clamp(28px, 4vw, 56px) 0; border: 0; border-radius: 0; background: transparent; }
 .so-nl--split .so-nl__intro { padding-right: clamp(24px, 3.6vw, 52px); }
