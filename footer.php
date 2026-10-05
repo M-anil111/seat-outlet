@@ -103,6 +103,20 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 </div>
 
   </div>
+  <div class="policies" aria-label="Browse by name, A to Z">
+  <ul>
+    <li><a href="/concert-artists">Artists on Tour</a></li>
+    <li><a href="/comedians-on-tour">Comedians on Tour</a></li>
+    <li><a href="/broadway-shows">Broadway Shows List</a></li>
+    <li><a href="/music-festivals-list">Music Festivals List</a></li>
+    <li><a href="/sports-teams">Sports Teams</a></li>
+    <li><a href="/nfl-teams">NFL Teams</a></li>
+    <li><a href="/nba-teams">NBA Teams</a></li>
+    <li><a href="/mlb-teams">MLB Teams</a></li>
+    <li><a href="/nhl-teams">NHL Teams</a></li>
+    <li><a href="/mls-teams">MLS Teams</a></li>
+  </ul>
+  </div>
   <div class="policies">
   <ul>
     <li><a href="/privacy-policy">Privacy Policy</a></li>

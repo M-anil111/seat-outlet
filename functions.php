@@ -4002,9 +4002,13 @@ function soEventSchemaDescription(array $event): string {
  * One schema.org Event node for a TicketNetwork event, the same everywhere (event page, artist page, listings).
  * Offers are TicketNetwork's own live figures: lowest and highest listed price and the number of tickets listed, never estimated.
  * $venue: the venue's own record (street address, postal code, geo) when the caller has it.
- * No "organizer" and no end time for a timed event: Seat Outlet does not organize the event, and the API names neither the promoter nor an end time.
+ * The API names neither the promoter nor an end time, so two fields are stand-ins that Google asks for: "organizer" is the venue (the
+ * party that hosts the event, never Seat Outlet, which only compares tickets) and a timed event's "endDate" is its start plus
+ * SO_EVENT_DEFAULT_HOURS (an estimate, not a published end time).
  * Image, description and offer start (validFrom) are always filled from the event's own data.
  */
+if (!defined('SO_EVENT_DEFAULT_HOURS')) define('SO_EVENT_DEFAULT_HOURS', 3);
+
 function soEventNode(array $event, array $opts = []) {
     $name = (string) ($event['text']['name'] ?? '');
     $id = (int) ($event['id'] ?? 0);
@@ -4047,10 +4051,21 @@ function soEventNode(array $event, array $opts = []) {
     ];
     $node['image'] = [!empty($opts['image']) ? (string) $opts['image'] : soEventSchemaImage($event)];
     $node['description'] = !empty($opts['description']) ? (string) $opts['description'] : soEventSchemaDescription($event);
-    // TicketNetwork gives a start time but no end time. An event with no time of day (all day or date only) ends on its start date;
-    // for a timed event the end is not published anywhere, so none is made up.
+    if ($venueName !== '') {
+        $org = ['@type' => 'Organization', 'name' => $venueName];
+        if (!empty($place['url'])) $org['url'] = $place['url'];
+        $node['organizer'] = $org;
+    }
+    // TicketNetwork gives a start time but no end time. An event with no time of day ends on its start date; a timed event ends
+    // SO_EVENT_DEFAULT_HOURS after it starts (an estimate).
     $startDate = (string) $node['startDate'];
-    if ($startDate !== '' && (($event['date']['time'] ?? '') === '' || ($event['date']['time'] ?? '') === '00:00:00')) $node['endDate'] = substr($startDate, 0, 10);
+    if ($startDate !== '') {
+        if (($event['date']['time'] ?? '') === '' || ($event['date']['time'] ?? '') === '00:00:00') {
+            $node['endDate'] = substr($startDate, 0, 10);
+        } else {
+            try { $node['endDate'] = (new DateTimeImmutable($startDate))->modify('+' . SO_EVENT_DEFAULT_HOURS . ' hours')->format('c'); } catch (Exception $e) { /* unparseable start: no end date */ }
+        }
+    }
     $low = (float) ($event['pricingInfo']['lowPrice']['value'] ?? 0);
     if (!empty($event['_metadata']['hasTickets']) && $low > 0) {
         $offer = [

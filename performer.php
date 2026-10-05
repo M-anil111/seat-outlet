@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+require_once __DIR__ . '/inc/directories.php';
 
 // Sanitize and normalize pagination.
 $page    = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -601,4 +602,5 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
+<?php echo soDirectoryLinksHtml((string) ($performer['defaultCategory']['path'] ?? ''), 3); ?>
 <?php include 'footer.php'; ?>
