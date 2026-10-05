@@ -153,9 +153,9 @@ include_once 'functions.php';
     $soCrit = $soCssFiles ? soCriticalCss() : '';
     if ($soCrit !== '') { ?>
     <style id="so-critical"><?php echo $soCrit; ?></style>
-    <?php foreach ($soSheets as $soSheet) { ?>
-    <link rel="preload" as="style" href="<?php echo $soSheet; ?>" onload="this.onload=null;this.rel='stylesheet'">
-    <?php } ?>
+    <script>/* the full stylesheets start loading once the page has painted, so nothing but the critical rules competes with the first paint */
+    (function(){var u=<?php echo json_encode(array_map('html_entity_decode', $soSheets)); ?>,go=function(){u.forEach(function(h){var l=document.createElement('link');l.rel='stylesheet';l.href=h;document.head.appendChild(l);});};
+    if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(go,0);});}else{setTimeout(go,0);}})();</script>
     <noscript><?php foreach ($soSheets as $soSheet) { ?><link rel="stylesheet" href="<?php echo $soSheet; ?>"><?php } ?></noscript>
     <?php } else { foreach ($soSheets as $soSheet) { ?>
     <link rel="stylesheet" href="<?php echo $soSheet; ?>">
