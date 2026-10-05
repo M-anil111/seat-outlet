@@ -79,6 +79,26 @@ function soCssGroupFor(string $script): ?string {
     return null;
 }
 
+/** The page type name of a script, "full" when it has none (the name of its critical CSS and stylesheet files). */
+function soCssGroupName(?string $script = null): string {
+    return soCssGroupFor($script ?? (string) ($_SERVER['SCRIPT_NAME'] ?? '')) ?? 'full';
+}
+
+/**
+ * The critical CSS of this page type (css/critical/<page type>.css, made by tools/critical-css.cjs): the rules for what is on screen
+ * at first paint. header.php prints it in the head and loads the full stylesheets without blocking. '' when there is none.
+ */
+function soCriticalCss(?string $script = null): string {
+    static $memo = [];
+    $g = soCssGroupName($script);
+    if (getenv('SO_CSS_SPLIT') === '0' || getenv('SO_CRITICAL') === '0') return '';
+    if (!isset($memo[$g])) {
+        $f = dirname(__DIR__) . '/css/critical/' . $g . '.css';
+        $memo[$g] = is_file($f) ? (string) file_get_contents($f) : '';
+    }
+    return $memo[$g];
+}
+
 /**
  * The stylesheet files this page loads, as site relative paths in load order: css/style.<page type>.min.css (or .1, .2 when
  * the build had to split it), "full" for a script that belongs to no page type, and the readable source when the build has not run.

@@ -140,19 +140,26 @@ include_once 'functions.php';
     <link rel="preload" as="image" href="<?php echo htmlspecialchars($pagePreloadImage, ENT_QUOTES, 'UTF-8'); ?>" fetchpriority="high">
     <?php } ?>
     <!-- Critical CSS -->
-    <?php /* css/bootstrap.min.css = Bootstrap trimmed to the classes this site uses (tools/build-assets.sh); the full file is the fallback. */ ?>
-    <link rel="stylesheet" href="<?php echo is_file(__DIR__ . '/css/bootstrap.min.css') ? htmlspecialchars(soAsset('css/bootstrap.css'), ENT_QUOTES, 'UTF-8') : '/lib/bootstrap/5.3.8/bootstrap.min.css'; ?>">
-    <?php /* One stylesheet per page type (inc/css-groups.php), the same rules in the same order minus what the page type cannot use; css/style.min.css when the build has not made them. */
+    <?php
+    /* Stylesheets: css/bootstrap.min.css (Bootstrap trimmed to the classes this site uses) and one stylesheet per page type
+       (inc/css-groups.php), the same rules in the same order minus what the page type cannot use (tools/build-assets.sh).
+       When the page type has critical CSS (css/critical/<page type>.css, tools/critical-css.cjs) its rules go inline in the head and
+       the full files load without blocking the first paint; they bring every other rule a moment later. */
+    $soSheets = [is_file(__DIR__ . '/css/bootstrap.min.css') ? htmlspecialchars(soAsset('css/bootstrap.css'), ENT_QUOTES, 'UTF-8') : '/lib/bootstrap/5.3.8/bootstrap.min.css'];
     $soCssFiles = soCssBundleFiles();
-    if ($soCssFiles) { foreach ($soCssFiles as $soCssRel) { ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(HOME_URL, '/') . '/' . $soCssRel . '?v=' . filemtime(__DIR__ . '/' . $soCssRel), ENT_QUOTES, 'UTF-8'); ?>">
-    <?php } } elseif (is_file(__DIR__ . '/css/style.min.css')) { ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
-    <?php } else { ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/skeleton.css'), ENT_QUOTES, 'UTF-8'); ?>">
+    if ($soCssFiles) { foreach ($soCssFiles as $soCssRel) { $soSheets[] = htmlspecialchars(rtrim(HOME_URL, '/') . '/' . $soCssRel . '?v=' . filemtime(__DIR__ . '/' . $soCssRel), ENT_QUOTES, 'UTF-8'); } }
+    elseif (is_file(__DIR__ . '/css/style.min.css')) { $soSheets[] = htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); }
+    else { $soSheets[] = htmlspecialchars(soAsset('css/style.css'), ENT_QUOTES, 'UTF-8'); $soSheets[] = htmlspecialchars(soAsset('css/skeleton.css'), ENT_QUOTES, 'UTF-8'); }
+    $soCrit = $soCssFiles ? soCriticalCss() : '';
+    if ($soCrit !== '') { ?>
+    <style id="so-critical"><?php echo $soCrit; ?></style>
+    <?php foreach ($soSheets as $soSheet) { ?>
+    <link rel="preload" as="style" href="<?php echo $soSheet; ?>" onload="this.onload=null;this.rel='stylesheet'">
     <?php } ?>
-    
+    <noscript><?php foreach ($soSheets as $soSheet) { ?><link rel="stylesheet" href="<?php echo $soSheet; ?>"><?php } ?></noscript>
+    <?php } else { foreach ($soSheets as $soSheet) { ?>
+    <link rel="stylesheet" href="<?php echo $soSheet; ?>">
+    <?php } } ?>
 
     <?php /* Same content hash tools/build-icons.py writes into css/icons.css, so the preload is the request the stylesheet uses. */ ?>
     <link rel="preload" href="/fonts/bootstrap-icons-subset.woff2?v=<?php echo substr((string) @md5_file(__DIR__ . '/fonts/bootstrap-icons-subset.woff2'), 0, 10); ?>" as="font" type="font/woff2" crossorigin>
