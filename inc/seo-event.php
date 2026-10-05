@@ -97,7 +97,6 @@ if (!empty($event) && $evName !== '') {
     $eventSchema = soEventNode($event, [
         'venue' => (is_array($evVenueRec) && !tnEntityMissing($evVenueRec)) ? $evVenueRec : null,
         'image' => ($evOgImg !== '' && strpos($evOgImg, 'seatoutlet-logo') === false) ? $evOgImg : '',
-        'description' => $metaDescription,
     ]);
 }
 

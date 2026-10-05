@@ -36,37 +36,10 @@ if (!empty($results['results'])) {
 
   foreach ($results['results'] as $event) {
 
-      $city = $event['city']['text']['name'] ?? '';
-      $state = $event['stateProvince']['text']['abbr'] ?? '';
-      $startDate = $event['date']['datetimeOffset'] ?? ($event['date']['date'] ?? '');
-      $price = $event['pricingInfo']['lowPrice']['value'] ?? null;
-
-      $eventsSchema[] = [
-          "@type" => "Event",
-          "name" => $event['text']['name'] ?? '',
-          "startDate" => $startDate,
-          "eventStatus" => "https://schema.org/EventScheduled",
-
-          "location" => [
-              "@type" => "Place",
-              // Was $event['text']['venue'] - the venue name lives under
-              // event.venue.text.name in the TicketNetwork API response,
-              // not event.text.venue. Confirmed against a live sandbox
-              // event: {"venue":{"text":{"name":"Royal Alexandra Theatre"}}}.
-              "name" => $event['venue']['text']['name'] ?? '',
-              "address" => [
-                  "@type" => "PostalAddress",
-                  "addressLocality" => $city,
-                  "addressRegion" => $state,
-                  "addressCountry" => "US"
-              ]
-          ],
-          "performer" => buildEventPerformerSchema($event),
-      ];
-      $offer = !empty($event['_metadata']['hasTickets']) ? seoOffer(HOME_URL . "/event/" . soEventSlug($event), $price) : null;
-      if ($offer) {
-          $eventsSchema[array_key_last($eventsSchema)]["offers"] = $offer;
-      }
+      // The same Event node as every other page (image, description, offers with validFrom).
+      $node = soEventNode($event);
+      if (empty($event['_metadata']['hasTickets'])) unset($node['offers']);
+      $eventsSchema[] = $node;
   }
 }
 
