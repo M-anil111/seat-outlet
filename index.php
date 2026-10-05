@@ -85,7 +85,10 @@ foreach ($fallbackCategories as $key => $list) {
       </div>
       <a class="so-feed__all" href="/buy-tickets-online">See all</a>
     </div>
-    <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><?php } ?></div>
+    <div class="so-feed__wrap">
+      <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><?php } ?></div>
+      <button type="button" class="so-feed__next" data-so-feed-next aria-label="Show more events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
   </div>
 </section>
 
@@ -98,7 +101,10 @@ foreach ($fallbackCategories as $key => $list) {
       </div>
       <a class="so-feed__all" role="link" tabindex="0" data-go="/buy-tickets-online?when=weekend">See all</a>
     </div>
-    <div class="so-feed__track" data-so-feed-track></div>
+    <div class="so-feed__wrap">
+      <div class="so-feed__track" data-so-feed-track></div>
+      <button type="button" class="so-feed__next" data-so-feed-next aria-label="Show more events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
   </div>
 </section>
 
@@ -191,7 +197,10 @@ foreach ($fallbackCategories as $key => $list) {
       </div>
       <a class="so-feed__all" href="/concert-tickets-for-sale">See all</a>
     </div>
-    <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><?php } ?></div>
+    <div class="so-feed__wrap">
+      <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><?php } ?></div>
+      <button type="button" class="so-feed__next" data-so-feed-next aria-label="Show more events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
   </div>
 </section>
 
