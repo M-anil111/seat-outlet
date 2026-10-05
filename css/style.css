@@ -7391,6 +7391,14 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-rp__txt small { font-size: 13px; color: #1c64f2; font-weight: 600; }
 .so-rp > svg { color: #9aa1b2; flex: none; }
 @media (min-width: 992px) { .so-recent__track { margin: 0; padding-left: 0; padding-right: 0; } }
+/* Desktop: whole cards only in "Pick up where you left off" (same as the home card rows): the slides were a fixed 300px,
+   so 4 of them plus the gaps did not fit and the last one was sliced at the edge. Fill the row exactly (3 per row from
+   992px, 4 from 1200px) with the row's 14px gap, snap to card edges; the arrow (.so-feed__next) pages through the rest. */
+@media (min-width: 992px) {
+  .so-recent__track { --so-pw-n: 3; scroll-snap-type: x mandatory; scroll-padding-left: 0; }
+  .so-recent__slide { flex: 0 0 calc((100% - (var(--so-pw-n) - 1) * 14px) / var(--so-pw-n)); min-width: 0; }
+}
+@media (min-width: 1200px) { .so-recent__track { --so-pw-n: 4; } }
 @media (prefers-reduced-motion: reduce) { .so-rp { transition: none; } .so-rp:hover { transform: none; } }
 
 /* Popular this weekend: tinted cards + side arrow; Advertisement frame; arrows kept inside the page on narrower screens */

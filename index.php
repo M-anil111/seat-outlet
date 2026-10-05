@@ -214,7 +214,10 @@ foreach ($fallbackCategories as $key => $list) {
       </div>
       <button type="button" class="so-recent__clear" data-so-recent-clear>Clear</button>
     </div>
-    <div class="so-recent__track" data-so-recent-track></div>
+    <div class="so-feed__wrap">
+      <div class="so-recent__track" data-so-recent-track></div>
+      <button type="button" class="so-feed__next" data-so-feed-next aria-label="Show more events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
   </div>
 </section>
 

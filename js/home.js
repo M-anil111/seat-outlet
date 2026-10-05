@@ -630,24 +630,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // "Popular this weekend": the same text-only card as everywhere else, with a soft category-colored header.
   function popCard(ev) { return window.soEvCard(ev, { tint: true }); }
 
-  // The row's arrow (desktop): one page of whole cards per click (the cards fill the row exactly from 992px); back to
-  // the start after the last page.
-  function bindNext(box, track) {
-    const nx = box.querySelector('[data-so-feed-next]');
-    if (!nx) return;
-    // No arrow when every card already fits (a row with few events).
-    const fit = function () { nx.hidden = track.scrollWidth <= track.clientWidth + 2; };
-    requestAnimationFrame(fit);
-    if (nx.dataset.bound) return;
-    nx.dataset.bound = '1';
-    window.addEventListener('resize', fit, { passive: true });
-    nx.addEventListener('click', function () {
-      const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
-      const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
-      if (atEnd) track.scrollTo({ left: 0, behavior: 'smooth' });
-      else track.scrollBy({ left: track.clientWidth + gap, behavior: 'smooth' });
-    });
-  }
+  // The row's arrow: window.soRowArrow (js/main.js), shared with "Pick up where you left off".
+  function bindNext(box, track) { if (window.soRowArrow) window.soRowArrow(box, track); }
 
   function render(box, kind, data, label) {
     const track = box.querySelector('[data-so-feed-track]');
