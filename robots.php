@@ -22,9 +22,9 @@ if (!SITE_INDEXABLE) {
     echo "Disallow: /\n";
     exit;
 }
-foreach (['/admin/', '/ajax/', '/cache/', '/vendor/', '/db/', '/tools/', '/cron/', '/deploy/', '/docs/', '/inc/', '/search', '/checkout', '/newsletter', '/unsubscribe', '/thank-you', '/order-confirmation'] as $path) {
+require_once __DIR__ . '/inc/sitemap-build.php';
+foreach (SO_ROBOTS_DISALLOW as $path) {
     echo "Disallow: $path\n";
 }
 // Always the host this install is configured for (HOME_URL), never a hard-coded domain.
-require_once __DIR__ . '/inc/sitemap-build.php';
 echo "\nSitemap: " . soSitemapIndexUrl() . "\n";

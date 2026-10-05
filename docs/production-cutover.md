@@ -113,7 +113,7 @@ LIVE_DB=seatoutlet_live BETA_DB=seatoutlet_beta deploy/clone-live-db-to-beta.sh
 
 ## After the cutover: check
 
-- `https://seatoutlet.com/robots.txt` shows the Disallow list and the sitemap.php line; `https://seatoutlet.com/sitemaps/sitemap.xml` is
+- `https://seatoutlet.com/robots.txt` shows the Disallow list and the `Sitemap:` line; `https://seatoutlet.com/sitemaps/sitemap.xml` is
   served by the site, not the Worker.
 - `curl -sI https://seatoutlet.com/concert-tickets-for-sale` shows `cf-cache-status: HIT` on the second request.
 - `https://beta.seatoutlet.com/robots.txt` still says `Disallow: /`, and beta pages have `noindex`.

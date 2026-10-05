@@ -1,0 +1,7 @@
+# Files that were removed from the repository. The pull deploy copies new code over the web root but never deletes, so a file
+# removed from git stays on the server (and keeps answering) until it is listed here. deploy/pull-deploy.sh deletes each one after
+# the copy. One path per line, relative to the web root, no wildcards. Never list a file that exists in the repository.
+sitemap-serve.php
+sitemap-style.php
+inc/sitemap-legacy.php
+sitemaps/sitemap-index.xml

@@ -75,6 +75,15 @@ if [ -n "$REMOVED" ]; then
   done <<< "$REMOVED"
 fi
 
+# Safety net for removed files the git diff above did not catch (a deploy that was skipped, or files put there by hand or by the SFTP
+# fallback): deploy/retired-files.txt lists them, one relative path per line.
+if [ -f deploy/retired-files.txt ]; then
+  while IFS= read -r f; do
+    case "$f" in ''|'#'*|/*|*..*|*\**|cache/*|inc/env.local.php) continue ;; esac
+    [ -f "$WEBROOT/$f" ] && { rm -f -- "$WEBROOT/$f"; log "removed retired file $f"; }
+  done < deploy/retired-files.txt
+fi
+
 # Seed feeds: copy cache/ files only where the server does not have them yet.
 if [ -d cache ]; then
   mkdir -p "$WEBROOT/cache"

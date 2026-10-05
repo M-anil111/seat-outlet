@@ -2,7 +2,7 @@
 <!--
   Makes the XML sitemaps readable in a browser: a header, a few facts about the file and a searchable table with the time each address
   last changed. Search engines ignore this file and read the XML underneath exactly as before.
-  Served as text/xsl by /sitemap-style.php. XSLT 1.0 only (that is what browsers run), no external requests.
+  Served as text/xsl from /sitemap.xsl (a static file; docs/server-rewrites.md has the one server line). XSLT 1.0 only (that is what browsers run), no external requests.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:s="http://www.sitemaps.org/schemas/sitemap/0.9">
   <xsl:output method="html" encoding="UTF-8" indent="no"/>

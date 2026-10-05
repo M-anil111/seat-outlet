@@ -76,12 +76,12 @@ Beta/staging/dev hosts then return `Disallow: /`; the production host returns th
 
 ### One sitemap address: /sitemaps/sitemap.xml
 
-The only index is `/sitemaps/sitemap.xml`, a static file the site writes itself (robots.txt, the footer and Search Console all use it). The old names are retired: `/sitemaps/sitemap-index.xml` is deleted by the next build, and the root `/sitemap.php` and `/sitemap.xml` should 301 to the new address. Add inside the `server { }` block, then reload nginx:
+The only XML index is `/sitemaps/sitemap.xml`, a static file the site writes itself (robots.txt and Search Console use it); the page for people is `/sitemap`. The old names are retired: `/sitemaps/sitemap-index.xml` is deleted by the next build, and `/sitemap.xml` should 301 to the new address. Do not redirect `/sitemap.php`: `/sitemap` is served by `sitemap.php` internally (the page sends direct visits to `/sitemap.php` or `/sitemap-page` to `/sitemap` itself). Add inside the `server { }` block, then reload nginx:
 
 ```nginx
 location = /sitemap.xml { return 301 /sitemaps/sitemap.xml; }
-location = /sitemap.php { return 301 /sitemaps/sitemap.xml; }
 location = /sitemaps/sitemap-index.xml { return 301 /sitemaps/sitemap.xml; }
+location = /sitemap.xsl { default_type text/xsl; expires 1d; }   # browser stylesheet for the XML files (without it the XML shows plain; search engines are not affected)
 ```
 
 If the Cloudflare Worker still answers `/sitemap.xml` itself (the old 21-URL list), remove that route from the Worker, or have it 301 to `/sitemaps/sitemap.xml`.

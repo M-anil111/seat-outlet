@@ -50,9 +50,11 @@ In the same `server { }` block add:
 
 ```nginx
 location = /sitemap.xml { return 301 /sitemaps/sitemap.xml; }
-location = /sitemap.php { return 301 /sitemaps/sitemap.xml; }
 location = /sitemaps/sitemap-index.xml { return 301 /sitemaps/sitemap.xml; }
+location = /sitemap.xsl { default_type text/xsl; expires 1d; }   # the stylesheet that makes the XML sitemaps readable in a browser
 ```
+
+There are two sitemaps and only two: the XML one for search engines at `/sitemaps/sitemap.xml` and the page for people at `/sitemap`. **Do not** add a rule that redirects `/sitemap.php`: `/sitemap` is served by `sitemap.php` internally, so a `location = /sitemap.php` rule would break it. If you added one earlier, remove it. The page itself sends any visit to `/sitemap.php` or `/sitemap-page` to `/sitemap`.
 
 The Worker currently answers `/sitemap.xml` with 410 and serves the index itself with a fixed list of 17 child files. That is fine until cutover. After cutover (docs/production-cutover.md) the Worker is deleted and the site serves its own index.
 

@@ -83,7 +83,7 @@ For the owner
 - Fees: confirm what TicketNetwork's checkout adds (service, delivery, taxes) and when it shows them. Counsel: check "review the full cost at checkout" against the FTC rule on unfair or deceptive fees (all-in pricing).
 - Email sending: set SMTP_USER and SMTP_PASS (Brevo) on the server, and optionally CONTACT_TO / CONTACT_TO_PARTNERSHIP. Without them messages are saved (see Admin > Contact Messages) but no email is sent. Make sure support@seatoutlet.com is a verified Brevo sender. Do NOT set SO_RECAPTCHA_SKIP outside local development.
 - Someone must read Admin > Contact Messages (or the support inbox) daily.
-- Footer: the "Sitemap" link still points to the XML file (/sitemap.xml). Point it to /sitemap-page. Footer and header text still say "Trusted resale marketplace", "100% Worry-Free Guarantee", "verified tickets", and "By continuing past this page, you agree" (WS6 area): align with the guarantee wording.
+- Footer: the "Sitemap" link still points to the XML file (/sitemap.xml). Point it to /sitemap. Footer and header text still say "Trusted resale marketplace", "100% Worry-Free Guarantee", "verified tickets", and "By continuing past this page, you agree" (WS6 area): align with the guarantee wording.
 - Production robots: serve robots.php at /robots.txt (docs/server-rewrites.md). The static robots.txt has no Sitemap line on purpose.
 - Blog: the seven launch posts repeat their focus phrase 34 to 51 times (SEO tool now warns). Have the author vary the wording. Review dates and facts before re-publishing.
 - Blog post image alt texts were written from the pictures; replace generic stock images with relevant ones when available.

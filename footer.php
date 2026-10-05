@@ -122,7 +122,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
     <li><a href="/privacy-policy">Privacy Policy</a></li>
     <li><a href="/terms-and-conditions">Terms of Use</a></li>
     <li><a href="/cookie-policy">Cookie Policy</a></li>
-    <li><a href="/sitemaps/sitemap.xml">Sitemap</a></li>
+    <li><a href="/sitemap">Sitemap</a></li>
     <?php if (GTM_ID !== '') { ?><li><button type="button" class="so-privacy-link" data-so-privacy aria-haspopup="true">Your privacy choices</button></li><?php } ?>
   </ul>
   </div>

@@ -124,7 +124,7 @@ $SEO_PLAN = [
         'Mindshare Consulting is a full service marketing agency in Austin for SEO, advertising, branding and web design, and the team behind this website.', null, null, false],
     '/image-credits' => ['photo credits', 'Photo Credits and Image Licenses',
         'Photo credits for the images used on Seat Outlet: the source, the photographer or rights holder and the license for every picture on the site.', null, null, false],
-    '/sitemap-page' => ['seat outlet sitemap', 'Seat Outlet Sitemap and Site Sections',
+    '/sitemap' => ['seat outlet sitemap', 'Seat Outlet Sitemap and Site Sections',
         'The Seat Outlet sitemap lists every section of the site: event categories, genres, cities, artists and teams, guides and customer service pages.', null, null, false],
 ];
 
