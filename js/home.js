@@ -727,4 +727,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     box.querySelector('.container').appendChild(btn);
   });
+
+  // The home FAQ is an accordion: opening one question closes the one that was open (one answer at a time).
+  document.querySelectorAll('[data-so-readmore]').forEach(function (box) {
+    const items = box.querySelectorAll('details.so-faq');
+    if (items.length) box.classList.add('so-homeqa');
+    items.forEach(function (d) {
+      d.addEventListener('toggle', function () {
+        if (!d.open) return;
+        items.forEach(function (o) { if (o !== d && o.open) o.open = false; });
+      });
+    });
+  });
 });

@@ -6875,6 +6875,24 @@ a.so-trust__cta:focus-visible { outline: 3px solid #9db6f4; outline-offset: 3px;
 .so-readmore__btn:hover { background: #2556e0; color: #fff; }
 .so-readmore:not(.is-clamped) .so-readmore__btn { margin-top: 24px; }
 @media (max-width: 575.98px) { .so-seo-copy.so-readmore { padding: 28px 0 32px; } }
+/* Home FAQ (the "Questions About How to Buy Event Tickets" block in the home copy): an accordion, one answer open at a time
+   (js/home.js adds .so-homeqa to the block and closes the others; the class is only in home.js, so other page types' stylesheets drop these rules; the selectors name details, not .so-faq, which the purge safelist keeps everywhere). The open item gets a pale blue panel, a blue question and a filled round minus icon. */
+.so-homeqa.so-readmore details { transition: background-color .2s ease; }
+.so-homeqa.so-readmore details summary { padding: 18px 56px 18px 16px; transition: color .15s ease; }
+.so-homeqa.so-readmore details summary:hover { color: #2556e0; }
+.so-homeqa.so-readmore details summary:focus-visible { outline: 3px solid #9db6f4; outline-offset: -3px; }
+.so-homeqa.so-readmore details summary::after { content: "+"; right: 14px; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #c9d6f6; background: #fff; font-size: 20px; font-weight: 500; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+.so-homeqa.so-readmore details[open] { background: #f2f6fe; border-radius: 12px; border-bottom-color: transparent; }
+.so-homeqa.so-readmore details[open] summary { color: #2556e0; }
+.so-homeqa.so-readmore details[open] summary::after { content: "\2212"; background: #2556e0; border-color: #2556e0; color: #fff; }
+.so-homeqa.so-readmore details > p { margin: 0; padding: 0 56px 18px 16px; animation: so-faq-in .2s ease; }
+@keyframes so-faq-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (max-width: 575.98px) {
+  .so-homeqa.so-readmore details summary { padding: 16px 50px 16px 12px; font-size: 16px; }
+  .so-homeqa.so-readmore details summary::after { right: 10px; width: 28px; height: 28px; }
+  .so-homeqa.so-readmore details > p { padding: 0 12px 16px; font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .so-homeqa.so-readmore details, .so-homeqa.so-readmore details summary, .so-homeqa.so-readmore details summary::after { transition: none; } .so-homeqa.so-readmore details > p { animation: none; } }
 
 /* Search page: results first on phones */
 @media (max-width: 767.98px) {
