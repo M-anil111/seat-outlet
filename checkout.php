@@ -53,72 +53,103 @@ $GLOBALS['soNoAds'] = true;   // no ads on the pages where someone is paying or 
 include 'header.php';
 ?>
 
-<section class="checkout-page py-4 py-md-5">
-  <div class="container">
-    <div class="row g-4">
-      <div class="col-lg-7">
-        <h1 class="fs-3 fw-bold mb-1">Review your order</h1>
-        <p class="text-muted mb-4">Step 1 of 2 · Next: secure payment</p>
+<link rel="stylesheet" href="<?php echo htmlspecialchars(soAsset('css/checkout.css'), ENT_QUOTES, 'UTF-8'); ?>">
+<section class="checkout-page so-co" aria-labelledby="soCoTitle">
+  <div class="container so-co__wrap">
+    <p class="so-co__secure"><svg width="16" height="18" viewBox="0 0 16 18" fill="currentColor" aria-hidden="true"><path d="M8 0a4.5 4.5 0 0 0-4.5 4.5V7H2.5A1.5 1.5 0 0 0 1 8.5v8A1.5 1.5 0 0 0 2.5 18h11a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 13.5 7h-1V4.5A4.5 4.5 0 0 0 8 0Zm-2.5 4.5a2.5 2.5 0 0 1 5 0V7h-5V4.5Z"/></svg> Secure Checkout</p>
 
-        <?php if (!$hasSelection) { ?>
-          <div class="checkout-card">
-            <h2 class="fs-5 fw-bold">No tickets selected yet</h2>
-            <p class="mb-3">Pick your seats on the event's seat map first; the price and quantity you choose carry over here.</p>
-            <?php if ($hasEvent) { ?>
-              <a class="btn btn-primary" href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>">Choose seats for <?php echo htmlspecialchars($eventName, ENT_QUOTES, 'UTF-8'); ?></a>
-            <?php } else { ?>
-              <a class="btn btn-primary" href="/buy-tickets-online">Browse events</a>
-            <?php } ?>
+    <div class="so-co__grid">
+      <div class="so-co__main">
+        <div class="so-co__card so-co__step">
+          <div class="so-co__step-head">
+            <span class="so-co__num" aria-hidden="true">1</span>
+            <div>
+              <h1 id="soCoTitle" class="so-co__title">Review your order</h1>
+              <p class="so-co__sub">Step 1 of 2 · Next: secure payment</p>
+            </div>
           </div>
-        <?php } else { ?>
-          <div class="checkout-card">
-            <?php if ($hasEvent) { ?>
-              <div class="d-flex gap-3 align-items-start">
-                <?php if ($eventDate) { ?>
-                  <div class="date-box text-center">
-                    <div class="month"><?php echo strtoupper(date('M', $eventDate)); ?></div>
-                    <div class="day"><?php echo date('d', $eventDate); ?></div>
-                  </div>
-                <?php } ?>
-                <div>
-                  <h2 class="fs-5 fw-bold mb-1"><?php echo htmlspecialchars($eventName, ENT_QUOTES, 'UTF-8'); ?></h2>
-                  <div class="text-muted"><?php echo $eventDate ? htmlspecialchars(date('l, F j, Y', $eventDate) . ($eventTime ? ' · ' . $eventTime : ''), ENT_QUOTES, 'UTF-8') : ''; ?></div>
-                  <div class="text-muted"><?php echo htmlspecialchars(trim($venueName . ' · ' . $cityLabel, ' ·'), ENT_QUOTES, 'UTF-8'); ?></div>
-                  <a class="small" href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>">Change seats</a>
-                </div>
-              </div>
-              <hr>
-            <?php } ?>
-            <dl class="row mb-0 checkout-lines">
-              <dt class="col-7">Tickets</dt><dd class="col-5 text-end"><?php echo (int) $qty; ?> × <?php echo $prc !== null ? '$' . number_format($prc, 2) : 'price shown at checkout'; ?></dd>
-              <?php if ($subtotal !== null) { ?>
-                <dt class="col-7">Ticket subtotal</dt><dd class="col-5 text-end">$<?php echo number_format($subtotal, 2); ?></dd>
+
+          <?php if (!$hasSelection) { ?>
+            <div class="so-co__empty">
+              <h2 class="so-co__h2">No tickets selected yet</h2>
+              <p>Pick your seats on the event's seat map first; the price and quantity you choose carry over here.</p>
+              <?php if ($hasEvent) { ?>
+                <a class="so-co__btn" href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>">Choose seats for <?php echo htmlspecialchars($eventName, ENT_QUOTES, 'UTF-8'); ?></a>
+              <?php } else { ?>
+                <a class="so-co__btn" href="/buy-tickets-online">Browse events</a>
               <?php } ?>
-              <dt class="col-7">Service &amp; delivery fees</dt><dd class="col-5 text-end text-muted">calculated at checkout</dd>
+            </div>
+          <?php } else { ?>
+            <h2 class="so-co__h2">Your tickets</h2>
+            <dl class="so-co__lines">
+              <div><dt>Tickets</dt><dd><?php echo (int) $qty; ?> × <?php echo $prc !== null ? '$' . number_format($prc, 2) : 'price shown at checkout'; ?></dd></div>
+              <?php if ($subtotal !== null) { ?>
+                <div><dt>Ticket subtotal</dt><dd>$<?php echo number_format($subtotal, 2); ?></dd></div>
+              <?php } ?>
+              <div><dt>Service &amp; delivery fees</dt><dd class="so-co__muted">calculated at checkout</dd></div>
             </dl>
-            <p class="small text-muted mt-3 mb-0">Ticket group <?php echo htmlspecialchars($tgid, ENT_QUOTES, 'UTF-8'); ?>. Prices can change until the order is placed; the final total, including all fees, is shown before you pay.</p>
-          </div>
+            <p class="so-co__note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.01"/></svg><span>Ticket group <?php echo htmlspecialchars($tgid, ENT_QUOTES, 'UTF-8'); ?>. Prices can change until the order is placed; the final total, including all fees, is shown before you pay.</span></p>
 
-          <a id="checkout-continue" class="btn btn-primary btn-lg w-100 mt-3" href="<?php echo htmlspecialchars($handoff, ENT_QUOTES, 'UTF-8'); ?>">Continue to secure payment</a>
-          <p class="small text-muted text-center mt-2 mb-0">You'll complete payment on our secure checkout partner page (<?php echo htmlspecialchars(parse_url(TN_CHECKOUT_URL, PHP_URL_HOST), ENT_QUOTES, 'UTF-8'); ?>).</p>
-        <?php } ?>
+            <div class="so-co__actions">
+              <a id="checkout-continue" class="so-co__btn" href="<?php echo htmlspecialchars($handoff, ENT_QUOTES, 'UTF-8'); ?>">Continue to secure payment <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+              <p class="so-co__partner">You'll complete payment on our secure checkout partner page (<?php echo htmlspecialchars(parse_url(TN_CHECKOUT_URL, PHP_URL_HOST), ENT_QUOTES, 'UTF-8'); ?>).</p>
+            </div>
+          <?php } ?>
+        </div>
+
+        <div class="so-co__card so-co__step so-co__step--next">
+          <div class="so-co__step-head">
+            <span class="so-co__num so-co__num--off" aria-hidden="true">2</span>
+            <div>
+              <h2 class="so-co__title so-co__title--sm">Payment</h2>
+              <p class="so-co__sub">Delivery details and payment on the secure checkout</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="col-lg-5">
-        <div class="checkout-card">
-          <h2 class="fs-6 fw-bold mb-3">What happens next</h2>
-          <ol class="checkout-steps ps-3 mb-0">
+      <aside class="so-co__side" aria-label="Order details">
+        <?php if ($hasEvent) { ?>
+          <div class="so-co__card so-co__event">
+            <div class="so-co__event-head">
+              <svg class="so-co__ticket" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5V7a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a2.5 2.5 0 0 0 0 5V17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2.5a2.5 2.5 0 0 0 0-5Z" transform="rotate(-35 12 12)"/><path d="M14 7.5v9" stroke-dasharray="1.6 2" transform="rotate(-35 12 12)"/></svg>
+              <div>
+                <h2 class="so-co__event-name"><?php echo htmlspecialchars($eventName, ENT_QUOTES, 'UTF-8'); ?></h2>
+                <?php if ($eventDate) { ?><p class="so-co__event-meta"><?php echo htmlspecialchars(date('l, F j, Y', $eventDate) . ($eventTime ? ' at ' . $eventTime : ''), ENT_QUOTES, 'UTF-8'); ?></p><?php } ?>
+                <p class="so-co__event-meta"><?php echo htmlspecialchars(trim($venueName . (($venueName !== '' && $cityLabel !== '') ? ' in ' : '') . $cityLabel), ENT_QUOTES, 'UTF-8'); ?></p>
+                <a class="so-co__change" href="/event/<?php echo htmlspecialchars($eventSlug, ENT_QUOTES, 'UTF-8'); ?>">Change seats</a>
+              </div>
+            </div>
+            <?php if ($hasSelection) { ?>
+              <div class="so-co__facts">
+                <div><span>Quantity</span><strong><?php echo (int) $qty; ?></strong></div>
+                <div><span>Price each</span><strong><?php echo $prc !== null ? '$' . number_format($prc, 2) : 'At checkout'; ?></strong></div>
+              </div>
+              <p class="so-co__fine">All prices are in US Dollars ($).</p>
+            <?php } ?>
+          </div>
+        <?php } ?>
+
+        <?php if ($hasSelection) { ?>
+          <div class="so-co__card so-co__summary">
+            <h2 class="so-co__h2">Order Summary</h2>
+            <div class="so-co__total"><span><?php echo $subtotal !== null ? 'Ticket subtotal:' : 'Order total:'; ?></span><strong><?php echo $subtotal !== null ? '$' . number_format($subtotal, 2) . ' USD' : 'Shown at checkout'; ?></strong></div>
+            <p class="so-co__fine">Service and delivery fees are added on the secure checkout, and the final total is shown before you pay.</p>
+          </div>
+        <?php } ?>
+
+        <div class="so-co__card so-co__info">
+          <h2 class="so-co__h3">What happens next</h2>
+          <ol class="so-co__steps">
             <li>Enter your details and pay on the secure checkout.</li>
             <li>Your order is confirmed by email within minutes.</li>
             <li>Tickets are delivered by the method shown at checkout (mobile transfer, e-ticket or shipping), usually before the event date.</li>
           </ol>
+          <h2 class="so-co__h3 so-co__h3--gap">Buyer Protection Guarantee</h2>
+          <p>Every order is backed by our guarantee: valid tickets, delivered in time for the event, or your money back.</p>
+          <a href="/ticket-buyer-protection" class="so-co__link">Read the guarantee</a>
         </div>
-        <div class="checkout-card mt-3">
-          <h2 class="fs-6 fw-bold mb-2">Buyer Protection Guarantee</h2>
-          <p class="mb-2">Every order is backed by our guarantee: valid tickets, delivered in time for the event, or your money back.</p>
-          <a href="/ticket-buyer-protection" class="small">Read the guarantee</a>
-        </div>
-      </div>
+      </aside>
     </div>
   </div>
 </section>
