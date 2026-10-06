@@ -182,3 +182,9 @@ To enforce the CSP: after about a week, run `php tools/csp-report-summary.php <p
 2. The sitemap build queues every US city. Then run `php cron/resolve-counties.php` (150 cities per run, one lookup per second), or add it to cron every 30 minutes until `still pending` reaches 0. New cities are picked up on the next sitemap build.
 3. `php cron/build-sitemaps.php --force` writes `counties-N.xml` (counties with at least 3 upcoming events). A county page with fewer events is noindex.
 4. `php tools/test-counties.php` checks the helpers offline. Canada has no counties; Canadian cities are never queued.
+
+## Worker note: never rewrite to a `.php` address
+
+On 6 Oct 2026 the live Cloudflare Worker rewrote `/state/<slug>`, `/county/<slug>`, every `*-city`, `*-state`, `*-country`, `*-venue` page, the discovery pages and the holiday pages to `/<page>.php?slug=...` on the origin. The origin answers any `.php` address with a 301 to the extensionless address, so every one of those clean URLs answered `301` to `/<page>?slug=...` (the page canonical still named the clean URL, so a redirect and a canonical pointed at each other). The Worker file now rewrites to `/<page>?slug=...` directly (200, no hop). The permanent fix is the nginx rules in this file; once they are in, the Worker's `legacyPhpUrl()` can be deleted along with the rest of the Worker.
+
+Check after a Worker change: `curl -sI https://seatoutlet.com/state/florida` must answer `200`, not `301`.
