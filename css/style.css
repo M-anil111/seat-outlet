@@ -6170,13 +6170,12 @@ main.terms-page .policy-section, main.cookie-page .policy-section { padding-top:
 .so-mega[hidden] { display: none; }
 .so-mega__inner { max-width: 1100px; margin: 10px auto 0; background: rgba(255,255,255,.98); border: 1px solid rgba(0,0,0,.08); border-radius: 28px; box-shadow: 0 30px 80px rgba(0,0,0,.28); padding: 28px; display: grid; grid-template-columns: 300px repeat(2, minmax(0, 1fr)); gap: 12px 32px; animation: so-mega-in .16s ease; }
 @keyframes so-mega-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-.so-mega__lead { display: flex; flex-direction: column; gap: 6px; padding: 22px; border-radius: 22px; background: linear-gradient(145deg, #eaf1ff 0%, #dbe7ff 100%); color: #1d1d1f; text-decoration: none; }
+.so-mega__lead { position: relative; overflow: hidden; isolation: isolate; min-height: 300px; display: flex; flex-direction: column; gap: 6px; padding: 22px; border-radius: 22px; background: #0b1736; color: #fff; text-decoration: none; }
 .so-mega__lead strong { font-size: 26px; letter-spacing: -.02em; }
 .so-mega__lead span { color: #424245; font-size: 15px; line-height: 1.4; }
 .so-mega__lead em { margin-top: auto; padding-top: 14px; font-style: normal; font-weight: 600; color: #0056d6; }
 .so-mega__icon { width: 52px; height: 52px; border-radius: 16px; background: #fff; color: #0056d6; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,86,214,.18); margin-bottom: 8px; }
 .so-mega__icon .so-ic { width: 28px; height: 28px; }
-.so-mega__lead:hover { background: linear-gradient(145deg, #e0eaff 0%, #cfdfff 100%); }
 .so-mega__col h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #6e6e73; margin: 6px 0 8px; font-weight: 700; }
 .so-mega__col ul { list-style: none; margin: 0; padding: 0; }
 .so-mega__col a { display: block; padding: 9px 12px; margin: 0 -12px; border-radius: 10px; color: #1d1d1f; font-size: 16px; font-weight: 500; text-decoration: none; transition: background .12s ease, color .12s ease; }
@@ -6188,17 +6187,19 @@ html.so-mega-open body::after { content: ""; position: fixed; inset: 0; backgrou
 .tm-header .so-mega-top, .tm-header .so-mega-top:hover { text-decoration: none !important; }
 .tm-header .so-mega .so-mega__col a, .tm-header .so-mega .so-mega__col a:visited { color: #1d1d1f !important; }
 .tm-header .so-mega .so-mega__col a:hover, .tm-header .so-mega .so-mega__col a:focus-visible { color: #0056d6 !important; }
-.tm-header .so-mega .so-mega__lead, .tm-header .so-mega .so-mega__lead strong { color: #1d1d1f !important; }
-.tm-header .so-mega .so-mega__lead span { color: #424245 !important; }
-.tm-header .so-mega .so-mega__lead em { color: #0056d6 !important; }
+.tm-header .so-mega .so-mega__lead, .tm-header .so-mega .so-mega__lead strong, .tm-header .so-mega .so-mega__lead em { color: #fff !important; }
+.tm-header .so-mega .so-mega__lead span:not(.so-mega__icon) { color: rgba(255, 255, 255, .9) !important; }
 .tm-header .so-mega .so-mega__col h3 { color: #6e6e73 !important; }
 .tm-header .so-mega .so-mega__icon { color: #0056d6 !important; }
 .tm-nav.so-mega-nav li a.so-mega-top::after { display: none !important; }
 .tm-nav.so-mega-nav .so-mega a::after { display: none !important; }   /* the old nav hover underline drew a blue line across the menu links */
-/* Picture in the mega menu's left box (images/home-cat-<key>.webp, 16:9); the "All ..." link stays at the bottom. */
-.so-mega__lead .so-mega__img { display: block; margin-top: 14px; border-radius: 16px; overflow: hidden; aspect-ratio: 16 / 9; background: #cfdcf7; box-shadow: 0 6px 18px rgba(0, 86, 214, .14); }
-.so-mega__lead .so-mega__img img { display: block; width: 100%; height: 100%; max-width: 100%; object-fit: cover; transition: transform .3s ease; }
-.so-mega__lead:hover .so-mega__img img { transform: scale(1.03); }
+/* Mega menu left box: the category picture (images/home-cat-<key>.webp) fills the whole box (object-fit: cover, never
+   stretched) under a dark navy overlay, so the white title, tagline, "All ..." link and the white icon tile stay readable.
+   The box's own colors are set on .so-mega__lead and the .tm-header .so-mega__lead rules above. */
+.so-mega__lead .so-mega__img { position: absolute; inset: 0; z-index: -2; }
+.so-mega__lead .so-mega__img img { display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; transition: transform .35s ease; }
+.so-mega__lead::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11, 23, 54, .55), rgba(11, 23, 54, .35) 38%, rgba(11, 23, 54, .88)); }
+.so-mega__lead:hover .so-mega__img img { transform: scale(1.04); }
 @media (prefers-reduced-motion: reduce) { .so-mega__lead:hover .so-mega__img img { transform: none; } }
 .tm-nav.so-mega-nav li a.so-mega-top:hover { color: #fff; }
 .so-dd:not([open]) > .so-dd__menu { display: none; }
