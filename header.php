@@ -343,6 +343,7 @@ include_once 'functions.php';
                                                 <span class="so-mega__icon"><?php echo $soIc($m['icon']); ?></span>
                                                 <strong><?php echo htmlspecialchars($m['label'], ENT_QUOTES, 'UTF-8'); ?></strong>
                                                 <span><?php echo htmlspecialchars($m['tag'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                                <span class="so-mega__img"><img src="/images/home-cat-<?php echo $m['key']; ?>.webp" alt="" width="480" height="270" loading="lazy" decoding="async"></span>
                                                 <em><?php echo htmlspecialchars($m['all'], ENT_QUOTES, 'UTF-8'); ?> &rsaquo;</em>
                                             </a>
                                             <?php foreach ($m['groups'] as $g) { ?>

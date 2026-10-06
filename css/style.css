@@ -6194,6 +6194,12 @@ html.so-mega-open body::after { content: ""; position: fixed; inset: 0; backgrou
 .tm-header .so-mega .so-mega__col h3 { color: #6e6e73 !important; }
 .tm-header .so-mega .so-mega__icon { color: #0056d6 !important; }
 .tm-nav.so-mega-nav li a.so-mega-top::after { display: none !important; }
+.tm-nav.so-mega-nav .so-mega a::after { display: none !important; }   /* the old nav hover underline drew a blue line across the menu links */
+/* Picture in the mega menu's left box (images/home-cat-<key>.webp, 16:9); the "All ..." link stays at the bottom. */
+.so-mega__lead .so-mega__img { display: block; margin-top: 14px; border-radius: 16px; overflow: hidden; aspect-ratio: 16 / 9; background: #cfdcf7; box-shadow: 0 6px 18px rgba(0, 86, 214, .14); }
+.so-mega__lead .so-mega__img img { display: block; width: 100%; height: 100%; max-width: 100%; object-fit: cover; transition: transform .3s ease; }
+.so-mega__lead:hover .so-mega__img img { transform: scale(1.03); }
+@media (prefers-reduced-motion: reduce) { .so-mega__lead:hover .so-mega__img img { transform: none; } }
 .tm-nav.so-mega-nav li a.so-mega-top:hover { color: #fff; }
 .so-dd:not([open]) > .so-dd__menu { display: none; }
 
