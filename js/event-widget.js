@@ -158,6 +158,7 @@
     if (!S || !S.config) { showFailed('no_global'); return; }
     var c = S.config;
     if (ev.checkoutUrl) c.checkoutUrl = ev.checkoutUrl;
+    if (ev.checkoutDomain) c.c3CheckoutDomain = ev.checkoutDomain;   // the hosted checkout's domain, set from the maps page (checkout.seatoutlet.com)
     c.enableLegalDisclosureMobile = true;
     c.preCheckoutButtonHtml = 'Continue to Payment';
     c.buyButtonContentHtml = '<div class="buy-btn">' + 'Buy Now' + '</div>';
