@@ -7119,7 +7119,7 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-pop-card__meta { font-size: 14px; color: #6e6e73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---- Event rows, final: one clean bordered card per event (date tile | title, time and city, venue, price). No button stack; the whole card is the link. ---- */
-.event-row-all { padding: 6px 0 14px; }
+.event-row-all { padding: 20px 20px 14px; }
 .event-row-all .performer-event-item { position: relative; display: grid !important; grid-template-columns: 68px minmax(0, 1fr); gap: 4px 14px; align-items: start; padding: 14px 14px 14px 12px; margin: 0 0 12px; border: 1px solid #e5e5ea !important; border-radius: 18px; background: #fff; box-shadow: none; transition: border-color .15s, box-shadow .15s; }
 .event-row-all .performer-event-item:last-child { border-bottom: 1px solid #e5e5ea !important; margin-bottom: 0; }
 .event-row-all .performer-event-item:hover { background: #fff; border-color: #0071e3 !important; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
