@@ -10,6 +10,8 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  * events. Canada has no counties, so Canadian cities are never queued.
  */
 const SO_COUNTY_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
+/** Canadian provinces and territories: no county lookup, but their cities are listed on the province page (status 'na' in city_counties). */
+const SO_PROVINCES = ['AB','BC','MB','NB','NL','NS','NT','NU','ON','PE','QC','SK','YT'];
 const SO_COUNTY_MAX_CITIES = 25;   // a county page asks the API for at most this many cities (the busiest first)
 
 /** County from a Census geocoder response: ['fips' => 48453, 'name' => 'Travis County'] or null. */
@@ -31,19 +33,33 @@ function soCountyFromCensus(float $lat, float $lng): ?array {
     return $body === false ? null : soCountyParseCensus($body);
 }
 
-/** Queue US cities for a county lookup: rows of [cityId, "Austin, TX"]. Cities already known are left alone. Returns how many were new. */
+/** "Austin, TX" to ['Austin', 'TX', true] (US, county lookup) or "Toronto, ON" to ['Toronto', 'ON', false] (Canada, listed only); null for anything else. */
+function soCountyPlace(string $label): ?array {
+    if (!preg_match('/^(.+),\s*([A-Z]{2})$/', $label, $m)) return null;
+    if (in_array($m[2], SO_COUNTY_STATES, true)) return [$m[1], $m[2], true];
+    if (in_array($m[2], SO_PROVINCES, true)) return [$m[1], $m[2], false];
+    return null;
+}
+
+/**
+ * Queue cities: rows of [cityId, "Austin, TX"]. US cities wait for a county lookup (cron/resolve-counties.php); Canadian cities are stored
+ * as 'na' (no lookup) so their province page can list them. Cities already known are left alone. Returns how many were new.
+ */
 function soCountyEnqueue(array $cities): int {
     $new = 0;
-    $st = MYSQLI->prepare("INSERT IGNORE INTO city_counties (city_id, city_name, state_abbr, status) VALUES (?, ?, ?, 'pending')");
-    if (!$st) return 0;
+    $us = MYSQLI->prepare("INSERT IGNORE INTO city_counties (city_id, city_name, state_abbr, status) VALUES (?, ?, ?, 'pending')");
+    $ca = MYSQLI->prepare("INSERT IGNORE INTO city_counties (city_id, city_name, state_abbr, status) VALUES (?, ?, ?, 'na')");
+    if (!$us || !$ca) return 0;
     foreach ($cities as [$id, $label]) {
         $id = (int) $id;
-        if ($id <= 0 || !preg_match('/^(.+),\s*([A-Z]{2})$/', (string) $label, $m) || !in_array($m[2], SO_COUNTY_STATES, true)) continue;
-        $name = $m[1]; $abbr = $m[2];
+        $place = $id > 0 ? soCountyPlace((string) $label) : null;
+        if (!$place) continue;
+        [$name, $abbr, $isUs] = $place;
+        $st = $isUs ? $us : $ca;
         $st->bind_param('iss', $id, $name, $abbr);
         if ($st->execute() && $st->affected_rows > 0) $new++;
     }
-    $st->close();
+    $us->close(); $ca->close();
     return $new;
 }
 
@@ -101,7 +117,7 @@ function soCountyFilter(array $cityIds): string {
 
 /** Cities in a state that have a page of their own (busiest first), as [cityId, "Austin, TX"]. Gives every city page an inbound link from its state page. */
 function soCitiesInState(string $abbr, int $limit = 60): array {
-    if (!in_array($abbr, SO_COUNTY_STATES, true)) return [];
+    if (!in_array($abbr, SO_COUNTY_STATES, true) && !in_array($abbr, SO_PROVINCES, true)) return [];
     $st = MYSQLI->prepare("SELECT city_id, city_name FROM city_counties WHERE state_abbr = ? AND events_n >= " . SO_SITEMAP_CITYPAGE_MIN . " ORDER BY events_n DESC, city_name ASC LIMIT " . max(1, $limit));
     if (!$st) return [];
     $st->bind_param('s', $abbr); $st->execute();
