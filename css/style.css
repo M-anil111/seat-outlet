@@ -2197,7 +2197,7 @@ h3,
   .search-bar-container {
     background-color: #fff;
     border-radius: 25px;
-    width: 50%;
+    width: 75%;   /* header search bar; 100% at 1280px and below */
     margin: 0 auto;
   }
   
