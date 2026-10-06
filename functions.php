@@ -2613,18 +2613,43 @@ function soFocusKeyword() {
 }
 
 /**
- * Output filter for the page body. The page's first <h1> (the keyword strip; on event pages the event title) is its one <h1>; any other <h1> a page template prints
- * becomes an <h2 class="h1 ..."> so it keeps its look (css/style.css styles ".h1" like "h1") and the page has a
- * single H1. Turn off with KEYWORD_H1=0 in the environment.
+ * Output filter for the page body: one <h1> per page, and it is the visible page title.
+ * The header prints the focus keyword in a small top strip (<h1 class="so-keyword-h1">). That strip is a label, not the page
+ * heading, so when the page has a real title the strip becomes a <p> and the title becomes the <h1>:
+ *   - a template that prints its own <h1> keeps it (the strip is turned into a <p>, any further <h1> becomes <h2 class="h1">);
+ *   - otherwise the first <h2> after the strip (the hero title every template shows) is promoted to <h1> and keeps its classes;
+ *   - a page with neither keeps the strip as its <h1>, so it is never left without one.
+ * Pages with no strip (event pages) keep the first <h1> they print. Turn off with KEYWORD_H1=0 in the environment.
  */
 function soSingleH1($html) {
-    $stripSeen = false; $demoted = false;
-    return preg_replace_callback('#<(/?)h1\b([^>]*)>#i', function ($m) use (&$stripSeen, &$demoted) {
+    $stripRe = '#<h1\b([^>]*\bso-keyword-h1\b[^>]*)>(.*?)</h1>#is';
+    if (preg_match($stripRe, $html, $sm, PREG_OFFSET_CAPTURE)) {
+        $stripEnd = $sm[0][1] + strlen($sm[0][0]);
+        $rest = substr($html, $stripEnd);
+        $hasOwn = preg_match('#<h1\b#i', $rest) === 1;
+        $h2Pos = null;
+        if (!$hasOwn && preg_match('#<h2\b#i', $rest, $hm, PREG_OFFSET_CAPTURE)) { $h2Pos = $hm[0][1]; }
+        if ($hasOwn || $h2Pos !== null) {
+            $p = '<p' . $sm[1][0] . '>' . $sm[2][0] . '</p>';
+            $html = substr($html, 0, $sm[0][1]) . $p . $rest;
+            if (!$hasOwn) {
+                $off = $sm[0][1] + strlen($p) + $h2Pos;
+                if (preg_match('#\G<h2\b([^>]*)>(.*?)</h2>#is', $html, $m2, 0, $off)) {
+                    $attrs = $m2[1];
+                    if (!preg_match('/\bclass\s*=\s*(["\'])(.*?)\1/i', $attrs)) { $attrs .= ' class="h1"'; }
+                    elseif (!preg_match('/\bclass\s*=\s*(["\'])(?:[^"\']*\s)?h1(?:\s[^"\']*)?\1/i', $attrs)) { $attrs = preg_replace('/\bclass\s*=\s*(["\'])(.*?)\1/i', 'class=$1$2 h1$1', $attrs, 1); }
+                    $html = substr($html, 0, $off) . '<h1' . $attrs . '>' . $m2[2] . '</h1>' . substr($html, $off + strlen($m2[0]));
+                }
+            }
+        }
+    }
+    $seen = false; $demoted = false;
+    return preg_replace_callback('#<(/?)h1\b([^>]*)>#i', function ($m) use (&$seen, &$demoted) {
         if ($m[1] === '/') {
             if ($demoted) { $demoted = false; return '</h2>'; }
             return $m[0];
         }
-        if (!$stripSeen) { $stripSeen = true; return $m[0]; }   // the first h1 on the page (the keyword strip, or the event title where there is no strip) stays
+        if (!$seen) { $seen = true; return $m[0]; }   // the first <h1> left on the page stays; any other becomes an <h2> that keeps its look
         $demoted = true;
         $attrs = $m[2];
         if (preg_match('/\bclass\s*=\s*(["\'])(.*?)\1/i', $attrs)) {
