@@ -330,7 +330,7 @@ include_once 'functions.php';
                     <!-- LEFT -->
                     <div class="d-flex align-items-center gap-4 so-header-left">
                         <!-- Logo -->
-                        <a href="/" class="tm-logo"><img src="/images/seatoutlet-logo.webp" alt="Seat Outlet" width="256" height="38" loading="eager"></a>
+                        <a href="/" class="tm-logo"><img src="/images/seatoutlet-logo-256.webp" srcset="/images/seatoutlet-logo-256.webp 1x, /images/seatoutlet-logo-512.webp 2x" alt="Seat Outlet" width="256" height="38" loading="eager"></a>
                     </div>
                     <!-- RIGHT -->
                     <div class="d-flex align-items-center gap-3">
@@ -437,7 +437,7 @@ include_once 'functions.php';
 
     <div class="offcanvas offcanvas-start so-menu" tabindex="-1" id="mobileMenu" aria-label="Menu">
         <div class="so-menu__head">
-            <a href="/" class="so-menu__logo"><img src="/images/seatoutlet-logo.webp" alt="Seat Outlet" width="180" height="27"></a>
+            <a href="/" class="so-menu__logo"><img src="/images/seatoutlet-logo-256.webp" srcset="/images/seatoutlet-logo-256.webp 1x, /images/seatoutlet-logo-512.webp 2x" alt="Seat Outlet" width="180" height="27" loading="lazy"></a>
             <button type="button" class="so-menu__close" data-bs-dismiss="offcanvas" aria-label="Close menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
         </div>
         <div class="so-menu__body" data-so-menu>

@@ -20,7 +20,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
     <!-- Column 1 -->
     <div class="tm-footer-col brand">
-      <div class="logo fs-2" style="width:256px; height:auto;"> <a href="/" class="tm-logo"><img src="/images/seatoutlet-logo.webp" alt="Seat Outlet" width="256" height="38"></a></div>
+      <div class="logo fs-2" style="width:256px; height:auto;"> <a href="/" class="tm-logo"><img src="/images/seatoutlet-logo-256.webp" srcset="/images/seatoutlet-logo-256.webp 1x, /images/seatoutlet-logo-512.webp 2x" alt="Seat Outlet" width="256" height="38" loading="lazy"></a></div>
 
       <p class="section-title">Let’s connect</p>
       <div class="social-icons">
@@ -155,7 +155,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
         <div class="space-between d-flex pe-2">
           Website Designed by 
           <a class="px-2 footer-bottom-logo" style="color: #e1c24e;" href="https://www.jaymehta.co/" target="_blank" rel="nofollow noopener" title="JM Digital">
-            <img src="/images/jm.webp" alt="JM Digital" style="max-width:100px;" width="100" height="19">
+            <img src="/images/jm-200.webp" alt="JM Digital" style="max-width:100px;" width="100" height="19" loading="lazy">
           </a> | 
         </div> 
         <div class="space-between d-flex">
