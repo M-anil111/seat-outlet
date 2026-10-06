@@ -86,14 +86,13 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
     </ol></nav>
     <?php } ?>
     <h1 class="ev-title so-evbar__title"><?php
-      // The page's one H1 (no keyword strip on event pages): the spec's "<Performer> Concert Tickets in <City>, <ST>". Showings of one event
-      // share a name, so day and time follow it: each page gets its own heading.
+      // The page's one H1 (no keyword strip on event pages): the spec's "Buy <Performer> Tickets for <Venue> Show in <City>, <ST>". The date
+      // is in the line below and in the title tag, so the heading stays one readable line.
       echo $h($evSpec['h1']);
-      $evH1Bits = array_filter([$eventTimestamp ? date('M j, Y', $eventTimestamp) . ($eventTimeText !== '' ? ', ' . $eventTimeText : '') : '']);
-      if ($evH1Bits) { echo ' <span class="so-evbar__sub">' . $h(implode(', ', $evH1Bits)) . '</span>'; }
     ?></h1>
-    <?php if ($eventVenueParts || $eventInfoLink) { ?>
+    <?php if ($eventTimestamp || $eventVenueParts || $eventInfoLink) { ?>
     <p class="so-evbar__meta"><?php
+      if ($eventTimestamp) { echo '<span><strong>' . $h(date('D, M j, Y', $eventTimestamp)) . ($eventTimeText !== '' ? ' &middot; ' . $h($eventTimeText) : '') . '</strong></span>'; }
       if ($eventVenueParts) {
         $out = [];
         foreach ($eventVenueParts as [$href, $label]) {
