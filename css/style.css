@@ -3517,7 +3517,6 @@ h3,
     border-radius: 14px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.12);
     border: none;
-    padding-bottom: 60px;
 }
 
 /* Month title */
@@ -3548,10 +3547,10 @@ h3,
 
 /* Footer */
 .fp-footer {
-    position: absolute;
-    bottom: 10px;
-    left: 15px;
-    right: 15px;
+    position: static;
+    clear: both;
+    padding: 8px 12px 12px;
+    border-top: 1px solid #eef1f6;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -3583,6 +3582,17 @@ h3,
 }
 
 /* Responsive */
+/* Tablet: centre the two-month header calendar so it is not cut off at the right edge */
+@media (min-width: 769px) and (max-width: 991.98px) {
+    .so-date-picker-custom {
+        left: calc(50% - 309px) !important;
+        right: auto !important;
+    }
+    .so-date-picker-custom::before,
+    .so-date-picker-custom::after {
+        display: none;
+    }
+}
 @media (max-width: 768px) {
 
     .flatpickr-calendar {
