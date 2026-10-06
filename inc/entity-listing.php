@@ -198,7 +198,7 @@ function soRenderEntityListing(array $c): void {
                             <script>(function(){var s=document.getElementById("eventsSection");if(!s)return;var w=document.querySelector("[data-so-rows-more]");if(!w)return;s.classList.add("so-rows--js");w.hidden=false;w.querySelector("[data-so-rows-toggle]").addEventListener("click",function(){s.classList.remove("so-rows--capped","so-rows--js");w.remove();var lm=document.querySelector(".load-more-wrapper");if(lm)lm.classList.remove("so-rows__lm-hold");});var lm=document.querySelector(".load-more-wrapper");if(lm)lm.classList.add("so-rows__lm-hold");})();</script>
                             <?php } ?>
                             <?php if ($totalPages > 1) { ?>
-                                <div class="load-more-wrapper text-center mt-5">
+                                <div class="load-more-wrapper text-center mt-5 mb-3">
                                     <div class="load-progress mx-auto mb-3">
                                         <div class="small mb-2">Loaded <strong id="loadedCount"><?php echo $count; ?></strong> out of <strong id="totalCount"><?php echo $total; ?></strong> events</div>
                                         <div class="progress progress-thin"><div class="progress-bar" id="progressBar" style="width: <?php echo $percent; ?>%;"></div></div>
