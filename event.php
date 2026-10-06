@@ -165,6 +165,7 @@ $soEventData = [
   'hasTickets' => !empty($event['_metadata']['hasTickets']),
   'widgetUrl'   => $mapScriptUrl,
   'checkoutUrl' => TN_CHECKOUT_URL,
+  'checkoutDomain' => (string) parse_url(TN_CHECKOUT_URL, PHP_URL_HOST),   // Seatics.config.c3CheckoutDomain: the host only (checkout.seatoutlet.com)
   'venueId'  => (int) ($eventVenueId ?? 0),
 ];
 ?>
