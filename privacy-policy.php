@@ -8,8 +8,8 @@
 /* Content layout: simple, step-by-step */
 
 .privacy-page .content-wrapper {
-    max-width: 900px;
-    margin: 0 auto;
+    max-width: 900px;   /* a readable line length for legal text, left-aligned with the page heading above it */
+    margin: 0;
 }
 
 .privacy-page .policy-section {

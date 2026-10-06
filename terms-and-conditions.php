@@ -45,7 +45,7 @@
     margin: 0 auto;
 }
 
-.terms-page .content-wrap { max-width: 900px; margin: 0 auto; }
+.terms-page .content-wrap { max-width: 900px; margin: 0; }   /* readable line length, left-aligned with the heading */
 
 .terms-page .policy-section {
     padding: 28px 0;

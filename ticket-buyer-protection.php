@@ -4,8 +4,8 @@
     /* Content layout: simple, step-by-step */
 
     .privacy-page .content-wrapper {
-        max-width: 900px;
-        margin: 0 auto;
+        max-width: none;   /* the page container sets the width, like the home page copy */
+        margin: 0;
     }
 
     .privacy-page .policy-section {
