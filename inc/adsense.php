@@ -75,7 +75,7 @@ function soAdsenseFooterScript(): string {
  * right after it. A page can turn it off with $soNoAds = true (checkout and confirmation pages), and prints its own with
  * soAdSlot('banner') when it needs a different place (then nothing is added). Pages without a hero get no banner.
  */
-const SO_AD_HERO_CLASSES = ['hero-section', 'hero-so-why', 'vp-hero', 'tickets-hero-section', 'search-hero-section', 'performers-hero-section', 'mc-hero', 'is-hero', 'asm-hero', 'so-g-hero', 'so-evhero', 'so-ent-hero', 'so-art__hero', 'so-np__head', 'section-featured-header', 'so-hero2', 'results-header'];
+const SO_AD_HERO_CLASSES = ['hero-section', 'hero-so-why', 'vp-hero', 'tickets-hero-section', 'search-hero-section', 'performers-hero-section', 'mc-hero', 'is-hero', 'asm-hero', 'so-g-hero', 'so-evhero', 'so-evbar', 'so-ent-hero', 'so-art__hero', 'so-np__head', 'section-featured-header', 'so-hero2', 'results-header'];
 
 function soAdInjectBanner(string $html): string {
     if (!empty($GLOBALS['soNoAds'])) return $html;

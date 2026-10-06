@@ -7923,3 +7923,17 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 
 /* "Where it is playing" lists: only the first rows show with JavaScript until "Show all"; every link stays in the page. */
 .so-list--js .so-list__item--extra { display: none; }
+
+/* Event page: slim title strip above the seat map (replaces the old hero card), so the map and the tickets start above the fold. */
+.so-evbar { background: #f5f5f7; padding: 8px 0 6px; }
+.so-evbar > .container { max-width: 1240px; }
+.so-evbar__title { font-size: clamp(20px, 2.4vw, 28px); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; color: #1d1d1f; margin: 2px 0 4px; overflow-wrap: anywhere; }
+.so-evbar__sub { display: block; font-size: 15px; font-weight: 600; letter-spacing: 0; color: #0056d6; margin-top: 2px; }
+.so-evbar__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; margin: 0 0 2px; font-size: 15px; line-height: 1.4; color: #6e6e73; }
+.so-evbar__meta a { display: inline-block; padding: 14px 2px; margin: -14px -2px; color: inherit; text-decoration: none; }   /* 44px tap area without a taller line */
+.so-evbar__meta a:hover { color: #0056d6; text-decoration: underline; }
+.so-evbar__meta .so-evbar__more { color: #0056d6; font-weight: 600; }
+.so-evbar__note { margin: 0; font-size: 12px; line-height: 1.4; color: #6e6e73; }
+.so-evbar__note a { color: #0b3c91; font-weight: 600; }
+@media (min-width: 992px) { .so-evbar__title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 14px; } .so-evbar__sub { display: inline; margin: 0; } }
+@media (max-width: 575.98px) { .so-evbar { padding: 6px 0 4px; } .so-evbar__title { font-size: 19px; } .so-evbar__sub { font-size: 14px; } .so-evbar__meta { font-size: 14px; } }

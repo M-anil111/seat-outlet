@@ -76,15 +76,8 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
   $eventInfoLink = ['/' . $categoryCityPrefix . '/' . soSlug('city', $eventCityLabel, $eventCityId), 'More events in ' . $eventCityLabel];
 }
 ?>
-<?php
-$evType = imageEntityTypeForPerformer($event['defaultCategory'] ?? []);
-$evWho  = (string) ($primaryPerformer['name'] ?? ($event['text']['name'] ?? ''));
-$evImg  = getEntityImage($evType, $evWho, ['category' => $event['defaultCategory'] ?? [], 'resolve' => false]);
-$evReal = in_array($evImg['status'] ?? '', ['ok', 'manual'], true) && ($evImg['url'] ?? '') !== '';
-$evHue  = hexdec(substr(md5($evWho), 0, 4)) % 360;
-$evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['name'] ?? '')));
-?>
-<section class="so-evhero">
+<?php /* Slim title strip: the one H1, where and when, and the resale disclosure. The seat map and the tickets follow straight away, above the fold. */ ?>
+<section class="so-evbar">
   <div class="container">
     <?php if (!empty($evTrail)) { /* the same trail as the BreadcrumbList in the head: up to the category and the performer */ ?>
     <nav class="so-crumbs" aria-label="Breadcrumb"><ol>
@@ -92,129 +85,28 @@ $evCatLabel = ucwords(strtolower((string) ($event['defaultCategory']['text']['na
       <li aria-current="page"><?php echo $h($evCrumbLabel ?? ($event['text']['name'] ?? '')); ?></li>
     </ol></nav>
     <?php } ?>
-    <div class="so-evhero__card">
-      <div class="so-evhero__media" style="--so-hue:<?php echo (int) $evHue; ?>">
-        <?php if ($evReal) { ?>
-          <img src="<?php echo $h($evImg['url']); ?>" alt="<?php echo $h($evSpec['alt']); ?>" width="480" height="480" fetchpriority="high" decoding="async">
-        <?php } else { ?>
-          <span class="so-evhero__initials" aria-hidden="true"><?php echo $h(soInitials($evWho)); ?></span>
-        <?php } ?>
-      </div>
-      <div class="so-evhero__main">
-        <?php if ($eventTimestamp) { ?>
-          <p class="so-evhero__when"><?php echo $h(date('l, F j, Y', $eventTimestamp)); ?><?php echo $eventTimeText !== '' ? ' &middot; ' . $h($eventTimeText) : ''; ?></p>
-        <?php } ?>
-        <h1 class="ev-title so-evhero__title"><?php
-          // The page's one H1 (no keyword strip on event pages): the spec's "<Performer> Concert Tickets in <City>, <ST>". Showings of one event
-          // share a name, so venue, day and time follow it: each page gets its own heading.
-          echo $h($evSpec['h1']);
-          $evH1Bits = array_filter([$eventTimestamp ? date('M j, Y', $eventTimestamp) . ($eventTimeText !== '' ? ', ' . $eventTimeText : '') : '']);
-          if ($evH1Bits) { echo ' <span class="so-evhero__sub">' . $h(implode(', ', $evH1Bits)) . '</span>'; }
-        ?></h1>
-        <?php
-          $evChips = [];
-          $evTickets = (int) ($event['_metadata']['ticketCount'] ?? 0);
-          $evRank = (int) ($event['salesRank'] ?? 0);
-          $evDays = $eventTimestamp ? (int) floor(($eventTimestamp - strtotime('today')) / 86400) : null;
-          if ($evRank >= 1 && $evRank <= 3) { $evChips[] = ['hot', 'Top seller right now']; }
-          if ($evTickets > 0 && $evTickets <= 30) { $evChips[] = ['warn', 'Only ' . $evTickets . ' tickets listed']; }
-          if ($evDays !== null && $evDays >= 0 && $evDays <= 14) { $evChips[] = ['soon', $evDays === 0 ? 'Happening today' : ($evDays === 1 ? 'Tomorrow' : 'In ' . $evDays . ' days')]; }
-          if ($evChips) { ?>
-          <ul class="so-evhero__chips" aria-label="Event status"><?php foreach ($evChips as [$ck, $cl]) { ?><li class="so-chipx so-chipx--<?php echo $ck; ?>"><?php echo $h($cl); ?></li><?php } ?></ul>
-        <?php } ?>
-        <?php if ($eventVenueParts) { ?>
-          <p class="so-evhero__venue"><i class="bi bi-geo-alt" aria-hidden="true"></i><span><?php
-            $out = [];
-            foreach ($eventVenueParts as [$href, $label]) {
-              $out[] = $href ? '<a href="' . $h($href) . '">' . $h($label) . '</a>' : $h($label);
-            }
-            echo implode("\u{2060}, ", $out);   // word joiner: the comma never starts a new line after a link
-          ?></span></p>
-        <?php } ?>
-        <div class="so-evhero__actions">
-          <button type="button" class="so-action so-action--icon so-action--save" data-so-save aria-pressed="false"><i class="bi bi-heart" aria-hidden="true"></i><span>Save</span></button>
-          <button type="button" class="so-action so-action--icon" data-so-share><i class="bi bi-share" aria-hidden="true"></i><span>Share</span></button>
-          <?php if ($eventTimestamp) { ?>
-            <div class="so-cal" data-so-cal>
-              <button type="button" class="so-action so-action--icon" data-so-cal-toggle aria-expanded="false">
-                <i class="bi bi-calendar-plus" aria-hidden="true"></i><span>Add to calendar</span>
-              </button>
-              <div class="so-cal__menu" hidden>
-                <a data-cal="google" target="_blank" rel="noopener">Google Calendar</a>
-                <a data-cal="outlook" target="_blank" rel="noopener">Outlook.com</a>
-                <a data-cal="office" target="_blank" rel="noopener">Microsoft 365</a>
-                <a data-cal="yahoo" target="_blank" rel="noopener">Yahoo Calendar</a>
-                <button type="button" data-cal="ics">Apple Calendar or other (.ics file)</button>
-              </div>
-            </div>
-          <?php } ?>
-          <?php if ($eventInfoLink) { ?>
-            <a class="so-action so-action--text" href="<?php echo $h($eventInfoLink[0]); ?>"><span>More dates</span></a>
-          <?php } ?>
-          <button type="button" class="so-action so-action--text so-action--saved" data-so-saved-open aria-haspopup="dialog" hidden><i class="bi bi-heart-fill" aria-hidden="true"></i><span>Saved (<b data-so-saved-count>0</b>)</span></button>
-        </div>
-        <span class="visually-hidden" id="so-action-status" role="status" aria-live="polite"></span>
-      </div>
-      <div class="so-evhero__buy">
-        <p class="so-evhero__price"><?php if ($eventLowPrice !== '') { ?><span>Price per ticket</span> <strong>From <?php echo $h($eventLowPrice); ?></strong><?php } else { ?><span>Price per ticket</span><?php } ?></p>
-        <a class="so-evhero__cta ev-cta-btn" href="#tn-maps" data-so-cta>View tickets</a>
-        <ul class="so-evhero__trust" aria-label="Buyer protection">
-          <li><a href="/worry-free-guarantee"><i class="bi bi-shield-check" aria-hidden="true"></i>100% Worry-Free Guarantee</a></li>
-          <li><a href="/ticket-buyer-protection">Buyer protection</a></li>
-          <li><a href="/ticket-customer-service">Questions? Contact us</a></li>
-        </ul>
-        <p class="so-evhero__note">Resale marketplace. Prices are set by sellers and may be above or below face value. All prices in USD.</p>
-      </div>
-    </div>
+    <h1 class="ev-title so-evbar__title"><?php
+      // The page's one H1 (no keyword strip on event pages): the spec's "<Performer> Concert Tickets in <City>, <ST>". Showings of one event
+      // share a name, so day and time follow it: each page gets its own heading.
+      echo $h($evSpec['h1']);
+      $evH1Bits = array_filter([$eventTimestamp ? date('M j, Y', $eventTimestamp) . ($eventTimeText !== '' ? ', ' . $eventTimeText : '') : '']);
+      if ($evH1Bits) { echo ' <span class="so-evbar__sub">' . $h(implode(', ', $evH1Bits)) . '</span>'; }
+    ?></h1>
+    <?php if ($eventVenueParts || $eventInfoLink) { ?>
+    <p class="so-evbar__meta"><?php
+      if ($eventVenueParts) {
+        $out = [];
+        foreach ($eventVenueParts as [$href, $label]) {
+          $out[] = $href ? '<a href="' . $h($href) . '">' . $h($label) . '</a>' : $h($label);
+        }
+        echo '<span>' . implode("\u{2060}, ", $out) . '</span>';   // word joiner: the comma never starts a new line after a link
+      }
+      if ($eventInfoLink) { echo '<a class="so-evbar__more" href="' . $h($eventInfoLink[0]) . '">More dates</a>'; }
+    ?></p>
+    <?php } ?>
+    <p class="so-evbar__note">Resale marketplace. Prices are set by sellers and may be above or below face value. All prices in USD. <a href="/worry-free-guarantee">100% Worry-Free Guarantee</a></p>
   </div>
 </section>
-<?php if (!$evReal) { ?>
-<script>
-// No picture stored yet: ask for it once (the server only looks up names it has queued), keep the initials tile otherwise.
-(function () {
-  var media = document.querySelector('.so-evhero__media');
-  if (!media) return;
-  setTimeout(function () {
-    fetch('/ajax/resolve-images.php', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: [{ name: <?php echo json_encode($evWho); ?>, type: <?php echo json_encode($evType); ?> }] }) })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        var url = d && d.images && d.images[0];
-        if (!url) return;
-        var img = new Image(); img.alt = <?php echo json_encode($evWho); ?>; img.width = 480; img.height = 480;
-        img.onload = function () { media.innerHTML = ''; media.appendChild(img); };
-        img.src = url;
-      }).catch(function () {});
-  }, 1200);
-})();
-</script>
-<?php } ?>
-
-<?php $evLowValue = (float) ($event['pricingInfo']['lowPrice']['value'] ?? 0); ?>
-<?php if ($evLowValue > 0) { ?>
-<section class="so-pricealert" aria-label="Price alert">
-  <div class="container">
-    <details class="so-pricealert__box">
-      <summary><i class="bi bi-bell" aria-hidden="true"></i><span>Alert me if the price drops</span></summary>
-      <div class="so-pricealert__body">
-        <?php echo soLeadForm([
-          'source' => 'event-price',
-          'title' => 'We will email you if the lowest price drops',
-          'text' => 'Lowest listed price right now: ' . $h($eventLowPrice !== '' ? $eventLowPrice : '$' . number_format($evLowValue, 0)) . '. We only email when it falls at least 10% below that. Prices are set by sellers and can also go up.',
-          'button' => 'Alert me',
-          'interest_type' => 'event',
-          'interest_id' => (int) $id,
-          'interest_name' => $evNmForLead,
-          'names' => false,
-          'class' => 'so-nl--compact',
-          'alert_kind' => 'price',
-          'baseline_price' => $evLowValue,
-        ]); ?>
-      </div>
-    </details>
-  </div>
-</section>
-<?php } ?>
 <div id="tn-maps" class="seatics so-seatmap" role="region" aria-label="<?php echo $h('Interactive seating chart and rows map for ' . ($eventVenueName !== '' ? $eventVenueName : 'the venue') . ' during ' . ($event['text']['name'] ?? 'this event')); ?>" aria-live="polite"></div>
 <noscript><p class="so-seatmap__nojs container py-4">The seat map needs JavaScript. Please turn it on, or <a href="/ticket-customer-service">contact us</a> and we will help you find tickets.</p></noscript>
 <div id="so-no-tickets" class="so-no-tickets d-none" role="region" aria-labelledby="so-no-tickets-title" tabindex="-1">
