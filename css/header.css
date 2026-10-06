@@ -60,7 +60,7 @@ h3,
 
 /*---------------------Topbar css stat ----------------------*/
 .header-top-section .keyword-topbar {background: #2556e0;}
-.header-top-section .keyword-topbar p {font-size: 10px; font-weight: 600;}
+.header-top-section .keyword-topbar p {font-size: 12px; font-weight: 600;}
 .header-top-section  .tm-topbar {background: #567ff9; color: #fff; padding: 0px 0;}
 .header-top-section .top-ticker {position: sticky; top: 0; overflow: hidden; height: 42px; align-items: center;}
 .header-top-section .ticker-track {white-space: nowrap;}

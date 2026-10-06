@@ -29,7 +29,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
             <div class="fw-bold" id="offcanvasVenue"></div>
             <div class="fw-bold mb-1" id="offcanvasLocation"></div>
             <div class="text-muted mb-4" id="offcanvasTitle"></div>            
-            <a href="#" class="btn btn-primary d-flex align-items-center justify-content-center gap-2" id="offcanvasId">
+            <a href="/" class="btn btn-primary d-flex align-items-center justify-content-center gap-2" id="offcanvasId">
                 Buy Tickets
                 <i class="bi bi-chevron-right"></i>
             </a>
@@ -46,7 +46,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
             <div class="venue-label fs-5 fw-semibold mb-1">
                 VENUE
             </div>
-            <a href="#" class="venue-link fs-6" id="venue-link" aria-label="Venue details"></a>
+            <a class="venue-link fs-6" id="venue-link" aria-label="Venue details"></a>
         </div>
 	</div>
 </div>
