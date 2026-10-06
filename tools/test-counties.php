@@ -16,5 +16,10 @@ ok(soCountyFilter([5, 6, 6, '7']) === '(city/id eq 5 or city/id eq 6 or city/id 
 $many = soCountyFilter(range(1, 60));
 ok(substr_count($many, 'city/id eq') === SO_COUNTY_MAX_CITIES, 'filter capped at SO_COUNTY_MAX_CITIES');
 ok(in_array('TX', SO_COUNTY_STATES, true) && !in_array('ON', SO_COUNTY_STATES, true), 'US states in, Canadian provinces out');
+ok(soCountyPlace('Austin, TX') === ['Austin', 'TX', true], 'US city label');
+ok(soCountyPlace('Toronto, ON') === ['Toronto', 'ON', false], 'Canadian city label is listed, not looked up');
+ok(soCountyPlace('St. John\'s, NL') === ['St. John\'s', 'NL', false], 'apostrophe and dot kept');
+ok(soCountyPlace('London, GB') === null && soCountyPlace('Austin') === null && soCountyPlace('') === null, 'unknown region or no region is skipped');
+ok(!in_array('ON', SO_COUNTY_STATES, true) && in_array('ON', SO_PROVINCES, true), 'provinces are a separate list');
 echo $fail === 0 ? "counties ok\n" : "$fail failure(s)\n";
 exit($fail === 0 ? 0 : 1);
