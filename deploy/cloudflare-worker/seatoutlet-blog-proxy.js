@@ -18,7 +18,7 @@ var DEFAULT_LOCATION = {
   lat: "30.29710",
   lng: "-97.81810"
 };
-var LIVE_REPO_COMMIT = "53ae0576fa93139deee8385fbc49b50b69d6fdf8";
+var LIVE_REPO_COMMIT = "32fd011361236977c2121f8248ff1dba8e37331d";
 var REPO_JS_ASSETS = new Set([
   "/js/main.min.js",
   "/js/home.min.js"
@@ -97,7 +97,7 @@ var index_default = {
     if (REPO_JS_ASSETS.has(url.pathname)) {
       return repoAssetResponse(url.pathname);
     }
-    const upstreamUrl = new URL(`${url.pathname}${url.search}`, BETA_ORIGIN);
+    const upstreamUrl = legacyPhpUrl(url) || new URL(`${url.pathname}${url.search}`, BETA_ORIGIN);
     const upstreamHeaders = new Headers(request.headers);
     upstreamHeaders.set("Accept-Encoding", "identity");
     upstreamHeaders.set("Host", "beta.seatoutlet.com");
@@ -116,6 +116,9 @@ var index_default = {
     if (response.status >= 400 && BLOG_POSTS[url.pathname]) {
       return renderPostFallback(BLOG_POSTS[url.pathname], url);
     }
+    if (response.status >= 400 && url.pathname === "/policies") {
+      return renderPoliciesFallback(url);
+    }
     // The browser stylesheet for the XML sitemaps must be sent as text/xsl or browsers ignore it (search engines never read it).
     if (url.pathname === "/sitemap.xsl" && response.ok) {
       const headers = new Headers(response.headers);
@@ -128,6 +131,77 @@ var index_default = {
     return rewriteResponse(response, url);
   }
 };
+function legacyPhpUrl(url) {
+  const target = new URL(url.pathname + url.search, BETA_ORIGIN);
+  let match = url.pathname.match(/^\/(event-city|concerts-city|concerts-state|concert-country|concert-venue|events-state|festivals-city|festivals-country|festivals-state|festivals-venue|sports-city|sports-state|theater-city|theater-country|theater-state|theater-venue|theatre-city|theatre-country|theatre-state|theatre-venue|state|country)\/([^/]+)\/?$/);
+  if (match) {
+    target.pathname = "/" + match[1] + ".php";
+    target.searchParams.set("slug", match[2]);
+    return target;
+  }
+  match = url.pathname.match(/^\/(artist-city|artist-state|artist-country|artist-venue)\/([^/]+)\/([^/]+)\/?$/);
+  if (match) {
+    target.pathname = "/" + match[1] + ".php";
+    target.searchParams.set("slug", match[2]);
+    target.searchParams.set("loc", match[3]);
+    return target;
+  }
+  match = url.pathname.match(/^\/(last-minute-tickets|weekend-events|cheap-tickets|best-events|county)\/([^/]+)\/?$/);
+  if (match) {
+    target.pathname = "/" + match[1] + ".php";
+    target.searchParams.set("slug", match[2]);
+    return target;
+  }
+  match = url.pathname.match(/^\/(christmas-shows-near-me|new-years-eve-events|valentines-day-events|st-patricks-day-events|easter-weekend-events|mothers-day-weekend-events|memorial-day-weekend-events|victoria-day-weekend-events|fathers-day-weekend-events|canada-day-events|july-4th-events|labor-day-weekend-events|labour-day-weekend-events|halloween-events|thanksgiving-weekend-events|canadian-thanksgiving-weekend-events)-in-([^/]+)\/?$/);
+  if (match) {
+    target.pathname = "/holiday-city.php";
+    target.searchParams.set("holiday", match[1]);
+    target.searchParams.set("slug", match[2]);
+    return target;
+  }
+  match = url.pathname.match(/^\/blog\/([a-z0-9-]+)\/?$/);
+  if (match) {
+    target.pathname = "/blog.php/" + match[1];
+    target.searchParams.set("slug", match[1]);
+    return target;
+  }
+  return null;
+}
+async function renderPoliciesFallback(requestUrl) {
+  const shellResponse = await fetch(BETA_ORIGIN + "/terms-and-conditions", {
+    headers: { "Accept-Encoding": "identity" },
+    cf: { cacheTtl: 300, cacheEverything: true }
+  });
+  if (!shellResponse.ok) {
+    return new Response("Ticket policies are temporarily unavailable.", {
+      status: 503,
+      headers: { "content-type": "text/plain; charset=UTF-8", "cache-control": "no-store" }
+    });
+  }
+  let body = await shellResponse.text();
+  const liveOrigin = requestUrl.protocol + "//" + requestUrl.hostname;
+  body = body.replaceAll(BETA_ORIGIN, liveOrigin)
+    .replaceAll("https:\\/\\/beta.seatoutlet.com", liveOrigin.replaceAll("/", "\\/"))
+    .replace(/<title>[^<]*<\/title>/i, "<title>Ticket Policies for Orders on Seat Outlet</title>")
+    .replace(/<meta name="description" content="[^"]*">/i, '<meta name="description" content="Read the ticket purchase, delivery and refund policies that apply to orders placed on Seat Outlet before checkout.">')
+    .replace(/<link rel="canonical" href="[^"]*">/i, '<link rel="canonical" href="' + CANONICAL_ORIGIN + '/policies">')
+    .replace(/<h1 class="so-keyword-h1">[\s\S]*?<\/h1>/i, '<h1 class="so-keyword-h1">Ticket Policies</h1>');
+  const policiesMain = `<main id="main" tabindex="-1" data-so-main>
+<section class="py-5"><div class="container" style="max-width:920px">
+<h1 class="fs-2 fw-bold mb-2">Ticket Policies</h1>
+<p class="text-muted mb-4">These policies apply to tickets ordered on Seat Outlet, including purchase, delivery and refund terms. Please read them before checkout.</p>
+<div id="so-ticket-policies"><script src="https://tickettransaction.com/?https=true&amp;bid=9250&amp;sitenumber=30&amp;tid=600"></script></div>
+<noscript><p>This page needs JavaScript to show the ticket policies. You can also read our <a href="/terms-and-conditions">Terms of Use</a>, <a href="/privacy-policy">Privacy Policy</a> and <a href="/worry-free-guarantee">guarantee</a>, or email <a href="mailto:info@seatoutlet.com">info@seatoutlet.com</a>.</p></noscript>
+<p class="small mt-4 mb-0">Questions about an order? Visit <a href="/ticket-customer-service">Customer Service</a> or email <a href="mailto:info@seatoutlet.com">info@seatoutlet.com</a>.</p>
+</div></section></main>`;
+  body = body.replace(/<main id="main"[\s\S]*?<\/main>/i, policiesMain);
+  const headers = new Headers(shellResponse.headers);
+  headers.set("content-type", "text/html; charset=UTF-8");
+  headers.set("cache-control", "public, max-age=0, s-maxage=300");
+  headers.delete("content-length");
+  headers.delete("content-encoding");
+  return new Response(body, { status: 200, headers });
+}
 async function repoAssetResponse(pathname) {
   const assetUrl = `https://raw.githubusercontent.com/M-anil111/seat-outlet/${LIVE_REPO_COMMIT}${pathname}`;
   const response = await fetch(assetUrl, {
