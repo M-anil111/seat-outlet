@@ -99,6 +99,19 @@ function soCountyFilter(array $cityIds): string {
     return '(' . implode(' or ', array_map(fn($i) => "city/id eq $i", $cityIds)) . ')';
 }
 
+/** Cities in a state that have a page of their own (busiest first), as [cityId, "Austin, TX"]. Gives every city page an inbound link from its state page. */
+function soCitiesInState(string $abbr, int $limit = 60): array {
+    if (!in_array($abbr, SO_COUNTY_STATES, true)) return [];
+    $st = MYSQLI->prepare("SELECT city_id, city_name FROM city_counties WHERE state_abbr = ? AND events_n >= " . SO_SITEMAP_CITYPAGE_MIN . " ORDER BY events_n DESC, city_name ASC LIMIT " . max(1, $limit));
+    if (!$st) return [];
+    $st->bind_param('s', $abbr); $st->execute();
+    $out = [];
+    $r = $st->get_result();
+    while ($r && ($row = $r->fetch_assoc())) $out[] = [(int) $row['city_id'], $row['city_name'] . ', ' . $abbr];
+    $st->close();
+    return $out;
+}
+
 /** Counties in a state, as [fips, label] sorted by name (state abbreviation like "TX"). */
 function soCountiesInState(string $abbr, int $limit = 60): array {
     if (!in_array($abbr, SO_COUNTY_STATES, true)) return [];

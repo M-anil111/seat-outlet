@@ -265,6 +265,15 @@ function soRenderEntityListing(array $c): void {
                     if ($kind === 'state') {
                         $soAbbr = (string) ($events[0]['stateProvince']['text']['abbr'] ?? '');
                         $soCounties = $soAbbr !== '' ? soCountiesInState($soAbbr) : [];
+                        $soStCities = $soAbbr !== '' ? soCitiesInState($soAbbr) : [];
+                        if ($soStCities) { ?>
+                        <div class="tab-section content-section-detail" id="state-cities">
+                            <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Cities in <?php echo $h($label); ?></h2>
+                            <div class="so-linkchips">
+                                <?php foreach ($soStCities as [$cid, $cl]) { ?><a class="so-linkchip" href="/city/<?php echo $h(soSlug('city', $cl, $cid)); ?>"><?php echo $h($cl); ?></a><?php } ?>
+                            </div>
+                        </div>
+                    <?php }
                         if ($soCounties) { ?>
                         <div class="tab-section content-section-detail" id="counties">
                             <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Counties in <?php echo $h($label); ?></h2>
