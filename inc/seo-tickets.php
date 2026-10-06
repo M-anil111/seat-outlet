@@ -9,12 +9,12 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 <meta property="og:description" content="Buy tickets online for concerts, sports, theater and festivals. Search every upcoming event, compare seats and prices, and check out with a 100% guarantee.">
 <meta property="og:url" content="<?php echo HOME_URL; ?>/tickets">
 <meta property="og:type" content="website">
-<meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
+<meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-share-1200x630.jpg">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Buy Tickets Online&#x2014;All Events, Secure Checkout&#x2014;Seat Outlet">
 <meta name="twitter:description" content="Buy tickets online for concerts, sports, theater and festivals. Search every upcoming event, compare seats and prices, and check out with a 100% guarantee.">
-<meta name="twitter:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
+<meta name="twitter:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-share-1200x630.jpg">
 
 <?php
 $images = [

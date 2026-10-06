@@ -218,9 +218,10 @@ include_once 'functions.php';
         <meta property="og:url" content="<?php echo htmlspecialchars($pageCanonicalUrl, ENT_QUOTES, 'UTF-8'); ?>">
         <?php } ?>
         <meta property="og:type" content="<?php echo htmlspecialchars($pageOgType ?? 'website', ENT_QUOTES, 'UTF-8'); ?>">
-        <meta property="og:image" content="<?php echo htmlspecialchars($pageOgImage ?? (HOME_URL . '/images/seatoutlet-logo.webp'), ENT_QUOTES, 'UTF-8'); ?>">
+        <meta property="og:image" content="<?php echo htmlspecialchars($pageOgImage ?? (HOME_URL . '/images/seatoutlet-share-1200x630.jpg'), ENT_QUOTES, 'UTF-8'); ?>">
+        <?php if (!isset($pageOgImage)) { ?><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><?php } ?>
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:image" content="<?php echo htmlspecialchars($pageOgImage ?? (HOME_URL . '/images/seatoutlet-logo.webp'), ENT_QUOTES, 'UTF-8'); ?>">
+        <meta name="twitter:image" content="<?php echo htmlspecialchars($pageOgImage ?? (HOME_URL . '/images/seatoutlet-share-1200x630.jpg'), ENT_QUOTES, 'UTF-8'); ?>">
         <meta name="twitter:title" content="<?php echo htmlspecialchars($pageMetaTitle, ENT_QUOTES, 'UTF-8'); ?>">
         <?php if (!empty($pageMetaDescription)) { ?>
         <meta name="twitter:description" content="<?php echo htmlspecialchars($pageMetaDescription, ENT_QUOTES, 'UTF-8'); ?>">
@@ -273,7 +274,7 @@ include_once 'functions.php';
         <meta property="og:title" content="<?php echo htmlspecialchars($fallbackTitle, ENT_QUOTES, 'UTF-8'); ?>">
         <meta property="og:url" content="<?php echo htmlspecialchars($fallbackCanonical, ENT_QUOTES, 'UTF-8'); ?>">
         <meta property="og:type" content="website">
-        <meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
+        <meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-share-1200x630.jpg">
         <?php outputJsonLdGraph([buildOrganizationSchema(), buildWebsiteSchema()]); ?>
     <?php } ?>
 

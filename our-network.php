@@ -79,6 +79,7 @@ $partners = [
     ],
 ];
 
+$pageRobots = 'noindex, follow';   // thin partner page: not worth a crawl, kept for visitors
 include 'header.php';
 ?>
 

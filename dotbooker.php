@@ -3,6 +3,7 @@ require_once 'functions.php';
 $pageMetaTitle       = 'Dotbooker – Smart Booking & Appointment Software | Seat Outlet Network';
 $pageMetaDescription = 'Dotbooker is a cloud-based booking management platform for service businesses - online scheduling, POS, membership management, inventory, and analytics in one system.';
 $pageCanonicalUrl    = HOME_URL . '/dotbooker';
+$pageRobots = 'noindex, follow';   // thin partner page: not worth a crawl, kept for visitors
 include 'header.php';
 ?>
 

@@ -2704,8 +2704,10 @@ function soPublicCanonical($html) {
         $html = preg_replace('#</body>#i', '<!--/email_off--></body>', $html, 1);
     }
     $from = rtrim(HOME_URL, '/');
+    // The home page's canonical and og:url end in a slash, like its schema (https://seatoutlet.com/).
+    $html = preg_replace('#(<link rel="canonical" href="|<meta property="og:url" content=")(' . preg_quote($from, '#') . ')(")#', '$1$2/$3', $html);
     if ($from === SO_PUBLIC_ORIGIN) return $html;
-    return preg_replace('#(<link rel="canonical" href="|<meta property="og:url" content=")' . preg_quote($from, '#') . '#', '$1' . SO_PUBLIC_ORIGIN, $html);
+    return preg_replace('#(<link rel="canonical" href="|<meta property="og:url" content=")' . preg_quote($from, '#') . '(?=[/"])#', '$1' . SO_PUBLIC_ORIGIN, $html);
 }
 
 /**
@@ -4617,7 +4619,7 @@ function getCategoryCityLinkPrefix($categoryPath): string {
     if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['concerts']) === 0) return 'concerts-city';
     if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['sports']) === 0) return 'sports-city';
     if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['theater']) === 0) return 'theater-city';
-    return 'event-city';
+    return 'city';   // all events: the /city/ page itself (/event-city/ lists the same events and redirects there)
 }
 
 /**
@@ -4664,7 +4666,7 @@ function getPerformerNounForPath($categoryPath): array {
 */
 
 const LOCATION_CATEGORY_PAGES = [
-    'city'    => ['plain' => 'city',    'pages' => ['event-city' => 'All events', 'concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals']],
+    'city'    => ['plain' => 'city',    'pages' => ['concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals']],
     'state'   => ['plain' => 'state',   'pages' => ['events-state' => 'All events', 'concerts-state' => 'Concerts', 'sports-state' => 'Sports', 'theater-state' => 'Theater', 'festivals-state' => 'Festivals']],
     'country' => ['plain' => 'country', 'pages' => ['concert-country' => 'Concerts', 'theater-country' => 'Theater', 'festivals-country' => 'Festivals']],
     'venue'   => ['plain' => 'venue',   'pages' => ['concert-venue' => 'Concerts', 'theater-venue' => 'Theater', 'festivals-venue' => 'Festivals']],
@@ -5392,6 +5394,9 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     // theatre-* is the same page as theater-* (the sitemap and menus use theater-*): one URL, one canonical.
     if (strpos($urlPrefix, 'theatre-') === 0) {
         soRedirect301('/theater-' . substr($urlPrefix, 8) . '/' . rawurlencode(trim((string) ($_GET['slug'] ?? ''), '/')));
+    }
+    if ($urlPrefix === 'event-city') {   // lists the same events as /city/<slug>: one page, one address
+        soRedirect301('/city/' . rawurlencode(trim((string) ($_GET['slug'] ?? ''), '/')));
     }
     $requestedSlug = (string) ($_GET['slug'] ?? '');
     $locationValue = parseLocationSlug($dimension, $requestedSlug);   // strict: junk ids never reach the API

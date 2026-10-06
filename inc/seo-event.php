@@ -82,7 +82,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 
 <?php
   // Share image: the performer's picture when we hold a real one, else the logo.
-  $evOgImg = rtrim(HOME_URL, '/') . '/images/seatoutlet-logo.webp';
+  $evOgImg = rtrim(HOME_URL, '/') . '/images/seatoutlet-share-1200x630.jpg';
   if ($evName !== '' && !empty($event['text']['name'])) {
       $evOgType = imageEntityTypeForPerformer($event['defaultCategory'] ?? []);
       $evOgWho  = (string) ($event['performers'][0]['name'] ?? $evName);

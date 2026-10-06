@@ -3,7 +3,7 @@ require_once 'functions.php';
 // SEO: this page previously relied on header.php's generic fallback
 // title/canonical. Copy per the site's own content documentation.
 $pageMetaTitle       = 'Hunt Tickets – Event Ticket Search Marketplace | Seat Outlet';
-$pageMetaDescription = 'Hunt Tickets is part of the SeatOutlet network, helping fans compare ticket prices online and run a fast sports ticket search across sports, concerts, and theater.';
+$pageMetaDescription = 'Hunt Tickets is part of the Seat Outlet network, helping fans compare ticket prices online and run a fast sports ticket search across sports, concerts, and theater.';
 $pageCanonicalUrl    = HOME_URL . '/hunt-tickets';
 include 'header.php';
 ?>

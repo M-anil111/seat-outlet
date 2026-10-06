@@ -3,6 +3,7 @@ require_once 'functions.php';
 $pageMetaTitle       = 'Salespeep – CRM for Sales, Marketing & Service | Seat Outlet Network';
 $pageMetaDescription = 'Salespeep is a cloud-based CRM platform helping organizations manage sales pipelines, marketing automation, and customer service from one place.';
 $pageCanonicalUrl    = HOME_URL . '/salespeep';
+$pageRobots = 'noindex, follow';   // thin partner page: not worth a crawl, kept for visitors
 include 'header.php';
 ?>
 
