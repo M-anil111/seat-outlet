@@ -2731,7 +2731,14 @@ function soRedirectCanonicalForm() {
         $clean = rtrim($path, '/');
         $clean = $clean === '' ? '/' : strtolower($clean);
     }
-    if (!$wrongHost && $clean === $path) return;
+    // ?page=N only means something on the pages that really paginate (the blog and the A to Z list). Everywhere else the list loads more
+    // by script, so the parameter showed page 1 again under another address: send it to the page itself.
+    $dropPage = false;
+    if (!$skip && $qs !== '' && !in_array($clean, ['/blog', '/all-artists-and-teams'], true)) {
+        parse_str($qs, $qa);
+        if (array_key_exists('page', $qa) && !is_array($qa['page'])) { unset($qa['page']); $qs = http_build_query($qa); $dropPage = true; }
+    }
+    if (!$wrongHost && $clean === $path && !$dropPage) return;
     http_response_code(301);
     header('Location: ' . ($wrongHost ? SO_PUBLIC_ORIGIN : '') . $clean . ($qs !== '' ? '?' . $qs : ''));
     header('Cache-Control: public, max-age=3600');
@@ -4008,7 +4015,7 @@ function soEventStatusUrl(array $event) {
 /** schema.org type for a performer, from the TicketNetwork category path: a team for sports, a theater group for shows, else a music group. */
 function soPerformerSchemaType($catPath) {
     $catPath = (string) $catPath;
-    if (strpos($catPath, '.1872.') !== false) return 'PerformingGroup';   // comedy: a comedian or a comedy show, not a music group
+    if (strpos($catPath, '.1872.') !== false) return 'Person';   // comedy: a comedian, not a group
     if (defined('TN_CATEGORY_PATH_SPORTS') && strpos($catPath, TN_CATEGORY_PATH_SPORTS) === 0) return 'SportsTeam';
     if (defined('TN_CATEGORY_PATH_THEATER') && strpos($catPath, TN_CATEGORY_PATH_THEATER) === 0) return 'TheaterGroup';
     if (defined('TN_CATEGORY_PATH_CONCERTS') && strpos($catPath, TN_CATEGORY_PATH_CONCERTS) === 0) return 'MusicGroup';
@@ -4061,8 +4068,7 @@ function soEventSchemaDescription(array $event): string {
  * Offers are TicketNetwork's own live figures: lowest and highest listed price and the number of tickets listed, never estimated.
  * $venue: the venue's own record (street address, postal code, geo) when the caller has it.
  * The API names neither the promoter nor an end time, so two fields are stand-ins that Google asks for: "organizer" is the venue (the
- * party that hosts the event, never Seat Outlet, which only compares tickets) and a timed event's "endDate" is its start plus
- * SO_EVENT_DEFAULT_HOURS (an estimate, not a published end time).
+ * party that hosts the event, never Seat Outlet, which only compares tickets). There is no "endDate": the feed has no end time.
  * Image, description and offer start (validFrom) are always filled from the event's own data.
  */
 if (!defined('SO_EVENT_DEFAULT_HOURS')) define('SO_EVENT_DEFAULT_HOURS', 3);
@@ -4117,16 +4123,7 @@ function soEventNode(array $event, array $opts = []) {
         if (!empty($place['url'])) $org['url'] = $place['url'];
         $node['organizer'] = $org;
     }
-    // TicketNetwork gives a start time but no end time. An event with no time of day ends on its start date; a timed event ends
-    // SO_EVENT_DEFAULT_HOURS after it starts (an estimate).
-    $startDate = (string) $node['startDate'];
-    if ($startDate !== '') {
-        if (($event['date']['time'] ?? '') === '' || ($event['date']['time'] ?? '') === '00:00:00') {
-            $node['endDate'] = substr($startDate, 0, 10);
-        } else {
-            try { $node['endDate'] = (new DateTimeImmutable($startDate))->modify('+' . SO_EVENT_DEFAULT_HOURS . ' hours')->format('c'); } catch (Exception $e) { /* unparseable start: no end date */ }
-        }
-    }
+    // TicketNetwork gives a start time but no end time, so there is no endDate: an estimate would be a made-up fact in the markup.
     $low = (float) ($event['pricingInfo']['lowPrice']['value'] ?? 0);
     if (!empty($event['_metadata']['hasTickets']) && $low > 0) {
         $offer = [

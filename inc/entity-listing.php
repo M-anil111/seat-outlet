@@ -85,7 +85,7 @@ function soRenderEntityListing(array $c): void {
     if ($kind === 'venue') {
         // Spec wording: "Buy <venue> Tickets in <city>", and the urgency line when events are on sale (inc/page-spec.php).
         $pageTitleMax = 70;
-        $pageMetaTitle = soTitleUpTo(70, $c['cityLabel'] !== '' ? "Buy $name Tickets in {$c['cityLabel']}" : '', "Buy $name Tickets", "$name Tickets");
+        $pageMetaTitle = soTitleUpTo(60, $c['cityLabel'] !== '' ? "Buy $name Tickets in {$c['cityLabel']}" : '', "Buy $name Tickets", "$name Tickets");
         $pageMetaDescription = $total > 0
             ? soSpecPick(155,
                 "Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ". Find great seats and book your tickets online today at Seat Outlet before they sell out.",
@@ -100,7 +100,7 @@ function soRenderEntityListing(array $c): void {
         $pageFocusKeyword = "Events in $soCityShort";
         // Spec wording: "Buy Tickets for Events in <place>" keeps the search phrase whole, and the urgency line is added when events are on sale.
         $pageTitleMax = 70;
-        $pageMetaTitle = soTitleUpTo(70, "Buy Tickets for Events in $label", "Buy Tickets for Events in $soCityShort", "Events in $soCityShort Concerts and Sports", "Events in $soCityShort", "$soCityShort Tickets");
+        $pageMetaTitle = soTitleUpTo(60, "Buy Tickets for Events in $label", "Buy Tickets for Events in $soCityShort", "Events in $soCityShort Concerts and Sports", "Events in $soCityShort", "$soCityShort Tickets");
         $pageMetaDescription = $total > 0
             ? soSpecPick(155,
                 "Buy tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ". Find great seats and book your tickets online today at Seat Outlet before they sell out.",

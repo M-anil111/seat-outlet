@@ -166,7 +166,7 @@ function renderCityHolidayPage(string $key = ''): void {
     $what = $cfg['label'];
     $pageTitleMax = 70;
     $pageFocusKeyword = $key === 'christmas-shows-near-me' ? "Christmas Shows Near Me in $cityName" : "$what in $cityName";
-    $pageMetaTitle = soTitleUpTo(70, "Buy Tickets to $what in $label", "Buy Tickets to $what in $cityName", "$what in $cityName");
+    $pageMetaTitle = soTitleUpTo(60, "Buy Tickets to $what in $label", "Buy Tickets to $what in $cityName", "$what in $cityName");
     $pageMetaDescription = $total >= SO_HOLIDAY_MIN
         ? soSpecPick(155,
             "Buy tickets to $what in $label" . ($win ? ", " . date('M j', strtotime($win['start'])) . ' to ' . date('M j', strtotime($win['to'])) : '') . ". Find great seats and book your tickets online today at Seat Outlet before they sell out.",

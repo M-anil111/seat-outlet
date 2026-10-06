@@ -1,7 +1,7 @@
 <?php
 // /holiday-events: the US and Canadian holidays with their next dates and a page for each of the biggest cities (inc/holidays.php).
 require_once 'functions.php';
-$pageMetaTitle       = soTitleUpTo(70, 'Buy Tickets to Holiday Events in the US and Canada', 'Holiday Events in the US and Canada');
+$pageMetaTitle       = soTitleUpTo(60, 'Buy Tickets to Holiday Events in the US and Canada', 'Holiday Events in the US and Canada');
 $pageTitleMax        = 70;
 $pageFocusKeyword    = 'Holiday Events Near Me';
 $pageMetaDescription = 'Buy tickets to holiday events near you: Christmas shows, New Year\'s Eve, July 4th, Thanksgiving weekend, Canada Day and more, in cities across the US and Canada.';

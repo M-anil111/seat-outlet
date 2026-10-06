@@ -69,6 +69,7 @@ function seoClampTitle($title, $max = 59) {
     $base = $brand !== '' ? mb_substr($title, 0, -mb_strlen($brand)) : $title;
     $tail = '';
     if (preg_match('/^(.*\S)(\s+Tickets)$/u', $base, $m)) { $base = $m[1]; $tail = $m[2]; }   // the search word survives the trim
+    if ($brand !== '' && mb_strlen($base . $tail) <= $max && mb_strlen($base . $tail . $brand) > $max) return $base . $tail;   // the name and "Tickets" matter more than the brand suffix: keep the entity name whole
     $room = $max - mb_strlen($brand) - mb_strlen($tail);
     if (mb_strlen($base) > $room) {
         $cut = mb_substr($base, 0, $room);

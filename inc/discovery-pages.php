@@ -58,7 +58,7 @@ function renderCityDiscoveryPage(string $key): void {
     $pageTitleMax = 70;
     $titleLead = ['last-minute-tickets' => 'Buy Last Minute Tickets in', 'weekend-events' => 'Buy Tickets for Weekend Events in', 'cheap-tickets' => 'Buy Cheap Tickets in', 'best-events' => 'Buy Tickets to the Best Events in'][$key];
     $pageFocusKeyword = ['last-minute-tickets' => 'Last Minute Tickets in', 'weekend-events' => 'Weekend Events in', 'cheap-tickets' => 'Cheap Tickets in', 'best-events' => 'Best Events in'][$key] . ' ' . $cityName;
-    $pageMetaTitle = soTitleUpTo(70, "$titleLead $label", "$titleLead $cityName", "$what in $cityName");
+    $pageMetaTitle = soTitleUpTo(60, "$titleLead $label", "$titleLead $cityName", "$what in $cityName");
     $pageMetaDescription = $total >= SO_DISCOVERY_MIN
         ? soSpecPick(155,
             "{$cfg['buy']} $label: {$cfg['blurb']}. Find great seats and book your tickets online today at Seat Outlet before they sell out.",
