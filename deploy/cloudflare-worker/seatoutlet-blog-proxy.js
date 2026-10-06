@@ -135,26 +135,26 @@ function legacyPhpUrl(url) {
   const target = new URL(url.pathname + url.search, BETA_ORIGIN);
   let match = url.pathname.match(/^\/(event-city|concerts-city|concerts-state|concert-country|concert-venue|events-state|festivals-city|festivals-country|festivals-state|festivals-venue|sports-city|sports-state|theater-city|theater-country|theater-state|theater-venue|theatre-city|theatre-country|theatre-state|theatre-venue|state|country)\/([^/]+)\/?$/);
   if (match) {
-    target.pathname = "/" + match[1] + ".php";
+    target.pathname = "/" + match[1];   // no ".php": the origin answers /x.php with a 301 to /x, which would send every visitor to a ?slug= address
     target.searchParams.set("slug", match[2]);
     return target;
   }
   match = url.pathname.match(/^\/(artist-city|artist-state|artist-country|artist-venue)\/([^/]+)\/([^/]+)\/?$/);
   if (match) {
-    target.pathname = "/" + match[1] + ".php";
+    target.pathname = "/" + match[1];
     target.searchParams.set("slug", match[2]);
     target.searchParams.set("loc", match[3]);
     return target;
   }
   match = url.pathname.match(/^\/(last-minute-tickets|weekend-events|cheap-tickets|best-events|county)\/([^/]+)\/?$/);
   if (match) {
-    target.pathname = "/" + match[1] + ".php";
+    target.pathname = "/" + match[1];
     target.searchParams.set("slug", match[2]);
     return target;
   }
   match = url.pathname.match(/^\/(christmas-shows-near-me|new-years-eve-events|valentines-day-events|st-patricks-day-events|easter-weekend-events|mothers-day-weekend-events|memorial-day-weekend-events|victoria-day-weekend-events|fathers-day-weekend-events|canada-day-events|july-4th-events|labor-day-weekend-events|labour-day-weekend-events|halloween-events|thanksgiving-weekend-events|canadian-thanksgiving-weekend-events)-in-([^/]+)\/?$/);
   if (match) {
-    target.pathname = "/holiday-city.php";
+    target.pathname = "/holiday-city";   // no ".php" (see above)
     target.searchParams.set("holiday", match[1]);
     target.searchParams.set("slug", match[2]);
     return target;
