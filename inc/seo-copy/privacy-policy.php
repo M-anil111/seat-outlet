@@ -21,7 +21,7 @@
 <p>We may share information with event organizers and venues, service providers such as payment and hosting companies, group companies, authorities where required, in a business transfer, or with your consent. Organizers can act as independent controllers, so their own privacy policies may also apply.</p>
 
 <h2>Your rights under the privacy policy</h2>
-<p>Depending on where you live, the policy says you may have rights to access, correct, delete, restrict, port or object to the use of your data, to withdraw consent, and to complain to a data protection authority. To use them, email privacy@seatoutlet.com. We may need to verify your identity first.</p>
+<p>Depending on where you live, the policy says you may have rights to access, correct, delete, restrict, port or object to the use of your data, to withdraw consent, and to complain to a data protection authority. To use them, email info@seatoutlet.com. We may need to verify your identity first.</p>
 <ul>
 <li>Unsubscribe from marketing with the link in any marketing email.</li>
 <li>Service messages, such as booking confirmations and security alerts, may still be sent.</li>
@@ -41,5 +41,5 @@
 <details class="so-faq"><summary>Where can I read the full privacy policy?</summary><p>It is on this page, above this guide.</p></details>
 <details class="so-faq"><summary>Does Seat Outlet store my full card number?</summary><p>The policy says full payment card details are typically processed by our payment processors and not stored by us.</p></details>
 <details class="so-faq"><summary>How do I stop marketing emails?</summary><p>Use the unsubscribe link in any marketing email.</p></details>
-<details class="so-faq"><summary>How do I make a request under the privacy policy?</summary><p>Email privacy@seatoutlet.com. We may need to verify your identity before responding.</p></details>
+<details class="so-faq"><summary>How do I make a request under the privacy policy?</summary><p>Email info@seatoutlet.com. We may need to verify your identity before responding.</p></details>
 <details class="so-faq"><summary>Where do cookies fit into the privacy policy?</summary><p>The policy covers cookies briefly, and our <a href="/cookie-policy">cookie policy</a> has the detail.</p></details>

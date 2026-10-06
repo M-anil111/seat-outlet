@@ -41,4 +41,4 @@
 <details class="so-faq"><summary>Do the terms and conditions allow refunds?</summary><p>They say sales are final unless the terms, the event terms or the law provide otherwise. Different options may be disclosed at purchase.</p></details>
 <details class="so-faq"><summary>Who decides what happens if an event is canceled under the terms and conditions?</summary><p>The terms say the refund or credit policy is typically determined by the organizer or venue.</p></details>
 <details class="so-faq"><summary>Can I resell tickets under the terms and conditions?</summary><p>Tickets are for personal use unless resale or listing is allowed through the platform or by the organizer.</p></details>
-<details class="so-faq"><summary>How do I ask a question about these terms and conditions?</summary><p>Email support@seatoutlet.com, or use the <a href="/ticket-customer-service">ticket customer service</a> page.</p></details>
+<details class="so-faq"><summary>How do I ask a question about these terms and conditions?</summary><p>Email info@seatoutlet.com, or use the <a href="/ticket-customer-service">ticket customer service</a> page.</p></details>
