@@ -31,7 +31,7 @@ function soLeadForm(array $o = []) {
         . '<div class="so-nl__fields' . ($o['names'] ? '' : ' so-nl__fields--email') . '">'
         . ($o['names'] ? $field('<input name="fname" type="text" placeholder="First name"' . ($split ? '' : ' aria-label="First name"') . ' maxlength="70" autocomplete="given-name">', 'First name')
                        . $field('<input name="lname" type="text" placeholder="Last name"' . ($split ? '' : ' aria-label="Last name"') . ' maxlength="70" autocomplete="family-name">', 'Last name') : '')
-        . $field('<input name="email" type="email" placeholder="Email"' . ($split ? '' : ' aria-label="Email"') . ' maxlength="120" autocomplete="email" required>', 'Email', ' so-nl__field--email')
+        . $field('<input name="email" type="email" pattern="[^@\s]+@[^@\s]+\.[A-Za-z]{2,}" title="Enter a full email address, for example name@example.com" placeholder="Email"' . ($split ? '' : ' aria-label="Email"') . ' maxlength="120" autocomplete="email" required>', 'Email', ' so-nl__field--email')
         . '<button type="submit">' . $h($o['button'])
         . ($split ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg>' : '')
         . '</button></div>'

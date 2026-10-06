@@ -1,0 +1,9 @@
+# Binary assets: no line-ending conversion (a text-mode copy corrupted the slick fonts, QA DEV-09)
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.ico binary
+*.png binary
+*.jpg binary
+*.webp binary

@@ -2,6 +2,7 @@
 require_once 'functions.php';
 
 $searchInput = soStringParams(array_merge($_GET, $_POST));
+if (($searchInput['keywordHeader'] ?? '') === '' && trim((string) ($searchInput['q'] ?? '')) !== '') { $searchInput['keywordHeader'] = trim((string) $searchInput['q']); }   // ?q= is the common name for the same search
 
 /*
 |--------------------------------------------------------------------------

@@ -388,7 +388,7 @@ function homepageBootstrapScript() {
       if (target) target.innerHTML = 'Near ' + esc(label) + ' <i class="fa fa-caret-down"></i>';
     }
     var headerInput = document.getElementById('locationInputHeader');
-    if (headerInput) headerInput.value = label;
+    if (headerInput && !headerInput.value) headerInput.placeholder = 'Near ' + label;   // a hint only: a detected city is never added to a visitor's search (QA FUN-04)
     var cityInput = document.getElementById('cityLocationInput');
     if (cityInput) cityInput.value = label;
     return label;
