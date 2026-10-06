@@ -270,7 +270,7 @@ function soSlugResolve(string $type, $slug): array {
     if ($type === 'country') {
         return preg_match('/^.+-([a-z]{2})$/', $slug, $m) ? [strtoupper($m[1]), true] : [null, false];
     }
-    if (preg_match('/^.+-(\d{1,10})$/', $slug, $m)) {
+    if (preg_match('/^.*-(\d{1,10})$/', $slug, $m)) {   // .* not .+: a nameless entity was once linked as "-<id>"
         $id = (int) $m[1];
         if ($id >= 1 && $id <= SO_MAX_ENTITY_ID) return [$id, true];
     }
@@ -287,7 +287,7 @@ function soSlugOutId(string $type, $ext) {
  */
 function soSlugLegacyPlausible(string $slug, bool $legacy, string $entityName): bool {
     if (!$legacy) return true;
-    if (!preg_match('/^(.+)-(\d{1,10})$/', strtolower(trim($slug, '/')), $m)) return true;
+    if (!preg_match('/^(.*)-(\d{1,10})$/', strtolower(trim($slug, '/')), $m)) return true;
     if (strlen($m[2]) >= 4) return true;
     return $m[1] === soSlugWords($entityName);
 }

@@ -57,6 +57,8 @@ jobs:
         run: php tools/test-counties.php
       - name: Crawl guard
         run: php tools/test-ratelimit.php
+      - name: Old address forms still resolve
+        run: php tools/test-slug-legacy.php
 
       - name: The sitemap's automatic page list finds every page and only pages
         run: php tools/check-sitemap-pages.php
