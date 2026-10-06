@@ -1628,6 +1628,15 @@ font-size: 18px;
         #tn-maps .map-list-ctn { padding-left: 0 !important; padding-right: 0 !important; }
     }
 
+    /* Map drawing and section overlay must be the same size. The widget lays the overlay (an SVG) out at a base width and scales
+       the map image from its natural size, so the image must not be resized by the site's img rules: img { width: 100% } stretched
+       it to the map box and the shaded sections drifted off the drawing. On desktop it loads a 2x image, so max-width: 100% must go
+       too; below 992px it loads a 1x image and narrow phones rely on max-width: 100%, so that part stays there. */
+    #tn-maps .sea-map-inner img { width: auto; height: auto; }
+    @media (min-width: 992px) {
+        #tn-maps .sea-map-inner img { max-width: none; }
+    }
+
     #precheckout-parent {
         --so-pc-inset: clamp(14px, 4.5vw, 24px);
         --so-pc-inset-r: max(var(--so-pc-inset), env(safe-area-inset-right, 0px));
