@@ -2408,12 +2408,12 @@ function unavailableBlockHtml($what) {
         . '</div></div>';
 }
 
-/** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, noindex, never cached. */
+/** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, never cached. */
 function renderUnavailablePage($what) {
     soSnapshotServe();   // the last good copy of this very page beats an error page
     http_response_code(503);
     header('Retry-After: 30');
-    $pageRobots = 'noindex, follow';
+    // No noindex: 503 + Retry-After is the whole message to crawlers; noindex on a temporary error can drop a live page.
     $pageMetaTitle = soTitle($what . ' Temporarily Unavailable');
     $pageMetaDescription = 'This page is temporarily unavailable. Please try again in a moment.';
     include 'header.php';
@@ -2458,12 +2458,6 @@ function soAsset($rel) {
     $min = preg_replace('/\.(css|js)$/', '.min.$1', $rel);
     $file = __DIR__ . '/' . $min;
     if ($min !== $rel && is_file($file)) {
-        // The live Cloudflare Worker answers exactly /js/main.min.js and /js/home.min.js itself, from a fixed GitHub commit,
-        // so later deploys of those two files would never reach seatoutlet.com. "/js//main.min.js" is the same file on the
-        // server (nginx merges slashes) but not a path the Worker intercepts, so live always gets the deployed version.
-        if (in_array($min, ['js/main.min.js', 'js/home.min.js'], true)) {
-            return rtrim(HOME_URL, '/') . '/js//' . basename($min) . '?v=' . filemtime($file);
-        }
         return rtrim(HOME_URL, '/') . '/' . $min . '?v=' . filemtime($file);
     }
     $file = __DIR__ . '/' . $rel;
@@ -2477,16 +2471,8 @@ function soAsset($rel) {
  * pass with reporting first.
  */
 function sendSecurityHeaders() {
-    if (headers_sent()) return;
-    header('X-Content-Type-Options: nosniff');
-    header('X-Frame-Options: SAMEORIGIN');
-    header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Permissions-Policy: camera=(), microphone=(), payment=(), geolocation=(self)');
-    if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')) {
-        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-    }
+    soSendSecurityHeaders();   // one list of headers, one place (soSendSecurityHeaders below)
 }
-
 
 /**
  * Cache-Control for public pages, so a CDN can serve the HTML instead of PHP.
@@ -2627,18 +2613,43 @@ function soFocusKeyword() {
 }
 
 /**
- * Output filter for the page body. The page's first <h1> (the keyword strip; on event pages the event title) is its one <h1>; any other <h1> a page template prints
- * becomes an <h2 class="h1 ..."> so it keeps its look (css/style.css styles ".h1" like "h1") and the page has a
- * single H1. Turn off with KEYWORD_H1=0 in the environment.
+ * Output filter for the page body: one <h1> per page, and it is the visible page title.
+ * The header prints the focus keyword in a small top strip (<h1 class="so-keyword-h1">). That strip is a label, not the page
+ * heading, so when the page has a real title the strip becomes a <p> and the title becomes the <h1>:
+ *   - a template that prints its own <h1> keeps it (the strip is turned into a <p>, any further <h1> becomes <h2 class="h1">);
+ *   - otherwise the first <h2> after the strip (the hero title every template shows) is promoted to <h1> and keeps its classes;
+ *   - a page with neither keeps the strip as its <h1>, so it is never left without one.
+ * Pages with no strip (event pages) keep the first <h1> they print. Turn off with KEYWORD_H1=0 in the environment.
  */
 function soSingleH1($html) {
-    $stripSeen = false; $demoted = false;
-    return preg_replace_callback('#<(/?)h1\b([^>]*)>#i', function ($m) use (&$stripSeen, &$demoted) {
+    $stripRe = '#<h1\b([^>]*\bso-keyword-h1\b[^>]*)>(.*?)</h1>#is';
+    if (preg_match($stripRe, $html, $sm, PREG_OFFSET_CAPTURE)) {
+        $stripEnd = $sm[0][1] + strlen($sm[0][0]);
+        $rest = substr($html, $stripEnd);
+        $hasOwn = preg_match('#<h1\b#i', $rest) === 1;
+        $h2Pos = null;
+        if (!$hasOwn && preg_match('#<h2\b#i', $rest, $hm, PREG_OFFSET_CAPTURE)) { $h2Pos = $hm[0][1]; }
+        if ($hasOwn || $h2Pos !== null) {
+            $p = '<p' . $sm[1][0] . '>' . $sm[2][0] . '</p>';
+            $html = substr($html, 0, $sm[0][1]) . $p . $rest;
+            if (!$hasOwn) {
+                $off = $sm[0][1] + strlen($p) + $h2Pos;
+                if (preg_match('#\G<h2\b([^>]*)>(.*?)</h2>#is', $html, $m2, 0, $off)) {
+                    $attrs = $m2[1];
+                    if (!preg_match('/\bclass\s*=\s*(["\'])(.*?)\1/i', $attrs)) { $attrs .= ' class="h1"'; }
+                    elseif (!preg_match('/\bclass\s*=\s*(["\'])(?:[^"\']*\s)?h1(?:\s[^"\']*)?\1/i', $attrs)) { $attrs = preg_replace('/\bclass\s*=\s*(["\'])(.*?)\1/i', 'class=$1$2 h1$1', $attrs, 1); }
+                    $html = substr($html, 0, $off) . '<h1' . $attrs . '>' . $m2[2] . '</h1>' . substr($html, $off + strlen($m2[0]));
+                }
+            }
+        }
+    }
+    $seen = false; $demoted = false;
+    return preg_replace_callback('#<(/?)h1\b([^>]*)>#i', function ($m) use (&$seen, &$demoted) {
         if ($m[1] === '/') {
             if ($demoted) { $demoted = false; return '</h2>'; }
             return $m[0];
         }
-        if (!$stripSeen) { $stripSeen = true; return $m[0]; }   // the first h1 on the page (the keyword strip, or the event title where there is no strip) stays
+        if (!$seen) { $seen = true; return $m[0]; }   // the first <h1> left on the page stays; any other becomes an <h2> that keeps its look
         $demoted = true;
         $attrs = $m[2];
         if (preg_match('/\bclass\s*=\s*(["\'])(.*?)\1/i', $attrs)) {
@@ -2693,8 +2704,45 @@ function soPublicCanonical($html) {
         $html = preg_replace('#</body>#i', '<!--/email_off--></body>', $html, 1);
     }
     $from = rtrim(HOME_URL, '/');
+    // The home page's canonical and og:url end in a slash, like its schema (https://seatoutlet.com/).
+    $html = preg_replace('#(<link rel="canonical" href="|<meta property="og:url" content=")(' . preg_quote($from, '#') . ')(")#', '$1$2/$3', $html);
     if ($from === SO_PUBLIC_ORIGIN) return $html;
-    return preg_replace('#(<link rel="canonical" href="|<meta property="og:url" content=")' . preg_quote($from, '#') . '#', '$1' . SO_PUBLIC_ORIGIN, $html);
+    return preg_replace('#(<link rel="canonical" href="|<meta property="og:url" content=")' . preg_quote($from, '#') . '(?=[/"])#', '$1' . SO_PUBLIC_ORIGIN, $html);
+}
+
+/**
+ * One host and one path form for every page: www.<host> answers 301 to the public host, a trailing slash is dropped and capital letters in a
+ * page address become lower case (301, query string kept). Static files, data endpoints and admin are left alone. The Worker and the web
+ * server do the same for requests that never reach PHP (docs/server-rewrites.md).
+ */
+function soRedirectCanonicalForm() {
+    if (PHP_SAPI === 'cli' || headers_sent()) return;
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
+    $uri  = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $path = (string) parse_url($uri, PHP_URL_PATH);
+    $qs   = (string) parse_url($uri, PHP_URL_QUERY);
+    $host = strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? ''))[0]));
+    $host = (string) preg_replace('/:\d+$/', '', $host);
+    $pub  = (string) parse_url(SO_PUBLIC_ORIGIN, PHP_URL_HOST);
+    $wrongHost = $pub !== '' && $host === 'www.' . $pub;
+    $clean = $path;
+    $skip = preg_match('#^/(ajax|admin|cdn-cgi|sitemaps|cron|tools|checkout|order-confirmation|thank-you)(/|$)#', $path) || preg_match('#\.[a-z0-9]{1,5}$#i', $path);
+    if (!$skip && $path !== '/') {
+        $clean = rtrim($path, '/');
+        $clean = $clean === '' ? '/' : strtolower($clean);
+    }
+    // ?page=N only means something on the pages that really paginate (the blog and the A to Z list). Everywhere else the list loads more
+    // by script, so the parameter showed page 1 again under another address: send it to the page itself.
+    $dropPage = false;
+    if (!$skip && $qs !== '' && !in_array($clean, ['/blog', '/all-artists-and-teams'], true)) {
+        parse_str($qs, $qa);
+        if (array_key_exists('page', $qa) && !is_array($qa['page'])) { unset($qa['page']); $qs = http_build_query($qa); $dropPage = true; }
+    }
+    if (!$wrongHost && $clean === $path && !$dropPage) return;
+    http_response_code(301);
+    header('Location: ' . ($wrongHost ? SO_PUBLIC_ORIGIN : '') . $clean . ($qs !== '' ? '?' . $qs : ''));
+    header('Cache-Control: public, max-age=3600');
+    exit;
 }
 
 function soRedirectLegacyUrl() {
@@ -3967,7 +4015,7 @@ function soEventStatusUrl(array $event) {
 /** schema.org type for a performer, from the TicketNetwork category path: a team for sports, a theater group for shows, else a music group. */
 function soPerformerSchemaType($catPath) {
     $catPath = (string) $catPath;
-    if (strpos($catPath, '.1872.') !== false) return 'PerformingGroup';   // comedy: a comedian or a comedy show, not a music group
+    if (strpos($catPath, '.1872.') !== false) return 'Person';   // comedy: a comedian, not a group
     if (defined('TN_CATEGORY_PATH_SPORTS') && strpos($catPath, TN_CATEGORY_PATH_SPORTS) === 0) return 'SportsTeam';
     if (defined('TN_CATEGORY_PATH_THEATER') && strpos($catPath, TN_CATEGORY_PATH_THEATER) === 0) return 'TheaterGroup';
     if (defined('TN_CATEGORY_PATH_CONCERTS') && strpos($catPath, TN_CATEGORY_PATH_CONCERTS) === 0) return 'MusicGroup';
@@ -4020,8 +4068,7 @@ function soEventSchemaDescription(array $event): string {
  * Offers are TicketNetwork's own live figures: lowest and highest listed price and the number of tickets listed, never estimated.
  * $venue: the venue's own record (street address, postal code, geo) when the caller has it.
  * The API names neither the promoter nor an end time, so two fields are stand-ins that Google asks for: "organizer" is the venue (the
- * party that hosts the event, never Seat Outlet, which only compares tickets) and a timed event's "endDate" is its start plus
- * SO_EVENT_DEFAULT_HOURS (an estimate, not a published end time).
+ * party that hosts the event, never Seat Outlet, which only compares tickets). There is no "endDate": the feed has no end time.
  * Image, description and offer start (validFrom) are always filled from the event's own data.
  */
 if (!defined('SO_EVENT_DEFAULT_HOURS')) define('SO_EVENT_DEFAULT_HOURS', 3);
@@ -4076,16 +4123,7 @@ function soEventNode(array $event, array $opts = []) {
         if (!empty($place['url'])) $org['url'] = $place['url'];
         $node['organizer'] = $org;
     }
-    // TicketNetwork gives a start time but no end time. An event with no time of day ends on its start date; a timed event ends
-    // SO_EVENT_DEFAULT_HOURS after it starts (an estimate).
-    $startDate = (string) $node['startDate'];
-    if ($startDate !== '') {
-        if (($event['date']['time'] ?? '') === '' || ($event['date']['time'] ?? '') === '00:00:00') {
-            $node['endDate'] = substr($startDate, 0, 10);
-        } else {
-            try { $node['endDate'] = (new DateTimeImmutable($startDate))->modify('+' . SO_EVENT_DEFAULT_HOURS . ' hours')->format('c'); } catch (Exception $e) { /* unparseable start: no end date */ }
-        }
-    }
+    // TicketNetwork gives a start time but no end time, so there is no endDate: an estimate would be a made-up fact in the markup.
     $low = (float) ($event['pricingInfo']['lowPrice']['value'] ?? 0);
     if (!empty($event['_metadata']['hasTickets']) && $low > 0) {
         $offer = [
@@ -4578,7 +4616,7 @@ function getCategoryCityLinkPrefix($categoryPath): string {
     if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['concerts']) === 0) return 'concerts-city';
     if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['sports']) === 0) return 'sports-city';
     if (strpos($categoryPath, LOCATION_CATEGORY_PATHS['theater']) === 0) return 'theater-city';
-    return 'event-city';
+    return 'city';   // all events: the /city/ page itself (/event-city/ lists the same events and redirects there)
 }
 
 /**
@@ -4625,7 +4663,7 @@ function getPerformerNounForPath($categoryPath): array {
 */
 
 const LOCATION_CATEGORY_PAGES = [
-    'city'    => ['plain' => 'city',    'pages' => ['event-city' => 'All events', 'concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals']],
+    'city'    => ['plain' => 'city',    'pages' => ['concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals']],
     'state'   => ['plain' => 'state',   'pages' => ['events-state' => 'All events', 'concerts-state' => 'Concerts', 'sports-state' => 'Sports', 'theater-state' => 'Theater', 'festivals-state' => 'Festivals']],
     'country' => ['plain' => 'country', 'pages' => ['concert-country' => 'Concerts', 'theater-country' => 'Theater', 'festivals-country' => 'Festivals']],
     'venue'   => ['plain' => 'venue',   'pages' => ['concert-venue' => 'Concerts', 'theater-venue' => 'Theater', 'festivals-venue' => 'Festivals']],
@@ -5353,6 +5391,9 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     // theatre-* is the same page as theater-* (the sitemap and menus use theater-*): one URL, one canonical.
     if (strpos($urlPrefix, 'theatre-') === 0) {
         soRedirect301('/theater-' . substr($urlPrefix, 8) . '/' . rawurlencode(trim((string) ($_GET['slug'] ?? ''), '/')));
+    }
+    if ($urlPrefix === 'event-city') {   // lists the same events as /city/<slug>: one page, one address
+        soRedirect301('/city/' . rawurlencode(trim((string) ($_GET['slug'] ?? ''), '/')));
     }
     $requestedSlug = (string) ($_GET['slug'] ?? '');
     $locationValue = parseLocationSlug($dimension, $requestedSlug);   // strict: junk ids never reach the API
@@ -6291,5 +6332,6 @@ register_shutdown_function('soAutoMigrateMaybeRun');   // beta only: keep the sc
 register_shutdown_function('soSitemapMaybeRun');   // background sitemap crawl, see inc/sitemap-build.php
 register_shutdown_function('imageWorkerMaybeRun');   // background image queue, see inc/images.php
 
+soRedirectCanonicalForm();
 soNoindexPrivatePaths();
 soCrawlGuardPublic();

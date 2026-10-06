@@ -38,7 +38,7 @@ $fallbackCategories = [
         ['slug' => 'west-end-2060', 'name' => 'West End'],
         ['slug' => 'las-vegas-1887', 'name' => 'Las Vegas'],
         ['slug' => 'off-broadway-1896', 'name' => 'Off-broadway'],
-        ['slug' => 'children-family-1869', 'name' => 'Children / Family'],
+        ['slug' => 'children-family', 'name' => 'Children / Family'],
         ['slug' => 'ballet-1863', 'name' => 'Ballet'],
         ['slug' => 'opera-1898', 'name' => 'Opera'],
     ],
@@ -368,7 +368,7 @@ foreach ($fallbackCategories as $key => $list) {
 
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
-    <a href="http://grabticketsnow.com/" target="_blank" rel="noopener">
+    <a href="https://grabticketsnow.com/" target="_blank" rel="noopener">
       <img src="/images/gtn.webp" class="img-fluid" alt="Grab Tickets Now" width="115" height="115" loading="lazy">
     </a>
   </div>

@@ -3,7 +3,7 @@ require_once 'functions.php';
 // SEO: this page previously relied on header.php's generic fallback
 // title/canonical. Copy per the site's own content documentation.
 $pageMetaTitle       = 'Ticket Scanner – Travel Booking for Flights, Hotels & Cars | Seat Outlet';
-$pageMetaDescription = 'Ticket Scanner is part of the SeatOutlet network - an online travel booking website for flights, hotels, and car rentals to help plan the trip around your event.';
+$pageMetaDescription = 'Ticket Scanner is part of the Seat Outlet network - an online travel booking website for flights, hotels, and car rentals to help plan the trip around your event.';
 $pageCanonicalUrl    = HOME_URL . '/ticket-scanner';
 include 'header.php';
 ?>

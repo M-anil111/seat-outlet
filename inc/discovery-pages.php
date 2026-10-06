@@ -25,6 +25,7 @@ function renderCityDiscoveryPage(string $key): void {
     $cfg = SO_DISCOVERY[$key] ?? null;
     if (!$cfg) { renderNotFoundPage('Page'); }
     $slug = (string) ($_GET['slug'] ?? '');
+    if ($key === 'best-events') { soRedirect301('/city/' . rawurlencode(trim($slug, '/'))); }   // the same events as the city page
     [$id] = soSlugResolve('city', $slug);
     if ($id === null) { renderNotFoundPage('City'); }
     $city = getTnCityById($id);
@@ -57,7 +58,7 @@ function renderCityDiscoveryPage(string $key): void {
     $pageTitleMax = 70;
     $titleLead = ['last-minute-tickets' => 'Buy Last Minute Tickets in', 'weekend-events' => 'Buy Tickets for Weekend Events in', 'cheap-tickets' => 'Buy Cheap Tickets in', 'best-events' => 'Buy Tickets to the Best Events in'][$key];
     $pageFocusKeyword = ['last-minute-tickets' => 'Last Minute Tickets in', 'weekend-events' => 'Weekend Events in', 'cheap-tickets' => 'Cheap Tickets in', 'best-events' => 'Best Events in'][$key] . ' ' . $cityName;
-    $pageMetaTitle = soTitleUpTo(70, "$titleLead $label", "$titleLead $cityName", "$what in $cityName");
+    $pageMetaTitle = soTitleUpTo(60, "$titleLead $label", "$titleLead $cityName", "$what in $cityName");
     $pageMetaDescription = $total >= SO_DISCOVERY_MIN
         ? soSpecPick(155,
             "{$cfg['buy']} $label: {$cfg['blurb']}. Find great seats and book your tickets online today at Seat Outlet before they sell out.",
@@ -100,7 +101,7 @@ function renderCityDiscoveryPage(string $key): void {
             foreach (['concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals'] as $p => $l) {
                 $links[] = '<a href="/' . $p . '/' . $h($canonSlug) . '">' . $l . ' in ' . $h($cityName) . '</a>';
             }
-            foreach (SO_DISCOVERY as $k => $c) { if ($k !== $key) $links[] = '<a href="/' . $k . '/' . $h($canonSlug) . '">' . $h($c['what']) . ' in ' . $h($cityName) . '</a>'; }
+            foreach (SO_DISCOVERY as $k => $c) { if ($k !== $key && $k !== 'best-events') $links[] = '<a href="/' . $k . '/' . $h($canonSlug) . '">' . $h($c['what']) . ' in ' . $h($cityName) . '</a>'; }
             $links[] = '<a href="/city-events">Browse all cities</a>';
             echo '<nav class="container pb-4" aria-label="More in ' . $h($cityName) . '"><p class="mb-0"><strong>More in ' . $h($cityName) . ':</strong> ' . implode(' &middot; ', $links) . '</p></nav>';
         },

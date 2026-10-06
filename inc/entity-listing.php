@@ -85,7 +85,7 @@ function soRenderEntityListing(array $c): void {
     if ($kind === 'venue') {
         // Spec wording: "Buy <venue> Tickets in <city>", and the urgency line when events are on sale (inc/page-spec.php).
         $pageTitleMax = 70;
-        $pageMetaTitle = soTitleUpTo(70, $c['cityLabel'] !== '' ? "Buy $name Tickets in {$c['cityLabel']}" : '', "Buy $name Tickets", "$name Tickets");
+        $pageMetaTitle = soTitleUpTo(60, $c['cityLabel'] !== '' ? "Buy $name Tickets in {$c['cityLabel']}" : '', "Buy $name Tickets", "$name Tickets");
         $pageMetaDescription = $total > 0
             ? soSpecPick(155,
                 "Buy tickets to " . soCountWord($total, 'upcoming event') . " at $name" . ($c['cityLabel'] !== '' ? " in {$c['cityLabel']}" : '') . ". Find great seats and book your tickets online today at Seat Outlet before they sell out.",
@@ -100,7 +100,7 @@ function soRenderEntityListing(array $c): void {
         $pageFocusKeyword = "Events in $soCityShort";
         // Spec wording: "Buy Tickets for Events in <place>" keeps the search phrase whole, and the urgency line is added when events are on sale.
         $pageTitleMax = 70;
-        $pageMetaTitle = soTitleUpTo(70, "Buy Tickets for Events in $label", "Buy Tickets for Events in $soCityShort", "Events in $soCityShort Concerts and Sports", "Events in $soCityShort", "$soCityShort Tickets");
+        $pageMetaTitle = soTitleUpTo(60, "Buy Tickets for Events in $label", "Buy Tickets for Events in $soCityShort", "Events in $soCityShort Concerts and Sports", "Events in $soCityShort", "$soCityShort Tickets");
         $pageMetaDescription = $total > 0
             ? soSpecPick(155,
                 "Buy tickets to " . soCountWord($total, 'upcoming event') . " in $label" . ($cheap ? ", from {$cheap['formatted']}" : '') . ". Find great seats and book your tickets online today at Seat Outlet before they sell out.",
@@ -307,7 +307,7 @@ function soRenderEntityListing(array $c): void {
                         $soCs = basename((string) $c['path']);   // the city's own slug, from /city/<slug>
                         $soCl = [];
                         foreach (['concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals'] as $pp => $ll) { $soCl[] = '<a href="/' . $pp . '/' . $h($soCs) . '">' . $ll . ' in ' . $h($name) . '</a>'; }
-                        foreach (SO_DISCOVERY as $kk => $cc) { $soCl[] = '<a href="/' . $kk . '/' . $h($soCs) . '">' . $h($cc['what']) . ' in ' . $h($name) . '</a>'; }
+                        foreach (SO_DISCOVERY as $kk => $cc) { if ($kk === 'best-events') continue; $soCl[] = '<a href="/' . $kk . '/' . $h($soCs) . '">' . $h($cc['what']) . ' in ' . $h($name) . '</a>'; }
                         // The next two holidays that apply to the city's country (inc/holidays.php).
                         foreach (array_slice(soHolidaysForCountry((string) ($c['entity']['country']['alphaCode'] ?? 'US')), 0, 2) as $hk) { $soCl[] = '<a href="/' . $hk . '-in-' . $h($soCs) . '">' . $h(SO_HOLIDAYS[$hk]['label']) . ' in ' . $h($name) . '</a>'; }
                         echo '<nav class="pb-3" aria-label="More in ' . $h($name) . '"><p class="mb-0"><strong>More in ' . $h($name) . ':</strong> ' . implode(' &middot; ', $soCl) . '</p></nav>';

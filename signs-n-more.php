@@ -3,6 +3,7 @@ require_once 'functions.php';
 $pageMetaTitle       = 'Signs N More Inc – Branding, Web & Digital Marketing | Seat Outlet Network';
 $pageMetaDescription = 'Signs N More Inc is a marketing and branding company offering web design and development, branding, and digital marketing services.';
 $pageCanonicalUrl    = HOME_URL . '/signs-n-more';
+$pageRobots = 'noindex, follow';   // thin partner page: not worth a crawl, kept for visitors
 include 'header.php';
 ?>
 

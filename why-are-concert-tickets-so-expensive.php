@@ -303,7 +303,7 @@
                             </p>
                         </div>
                         <div class="trusted-question">
-                            <h2 class="section-heading">What does SeatOutlet do?</h2>
+                            <h2 class="section-heading">What does Seat Outlet do?</h2>
                             <p class="section-body">
                             Seat Outlet is a resale marketplace. We list tickets from the TicketNetwork marketplace so you can compare seats and prices in one place. Checkout is hosted by TicketNetwork, and orders are covered by its 100% guarantee.
                             </p>

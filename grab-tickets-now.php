@@ -3,7 +3,7 @@ require_once 'functions.php';
 // SEO: this page previously relied on header.php's generic fallback
 // title/canonical. Copy per the site's own content documentation.
 $pageMetaTitle       = 'Grab Tickets Now – Online Ticket Marketplace for Live Events | Seat Outlet';
-$pageMetaDescription = 'Grab Tickets Now is part of the SeatOutlet network, helping fans buy sports tickets online and buy concert tickets online through a streamlined, trusted marketplace.';
+$pageMetaDescription = 'Grab Tickets Now is part of the Seat Outlet network, helping fans buy sports tickets online and buy concert tickets online through a streamlined, trusted marketplace.';
 $pageCanonicalUrl    = HOME_URL . '/grab-tickets-now';
 include 'header.php';
 ?>
@@ -93,7 +93,7 @@ include 'header.php';
             <div class="row justify-content-center text-center">
                 <div class="col-lg-9 hero-inner">
                     <h1 class="hero-title">Grab Tickets Now</h1>
-                    <p class="hero-subtitle">Online Ticket Marketplace for Live Events by SeatOutlet Network
+                    <p class="hero-subtitle">Online Ticket Marketplace for Live Events by Seat Outlet Network
                     </p>
                 </div>
             </div>
@@ -109,16 +109,16 @@ include 'header.php';
                 <div class="policy-section" id="section-1">
                     <h2> About Grab Tickets Now</h2>
                     <p>
-                    <p><strong>Grab Tickets Now</strong> is a trusted <strong>online ticket marketplace for live events</strong> and a proud part of the SeatOutlet network. As a partner platform, it expands SeatOutlet’s reach by connecting fans to a wide range of live experiences, including sports, concerts, theater, and more.</p>
-<p>Within our growing ecosystem, Grab Tickets Now plays a key role in helping users <strong>buy sports tickets online</strong> and <strong>buy concert tickets online</strong> through a streamlined and user-friendly interface. Together with SeatOutlet, we aim to deliver a unified and reliable ticket discovery experience across multiple platforms.</p>
+                    <p><strong>Grab Tickets Now</strong> is a trusted <strong>online ticket marketplace for live events</strong> and a proud part of the Seat Outlet network. As a partner platform, it expands Seat Outlet’s reach by connecting fans to a wide range of live experiences, including sports, concerts, theater, and more.</p>
+<p>Within our growing ecosystem, Grab Tickets Now plays a key role in helping users <strong>buy sports tickets online</strong> and <strong>buy concert tickets online</strong> through a streamlined and user-friendly interface. Together with Seat Outlet, we aim to deliver a unified and reliable ticket discovery experience across multiple platforms.</p>
                     </p>
 
                 </div>
 
                 <!-- 2 -->
                 <div class="policy-section" id="section-2">
-                    <h2>Strengthening the SeatOutlet Network</h2>
-                    <p>At SeatOutlet, we collaborate with trusted platforms to build a powerful <strong>online ticket marketplace for live events</strong>. Grab Tickets Now contributes to this vision by offering:</p>
+                    <h2>Strengthening the Seat Outlet Network</h2>
+                    <p>At Seat Outlet, we collaborate with trusted platforms to build a powerful <strong>online ticket marketplace for live events</strong>. Grab Tickets Now contributes to this vision by offering:</p>
 <ul>
 <li>Access to diverse ticket inventory</li>
 <li>Competitive pricing across events</li>
@@ -140,7 +140,7 @@ include 'header.php';
 <li>Explore theater, comedy, and festival events</li>
 <li>Compare ticket prices from multiple sources</li>
 </ul>
-<p>This makes it an essential part of the SeatOutlet network, offering flexibility and convenience to users worldwide.</p>
+<p>This makes it an essential part of the Seat Outlet network, offering flexibility and convenience to users worldwide.</p>
                 </div>
 
                 <!-- 4 -->
@@ -165,13 +165,13 @@ include 'header.php';
 <li>Compare seating options and prices</li>
 <li>Secure tickets quickly and safely</li>
 </ul>
-<p>This strengthens SeatOutlet’s overall offering by making concert ticket discovery more accessible.</p>
+<p>This strengthens Seat Outlet’s overall offering by making concert ticket discovery more accessible.</p>
                 </div>
 
                 <!-- 6 -->
                 <div class="policy-section" id="section-6">
                     <h2>Reliable & User-Focused Experience</h2>
-                    <p>Grab Tickets Now shares SeatOutlet’s commitment to quality and trust. As part of our <strong>online ticket marketplace for live events</strong>, it emphasizes:</p>
+                    <p>Grab Tickets Now shares Seat Outlet’s commitment to quality and trust. As part of our <strong>online ticket marketplace for live events</strong>, it emphasizes:</p>
 <ul>
 <li>Secure and smooth transactions</li>
 <li>Easy navigation and search functionality</li>
@@ -185,7 +185,7 @@ include 'header.php';
                 <!-- 7 -->
                 <div class="policy-section" id="section-7">
                     <h2>Part of a Growing Ticketing Ecosystem</h2>
-                    <p>The SeatOutlet network is built on strong partnerships, and Grab Tickets Now is a key contributor to this expanding ecosystem. As an <strong>online ticket marketplace for live events</strong>, it helps us:</p>
+                    <p>The Seat Outlet network is built on strong partnerships, and Grab Tickets Now is a key contributor to this expanding ecosystem. As an <strong>online ticket marketplace for live events</strong>, it helps us:</p>
 <ul>
 <li>Reach a wider audience</li>
 <li>Provide more ticket options</li>
@@ -197,8 +197,8 @@ include 'header.php';
 
                 <!-- 8 -->
                 <div class="policy-section" id="section-8">
-                    <h2>Seamless Integration with SeatOutlet</h2>
-                    <p>As part of our network, Grab Tickets Now complements SeatOutlet’s core platform. Both operate within the same vision of creating a leading <strong>online ticket marketplace for live events</strong> that prioritizes user experience and accessibility.</p>
+                    <h2>Seamless Integration with Seat Outlet</h2>
+                    <p>As part of our network, Grab Tickets Now complements Seat Outlet’s core platform. Both operate within the same vision of creating a leading <strong>online ticket marketplace for live events</strong> that prioritizes user experience and accessibility.</p>
 <p>This integration allows users to:</p>
 <ul>
 <li>Explore multiple platforms within one network</li>
@@ -213,9 +213,9 @@ include 'header.php';
                 <!-- 10 -->
                 <div class="policy-section" id="section-10">
                     <h2>Explore Grab Tickets Now</h2>
-                    <p>Grab Tickets Now continues to grow as a reliable <strong>online ticket marketplace for live events</strong>, supporting SeatOutlet’s mission to simplify ticket discovery and booking.</p>
+                    <p>Grab Tickets Now continues to grow as a reliable <strong>online ticket marketplace for live events</strong>, supporting Seat Outlet’s mission to simplify ticket discovery and booking.</p>
 <p>Whether you're looking to <strong>buy sports tickets online</strong> for an upcoming game or <strong>buy concert tickets online</strong> for your favorite artist, Grab Tickets Now provides the tools and access you need.</p>
-<p>As part of the SeatOutlet network, it stands as a valuable platform dedicated to connecting fans with unforgettable live experiences.</p>
+<p>As part of the Seat Outlet network, it stands as a valuable platform dedicated to connecting fans with unforgettable live experiences.</p>
                 </div>
             </div>
         </div>

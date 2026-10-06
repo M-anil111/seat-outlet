@@ -9,12 +9,12 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 <meta property="og:description" content="Buy event tickets for concerts, sports, theater and festivals. Compare seats and prices side by side, check out securely and get our 100% guarantee.">
 <meta property="og:url" content="<?php echo HOME_URL; ?>/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
+<meta property="og:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-share-1200x630.jpg">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Buy Event Tickets&#x2014;Concerts, Sports &amp; Theater&#x2014;Seat Outlet">
 <meta name="twitter:description" content="Buy event tickets for concerts, sports, theater and festivals. Compare seats and prices side by side, check out securely and get our 100% guarantee.">
-<meta name="twitter:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-logo.webp">
+<meta name="twitter:image" content="<?php echo HOME_URL; ?>/images/seatoutlet-share-1200x630.jpg">
 
 <?php
 $images = [
@@ -111,7 +111,6 @@ foreach ($eventFiles as $file) {
           "@type" => "Event",
           "name" => $event['name'],
           "startDate" => $startDate,
-          "endDate" => $startDate,   // the feed has the day only: an event with no time of day ends on its day
           "description" => trim($event['name'] . ' tickets on ' . date('l, F j, Y', $event['edate']) . (!empty($event['venue']) ? ' at ' . $event['venue'] : '') . ($city !== '' ? ' in ' . $city . ($state !== '' ? ', ' . $state : '') : '') . '. Compare seats and prices from many sellers on Seat Outlet.'),
           "image" => [HOME_URL . (['concerts' => '/images/event-concert.jpg', 'sports' => '/images/team-event.webp', 'theatre' => '/images/loews-theatre.webp', 'festival' => '/images/festival-1.webp'][$tab] ?? '/images/crowd-at-concert-or-event.webp')],
           "eventStatus" => "https://schema.org/EventScheduled",

@@ -20,7 +20,9 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $evState  = (string) ($event['stateProvince']['text']['abbr'] ?? '');
   $evPlace  = trim($evCity . ($evState !== '' ? ', ' . $evState : ''));
   // Lowercase "name-id" slug, the same one the sitemap and every internal link use (header.php 301s any other spelling to it).
-  $evUrl    = rtrim(HOME_URL, '/') . '/event/' . soEventSlug($event);
+  // No event data (the feed failed, or the event is gone): there is no address to name, so no canonical and no og:url. The page answers 503 or 404 and
+  // used to print /event/-0 here, a canonical that is itself a 404.
+  $evUrl    = $evName !== '' ? rtrim(HOME_URL, '/') . '/event/' . soEventSlug($event) : '';
   $evTs     = !empty($event['date']['date']) ? strtotime($event['date']['date']) : false;
   $evDate   = $evTs ? date('M j, Y', $evTs) : '';
   // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
@@ -75,12 +77,12 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 <title><?php echo $e($metaTitle); ?></title>
 <meta name="description" content="<?php echo $e($metaDescription); ?>">
 <meta name="keywords" content="<?php echo $e($metaKeywords); ?>">
-<link rel="canonical" href="<?php echo $e($evUrl); ?>">
+<?php if ($evUrl !== '') { ?><link rel="canonical" href="<?php echo $e($evUrl); ?>"><?php } ?>
 <link rel="stylesheet" href="<?php echo $e(soAsset('css/event.css')); ?>">
 
 <?php
   // Share image: the performer's picture when we hold a real one, else the logo.
-  $evOgImg = rtrim(HOME_URL, '/') . '/images/seatoutlet-logo.webp';
+  $evOgImg = rtrim(HOME_URL, '/') . '/images/seatoutlet-share-1200x630.jpg';
   if ($evName !== '' && !empty($event['text']['name'])) {
       $evOgType = imageEntityTypeForPerformer($event['defaultCategory'] ?? []);
       $evOgWho  = (string) ($event['performers'][0]['name'] ?? $evName);
@@ -92,7 +94,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 ?>
 <meta property="og:title" content="<?php echo $e($metaTitle); ?>">
 <meta property="og:description" content="<?php echo $e($metaDescription); ?>">
-<meta property="og:url" content="<?php echo $e($evUrl); ?>">
+<?php if ($evUrl !== '') { ?><meta property="og:url" content="<?php echo $e($evUrl); ?>"><?php } ?>
 <meta property="og:type" content="website">
 <meta property="og:image" content="<?php echo $e($evOgImg); ?>">
 

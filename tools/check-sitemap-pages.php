@@ -21,12 +21,12 @@ $mustHave = ['/', '/blog', '/about-seat-outlet', '/ticket-partner-program', '/ho
     '/comedy-show-tickets', '/classical-music-tickets', '/nba-tickets', '/nfl-tickets', '/mlb-tickets', '/nhl-tickets', '/mls-tickets', '/soccer-tickets', '/tennis-tickets',
     '/racing-tickets', '/boxing-tickets', '/las-vegas-shows-tickets', '/christmas-shows-near-me', '/game-day-tickets', '/concert-artists', '/sports-teams', '/nfl-teams',
     '/nba-teams', '/mlb-teams', '/nhl-teams', '/mls-teams', '/broadway-shows', '/comedians-on-tour', '/music-festivals-list', '/buy-broadway-tickets',
-    '/upcoming-music-festivals', '/tickets-promo-code', '/ticket-deals', '/hunt-tickets', '/ticket-scanner', '/grab-tickets-now', '/our-network', '/dotbooker', '/wingcms',
-    '/salespeep', '/signs-n-more', '/it-sprinkles', '/austin-sign-masters', '/viralpep', '/mindshare-consulting', '/terms-and-conditions', '/privacy-policy', '/cookie-policy'];
+    '/upcoming-music-festivals', '/tickets-promo-code', '/ticket-deals', '/hunt-tickets', '/ticket-scanner', '/grab-tickets-now', '/terms-and-conditions', '/privacy-policy', '/cookie-policy'];
 foreach ($mustHave as $p) { if (!in_array($p, $paths, true)) $errors[] = "missing from the scan: $p"; }
 
 // Never a page.
-$never = ['/robots', '/sitemap', '/sitemap-page', '/search', '/checkout', '/order-confirmation', '/thank-you', '/unsubscribe', '/newsletter-email', '/404', '/header', '/footer', '/functions',
+$never = ['/our-network', '/dotbooker', '/wingcms', '/salespeep', '/signs-n-more', '/it-sprinkles', '/austin-sign-masters', '/viralpep', '/mindshare-consulting',   // thin partner pages: noindex, out of the sitemap
+    '/robots', '/sitemap', '/sitemap-page', '/search', '/checkout', '/order-confirmation', '/thank-you', '/unsubscribe', '/newsletter-email', '/404', '/header', '/footer', '/functions',
     '/performer', '/venue', '/event', '/city', '/state', '/country', '/category', '/artist-city', '/concerts-city', '/event-city', '/best-events', '/cheap-tickets', '/last-minute-tickets', '/weekend-events', '/holiday-city'];
 foreach ($never as $p) { if (in_array($p, $paths, true)) $errors[] = "listed but not a page: $p"; }
 

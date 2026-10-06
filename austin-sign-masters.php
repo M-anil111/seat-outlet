@@ -1,4 +1,7 @@
-<?php include 'header.php'; ?>
+<?php
+$pageRobots = 'noindex, follow';   // thin partner page: not worth a crawl, kept for visitors
+include 'header.php';
+?>
 
 <style>
     :root {

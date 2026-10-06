@@ -94,9 +94,22 @@
     if (l) { e.preventDefault(); open(true); }
   });
 
+  // The bar is shown once per visitor. A visitor who ignores it never saves a choice (no so_consent cookie), so without a record that it was
+  // shown it came back on every page. so_consent_seen (one year, first party) and a localStorage copy remember that it was shown; the
+  // footer link "Your privacy choices" still reopens it at any time. Tags keep their default (on, as before) until the visitor declines.
+  function wasShown() {
+    if (/(?:^|; )so_consent_seen=1/.test(document.cookie)) return true;
+    try { return window.localStorage.getItem('so_consent_seen') === '1'; } catch (e) { return false; }
+  }
+  function markShown() {
+    var secure = location.protocol === 'https:' ? ';Secure' : '';
+    document.cookie = 'so_consent_seen=1;path=/;max-age=31536000;SameSite=Lax' + secure;
+    try { window.localStorage.setItem('so_consent_seen', '1'); } catch (e) {}
+  }
   // First visit with no choice and no Global Privacy Control: show the bar (it never blocks the page and never steals focus).
-  if (!st.gpc && !st.choice) {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { open(false); });
-    else open(false);
+  if (!st.gpc && !st.choice && !wasShown()) {
+    var first = function () { markShown(); open(false); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', first);
+    else first();
   }
 })();

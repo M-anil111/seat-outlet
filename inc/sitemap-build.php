@@ -212,14 +212,14 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
                     // The city's page for each kind of event it has: all events, plus the concert, festival, sports and theater pages
                     // this event belongs to (festivals sit under concerts, the same nesting the pages themselves use).
                     $cPath = (string) ($e['defaultCategory']['path'] ?? '');
-                    $kinds = ['event-city'];
+                    $kinds = [];   // the all-events page is the /city/ page itself; /event-city/ and /best-events/ redirect to it
                     if (strpos($cPath, TN_CATEGORY_PATH_CONCERTS) === 0) $kinds[] = 'concerts-city';
                     if (strpos($cPath, TN_CATEGORY_PATH_FESTIVAL) === 0) $kinds[] = 'festivals-city';
                     if (strpos($cPath, TN_CATEGORY_PATH_SPORTS) === 0) $kinds[] = 'sports-city';
                     if (strpos($cPath, TN_CATEGORY_PATH_THEATER) === 0) $kinds[] = 'theater-city';
                     // The city discovery pages (inc/discovery-pages.php): best and cheap are views of all the city's events; last minute and
                     // weekend only count events inside their date window (measured when the crawl runs).
-                    $kinds[] = 'cheap-tickets'; $kinds[] = 'best-events';
+                    $kinds[] = 'cheap-tickets';
                     $evDay = (string) ($e['date']['date'] ?? '');
                     $evDay = $evDay !== '' ? substr($evDay, 0, 10) : '';
                     if ($evDay !== '') {
@@ -289,12 +289,15 @@ function soSitemapBuildFiles(string $tmp): array {
         $pages[$loc] = [$loc, gmdate('c', strtotime($post['updated_at'] ?? $post['published_at']))];
     }
     foreach ((cache_get('top_categories', 30 * 86400) ?: []) as $bucket) {
-        foreach ((array) $bucket as $cat) { if (!empty($cat['slug'])) { $loc = $base . '/category/' . $cat['slug']; $pages[$loc] = [$loc, null]; } }
+        foreach ((array) $bucket as $cat) {   // the final address, from id and name: the cached slug can be an old name-and-id form that redirects
+            if (empty($cat['id']) || empty($cat['name']) || (int) $cat['id'] === 2094) continue;
+            $loc = $base . soCategoryHref((int) $cat['id'], (string) $cat['name']); $pages[$loc] = [$loc, null];
+        }
     }
     // Every sub-category the ticket API lists under concerts, sports and theater that has tickets on sale (the same list as the sub-category pills).
     if (function_exists('soHubSubcategories')) {
         foreach (array_keys(SO_HUB_ROOTS) as $hub) {
-            foreach (soHubSubcategories($hub) as $sub) { $loc = $base . $sub['href']; $pages[$loc] = [$loc, null]; }
+            foreach (soHubSubcategories($hub) as $sub) { if ((int) ($sub['id'] ?? 0) === 2094) continue; $loc = $base . $sub['href']; $pages[$loc] = [$loc, null]; }
         }
     }
     $emit('pages', array_values($pages));

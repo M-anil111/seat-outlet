@@ -188,3 +188,38 @@ To enforce the CSP: after about a week, run `php tools/csp-report-summary.php <p
 On 6 Oct 2026 the live Cloudflare Worker rewrote `/state/<slug>`, `/county/<slug>`, every `*-city`, `*-state`, `*-country`, `*-venue` page, the discovery pages and the holiday pages to `/<page>.php?slug=...` on the origin. The origin answers any `.php` address with a 301 to the extensionless address, so every one of those clean URLs answered `301` to `/<page>?slug=...` (the page canonical still named the clean URL, so a redirect and a canonical pointed at each other). The Worker file now rewrites to `/<page>?slug=...` directly (200, no hop). The permanent fix is the nginx rules in this file; once they are in, the Worker's `legacyPhpUrl()` can be deleted along with the rest of the Worker.
 
 Check after a Worker change: `curl -sI https://seatoutlet.com/state/florida` must answer `200`, not `301`.
+
+## QA sheet follow-up (6 Oct 2026): rules for the web server and Cloudflare
+
+The Worker (deploy/cloudflare-worker/seatoutlet-blog-proxy.js) and PHP (`soRedirectCanonicalForm()` in functions.php) now answer these. Put the same rules in nginx and Cloudflare so they hold without the Worker (after cutover) and for any request that skips it.
+
+```nginx
+# DEV-04: dependency manifests and project files are never public (404, nothing revealed)
+location ~ ^/(vendor|docs|deploy|db|tools|cron|inc|cache|tests?|node_modules)(/|$) { return 404; }
+location ~ ^/(composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml(\.dist)?|README|CHANGELOG|Makefile|docker-compose\.ya?ml)$ { return 404; }
+location ~* \.(md|sql|sh|log|bak|ini|dist|ya?ml|lock)$ { return 404; }
+location ~ /\.(git|env|htaccess|gitignore|gitattributes) { return 404; }
+
+# DEV-06: unknown addresses get the branded 404 page (status 404), not php-fpm's plain "File not found."
+error_page 404 /404.php;
+fastcgi_intercept_errors on;          # in the location that passes .php to php-fpm
+
+# DEV-07: one path form (no trailing slash; capital letters are handled by PHP and the Worker)
+rewrite ^/(.+)/$ /$1 permanent;
+
+# DEV-05: one host
+server { listen 443 ssl; server_name www.seatoutlet.com; return 301 https://seatoutlet.com$request_uri; }
+
+# PERF-07: one caching rule for static files (no Expires next to Cache-Control)
+location ~* ^/(fonts|lib)/|\.min\.(css|js)$ { add_header Cache-Control "public, max-age=31536000, immutable"; expires off; }
+location ^~ /images/ { add_header Cache-Control "public, max-age=2592000"; expires off; }
+```
+
+Cloudflare (dashboard):
+- **www to apex (DEV-05):** Rules, Redirect Rules, "hostname equals www.seatoutlet.com" to `concat("https://seatoutlet.com", http.request.uri.path)` keeping the query string, status 301. (The Worker route must also list `www.seatoutlet.com/*` if the Worker should do it.)
+- **Rocket Loader (DEV-12):** Speed, Optimization, Content Optimization, Rocket Loader OFF, on the live zone and on beta.seatoutlet.com. Both hostnames inject the loader and each rewrites the scripts with its own key, which is why the page source shows three `rocket-loader.min.js` tags. Switching it off removes the duplicates, the script type rewrites and a source of layout shift. Do not strip the tags in code: the rewritten `type="<key>-text/javascript"` scripts need the loader to run.
+- **Security headers (DEV-11):** Rules, Transform Rules, Modify Response Header: delete any rule that sets `Referrer-Policy`, `X-Frame-Options` or `X-Content-Type-Options`. The site sends them (soSendSecurityHeaders) and the Worker keeps one value of each. A `same-origin` Referrer-Policy value on live pages comes from a layer outside the code.
+- **Image host (PERF-02):** Caching, Cache Rules: hostname equals the image host (cdn-beta.seatoutlet.com today), "Eligible for cache", Edge TTL "Use cache-control header if present, else 30 days". Then point the image host at a production name (cdn.seatoutlet.com) and set `AWS_CDN_URL` (inc/env.local.php or the server environment; `tools/check-env.php` reports BETA while it still names cdn-beta). Image addresses already stored in the database and in cache/*.json keep the old host, so keep both names resolving until those are refreshed.
+- **HTML at the edge (PERF-06):** Cache Rule for `seatoutlet.com` HTML: "Eligible for cache", "Respect origin TTL". The site already sends `Cache-Control: public, s-maxage=120, stale-while-revalidate` on public pages and `no-store` on checkout, admin and degraded pages.
+
+Check after changes: `curl -sI https://seatoutlet.com/vendor/composer/installed.json` is 404; `curl -sI https://www.seatoutlet.com/` is 301 to `https://seatoutlet.com/`; `curl -sI https://seatoutlet.com/about-seat-outlet/` is 301; `curl -s https://seatoutlet.com/no-such-page` shows the branded page; `curl -sI https://seatoutlet.com/` shows one `referrer-policy`.

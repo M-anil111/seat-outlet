@@ -3,6 +3,7 @@ require_once 'functions.php';
 $pageMetaTitle       = 'WingCMS – End to End Real Estate Tech | Seat Outlet Network';
 $pageMetaDescription = 'WingCMS is a content management system built for the real estate industry, with website building, property marketing, IDX listings, and lead management tools.';
 $pageCanonicalUrl    = HOME_URL . '/wingcms';
+$pageRobots = 'noindex, follow';   // thin partner page: not worth a crawl, kept for visitors
 include 'header.php';
 ?>
 

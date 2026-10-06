@@ -60,7 +60,7 @@ function soPageHero(array $o): void {
           <p class="so-phero__lead"><?php echo $h($o['lead']); ?></p>
         <?php } ?>
         <?php if ($stats) { ?>
-          <p class="so-phero__stats"><?php echo implode('<span class="so-phero__dot" aria-hidden="true">&middot;</span>', $stats); ?></p>
+          <p class="so-phero__stats"><?php echo implode('<span class="so-phero__dot" aria-hidden="true">&middot;</span>', array_map(function ($st) { return '<span class="so-phero__stat">' . $st . '</span>'; }, $stats)); ?></p>
         <?php } ?>
         <?php if (($o['note'] ?? true) || !empty($o['cta'])) { ?>
           <div class="so-phero__foot">

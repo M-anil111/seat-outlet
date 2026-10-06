@@ -1490,7 +1490,7 @@ h3,
 
 /* Partner label */
 .partner-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.8px;
     color: #000;
@@ -2343,7 +2343,7 @@ h3,
   .location-input-clear {
     border: none;
     background: transparent;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     padding: 0 2px;
     cursor: pointer;
     color: #6b7280;
@@ -3884,7 +3884,7 @@ h3,
 }
 
 .stat-label {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   opacity: 0.8;
   text-align: center;
   line-height: 1.3;
@@ -3980,7 +3980,7 @@ h3,
 }
 
 .article-type {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -4269,7 +4269,7 @@ h3,
 
 .search-loader {
   display: none; 
-  font-size: 10px;
+  font-size: 12px;
   color: #666;
   position: absolute;
   right: 120px;
@@ -4623,7 +4623,7 @@ a.common-btn:hover{
 }
 .bg-surface { background: #f5f3ef !important; }
 .section-label {
-  font-size: .72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 2.5px;
   text-transform: uppercase;
@@ -4914,7 +4914,7 @@ a.common-btn:hover{
   border: 1px #fff solid;
 
   color: #ffffff;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -4950,9 +4950,9 @@ a.common-btn:hover{
     right: 16px;
     max-width: 100%;
   }
-  .top-hero-slider .slide-caption .tag { margin-bottom: 6px; font-size: 0.6rem; }
+  .top-hero-slider .slide-caption .tag { margin-bottom: 6px; font-size: 0.75rem; }
   .top-hero-slider .slide-caption p { display: none; } /* hide paragraph on very small screens */
-  .top-hero-slider .slide-caption .btn-slide { padding: 8px 20px !important; font-size: 10px; letter-spacing: 0.14em; }
+  .top-hero-slider .slide-caption .btn-slide { padding: 8px 20px !important; font-size: 12px; letter-spacing: 0.14em; }
   .top-hero-slider .slide-caption h1,
   .top-hero-slider .slide-caption h2,
 .top-hero-slider .slide-caption h2.h1 {line-height: 28px;}
@@ -5004,7 +5004,7 @@ a.common-btn:hover{
 }
 
 .hero-slider .slick-dots li button:before {
-  font-size: 11px;
+  font-size: 12px;
   color: #567ff9;
   opacity: 0.45;
 }
@@ -5177,11 +5177,11 @@ a.common-btn:hover{
 .performer-event-item .ms-3{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .event-price-tag{font-size:13px;color:#555;white-space:nowrap;line-height:1.2}
 .event-price-tag strong{color:#111;font-size:15px}
-.event-deal-badge{display:inline-block;background:#e8f7ee;color:#137a3a;border:1px solid #b9e6c9;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.3px;padding:1px 6px;text-transform:uppercase;vertical-align:middle}
+.event-deal-badge{display:inline-block;background:#e8f7ee;color:#137a3a;border:1px solid #b9e6c9;border-radius:4px;font-size: 12px;font-weight:700;letter-spacing:.3px;padding:1px 6px;text-transform:uppercase;vertical-align:middle}
 @media (max-width:576px){.event-price-tag{font-size:12px}.event-price-tag strong{font-size:13px}}
 
 /* Photo credit under sourced images (CC BY / BY-SA attribution) */
-.img-credit{font-size:11px;line-height:1.3;color:#9aa3ad;margin-top:6px;opacity:.85}
+.img-credit{font-size: 12px;line-height:1.3;color:#9aa3ad;margin-top:6px;opacity:.85}
 .artist-info .img-credit,.img-artist .img-credit{color:rgba(255,255,255,.7)}
 
 /* Performer page: snapshot line under the H1, next-event and price cards in the sidebar */
@@ -5189,7 +5189,7 @@ a.common-btn:hover{
 .artist-snapshot strong{color:#fff}
 .artist-snapshot .dot{margin:0 8px;opacity:.6}
 .next-event-card,.price-snapshot-card{background:#fff;border:1px solid #e3e6ea;border-radius:10px;padding:16px 18px}
-.next-event-label{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#6c757d;margin-bottom:6px}
+.next-event-label{font-size: 12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#6c757d;margin-bottom:6px}
 .next-event-date{font-weight:600;color:#111}
 .next-event-name{font-size:15px;margin-top:2px;color:#222}
 .next-event-venue{font-size:13px;color:#666;margin-top:2px}
@@ -5202,7 +5202,7 @@ a.common-btn:hover{
 .checkout-page,.confirmation-page{background:#f6f7f9}
 .checkout-card{background:#fff;border:1px solid #e3e6ea;border-radius:12px;padding:22px 24px}
 .checkout-card .date-box{min-width:56px;border:1px solid #e3e6ea;border-radius:8px;padding:6px 8px;background:#f8f9fa}
-.checkout-card .date-box .month{font-size:11px;font-weight:700;letter-spacing:.5px;color:#555}
+.checkout-card .date-box .month{font-size: 12px;font-weight:700;letter-spacing:.5px;color:#555}
 .checkout-card .date-box .day{font-size:20px;font-weight:700;line-height:1.1;color:#111}
 .checkout-lines dt{font-weight:500;color:#333}
 .checkout-lines dd{font-weight:600;color:#111}
@@ -5221,15 +5221,15 @@ a.common-btn:hover{
 .listing-filter-empty{font-size:14px;color:#555;margin:6px 0 0}
 .search-corrected{font-size:15px;color:#333}
 .did-you-mean{font-size:16px}
-.event-low-inv{display:block;font-size:11px;color:#b45309;margin-top:2px}
-.event-cheapest-badge{display:inline-block;background:#eef4ff;color:#1a5cff;border:1px solid #c9dbff;border-radius:4px;font-size:11px;font-weight:700;padding:1px 6px;text-transform:uppercase;letter-spacing:.3px}
+.event-low-inv{display:block;font-size: 12px;color:#b45309;margin-top:2px}
+.event-cheapest-badge{display:inline-block;background:#eef4ff;color:#1a5cff;border:1px solid #c9dbff;border-radius:4px;font-size: 12px;font-weight:700;padding:1px 6px;text-transform:uppercase;letter-spacing:.3px}
 .recently-viewed{padding:28px 0}
 .recently-viewed h2{font-size:22px}
 .recent-card{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #e3e6ea;border-radius:10px;background:#fff;text-decoration:none;color:#111;height:100%}
 .recent-card img{width:56px;height:56px;object-fit:cover;border-radius:8px;flex:0 0 56px;background:#f0f2f5}
 .recent-card span{font-weight:600;font-size:14px;line-height:1.3}
 .recent-event small{color:#5b6573;font-size:13px}
-.search-recents-label{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#6c757d;padding:8px 12px 2px}
+.search-recents-label{font-size: 12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#6c757d;padding:8px 12px 2px}
 
 /* Accessibility: AA contrast for links on the light grey event panels, and tap targets of at least 24px for text links in listings. */
 .event-detail .event-location a,
@@ -5270,7 +5270,7 @@ a.common-btn:hover{
   text-align: center;
   color: rgba(255, 255, 255, .94);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: .08em;
@@ -5511,7 +5511,7 @@ a.common-btn:hover{
 /* results header */
 .results-header { margin-bottom: 4px; }
 .results-title h2, .results-title h2.h1, .results-title h1 { font-size: clamp(17px, 4.6vw, 22px); line-height: 1.25; letter-spacing: .01em; }
-.results-title .count { display: inline-block; font-size: .72em; background: #eef2ff; color: var(--so-blue-2); padding: 3px 10px; border-radius: 999px; vertical-align: middle; font-weight: 700; margin-left: 4px; }
+.results-title .count { display: inline-block; font-size: 0.75em; background: #eef2ff; color: var(--so-blue-2); padding: 3px 10px; border-radius: 999px; vertical-align: middle; font-weight: 700; margin-left: 4px; }
 .results-title .dot { display: none; }
 
 /* filter bar: two soft inputs, chevron on the right */
@@ -5552,7 +5552,7 @@ a.common-btn:hover{
 .event-row-all .performer-event-item .btn.btn-primary { display: inline-flex !important; align-items: center; justify-content: center; gap: 6px; height: 42px; padding: 0 18px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 700; background: var(--so-blue); }
 .event-row-all .performer-event-item .btn.btn-primary:hover { background: var(--so-blue-2); }
 .event-row-all .performer-event-item .btn .d-none { display: inline !important; }
-.event-row-all .event-cheapest-badge { font-size: 11px; }
+.event-row-all .event-cheapest-badge { font-size: 12px; }
 @media (max-width: 575.98px) {
     .event-row-all .performer-event-item { grid-template-columns: 54px minmax(0, 1fr); padding: 16px; gap: 6px 14px; }
     .event-row-all .performer-event-item .date-box { width: 54px; }
@@ -5644,7 +5644,7 @@ a.next-event-name { display: block; margin-top: 8px; font-size: 18px; font-weigh
 /* ABOVE THE FOLD ON PHONES: one strip (keyword + guarantee), search folded behind its icon, compact artist hero */
 .so-strip-guarantee { display: none; }
 .so-resale-note { font-size: 13px; color: rgba(255, 255, 255, .72); margin-top: 10px; }
-.so-hero-credit { font-size: 10px; color: rgba(255, 255, 255, .5); margin-top: 8px; }
+.so-hero-credit { font-size: 12px; color: rgba(255, 255, 255, .5); margin-top: 8px; }
 .so-search-toggle.is-open { background: #fff; }
 .so-search-toggle.is-open i { color: #1c47c7; }
 @media (max-width: 991.98px) {
@@ -6674,8 +6674,8 @@ a.so-live__row:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(
   .event-row-all .performer-event-item { grid-template-columns: 52px minmax(0, 1fr); padding: 12px 2px; gap: 2px 12px; }
   .event-row-all .performer-event-item .date-box { width: 52px; border-radius: 14px; }
   .event-row-all .performer-event-item .date-box .day { font-size: 24px; padding-bottom: 4px; }
-  .event-row-all .performer-event-item .date-box .month:first-child { padding-top: 6px; font-size: 11px; }
-  .event-row-all .performer-event-item .date-box .wd { padding: 2px 0; font-size: 11px; }
+  .event-row-all .performer-event-item .date-box .month:first-child { padding-top: 6px; font-size: 12px; }
+  .event-row-all .performer-event-item .date-box .wd { padding: 2px 0; font-size: 12px; }
   .event-row-all .performer-event-item > .ms-3 { grid-column: 2; grid-row: 2; width: 100%; flex-direction: row; justify-content: space-between; align-items: center; gap: 8px; margin: 2px 0 0 !important; padding: 4px 0 0; border-top: 0; }
   .event-row-all .performer-event-item .btn.btn-primary, .event-row-all .performer-event-item .btn.btn-outline-primary { flex: none; min-width: 0; max-width: none; height: 44px; padding: 0 14px; font-size: 15px; }
   .event-row-all .ev-name a, .so-festgroup__title { font-size: 17px; }
@@ -6751,7 +6751,7 @@ a.performer-filter-btn { text-decoration: none; }
 .so-info-btn { background: none; border: 0; padding: 0; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin: -10px 0; cursor: pointer; }
 .so-tag-low { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 980px; background: #e6f4ea; color: #1a7f37; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .img-credit a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
-.so-related__media .so-related__credit { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 8px 4px; font-size: 10px; line-height: 1.2; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.55)); pointer-events: none; }
+.so-related__media .so-related__credit { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 8px 4px; font-size: 12px; line-height: 1.2; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.55)); pointer-events: none; }
 .so-related__credits { margin: 8px 0 0; font-size: 12px; text-align: right; }
 @media (max-width: 575.98px) {
   .so-ent-hero__row { flex-direction: column; align-items: flex-start; gap: 14px; }
@@ -6921,7 +6921,9 @@ a.so-trust__cta:focus-visible { outline: 3px solid #9db6f4; outline-offset: 3px;
 }
 
 /* Privacy bar (js/consent.js) */
-.so-consent { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 2500; max-width: 760px; margin: 0 auto; padding: 16px 18px; background: #0b1120; color: #f1f5f9; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+.so-consent { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 1040; max-width: 760px; margin: 0 auto; padding: 16px 18px; background: #0b1120; color: #f1f5f9; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+/* Under every modal, sheet and the mobile menu: it must never cover their buttons (QA UI-02). It stays out of the way while one is open. */
+body:has(.offcanvas.show, .modal.show, [role="dialog"][aria-modal="true"]:not([hidden])) .so-consent { display: none; }
 .so-consent__text { margin: 0 0 12px; font-size: 15px; line-height: 1.5; }
 .so-consent__text a { color: #a5c8fd; text-decoration: underline; }
 .so-consent__actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -7371,7 +7373,7 @@ body.so-home .tm-header .container-fluid { padding-bottom: 0 !important; }
 .so-topc__title { position: absolute; left: 16px; bottom: 34px; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #fff; }
 .so-topc__from { position: absolute; right: 14px; top: 16px; padding: 6px 12px; border-radius: 980px; background: #fff; color: #111827; font-size: 13px; font-weight: 800; }
 .so-topc__from[hidden] { display: none; }
-.so-topc__tag { position: absolute; left: 16px; bottom: 12px; margin: 0; font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.88); }
+.so-topc__tag { position: absolute; left: 16px; bottom: 12px; margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.88); }
 .so-topc__list { list-style: none; margin: 0; padding: 6px 8px; flex: 1; }
 .so-topc__row { display: flex; align-items: center; gap: 12px; padding: 9px 8px; border-radius: 12px; color: #111827; text-decoration: none; font-weight: 600; font-size: 16px; transition: background .15s ease; }
 .so-topc__row:hover { background: #f4f6fb; }
@@ -7617,7 +7619,7 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
    Advertisement banner (AdSense): a quiet, rounded card under the hero on every page
    ========================================================================== */
 .so-ad { position: relative; max-width: 1242px; margin: 26px auto 14px; padding: 0 12px; text-align: left; }
-.so-ad__label { display: block; margin: 0 0 9px 6px; font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #6e6e73; line-height: 1; }
+.so-ad__label { display: block; margin: 0 0 9px 6px; font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #6e6e73; line-height: 1; }
 .so-ad .adsbygoogle, .so-ad__ph { display: block; position: relative; min-height: 96px; margin: 0; border-radius: 22px; overflow: hidden; background: #fff; border: 1px solid rgba(60, 60, 67, .12); box-shadow: 0 1px 1px rgba(0, 0, 0, .03), 0 14px 34px -14px rgba(0, 0, 0, .2); }
 .so-ad__ph { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 18px; text-align: center; background: radial-gradient(120% 140% at 0% 0%, #ffffff 0%, #f4f6fb 55%, #eceff6 100%); isolation: isolate; }
 .so-ad__ph strong { font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: #1d1d1f; }
@@ -7635,6 +7637,10 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 /* Inside a column or container the page already provides the gutter: the card lines up with the content around it */
 .container .so-ad, .left-bar .so-ad, [class*="col-"] .so-ad { max-width: none; padding: 0; }
 .so-ad--foot { margin-top: 36px; margin-bottom: 36px; }
+/* An ad the network did not fill leaves no blank card behind, and on a phone the banner under the hero stays out of sight until it has an ad,
+   so the content follows the hero straight away (QA UI-05). */
+.so-ad:has(ins.adsbygoogle[data-ad-status="unfilled"]) { display: none; }
+@media (max-width: 767.98px) { .so-ad--banner:not(:has(ins.adsbygoogle[data-ad-status="filled"])):not(.so-ad--placeholder) { display: none; } }
 .so-ad--mid { margin-top: 30px; margin-bottom: 30px; }
 
 
@@ -7717,7 +7723,7 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
   .results-header.so-hero { min-height: 100px; padding: 16px 16px; gap: 14px; border-radius: 20px; margin-bottom: 12px; }
   .results-header.so-hero::before { width: 66px; height: 66px; border-radius: 16px; }
   .results-header.so-hero h1, .results-header.so-hero h2, .results-header.so-hero .h1 { font-size: clamp(20px, 6vw, 26px) !important; }
-  .results-header.so-hero .count { margin-top: 8px; padding: 3px 10px; font-size: 11px; }
+  .results-header.so-hero .count { margin-top: 8px; padding: 3px 10px; font-size: 12px; }
 }
 
 
@@ -7878,12 +7884,13 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-phero__lead { max-width: 64ch; margin: 0 0 12px; font-size: 17px; line-height: 1.45; color: #424245; }
 .so-phero__stats { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 14px; font-size: 17px; color: #1d1d1f; }
 .so-phero__stats strong { font-weight: 600; }
+.so-phero__stat { display: inline-block; }
 .so-phero__dot { color: #86868b; }
 .so-phero__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
 .so-phero__cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 22px; border-radius: 999px; background: #0056d6; color: #fff !important; font-size: 16px; font-weight: 600; text-decoration: none; }
 .so-phero__cta:hover { background: #0041a3; }
 .so-phero__note { margin: 0; font-size: 13px; line-height: 1.45; color: #6e6e73; }
-.so-phero__credit { display: block; margin-top: 8px; font-size: 11px; color: #86868b; }
+.so-phero__credit { display: block; margin-top: 8px; font-size: 12px; color: #86868b; }
 .so-phero__credit a { color: inherit; }
 @media (max-width: 991.98px) {
   .so-phero .so-evhero__card { grid-template-columns: 150px minmax(0, 1fr); }
@@ -7907,7 +7914,7 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .results-title .active-indicator { display: none; }
 .results-title h1, .results-title h2, .results-title h2.h1 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; color: #1d1d1f; }
 .results-title .count { color: #6e6e73; font-weight: 400; }
-@media (max-width: 575.98px) { .so-phero__dot { display: none; } .so-phero__stats { gap: 2px 14px; } }
+@media (max-width: 575.98px) { .so-phero__dot { display: none; } .so-phero__stats { gap: 2px 18px; } .so-phero__stat + .so-phero__stat { margin-left: 0; } }
 
 /* Controls that navigate through data-go (see js/main.js) are not links, so give them the pointer. */
 [data-go] { cursor: pointer; }
@@ -7933,3 +7940,24 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 
 /* "Where it is playing" lists: only the first rows show with JavaScript until "Show all"; every link stays in the page. */
 .so-list--js .so-list__item--extra { display: none; }
+
+/* Event page: slim title strip above the seat map (replaces the old hero card), so the map and the tickets start above the fold. */
+.so-evbar { background: #f5f5f7; padding: 8px 0 6px; }
+.so-evbar > .container { max-width: 1240px; }
+.so-evbar__title { font-size: clamp(20px, 2.4vw, 28px); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; color: #1d1d1f; margin: 2px 0 4px; overflow-wrap: anywhere; }
+.so-evbar__sub { display: block; font-size: 15px; font-weight: 600; letter-spacing: 0; color: #0056d6; margin-top: 2px; }
+.so-evbar__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; margin: 0 0 2px; font-size: 15px; line-height: 1.4; color: #6e6e73; }
+.so-evbar__meta a { display: inline-block; padding: 14px 2px; margin: -14px -2px; color: inherit; text-decoration: none; }   /* 44px tap area without a taller line */
+.so-evbar__meta a:hover { color: #0056d6; text-decoration: underline; }
+.so-evbar__meta .so-evbar__more { color: #0056d6; font-weight: 600; }
+.so-evbar__note { margin: 0; font-size: 12px; line-height: 1.4; color: #6e6e73; }
+.so-evbar__note a { color: #0b3c91; font-weight: 600; }
+@media (min-width: 992px) { .so-evbar__title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 14px; } .so-evbar__sub { display: inline; margin: 0; } }
+@media (max-width: 575.98px) { .so-evbar { padding: 6px 0 4px; } .so-evbar__title { font-size: 19px; } .so-evbar__sub { font-size: 14px; } .so-evbar__meta { font-size: 14px; } }
+
+/* Tap targets (QA MOB-05): stand-alone links get at least a 24px high, in practice 44px, hit area on touch screens. Links inside a sentence
+   keep their line height (WCAG 2.2 allows that), and the event cards are tapped as a whole by their stretched link. */
+@media (pointer: coarse), (max-width: 767.98px) {
+  .so-picks-all, .footer-bottom-logo, .so-guarantee__links a, .so-nl__legal a, .geo-attribution a { display: inline-flex; align-items: center; min-height: 44px; }
+  .so-evc__link { display: inline-block; min-height: 24px; }
+}

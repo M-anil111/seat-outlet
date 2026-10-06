@@ -39,7 +39,7 @@ function soLeadEmail($v) {
     if ($v === '' || strlen($v) > 254 || preg_match('/[\x00-\x1F\x7F\s,;<>"\']/', $v)) return null;
     if (!filter_var($v, FILTER_VALIDATE_EMAIL)) return null;
     $domain = substr($v, strrpos($v, '@') + 1);
-    if (strpos($domain, '.') === false) return null;
+    if (!preg_match('/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:xn--[a-z0-9-]{2,}|[a-z]{2,})$/i', $domain)) return null;   // a full domain with a real ending (not "me@x.c" or "me@host")
     return strtolower($v);
 }
 

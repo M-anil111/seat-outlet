@@ -117,7 +117,7 @@ function soCategorySeo(array $cfg, array $d) {
     $lbl = soListingInline($label);   // acronyms (NBA, MLB, R&B) keep their capitals inside sentences
     $kw = $lbl . ' tickets';
     $unit = $kind === 'sports' ? 'games' : ($kind === 'concerts' ? 'concerts' : 'shows');
-    $cityPrefix = $kind === 'sports' ? 'sports-city' : ($kind === 'concerts' ? 'concerts-city' : 'event-city');
+    $cityPrefix = $kind === 'sports' ? 'sports-city' : ($kind === 'concerts' ? 'concerts-city' : 'city');
     $hub = $kind === 'sports' ? ['/game-day-tickets', 'game day tickets'] : ($kind === 'concerts' ? ['/concert-tickets-for-sale', 'concert tickets for sale'] : ['/buy-tickets-online', 'tickets for every event']);
     $profile = soCategoryProfile($cfg['profile'] ?? '');
     $cityNames = array_map(function ($c) { return $c['label']; }, $d['cities']);

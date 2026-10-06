@@ -19,7 +19,7 @@ foreach ($topCities as $c) {
 }
 uasort($byState, function ($a, $b) { return $b['events'] <=> $a['events']; });
 
-$cityLinks = ['Events' => 'event-city', 'Concerts' => 'concerts-city', 'Sports' => 'sports-city', 'Theater' => 'theater-city', 'Festivals' => 'festivals-city'];
+$cityLinks = ['Events' => 'city', 'Concerts' => 'concerts-city', 'Sports' => 'sports-city', 'Theater' => 'theater-city', 'Festivals' => 'festivals-city'];
 $h = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); };
 
 include 'header.php';
@@ -61,7 +61,7 @@ include 'header.php';
                             <?php foreach ($info['cities'] as $city) {
                                 $citySlug = soSlug('city', $city['label'], $city['id']); ?>
                                 <div class="so-citycard">
-                                    <a class="so-citycard__main" href="/event-city/<?php echo $h($citySlug); ?>" title="Events in <?php echo $h($city['name']); ?>">
+                                    <a class="so-citycard__main" href="/city/<?php echo $h($citySlug); ?>" title="Events in <?php echo $h($city['name']); ?>">
                                         <strong><?php echo $h($city['label']); ?></strong>
                                         <span><?php echo number_format((int) $city['eventCount']); ?> events</span>
                                     </a>

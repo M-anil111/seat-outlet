@@ -59,6 +59,8 @@ jobs:
         run: php tools/test-ratelimit.php
       - name: Old address forms still resolve
         run: php tools/test-slug-legacy.php
+      - name: Worker helpers (blocked paths, clean paths, rewrites)
+        run: node tools/test-worker.mjs
 
       - name: The sitemap's automatic page list finds every page and only pages
         run: php tools/check-sitemap-pages.php

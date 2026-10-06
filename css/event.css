@@ -1023,7 +1023,7 @@ font-size: 18px;
         border-radius: 4px;
         cursor: pointer;
         display: none;
-        font-size: 10px;
+        font-size: 12px;
         position: static;
         width: 180px;
         float: right;
@@ -1037,7 +1037,7 @@ font-size: 18px;
         .sea-marketing-header .sea-marketing-header-label,
         .sea-marketing-html-map .sea-marketing-header-label {
             display: block;
-            font-size: 10px;
+            font-size: 12px;
             text-align: center;
             margin-bottom: 5px;
         }
@@ -1577,7 +1577,7 @@ font-size: 18px;
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-tg-list-value-score-inner { display: inline-block; padding: 0 !important; }
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-value-score-star { display: inline-block; }
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-value-score-star-rightmost { margin-right: 0 !important; }
-    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-value-score-star:before { color: #f5a300 !important; font-size: 11px; width: auto !important; margin: 0 !important; }
+    #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-value-score-star:before { color: #f5a300 !important; font-size: 12px; width: auto !important; margin: 0 !important; }
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .sea-tg-list-value-score-text { margin-left: 0; color: #0f1b3d; }
     /* Wrap long section names between words, never mid-word. */
     #tn-maps:has(.sea-ticket-type-option.active :is(button[value="Any"], button[value="AdaAccessible"])) .venue-ticket-list-section-row-text { word-break: normal; overflow-wrap: break-word; hyphens: none; }
@@ -1755,7 +1755,7 @@ font-size: 18px;
 #tn-maps tr.Sea-TicketRow .venue-ticket-list-cta-col { vertical-align: middle; text-align: center; }
 #tn-maps tr.Sea-TicketRow .venue-ticket-list-cta-col .buy-btn { display: inline-block; margin: 0 0 6px; padding: 9px 16px; border-radius: 980px; background: #0071e3; color: #fff !important; font-size: 14px; font-weight: 600; line-height: 1.1; }
 #tn-maps tr.Sea-TicketRow .sea-tg-list-value-score-inner { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
-#tn-maps tr.Sea-TicketRow .sea-value-score-star { font-size: 11px !important; }
+#tn-maps tr.Sea-TicketRow .sea-value-score-star { font-size: 12px !important; }
 #tn-maps tr.Sea-TicketRow .sea-tg-list-value-score-text { display: inline-block; padding: 2px 9px; border-radius: 980px; background: #e6f4ea; color: #137333 !important; font-size: 12px !important; font-weight: 700 !important; font-style: normal !important; }
 
 /* Row layout: details on the left (section, row, how many tickets), price over the Buy button on the right. The details icon sits at
