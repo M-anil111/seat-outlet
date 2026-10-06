@@ -55,6 +55,8 @@ jobs:
 
       - name: County helpers (Census response parsing, city filter) behave
         run: php tools/test-counties.php
+      - name: Crawl guard
+        run: php tools/test-ratelimit.php
 
       - name: The sitemap's automatic page list finds every page and only pages
         run: php tools/check-sitemap-pages.php

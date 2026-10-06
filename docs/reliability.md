@@ -40,3 +40,7 @@ Empty categories and empty location pages are indexable again; an empty page is 
 - Run site audits with 1 or 2 threads and a delay (not the default speed), and ask TicketNetwork for the limits on our key (see above).
 - Fixed in code: internal links still used the API's old name-and-id address (`/artist/arizona-cardinals-57`, `/category/other-1900`) on directory pages, related-performer cards, the home venue and nearby-venue feeds and the category breadcrumb. Each answered 301, which is the 6,456 "internal links to 3XX". They now use the clean slugs.
 - Not code: old address forms in the audit that now 301 (`/event/<name>-<id>`, `/concert-venue/<name>-<id>`) will clear on the next audit; the "CSS not minified" count (6,004) was the unminified carousel CSS fixed on 5 Oct.
+
+## Crawl guard (per-address page limit)
+
+`inc/crawl-guard.php` counts public page requests per address per minute (files in `cache/ratelimit/`). Over `SO_RL_PER_MIN` (default 120; search engine bots get 3x; 0 turns it off) the visitor gets `429` with `Retry-After`, and no page is built and no ticket API call is made. This stops one site audit or scraper (the 4 to 5 Oct 2026 audit loaded 58,000 pages) from using up the ticket API allowance and turning pages into 503 for everyone. Data endpoints, checkout, admin, cron, sitemaps and robots.txt are not counted. Set audit tools to 1 to 2 threads with a delay, or raise the limit for a known audit address in `inc/env.local.php`. Behind Cloudflare the address comes from `CF-Connecting-IP`.
