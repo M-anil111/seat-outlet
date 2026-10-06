@@ -7895,3 +7895,6 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 .so-rows__lm-hold { display: none !important; }
 /* Blog on phones: only three more-guide cards until "Show more guides". */
 .so-art__more-grid.so-cap3 > :nth-child(n+4) { display: none; }
+
+/* "Where it is playing" lists: only the first rows show with JavaScript until "Show all"; every link stays in the page. */
+.so-list--js .so-list__item--extra { display: none; }
