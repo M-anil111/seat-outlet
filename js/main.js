@@ -508,12 +508,32 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       return fp;
     }
+    // Fallback when the calendar library cannot be loaded: the browser's own date fields (From, To) in a small panel under the field.
+    function nativeDateFallback() {
+        if (dateEl.getAttribute('data-fallback')) { var open = document.getElementById('soDateFallback'); if (open) open.hidden = false; return; }
+        dateEl.setAttribute('data-fallback', '1');
+        var today = new Date(), iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+        var panel = document.createElement('div');
+        panel.id = 'soDateFallback'; panel.className = 'so-date-fallback'; panel.setAttribute('role', 'group'); panel.setAttribute('aria-label', 'Choose dates');
+        panel.innerHTML = '<label>From <input type="date" id="soDateFrom" min="' + iso(today) + '"></label><label>To <input type="date" id="soDateTo" min="' + iso(today) + '"></label><button type="button" class="so-date-fallback__done">Done</button>';
+        (dateEl.closest('.search-item') || dateEl.parentNode).appendChild(panel);
+        var from = panel.querySelector('#soDateFrom'), to = panel.querySelector('#soDateTo');
+        function apply() {
+            if (from.value && to.value && to.value < from.value) to.value = from.value;
+            if (DOM.startInputHeader) DOM.startInputHeader.value = from.value;
+            if (DOM.endInputHeader) DOM.endInputHeader.value = to.value || from.value;
+            dateEl.value = from.value ? (from.value + (to.value && to.value !== from.value ? ' to ' + to.value : '')) : '';
+        }
+        from.addEventListener('change', apply); to.addEventListener('change', apply);
+        panel.querySelector('.so-date-fallback__done').addEventListener('click', function () { apply(); panel.hidden = true; });
+        panel.hidden = false;
+    }
     ['pointerdown', 'touchstart', 'focus'].forEach(function (evt) {
         dateEl.addEventListener(evt, function () {
             soLoadFlatpickr().then(function () {
                 const f = getFp();
                 if (f && document.activeElement === dateEl) f.open();   // the calendar did not exist yet when the visitor tapped
-            }).catch(function () {});
+            }).catch(function () { nativeDateFallback(); });   // the calendar files did not load: two plain date fields instead of a dead field
         }, { once: true, passive: true });
     });
   

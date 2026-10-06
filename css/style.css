@@ -7961,3 +7961,10 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
   .so-picks-all, .footer-bottom-logo, .so-guarantee__links a, .so-nl__legal a, .geo-attribution a { display: inline-flex; align-items: center; min-height: 44px; }
   .so-evc__link { display: inline-block; min-height: 24px; }
 }
+
+/* Header date field when the calendar library failed to load: plain browser date fields (QA FUN-02 / DEV-10). */
+.so-date-fallback { position: absolute; top: calc(100% + 8px); left: 0; z-index: 1100; display: flex; flex-wrap: wrap; gap: 10px; align-items: end; padding: 14px; background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.16); color: #1d1d1f; }
+.so-date-fallback[hidden] { display: none; }
+.so-date-fallback label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
+.so-date-fallback input { min-height: 40px; padding: 0 10px; border: 1px solid #c7c7cc; border-radius: 10px; font-size: 15px; }
+.so-date-fallback__done { min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: #0071e3; color: #fff; font-weight: 600; }
