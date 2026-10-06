@@ -2408,12 +2408,12 @@ function unavailableBlockHtml($what) {
         . '</div></div>';
 }
 
-/** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, noindex, never cached. */
+/** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, never cached. */
 function renderUnavailablePage($what) {
     soSnapshotServe();   // the last good copy of this very page beats an error page
     http_response_code(503);
     header('Retry-After: 30');
-    $pageRobots = 'noindex, follow';
+    // No noindex: 503 + Retry-After is the whole message to crawlers; noindex on a temporary error can drop a live page.
     $pageMetaTitle = soTitle($what . ' Temporarily Unavailable');
     $pageMetaDescription = 'This page is temporarily unavailable. Please try again in a moment.';
     include 'header.php';
@@ -2458,12 +2458,6 @@ function soAsset($rel) {
     $min = preg_replace('/\.(css|js)$/', '.min.$1', $rel);
     $file = __DIR__ . '/' . $min;
     if ($min !== $rel && is_file($file)) {
-        // The live Cloudflare Worker answers exactly /js/main.min.js and /js/home.min.js itself, from a fixed GitHub commit,
-        // so later deploys of those two files would never reach seatoutlet.com. "/js//main.min.js" is the same file on the
-        // server (nginx merges slashes) but not a path the Worker intercepts, so live always gets the deployed version.
-        if (in_array($min, ['js/main.min.js', 'js/home.min.js'], true)) {
-            return rtrim(HOME_URL, '/') . '/js//' . basename($min) . '?v=' . filemtime($file);
-        }
         return rtrim(HOME_URL, '/') . '/' . $min . '?v=' . filemtime($file);
     }
     $file = __DIR__ . '/' . $rel;
@@ -2477,16 +2471,8 @@ function soAsset($rel) {
  * pass with reporting first.
  */
 function sendSecurityHeaders() {
-    if (headers_sent()) return;
-    header('X-Content-Type-Options: nosniff');
-    header('X-Frame-Options: SAMEORIGIN');
-    header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Permissions-Policy: camera=(), microphone=(), payment=(), geolocation=(self)');
-    if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')) {
-        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-    }
+    soSendSecurityHeaders();   // one list of headers, one place (soSendSecurityHeaders below)
 }
-
 
 /**
  * Cache-Control for public pages, so a CDN can serve the HTML instead of PHP.
@@ -2695,6 +2681,34 @@ function soPublicCanonical($html) {
     $from = rtrim(HOME_URL, '/');
     if ($from === SO_PUBLIC_ORIGIN) return $html;
     return preg_replace('#(<link rel="canonical" href="|<meta property="og:url" content=")' . preg_quote($from, '#') . '#', '$1' . SO_PUBLIC_ORIGIN, $html);
+}
+
+/**
+ * One host and one path form for every page: www.<host> answers 301 to the public host, a trailing slash is dropped and capital letters in a
+ * page address become lower case (301, query string kept). Static files, data endpoints and admin are left alone. The Worker and the web
+ * server do the same for requests that never reach PHP (docs/server-rewrites.md).
+ */
+function soRedirectCanonicalForm() {
+    if (PHP_SAPI === 'cli' || headers_sent()) return;
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
+    $uri  = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $path = (string) parse_url($uri, PHP_URL_PATH);
+    $qs   = (string) parse_url($uri, PHP_URL_QUERY);
+    $host = strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? ''))[0]));
+    $host = (string) preg_replace('/:\d+$/', '', $host);
+    $pub  = (string) parse_url(SO_PUBLIC_ORIGIN, PHP_URL_HOST);
+    $wrongHost = $pub !== '' && $host === 'www.' . $pub;
+    $clean = $path;
+    $skip = preg_match('#^/(ajax|admin|cdn-cgi|sitemaps|cron|tools|checkout|order-confirmation|thank-you)(/|$)#', $path) || preg_match('#\.[a-z0-9]{1,5}$#i', $path);
+    if (!$skip && $path !== '/') {
+        $clean = rtrim($path, '/');
+        $clean = $clean === '' ? '/' : strtolower($clean);
+    }
+    if (!$wrongHost && $clean === $path) return;
+    http_response_code(301);
+    header('Location: ' . ($wrongHost ? SO_PUBLIC_ORIGIN : '') . $clean . ($qs !== '' ? '?' . $qs : ''));
+    header('Cache-Control: public, max-age=3600');
+    exit;
 }
 
 function soRedirectLegacyUrl() {
@@ -6291,5 +6305,6 @@ register_shutdown_function('soAutoMigrateMaybeRun');   // beta only: keep the sc
 register_shutdown_function('soSitemapMaybeRun');   // background sitemap crawl, see inc/sitemap-build.php
 register_shutdown_function('imageWorkerMaybeRun');   // background image queue, see inc/images.php
 
+soRedirectCanonicalForm();
 soNoindexPrivatePaths();
 soCrawlGuardPublic();

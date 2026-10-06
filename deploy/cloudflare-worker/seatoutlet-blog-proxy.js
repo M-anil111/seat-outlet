@@ -8,6 +8,18 @@
 //   - Retired sitemap addresses 301 to the current ones instead of answering 410.
 //   - /sitemap.xsl is sent as text/xsl so browsers apply it.
 //   - robots.txt keeps its own answer here (the site's robots.php on the beta host says "Disallow: /"), now with the site's Disallow list.
+// Changes of 6 Oct 2026 (QA sheet "SeatOutlet-Website-QA-Audit"):
+//   - www.seatoutlet.com 301s to https://seatoutlet.com for every path (DEV-05).
+//   - Files that must never be public (vendor/, composer.json and .lock, docs/, deploy/, db/, tools/, cron/, inc/, cache/, tests/, .git, .env,
+//     *.md, *.sql, *.sh, *.log ...) answer 404 here, whatever the web server does (DEV-04).
+//   - A trailing slash or capital letters in a page address 301 to the clean address; files and data endpoints are left alone (DEV-07).
+//   - The web server's plain "File not found." / nginx 404 for an unknown address is replaced by the site's branded 404 page, still status 404 (DEV-06).
+//   - /favicon.ico and /.well-known/security.txt answer even if the web server has no such file (DEV-14).
+//   - The security headers the site and the web server both send are collapsed to one value each (DEV-11).
+//   - /js/main.min.js and /js/home.min.js are no longer answered from a fixed GitHub commit (that is what forced the "/js//main.min.js" address
+//     in the page source, DEV-12); the deployed files are served.
+//   - Static files lose the web server's Expires header so Cache-Control is the only rule (PERF-07).
+//   - Clean URLs are rewritten to the extensionless address, not .php (no 301 to ?slug= addresses, DEV-03).
 // Everything else is as deployed. Source of truth for the Worker: this file. Deploy with `npx wrangler deploy` or paste into the
 // dashboard (Workers, seatoutlet-blog-proxy, Edit code). docs/production-cutover.md retires the Worker at cutover.
 
@@ -18,11 +30,6 @@ var DEFAULT_LOCATION = {
   lat: "30.29710",
   lng: "-97.81810"
 };
-var LIVE_REPO_COMMIT = "32fd011361236977c2121f8248ff1dba8e37331d";
-var REPO_JS_ASSETS = new Set([
-  "/js/main.min.js",
-  "/js/home.min.js"
-]);
 var CANONICAL_ORIGIN = "https://seatoutlet.com";
 // The same list robots.php prints (SO_ROBOTS_DISALLOW in inc/sitemap-build.php).
 var ROBOTS_DISALLOW = ["/admin/", "/ajax/", "/cache/", "/vendor/", "/db/", "/tools/", "/cron/", "/deploy/", "/docs/", "/inc/", "/search", "/checkout", "/newsletter", "/unsubscribe", "/thank-you", "/order-confirmation"];
@@ -85,17 +92,45 @@ var BLOG_POSTS = {
     alt: "Crowd at a large arena concert with stage lights and rigging overhead"
   }
 };
+// Paths that must never be public. Answered 404 (not 403: nothing is revealed about what exists).
+var BLOCKED_PATH = /^\/(vendor|docs|deploy|db|tools|cron|inc|cache|tests?|node_modules|\.git|\.github|\.env[^/]*)(\/|$)|^\/(composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml(\.dist)?|\.gitignore|\.gitattributes|\.htaccess|Makefile|docker-compose\.ya?ml|README|CHANGELOG)$|\.(md|sql|sh|log|bak|ini|dist|yml|yaml|lock)$/i;
+var SECURITY_TXT = "Contact: mailto:info@seatoutlet.com\nExpires: 2027-10-06T00:00:00.000Z\nPreferred-Languages: en\nCanonical: https://seatoutlet.com/.well-known/security.txt\n";
+/** True for a path that must answer 404 without asking the origin. */
+function isBlockedPath(pathname) {
+  return BLOCKED_PATH.test(pathname);
+}
+/**
+ * The clean form of a page address: no trailing slash, lower case. Anything with a file extension, the data endpoints, admin, Cloudflare's own
+ * paths and the sitemaps are returned unchanged. Returns the same string when nothing needs to change.
+ */
+function cleanPagePath(pathname) {
+  if (pathname === "/" || /^\/(ajax|admin|cdn-cgi|sitemaps|cron|tools|\.well-known)(\/|$)/.test(pathname) || /\.[a-z0-9]{1,5}$/i.test(pathname)) {
+    return pathname;
+  }
+  const trimmed = pathname.replace(/\/+$/, "");
+  return (trimmed === "" ? "/" : trimmed).toLowerCase();
+}
 var index_default = {
   async fetch(request) {
     const url = new URL(request.url);
+    // One host: www.<domain> goes to the apex with the same path and query.
+    if (url.hostname === "www." + new URL(CANONICAL_ORIGIN).hostname) {
+      return Response.redirect(CANONICAL_ORIGIN + url.pathname + url.search, 301);
+    }
+    if (isBlockedPath(url.pathname)) {
+      return new Response("Not found", { status: 404, headers: { "content-type": "text/plain; charset=UTF-8", "cache-control": "public, max-age=300" } });
+    }
+    if (request.method === "GET" || request.method === "HEAD") {
+      const clean = cleanPagePath(url.pathname);
+      if (clean !== url.pathname) {
+        return Response.redirect(CANONICAL_ORIGIN + clean + url.search, 301);
+      }
+    }
     if (url.pathname === "/robots.txt") {
       return robotsResponse(url);
     }
     if (SITEMAP_REDIRECTS[url.pathname]) {
       return Response.redirect(CANONICAL_ORIGIN + SITEMAP_REDIRECTS[url.pathname], 301);
-    }
-    if (REPO_JS_ASSETS.has(url.pathname)) {
-      return repoAssetResponse(url.pathname);
     }
     const upstreamUrl = legacyPhpUrl(url) || new URL(`${url.pathname}${url.search}`, BETA_ORIGIN);
     const upstreamHeaders = new Headers(request.headers);
@@ -112,6 +147,17 @@ var index_default = {
     const response = await fetch(upstreamRequest, { redirect: "manual" });
     if (url.pathname === "/ajax/get_ip_details.php") {
       return locationResponse(response);
+    }
+    if (response.status === 404 && url.pathname === "/.well-known/security.txt") {
+      return new Response(SECURITY_TXT, { headers: { "content-type": "text/plain; charset=UTF-8", "cache-control": "public, max-age=86400" } });
+    }
+    if (response.status === 404 && url.pathname === "/favicon.ico") {
+      return Response.redirect(CANONICAL_ORIGIN + "/images/favicon-32.png", 301);
+    }
+    // The web server's own "File not found." (16 bytes) or default nginx 404 page: show the site's branded 404 instead, still with status 404.
+    if (response.status === 404 && (request.method === "GET" || request.method === "HEAD") && Number(response.headers.get("content-length") || 0) > 0 && Number(response.headers.get("content-length")) < 500) {
+      const branded = await brandedNotFound(url);
+      if (branded) return branded;
     }
     if (response.status >= 400 && BLOG_POSTS[url.pathname]) {
       return renderPostFallback(BLOG_POSTS[url.pathname], url);
@@ -167,6 +213,29 @@ function legacyPhpUrl(url) {
   }
   return null;
 }
+async function brandedNotFound(requestUrl) {
+  try {
+    const page = await fetch(BETA_ORIGIN + "/404", { headers: { "Accept-Encoding": "identity", "Host": "beta.seatoutlet.com" }, redirect: "follow" });
+    if (page.status !== 404 || Number(page.headers.get("content-length") || 9999) < 500) return null;   // only the real branded page (it is large)
+    let body = await page.text();
+    body = body.replaceAll(BETA_ORIGIN, requestUrl.protocol + "//" + requestUrl.hostname);
+    const headers = new Headers(page.headers);
+    headers.set("content-type", "text/html; charset=UTF-8");
+    headers.set("cache-control", "public, max-age=0, s-maxage=60");
+    headers.delete("content-length");
+    headers.delete("content-encoding");
+    return new Response(body, { status: 404, headers });
+  } catch (error) {
+    return null;
+  }
+}
+/** The site and the web server both send these; keep exactly one value each (admin pages keep their own stricter values). */
+function collapseSecurityHeaders(headers, pathname) {
+  if (/^\/admin(\/|$)/.test(pathname)) return;
+  headers.set("x-content-type-options", "nosniff");
+  headers.set("x-frame-options", "SAMEORIGIN");
+  headers.set("referrer-policy", "strict-origin-when-cross-origin");
+}
 async function renderPoliciesFallback(requestUrl) {
   const shellResponse = await fetch(BETA_ORIGIN + "/terms-and-conditions", {
     headers: { "Accept-Encoding": "identity" },
@@ -201,29 +270,6 @@ async function renderPoliciesFallback(requestUrl) {
   headers.delete("content-length");
   headers.delete("content-encoding");
   return new Response(body, { status: 200, headers });
-}
-async function repoAssetResponse(pathname) {
-  const assetUrl = `https://raw.githubusercontent.com/M-anil111/seat-outlet/${LIVE_REPO_COMMIT}${pathname}`;
-  const response = await fetch(assetUrl, {
-    headers: {
-      "Accept": "text/plain, application/javascript"
-    },
-    cf: {
-      cacheTtl: 300,
-      cacheEverything: true
-    }
-  });
-  const headers = new Headers(response.headers);
-  headers.set("content-type", "application/javascript; charset=UTF-8");
-  headers.set("cache-control", "public, max-age=300");
-  headers.delete("content-security-policy");
-  headers.delete("content-length");
-  headers.delete("content-encoding");
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
 }
 function applyVisitorHeaders(headers, request) {
   const cfIp = request.headers.get("CF-Connecting-IP");
@@ -279,15 +325,16 @@ function applyStaticCache(headers, pathname, status) {
   if (status !== 200) return;
   if (/^\/(fonts|lib)\//.test(pathname) || /\.min\.(css|js)$/.test(pathname)) {
     headers.set("cache-control", "public, max-age=31536000, immutable");
+    headers.delete("expires");   // the web server's Expires disagreed with Cache-Control: one rule only
   } else if (/^\/images\/.+\.(webp|png|jpe?g|svg|gif|ico|avif)$/i.test(pathname)) {
     headers.set("cache-control", "public, max-age=2592000");
+    headers.delete("expires");
   }
 }
 async function rewriteResponse(response, requestUrl) {
   const headers = new Headers(response.headers);
   rewriteLocationHeader(headers, requestUrl);
-  if (!headers.has("x-content-type-options")) headers.set("x-content-type-options", "nosniff");
-  if (!headers.has("referrer-policy")) headers.set("referrer-policy", "strict-origin-when-cross-origin");
+  collapseSecurityHeaders(headers, requestUrl.pathname);
   applyStaticCache(headers, requestUrl.pathname, response.status);
   const contentType = headers.get("content-type") || "";
   if (!isTextResponse(contentType)) {
@@ -520,6 +567,11 @@ function escapeHtml(value) {
     "'": "&#39;"
   })[char]);
 }
+// The named exports are only for tools/test-worker.mjs (the pure helpers); the Worker itself is the default export.
 export {
-  index_default as default
+  index_default as default,
+  isBlockedPath,
+  cleanPagePath,
+  legacyPhpUrl,
+  SECURITY_TXT
 };

@@ -72,7 +72,7 @@ include_once 'functions.php';
             soSnapshotServe();   // the last good copy of this event page, if there is one
             http_response_code(503);
             header('Retry-After: 30');
-            $pageRobots = 'noindex, follow';
+            // No noindex here: a 503 already tells crawlers "come back later", and a noindex on a temporary error can drop a live page.
         } elseif ($soEvCheck === null || tnEntityMissing($soEvCheck) || empty($soEvCheck['text']['name'])) {
             // The event is gone from the catalog: send the visitor (and search engines) to the performer's page we
             // remembered for it, or the matching category, instead of a 404.
@@ -123,7 +123,9 @@ include_once 'functions.php';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <?php echo function_exists('soAdsenseMetaTag') ? soAdsenseMetaTag() . "\n" : ''; ?>
     <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); ?>">
-    <link rel="icon" type="image/png" href="/images/favicon-new.webp">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16.png">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/images/app/apple-touch-icon.png">
     <meta name="theme-color" content="#2556e0">
