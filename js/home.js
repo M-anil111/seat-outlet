@@ -709,7 +709,7 @@ document.addEventListener('DOMContentLoaded', function () {
 ===================================================== */
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('[data-so-readmore]').forEach(function (box, i) {
-    const inner = box.querySelector('.so-seo-copy__inner');
+    const inner = box.querySelector('.so-readmore__body, .so-seo-copy__inner');
     if (!inner) return;
     if (!inner.id) inner.id = 'soReadmoreBody' + i;
     box.classList.add('is-clamped');

@@ -398,6 +398,7 @@ foreach ($fallbackCategories as $key => $list) {
 // The long text for search engines and curious readers: all of it stays in the HTML, shown clamped behind "Read more" (js/home.js).
 ob_start();
 soSeoCopy('home');
-echo str_replace('<section class="so-seo-copy"', '<section class="so-seo-copy so-readmore" data-so-readmore', ob_get_clean());
+// The home copy block does not use .so-seo-copy__inner (that class caps the text at 880px on the other pages); its body is .so-readmore__body.
+echo str_replace(['<section class="so-seo-copy"', '<div class="so-seo-copy__inner">'], ['<section class="so-seo-copy so-readmore" data-so-readmore', '<div class="so-readmore__body">'], ob_get_clean());
 ?>
 <?php include 'footer.php'; ?>
