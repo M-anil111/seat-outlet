@@ -760,7 +760,7 @@ h3,
 }
 
 .policies a:hover, .policies a.active {
-  text-decoration: underline;
+  text-decoration: none;
   color: #a5c8fd;
 }
 
@@ -5293,7 +5293,7 @@ a.common-btn:hover{
 }
 .so-trustbar li { display: inline-flex; align-items: center; position: relative; }
 .so-trustbar a { color: #fff; text-decoration: none; font-weight: 600; }
-.so-trustbar a:hover { text-decoration: underline; }
+.so-trustbar a:hover { text-decoration: none; opacity: .8; }
 @media (min-width: 768px) {
   .so-trustbar { font-size: 13px; gap: 2px 28px; }
   .so-trustbar li + li::before {
@@ -6981,7 +6981,7 @@ body:has(.offcanvas.show, .modal.show, [role="dialog"][aria-modal="true"]:not([h
 .so-sitemap__group { margin: 12px 0 4px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6e6e73; }
 .so-sitemap__col ul { list-style: none; margin: 0; padding: 0; }
 .so-sitemap__col li a { display: block; padding: 6px 0; min-height: 32px; color: #0056d6; text-decoration: none; font-size: 15px; }
-.so-sitemap__col li a:hover { text-decoration: underline; }
+.so-sitemap__col li a:hover { text-decoration: none; color: #0056d6; }
 
 /* Artist page: quick date chips (replace the calendar field) */
 .so-when { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
@@ -7859,7 +7859,7 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 .so-guarantee__dot{flex:0 0 auto;width:.5rem;height:.5rem;border-radius:50%;background:#34c759;box-shadow:0 0 0 3px rgba(52,199,89,.2);transform:translateY(-1px)}
 .so-guarantee__links{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;margin:0;font-size:.875rem}
 .so-guarantee__links a{color:#0066cc;text-decoration:none}
-.so-guarantee__links a:hover{text-decoration:underline}
+.so-guarantee__links a:hover{text-decoration:none;color:#0056d6}
 @media (max-width:575.98px){.so-guarantee{padding:1.25rem}.so-guarantee__list{grid-template-columns:1fr}}
 
 /* Venue and city FAQ (soMiniFaq): same look as the event page FAQ */
