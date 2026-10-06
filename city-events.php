@@ -15,6 +15,7 @@ foreach ($topCities as $c) {
     $st = (string) ($c['state'] ?? '');
     $byState[$st]['cities'][] = $c;
     $byState[$st]['events'] = ($byState[$st]['events'] ?? 0) + (int) ($c['eventCount'] ?? 0);
+    if (empty($byState[$st]['stateId']) && (int) ($c['stateId'] ?? 0) > 0) $byState[$st]['stateId'] = (int) $c['stateId'];   // for the link to the state page
 }
 uasort($byState, function ($a, $b) { return $b['events'] <=> $a['events']; });
 
@@ -53,6 +54,9 @@ include 'header.php';
                 <?php foreach ($byState as $abbr => $info) { ?>
                     <div class="so-cities__state" id="state-<?php echo $h(strtolower($abbr)); ?>" data-state="<?php echo $h($abbr); ?>" data-state-name="<?php echo $h($soStates[$abbr] ?? $abbr); ?>">
                         <h2 class="section-heading"><?php echo $h($soStates[$abbr] ?? $abbr); ?> <small><?php echo number_format($info['events']); ?> events in top cities</small></h2>
+                        <?php if (!empty($info['stateId'])) { $soStName = (string) ($soStates[$abbr] ?? $abbr); ?>
+                            <p class="so-cities__all"><a href="/state/<?php echo $h(soSlug('state', $soStName, (int) $info['stateId'])); ?>">See all events in <?php echo $h($soStName); ?> and the cities in it</a></p>
+                        <?php } ?>
                         <div class="so-cities__grid">
                             <?php foreach ($info['cities'] as $city) {
                                 $citySlug = soSlug('city', $city['label'], $city['id']); ?>
