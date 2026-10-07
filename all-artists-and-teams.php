@@ -334,5 +334,10 @@ try {
 </section>
 
 
-<?php soSeoCopy($soDir['copy'] ?? 'all-artists-and-teams'); ?>
+<?php
+// The "Questions" FAQ uses the home accordion design (.so-qa in css/style.css); <details name> keeps one answer open at a time.
+ob_start();
+soSeoCopy($soDir['copy'] ?? 'all-artists-and-teams');
+echo str_replace(['<section class="so-seo-copy"', '<details class="so-faq">'], ['<section class="so-seo-copy so-qa"', '<details class="so-faq" name="so-qa">'], ob_get_clean());
+?>
 <?php include 'footer.php'; ?>
