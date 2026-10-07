@@ -213,6 +213,7 @@ function soSpecEventText(string $kind, array $c): array {
     $place = $City . ($St !== '' ? ', ' . $St : '');
     $day = (string) ($c['day'] ?? ''); $cat = (string) ($c['cat'] ?? ''); $country = (string) ($c['country'] ?? 'the United States');
     $at = $V !== '' ? $V : $place;                       // "at <venue>" falls back to the city
+    $cityAt = ($City !== '' && $V !== '' && stripos($V, $City) === false);   // add the city after the venue only when the venue's name does not already carry it ("The Rose Theatre, Phoenix")
     $sell = !empty($c['hasTickets']) ? ' before they sell out' : '';
     $out = ['h2' => []];
     switch ($kind) {
@@ -232,10 +233,10 @@ function soSpecEventText(string $kind, array $c): array {
             break;
         case 'theater':
             $out['focus'] = "$L Tickets at $at";
-            $out['h1'] = "Buy $L Tickets at $at" . ($City !== '' && $V !== '' ? ", $City" : '');
-            $out['titles'] = array_filter([$day !== '' ? "Buy $L Tickets at $at, $City on $day" : '', $day !== '' ? "Buy $L Tickets in $City on $day" : '', $day !== '' ? "$L Tickets on $day" : '', $V !== '' && $City !== '' ? "Buy $L Tickets at $V, $City" : '', "Buy $L Tickets at $at", "$L Tickets"]);
+            $out['h1'] = "Buy $L Tickets at $at" . ($cityAt ? ", $City" : '');
+            $out['titles'] = array_filter([$day !== '' ? "Buy $L Tickets at $at" . ($cityAt ? ", $City" : '') . " on $day" : '', $day !== '' ? "Buy $L Tickets in $City on $day" : '', $day !== '' ? "$L Tickets on $day" : '', $V !== '' && $City !== '' ? "Buy $L Tickets at $V, $City" : '', "Buy $L Tickets at $at", "$L Tickets"]);
             $out['descs'] = [
-                "Get $L tickets at $at" . ($City !== '' && $V !== '' ? " in $City" : '') . ". Find available seats, book online easily, and secure your spot for this must-see theater show$sell.",
+                "Get $L tickets at $at" . ($cityAt ? " in $City" : '') . ". Find available seats, book online easily, and secure your spot for this must-see theater show$sell.",
                 "Get $L tickets at $at. Find available seats and book online at Seat Outlet$sell.",
                 "Get $L tickets at Seat Outlet$sell.",
             ];
@@ -246,7 +247,7 @@ function soSpecEventText(string $kind, array $c): array {
             break;
         case 'festival':
             $out['focus'] = "$L Passes for $at";
-            $out['h1'] = "Buy $L Passes for $at" . ($City !== '' && $V !== '' ? ", $City" : '');
+            $out['h1'] = "Buy $L Passes for $at" . ($cityAt ? ", $City" : '');
             $out['titles'] = array_filter([$day !== '' ? "Buy $L Passes for $at on $day" : '', $day !== '' ? "$L Passes on $day" : '', $V !== '' && $City !== '' ? "Buy $L Passes for $V, $City" : '', "Buy $L Passes for $at", "$L Tickets"]);
             $out['descs'] = [
                 "Get $L passes for $at. Secure your festival access today and enjoy all the live performances and experiences at Seat Outlet$sell.",
