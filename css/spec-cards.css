@@ -1,6 +1,6 @@
 /* Spec cards: the About <venue | city> card (pale blue, with link cards), then the guide (40%) beside the upcoming events (60%).
    Markup from soSpecVenueInfoHtml(..., true), soSpecCityInfoHtml(..., true), soSpecGuideCard() and soSpecEventRows(), inside a .so-evv wrapper.
-   Loaded on event pages (inc/seo-event.php) and artist location pages (renderArtistLocationPage()) only. */
+   Loaded on event pages (inc/seo-event.php), artist location pages (renderArtistLocationPage()) and venue pages (inc/entity-listing.php) only. */
 .so-evv .so-evv-venue { margin: 0 0 24px; padding: clamp(20px, 3vw, 32px); background: #f2f6fe; border: 1px solid #dce6fa; border-radius: 18px; }
 .so-evv .so-evv-venue__head { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 22px; }
 .so-evv .so-evv-venue h2, .so-evv .so-evv-card h2 { margin: 0 0 8px; font-size: clamp(21px, 2.4vw, 28px); font-weight: 800; letter-spacing: -.02em; line-height: 1.2; color: #0b1736; }

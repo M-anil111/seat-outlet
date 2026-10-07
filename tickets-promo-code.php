@@ -115,7 +115,7 @@ include 'header.php';
 						<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Latest Ticket Promo Codes</h2>
 						
 						<div class="row g-3 mt-2">
-							<div class="col-md-6">
+							<div class="col-md-12">
 								<div class="offer-pill d-flex align-items-center justify-content-between px-3">
 									<div class="d-flex align-items-center">
 										<div class="offer-icon me-3 d-flex align-items-center justify-content-center ">
@@ -137,7 +137,7 @@ include 'header.php';
 									</div>
 								</div>
 							</div>
-							<div class="col-md-6">
+							<div class="col-md-12">
 								<div class="offer-pill d-flex align-items-center justify-content-between">
 									<div class="d-flex align-items-center">
 										<div class="offer-icon me-3 d-flex align-items-center justify-content-center">
