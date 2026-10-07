@@ -1,0 +1,13 @@
+name: seatics-probe
+on:
+  push:
+    branches: [claude/seatics-probe-tmp]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i playwright@1 && npx playwright install --with-deps chromium
+      - run: node tools/seatics-probe.cjs
+        env:
+          URL: https://beta.seatoutlet.com/event/hellafunny-comedy-night-san-francisco-ca-2026-10-09
