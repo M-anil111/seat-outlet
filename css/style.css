@@ -6916,7 +6916,7 @@ a.so-trust__cta:focus-visible { outline: 3px solid #9db6f4; outline-offset: 3px;
 .so-qa.so-qa .accordion-button:hover, .so-qa.so-qa .accordion-button:not(.collapsed) { color: #2556e0; background: transparent; box-shadow: none; }
 .so-qa.so-qa .accordion-button:focus { box-shadow: none; }
 .so-qa.so-qa .accordion-button:focus-visible { outline: 3px solid #9db6f4; outline-offset: -3px; }
-.so-qa.so-qa .accordion-button::after { content: "+"; position: absolute; top: 50%; right: 14px; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin: 0; border-radius: 50%; border: 1px solid #c9d6f6; background: #fff none; color: #2556e0; font-size: 20px; font-weight: 500; line-height: 1; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+.so-qa.so-qa .accordion-button::after { content: "+"; filter: none; position: absolute; top: 50%; right: 14px; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin: 0; border-radius: 50%; border: 1px solid #c9d6f6; background: #fff none; color: #2556e0; font-size: 20px; font-weight: 500; line-height: 1; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
 .so-qa.so-qa .accordion-button:not(.collapsed)::after { content: "\2212"; transform: translateY(-50%); background: #2556e0 none; border-color: #2556e0; color: #fff; }
 .so-qa.so-qa .accordion-body { padding: 0 56px 18px 16px; max-width: none; font-size: 17px; line-height: 1.7; color: #3a3f48; }
 @media (max-width: 575.98px) {
@@ -8000,7 +8000,7 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 .so-evp-promo__txt span { display: block; font-size: 15px; color: #0b1736; }
 .so-evp-promo__txt b { font-weight: 700; letter-spacing: .02em; }
 .so-evp-promo__txt small { display: block; margin-top: 2px; font-size: 13px; color: #6b7280; }
-.so-evp-promo .so-evp-promo__btn { flex: none; min-height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #2556e0 !important; font-size: 15px; font-weight: 600 !important; white-space: nowrap; }
+.so-evp-promo .so-evp-promo__btn { color: #fff !important; flex: none; min-height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #2556e0 !important; font-size: 15px; font-weight: 600 !important; white-space: nowrap; }
 .so-evp-promo .so-evp-promo__btn:hover { background: #1a3fa8 !important; text-decoration: none; }
 .so-evp-promo__note { margin: 14px 0 0; font-size: 13px; color: #4b5565; }
 .so-evp-promo__note a { color: #2556e0; }
