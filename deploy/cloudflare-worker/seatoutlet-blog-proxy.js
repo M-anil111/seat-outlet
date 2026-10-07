@@ -94,7 +94,7 @@ var BLOG_POSTS = {
 };
 // Paths that must never be public. Answered 404 (not 403: nothing is revealed about what exists).
 var BLOCKED_PATH = /^\/(vendor|docs|deploy|db|tools|cron|inc|cache|tests?|node_modules|\.git|\.github|\.env[^/]*)(\/|$)|^\/(composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml(\.dist)?|\.gitignore|\.gitattributes|\.htaccess|Makefile|docker-compose\.ya?ml|README|CHANGELOG)$|\.(md|sql|sh|log|bak|ini|dist|yml|yaml|lock)$/i;
-var SECURITY_TXT = "Contact: mailto:info@seatoutlet.com\nExpires: 2027-10-06T00:00:00.000Z\nPreferred-Languages: en\nCanonical: https://seatoutlet.com/.well-known/security.txt\n";
+var SECURITY_TXT = "Contact: mailto:support@seatoutlet.com\nExpires: 2027-10-06T00:00:00.000Z\nPreferred-Languages: en\nCanonical: https://seatoutlet.com/.well-known/security.txt\n";
 /** True for a path that must answer 404 without asking the origin. */
 function isBlockedPath(pathname) {
   return BLOCKED_PATH.test(pathname);
@@ -260,8 +260,8 @@ async function renderPoliciesFallback(requestUrl) {
 <h1 class="fs-2 fw-bold mb-2">Ticket Policies</h1>
 <p class="text-muted mb-4">These policies apply to tickets ordered on Seat Outlet, including purchase, delivery and refund terms. Please read them before checkout.</p>
 <div id="so-ticket-policies"><script src="https://tickettransaction.com/?https=true&amp;bid=9250&amp;sitenumber=30&amp;tid=600"></script></div>
-<noscript><p>This page needs JavaScript to show the ticket policies. You can also read our <a href="/terms-and-conditions">Terms of Use</a>, <a href="/privacy-policy">Privacy Policy</a> and <a href="/worry-free-guarantee">guarantee</a>, or email <a href="mailto:info@seatoutlet.com">info@seatoutlet.com</a>.</p></noscript>
-<p class="small mt-4 mb-0">Questions about an order? Visit <a href="/ticket-customer-service">Customer Service</a> or email <a href="mailto:info@seatoutlet.com">info@seatoutlet.com</a>.</p>
+<noscript><p>This page needs JavaScript to show the ticket policies. You can also read our <a href="/terms-and-conditions">Terms of Use</a>, <a href="/privacy-policy">Privacy Policy</a> and <a href="/worry-free-guarantee">guarantee</a>, or email <a href="mailto:support@seatoutlet.com">support@seatoutlet.com</a>.</p></noscript>
+<p class="small mt-4 mb-0">Questions about an order? Visit <a href="/ticket-customer-service">Customer Service</a> or email <a href="mailto:support@seatoutlet.com">support@seatoutlet.com</a>.</p>
 </div></section></main>`;
   body = body.replace(/<main id="main"[\s\S]*?<\/main>/i, policiesMain);
   const headers = new Headers(shellResponse.headers);

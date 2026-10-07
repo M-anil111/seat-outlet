@@ -46,7 +46,7 @@ eq(to('/halloween-events-in-austin-tx'), '/holiday-city?holiday=halloween-events
 eq(to('/city/austin-tx'), null, 'city passes through');
 eq(/\.php/.test(to('/last-minute-tickets/austin-tx') || ''), false, 'no .php in rewritten paths');
 
-eq(/^Contact: mailto:info@seatoutlet\.com\n/.test(SECURITY_TXT) && /\nExpires: \d{4}-/.test(SECURITY_TXT), true, 'security.txt has Contact and Expires');
+eq(/^Contact: mailto:support@seatoutlet\.com\n/.test(SECURITY_TXT) && /\nExpires: \d{4}-/.test(SECURITY_TXT), true, 'security.txt has Contact and Expires');
 
 console.log(fail ? `${fail} failure(s)` : 'worker helpers: all passed');
 process.exit(fail ? 1 : 0);
