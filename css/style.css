@@ -1321,6 +1321,8 @@ h3,
 .guarantee-icon i {
     font-size: 20px;
     color: #0b63f6;
+    display: flex; /* centre the shield in the ring (a flex item ignores the icon font's -.125em baseline shift) */
+    margin-left: 2px; /* the glyph sits 2px left of its box */
 }
 .tn-dropdown-menu{position: absolute; z-index: 1; }
 
