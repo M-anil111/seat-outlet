@@ -343,7 +343,7 @@ $evDirHref = 'https://www.google.com/maps/dir/?api=1&destination=' . rawurlencod
         <?php } ?>
     </div>
 
-    <div class="so-evinfo__main so-evp__more">
+    <div class="so-evinfo__main so-evp__more so-evv">
       <?php if ($evAboutText !== '') { ?>
       <h2><?php echo $h($evH2['about']); ?></h2>
       <p><?php echo $h($evAboutText); ?></p>

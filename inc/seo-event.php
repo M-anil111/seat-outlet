@@ -79,6 +79,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 <meta name="keywords" content="<?php echo $e($metaKeywords); ?>">
 <?php if ($evUrl !== '') { ?><link rel="canonical" href="<?php echo $e($evUrl); ?>"><?php } ?>
 <link rel="stylesheet" href="<?php echo $e(soAsset('css/event.css')); ?>">
+<link rel="stylesheet" href="<?php echo $e(soAsset('css/spec-cards.css')); ?>">
 
 <?php
   // Share image: the performer's picture when we hold a real one, else the logo.
