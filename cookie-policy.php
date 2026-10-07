@@ -106,12 +106,6 @@
 
 <main class="cookie-page">
 
-    <!-- <section class="hero-section">
-        <div class="container">
-            <h1 class="hero-title">Cookies Policy</h1>
-        </div>
-    </section> -->
-
     <section class="hero-section">
         <div class="container">
             <div class="row justify-content-center text-center">
