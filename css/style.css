@@ -7986,3 +7986,26 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 .so-date-fallback label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
 .so-date-fallback input { min-height: 40px; padding: 0 10px; border: 1px solid #c7c7cc; border-radius: 10px; font-size: 15px; }
 .so-date-fallback__done { min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: #0071e3; color: #fff; font-weight: 600; }
+
+/* Promo code cards (soSpecPromoMarkup() in inc/page-spec.php): the event page shows two side by side, every other page one per row
+   (.so-evp-promo--stack). Moved here from css/event.css so each page type that prints them carries the rules. */
+.so-evp-promo { margin-bottom: 28px; }
+.so-evp-promo .so-evp__h { margin-bottom: 4px; }
+.so-evp-promo__sub { margin: 0 0 16px; font-size: 15px; color: #4b5565; }
+.so-evp-promo__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.so-evp-promo__card { display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: #fff; border: 1px solid #e3e8f0; border-radius: 14px; }
+.so-evp-promo__icon { flex: none; display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: #eaf0fd; }
+.so-evp-promo__txt { flex: 1; min-width: 0; line-height: 1.35; }
+.so-evp-promo__txt strong { display: block; font-size: 20px; font-weight: 800; color: #0b1736; }
+.so-evp-promo__txt span { display: block; font-size: 15px; color: #0b1736; }
+.so-evp-promo__txt b { font-weight: 700; letter-spacing: .02em; }
+.so-evp-promo__txt small { display: block; margin-top: 2px; font-size: 13px; color: #6b7280; }
+.so-evp-promo .so-evp-promo__btn { flex: none; min-height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #2556e0 !important; font-size: 15px; font-weight: 600 !important; white-space: nowrap; }
+.so-evp-promo .so-evp-promo__btn:hover { background: #1a3fa8 !important; text-decoration: none; }
+.so-evp-promo__note { margin: 14px 0 0; font-size: 13px; color: #4b5565; }
+.so-evp-promo__note a { color: #2556e0; }
+.so-evp-promo--stack { margin: 32px 0; }
+.so-evp-promo--stack .so-evp-promo__grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.so-evp-promo--page { margin: 0; }
+@media (max-width: 767.98px) { .so-evp-promo__grid { grid-template-columns: minmax(0, 1fr); gap: 12px; } }
+@media (max-width: 575.98px) { .so-evp-promo__card { flex-wrap: wrap; padding: 16px; } .so-evp-promo .so-evp-promo__btn { flex-basis: 100%; } }

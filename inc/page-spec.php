@@ -75,21 +75,32 @@ function soSpecPromoHeading(string $label, string $kind, string $city, string $s
 }
 
 /**
- * The promo code block: TAKE5 and TAKE10 with their terms, named for the page's subject. $heading '' leaves the heading to the caller.
- * Uses the offer-pill markup every page group already carries (js/events-listing.js wires the Copy buttons).
+ * The promo code block for performer, venue, city, category and holiday pages: TAKE5 and TAKE10 with their terms, named for the
+ * page's subject, as the same cards the event page uses (one column here, because these pages have a sidebar). $heading '' leaves
+ * the heading to the caller. js/events-listing.js wires the Copy code buttons.
  */
 function soSpecPromoHtml(string $heading, string $subject): string {
+    return soSpecPromoMarkup($heading, $subject, false);
+}
+
+/** One promo card: ticket icon, % off, code, minimum order and a Copy code button. $p is a SO_PROMO_CODES entry. */
+function soSpecPromoCard(array $p, string $subject): string {
     $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
-    $out = '<div class="so-specpromo" id="promocode" style="margin:32px 0">' . ($heading !== '' ? '<h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . $e($heading) . '</h2>' : '')
-        . '<p>Two promo codes are available for ' . $e($subject) . ' tickets. Enter the code in the promo code field at checkout.</p><div class="row g-3 mt-2">';
-    foreach (SO_PROMO_CODES as $p) {
-        $out .= '<div class="col-md-12"><div class="offer-pill d-flex align-items-center justify-content-between"><div class="d-flex align-items-center">'
-            . '<div class="offer-icon me-3 d-flex align-items-center justify-content-center" style="flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path><circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle></svg></div>'
-            . '<div class="offer-text"><div class="offer-title">' . (int) $p['pct'] . '% OFF</div><div class="offer-subtitle">' . $e($p['code']) . '</div>'
-            . '<div class="small">Take ' . (int) $p['pct'] . '% off your ' . $e($subject) . ' tickets when you spend $' . (int) $p['min'] . ' or more.</div></div></div>'
-            . '<div class="offer-copy text-end"><button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="' . $e($p['code']) . '">Copy</button></div></div></div>';
-    }
-    return $out . '</div><p class="small mt-3 mb-0">Codes apply only where the checkout accepts them, minimum order amounts apply, and codes can change or stop working without notice. See <a href="/tickets-promo-code">all ticket promo codes</a>.</p></div>';
+    $icon = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2556e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 0 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z"/><path d="M14 5v2M14 11v2M14 17v2"/></svg>';
+    return '<div class="so-evp-promo__card"><span class="so-evp-promo__icon">' . $icon . '</span>'
+        . '<div class="so-evp-promo__txt"><strong>' . (int) $p['pct'] . '% OFF</strong><span>Code: <b>' . $e($p['code']) . '</b></span>'
+        . '<small>Take ' . (int) $p['pct'] . '% off your ' . $e($subject) . ' tickets when you spend $' . (int) $p['min'] . ' or more.</small></div>'
+        . '<button type="button" class="btn btn-primary text-white offer-copy-btn so-evp-promo__btn" data-code="' . $e($p['code']) . '" aria-label="Copy code ' . $e($p['code']) . '">Copy code</button></div>';
+}
+
+/** The whole promo block. $wide: two cards side by side under the event page's own heading style; otherwise one card per row. */
+function soSpecPromoMarkup(string $heading, string $subject, bool $wide): string {
+    $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $out = '<div class="so-evp-promo' . ($wide ? '' : ' so-evp-promo--stack') . '" id="promocode">'
+        . ($heading !== '' ? '<h2 class="' . ($wide ? 'so-evp__h' : 'so-heading fw-bold fs-4 mb-3 text-black') . '">' . $e($heading) . '</h2>' : '')
+        . '<p class="so-evp-promo__sub">Two promo codes are available for ' . $e($subject) . ' tickets. Enter the code in the promo code field at checkout.</p><div class="so-evp-promo__grid">';
+    foreach (SO_PROMO_CODES as $p) $out .= soSpecPromoCard($p, $subject);
+    return $out . '</div><p class="so-evp-promo__note">Codes apply only where the checkout accepts them, minimum order amounts apply, and codes can change or stop working without notice. See <a href="/tickets-promo-code">all ticket promo codes</a>.</p></div>';
 }
 
 /** Events of one kind in one city for the sections below (soonest first). [] when the feed has nothing or is down. */
@@ -142,22 +153,9 @@ function soSpecCityInfoHtml(string $city, string $state, array $cityData, string
     return '<h2>About ' . $e($place) . '</h2>' . $p . '<p><a href="' . $e($cityHref) . '">See all ' . $e($noun) . ' in ' . $e($place) . '</a></p>';
 }
 
-/**
- * Event page promo block: the same two codes and wording as soSpecPromoHtml(), laid out as two cards (ticket icon, % off,
- * code, minimum order and a Copy code button; js/events-listing.js copies data-code). id="promocode" stays the anchor.
- */
+/** Event page promo block: the same two codes and wording as soSpecPromoHtml(), two cards side by side. id="promocode" stays the anchor. */
 function soSpecPromoCards(string $heading, string $subject): string {
-    $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
-    $icon = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2556e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 0 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z"/><path d="M14 5v2M14 11v2M14 17v2"/></svg>';
-    $out = '<div class="so-evp-promo" id="promocode">' . ($heading !== '' ? '<h2 class="so-evp__h">' . $e($heading) . '</h2>' : '')
-        . '<p class="so-evp-promo__sub">Two promo codes are available for ' . $e($subject) . ' tickets. Enter the code in the promo code field at checkout.</p><div class="so-evp-promo__grid">';
-    foreach (SO_PROMO_CODES as $p) {
-        $out .= '<div class="so-evp-promo__card"><span class="so-evp-promo__icon">' . $icon . '</span>'
-            . '<div class="so-evp-promo__txt"><strong>' . (int) $p['pct'] . '% OFF</strong><span>Code: <b>' . $e($p['code']) . '</b></span>'
-            . '<small>Take ' . (int) $p['pct'] . '% off your ' . $e($subject) . ' tickets when you spend $' . (int) $p['min'] . ' or more.</small></div>'
-            . '<button type="button" class="btn btn-primary text-white offer-copy-btn so-evp-promo__btn" data-code="' . $e($p['code']) . '" aria-label="Copy code ' . $e($p['code']) . '">Copy code</button></div>';
-    }
-    return $out . '</div><p class="so-evp-promo__note">Codes apply only where the checkout accepts them, minimum order amounts apply, and codes can change or stop working without notice. See <a href="/tickets-promo-code">all ticket promo codes</a>.</p></div>';
+    return soSpecPromoMarkup($heading, $subject, true);
 }
 
 /**

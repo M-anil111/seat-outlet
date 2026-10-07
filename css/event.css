@@ -1838,21 +1838,6 @@ font-size: 18px;
 .so-evx__steps strong { display: block; margin-bottom: 4px; font-size: 17px; font-weight: 700; color: #0b1736; }
 .so-evx__steps p { margin: 0; font-size: 14px; line-height: 1.5; color: #4b5565; }
 
-.so-evp-promo { margin-bottom: 28px; }
-.so-evp-promo .so-evp__h { margin-bottom: 4px; }
-.so-evp-promo__sub { margin: 0 0 16px; font-size: 15px; color: #4b5565; }
-.so-evp-promo__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.so-evp-promo__card { display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: #fff; border: 1px solid #e3e8f0; border-radius: 14px; }
-.so-evp-promo__icon { flex: none; display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: #eaf0fd; }
-.so-evp-promo__txt { flex: 1; min-width: 0; line-height: 1.35; }
-.so-evp-promo__txt strong { display: block; font-size: 20px; font-weight: 800; color: #0b1736; }
-.so-evp-promo__txt span { display: block; font-size: 15px; color: #0b1736; }
-.so-evp-promo__txt b { font-weight: 700; letter-spacing: .02em; }
-.so-evp-promo__txt small { display: block; margin-top: 2px; font-size: 13px; color: #6b7280; }
-.so-evp-promo .so-evp-promo__btn { flex: none; min-height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #2556e0 !important; font-size: 15px; font-weight: 600 !important; white-space: nowrap; }
-.so-evp-promo .so-evp-promo__btn:hover { background: #1a3fa8 !important; }
-.so-evp-promo__note { margin: 14px 0 0; font-size: 13px; color: #4b5565; }
-.so-evp-promo__note a { color: #2556e0; }
 
 .so-evp .so-guarantee { max-width: none; margin: 0; padding: clamp(20px, 3vw, 30px); border: 1px solid #e3e8f0; border-radius: 16px; box-shadow: none; }
 .so-evp .so-guarantee__title { font-size: clamp(22px, 2.6vw, 28px); color: #0b1736; }
@@ -1904,14 +1889,12 @@ font-size: 18px;
   .so-evp .so-guarantee__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 767.98px) {
-  .so-evx__steps, .so-evp-promo__grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .so-evx__steps { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .so-evx__steps li { padding: 16px; }
 }
 @media (max-width: 575.98px) {
   .so-evbar__facts { gap: 6px 18px; font-size: 14px; }
   .so-evx__card, .so-evp-venue { padding: 16px; }
-  .so-evp-promo__card { flex-wrap: wrap; padding: 16px; }
-  .so-evp-promo .so-evp-promo__btn { flex-basis: 100%; }
   .so-evp .so-guarantee__list { grid-template-columns: minmax(0, 1fr); }
   .so-evp .so-guarantee__links { flex-direction: column; align-items: flex-start; }
   .so-evp .so-guarantee__links a + a::before { display: none; }
