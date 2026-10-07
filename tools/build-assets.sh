@@ -3,6 +3,7 @@
 # (see soAsset() in functions.php):
 #   css/event.min.css   = css/event.css, minified
 #   css/checkout.min.css = css/checkout.css, minified (the /checkout review page only, linked by checkout.php)
+#   css/spec-cards.min.css = css/spec-cards.css, minified (event and artist location pages: About / guide / upcoming cards)
 #   css/style.min.css   = css/fonts.css + css/style.css + css/skeleton.css, with the rules for classes the site never uses removed
 #                         (tools/purgecss-style.config.cjs), + css/icons.css (icon subset, tools/build-icons.py), minified
 #   css/style.<page type>.min.css = the site stylesheet reduced to one page type (inc/css-groups.php, tools/css-split.php), in files under 110 KB
@@ -26,6 +27,7 @@ mkdir -p "$OUT/style-src" "$OUT/style-purged"
 cat css/fonts.css css/style.css css/skeleton.css > "$OUT/style-src/style.css"
 npx --yes clean-css-cli@5.6.3 -O1 css/event.css -o "$OUT/event.min.css"   # event pages only (seat-map widget skin), linked by inc/seo-event.php
 npx --yes clean-css-cli@5.6.3 -O1 css/checkout.css -o "$OUT/checkout.min.css"   # /checkout only, linked by checkout.php
+npx --yes clean-css-cli@5.6.3 -O1 css/spec-cards.css -o "$OUT/spec-cards.min.css"   # event and artist location pages (About / guide / upcoming cards)
 for f in js/*.js; do
   case "$f" in *.min.js) continue;; esac
   name="$(basename "$f" .js)"
@@ -71,6 +73,7 @@ install_or_compare() {
 install_or_compare "$OUT/style.min.css" css/style.min.css
 install_or_compare "$OUT/event.min.css" css/event.min.css
 install_or_compare "$OUT/checkout.min.css" css/checkout.min.css
+install_or_compare "$OUT/spec-cards.min.css" css/spec-cards.min.css
 install_or_compare "$OUT/bootstrap.purged.css" css/bootstrap.min.css
 for f in "$OUT"/*.min.js; do install_or_compare "$f" "js/$(basename "$f")"; done
 for f in "$OUT"/groups-css/style.*.min.css; do install_or_compare "$f" "css/$(basename "$f")"; done

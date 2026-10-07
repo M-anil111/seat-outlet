@@ -5338,21 +5338,24 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             foreach ($events as $oe) { $lv = $oe['pricingInfo']['lowPrice']['value'] ?? null; if (is_numeric($lv) && ($soLow === null || (float) $lv < $soLow)) { $soLow = (float) $lv; } $soTicketCount += (int) ($oe['_metadata']['ticketCount'] ?? 0); }
             $soFirst = $events[0] ?? null;
             $soFirstTs = ($soFirst && !empty($soFirst['date']['date'])) ? strtotime($soFirst['date']['date']) : false;
-            echo soSpecCityInfoHtml($soLocShort, $soStateAbbr, $soCityData, $soKind, ($dimension === 'city') ? '/' . getCategoryCityLinkPrefix((string) ($performer['defaultCategory']['path'] ?? '')) . '/' . $canonLocSlug : '/city-events');
-            if ($soKind === 'concert' && $soOtherDates) {
-                echo '<div class="tab-section content-section-detail"><h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . htmlspecialchars($soLabel . ' Tour Dates Across ' . $soCountryName, ENT_QUOTES, 'UTF-8') . '</h2>' . soSpecEventList($soOtherDates, [], 6) . '<p><a href="/artist/' . htmlspecialchars($canonArtistSlug, ENT_QUOTES, 'UTF-8') . '">See all ' . htmlspecialchars($soLabel, ENT_QUOTES, 'UTF-8') . ' tour dates</a></p></div>';
-            }
-            if ($total_count > 0 && $soFirst) {
-                echo '<div class="tab-section content-section-detail">' . soSpecGuideHtml(soSpecGuideHeading($soLabel, $soKind, $soLocShort, $soStateAbbr), $soLabel, [
+            // About the city, then the guide (40%) beside the other shows in the city (60%), as cards (css/spec-cards.css).
+            $soCityCard = soSpecCityInfoHtml($soLocShort, $soStateAbbr, $soCityData, $soKind, ($dimension === 'city') ? '/' . getCategoryCityLinkPrefix((string) ($performer['defaultCategory']['path'] ?? '')) . '/' . $canonLocSlug : '/city-events', true);
+            $soGuideCard = ($total_count > 0 && $soFirst) ? soSpecGuideHtml(soSpecGuideHeading($soLabel, $soKind, $soLocShort, $soStateAbbr), $soLabel, [
                     'when' => $soFirstTs ? 'next date ' . date('l, F j, Y', $soFirstTs) : '',
                     'venue' => (string) ($soFirst['venue']['text']['name'] ?? ''),
                     'venueHref' => !empty($soFirst['venue']['id']) ? '/venue/' . soVenueSlug((string) $soFirst['venue']['text']['name'], (int) $soFirst['venue']['id'], $locationLabel) : '',
                     'tickets' => $soTicketCount, 'low' => $soLow !== null ? '$' . number_format($soLow, 0) : '', 'dates' => $total_count,
-                ]) . '</div>';
+                ], true, true) : '';
+            $soSimilarRows = soSpecEventRows(array_values(array_filter($soCityData['events'] ?? [], function ($oe) use ($performerId) { foreach (($oe['performers'] ?? []) as $pp) { if ((int) ($pp['id'] ?? 0) === (int) $performerId) return false; } return true; })), [], 6);
+            $soSimilarCard = $soSimilarRows !== '' ? '<div class="so-evv-card so-evv-up"><h2>' . htmlspecialchars(soSpecSimilarHeading($soKind, $soLocShort, $soStateAbbr), ENT_QUOTES, 'UTF-8') . '</h2>' . $soSimilarRows . '</div>' : '';
+            if ($soCityCard !== '' || $soGuideCard !== '' || $soSimilarCard !== '') {
+                echo '<link rel="stylesheet" href="' . htmlspecialchars(soAsset('css/spec-cards.css'), ENT_QUOTES, 'UTF-8') . '">';
+                echo '<div class="so-evv so-evv--page">' . $soCityCard;
+                if ($soGuideCard !== '' || $soSimilarCard !== '') echo '<div class="so-evv-pair' . (($soGuideCard === '' || $soSimilarCard === '') ? ' so-evv-pair--one' : '') . '">' . $soGuideCard . $soSimilarCard . '</div>';
+                echo '</div>';
             }
-            $soSimilar = soSpecEventList(array_values(array_filter($soCityData['events'] ?? [], function ($oe) use ($performerId) { foreach (($oe['performers'] ?? []) as $pp) { if ((int) ($pp['id'] ?? 0) === (int) $performerId) return false; } return true; })), [], 6);
-            if ($soSimilar !== '') {
-                echo '<div class="tab-section content-section-detail"><h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . htmlspecialchars(soSpecSimilarHeading($soKind, $soLocShort, $soStateAbbr), ENT_QUOTES, 'UTF-8') . '</h2>' . $soSimilar . '</div>';
+            if ($soKind === 'concert' && $soOtherDates) {
+                echo '<div class="tab-section content-section-detail"><h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . htmlspecialchars($soLabel . ' Tour Dates Across ' . $soCountryName, ENT_QUOTES, 'UTF-8') . '</h2>' . soSpecEventList($soOtherDates, [], 6) . '<p><a href="/artist/' . htmlspecialchars($canonArtistSlug, ENT_QUOTES, 'UTF-8') . '">See all ' . htmlspecialchars($soLabel, ENT_QUOTES, 'UTF-8') . ' tour dates</a></p></div>';
             }
             ?>
 
