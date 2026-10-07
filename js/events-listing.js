@@ -3,13 +3,14 @@
 ===================================================== */
     
 document.querySelectorAll(".offer-copy-btn").forEach((btn) => {
+    const label = btn.textContent;   // "Copy" or "Copy code": restored after "Copied"
     btn.addEventListener("click", () => {
         const code = btn.dataset.code || btn.previousElementSibling.textContent.trim();
         navigator.clipboard
         .writeText(code)
         .then(() => {
             btn.textContent = "Copied";
-            setTimeout(() => (btn.textContent = "Copy"), 1500);
+            setTimeout(() => (btn.textContent = label), 1500);
         })
         .catch(() => {
             alert("Unable to copy code. Please copy manually.");
