@@ -1782,3 +1782,51 @@ font-size: 18px;
 #tn-maps tr.Sea-TicketRow .venue-ticket-list-price-col-inner { width: 100%; }
 #tn-maps tr.Sea-TicketRow td.venue-ticket-list-info-col .sea-sr-only { position: absolute !important; }
 #tn-maps tr.Sea-TicketRow td.venue-ticket-list-price-col { width: 100% !important; max-width: none; min-width: 0; box-sizing: border-box; }
+
+/* ---- Event info, top: "How to buy tickets" (three numbered cards) and a two-column grid of four cards
+   (What to expect, Event details, More <performer> dates, Upcoming events at this venue). event.php .so-evx ---- */
+.so-evinfo__grid--one { grid-template-columns: minmax(0, 1fr); }
+.so-evx { max-width: 1180px; margin: 0 auto clamp(36px, 5vw, 56px); color: #0b1736; }
+.so-evx__h { font-size: clamp(22px, 2.6vw, 28px); font-weight: 700; letter-spacing: -.02em; line-height: 1.2; color: #0b1736; margin: 0 0 16px; }
+.so-evx__steps { list-style: none; margin: 0 0 28px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.so-evx__steps li { display: flex; align-items: center; gap: 16px; margin: 0; padding: 20px; background: #f5f8fe; border: 1px solid #e4eaf6; border-radius: 14px; }
+.so-evx__n { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: #2556e0; color: #fff; font-size: 18px; font-weight: 700; }
+.so-evx__steps strong { display: block; margin-bottom: 4px; font-size: 17px; font-weight: 700; color: #0b1736; }
+.so-evx__steps p { margin: 0; font-size: 14px; line-height: 1.5; color: #4b5565; }
+.so-evx__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.so-evx__card { min-width: 0; padding: 18px 20px; background: #fff; border: 1px solid #e3e8f0; border-radius: 14px; }
+.so-evx__card h3 { margin: 0 0 12px; font-size: 18px; font-weight: 700; line-height: 1.3; color: #0b1736; }
+.so-evx__card p { margin: 0; font-size: 15px; line-height: 1.6; color: #4b5565; }
+.so-evx__card a { color: #2556e0; }
+.so-evx__dl { display: grid; grid-template-columns: 110px minmax(0, 1fr); margin: 0; font-size: 15px; }
+.so-evx__dl dt, .so-evx__dl dd { margin: 0; padding: 7px 0; border-top: 1px solid #edf0f5; }
+.so-evx__dl dt:first-of-type, .so-evx__dl dd:first-of-type { border-top: 0; }
+.so-evx__dl dt { font-weight: 500; color: #4b5565; }
+.so-evx__dl dd { font-weight: 500; color: #0b1736; overflow-wrap: anywhere; }
+.so-evx__dl a, .so-evx__more { text-decoration: none; }
+.so-evx__dl a:hover, .so-evx__more:hover { text-decoration: underline; }
+.so-evx__rows { list-style: none; margin: 0; padding: 0; }
+.so-evx__rows li { margin: 0; }
+.so-evx__rows a { display: flex; align-items: center; gap: 14px; min-height: 48px; padding: 8px 4px; border-top: 1px solid #edf0f5; color: #0b1736; text-decoration: none; }
+.so-evx__rows li:first-child a { border-top: 0; }
+.so-evx__rows a:hover { background: #f7f9fd; }
+.so-evx__date { flex: none; width: 68px; padding: 5px 0; border: 1px solid #f1c9d4; border-radius: 8px; color: #d1245b; font-size: 13px; font-weight: 700; text-align: center; }
+.so-evx__t { flex: 1; min-width: 0; line-height: 1.3; }
+.so-evx__t strong { display: block; font-size: 15px; font-weight: 600; }
+.so-evx__t small { display: block; font-size: 13px; color: #6b7280; }
+.so-evx__p { flex: none; font-size: 14px; }
+.so-evx__p u { font-weight: 700; text-underline-offset: 3px; }
+.so-evx__when { flex: none; font-size: 13px; color: #4b5565; }
+.so-evx__chev { flex: none; font-size: 22px; line-height: 1; color: #2556e0; }
+.so-evx__more { display: inline-block; margin-top: 10px; font-size: 14px; font-weight: 600; }
+@media (max-width: 991.98px) { .so-evx__grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 767.98px) { .so-evx__steps { grid-template-columns: minmax(0, 1fr); gap: 12px; } .so-evx__steps li { padding: 16px; } }
+@media (max-width: 575.98px) {
+  .so-evx__card { padding: 16px; }
+  .so-evx__dl { grid-template-columns: 96px minmax(0, 1fr); }
+  .so-evx__rows a { gap: 10px; }
+  .so-evx__date { width: 60px; }
+  .so-evx__rows--venue a { flex-wrap: wrap; row-gap: 2px; }
+  .so-evx__rows--venue .so-evx__t { flex-basis: calc(100% - 40px); }
+  .so-evx__rows--venue .so-evx__when { order: 3; flex-basis: 100%; }
+}

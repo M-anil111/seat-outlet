@@ -232,24 +232,73 @@ $evGuideHtml = soSpecGuideHtml($evH2['guide'], $evLabel, [
   'venue' => $eventVenueName, 'venueHref' => $evVenueHref,
   'address' => (string) (($evVenueRec['address']['text']['address1'] ?? '') ?: ''),
   'tickets' => (int) ($event['_metadata']['ticketCount'] ?? 0), 'low' => $eventLowPrice,
-]);
+], false);
 $evOtherList = soSpecEventList($evVenueEvents ?: ($evCityData['events'] ?? []), $evShownIds, 6);
 $evSimilarHtml = ($evOtherList !== '' && $eventVenueName !== '') ? '<h2>' . $h($evH2['other']) . '</h2>' . $evOtherList : '';
+$evOtherCard = array_slice($evOther, 0, 4);
+$evAtVenue = [];
+$evSkipVenue = array_merge([(int) $id], array_map(fn($oe) => (int) ($oe['id'] ?? 0), $evOtherCard));
+foreach ($evVenueEvents as $ve) {
+  if (count($evAtVenue) >= 4) break;
+  if (empty($ve['text']['name']) || in_array((int) ($ve['id'] ?? 0), $evSkipVenue, true)) continue;
+  $evAtVenue[] = $ve;
+}
+$evKindWord = ['concert' => 'concert', 'sports' => 'sports', 'theater' => 'theater', 'festival' => 'festival'][$evKind] ?? '';
 ?>
 <section class="so-evinfo">
   <div class="container">
-    <div class="so-evinfo__grid">
+    <div class="so-evx">
+      <h2 class="so-evx__h">How to buy tickets</h2>
+      <ol class="so-evx__steps">
+        <li><span class="so-evx__n" aria-hidden="true">1</span><div><strong>Choose how many</strong><p>Tell us how many tickets you need and we&rsquo;ll show you available listings.</p></div></li>
+        <li><span class="so-evx__n" aria-hidden="true">2</span><div><strong>Pick your seats</strong><p>Use the map and filters to compare sections, rows and prices.</p></div></li>
+        <li><span class="so-evx__n" aria-hidden="true">3</span><div><strong>Check out and go</strong><p>Pay securely and get your tickets before the event.</p></div></li>
+      </ol>
+      <div class="so-evx__grid">
+        <div class="so-evx__card">
+          <h3>What to expect at <?php echo $h($evLabel); ?></h3>
+          <p>Choose how many tickets you need, pick seats on the map, then check out. Prices are set by sellers and can be above or below face value. Read how <a href="/ticket-buyer-protection">ticket buyer protection</a> works before you order <?php echo $h($evLabel); ?> tickets.</p>
+        </div>
+        <div class="so-evx__card">
+          <h3>Event details</h3>
+          <dl class="so-evx__dl">
+            <?php if ($evWhenLong !== '') { ?><dt>Date</dt><dd><?php echo $h($evWhenLong); ?></dd><?php } ?>
+            <?php if ($eventTimeText !== '') { ?><dt>Time</dt><dd><?php echo $h($eventTimeText); ?></dd><?php } ?>
+            <?php if ($eventVenueName !== '') { ?><dt>Venue</dt><dd><?php echo $evVenueHref !== '' ? '<a href="' . $h($evVenueHref) . '">' . $h($eventVenueName) . '</a>' : $h($eventVenueName); ?></dd><?php } ?>
+            <?php if ($evPlaceFull !== '') { ?><dt>City</dt><dd><?php echo $eventCityId ? '<a href="/' . $h($categoryCityPrefix) . '/' . $h(soSlug('city', $eventCityLabel, $eventCityId)) . '">' . $h($evPlaceFull) . '</a>' : $h($evPlaceFull); ?></dd><?php } ?>
+            <?php if (!empty($primaryPerformer['id'])) { ?><dt>Performer</dt><dd><a href="/artist/<?php echo $h(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id'])); ?>"><?php echo $h($primaryPerformer['name']); ?></a></dd><?php } ?>
+            <?php if ($evCatName !== '') { ?><dt>Category</dt><dd><?php echo $h($evCatName); ?></dd><?php } ?>
+          </dl>
+        </div>
+        <?php if ($evOtherCard) { ?>
+        <div class="so-evx__card">
+          <h3>More <?php echo $h($primaryPerformer['name'] ?? $evLabel); ?> dates</h3>
+          <ul class="so-evx__rows">
+            <?php foreach ($evOtherCard as $oe) { $ots = strtotime($oe['date']['date'] ?? 'now'); $op = (string) ($oe['pricingInfo']['lowPrice']['text']['formatted'] ?? ''); ?>
+            <li><a href="/event/<?php echo $h(soEventSlug($oe)); ?>"><span class="so-evx__date"><?php echo $h(strtoupper(date('M j', $ots))); ?></span><span class="so-evx__t"><strong><?php echo $h(trim(($oe['city']['text']['name'] ?? '') . ', ' . ($oe['stateProvince']['text']['abbr'] ?? ''), ', ')); ?></strong><small><?php echo $h($oe['venue']['text']['name'] ?? ''); ?></small></span><?php if ($op !== '') { ?><span class="so-evx__p">From <u><?php echo $h($op); ?></u></span><?php } ?><span class="so-evx__chev" aria-hidden="true">&rsaquo;</span></a></li>
+            <?php } ?>
+          </ul>
+          <?php if (!empty($primaryPerformer['id'])) { ?><a class="so-evx__more" href="/artist/<?php echo $h(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id'])); ?>">See all <?php echo $h($primaryPerformer['name']); ?> tickets &rsaquo;</a><?php } ?>
+        </div>
+        <?php } ?>
+        <?php if ($evAtVenue) { ?>
+        <div class="so-evx__card">
+          <h3>Upcoming <?php echo $evKindWord !== '' ? $h($evKindWord) . ' ' : ''; ?>events at this venue</h3>
+          <ul class="so-evx__rows so-evx__rows--venue">
+            <?php foreach ($evAtVenue as $ve) { $vts = !empty($ve['date']['date']) ? strtotime($ve['date']['date']) : false; ?>
+            <li><a href="/event/<?php echo $h(soEventSlug($ve)); ?>"><span class="so-evx__t"><strong><?php echo $h($ve['text']['name']); ?></strong></span><?php if ($vts) { ?><span class="so-evx__when"><?php echo $h(date('D, M j, Y', $vts)) . ' &bull; ' . $h(date('g:i A', $vts)); ?></span><?php } ?><span class="so-evx__chev" aria-hidden="true">&rsaquo;</span></a></li>
+            <?php } ?>
+          </ul>
+          <?php if ($evVenueHref !== '') { ?><a class="so-evx__more" href="<?php echo $h($evVenueHref); ?>">See more events at <?php echo $h($eventVenueName); ?> &rsaquo;</a><?php } ?>
+        </div>
+        <?php } ?>
+      </div>
+    </div>
+    <div class="so-evinfo__grid so-evinfo__grid--one">
       <div class="so-evinfo__main">
         <h2><?php echo $h($evH2['tickets']); ?></h2>
         <p>Looking for <?php echo $h($evNm); ?> tickets<?php echo $evPlaceFull !== '' ? ' in ' . $h($evPlaceFull) : ''; ?>? Seat Outlet lets you compare seats and prices for this event in one place<?php echo $eventLowPrice !== '' ? ', with tickets listed from <strong>' . $h($eventLowPrice) . '</strong> per ticket' : ''; ?>. Pick your quantity, choose a section on the map and check out securely, backed by our <a href="/worry-free-guarantee">100% guarantee</a>.</p>
         <p>This is a resale marketplace, so prices are set by sellers and may be above or below face value. Read how <a href="/ticket-buyer-protection">ticket buyer protection</a> works, or see <a href="/how-to-buy-tickets-online">how to buy tickets online</a>.</p>
-
-        <h2>How to buy <?php echo $h($evNm); ?> tickets</h2>
-        <ol class="so-steps">
-          <li><span><strong>Choose how many.</strong> Tell us how many tickets you need and we only show listings that fit.</span></li>
-          <li><span><strong>Pick your seats.</strong> Use the map and the filters to compare sections, rows and prices.</span></li>
-          <li><span><strong>Check out and go.</strong> Pay securely and get your tickets before the event.</span></li>
-        </ol>
 
         <?php echo soSpecPromoHtml($evH2['promo'], $evKind === 'concert' ? $evPerfName : $evLabel); ?>
 
@@ -273,30 +322,6 @@ $evSimilarHtml = ($evOtherList !== '' && $eventVenueName !== '') ? '<h2>' . $h($
         <?php echo $evGuideHtml; ?>
         <?php echo $evSimilarHtml; ?>
       </div>
-      <aside class="so-evinfo__side">
-        <div class="so-evcard">
-          <h3>Event details</h3>
-          <dl>
-            <?php if ($evWhenLong !== '') { ?><dt>Date</dt><dd><?php echo $h($evWhenLong); ?></dd><?php } ?>
-            <?php if ($eventTimeText !== '') { ?><dt>Time</dt><dd><?php echo $h($eventTimeText); ?></dd><?php } ?>
-            <?php if ($eventVenueName !== '') { ?><dt>Venue</dt><dd><?php echo $eventVenueId ? '<a href="/venue/' . $h(soVenueSlug($eventVenueName, $eventVenueId, $eventCityLabel)) . '">' . $h($eventVenueName) . ' tickets</a>' : $h($eventVenueName); ?></dd><?php } ?>
-            <?php if ($evPlaceFull !== '') { ?><dt>City</dt><dd><?php echo $eventCityId ? '<a href="/' . $h($categoryCityPrefix) . '/' . $h(soSlug('city', $eventCityLabel, $eventCityId)) . '">Events in ' . $h($evPlaceFull) . '</a>' : $h($evPlaceFull); ?></dd><?php } ?>
-            <?php if (!empty($primaryPerformer['id'])) { ?><dt>Performer</dt><dd><a href="/artist/<?php echo $h(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id'])); ?>"><?php echo $h($primaryPerformer['name']); ?> tickets</a></dd><?php } ?>
-            <?php if ($evCatName !== '') { ?><dt>Category</dt><dd><?php echo $h($evCatName); ?></dd><?php } ?>
-          </dl>
-        </div>
-        <?php if ($evOther) { ?>
-        <div class="so-evcard">
-          <h3>More <?php echo $h($primaryPerformer['name'] ?? 'dates'); ?> dates</h3>
-          <ul class="so-evother">
-            <?php foreach ($evOther as $oe) { $ots = strtotime($oe['date']['date'] ?? 'now'); ?>
-            <li><a href="/event/<?php echo $h(soEventSlug($oe)); ?>"><span class="so-evother__d"><?php echo $h(date('M j', $ots)); ?></span><span class="so-evother__t"><?php echo $h(($oe['city']['text']['name'] ?? '') . ', ' . ($oe['stateProvince']['text']['abbr'] ?? '')); ?><small><?php echo $h($oe['venue']['text']['name'] ?? ''); ?></small></span><span class="so-evother__p"><?php echo $h($oe['pricingInfo']['lowPrice']['text']['formatted'] ?? ''); ?></span></a></li>
-            <?php } ?>
-          </ul>
-          <?php if (!empty($primaryPerformer['id'])) { ?><a class="so-evcard__more" href="/artist/<?php echo $h(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id'])); ?>">See all <?php echo $h($primaryPerformer['name']); ?> tickets &rsaquo;</a><?php } ?>
-        </div>
-        <?php } ?>
-      </aside>
     </div>
   </div>
 </section>

@@ -142,7 +142,7 @@ function soSpecCityInfoHtml(string $city, string $state, array $cityData, string
  * The guide: the facts the event page holds, in the order a buyer needs them. $f keys (all optional): when, venue, venueHref, address,
  * tickets (count), low (formatted price), eventsInCity, venueHref. Steps are the same three the page's own "how to buy" lists.
  */
-function soSpecGuideHtml(string $heading, string $label, array $f): string {
+function soSpecGuideHtml(string $heading, string $label, array $f, bool $note = true): string {
     $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
     $facts = [];
     if (!empty($f['when'])) $facts[] = '<li><strong>When:</strong> ' . $e($f['when']) . '</li>';
@@ -154,8 +154,8 @@ function soSpecGuideHtml(string $heading, string $label, array $f): string {
     if (!empty($f['dates']) && (int) $f['dates'] > 1) $facts[] = '<li><strong>Dates in this city:</strong> ' . (int) $f['dates'] . ', so you can pick the night that suits you</li>';
     if (!$facts) return '';
     return '<h2>' . $e($heading) . '</h2><ul class="so-speclist">' . implode('', $facts) . '</ul>'
-        . '<p>Choose how many tickets you need, pick seats on the map, then check out. Prices are set by sellers and can be above or below face value. '
-        . 'Read how <a href="/ticket-buyer-protection">ticket buyer protection</a> works before you order ' . $e($label) . ' tickets.</p>';
+        . (!$note ? '' : '<p>Choose how many tickets you need, pick seats on the map, then check out. Prices are set by sellers and can be above or below face value. '
+        . 'Read how <a href="/ticket-buyer-protection">ticket buyer protection</a> works before you order ' . $e($label) . ' tickets.</p>');
 }
 
 /** The guide heading for a kind. */
