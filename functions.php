@@ -5295,7 +5295,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
                     <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars("$soLabel Tickets $soPrep $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
-                    <div class="accordion" id="faqAccordion">
+                    <div class="accordion so-qa" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
                             $headingId  = 'heading' . $index;
@@ -5591,7 +5591,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
                     <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars("$categoryLabel Tickets $soKwPrep $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
-                    <div class="accordion" id="faqAccordion">
+                    <div class="accordion so-qa" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
                             $headingId  = 'heading' . $index;

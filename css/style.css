@@ -5579,15 +5579,7 @@ a.next-event-name { display: block; margin-top: 8px; font-size: 18px; font-weigh
 .next-event-cta { display: flex; align-items: center; justify-content: center; width: 100%; height: 54px; margin-top: 18px; border-radius: 16px; background: linear-gradient(180deg, #2f6df6, #1d4fd8); color: #fff; font-size: 18px; font-weight: 700; letter-spacing: .01em; text-align: center; box-shadow: 0 6px 16px rgba(29, 91, 240, .3); }
 .next-event-cta:hover { color: #fff; filter: brightness(1.05); }
 
-/* FAQs, Apple style: hairlines, quiet type, no colour on open */
-#faqs .accordion { --bs-accordion-bg: transparent; --bs-accordion-border-width: 0; }
-#faqs .accordion-item { background: transparent; border: 0; border-bottom: 1px solid var(--so-line); border-radius: 0; }
-#faqs .accordion-item:first-child { border-top: 1px solid var(--so-line); }
-#faqs .accordion-button { background: transparent; box-shadow: none; padding: 20px 4px; font-size: 18px; font-weight: 600; line-height: 1.4; color: var(--so-ink); gap: 16px; }
-#faqs .accordion-button:not(.collapsed) { color: var(--so-ink); background: transparent; box-shadow: none; }
-#faqs .accordion-button:focus { box-shadow: none; }
-#faqs .accordion-button::after { flex: 0 0 auto; width: 22px; height: 22px; background-size: 14px; background-position: center; background-color: #f2f4f8; border-radius: 50%; opacity: 1; }
-#faqs .accordion-body { padding: 0 4px 22px; font-size: 16.5px; line-height: 1.65; color: var(--so-ink-2); max-width: 760px; }
+/* FAQs: the Bootstrap accordions on these pages carry .so-qa and take the shared FAQ look (see ".so-qa" below); only the Show more button is styled here */
 #faqs #faqToggleBtn { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 22px; border: 0; border-radius: 999px; background: #f2f4f8; color: var(--so-ink); font-size: 16px; font-weight: 600; }
 #faqs #faqToggleBtn:hover { background: #e8ecf3; }
 
@@ -6915,6 +6907,24 @@ a.so-trust__cta:focus-visible { outline: 3px solid #9db6f4; outline-offset: 3px;
   .so-qa.so-qa details > p { padding: 0 12px 16px; font-size: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .so-qa.so-qa details, .so-qa.so-qa details summary, .so-qa.so-qa details summary::after { transition: none; } .so-qa.so-qa details > p { animation: none; } }
+/* The same look for the Bootstrap collapse FAQs (artist, search, buy-tickets, category and artist location pages, FAQ and BBB pages): the .accordion wrapper carries .so-qa. */
+.so-qa.so-qa.accordion { --bs-accordion-bg: transparent; --bs-accordion-border-width: 0; --bs-accordion-btn-focus-box-shadow: none; }
+.so-qa.so-qa .accordion-item { background: transparent; border: 0; border-bottom: 1px solid #e6e9ef; border-radius: 0; transition: background-color .2s ease; }
+.so-qa.so-qa .accordion-item:first-of-type { border-top: 1px solid #e6e9ef; }
+.so-qa.so-qa .accordion-item:has(> .accordion-collapse.show, > .accordion-collapse.collapsing) { background: #f2f6fe; border-radius: 12px; border-bottom-color: transparent; }
+.so-qa.so-qa .accordion-button { position: relative; padding: 18px 56px 18px 16px; background: transparent; box-shadow: none; border-radius: 0; font-size: 17px; font-weight: 650; line-height: 1.4; text-align: left; color: #0b1120; transition: color .15s ease; }
+.so-qa.so-qa .accordion-button:hover, .so-qa.so-qa .accordion-button:not(.collapsed) { color: #2556e0; background: transparent; box-shadow: none; }
+.so-qa.so-qa .accordion-button:focus { box-shadow: none; }
+.so-qa.so-qa .accordion-button:focus-visible { outline: 3px solid #9db6f4; outline-offset: -3px; }
+.so-qa.so-qa .accordion-button::after { content: "+"; position: absolute; top: 50%; right: 14px; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin: 0; border-radius: 50%; border: 1px solid #c9d6f6; background: #fff none; color: #2556e0; font-size: 20px; font-weight: 500; line-height: 1; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+.so-qa.so-qa .accordion-button:not(.collapsed)::after { content: "\2212"; transform: translateY(-50%); background: #2556e0 none; border-color: #2556e0; color: #fff; }
+.so-qa.so-qa .accordion-body { padding: 0 56px 18px 16px; max-width: none; font-size: 17px; line-height: 1.7; color: #3a3f48; }
+@media (max-width: 575.98px) {
+  .so-qa.so-qa .accordion-button { padding: 16px 50px 16px 12px; font-size: 16px; }
+  .so-qa.so-qa .accordion-button::after { right: 10px; width: 28px; height: 28px; }
+  .so-qa.so-qa .accordion-body { padding: 0 12px 16px; font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .so-qa.so-qa .accordion-item, .so-qa.so-qa .accordion-button, .so-qa.so-qa .accordion-button::after { transition: none; } }
 
 /* Search page: results first on phones */
 @media (max-width: 767.98px) {
@@ -7169,7 +7179,7 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-chips .so-chip--on svg, .so-dd[open] .so-chip svg { color: #fff; }
 /* Location chip (e.g. "Ahmedabad"): on hover the place name, map icon and caret turn blue (the hover background is light,
    so white would vanish); the background, border and size keep their existing styles. */
-[data-so-loc-toggle]:hover > * { color: #0071e3 !important; } /* the label, map icon and caret are its only children */
+[data-so-loc-toggle]:hover > *, .so-chips .so-chip--on:hover > *, .so-chips--compact .so-chip--on:hover > *, .so-filterbar .so-chip--on:hover > *, .so-dd[open] > .so-chip:hover > * { color: #0071e3 !important; } /* the label, icon and caret are the chip's only children; applies to every active chip (location, filters, open dropdowns), not only the artist page */
 @media (max-width: 575.98px) {
   .so-explore .so-chips, .so-filterbar--compact, .so-chips--compact { flex-wrap: nowrap !important; overflow-x: auto; margin: 0 -12px 10px; padding: 2px 12px 4px; scrollbar-width: none; scroll-snap-type: x proximity; }
   .so-chips > *, .so-chips--compact > * { flex: 0 0 auto; scroll-snap-align: start; }

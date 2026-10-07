@@ -153,7 +153,7 @@ include 'header.php';
                     <div class="col-lg-12">
                         <div class="faq-card mb-4">
                             <h2 class="h3 mb-0">Frequently Asked Questions</h2>
-                            <div class="accordion mb-0" id="purchaseFaq">
+                            <div class="accordion so-qa mb-0" id="purchaseFaq">
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent" data-bs-toggle="collapse" data-bs-target="#purchaseOne">
                                     Does Seat Outlet have a BBB rating?

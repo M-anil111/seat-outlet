@@ -291,8 +291,13 @@ function soRenderEntityListing(array $c): void {
                         : [ "What events are on in $name?", $total > 0 ? 'There are ' . soCountWord($total, 'upcoming event') . " in $name on Seat Outlet right now, including concerts, sports and theater. Use the date and price filters above to narrow the list." : "Nothing is on sale in $name right now. New dates are added every day, so leave your email above and we will tell you when tickets go on sale." ];
                     if ($kind === 'venue') {
                         // Spec: "About <Venue> in <City>, <ST>": address, directions, transit, official site and weather, no invented policies.
-                        echo '<div class="tab-section content-section-detail">' . soSpecVenueInfoHtml('About ' . $name . ($c['cityLabel'] !== '' ? ' in ' . $c['cityLabel'] : ''), $name,
-                            (string) ($c['entity']['city']['text']['name'] ?? ''), (string) ($c['entity']['stateProvince']['text']['abbr'] ?? ''), '', is_array($c['entity'] ?? null) ? $c['entity'] : [], $soEntityFacts, $total) . '</div>';
+                        // The same pale blue card with link cards as the event page's "About <venue>" (css/spec-cards.css, a .so-evv wrapper).
+                        $soVenueCard = soSpecVenueInfoHtml('About ' . $name . ($c['cityLabel'] !== '' ? ' in ' . $c['cityLabel'] : ''), $name,
+                            (string) ($c['entity']['city']['text']['name'] ?? ''), (string) ($c['entity']['stateProvince']['text']['abbr'] ?? ''), '', is_array($c['entity'] ?? null) ? $c['entity'] : [], $soEntityFacts, $total, true);
+                        if ($soVenueCard !== '') {
+                            echo '<link rel="stylesheet" href="' . htmlspecialchars(soAsset('css/spec-cards.css'), ENT_QUOTES, 'UTF-8') . '">';
+                            echo '<div class="so-evv so-evv--page">' . $soVenueCard . '</div>';
+                        }
                     }
                     soMiniFaq('FAQs about ' . ($kind === 'venue' ? $name : $label) . ' Tickets', array_values(array_filter([
                         $soWhere,

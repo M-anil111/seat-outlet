@@ -56,7 +56,7 @@ soRenderListingPage([
 		<?php if (!empty($faqs)) { ?>
 			<div class="tab-section content-section-detail">
 				<h2 class="so-heading fw-bold fs-4 mb-4 text-black">Live event tickets FAQ</h2>
-				<div class="accordion" id="faqAccordion">
+				<div class="accordion so-qa" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;
 						$headingId  = 'heading' . $index;
