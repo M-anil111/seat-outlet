@@ -7167,9 +7167,9 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-chips .so-chip:hover, .so-filterbar .so-chip:hover { background: #f5f5f7 !important; }
 .so-chips .so-chip--on, .so-chips--compact .so-chip--on, .so-filterbar .so-chip--on, .so-dd[open] .so-chip { background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important; }
 .so-chips .so-chip--on svg, .so-dd[open] .so-chip svg { color: #fff; }
-/* Location chip (e.g. "Ahmedabad"): on hover only the place name turns blue (the hover background is light, so the
-   white label would vanish); the map icon, background, border and size keep their existing styles. */
-.so-chips--compact .so-chip:hover [data-so-loc-label] { color: #0071e3; }
+/* Location chip (e.g. "Ahmedabad"): on hover the place name, map icon and caret turn blue (the hover background is light,
+   so white would vanish); the background, border and size keep their existing styles. */
+[data-so-loc-toggle]:hover > * { color: #0071e3 !important; } /* the label, map icon and caret are its only children */
 @media (max-width: 575.98px) {
   .so-explore .so-chips, .so-filterbar--compact, .so-chips--compact { flex-wrap: nowrap !important; overflow-x: auto; margin: 0 -12px 10px; padding: 2px 12px 4px; scrollbar-width: none; scroll-snap-type: x proximity; }
   .so-chips > *, .so-chips--compact > * { flex: 0 0 auto; scroll-snap-align: start; }
