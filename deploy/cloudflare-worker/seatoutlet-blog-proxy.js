@@ -46,50 +46,50 @@ var BLOG_POSTS = {
     category: "Ticket Safety",
     title: "Ticket Scams: 15 Warning Signs and How to Buy Tickets Safely",
     description: "Learn how ticket scams work, 15 warning signs, a 12-point pre-purchase checklist, safe vs risky payment methods, what the BOTS Act and FTC fee rule cover, and what to do if you were scammed.",
-    image: "/images/event-ticket-buying.webp",
-    alt: "Concert tickets on a laptop and a phone, with a green check mark on the phone ticket"
+    image: "/images/blog/how-to-avoid-ticket-scams.webp",
+    alt: "A careful online shopper reviewing a credit card before entering payment details on a laptop"
   },
   "/blog/upcoming-concert-tours": {
     category: "Concerts & Tours",
     title: "Upcoming Concert Tours: 12 Announced Tours and How to Get Tickets",
     description: "12 verified upcoming concert tours for late 2026 and 2027 in North America, with dates as published, plus how announcements, presales and on-sales work and how to compare resale seats. As of 2 October 2026.",
-    image: "/images/stage.webp",
-    alt: "Musicians performing on a stage lit by beams of light, with the crowd in the foreground"
+    image: "/images/blog/upcoming-concert-tours.webp",
+    alt: "A singer engaging fans from the stage during a live concert tour"
   },
   "/blog/taylor-swift-tour-dates": {
     category: "Concerts & Tours",
     title: "Taylor Swift Tour Dates: Latest Updates and How to Get Tickets in 2026",
     description: "As of 2 October 2026 no Taylor Swift tour has been announced. Here is what is verified, how to prepare, how resale works and how to avoid fake tour-date posts.",
-    image: "/images/indie-rock-night.webp",
-    alt: "Packed crowd at an indoor concert under red and blue stage lights"
+    image: "/images/blog/taylor-swift-tour-dates.webp",
+    alt: "A singer performing on a concert stage beneath vivid red and blue lights"
   },
   "/blog/kids-events-in-austin": {
     category: "City Guides",
     title: "Kids Events in Austin: 12 Family Ideas, Shows and Tickets",
     description: "A practical guide to kids events in Austin: family shows, sports, holiday lights and attractions, with age tips and venue rules on lap seats, bags and strollers. Verified against official sites as of 2 October 2026.",
-    image: "/images/austin.webp",
-    alt: "Large crowd at an outdoor festival stage with a city skyline behind it"
+    image: "/images/blog/kids-events-in-austin.webp",
+    alt: "A family with children playing together outdoors at a sunny community event"
   },
   "/blog/best-concerts-in-nyc": {
     category: "City Guides",
     title: "Best Concerts in NYC: Venues, Shows and Smart Ticket Tips",
     description: "A practical guide to the best concerts in NYC by experience: arenas, historic theaters, indie clubs, jazz halls, outdoor summer shows and New Jersey stadiums, with a venue table, seat advice, transit and ticket tips.",
-    image: "/images/venue.webp",
-    alt: "Empty arena with rows of seats facing a lit stage"
+    image: "/images/blog/best-concerts-in-nyc.webp",
+    alt: "A New York concert audience watching performers under vivid purple and blue stage lights"
   },
   "/blog/things-to-do-in-nyc-in-december": {
     category: "City Guides",
     title: "Things to Do in NYC in December: Top Ticketed Events for 2026",
     description: "A guide to ticketed and free things to do in NYC in December 2026: Radio City, The Nutcracker, Jingle Ball, sports, the Rockefeller tree and New Year's Eve, with dates as published by organizers as of 2 October 2026.",
-    image: "/images/loews-theatre.webp",
-    alt: "Front of a historic theater with a clock tower and a lit marquee"
+    image: "/images/blog/things-to-do-in-nyc-in-december.webp",
+    alt: "The New York City skyline at sunset decorated with glowing December holiday lights"
   },
   "/blog/best-concert-venues-in-the-us": {
     category: "Venues",
     title: "Best Concert Venues in the US: 20 Iconic Places to See Live Music",
     description: "An editorial guide to the best concert venues in the US: 20 amphitheaters, historic theaters, arenas, a stadium and clubs, with capacities, history, seating tips and trip planning.",
-    image: "/images/festival-1.webp",
-    alt: "Crowd at a large arena concert with stage lights and rigging overhead"
+    image: "/images/blog/best-concert-venues-in-the-us.webp",
+    alt: "Rows of seats rising through a large modern event venue before the audience arrives"
   }
 };
 // Paths that must never be public. Answered 404 (not 403: nothing is revealed about what exists).
