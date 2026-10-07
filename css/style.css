@@ -6891,24 +6891,28 @@ a.so-trust__cta:focus-visible { outline: 3px solid #9db6f4; outline-offset: 3px;
 .so-readmore__btn:hover { background: #2556e0; color: #fff; }
 .so-readmore:not(.is-clamped) .so-readmore__btn { margin-top: 24px; }
 @media (max-width: 575.98px) { .so-seo-copy.so-readmore { padding: 28px 0 32px; } }
-/* Home FAQ (the "Questions About How to Buy Event Tickets" block in the home copy), also the directory pages' "Questions" block (.so-seo-copy.so-qa, one open at a time via <details name>): an accordion, one answer open at a time
-   (js/home.js adds .so-homeqa to the block and closes the others; the class is only in home.js, so other page types' stylesheets drop these rules; the selectors name details, not .so-faq, which the purge safelist keeps everywhere). The open item gets a pale blue panel, a blue question and a filled round minus icon. */
-.so-homeqa.so-readmore details, .so-seo-copy.so-qa details { transition: background-color .2s ease; }
-.so-homeqa.so-readmore details summary, .so-seo-copy.so-qa details summary { padding: 18px 56px 18px 16px; transition: color .15s ease; }
-.so-homeqa.so-readmore details summary:hover, .so-seo-copy.so-qa details summary:hover { color: #2556e0; }
-.so-homeqa.so-readmore details summary:focus-visible, .so-seo-copy.so-qa details summary:focus-visible { outline: 3px solid #9db6f4; outline-offset: -3px; }
-.so-homeqa.so-readmore details summary::after, .so-seo-copy.so-qa details summary::after { content: "+"; right: 14px; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #c9d6f6; background: #fff; font-size: 20px; font-weight: 500; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
-.so-homeqa.so-readmore details[open], .so-seo-copy.so-qa details[open] { background: #f2f6fe; border-radius: 12px; border-bottom-color: transparent; }
-.so-homeqa.so-readmore details[open] summary, .so-seo-copy.so-qa details[open] summary { color: #2556e0; }
-.so-homeqa.so-readmore details[open] summary::after, .so-seo-copy.so-qa details[open] summary::after { content: "\2212"; background: #2556e0; border-color: #2556e0; color: #fff; }
-.so-homeqa.so-readmore details > p, .so-seo-copy.so-qa details > p { margin: 0; padding: 0 56px 18px 16px; animation: so-faq-in .2s ease; }
+/* Site FAQ accordion (.so-qa): one design for every question-and-answer block (the soSeoCopy() "Questions" blocks on the
+   buy-tickets pages, soMiniFaq(), the category FAQ and the event FAQ). <details name> keeps one answer open per block.
+   Selectors name details, not .so-faq (the purge safelist keeps any .so-faq selector everywhere); .so-qa.so-qa outranks
+   the older per-block FAQ rules. The open item gets a pale blue panel, a blue question and a filled round minus icon. */
+.so-qa.so-qa details { border: 0; border-bottom: 1px solid #e6e9ef; padding: 0; margin: 0; transition: background-color .2s ease; }
+.so-qa.so-qa details:first-of-type { border-top: 1px solid #e6e9ef; }
+.so-qa.so-qa details summary { position: relative; display: block; list-style: none; cursor: pointer; padding: 18px 56px 18px 16px; font-size: 17px; font-weight: 650; line-height: 1.4; color: #0b1120; transition: color .15s ease; }
+.so-qa.so-qa details summary::-webkit-details-marker { display: none; }
+.so-qa.so-qa details summary:hover { color: #2556e0; }
+.so-qa.so-qa details summary:focus-visible { outline: 3px solid #9db6f4; outline-offset: -3px; }
+.so-qa.so-qa details summary::after { content: "+"; position: absolute; top: 50%; right: 14px; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #c9d6f6; background: #fff; color: #2556e0; font-size: 20px; font-weight: 500; line-height: 1; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+.so-qa.so-qa details[open] { background: #f2f6fe; border-radius: 12px; border-bottom-color: transparent; }
+.so-qa.so-qa details[open] summary { color: #2556e0; }
+.so-qa.so-qa details[open] summary::after { content: "\2212"; background: #2556e0; border-color: #2556e0; color: #fff; }
+.so-qa.so-qa details > p { margin: 0; padding: 0 56px 18px 16px; max-width: none; font-size: 17px; line-height: 1.7; color: #3a3f48; animation: so-faq-in .2s ease; }
 @keyframes so-faq-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @media (max-width: 575.98px) {
-  .so-homeqa.so-readmore details summary, .so-seo-copy.so-qa details summary { padding: 16px 50px 16px 12px; font-size: 16px; }
-  .so-homeqa.so-readmore details summary::after, .so-seo-copy.so-qa details summary::after { right: 10px; width: 28px; height: 28px; }
-  .so-homeqa.so-readmore details > p, .so-seo-copy.so-qa details > p { padding: 0 12px 16px; font-size: 16px; }
+  .so-qa.so-qa details summary { padding: 16px 50px 16px 12px; font-size: 16px; }
+  .so-qa.so-qa details summary::after { right: 10px; width: 28px; height: 28px; }
+  .so-qa.so-qa details > p { padding: 0 12px 16px; font-size: 16px; }
 }
-@media (prefers-reduced-motion: reduce) { .so-homeqa.so-readmore details, .so-homeqa.so-readmore details summary, .so-homeqa.so-readmore details summary::after, .so-seo-copy.so-qa details, .so-seo-copy.so-qa details summary, .so-seo-copy.so-qa details summary::after { transition: none; } .so-homeqa.so-readmore details > p, .so-seo-copy.so-qa details > p { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .so-qa.so-qa details, .so-qa.so-qa details summary, .so-qa.so-qa details summary::after { transition: none; } .so-qa.so-qa details > p { animation: none; } }
 
 /* Search page: results first on phones */
 @media (max-width: 767.98px) {

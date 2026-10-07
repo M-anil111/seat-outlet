@@ -399,6 +399,6 @@ foreach ($fallbackCategories as $key => $list) {
 ob_start();
 soSeoCopy('home');
 // The home copy block's body is .so-readmore__body (the Read more clamp).
-echo str_replace(['<section class="so-seo-copy"', '<div class="container"><div>'], ['<section class="so-seo-copy so-readmore" data-so-readmore', '<div class="container"><div class="so-readmore__body">'], ob_get_clean());
+echo str_replace(['<section class="so-seo-copy so-qa"', '<div class="container"><div>'], ['<section class="so-seo-copy so-qa so-readmore" data-so-readmore', '<div class="container"><div class="so-readmore__body">'], ob_get_clean());
 ?>
 <?php include 'footer.php'; ?>

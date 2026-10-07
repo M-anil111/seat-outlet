@@ -2544,8 +2544,11 @@ function soSeoCopy($key) {
     $file = __DIR__ . '/inc/seo-copy/' . preg_replace('/[^a-z0-9-]/', '', (string) $key) . '.php';
     if (!is_file($file)) { return; }
     $year = date('Y');
-    echo "\n<section class=\"so-seo-copy\" data-so-copy=\"" . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . "\"><div class=\"container\"><div>\n";
+    echo "\n<section class=\"so-seo-copy so-qa\" data-so-copy=\"" . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . "\"><div class=\"container\"><div>\n";
+    ob_start();
     include $file;
+    // The FAQ answers open one at a time (the .so-qa accordion).
+    echo str_replace('<details class="so-faq">', '<details class="so-faq" name="so-qa-copy">', ob_get_clean());
     echo "\n</div></div></section>\n";
 }
 
