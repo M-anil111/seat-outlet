@@ -6895,13 +6895,13 @@ a.so-trust__cta:focus-visible { outline: 3px solid #9db6f4; outline-offset: 3px;
    buy-tickets pages, soMiniFaq(), the category FAQ and the event FAQ). <details name> keeps one answer open per block.
    Selectors name details, not .so-faq (the purge safelist keeps any .so-faq selector everywhere); .so-qa.so-qa outranks
    the older per-block FAQ rules. The open item gets a pale blue panel, a blue question and a filled round minus icon. */
-.so-qa.so-qa details { border: 0; border-bottom: 1px solid #e6e9ef; padding: 0; margin: 0; transition: background-color .2s ease; }
+.so-qa.so-qa details { border: 0; border-bottom: 1px solid #e6e9ef; padding: 0; transition: background-color .2s ease; }
 .so-qa.so-qa details:first-of-type { border-top: 1px solid #e6e9ef; }
 .so-qa.so-qa details summary { position: relative; display: block; list-style: none; cursor: pointer; padding: 18px 56px 18px 16px; font-size: 17px; font-weight: 650; line-height: 1.4; color: #0b1120; transition: color .15s ease; }
 .so-qa.so-qa details summary::-webkit-details-marker { display: none; }
 .so-qa.so-qa details summary:hover { color: #2556e0; }
 .so-qa.so-qa details summary:focus-visible { outline: 3px solid #9db6f4; outline-offset: -3px; }
-.so-qa.so-qa details summary::after { content: "+"; position: absolute; top: 50%; right: 14px; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #c9d6f6; background: #fff; color: #2556e0; font-size: 20px; font-weight: 500; line-height: 1; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+.so-qa.so-qa details summary::after { content: "+"; position: absolute; top: 50%; right: 14px; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #c9d6f6; background: #fff; color: #2556e0; font-size: 20px; font-weight: 500; line-height: 1; transition: .2s ease; }
 .so-qa.so-qa details[open] { background: #f2f6fe; border-radius: 12px; border-bottom-color: transparent; }
 .so-qa.so-qa details[open] summary { color: #2556e0; }
 .so-qa.so-qa details[open] summary::after { content: "\2212"; background: #2556e0; border-color: #2556e0; color: #fff; }
@@ -7165,6 +7165,9 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-chips .so-chip:hover, .so-filterbar .so-chip:hover { background: #f5f5f7 !important; }
 .so-chips .so-chip--on, .so-chips--compact .so-chip--on, .so-filterbar .so-chip--on, .so-dd[open] .so-chip { background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important; }
 .so-chips .so-chip--on svg, .so-dd[open] .so-chip svg { color: #fff; }
+/* Location chip (e.g. "Ahmedabad"): on hover only the place name turns blue (the hover background is light, so the
+   white label would vanish); the map icon, background, border and size keep their existing styles. */
+.so-chips--compact .so-chip:hover [data-so-loc-label] { color: #0071e3; }
 @media (max-width: 575.98px) {
   .so-explore .so-chips, .so-filterbar--compact, .so-chips--compact { flex-wrap: nowrap !important; overflow-x: auto; margin: 0 -12px 10px; padding: 2px 12px 4px; scrollbar-width: none; scroll-snap-type: x proximity; }
   .so-chips > *, .so-chips--compact > * { flex: 0 0 auto; scroll-snap-align: start; }

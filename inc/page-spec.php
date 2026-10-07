@@ -83,7 +83,7 @@ function soSpecPromoHtml(string $heading, string $subject): string {
     $out = '<div class="so-specpromo" id="promocode" style="margin:32px 0">' . ($heading !== '' ? '<h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . $e($heading) . '</h2>' : '')
         . '<p>Two promo codes are available for ' . $e($subject) . ' tickets. Enter the code in the promo code field at checkout.</p><div class="row g-3 mt-2">';
     foreach (SO_PROMO_CODES as $p) {
-        $out .= '<div class="col-md-6"><div class="offer-pill d-flex align-items-center justify-content-between"><div class="d-flex align-items-center">'
+        $out .= '<div class="col-md-12"><div class="offer-pill d-flex align-items-center justify-content-between"><div class="d-flex align-items-center">'
             . '<div class="offer-icon me-3 d-flex align-items-center justify-content-center" style="flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path><circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle></svg></div>'
             . '<div class="offer-text"><div class="offer-title">' . (int) $p['pct'] . '% OFF</div><div class="offer-subtitle">' . $e($p['code']) . '</div>'
             . '<div class="small">Take ' . (int) $p['pct'] . '% off your ' . $e($subject) . ' tickets when you spend $' . (int) $p['min'] . ' or more.</div></div></div>'
