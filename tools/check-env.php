@@ -73,6 +73,7 @@ $add($env('THESPORTSDB_KEY') !== '' && $env('THESPORTSDB_KEY') !== '3' ? 'OK' : 
 $cdn = $env('AWS_CDN_URL') ?: 'https://cdn-beta.seatoutlet.com/';
 $add(stripos($cdn, 'cdn-beta') !== false ? 'BETA' : 'OK', 'AWS_CDN_URL', $env('AWS_CDN_URL') === '' ? 'not set, defaults to ' . $cdn : 'set');
 $add($env('TN_CHECKOUT_URL') === '' ? 'WARN' : 'OK', 'TN_CHECKOUT_URL', $env('TN_CHECKOUT_URL') === '' ? 'not set, defaults to https://checkout.seatoutlet.com: confirm that is the live hosted checkout address' : 'set');
+$add($env('UNSPLASH_ACCESS_KEY') !== '' ? 'OK' : 'INFO', 'UNSPLASH_ACCESS_KEY', $env('UNSPLASH_ACCESS_KEY') !== '' ? 'set' : 'not set: city pages use Wikidata or Pexels photos, or the initials tile');
 $geo = $env('GEOIP_DB_PATH') ?: dirname(rtrim($path, '/')) . '/geoip/GeoLite2-City.mmdb';
 $add(is_file($geo) ? 'OK' : 'WARN', 'GeoIP database', is_file($geo) ? 'present' : 'not found at the expected path: visitor location falls back to the browser (run cron/geoip-update.php with MAXMIND_* set)');
 $cache = __DIR__ . '/../cache';
