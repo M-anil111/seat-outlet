@@ -233,15 +233,15 @@ if ($evKind === 'concert' && $evOther) {
 }
 // Venue info: address, directions, transit, the official site and the weather, from the venue record and Wikidata (no policies are stated).
 $evVenueFacts = $eventVenueName !== '' ? soEntityFacts($eventVenueName, 'venue', (string) $eventCityName) : [];
-$evVenueInfoHtml = soSpecVenueInfoHtml($evH2['venue'], (string) $eventVenueName, (string) $eventCityName, $evStateAbbr, $evVenueHref, is_array($evVenueRec ?? null) ? $evVenueRec : [], $evVenueFacts, (int) ($evVenueData['total'] ?? 0));
+$evVenueInfoHtml = soSpecVenueInfoHtml($evH2['venue'], (string) $eventVenueName, (string) $eventCityName, $evStateAbbr, $evVenueHref, is_array($evVenueRec ?? null) ? $evVenueRec : [], $evVenueFacts, (int) ($evVenueData['total'] ?? 0), true);
 $evGuideHtml = soSpecGuideHtml($evH2['guide'], $evLabel, [
   'when' => $evWhenLong !== '' ? $evWhenLong . ($eventTimeText !== '' ? ' at ' . $eventTimeText : '') : '',
   'venue' => $eventVenueName, 'venueHref' => $evVenueHref,
   'address' => (string) (($evVenueRec['address']['text']['address1'] ?? '') ?: ''),
   'tickets' => (int) ($event['_metadata']['ticketCount'] ?? 0), 'low' => $eventLowPrice,
-], false);
-$evOtherList = soSpecEventList($evVenueEvents ?: ($evCityData['events'] ?? []), $evShownIds, 6);
-$evSimilarHtml = ($evOtherList !== '' && $eventVenueName !== '') ? '<h2>' . $h($evH2['other']) . '</h2>' . $evOtherList : '';
+], false, true);
+$evOtherList = soSpecEventRows($evVenueEvents ?: ($evCityData['events'] ?? []), $evShownIds, 6);
+$evSimilarHtml = ($evOtherList !== '' && $eventVenueName !== '') ? '<div class="so-evv-card so-evv-up"><h2>' . $h($evH2['other']) . '</h2>' . $evOtherList . '</div>' : '';
 $evOtherCard = array_slice($evOther, 0, 4);
 $evAtVenue = [];
 $evSkipVenue = array_merge([(int) $id], array_map(fn($oe) => (int) ($oe['id'] ?? 0), $evOtherCard));
@@ -349,9 +349,10 @@ $evDirHref = 'https://www.google.com/maps/dir/?api=1&destination=' . rawurlencod
       <p><?php echo $h($evAboutText); ?></p>
       <?php } ?>
       <?php echo $evVenueInfoHtml; ?>
+      <?php if ($evGuideHtml !== '' || $evSimilarHtml !== '') { ?>
+      <div class="so-evv-pair<?php echo ($evGuideHtml === '' || $evSimilarHtml === '') ? ' so-evv-pair--one' : ''; ?>"><?php echo $evGuideHtml . $evSimilarHtml; ?></div>
+      <?php } ?>
       <?php echo $evKindSection; ?>
-      <?php echo $evGuideHtml; ?>
-      <?php echo $evSimilarHtml; ?>
     </div>
   </div>
 </section>
