@@ -214,14 +214,14 @@ if ($evKind === 'sports') {
 $evKindSection = '';
 $evSubPrefix = '.' . implode('.', array_slice(array_filter(explode('.', (string) $eventCategoryPath), 'strlen'), 0, 3)) . '.';
 if ($evKind === 'concert' && $evOther) {
-  $evKindSection = '<h2>' . $h($evH2['kind']) . '</h2>' . soSpecEventList($evOther, [(int) $id], 6)
-    . (!empty($primaryPerformer['id']) ? '<p><a href="/artist/' . $h(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id'])) . '">See all ' . $h($evPerfName) . ' tour dates</a></p>' : '');
+  $evKindSection = '<div class="so-evv-card so-evv-up"><h2>' . $h($evH2['kind']) . '</h2>' . soSpecEventRows($evOther, [(int) $id], 6)
+    . (!empty($primaryPerformer['id']) ? '<p class="so-evv-more"><a href="/artist/' . $h(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id'])) . '">See all ' . $h($evPerfName) . ' tour dates</a></p>' : '') . '</div>';
   foreach ($evOther as $oe) { $evShownIds[] = (int) ($oe['id'] ?? 0); }
 } elseif (in_array($evKind, ['sports', 'theater'], true)) {
   $evSameSub = array_values(array_filter($evVenueEvents, fn($oe) => strpos((string) ($oe['defaultCategory']['path'] ?? ''), $evSubPrefix) === 0));
-  $evList = soSpecEventList($evSameSub, $evShownIds, 6);
+  $evList = soSpecEventRows($evSameSub, $evShownIds, 6);
   if ($evList !== '' && $eventVenueName !== '') {
-    $evKindSection = '<h2>' . $h($evH2['kind']) . '</h2>' . $evList;
+    $evKindSection = '<div class="so-evv-card so-evv-up"><h2>' . $h($evH2['kind']) . '</h2>' . $evList . '</div>';
     foreach ($evSameSub as $oe) { $evShownIds[] = (int) ($oe['id'] ?? 0); }
   }
 } elseif ($evKind === 'festival' && count($event['performers'] ?? []) > 1) {

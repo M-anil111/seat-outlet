@@ -5367,7 +5367,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                 echo '</div>';
             }
             if ($soKind === 'concert' && $soOtherDates) {
-                echo '<div class="tab-section content-section-detail"><h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . htmlspecialchars($soLabel . ' Tour Dates Across ' . $soCountryName, ENT_QUOTES, 'UTF-8') . '</h2>' . soSpecEventList($soOtherDates, [], 6) . '<p><a href="/artist/' . htmlspecialchars($canonArtistSlug, ENT_QUOTES, 'UTF-8') . '">See all ' . htmlspecialchars($soLabel, ENT_QUOTES, 'UTF-8') . ' tour dates</a></p></div>';
+                echo '<link rel="stylesheet" href="' . htmlspecialchars(soAsset('css/spec-cards.css'), ENT_QUOTES, 'UTF-8') . '"><div class="so-evv so-evv--page"><div class="so-evv-card so-evv-up"><h2>' . htmlspecialchars($soLabel . ' Tour Dates Across ' . $soCountryName, ENT_QUOTES, 'UTF-8') . '</h2>' . soSpecEventRows($soOtherDates, [], 6) . '<p class="so-evv-more"><a href="/artist/' . htmlspecialchars($canonArtistSlug, ENT_QUOTES, 'UTF-8') . '">See all ' . htmlspecialchars($soLabel, ENT_QUOTES, 'UTF-8') . ' tour dates</a></p></div></div>';
             }
             ?>
 
