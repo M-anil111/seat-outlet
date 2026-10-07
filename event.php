@@ -116,13 +116,14 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
 <noscript><p class="so-seatmap__nojs container py-4">The seat map needs JavaScript. Please turn it on, or <a href="/ticket-customer-service">contact us</a> and we will help you find tickets.</p></noscript>
 </div></section>
 <div id="so-no-tickets" class="so-no-tickets d-none" role="region" aria-labelledby="so-no-tickets-title" tabindex="-1">
-  <div class="container py-5 text-center">
-    <h2 class="fw-bold fs-4 mb-2" id="so-no-tickets-title">No tickets are listed for this event right now</h2>
-    <p class="text-muted mb-4" id="so-no-tickets-text">Inventory changes hourly as sellers list seats. Try another date, or browse related tickets below.</p>
-    <div class="so-nt__reload" id="so-no-tickets-reload" hidden>
-      <button type="button" class="so-nt__btn" data-so-reload>Reload the seat map</button>
+  <div class="container py-5"><div class="so-state">
+    <?php echo soStateIcon('ticket'); ?>
+    <h2 class="so-state__title" id="so-no-tickets-title">No tickets are listed for this event right now</h2>
+    <p class="so-state__text" id="so-no-tickets-text">Inventory changes hourly as sellers list seats. Try another date, or browse related tickets below.</p>
+    <div class="so-state__actions" id="so-no-tickets-reload" hidden>
+      <button type="button" class="so-state__btn" data-so-reload>Reload the seat map</button>
     </div>
-    <div class="so-nt__lead">
+    <div class="so-state__lead">
       <?php echo soLeadForm([
         'source' => 'event-empty',
         'title' => 'Notify me when tickets are listed',
@@ -135,9 +136,9 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
         'class' => 'so-nl--compact',
       ]); ?>
     </div>
-    <div class="so-nt__actions">
+    <div class="so-state__chips">
       <?php if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name'])) { ?>
-        <a class="so-nt__btn" href="/artist/<?php echo htmlspecialchars(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id']), ENT_QUOTES, 'UTF-8'); ?>">All <?php echo htmlspecialchars($primaryPerformer['name'], ENT_QUOTES, 'UTF-8'); ?> dates</a>
+        <a class="so-linkchip" href="/artist/<?php echo htmlspecialchars(soSlug('performer', $primaryPerformer['name'], $primaryPerformer['id']), ENT_QUOTES, 'UTF-8'); ?>">All <?php echo htmlspecialchars($primaryPerformer['name'], ENT_QUOTES, 'UTF-8'); ?> dates</a>
       <?php } ?>
       <?php if (!empty($eventCityId)) { ?>
         <a class="so-linkchip" href="/<?php echo htmlspecialchars($categoryCityPrefix, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars(soSlug('city', $eventCityLabel, $eventCityId), ENT_QUOTES, 'UTF-8'); ?>">More events in <?php echo htmlspecialchars($eventCityLabel, ENT_QUOTES, 'UTF-8'); ?></a>
@@ -146,7 +147,7 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
         <a class="so-linkchip" href="/venue/<?php echo htmlspecialchars(soVenueSlug($eventVenueName, $eventVenueId, $eventCityLabel), ENT_QUOTES, 'UTF-8'); ?>">More at <?php echo htmlspecialchars($eventVenueName, ENT_QUOTES, 'UTF-8'); ?></a>
       <?php } ?>
     </div>
-  </div>
+  </div></div>
 </div>
 <?php
 // Facts for js/event-actions.js (calendar file, share, "recently viewed"). Everything here is already on the page.
