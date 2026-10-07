@@ -261,9 +261,9 @@ $evSimilarHtml = ($evOtherList !== '' && $eventVenueName !== '') ? '<h2>' . $h($
         <?php soBuyerGuaranteeSection(['events' => [$event]]); ?>
 
         <h2><?php echo $h($evH2['faqs']); ?></h2>
-        <div class="so-evfaq">
+        <div class="so-evfaq so-qa">
           <?php foreach ($evFaqs as $fq) { ?>
-          <details class="so-faq"><summary><h3 style="display:inline;font:inherit;margin:0"><?php echo $h($fq['q']); ?></h3></summary><p><?php echo $h($fq['a']); ?></p></details>
+          <details class="so-faq" name="so-qa-ev"><summary><h3 style="display:inline;font:inherit;margin:0"><?php echo $h($fq['q']); ?></h3></summary><p><?php echo $h($fq['a']); ?></p></details>
           <?php } ?>
         </div>
       </div>
