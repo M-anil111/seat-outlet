@@ -8,7 +8,6 @@ preg_match("/function imageHttpJson\(.*?\n}\n/s", $src, $m2);
 preg_match("/function imageSourcePixabay\(.*?\n}\n/s", $src, $m3);
 preg_match("/function imageLicenseUrl\(.*?\n}\n/s", $src, $m4);
 eval($m1[0] . $m2[0] . $m3[0] . $m4[0]);
-function imageHttpGet($url, $h = []) { return [0, '']; }
 
 $fails = 0;
 function pxCheck($ok, $msg) { global $fails; if (!$ok) { $fails++; fwrite(STDERR, "FAIL: $msg\n"); } }
