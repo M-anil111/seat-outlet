@@ -57,3 +57,6 @@
 .so-evv .so-evv-note a { color: #2556e0; }
 .so-evv--page { margin: 0 0 24px; }
 .so-evv .so-evv-links li:only-child { max-width: 380px; }
+.so-evv > .so-evv-card { margin: 0 0 24px; }
+.so-evv .so-evv-more { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid #e6ecf6; font-size: 16px; font-weight: 600; }
+.so-evv .so-evv-more a { color: #2556e0; text-decoration: underline; text-underline-offset: 3px; }
