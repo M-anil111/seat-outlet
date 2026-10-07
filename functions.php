@@ -2381,31 +2381,42 @@ function notFoundBlockHtml($what) {
               ['/upcoming-music-festivals', 'Festivals'], ['/city-events', 'Cities'], ['/all-artists-and-teams', 'Artists and teams']];
     $links = '';
     foreach ($chips as [$href, $label]) { $links .= '<a class="so-linkchip" href="' . $href . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>'; }
-    return '<div class="container py-5 text-center so-404">'
-        . '<p class="so-404__code" aria-hidden="true">404</p>'
-        . '<h1 class="fs-3 fw-bold mb-2">' . $w . ' not found</h1>'
-        . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place. Search for what you wanted, or pick a category below.</p>'
+    return '<div class="container py-5"><div class="so-state so-404">'
+        . '<p class="so-state__code" aria-hidden="true">404</p>' . soStateIcon('map')
+        . '<h1 class="so-state__title">' . $w . ' not found</h1>'
+        . '<p class="so-state__text">We could not find that page. It may have moved, or the event may have already taken place. Search for what you wanted, or pick a category below.</p>'
         . '<form class="so-404__search" method="get" action="/search" role="search">'
         . '<label class="visually-hidden" for="so404Q">Search for an artist, team, show or venue</label>'
         . '<input id="so404Q" type="search" name="keywordHeader" placeholder="Artist, team, show or venue" autocomplete="off" maxlength="80">'
         . '<button type="submit" class="btn btn-primary">Search</button></form>'
-        . '<div class="d-flex flex-wrap justify-content-center gap-2 mt-4">'
-        . '<a class="btn btn-primary" href="/buy-tickets-online">Browse all events</a>' . $links
+        . '<div class="so-state__actions"><a class="so-state__btn" href="/buy-tickets-online">Browse all events</a></div>'
+        . '<div class="so-state__chips">' . $links . '</div>'
         . '</div></div>';
+}
+
+/** Round icon for the shared empty and unavailable states (.so-state). $k: search, ticket, pin, clock, map. */
+function soStateIcon($k) {
+    $p = ['search' => '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+          'ticket' => '<path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 0 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z"/><path d="M14 5v2M14 11v2M14 17v2"/>',
+          'pin' => '<path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>',
+          'clock' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+          'map' => '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>'][$k] ?? '';
+    return '<span class="so-state__ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' . $p . '</svg></span>';
 }
 
 /** "Try again in a moment" content for when the ticket feed failed (no header/footer). */
 function unavailableBlockHtml($what) {
     $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
-    return '<meta http-equiv="refresh" content="15"><div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' temporarily unavailable</h1>'
-        . '<p class="text-muted mb-4">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
-        . '<div class="d-flex flex-wrap justify-content-center gap-2">'
-        . '<a class="btn btn-primary" href="">Try again</a>'
+    return '<meta http-equiv="refresh" content="15"><div class="container py-5"><div class="so-state">' . soStateIcon('clock')
+        . '<h1 class="so-state__title">' . $w . ' temporarily unavailable</h1>'
+        . '<p class="so-state__text">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
+        . '<div class="so-state__actions"><a class="so-state__btn" href="">Try again</a></div>'
+        . '<div class="so-state__chips">'
         . '<a class="so-linkchip" href="/buy-tickets-online">Browse all events</a>'
         . '<a class="so-linkchip" href="/concert-tickets-for-sale">Concerts</a>'
         . '<a class="so-linkchip" href="/game-day-tickets">Sports</a>'
         . '<a class="so-linkchip" href="/buy-broadway-tickets">Theater</a>'
-        . '</div></div>';
+        . '</div></div></div>';
 }
 
 /** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, never cached. */
@@ -5248,9 +5259,10 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <div class="so-empty" role="status">
-                                    <h3 class="so-empty__title">No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
-                                    <p>Dates are added as they are announced. Leave your email and we will tell you when <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> announces dates.</p>
+                                <div class="so-state" role="status">
+                                    <?php echo soStateIcon('ticket'); ?>
+                                    <h3 class="so-state__title">No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
+                                    <p class="so-state__text">Dates are added as they are announced. Leave your email and we will tell you when <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> announces dates.</p>
                                     <?php
                                     echo soLeadForm(['source' => 'artist-empty', 'class' => 'so-nl--compact', 'title' => 'Get alerts when ' . $artistName . ' announces dates', 'text' => 'One email when new dates go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'performer', 'interest_id' => (int) $performerId, 'interest_name' => $artistName, 'names' => false]);
                                     soRenderEntityAlternatives(['parent' => ['url' => '/artist/' . $canonArtistSlug, 'text' => 'All ' . $artistName . ' tickets']], []);
@@ -5557,9 +5569,10 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <div class="so-empty" role="status">
-                                    <h3 class="so-empty__title">No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
-                                    <p>New dates are added all the time.<?php echo $dimension === 'city' ? ' Leave your email and we will tell you when tickets go on sale.' : ''; ?></p>
+                                <div class="so-state" role="status">
+                                    <?php echo soStateIcon('pin'); ?>
+                                    <h3 class="so-state__title">No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
+                                    <p class="so-state__text">New dates are added all the time.<?php echo $dimension === 'city' ? ' Leave your email and we will tell you when tickets go on sale.' : ''; ?></p>
                                     <?php
                                     if ($dimension === 'city') {
                                         echo soLeadForm(['source' => 'city-empty', 'class' => 'so-nl--compact', 'title' => 'Get an alert for new events in ' . $locationLabel, 'text' => 'One email when tickets go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'city', 'interest_id' => (int) $locationValue, 'interest_name' => $locationLabel, 'names' => false]);

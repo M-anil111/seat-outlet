@@ -20,14 +20,14 @@ function soRenderEntityAlternatives(array $c, array $nearby): void {
     $links[] = ['href' => '/buy-tickets-online', 'text' => 'Popular events'];
     $links[] = ['href' => '/city-events', 'text' => 'Browse by city'];
     ?>
-    <div class="so-empty__alts">
-        <p class="so-empty__lead">Try one of these instead:</p>
-        <div class="so-linkchips">
+    <div class="so-state__alts">
+        <p class="so-state__label">Try one of these instead</p>
+        <div class="so-state__chips">
             <?php foreach ($links as $l) { ?><a class="so-linkchip" href="<?php echo $h($l['href']); ?>"><?php echo $h($l['text']); ?></a><?php } ?>
         </div>
         <?php if ($nearby) { ?>
-            <p class="so-empty__lead mt-3">Venues nearby with tickets:</p>
-            <div class="so-linkchips">
+            <p class="so-state__label">Venues nearby with tickets</p>
+            <div class="so-state__chips">
                 <?php foreach ($nearby as $v) { ?><a class="so-linkchip" href="/venue/<?php echo $h(soVenueSlug($v['text']['name'] ?? '', $v['id'], soPlaceLabel($v))); ?>"><?php echo $h($v['text']['name'] ?? ''); ?></a><?php } ?>
             </div>
         <?php } ?>
@@ -215,13 +215,14 @@ function soRenderEntityListing(array $c): void {
                                 </div>
                             <?php } ?>
                         <?php } else { ?>
-                            <div class="so-empty" role="status">
+                            <div class="so-state" role="status">
+                                <?php echo soStateIcon('pin'); ?>
                                 <?php if (($c['when'] ?? '') !== '' || !empty($c['isFiltered'])) { ?>
-                                    <h3 class="so-empty__title">No dates match those filters</h3>
-                                    <p>Clear a filter above to see everything on sale at <?php echo $h($name); ?>.</p>
+                                    <h3 class="so-state__title">No dates match those filters</h3>
+                                    <p class="so-state__text">Clear a filter above to see everything on sale at <?php echo $h($name); ?>.</p>
                                 <?php } else { ?>
-                                    <h3 class="so-empty__title">No upcoming events at <?php echo $h($name); ?> right now</h3>
-                                    <p>New dates are added all the time. <?php echo ($kind === 'venue' || $kind === 'city') ? 'Leave your email and we will tell you when tickets go on sale.' : 'Try a nearby place or a category below.'; ?></p>
+                                    <h3 class="so-state__title">No upcoming events at <?php echo $h($name); ?> right now</h3>
+                                    <p class="so-state__text">New dates are added all the time. <?php echo ($kind === 'venue' || $kind === 'city') ? 'Leave your email and we will tell you when tickets go on sale.' : 'Try a nearby place or a category below.'; ?></p>
                                     <?php
                                     if (($kind === 'venue' || $kind === 'city') && !empty($c['cityId'])) {
                                         echo soLeadForm(['source' => 'city-empty', 'class' => 'so-nl--compact', 'title' => 'Get an alert for new events in ' . ($kind === 'venue' ? $c['cityLabel'] : $label), 'text' => 'One email when tickets go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'city', 'interest_id' => (int) $c['cityId'], 'interest_name' => $kind === 'venue' ? $c['cityLabel'] : $label, 'names' => false]);
