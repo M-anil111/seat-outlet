@@ -47,6 +47,9 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 |   openverse    CC0 / CC BY / CC BY-SA photos with the attribution string
 |                Openverse builds. Festivals (Wikimedia rarely has them).
 |   pexels       optional, only when PEXELS_API_KEY is set. City skylines.
+|   unsplash     optional, only when UNSPLASH_ACCESS_KEY is set. City photos. Unsplash's API terms require the photo to be HOTLINKED from
+|                images.unsplash.com (never copied to our own storage), a call to the photo's download endpoint when we pick it, and a
+|                visible credit with links to the photographer and Unsplash carrying utm_source. See imageSourceUnsplash().
 */
 
 const IMAGE_FALLBACK_TTL_DAYS   = 7;      // retry a miss after a week
@@ -59,7 +62,7 @@ const IMAGE_SOURCE_CHAIN = [
     'team'     => ['thesportsdb', 'wikidata'],
     'venue'    => ['wikidata', 'thesportsdb_venue'],
     'festival' => ['wikidata', 'openverse'],
-    'city'     => ['wikidata', 'pexels'],
+    'city'     => ['unsplash', 'wikidata', 'pexels'],
 ];
 
 /* ------------------------------------------------------------------ keys */
@@ -309,6 +312,7 @@ function resolveEntityImage($type, $name, $defaultCategory = [], $fallbackUrl = 
             case 'thesportsdb_venue': $result = imageSourceTheSportsDbVenue($name); break;
             case 'openverse':         $result = imageSourceOpenverse($name, $type); break;
             case 'pexels':            $result = imageSourcePexels($name, $type); break;
+            case 'unsplash':          $result = imageSourceUnsplash($name, $type); break;
         }
         if ($result === 'RATE_LIMITED') { $rateLimited = true; continue; }
         if (is_array($result) && !empty($result['image_url'])) { $found = $result + ['source' => $source]; break; }
@@ -317,7 +321,15 @@ function resolveEntityImage($type, $name, $defaultCategory = [], $fallbackUrl = 
     $storeFailed = false;
     if ($found) {
         $storeKey = imageStoreKey($type, $key);
-        $cdnUrl = processAndStoreImage($found['image_url'], $name, imageStorageFolder($type), $storeKey);
+        if (!empty($found['hotlink'])) {
+            // Unsplash: the picture stays on Unsplash's server (their terms), we store only the address and the credit, and tell
+            // Unsplash once that the photo was picked.
+            $storeKey = null;
+            $cdnUrl = (string) $found['image_url'];
+            imageUnsplashTrackDownload((string) ($found['download_location'] ?? ''));
+        } else {
+            $cdnUrl = processAndStoreImage($found['image_url'], $name, imageStorageFolder($type), $storeKey);
+        }
         $storeFailed = ($cdnUrl === '');
         if ($cdnUrl) {
             $row = [
@@ -680,6 +692,87 @@ function imageSourcePexels($name, $type) {
     ];
 }
 
+/* -------------------------------------------------------------- unsplash */
+
+/** Query-string tags Unsplash asks for on every link back to them. */
+const IMAGE_UNSPLASH_UTM = 'utm_source=seatoutlet&utm_medium=referral';
+
+/**
+ * One Unsplash API call. Returns [http code, decoded body or null, requests left this hour or null]. A CLI test can answer it
+ * through $GLOBALS['so_unsplash_stub'] (callable(url) => [code, array, remaining]).
+ */
+function imageUnsplashGet(string $url): array {
+    if (isset($GLOBALS['so_unsplash_stub']) && is_callable($GLOBALS['so_unsplash_stub'])) return ($GLOBALS['so_unsplash_stub'])($url);
+    $key = (string) getenv('UNSPLASH_ACCESS_KEY');
+    $remaining = null;
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 4, CURLOPT_TIMEOUT => IMAGE_HTTP_TIMEOUT, CURLOPT_USERAGENT => imageUserAgent(),
+        CURLOPT_HTTPHEADER => ['Authorization: Client-ID ' . $key, 'Accept-Version: v1', 'Accept: application/json'],
+        CURLOPT_HEADERFUNCTION => function ($c, $h) use (&$remaining) {
+            if (stripos($h, 'x-ratelimit-remaining:') === 0) $remaining = (int) trim(substr($h, 22));
+            return strlen($h);
+        },
+    ]);
+    $body = curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    $data = $body === false ? null : json_decode((string) $body, true);
+    return [$body === false ? 0 : $code, is_array($data) ? $data : null, $remaining];
+}
+
+/**
+ * City photo from Unsplash (UNSPLASH_ACCESS_KEY). The free tier allows 50 requests an hour, so this runs only from the cron
+ * resolver (never during a page view), stops asking for the rest of the hour once the quota is nearly used, and a city that
+ * cannot be matched confidently gets no photo (the page keeps its initials tile) instead of a wrong one.
+ * A photo is accepted only when its own text (description, alt text, location, tags) names the city and the place is in the same
+ * state or in the US or Canada, so "Paris, TX" is never answered with the Eiffel Tower.
+ */
+function imageSourceUnsplash($name, $type) {
+    if ($type !== 'city' || (string) getenv('UNSPLASH_ACCESS_KEY') === '') return null;
+    $pause = function_exists('cache_get') ? (int) cache_get('unsplash_pause_until', 7200) : 0;
+    if ($pause > time()) return 'RATE_LIMITED';
+    if (!preg_match('/^(.+?),\s*([A-Z]{2})$/', trim((string) $name), $m)) return null;
+    [$cityName, $abbr] = [trim($m[1]), $m[2]];
+    $stateName = IMAGE_STATE_NAMES[$abbr] ?? '';
+    $url = 'https://api.unsplash.com/search/photos?' . http_build_query(['query' => $cityName . ($stateName !== '' ? ' ' . $stateName : '') . ' skyline', 'orientation' => 'landscape', 'content_filter' => 'high', 'per_page' => 10]);
+    [$code, $data, $left] = imageUnsplashGet($url);
+    if ($left !== null && $left <= 4 && function_exists('cache_set')) cache_set('unsplash_pause_until', time() + 3600);   // keep a few calls for the download notices
+    if ($code === 429 || ($code === 403 && $left === 0)) { if (function_exists('cache_set')) cache_set('unsplash_pause_until', time() + 3600); return 'RATE_LIMITED'; }
+    if ($code !== 200 || !is_array($data)) return null;
+
+    $cityLc = mb_strtolower($cityName);
+    foreach ($data['results'] ?? [] as $p) {
+        if ((int) ($p['width'] ?? 0) < 1600 || (int) ($p['height'] ?? 0) <= 0 || ($p['width'] / $p['height']) < 1.3) continue;
+        $loc = (array) ($p['location'] ?? []);
+        $tags = implode(' ', array_map(fn($t) => (string) ($t['title'] ?? ''), (array) ($p['tags'] ?? [])));
+        $text = mb_strtolower(implode(' ', [(string) ($p['description'] ?? ''), (string) ($p['alt_description'] ?? ''), (string) ($loc['name'] ?? ''), (string) ($loc['city'] ?? ''), $tags]));
+        if (!preg_match('/(?<![a-z])' . preg_quote($cityLc, '/') . '(?![a-z])/u', $text)) continue;
+        $country = mb_strtolower((string) ($loc['country'] ?? ''));
+        $sameState = $stateName !== '' && mb_strpos($text, mb_strtolower($stateName)) !== false;
+        if (!$sameState && $country !== '' && !in_array($country, ['united states', 'united states of america', 'usa', 'us', 'canada'], true)) continue;
+        $user = (array) ($p['user'] ?? []);
+        $raw = (string) ($p['urls']['raw'] ?? '');
+        if ($raw === '' || empty($user['name']) || empty($user['username']) || empty($p['links']['download_location']) || empty($p['links']['html'])) continue;
+        return [
+            'hotlink'           => true,   // image_url is a 220px square shown at 480 for sharp screens
+            'image_url'         => $raw . (strpos($raw, '?') === false ? '?' : '&') . 'w=480&h=480&fit=crop&crop=entropy&q=75&auto=format',
+            'source_url'        => $p['links']['html'] . '?' . IMAGE_UNSPLASH_UTM,
+            'license'           => 'Unsplash License',
+            'attribution'       => mb_substr((string) $user['name'], 0, 120) . '|' . preg_replace('/[^A-Za-z0-9_.-]/', '', (string) $user['username']),
+            'download_location' => (string) $p['links']['download_location'],
+        ];
+    }
+    return null;
+}
+
+/** Tell Unsplash the photo was picked (required by their API terms). Failure is logged, never fatal: the photo still shows. */
+function imageUnsplashTrackDownload(string $downloadLocation): void {
+    if ($downloadLocation === '' || strpos($downloadLocation, 'https://api.unsplash.com/') !== 0) return;
+    [$code] = imageUnsplashGet($downloadLocation);
+    if ($code !== 200) error_log('Unsplash download notice answered ' . $code);
+}
+
 /* --------------------------------------------------------------- render */
 
 /** URL of the licence text for the licence strings we store ("CC BY-SA 4.0", "CC0", "Pexels License"), or ''. */
@@ -689,6 +782,7 @@ function imageLicenseUrl($license) {
     if (preg_match('/^cc[ -]?by(-sa)?[ -]?(\d\.\d)/', $l, $m)) return 'https://creativecommons.org/licenses/by' . ($m[1] ? '-sa' : '') . '/' . $m[2] . '/';
     if (preg_match('/^cc[ -]?by(-sa)?\b/', $l, $m)) return 'https://creativecommons.org/licenses/by' . ($m[1] ? '-sa' : '') . '/4.0/';
     if (strpos($l, 'pexels') === 0) return 'https://www.pexels.com/license/';
+    if (strpos($l, 'unsplash') === 0) return 'https://unsplash.com/license';
     return '';
 }
 
@@ -701,6 +795,13 @@ function imageLicenseUrl($license) {
 function renderImageCredit(array $img, $class = 'img-credit') {
     if (empty($img['url']) || (empty($img['credit']) && empty($img['license']))) return;
     $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    if (($img['source'] ?? '') === 'unsplash') {   // Unsplash's required form: photographer and Unsplash, each linked, with utm_source
+        [$who, $user] = array_pad(explode('|', (string) ($img['credit'] ?? ''), 2), 2, '');
+        if (trim($who) !== '' && $user !== '') {
+            echo '<div class="' . $h($class) . '">Photo by <a href="' . $h('https://unsplash.com/@' . rawurlencode($user) . '?' . IMAGE_UNSPLASH_UTM) . '" rel="noopener nofollow" target="_blank">' . $h(trim($who)) . '</a> on <a href="' . $h('https://unsplash.com/?' . IMAGE_UNSPLASH_UTM) . '" rel="noopener nofollow" target="_blank">Unsplash</a>. <a href="/image-credits">All photo credits</a></div>';
+            return;
+        }
+    }
     $credit  = trim((string) ($img['credit'] ?? ''));
     $license = trim((string) ($img['license'] ?? ''));
     $licUrl  = imageLicenseUrl($license);
@@ -725,6 +826,7 @@ function renderImageCredit(array $img, $class = 'img-credit') {
 
 /** Short text for a card caption / tooltip: "Photo: CC BY-SA 4.0". Cards link to /image-credits for the full notice. */
 function imageCreditShort(array $img) {
+    if (($img['source'] ?? '') === 'unsplash') return 'Photo: Unsplash';
     $license = trim((string) ($img['license'] ?? ''));
     if ($license !== '') return 'Photo: ' . $license;
     $credit = trim((string) ($img['credit'] ?? ''));

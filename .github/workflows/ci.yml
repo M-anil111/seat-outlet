@@ -55,6 +55,8 @@ jobs:
 
       - name: County helpers (Census response parsing, city filter) behave
         run: php tools/test-counties.php
+      - name: Unsplash city photo source (relevance filter, attribution, hotlink rules)
+        run: php tools/test-unsplash.php
       - name: Crawl guard
         run: php tools/test-ratelimit.php
       - name: Old address forms still resolve
