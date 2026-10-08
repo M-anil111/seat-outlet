@@ -24,11 +24,14 @@
 // dashboard (Workers, seatoutlet-blog-proxy, Edit code). docs/production-cutover.md retires the Worker at cutover.
 
 var BETA_ORIGIN = "https://beta.seatoutlet.com";
-var DEFAULT_LOCATION = {
-  city: "Austin",
-  state: "TX",
-  lat: "30.29710",
-  lng: "-97.81810"
+// No invented city: a lookup that fails answers "unknown" and the page shows nationwide events (same shape as ajax/get_ip_details.php).
+var UNKNOWN_LOCATION = {
+  city: "",
+  state: "",
+  lat: "",
+  lng: "",
+  source: "unknown",
+  fallback: true
 };
 var CANONICAL_ORIGIN = "https://seatoutlet.com";
 // The same list robots.php prints (SO_ROBOTS_DISALLOW in inc/sitemap-build.php).
@@ -296,10 +299,11 @@ function setHeaderFromRequestOrCf(headers, request, name, cfValue) {
 }
 async function locationResponse(response) {
   const data = await readLocationJson(response);
-  const location = hasLocation(data) ? data : DEFAULT_LOCATION;
+  const known = hasLocation(data);
+  const location = known ? data : UNKNOWN_LOCATION;
   const headers = new Headers(response.headers);
   headers.set("content-type", "application/json; charset=UTF-8");
-  headers.set("cache-control", "private, max-age=300");
+  headers.set("cache-control", known ? "private, max-age=300" : "no-store");
   headers.delete("content-length");
   headers.delete("content-encoding");
   return new Response(JSON.stringify(location), {

@@ -85,7 +85,6 @@ function soContactRecaptcha(string $token): array {
         CURLOPT_POSTFIELDS => http_build_query(['secret' => defined('RECAPTCHA_SECRET_KEY') ? RECAPTCHA_SECRET_KEY : (string) getenv('RECAPTCHA_SECRET_KEY'), 'response' => $token, 'remoteip' => soContactClientIp()]),
     ]);
     $raw = curl_exec($ch);
-    curl_close($ch);
     $d = $raw !== false ? json_decode((string) $raw, true) : null;
     if (empty($d['success'])) return [false, null];
     $score = isset($d['score']) ? (float) $d['score'] : null;

@@ -72,7 +72,6 @@ function soLeadVerifyRecaptcha($token, $ip, $actions = null) {
         CURLOPT_TIMEOUT => 8,
     ]);
     $raw = curl_exec($ch);
-    curl_close($ch);
     $r = $raw !== false ? json_decode((string) $raw, true) : null;
     if (!is_array($r) || empty($r['success'])) return false;
     if (isset($r['action']) && !in_array($r['action'], $actions, true)) return false;
@@ -288,7 +287,6 @@ function soLeadBrevoRequest($method, $path, array $body) {
     ]);
     curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
     return $code;
 }
 

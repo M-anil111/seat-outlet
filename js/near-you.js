@@ -88,6 +88,7 @@
       // The nearest event is more than 250 miles away: say what this is instead of calling it "near you".
       title.textContent = 'Popular ' + noun + ' nationwide' + when;
       notice.hidden = false;
+      if (!state.lat) { notice.textContent = 'Choose a location to see ' + noun + ' near you. These are the most popular across the country' + (state.when ? ' for those dates' : '') + '.'; return; }
       notice.textContent = 'No ' + noun + ' within 250 miles of ' + place + (state.when ? ' for those dates' : '') + '. These are the most popular across the country' + (data.closest ? ' (the nearest is about ' + data.closest + ' miles away).' : '.');
       return;
     }
@@ -324,9 +325,18 @@
   // Location from the cookies if they exist; otherwise wait for the address lookup in main.js.
   var lat = readCookie('so_lat'), lng = readCookie('so_lng');
   if (lat && lng) setLocation(lat, lng, readCookie('so_label'), false);
+  // No location known (the lookup failed, or the visitor cleared it): show the country's popular events instead of hiding the section.
+  var nationwideStarted = false;
+  function startNationwide() {
+    if (state.lat || nationwideStarted) return;
+    nationwideStarted = true;
+    locLabel.textContent = 'Choose location';
+    load(1);
+  }
   document.addEventListener('so:location', function (e) {
     var d = e.detail || {};
     if (d.lat && d.lng && (d.lat != state.lat || d.lng != state.lng)) setLocation(d.lat, d.lng, d.label, false);
+    else if (!d.lat && !d.lng) startNationwide();
   });
-  setTimeout(function () { if (!state.lat && /^Finding/.test(locLabel.textContent)) locLabel.textContent = 'Choose location'; }, 5000);
+  setTimeout(function () { if (!state.lat && /^Finding/.test(locLabel.textContent)) locLabel.textContent = 'Choose location'; startNationwide(); }, 5000);
 })();
