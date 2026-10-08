@@ -552,8 +552,8 @@ document.addEventListener('DOMContentLoaded', function () {
     window.soLocal.addPerformer({
       id: <?php echo json_encode((string) $id); ?>,
       name: <?php echo json_encode($artistName, JSON_HEX_TAG | JSON_HEX_AMP); ?>,
-      slug: <?php echo json_encode(soSlug('performer', $artistName, $id)); ?>,
-      img: <?php echo json_encode($hasRealImage ? $performer_image : ''); ?>
+      slug: <?php echo json_encode(soSlug('performer', $artistName, $id), JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+      img: <?php echo json_encode($hasRealImage ? $performer_image : '', JSON_HEX_TAG | JSON_HEX_AMP); ?>
     });
   }
 });

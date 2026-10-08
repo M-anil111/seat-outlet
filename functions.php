@@ -2745,10 +2745,14 @@ function soRedirectCanonicalForm() {
         $clean = rtrim($path, '/');
         $clean = $clean === '' ? '/' : strtolower($clean);
     }
-    // ?page=N only means something on the pages that really paginate (the blog and the A to Z list). Everywhere else the list loads more
-    // by script, so the parameter showed page 1 again under another address: send it to the page itself.
+    // ?page=N only means something on the pages that really paginate (the blog and every A to Z directory: /concert-artists,
+    // /broadway-shows, /sports-teams ...). Everywhere else the list loads more by script, so the parameter showed page 1 again under
+    // another address: send it to the page itself.
     $dropPage = false;
-    if (!$skip && $qs !== '' && !in_array($clean, ['/blog', '/all-artists-and-teams'], true)) {
+    $paginating = ['/blog', '/all-artists-and-teams'];
+    require_once __DIR__ . '/inc/directories.php';
+    foreach (SO_DIRECTORIES as $dir) { $paginating[] = $dir['path']; }
+    if (!$skip && $qs !== '' && !in_array($clean, $paginating, true)) {
         parse_str($qs, $qa);
         if (array_key_exists('page', $qa) && !is_array($qa['page'])) { unset($qa['page']); $qs = http_build_query($qa); $dropPage = true; }
     }
@@ -4421,7 +4425,7 @@ function soInjectFaqSchema($html) {
     $url = (string) ($GLOBALS['pageCanonicalUrl'] ?? '');
     $node = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $items];
     if ($url !== '') { $node['@id'] = $url . '#faq'; $node['isPartOf'] = ['@id' => $url . '#webpage']; }
-    $tag = '<script type="application/ld+json">' . json_encode($node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+    $tag = '<script type="application/ld+json">' . json_encode($node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) . '</script>';
     $pos = strripos($html, '</body>');
     return $pos !== false ? substr($html, 0, $pos) . $tag . substr($html, $pos) : $html . $tag;
 }
@@ -4440,7 +4444,7 @@ function outputJsonLdGraph(array $nodes) {
     echo json_encode([
         "@context" => "https://schema.org",
         "@graph" => $nodes,
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);   // compact: pretty-printing doubled the size (51 KB on the homepage)
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);   // compact; HEX_TAG keeps a visitor's text (the search query) from closing the script tag: pretty-printing doubled the size (51 KB on the homepage)
     echo "\n" . '</script>' . "\n";
 }
 
