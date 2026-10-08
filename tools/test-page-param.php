@@ -18,7 +18,7 @@ $fails = 0;
 function pageParamCheck(string $uri, string $want): void {
     global $fails;
     $_SERVER['REQUEST_URI'] = $uri; $_SERVER['HTTP_HOST'] = 'seatoutlet.com'; $_SERVER['REQUEST_METHOD'] = 'GET';
-    $got = soPageParamProbe();
+    $got = call_user_func('soPageParamProbe');   // defined by eval above, so the undefined-function check must not see a direct call
     echo ($got === $want ? 'ok   ' : 'FAIL ') . "$uri => $got\n";
     if ($got !== $want) $fails++;
 }
