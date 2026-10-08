@@ -55,7 +55,7 @@ if (
 	isset($searchInput['keywordHeader']) &&
 	$searchInput['keywordHeader'] !== ''
 ) {
-	$keywordHeader = trim((string) $searchInput['keywordHeader']);
+	$keywordHeader = trim(mb_substr(trim((string) $searchInput['keywordHeader']), 0, 100));   // a search is a name, not an essay: cap it before it reaches the API and the page
 	$params['q'] = $keywordHeader;
 }else{
 	$params['q'] = "*";
@@ -95,7 +95,7 @@ if (
 if (!$hasHeaderRange) {
 	$range = listingDateRange($searchWhen);
 	$currDate = $range ? $range[0] : date('Y-m-d');
-	$filterParts[] = "date/date ge $currDate" . ($range ? " and date/date le {$range[1]}" : '');
+	$filterParts[] = "date/date ge $currDate" . ($range ? " and date/date le {$range[1]}" : ' and date/date le ' . soEventHorizon());
 }
 if ($searchMax > 0) {
 	$filterParts[] = 'pricingInfo/lowPrice/value le ' . $searchMax;

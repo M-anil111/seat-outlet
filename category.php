@@ -44,6 +44,10 @@ if ($soGenre && !isset($soGenreSlug)) {
 	exit;
 }
 $catLabel = $soGenre['label'] ?? $catName;
+// The feed names some categories in capitals ("GOLF"): show them like the others, but keep real acronyms (NASCAR, UFC ...).
+if (preg_match('/^[A-Z][A-Z &\/]{2,}$/', (string) $catLabel) && !preg_match('/^(NASCAR|NHRA|UFC|WWE|MMA|PBR|PGA|LPGA|NBA|NFL|MLB|NHL|MLS|WNBA|NCAA|EDM|AEW|XFL|USFL|AHL|ECHL|NWSL|ATP|WTA|MLR|F1)$/', (string) $catLabel)) {
+	$catLabel = ucwords(strtolower((string) $catLabel));
+}
 $soCatCfg = ['id' => $id, 'label' => $catLabel, 'long' => $soGenre['long'] ?? strtolower($catName), 'kind' => $soGenre['kind'] ?? 'other', 'profile' => $soGenre['profile'] ?? null, 'slug' => $soGenre['slug'] ?? ''];
 $soCatData = soCategoryData($id);
 $soCatSeo = soCategorySeo($soCatCfg, $soCatData);
