@@ -68,7 +68,7 @@ function soRenderEntityListing(array $c): void {
     $kindNoun = ['venue' => 'Venue', 'city' => 'City', 'county' => 'County', 'state' => 'State', 'country' => 'Country'][$kind];
 
     // A feed that failed is not an empty page: 503 (the API counted as down), never a thin 200 that gets indexed or noindexed.
-    if ($total === 0 && $events === [] && soApiDegraded()) { renderUnavailablePage($kindNoun); }
+    if ($total === 0 && $events === [] && soApiDegraded()) { soFeedDownGate($kindNoun); }
 
     $pageRobots = null;
     if ($isZero || !empty($c['isFiltered'])) { $pageRobots = 'noindex, follow'; }
@@ -215,7 +215,8 @@ function soRenderEntityListing(array $c): void {
                                 </div>
                             <?php } ?>
                         <?php } else { ?>
-                            <div class="so-state" role="status">
+                            <?php if (!empty($GLOBALS['soFeedDown'])) { echo soFeedDownStateHtml(); } else { ?>
+<div class="so-state" role="status">
                                 <?php echo soStateIcon('pin'); ?>
                                 <?php if (($c['when'] ?? '') !== '' || !empty($c['isFiltered'])) { ?>
                                     <h3 class="so-state__title">No dates match those filters</h3>
@@ -231,6 +232,7 @@ function soRenderEntityListing(array $c): void {
                                     ?>
                                 <?php } ?>
                             </div>
+                            <?php } ?>
                         <?php } ?>
                     </div>
 

@@ -122,7 +122,7 @@ include_once 'functions.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <?php echo function_exists('soAdsenseMetaTag') ? soAdsenseMetaTag() . "\n" : ''; ?>
-    <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? (!empty($GLOBALS['soFeedDown']) || (function_exists('soApiDegraded') && soApiDegraded() && isset($total_count) && (int) $total_count === 0) ? 'noindex, follow' : ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow'))), ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16.png">

@@ -305,6 +305,7 @@ function soListingCountFor(array $events): int {
  *     kind ('category' | 'city'), id, name, alts (list of [label, href]).
  */
 function soRenderListingEmpty(array $o): string {
+    if (!empty($GLOBALS['soFeedDown'])) return soFeedDownStateHtml();   // the feed failed: say so, do not claim there are no events
     $h = 'soListingH';
     $o += ['basePath' => '', 'noun' => 'events', 'when' => '', 'max' => 0, 'fragment' => '', 'kind' => 'category', 'id' => 0, 'name' => '', 'alts' => [], 'lead' => true];
     $filtered = $o['when'] !== '' || $o['max'] > 0;
@@ -423,8 +424,7 @@ function soRenderListingPage(array $o): void {
     // The feed failed (throttled, down): never present that as "0 results". Serve the last good copy of this page; without one,
     // answer 503 (retry) so neither visitors nor search engines keep an empty page.
     if ($total === 0 && empty($o['body']['events']) && soApiDegraded()) {
-        soSnapshotServe();
-        if (!headers_sent()) { http_response_code(503); header('Retry-After: 30'); }
+        soFeedDownGate();   // the page renders with the feed marked down (no empty 503 page); the empty state says so
     }
     $tag = $o['tag'] === 'h2' ? 'h2' : 'h1';
     // The page header: the shared card (inc/page-hero.php), with the hub or category picture and the live result count.
