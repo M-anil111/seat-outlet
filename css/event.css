@@ -1666,6 +1666,9 @@ font-size: 18px;
         height: 52px; padding: 14px 16px; border-radius: 12px;
         font-size: 17px; line-height: 1.2; white-space: normal;
     }
+    /* When the widget shows both buttons at once, keep a gap between them instead of letting them touch. */
+    #precheckout-parent #pre-checkout-sold-cta { margin-top: 10px; }
+    #precheckout-parent #pre-checkout-price-cta { margin-bottom: 0; }
 
 /* ---------- TICKET-TYPE STRIP: Apple-style segmented control + Filters pill ---------- */
 #tn-maps #sea-inventory-slider-with-filterBtn {

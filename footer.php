@@ -24,7 +24,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
       <p class="section-title">Let’s connect</p>
       <div class="social-icons">
-        <a href="https://www.facebook.com/profile.php?id=61588886945534" aria-label="Facebook" target="_blank" rel="noopener"><i class="bi bi-facebook fs-4"></i><span class="visually-hidden">Facebook</span></a>
+        <a href="https://www.facebook.com/seatoutlet.usa" aria-label="Facebook" target="_blank" rel="noopener"><i class="bi bi-facebook fs-4"></i><span class="visually-hidden">Facebook</span></a>
         <a href="https://www.youtube.com/@SeatOutlet" aria-label="YouTube" target="_blank" rel="noopener"><i class="bi bi-youtube fs-4"></i><span class="visually-hidden">YouTube</span></a>
         <a href="https://www.instagram.com/seatoutlet/" aria-label="Instagram" target="_blank" rel="noopener"><i class="bi bi-instagram fs-4"></i><span class="visually-hidden">Instagram</span></a>
         <a href="https://linktr.ee/seatoutlet" aria-label="Linktree" class="google-icon" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="30" height="25" id="Layer_1" x="0px" y="0px" viewBox="0 0 80 97.7" style="fill: #e0e0e0;" xml:space="preserve">
@@ -32,6 +32,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
  </path>
 </svg><span class="visually-hidden">Linktree</span></a>
       </div>
+      <div class="so-social-more" role="group" aria-label="More Seat Outlet profiles"><?php echo soSocialPillsHtml(); ?></div>
      
 
      

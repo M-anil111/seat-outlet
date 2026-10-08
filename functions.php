@@ -2319,6 +2319,7 @@ function seoOffer($url, $price, $validFrom = '') {
     return $offer;
 }
 
+require_once __DIR__ . '/inc/social.php';
 require_once __DIR__ . '/inc/title.php';   // soNormalizeTitle(), soTitle(), seoClampTitle(), SO_TITLE_BRAND
 
 
@@ -4182,9 +4183,17 @@ function soEventNode(array $event, array $opts = []) {
             'seller' => ['@id' => HOME_URL . '/#organization'],
         ];
         $high = (float) ($event['pricingInfo']['highPrice']['value'] ?? 0);
-        if ($high >= $low) $offer['highPrice'] = number_format($high, 2, '.', '');
+        if ($high >= $low) {
+            $offer['highPrice'] = number_format($high, 2, '.', '');
+        } else {
+            // No highest price in the feed: an AggregateOffer without highPrice is flagged in Search Console, so state what is
+            // known, the lowest listed price, as a plain Offer (no made-up high price).
+            $offer['@type'] = 'Offer';
+            $offer['price'] = $offer['lowPrice'];
+            unset($offer['lowPrice']);
+        }
         $count = (int) ($event['_metadata']['ticketCount'] ?? 0);
-        if ($count > 0) $offer['offerCount'] = $count;
+        if ($count > 0 && $offer['@type'] === 'AggregateOffer') $offer['offerCount'] = $count;
         $from = soEventListedFrom($event);
         if ($from !== '') $offer['validFrom'] = $from;
         $node['offers'] = $offer;
@@ -4221,12 +4230,7 @@ function buildOrganizationSchema() {
             "url" => HOME_URL . "/ticket-customer-service",
             "availableLanguage" => ["English"],
         ],
-        "sameAs" => [
-            "https://www.facebook.com/profile.php?id=61588886945534",
-            "https://www.instagram.com/seatoutlet/",
-            "https://www.youtube.com/@SeatOutlet",
-            "https://linktr.ee/seatoutlet"
-        ]
+        "sameAs" => soSocialSameAs()
     ];
 }
 

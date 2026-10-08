@@ -18,7 +18,7 @@ $stateLabel = $state['label'];
 $canonSlug  = soSlug('state', $stateLabel, $id);
 soRedirectToCanonicalSlug('state', $slug, $canonSlug);
 
-[$when, $sort, $isFiltered] = listingRequestState('popular');
+[$when, $sort, $isFiltered] = listingRequestState('soonest');
 $params = locationListingParams("stateProvince/id eq $id", $perPage, 1, $when, $sort);
 $eventsResponse = tnRequest('/catalog/v2/events/', $params);
 $events = $eventsResponse['results'] ?? [];
@@ -26,6 +26,6 @@ $events = $eventsResponse['results'] ?? [];
 soRenderEntityListing([
 	'kind' => 'state', 'id' => $id, 'name' => $stateLabel, 'label' => $stateLabel, 'path' => '/state/' . $canonSlug,
 	'events' => $events, 'total' => (int) ($eventsResponse['totalCount'] ?? 0), 'count' => (int) ($eventsResponse['count'] ?? count($events)),
-	'perPage' => $perPage, 'params' => $params, 'when' => $when, 'sort' => $sort, 'defaultSort' => 'popular', 'isFiltered' => $isFiltered,
+	'perPage' => $perPage, 'params' => $params, 'when' => $when, 'sort' => $sort, 'defaultSort' => 'soonest', 'isFiltered' => $isFiltered,
 	'trail' => [], 'entity' => $raw, 'cityId' => 0, 'cityLabel' => '', 'image' => null, 'parent' => null, 'stateParent' => null,
 ]);

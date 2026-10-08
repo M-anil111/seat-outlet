@@ -178,6 +178,9 @@ h3,
 /* ---------- MAIN HEADER ---------- */
 .tm-header {
     background: #2556e0;
+    /* A stacking context of its own, so the mega menu opens above third-party widgets and sticky strips (the ticket widget header used to show through it). */
+    position: relative;
+    z-index: 1100;
 }
 
 /* Logo */
@@ -4275,6 +4278,9 @@ h3,
   color: #666;
   position: absolute;
   right: 120px;
+  top: 50%;
+  transform: translateY(-50%);
+  line-height: 0;
 }
 .top-picks .new-slider .slick-prev, .top-picks .new-slider .slick-next{
   top:-30px;
@@ -8010,3 +8016,10 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 /* Link colors that pass 4.5:1 on the pale page backgrounds (Bootstrap's default #0d6efd gives 4.16 on #f5f6f9). */
 :root { --bs-link-color: #0056d6; --bs-link-color-rgb: 0, 86, 214; --bs-link-hover-color: #0046b0; --bs-link-hover-color-rgb: 0, 70, 176; }
 .so-evp-promo__note a { color: #1a44c2; }
+
+/* Footer: the profiles that have no icon in the font, as small text links under the icon row. */
+.so-social-more { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.so-social-pill { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 12px; border: 1px solid rgba(255,255,255,.35); border-radius: 980px; color: #e0e0e0; font-size: 14px; font-weight: 600; text-decoration: none; transition: background .15s ease, color .15s ease; }
+.so-social-pill:hover, .so-social-pill:focus-visible { background: #fff; color: #0b1120; }
+.mascot-panel .so-social-pill { color: #1d1d1f; border-color: rgba(0,0,0,.25); }
+.mascot-panel .so-social-pill:hover, .mascot-panel .so-social-pill:focus-visible { background: #0b1120; color: #fff; }

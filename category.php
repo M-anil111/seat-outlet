@@ -71,7 +71,7 @@ $pageJsonLdNodes     = array_values(array_filter([
 	buildFaqPageSchema($soCatSeo['faqs']),
 ]));
 
-[$when, $sort, $isFiltered] = listingRequestState('popular');
+[$when, $sort, $isFiltered] = listingRequestState('soonest');
 $maxPrice = soListingMaxPrice();
 if ($maxPrice > 0) { $isFiltered = true; }
 if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // canonical page stays the indexed one
@@ -102,6 +102,7 @@ soRenderListingPage([
 	'basePath'    => $catBasePath,
 	'when'        => $when,
 	'sort'        => $sort,
+	'defaultSort' => 'soonest',
 	'max'         => $maxPrice,
 	'explore'     => ['catId' => $id, 'noun' => $catInline . ' events', 'hero' => $soCatHero, 'family' => $soFamily, 'label' => $catLabel],
 	'body'        => [

@@ -573,7 +573,9 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
     }
   
     function showLoader() {
-        if (DOM.searchLoader) DOM.searchLoader.style.display = 'block';
+        // Only while the search box is actually on screen: when the header search is collapsed the spinner has no
+        // parent to sit in and used to float under the logo.
+        if (DOM.searchLoader && DOM.keywordHeader && DOM.keywordHeader.offsetParent !== null) DOM.searchLoader.style.display = 'block';
     }
   
     function hideLoader() {
@@ -1455,3 +1457,34 @@ document.addEventListener('error', function (e) {
         if (el && el.tagName !== 'BUTTON') { e.preventDefault(); go(el); }
     });
 })();
+
+
+/* Promo "Copy code" buttons: one delegated handler for every page (event, artist, venue and promo pages),
+   with a fallback for browsers that block the async clipboard API. */
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.offer-copy-btn');
+    if (!btn) return;
+    var code = btn.dataset.code || (btn.previousElementSibling && btn.previousElementSibling.textContent.trim()) || '';
+    if (!code) return;
+    var label = btn.getAttribute('data-label') || btn.textContent;
+    btn.setAttribute('data-label', label);
+    var done = function (ok) {
+        btn.textContent = ok ? 'Copied' : 'Press Ctrl+C to copy: ' + code;
+        clearTimeout(btn._soT);
+        btn._soT = setTimeout(function () { btn.textContent = label; }, ok ? 1500 : 4000);
+    };
+    var legacy = function () {
+        var t = document.createElement('textarea');
+        t.value = code; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+        document.body.appendChild(t); t.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+        document.body.removeChild(t);
+        done(ok);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(code).then(function () { done(true); }, legacy);
+    } else {
+        legacy();
+    }
+});
