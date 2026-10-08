@@ -8006,3 +8006,7 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 .so-state .so-404__search { margin: 0 auto 16px; }
 .so-state__actions + .so-state__chips { margin-top: 14px; }
 .so-state .so-404__search .btn { background: #2556e0; border-color: #2556e0; }
+
+/* Link colors that pass 4.5:1 on the pale page backgrounds (Bootstrap's default #0d6efd gives 4.16 on #f5f6f9). */
+:root { --bs-link-color: #0056d6; --bs-link-color-rgb: 0, 86, 214; --bs-link-hover-color: #0046b0; --bs-link-hover-color-rgb: 0, 70, 176; }
+.so-evp-promo__note a { color: #1a44c2; }

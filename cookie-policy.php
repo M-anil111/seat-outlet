@@ -126,7 +126,7 @@
                         <p><strong>Last updated: October 2, 2026</strong></p>
                         <p>Seat Outlet is an independent resale marketplace and is not affiliated with any venue, team or artist.</p>
                         <p><strong>Overview:</strong> this is the Seat Outlet cookie policy, published under the title Cookies Policy. It explains the cookies and similar technologies we use on our website, why we use them, and how you can manage them. The full text below is the version that applies; the summary at the bottom of the page is only a plain-English guide.</p>
-                        <p>This Cookies Policy explains how Seat Outlet ("Seat Outlet", "we", "us", or "our") uses cookies and similar technologies when you access or use our website and related services (collectively, the "Platform"). It should be read together with our <a href="/privacy-policy.php" title="Privacy Policy" target="_blank">Privacy Policy</a> and our <a href="/terms-of-use.php" title="Terms of Use" target="_blank">Terms of Use</a>.</p>
+                        <p>This Cookies Policy explains how Seat Outlet ("Seat Outlet", "we", "us", or "our") uses cookies and similar technologies when you access or use our website and related services (collectively, the "Platform"). It should be read together with our <a href="/privacy-policy" title="Privacy Policy" target="_blank" rel="noopener">Privacy Policy</a> and our <a href="/terms-of-use" title="Terms of Use" target="_blank">Terms of Use</a>.</p>
                         <p>By using the Platform, you agree that we can use cookies and similar technologies as described in this Cookies Policy, subject to your choices and applicable law.</p>
                     </div>
                 </div>
@@ -289,7 +289,7 @@
                             <li>Legal bases for processing</li>
                             <li>Your rights and choices</li>
                         </ul>
-                        <p>Please review our <a href="/privacy-policy.php" title="Privacy Policy" target="_blank">Privacy Policy</a> for more details on our overall data practices.</p>
+                        <p>Please review our <a href="/privacy-policy" title="Privacy Policy" target="_blank" rel="noopener">Privacy Policy</a> for more details on our overall data practices.</p>
                     </div>
                 </div>
 

@@ -1699,6 +1699,9 @@ const TN_CATEGORY_PATH_SPORTS   = '.1859.1988.';
 const TN_CATEGORY_PATH_THEATER  = '.1859.1989.';
 const TN_CATEGORY_PATH_FESTIVAL = '.1859.1986.1877.';
 
+/** Latest event date a listing may show: TicketNetwork parks date-TBA events decades out (2075, 2076), and a visitor must not see those as real dates. */
+function soEventHorizon() { return date('Y-m-d', strtotime('+3 years')); }
+
 /** [from, to] (Y-m-d) for a "when" quick filter, or null for "any time". */
 function listingDateRange($when) {
     $today = new DateTimeImmutable('today');
@@ -1742,7 +1745,7 @@ function listingSortParams($sort) {
 function locationListingParams($fragment, $perPage = 20, $page = 1, $when = '', $sort = 'popular', $maxPrice = 0) {
     $range = listingDateRange($when);
     $from = $range ? $range[0] : date('Y-m-d');
-    $filter = $fragment . " and date/date ge $from" . ($range ? " and date/date le {$range[1]}" : '') . ' and _metadata/hasTickets eq true';
+    $filter = $fragment . " and date/date ge $from" . ($range ? " and date/date le {$range[1]}" : ' and date/date le ' . soEventHorizon()) . ' and _metadata/hasTickets eq true';
     // "Under $X": the events API filters on the event's lowest listed price (pricingInfo/lowPrice/value, verified in the sandbox).
     if ((int) $maxPrice > 0) $filter .= ' and pricingInfo/lowPrice/value le ' . (int) $maxPrice;
     return ['filter' => $filter] + listingSortParams($sort) + [
@@ -2407,7 +2410,7 @@ function soStateIcon($k) {
 /** "Try again in a moment" content for when the ticket feed failed (no header/footer). */
 function unavailableBlockHtml($what) {
     $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
-    return '<meta http-equiv="refresh" content="15"><div class="container py-5"><div class="so-state">' . soStateIcon('clock')
+    return '<div class="container py-5"><div class="so-state">' . soStateIcon('clock')
         . '<h1 class="so-state__title">' . $w . ' temporarily unavailable</h1>'
         . '<p class="so-state__text">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
         . '<div class="so-state__actions"><a class="so-state__btn" href="">Try again</a></div>'
@@ -2504,6 +2507,9 @@ function sendSecurityHeaders() {
 function soSendSecurityHeaders() {
     if (headers_sent()) return;
     header('X-Content-Type-Options: nosniff');
+    // HSTS on the public host only (no includeSubDomains: beta and the checkout host are managed separately). Sent over HTTPS only.
+    $soHttps = (($_SERVER['HTTPS'] ?? '') !== '' && $_SERVER['HTTPS'] !== 'off') || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https' || stripos((string) ($_SERVER['HTTP_CF_VISITOR'] ?? ''), 'https') !== false;
+    if ($soHttps) header('Strict-Transport-Security: max-age=31536000');
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=(self)');
@@ -2905,7 +2911,7 @@ function getTnCityEvents($cityId = 0, $params = []) {
 
     $today = date('Y-m-d');
     if ($cityId > 0) {
-        $params['filter'] = "city/id eq $cityId and date/date ge $today";
+        $params['filter'] = "city/id eq $cityId and date/date ge $today and date/date le " . soEventHorizon();
     }
 
     return tnRequest('/catalog/v2/events/', $params);
@@ -2931,7 +2937,7 @@ function getTnCityEventsCount($cityId = 0, $params = []) {
     
     $today = date('Y-m-d');
     if ($cityId > 0) {
-        $params['filter'] = "city/id eq $cityId and date/date ge $today";
+        $params['filter'] = "city/id eq $cityId and date/date ge $today and date/date le " . soEventHorizon();
     }
 
     return tnCountEvents($params);
@@ -2941,7 +2947,7 @@ function getTnVenueEvents($venueId = 0, $params = []) {
 
     $today = date('Y-m-d');
     if ($venueId > 0) {
-        $params['filter'] = "venue/id eq $venueId and date/date ge $today";
+        $params['filter'] = "venue/id eq $venueId and date/date ge $today and date/date le " . soEventHorizon();
     }
 
     return tnRequest('/catalog/v2/events/', $params);
@@ -2951,7 +2957,7 @@ function getTnVenueEventsCount($venueId = 0, $params = []) {
     
     $today = date('Y-m-d');
     if ($venueId > 0) {
-        $params['filter'] = "venue/id eq $venueId and date/date ge $today";
+        $params['filter'] = "venue/id eq $venueId and date/date ge $today and date/date le " . soEventHorizon();
     }
 
     return tnCountEvents($params);
@@ -2966,7 +2972,7 @@ function getTnStateEvents($stateId = 0, $params = []) {
 
     $today = date('Y-m-d');
     if ($stateId > 0) {
-        $params['filter'] = "stateProvince/id eq $stateId and date/date ge $today";
+        $params['filter'] = "stateProvince/id eq $stateId and date/date ge $today and date/date le " . soEventHorizon();
     }
 
     return tnRequest('/catalog/v2/events/', $params);
@@ -2976,7 +2982,7 @@ function getTnStateEventsCount($stateId = 0, $params = []) {
 
     $today = date('Y-m-d');
     if ($stateId > 0) {
-        $params['filter'] = "stateProvince/id eq $stateId and date/date ge $today";
+        $params['filter'] = "stateProvince/id eq $stateId and date/date ge $today and date/date le " . soEventHorizon();
     }
 
     return tnCountEvents($params);
@@ -2986,7 +2992,7 @@ function getTnCountryEvents($countryCode = '', $params = []) {
 
     $today = date('Y-m-d');
     if ($countryCode !== '') {
-        $params['filter'] = "country/alphaCode eq '" . tnEscapeFilterValue($countryCode) . "' and date/date ge $today";
+        $params['filter'] = "country/alphaCode eq '" . tnEscapeFilterValue($countryCode) . "' and date/date ge $today and date/date le " . soEventHorizon();
     }
 
     return tnRequest('/catalog/v2/events/', $params);
@@ -2996,7 +3002,7 @@ function getTnCountryEventsCount($countryCode = '', $params = []) {
 
     $today = date('Y-m-d');
     if ($countryCode !== '') {
-        $params['filter'] = "country/alphaCode eq '" . tnEscapeFilterValue($countryCode) . "' and date/date ge $today";
+        $params['filter'] = "country/alphaCode eq '" . tnEscapeFilterValue($countryCode) . "' and date/date ge $today and date/date le " . soEventHorizon();
     }
 
     return tnCountEvents($params);
@@ -3032,7 +3038,7 @@ function getTnCatEvents($catId = 0, $params = []) {
 
     $today = date('Y-m-d');
     if ($catId > 0) {
-        $params['filter'] = "contains(defaultCategory/path, '.$catId.') and date/date ge $today";
+        $params['filter'] = "contains(defaultCategory/path, '.$catId.') and date/date ge $today and date/date le " . soEventHorizon();
     }
 
     return tnRequest('/catalog/v2/events/', $params);
@@ -3042,7 +3048,7 @@ function getTnCatEventsCount($catId = 0, $params = []) {
     
     $today = date('Y-m-d');
     if ($catId > 0) {
-        $params['filter'] = "contains(defaultCategory/path, '.$catId.') and date/date ge $today";
+        $params['filter'] = "contains(defaultCategory/path, '.$catId.') and date/date ge $today and date/date le " . soEventHorizon();
     }
 
     return tnCountEvents($params);
@@ -4585,7 +4591,7 @@ function getTnCountryByCode($alphaCode) {
 function performerLocationParams(string $dimension, $locationValue, array $params = []) {
     $locationFilter = getLocationFilterFragment($dimension, $locationValue);
     if ($locationFilter === null) return null;
-    $params['filter'] = $locationFilter . ' and date/date ge ' . date('Y-m-d');
+    $params['filter'] = $locationFilter . ' and date/date ge ' . date('Y-m-d') . ' and date/date le ' . soEventHorizon();
     return $params;
 }
 
@@ -4608,7 +4614,7 @@ function getCategoryEventsByLocation(string $categoryKey, string $dimension, $lo
     $today = date('Y-m-d');
     $categoryPath = LOCATION_CATEGORY_PATHS[$categoryKey] ?? null;
 
-    $filterParts = [$locationFilter, "date/date ge $today"];
+    $filterParts = [$locationFilter, "date/date ge $today and date/date le " . soEventHorizon()];
     if ($categoryPath !== null) {
         $filterParts[] = "startswith(defaultCategory/path, '" . tnEscapeFilterValue($categoryPath) . "')";
     }
@@ -5066,7 +5072,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
         performerEventsSpec($performerId, performerLocationParams($dimension, $locationValue, [
             'page' => $page, 'perPage' => $perPage, 'includeTotalCount' => 'true',
         ]) ?? []),
-        performerEventsSpec($performerId, ['filter' => 'date/date ge ' . date('Y-m-d'), 'perPage' => 100, 'sort' => 'date/date']),
+        performerEventsSpec($performerId, ['filter' => 'date/date ge ' . date('Y-m-d') . ' and date/date le ' . soEventHorizon(), 'perPage' => 100, 'sort' => 'date/date']),
     ];
     tnRequestMulti($prefetch);
 
@@ -5097,7 +5103,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     $count       = $eventsResponse['count'] ?? count($events);
     // Unfiltered upcoming events feed the "by city / venue / state" links,
     // so a Taylor-Swift-in-Austin page links to her other cities too.
-    $allPerformerEvents = getTnPerformerEvents($performerId, ['filter' => 'date/date ge ' . date('Y-m-d'), 'perPage' => 100, 'sort' => 'date/date'])['results'] ?? [];
+    $allPerformerEvents = getTnPerformerEvents($performerId, ['filter' => 'date/date ge ' . date('Y-m-d') . ' and date/date le ' . soEventHorizon(), 'perPage' => 100, 'sort' => 'date/date'])['results'] ?? [];
     $percent     = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
     $year        = date('Y');
 
