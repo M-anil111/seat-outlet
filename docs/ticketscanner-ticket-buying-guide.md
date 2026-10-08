@@ -341,7 +341,7 @@ Seat Outlet after the work: server time 3–10 ms warm; Lighthouse desktop perfo
 | `GTM_ID` | Google Tag Manager container |
 | `SITE_INDEXABLE` | Force indexing on or off (default: off on beta/staging/dev hosts) |
 | `TN_PROFILE` | File path; logs calls, hits and milliseconds per request |
-| `THESPORTSDB_KEY`, `PEXELS_API_KEY`, `UNSPLASH_ACCESS_KEY` | Optional image sources |
+| `THESPORTSDB_KEY`, `PEXELS_API_KEY`, `UNSPLASH_ACCESS_KEY`, `PIXABAY_API_KEY` | Optional image sources |
 | `MAXMIND_ACCOUNT_ID`, `MAXMIND_LICENSE_KEY`, `GEOIP_DB_PATH` | Local geo-IP database |
 
 ## Appendix B: Seat Outlet files to use as a reference

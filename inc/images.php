@@ -47,6 +47,9 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 |   openverse    CC0 / CC BY / CC BY-SA photos with the attribution string
 |                Openverse builds. Festivals (Wikimedia rarely has them).
 |   pexels       optional, only when PEXELS_API_KEY is set. City skylines.
+|   pixabay      optional, only when PIXABAY_API_KEY is set. City photos. Pixabay's API terms forbid permanent hotlinking, so the photo is
+|                downloaded and re-hosted like every other source here; the credit names the contributor and Pixabay. Results are cached
+|                (the image row is the cache) and the key allows 100 requests a minute. See imageSourcePixabay().
 |   unsplash     optional, only when UNSPLASH_ACCESS_KEY is set. City photos. Unsplash's API terms require the photo to be HOTLINKED from
 |                images.unsplash.com (never copied to our own storage), a call to the photo's download endpoint when we pick it, and a
 |                visible credit with links to the photographer and Unsplash carrying utm_source. See imageSourceUnsplash().
@@ -62,7 +65,7 @@ const IMAGE_SOURCE_CHAIN = [
     'team'     => ['thesportsdb', 'wikidata'],
     'venue'    => ['wikidata', 'thesportsdb_venue'],
     'festival' => ['wikidata', 'openverse'],
-    'city'     => ['unsplash', 'wikidata', 'pexels'],
+    'city'     => ['pixabay', 'unsplash', 'wikidata', 'pexels'],
 ];
 
 /* ------------------------------------------------------------------ keys */
@@ -313,6 +316,7 @@ function resolveEntityImage($type, $name, $defaultCategory = [], $fallbackUrl = 
             case 'openverse':         $result = imageSourceOpenverse($name, $type); break;
             case 'pexels':            $result = imageSourcePexels($name, $type); break;
             case 'unsplash':          $result = imageSourceUnsplash($name, $type); break;
+            case 'pixabay':           $result = imageSourcePixabay($name, $type); break;
         }
         if ($result === 'RATE_LIMITED') { $rateLimited = true; continue; }
         if (is_array($result) && !empty($result['image_url'])) { $found = $result + ['source' => $source]; break; }
@@ -692,6 +696,47 @@ function imageSourcePexels($name, $type) {
     ];
 }
 
+/* -------------------------------------------------------------- pixabay */
+
+/**
+ * City photo from Pixabay (PIXABAY_API_KEY). Allowed to be copied to our own storage (their terms only forbid permanent hotlinking), so it
+ * goes through the normal download, resize and re-host step. Pixabay photos carry only a comma-separated tag list, so a photo is accepted
+ * only when one tag IS the city name and another tag names the state ("phoenix, arizona"). That rejects "Phoenix Island, China" and
+ * the Eiffel Tower for "Paris, TX"; a city that cannot be matched this safely gets no photo and the next source is tried.
+ * Runs from the cron resolver only (never during a page view). The API allows 100 requests per 60 seconds and asks that results be
+ * cached for 24 hours, which the image row is.
+ */
+function imageSourcePixabay($name, $type) {
+    $key = (string) getenv('PIXABAY_API_KEY');
+    if ($type !== 'city' || $key === '') return null;
+    if (!preg_match('/^(.+?),\s*([A-Z]{2})$/', trim((string) $name), $m)) return null;
+    [$cityName, $abbr] = [trim($m[1]), $m[2]];
+    $stateName = IMAGE_STATE_NAMES[$abbr] ?? '';
+    if ($stateName === '') return null;
+    $data = imageHttpJson('https://pixabay.com/api/?' . http_build_query([
+        'key' => $key, 'q' => mb_substr($cityName . ' ' . $stateName . ' skyline', 0, 100), 'image_type' => 'photo', 'orientation' => 'horizontal',
+        'min_width' => 1600, 'safesearch' => 'true', 'per_page' => 10,
+    ]));
+    if ($data === 'RATE_LIMITED') return 'RATE_LIMITED';
+    $cityLc = mb_strtolower($cityName); $stateLc = mb_strtolower($stateName);
+    foreach ((array) ($data['hits'] ?? []) as $p) {
+        if ((int) ($p['imageWidth'] ?? 0) < 1600 || (int) ($p['imageHeight'] ?? 0) <= 0 || ($p['imageWidth'] / $p['imageHeight']) < 1.3) continue;
+        $tags = array_map(fn($t) => trim(mb_strtolower($t)), explode(',', (string) ($p['tags'] ?? '')));
+        if (!in_array($cityLc, $tags, true) || !in_array($stateLc, $tags, true)) continue;
+        $url = (string) ($p['largeImageURL'] ?? '');
+        $user = trim((string) ($p['user'] ?? ''));
+        if (strpos($url, 'https://pixabay.com/') !== 0 && strpos($url, 'https://cdn.pixabay.com/') !== 0) continue;
+        if ($user === '' || empty($p['pageURL']) || strpos((string) $p['pageURL'], 'https://pixabay.com/') !== 0) continue;
+        return [
+            'image_url'   => $url,
+            'source_url'  => (string) $p['pageURL'],
+            'license'     => 'Pixabay License',
+            'attribution' => 'Photo by ' . mb_substr($user, 0, 120) . ' on Pixabay',
+        ];
+    }
+    return null;
+}
+
 /* -------------------------------------------------------------- unsplash */
 
 /** Query-string tags Unsplash asks for on every link back to them. */
@@ -783,6 +828,7 @@ function imageLicenseUrl($license) {
     if (preg_match('/^cc[ -]?by(-sa)?\b/', $l, $m)) return 'https://creativecommons.org/licenses/by' . ($m[1] ? '-sa' : '') . '/4.0/';
     if (strpos($l, 'pexels') === 0) return 'https://www.pexels.com/license/';
     if (strpos($l, 'unsplash') === 0) return 'https://unsplash.com/license';
+    if (strpos($l, 'pixabay') === 0) return 'https://pixabay.com/service/license-summary/';
     return '';
 }
 
