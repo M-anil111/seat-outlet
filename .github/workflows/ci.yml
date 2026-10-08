@@ -63,6 +63,8 @@ jobs:
         run: php tools/test-jsonld-safe.php
       - name: Pagination links on the A to Z directories are not redirected away
         run: php tools/test-page-param.php
+      - name: Contact form same-origin check (live host differs from the public host)
+        run: php tools/test-contact-origin.php
       - name: Crawl guard
         run: php tools/test-ratelimit.php
       - name: Old address forms still resolve
