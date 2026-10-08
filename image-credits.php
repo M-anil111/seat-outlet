@@ -19,7 +19,7 @@ $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 <section>
 	<div class="container py-4">
 		<h1 class="fs-2 fw-bold mb-2">Photo credits</h1>
-		<p class="text-muted mb-4">Pictures of performers, teams, venues and cities come from Wikimedia Commons, Unsplash and similar sources under open licences. Photos are resized and cropped for our pages; Unsplash photos are loaded directly from Unsplash and credited to the photographer. Logos and posters are never used. Where no licensed photo exists we show an initials tile instead.</p>
+		<p class="text-muted mb-4">Pictures of performers, teams, venues and cities come from Wikimedia Commons, Pixabay, Unsplash and similar sources under open licences. Photos are resized and cropped for our pages; Unsplash photos are loaded directly from Unsplash and credited to the photographer. Logos and posters are never used. Where no licensed photo exists we show an initials tile instead.</p>
 		<?php if (!$rows) { ?>
 			<p>No licensed photos are stored yet.</p>
 		<?php } else { ?>
