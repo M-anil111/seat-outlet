@@ -206,7 +206,7 @@
                         <div class="faq-card mb-4">
                             <!-- 1. Ticket Purchase & Delivery -->
                             <h3 class="mb-0">Ticket Purchase & Delivery</h3>
-                            <div class="accordion mb-0" id="purchaseFaq">
+                            <div class="accordion so-qa mb-0" id="purchaseFaq">
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent" data-bs-toggle="collapse" data-bs-target="#purchaseOne">
                                         How do I purchase tickets?
@@ -264,7 +264,7 @@
                         <div class="faq-card mb-4">
                                <!-- 2. Event Entry & Venue Rules -->
                             <h3 class="mb-0">Event Entry & Venue Rules</h3>
-                            <div class="accordion mb-0" id="entryFaq">
+                            <div class="accordion so-qa mb-0" id="entryFaq">
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent" data-bs-toggle="collapse" data-bs-target="#entryOne">
                                         What do I need to bring to the event?
@@ -322,7 +322,7 @@
                         <div class="faq-card mb-4">
                             <!-- 3. Refunds, Cancellations & Rescheduling -->
                             <h3 class="mb-0">Refunds, Cancellations & Rescheduling</h3>
-                            <div class="accordion mb-0" id="refundFaq">
+                            <div class="accordion so-qa mb-0" id="refundFaq">
 
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent" data-bs-toggle="collapse" data-bs-target="#refundOne">
@@ -388,7 +388,7 @@
                         <div class="faq-card mb-4">
                             <!-- 4. Payments & Orders -->
                             <h3 class="mb-0">Payments & Orders</h3>
-                            <div class="accordion mb-0" id="paymentFaq">
+                            <div class="accordion so-qa mb-0" id="paymentFaq">
 
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent" data-bs-toggle="collapse" data-bs-target="#paymentOne">
@@ -451,7 +451,7 @@
                     <div class="col-lg-6">
                         <div class="faq-card mb-4">
                             <h3 class="mb-0">Event Categories FAQs</h3>
-                            <div class="accordion" id="categoryFaq">
+                            <div class="accordion so-qa" id="categoryFaq">
 
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent" data-bs-toggle="collapse" data-bs-target="#categoryOne">
@@ -516,7 +516,7 @@
                         <div class="faq-card mb-4">
                             <!-- 6. Orders & Customer Support -->
                             <h3 class="mb-0">Orders & Customer Support</h3>
-                            <div class="accordion mb-0" id="accountFaq">
+                            <div class="accordion so-qa mb-0" id="accountFaq">
 
                                 <div class="accordion-item border-0">
                                     <button class="accordion-button bg-transparent" data-bs-toggle="collapse" data-bs-target="#accountOne">

@@ -2381,31 +2381,42 @@ function notFoundBlockHtml($what) {
               ['/upcoming-music-festivals', 'Festivals'], ['/city-events', 'Cities'], ['/all-artists-and-teams', 'Artists and teams']];
     $links = '';
     foreach ($chips as [$href, $label]) { $links .= '<a class="so-linkchip" href="' . $href . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>'; }
-    return '<div class="container py-5 text-center so-404">'
-        . '<p class="so-404__code" aria-hidden="true">404</p>'
-        . '<h1 class="fs-3 fw-bold mb-2">' . $w . ' not found</h1>'
-        . '<p class="text-muted mb-4">We could not find that page. It may have moved, or the event may have already taken place. Search for what you wanted, or pick a category below.</p>'
+    return '<div class="container py-5"><div class="so-state so-404">'
+        . '<p class="so-state__code" aria-hidden="true">404</p>' . soStateIcon('map')
+        . '<h1 class="so-state__title">' . $w . ' not found</h1>'
+        . '<p class="so-state__text">We could not find that page. It may have moved, or the event may have already taken place. Search for what you wanted, or pick a category below.</p>'
         . '<form class="so-404__search" method="get" action="/search" role="search">'
         . '<label class="visually-hidden" for="so404Q">Search for an artist, team, show or venue</label>'
         . '<input id="so404Q" type="search" name="keywordHeader" placeholder="Artist, team, show or venue" autocomplete="off" maxlength="80">'
         . '<button type="submit" class="btn btn-primary">Search</button></form>'
-        . '<div class="d-flex flex-wrap justify-content-center gap-2 mt-4">'
-        . '<a class="btn btn-primary" href="/buy-tickets-online">Browse all events</a>' . $links
+        . '<div class="so-state__actions"><a class="so-state__btn" href="/buy-tickets-online">Browse all events</a></div>'
+        . '<div class="so-state__chips">' . $links . '</div>'
         . '</div></div>';
+}
+
+/** Round icon for the shared empty and unavailable states (.so-state). $k: search, ticket, pin, clock, map. */
+function soStateIcon($k) {
+    $p = ['search' => '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+          'ticket' => '<path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 0 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z"/><path d="M14 5v2M14 11v2M14 17v2"/>',
+          'pin' => '<path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>',
+          'clock' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+          'map' => '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>'][$k] ?? '';
+    return '<span class="so-state__ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' . $p . '</svg></span>';
 }
 
 /** "Try again in a moment" content for when the ticket feed failed (no header/footer). */
 function unavailableBlockHtml($what) {
     $w = htmlspecialchars((string) $what, ENT_QUOTES, 'UTF-8');
-    return '<meta http-equiv="refresh" content="15"><div class="container py-5 text-center"><h1 class="fs-3 fw-bold mb-2">' . $w . ' temporarily unavailable</h1>'
-        . '<p class="text-muted mb-4">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
-        . '<div class="d-flex flex-wrap justify-content-center gap-2">'
-        . '<a class="btn btn-primary" href="">Try again</a>'
+    return '<meta http-equiv="refresh" content="15"><div class="container py-5"><div class="so-state">' . soStateIcon('clock')
+        . '<h1 class="so-state__title">' . $w . ' temporarily unavailable</h1>'
+        . '<p class="so-state__text">Our ticket feed did not answer just now. Please try again in a few seconds.</p>'
+        . '<div class="so-state__actions"><a class="so-state__btn" href="">Try again</a></div>'
+        . '<div class="so-state__chips">'
         . '<a class="so-linkchip" href="/buy-tickets-online">Browse all events</a>'
         . '<a class="so-linkchip" href="/concert-tickets-for-sale">Concerts</a>'
         . '<a class="so-linkchip" href="/game-day-tickets">Sports</a>'
         . '<a class="so-linkchip" href="/buy-broadway-tickets">Theater</a>'
-        . '</div></div>';
+        . '</div></div></div>';
 }
 
 /** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, never cached. */
@@ -2734,10 +2745,14 @@ function soRedirectCanonicalForm() {
         $clean = rtrim($path, '/');
         $clean = $clean === '' ? '/' : strtolower($clean);
     }
-    // ?page=N only means something on the pages that really paginate (the blog and the A to Z list). Everywhere else the list loads more
-    // by script, so the parameter showed page 1 again under another address: send it to the page itself.
+    // ?page=N only means something on the pages that really paginate (the blog and every A to Z directory: /concert-artists,
+    // /broadway-shows, /sports-teams ...). Everywhere else the list loads more by script, so the parameter showed page 1 again under
+    // another address: send it to the page itself.
     $dropPage = false;
-    if (!$skip && $qs !== '' && !in_array($clean, ['/blog', '/all-artists-and-teams'], true)) {
+    $paginating = ['/blog', '/all-artists-and-teams'];
+    require_once __DIR__ . '/inc/directories.php';
+    foreach (SO_DIRECTORIES as $dir) { $paginating[] = $dir['path']; }
+    if (!$skip && $qs !== '' && !in_array($clean, $paginating, true)) {
         parse_str($qs, $qa);
         if (array_key_exists('page', $qa) && !is_array($qa['page'])) { unset($qa['page']); $qs = http_build_query($qa); $dropPage = true; }
     }
@@ -4410,7 +4425,7 @@ function soInjectFaqSchema($html) {
     $url = (string) ($GLOBALS['pageCanonicalUrl'] ?? '');
     $node = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $items];
     if ($url !== '') { $node['@id'] = $url . '#faq'; $node['isPartOf'] = ['@id' => $url . '#webpage']; }
-    $tag = '<script type="application/ld+json">' . json_encode($node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+    $tag = '<script type="application/ld+json">' . json_encode($node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) . '</script>';
     $pos = strripos($html, '</body>');
     return $pos !== false ? substr($html, 0, $pos) . $tag . substr($html, $pos) : $html . $tag;
 }
@@ -4429,7 +4444,7 @@ function outputJsonLdGraph(array $nodes) {
     echo json_encode([
         "@context" => "https://schema.org",
         "@graph" => $nodes,
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);   // compact: pretty-printing doubled the size (51 KB on the homepage)
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);   // compact; HEX_TAG keeps a visitor's text (the search query) from closing the script tag: pretty-printing doubled the size (51 KB on the homepage)
     echo "\n" . '</script>' . "\n";
 }
 
@@ -5248,9 +5263,10 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <div class="so-empty" role="status">
-                                    <h3 class="so-empty__title">No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
-                                    <p>Dates are added as they are announced. Leave your email and we will tell you when <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> announces dates.</p>
+                                <div class="so-state" role="status">
+                                    <?php echo soStateIcon('ticket'); ?>
+                                    <h3 class="so-state__title">No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
+                                    <p class="so-state__text">Dates are added as they are announced. Leave your email and we will tell you when <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> announces dates.</p>
                                     <?php
                                     echo soLeadForm(['source' => 'artist-empty', 'class' => 'so-nl--compact', 'title' => 'Get alerts when ' . $artistName . ' announces dates', 'text' => 'One email when new dates go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'performer', 'interest_id' => (int) $performerId, 'interest_name' => $artistName, 'names' => false]);
                                     soRenderEntityAlternatives(['parent' => ['url' => '/artist/' . $canonArtistSlug, 'text' => 'All ' . $artistName . ' tickets']], []);
@@ -5295,7 +5311,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
                     <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars("$soLabel Tickets $soPrep $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
-                    <div class="accordion" id="faqAccordion">
+                    <div class="accordion so-qa" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
                             $headingId  = 'heading' . $index;
@@ -5338,21 +5354,24 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             foreach ($events as $oe) { $lv = $oe['pricingInfo']['lowPrice']['value'] ?? null; if (is_numeric($lv) && ($soLow === null || (float) $lv < $soLow)) { $soLow = (float) $lv; } $soTicketCount += (int) ($oe['_metadata']['ticketCount'] ?? 0); }
             $soFirst = $events[0] ?? null;
             $soFirstTs = ($soFirst && !empty($soFirst['date']['date'])) ? strtotime($soFirst['date']['date']) : false;
-            echo soSpecCityInfoHtml($soLocShort, $soStateAbbr, $soCityData, $soKind, ($dimension === 'city') ? '/' . getCategoryCityLinkPrefix((string) ($performer['defaultCategory']['path'] ?? '')) . '/' . $canonLocSlug : '/city-events');
-            if ($soKind === 'concert' && $soOtherDates) {
-                echo '<div class="tab-section content-section-detail"><h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . htmlspecialchars($soLabel . ' Tour Dates Across ' . $soCountryName, ENT_QUOTES, 'UTF-8') . '</h2>' . soSpecEventList($soOtherDates, [], 6) . '<p><a href="/artist/' . htmlspecialchars($canonArtistSlug, ENT_QUOTES, 'UTF-8') . '">See all ' . htmlspecialchars($soLabel, ENT_QUOTES, 'UTF-8') . ' tour dates</a></p></div>';
-            }
-            if ($total_count > 0 && $soFirst) {
-                echo '<div class="tab-section content-section-detail">' . soSpecGuideHtml(soSpecGuideHeading($soLabel, $soKind, $soLocShort, $soStateAbbr), $soLabel, [
+            // About the city, then the guide (40%) beside the other shows in the city (60%), as cards (css/spec-cards.css).
+            $soCityCard = soSpecCityInfoHtml($soLocShort, $soStateAbbr, $soCityData, $soKind, ($dimension === 'city') ? '/' . getCategoryCityLinkPrefix((string) ($performer['defaultCategory']['path'] ?? '')) . '/' . $canonLocSlug : '/city-events', true);
+            $soGuideCard = ($total_count > 0 && $soFirst) ? soSpecGuideHtml(soSpecGuideHeading($soLabel, $soKind, $soLocShort, $soStateAbbr), $soLabel, [
                     'when' => $soFirstTs ? 'next date ' . date('l, F j, Y', $soFirstTs) : '',
                     'venue' => (string) ($soFirst['venue']['text']['name'] ?? ''),
                     'venueHref' => !empty($soFirst['venue']['id']) ? '/venue/' . soVenueSlug((string) $soFirst['venue']['text']['name'], (int) $soFirst['venue']['id'], $locationLabel) : '',
                     'tickets' => $soTicketCount, 'low' => $soLow !== null ? '$' . number_format($soLow, 0) : '', 'dates' => $total_count,
-                ]) . '</div>';
+                ], true, true) : '';
+            $soSimilarRows = soSpecEventRows(array_values(array_filter($soCityData['events'] ?? [], function ($oe) use ($performerId) { foreach (($oe['performers'] ?? []) as $pp) { if ((int) ($pp['id'] ?? 0) === (int) $performerId) return false; } return true; })), [], 6);
+            $soSimilarCard = $soSimilarRows !== '' ? '<div class="so-evv-card so-evv-up"><h2>' . htmlspecialchars(soSpecSimilarHeading($soKind, $soLocShort, $soStateAbbr), ENT_QUOTES, 'UTF-8') . '</h2>' . $soSimilarRows . '</div>' : '';
+            if ($soCityCard !== '' || $soGuideCard !== '' || $soSimilarCard !== '') {
+                echo '<link rel="stylesheet" href="' . htmlspecialchars(soAsset('css/spec-cards.css'), ENT_QUOTES, 'UTF-8') . '">';
+                echo '<div class="so-evv so-evv--page">' . $soCityCard;
+                if ($soGuideCard !== '' || $soSimilarCard !== '') echo '<div class="so-evv-pair' . (($soGuideCard === '' || $soSimilarCard === '') ? ' so-evv-pair--one' : '') . '">' . $soGuideCard . $soSimilarCard . '</div>';
+                echo '</div>';
             }
-            $soSimilar = soSpecEventList(array_values(array_filter($soCityData['events'] ?? [], function ($oe) use ($performerId) { foreach (($oe['performers'] ?? []) as $pp) { if ((int) ($pp['id'] ?? 0) === (int) $performerId) return false; } return true; })), [], 6);
-            if ($soSimilar !== '') {
-                echo '<div class="tab-section content-section-detail"><h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . htmlspecialchars(soSpecSimilarHeading($soKind, $soLocShort, $soStateAbbr), ENT_QUOTES, 'UTF-8') . '</h2>' . $soSimilar . '</div>';
+            if ($soKind === 'concert' && $soOtherDates) {
+                echo '<link rel="stylesheet" href="' . htmlspecialchars(soAsset('css/spec-cards.css'), ENT_QUOTES, 'UTF-8') . '"><div class="so-evv so-evv--page"><div class="so-evv-card so-evv-up"><h2>' . htmlspecialchars($soLabel . ' Tour Dates Across ' . $soCountryName, ENT_QUOTES, 'UTF-8') . '</h2>' . soSpecEventRows($soOtherDates, [], 6) . '<p class="so-evv-more"><a href="/artist/' . htmlspecialchars($canonArtistSlug, ENT_QUOTES, 'UTF-8') . '">See all ' . htmlspecialchars($soLabel, ENT_QUOTES, 'UTF-8') . ' tour dates</a></p></div></div>';
             }
             ?>
 
@@ -5554,9 +5573,10 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <div class="so-empty" role="status">
-                                    <h3 class="so-empty__title">No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
-                                    <p>New dates are added all the time.<?php echo $dimension === 'city' ? ' Leave your email and we will tell you when tickets go on sale.' : ''; ?></p>
+                                <div class="so-state" role="status">
+                                    <?php echo soStateIcon('pin'); ?>
+                                    <h3 class="so-state__title">No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
+                                    <p class="so-state__text">New dates are added all the time.<?php echo $dimension === 'city' ? ' Leave your email and we will tell you when tickets go on sale.' : ''; ?></p>
                                     <?php
                                     if ($dimension === 'city') {
                                         echo soLeadForm(['source' => 'city-empty', 'class' => 'so-nl--compact', 'title' => 'Get an alert for new events in ' . $locationLabel, 'text' => 'One email when tickets go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'city', 'interest_id' => (int) $locationValue, 'interest_name' => $locationLabel, 'names' => false]);
@@ -5588,7 +5608,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
                     <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars("$categoryLabel Tickets $soKwPrep $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
-                    <div class="accordion" id="faqAccordion">
+                    <div class="accordion so-qa" id="faqAccordion">
                         <?php foreach ($faqs as $index => $faq) {
                             $collapseId = 'collapse' . $index;
                             $headingId  = 'heading' . $index;

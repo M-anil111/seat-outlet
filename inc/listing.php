@@ -324,15 +324,16 @@ function soRenderListingEmpty(array $o): string {
         ? 'No ' . $o['noun'] . ' match your filters' . ($whenText !== '' ? ' for ' . $whenText : '') . ($o['max'] > 0 ? ' under $' . (int) $o['max'] : '') . '.'
         : 'No ' . $o['noun'] . ' are on sale right now.';
     ob_start(); ?>
-<div class="so-empty" role="status">
-	<h3 class="so-empty__title"><?php echo $h($msg); ?></h3>
+<div class="so-state" role="status">
+	<?php echo soStateIcon($filtered ? 'search' : 'ticket'); ?>
+	<h3 class="so-state__title"><?php echo $h($msg); ?></h3>
 	<?php if ($next) { ?>
-		<p class="so-empty__next">The next one is <a href="/event/<?php echo $h($next['slug']); ?>"><?php echo $h($next['name']); ?></a> on <strong><?php echo $h(date('l, F j', $next['ts'])); ?></strong><?php echo $next['place'] !== '' ? ' in ' . $h($next['place']) : ''; ?>.</p>
+		<p class="so-state__text">The next one is <a href="/event/<?php echo $h($next['slug']); ?>"><?php echo $h($next['name']); ?></a> on <strong><?php echo $h(date('l, F j', $next['ts'])); ?></strong><?php echo $next['place'] !== '' ? ' in ' . $h($next['place']) : ''; ?>.</p>
 	<?php } ?>
-	<?php if ($filtered) { ?><p><a class="so-empty__clear" href="<?php echo $h($o['basePath']); ?>">Clear filters and show everything</a></p><?php } ?>
+	<?php if ($filtered) { ?><div class="so-state__actions"><a class="so-state__btn" href="<?php echo $h($o['basePath']); ?>">Clear filters and show everything</a></div><?php } ?>
 	<?php if ($o['alts']) { ?>
-		<p class="so-empty__altlabel">Try instead</p>
-		<div class="so-empty__alts">
+		<p class="so-state__label">Try instead</p>
+		<div class="so-state__chips">
 			<?php foreach ($o['alts'] as $alt) { ?><a class="so-linkchip" href="<?php echo $h($alt[1]); ?>"><?php echo $h($alt[0]); ?></a><?php } ?>
 		</div>
 	<?php } ?>

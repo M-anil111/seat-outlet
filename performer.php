@@ -334,9 +334,10 @@ soPageHero([
 								</div>
 							<?php } ?>
 						<?php } else { ?>
-							<div class="so-empty" role="status">
-								<h3 class="so-empty__title">No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> dates are on sale right now</h3>
-								<p>Tour dates are added as they are announced. Leave your email and we will tell you when <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> announces dates.</p>
+							<div class="so-state" role="status">
+								<?php echo soStateIcon('ticket'); ?>
+<h3 class="so-state__title">No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> dates are on sale right now</h3>
+								<p class="so-state__text">Tour dates are added as they are announced. Leave your email and we will tell you when <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> announces dates.</p>
 								<?php echo soLeadForm(['source' => 'artist-empty', 'class' => 'so-nl--compact', 'title' => 'Get alerts when ' . $artistName . ' announces dates', 'text' => 'One email when new dates go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'performer', 'interest_id' => (int) $id, 'interest_name' => $artistName, 'names' => false]); ?>
 								<?php soRenderEntityAlternatives(['parent' => ['url' => (string) ($breadcrumbs[1]['url'] ?? '/buy-tickets-online'), 'text' => 'More ' . strtolower((string) ($breadcrumbs[1]['label'] ?? 'event')) . ' tickets']], []); ?>
 							</div>
@@ -472,7 +473,7 @@ soPageHero([
 			<?php $faqVisible = 5; // FAQs shown before "Show more" ?>
 			<div class="tab-section content-section-detail" id="faqs">
 				<h2 class="so-heading fw-bold fs-4 mb-4 text-black"><?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets FAQ</h2>
-				<div class="accordion" id="faqAccordion">
+				<div class="accordion so-qa" id="faqAccordion">
 					<?php foreach ($faqs as $index => $faq) {
 						$collapseId = 'collapse' . $index;
 						$headingId  = 'heading' . $index;
@@ -551,8 +552,8 @@ document.addEventListener('DOMContentLoaded', function () {
     window.soLocal.addPerformer({
       id: <?php echo json_encode((string) $id); ?>,
       name: <?php echo json_encode($artistName, JSON_HEX_TAG | JSON_HEX_AMP); ?>,
-      slug: <?php echo json_encode(soSlug('performer', $artistName, $id)); ?>,
-      img: <?php echo json_encode($hasRealImage ? $performer_image : ''); ?>
+      slug: <?php echo json_encode(soSlug('performer', $artistName, $id), JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+      img: <?php echo json_encode($hasRealImage ? $performer_image : '', JSON_HEX_TAG | JSON_HEX_AMP); ?>
     });
   }
 });

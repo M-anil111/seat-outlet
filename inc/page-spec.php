@@ -75,21 +75,32 @@ function soSpecPromoHeading(string $label, string $kind, string $city, string $s
 }
 
 /**
- * The promo code block: TAKE5 and TAKE10 with their terms, named for the page's subject. $heading '' leaves the heading to the caller.
- * Uses the offer-pill markup every page group already carries (js/events-listing.js wires the Copy buttons).
+ * The promo code block for performer, venue, city, category and holiday pages: TAKE5 and TAKE10 with their terms, named for the
+ * page's subject, as the same cards the event page uses (one column here, because these pages have a sidebar). $heading '' leaves
+ * the heading to the caller. js/events-listing.js wires the Copy code buttons.
  */
 function soSpecPromoHtml(string $heading, string $subject): string {
+    return soSpecPromoMarkup($heading, $subject, false);
+}
+
+/** One promo card: ticket icon, % off, code, minimum order and a Copy code button. $p is a SO_PROMO_CODES entry. */
+function soSpecPromoCard(array $p, string $subject): string {
     $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
-    $out = '<div class="so-specpromo" id="promocode" style="margin:32px 0">' . ($heading !== '' ? '<h2 class="so-heading fw-bold fs-4 mb-3 text-black">' . $e($heading) . '</h2>' : '')
-        . '<p>Two promo codes are available for ' . $e($subject) . ' tickets. Enter the code in the promo code field at checkout.</p><div class="row g-3 mt-2">';
-    foreach (SO_PROMO_CODES as $p) {
-        $out .= '<div class="col-md-12"><div class="offer-pill d-flex align-items-center justify-content-between"><div class="d-flex align-items-center">'
-            . '<div class="offer-icon me-3 d-flex align-items-center justify-content-center" style="flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12.5V5.8A1.8 1.8 0 0 1 4.8 4h6.7L21 13.5l-6.4 6.4L3 12.5Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"></path><circle cx="8.2" cy="8.2" r="1.1" fill="white"></circle></svg></div>'
-            . '<div class="offer-text"><div class="offer-title">' . (int) $p['pct'] . '% OFF</div><div class="offer-subtitle">' . $e($p['code']) . '</div>'
-            . '<div class="small">Take ' . (int) $p['pct'] . '% off your ' . $e($subject) . ' tickets when you spend $' . (int) $p['min'] . ' or more.</div></div></div>'
-            . '<div class="offer-copy text-end"><button type="button" class="btn btn-primary text-white offer-copy-btn btn-sm px-4 rounded-pill" data-code="' . $e($p['code']) . '">Copy</button></div></div></div>';
-    }
-    return $out . '</div><p class="small mt-3 mb-0">Codes apply only where the checkout accepts them, minimum order amounts apply, and codes can change or stop working without notice. See <a href="/tickets-promo-code">all ticket promo codes</a>.</p></div>';
+    $icon = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2556e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 0 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z"/><path d="M14 5v2M14 11v2M14 17v2"/></svg>';
+    return '<div class="so-evp-promo__card"><span class="so-evp-promo__icon">' . $icon . '</span>'
+        . '<div class="so-evp-promo__txt"><strong>' . (int) $p['pct'] . '% OFF</strong><span>Code: <b>' . $e($p['code']) . '</b></span>'
+        . '<small>Take ' . (int) $p['pct'] . '% off your ' . $e($subject) . ' tickets when you spend $' . (int) $p['min'] . ' or more.</small></div>'
+        . '<button type="button" class="btn btn-primary text-white offer-copy-btn so-evp-promo__btn" data-code="' . $e($p['code']) . '" aria-label="Copy code ' . $e($p['code']) . '">Copy code</button></div>';
+}
+
+/** The whole promo block. $wide: two cards side by side under the event page's own heading style; otherwise one card per row. */
+function soSpecPromoMarkup(string $heading, string $subject, bool $wide): string {
+    $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $out = '<div class="so-evp-promo' . ($wide ? '' : ' so-evp-promo--stack') . '" id="promocode">'
+        . ($heading !== '' ? '<h2 class="' . ($wide ? 'so-evp__h' : 'so-heading fw-bold fs-4 mb-3 text-black') . '">' . $e($heading) . '</h2>' : '')
+        . '<p class="so-evp-promo__sub">Two promo codes are available for ' . $e($subject) . ' tickets. Enter the code in the promo code field at checkout.</p><div class="so-evp-promo__grid">';
+    foreach (SO_PROMO_CODES as $p) $out .= soSpecPromoCard($p, $subject);
+    return $out . '</div><p class="so-evp-promo__note">Codes apply only where the checkout accepts them, minimum order amounts apply, and codes can change or stop working without notice. See <a href="/tickets-promo-code">all ticket promo codes</a>.</p></div>';
 }
 
 /** Events of one kind in one city for the sections below (soonest first). [] when the feed has nothing or is down. */
@@ -121,7 +132,7 @@ function soSpecEventList(array $events, array $skipIds, int $max = 6): string {
  * "About <City>, <State>": what Seat Outlet lists there, from the city's own feed. Venue names come from the events listed.
  * $cityData is soSpecCityEvents(). '' when the city has no events listed.
  */
-function soSpecCityInfoHtml(string $city, string $state, array $cityData, string $kind, string $cityHref): string {
+function soSpecCityInfoHtml(string $city, string $state, array $cityData, string $kind, string $cityHref, bool $cards = false): string {
     $events = $cityData['events'] ?? [];
     $total = (int) ($cityData['total'] ?? count($events));
     if ($total <= 0 || !$events) return '';
@@ -135,15 +146,25 @@ function soSpecCityInfoHtml(string $city, string $state, array $cityData, string
     $p = '<p>Seat Outlet lists ' . number_format($total) . ' upcoming ' . $e($noun) . ' in ' . $e($place) . '.'
         . ($top ? ' They take place at ' . $e(implode(', ', array_slice($top, 0, -1)) . (count($top) > 1 ? ' and ' : '') . end($top)) . '.' : '')
         . ' Prices come from many sellers, so compare sections before you buy.</p>';
+    if ($cards) {
+        return '<section class="so-evv-venue"><div class="so-evv-venue__head"><span class="so-evv-ico so-evv-ico--lg">' . soEvvIcon('pin') . '</span><div><h2>About ' . $e($place) . '</h2>' . $p . '</div></div>'
+            . '<ul class="so-evv-links"><li><a href="' . $e($cityHref) . '"><span class="so-evv-ico">' . soEvvIcon('tix') . '</span><span class="so-evv-lt">See all ' . $e($noun) . ' in ' . $e($place) . '</span><span class="so-evv-chev" aria-hidden="true">&rsaquo;</span></a></li></ul></section>';
+    }
     return '<h2>About ' . $e($place) . '</h2>' . $p . '<p><a href="' . $e($cityHref) . '">See all ' . $e($noun) . ' in ' . $e($place) . '</a></p>';
+}
+
+/** Event page promo block: the same two codes and wording as soSpecPromoHtml(), two cards side by side. id="promocode" stays the anchor. */
+function soSpecPromoCards(string $heading, string $subject): string {
+    return soSpecPromoMarkup($heading, $subject, true);
 }
 
 /**
  * The guide: the facts the event page holds, in the order a buyer needs them. $f keys (all optional): when, venue, venueHref, address,
  * tickets (count), low (formatted price), eventsInCity, venueHref. Steps are the same three the page's own "how to buy" lists.
  */
-function soSpecGuideHtml(string $heading, string $label, array $f, bool $note = true): string {
+function soSpecGuideHtml(string $heading, string $label, array $f, bool $note = true, bool $cards = false): string {
     $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    if ($cards) return soSpecGuideCard($heading, $f, $note ? $label : '');
     $facts = [];
     if (!empty($f['when'])) $facts[] = '<li><strong>When:</strong> ' . $e($f['when']) . '</li>';
     if (!empty($f['venue'])) {
@@ -156,6 +177,58 @@ function soSpecGuideHtml(string $heading, string $label, array $f, bool $note = 
     return '<h2>' . $e($heading) . '</h2><ul class="so-speclist">' . implode('', $facts) . '</ul>'
         . (!$note ? '' : '<p>Choose how many tickets you need, pick seats on the map, then check out. Prices are set by sellers and can be above or below face value. '
         . 'Read how <a href="/ticket-buyer-protection">ticket buyer protection</a> works before you order ' . $e($label) . ' tickets.</p>');
+}
+
+/** Event page card version of the guide: the same facts as icon rows (When, Where with the venue link and street, Tickets listed, Dates). */
+function soSpecGuideCard(string $heading, array $f, string $noteLabel = ''): string {
+    $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $rows = [];
+    if (!empty($f['when'])) $rows[] = ['cal', 'When', $e($f['when'])];
+    if (!empty($f['venue'])) {
+        $v = !empty($f['venueHref']) ? '<a href="' . $e($f['venueHref']) . '">' . $e($f['venue']) . '</a>' : $e($f['venue']);
+        $rows[] = ['pin', 'Where', $v . (!empty($f['address']) ? '<br>' . $e($f['address']) : '')];
+    }
+    if (!empty($f['tickets']) && (int) $f['tickets'] > 0) $rows[] = ['tix', 'Tickets listed', number_format((int) $f['tickets']) . (!empty($f['low']) ? ', from ' . $e($f['low']) . ' each' : '')];
+    if (!empty($f['dates']) && (int) $f['dates'] > 1) $rows[] = ['cal', 'Dates in this city', (int) $f['dates'] . ', so you can pick the night that suits you'];
+    if (!$rows) return '';
+    $out = '<div class="so-evv-card so-evv-guide"><h2>' . $e($heading) . '</h2><ul class="so-evv-facts">';
+    foreach ($rows as [$ico, $t, $v]) $out .= '<li><span class="so-evv-ico">' . soEvvIcon($ico) . '</span><div><strong>' . $e($t) . '</strong><span>' . $v . '</span></div></li>';
+    $out .= '</ul>';
+    if ($noteLabel !== '') $out .= '<p class="so-evv-note">Choose how many tickets you need, pick seats on the map, then check out. Prices are set by sellers and can be above or below face value. '
+        . 'Read how <a href="/ticket-buyer-protection">ticket buyer protection</a> works before you order ' . $e($noteLabel) . ' tickets.</p>';
+    return $out . '</div>';
+}
+
+/** Line icons (24px viewBox, currentColor) for the event page venue, guide and upcoming cards. */
+function soEvvIcon(string $k): string {
+    $p = [
+        'pin'  => '<path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>',
+        'cal'  => '<rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>',
+        'tix'  => '<path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 0 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z"/><path d="M14 5v2M14 11v2M14 17v2"/>',
+        'route' => '<circle cx="6" cy="19" r="2"/><path d="M18 9s3-3.1 3-5.2A3 3 0 0 0 15 4c0 2 3 5 3 5Z"/><path d="M8 19h6.5a3.5 3.5 0 0 0 0-7h-5a3.5 3.5 0 0 1 0-7H12"/>',
+        'bus'  => '<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3"/><circle cx="8" cy="14.5" r=".8"/><circle cx="16" cy="14.5" r=".8"/>',
+        'web'  => '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+        'cloud' => '<path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.3 1.5A3.3 3.3 0 0 0 7 18Z"/>',
+    ][$k] ?? '';
+    return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $p . '</svg>';
+}
+
+/** Event page card version of soSpecEventList(): rows with a date badge, the name, venue and city, and a chevron. '' when none. */
+function soSpecEventRows(array $events, array $skipIds, int $max = 6): string {
+    $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $rows = ''; $n = 0;
+    foreach ($events as $ev) {
+        if ($n >= $max) break;
+        if (in_array((int) ($ev['id'] ?? 0), $skipIds, true) || empty($ev['text']['name'])) continue;
+        $ts = !empty($ev['date']['date']) ? strtotime($ev['date']['date']) : false;
+        $where = trim((string) ($ev['venue']['text']['name'] ?? '') . ((string) ($ev['city']['text']['name'] ?? '') !== '' ? ', ' . $ev['city']['text']['name'] : ''), ', ');
+        $rows .= '<li><a href="/event/' . $e(soEventSlug($ev)) . '">'
+            . ($ts ? '<span class="so-evv-date"><small>' . $e(strtoupper(date('M', $ts))) . '</small><b>' . $e(date('j', $ts)) . '</b></span>' : '')
+            . '<span class="so-evv-t"><strong>' . $e($ev['text']['name']) . '</strong>' . ($where !== '' ? '<small>' . $e($where) . '</small>' : '') . '</span>'
+            . '<span class="so-evv-chev" aria-hidden="true">&rsaquo;</span></a></li>';
+        $n++;
+    }
+    return $rows === '' ? '' : '<ul class="so-evv-rows">' . $rows . '</ul>';
 }
 
 /** The guide heading for a kind. */
@@ -297,7 +370,7 @@ function soSpecVenueEvents(string $kind, $venueId, int $limit = 24): array {
  * official site for parking, bag and entry rules). Nothing about parking or policies is stated: we do not hold those facts.
  * $venueRec is the venue's own record (address, geo), $facts is soEntityFacts() for the venue.
  */
-function soSpecVenueInfoHtml(string $heading, string $venue, string $city, string $state, string $venueHref, array $venueRec, array $facts, int $upcoming): string {
+function soSpecVenueInfoHtml(string $heading, string $venue, string $city, string $state, string $venueHref, array $venueRec, array $facts, int $upcoming, bool $cards = false): string {
     if ($venue === '') return '';
     $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
     $street = trim((string) ($venueRec['address']['text']['address1'] ?? ''));
@@ -314,6 +387,18 @@ function soSpecVenueInfoHtml(string $heading, string $venue, string $city, strin
     $geo = $venueRec['geoLocation'] ?? ($venueRec['address']['geoLocation'] ?? []);
     if (($state !== '' || true) && isset($geo['latitude'], $geo['longitude']) && (float) $geo['latitude'] != 0.0 && ($venueRec['country']['alphaCode'] ?? ($venueRec['address']['country']['alphaCode'] ?? 'US')) === 'US') {
         $links[] = '<a href="https://forecast.weather.gov/MapClick.php?lat=' . rawurlencode((string) round((float) $geo['latitude'], 4)) . '&amp;lon=' . rawurlencode((string) round((float) $geo['longitude'], 4)) . '" target="_blank" rel="noopener">Weather forecast for ' . $e($city) . '</a>';
+    }
+    if ($cards) {
+        // Event page: a pale blue card, pin icon, heading and text, then each link as a small card with its icon and a chevron.
+        $icons = ['Directions' => 'route', 'Public tra' => 'bus', 'Official w' => 'web', 'All events' => 'tix', 'Weather fo' => 'cloud'];
+        $cardsHtml = '';
+        foreach ($links as $a) {
+            $label = trim(strip_tags($a));
+            $ico = $icons[substr($label, 0, 10)] ?? 'pin';
+            $cardsHtml .= '<li>' . preg_replace('#^(<a [^>]*>)(.*)</a>$#s', '$1<span class="so-evv-ico">' . soEvvIcon($ico) . '</span><span class="so-evv-lt">$2</span><span class="so-evv-chev" aria-hidden="true">&rsaquo;</span></a>', $a) . '</li>';
+        }
+        return '<section class="so-evv-venue"><div class="so-evv-venue__head"><span class="so-evv-ico so-evv-ico--lg">' . soEvvIcon('pin') . '</span><div><h2>' . $e($heading) . '</h2>' . $p . '</div></div>'
+            . '<ul class="so-evv-links">' . $cardsHtml . '</ul></section>';
     }
     return '<h2>' . $e($heading) . '</h2>' . $p . '<ul class="so-speclist"><li>' . implode('</li><li>', $links) . '</li></ul>';
 }

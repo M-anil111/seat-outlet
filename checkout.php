@@ -159,16 +159,16 @@ include 'header.php';
   window.dataLayer = window.dataLayer || [];
   var item = {
     item_id: '<?php echo (int) $eventId; ?>',
-    item_name: <?php echo json_encode($eventName); ?>,
-    item_variant: <?php echo json_encode($tgid); ?>,
-    price: <?php echo json_encode($prc); ?>,
+    item_name: <?php echo json_encode($eventName, JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+    item_variant: <?php echo json_encode($tgid, JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+    price: <?php echo json_encode($prc, JSON_HEX_TAG | JSON_HEX_AMP); ?>,
     quantity: <?php echo (int) $qty; ?>
   };
   <?php if ($hasSelection) { ?>
-  window.dataLayer.push({ event: 'view_cart', ecommerce: { currency: 'USD', value: <?php echo json_encode($subtotal); ?>, items: [item] } });
+  window.dataLayer.push({ event: 'view_cart', ecommerce: { currency: 'USD', value: <?php echo json_encode($subtotal, JSON_HEX_TAG | JSON_HEX_AMP); ?>, items: [item] } });
   var btn = document.getElementById('checkout-continue');
   if (btn) btn.addEventListener('click', function () {
-    window.dataLayer.push({ event: 'begin_checkout', ecommerce: { currency: 'USD', value: <?php echo json_encode($subtotal); ?>, items: [item] } });
+    window.dataLayer.push({ event: 'begin_checkout', ecommerce: { currency: 'USD', value: <?php echo json_encode($subtotal, JSON_HEX_TAG | JSON_HEX_AMP); ?>, items: [item] } });
   });
   <?php } ?>
 })();
