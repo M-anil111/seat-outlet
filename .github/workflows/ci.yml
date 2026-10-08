@@ -59,6 +59,10 @@ jobs:
         run: php tools/test-pixabay.php
       - name: Unsplash city photo source (relevance filter, attribution, hotlink rules)
         run: php tools/test-unsplash.php
+      - name: JSON-LD output cannot be broken out of by visitor text (search query XSS)
+        run: php tools/test-jsonld-safe.php
+      - name: Pagination links on the A to Z directories are not redirected away
+        run: php tools/test-page-param.php
       - name: Crawl guard
         run: php tools/test-ratelimit.php
       - name: Old address forms still resolve
