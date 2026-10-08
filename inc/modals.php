@@ -20,7 +20,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 	<div class="offcanvas-header">
 		
 		<button type="button" class="btn btn-outline-primary" data-bs-dismiss="offcanvas" aria-label="Close"> <i class="bi bi-arrow-left"></i></button>
-        <h5 class="offcanvas-title ms-3" id="offcanvasRightLabel">Event information</h5>
+        <h2 class="h5 offcanvas-title ms-3" id="offcanvasRightLabel">Event information</h2>
 	</div>
 	<div class="offcanvas-body px-4" id="offcanvasBody">
         <hr class="mt-0">
@@ -46,7 +46,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
             <div class="venue-label fs-5 fw-semibold mb-1">
                 VENUE
             </div>
-            <a class="venue-link fs-6" id="venue-link" aria-label="Venue details"></a>
+            <a class="venue-link fs-6" id="venue-link"></a>
         </div>
 	</div>
 </div>

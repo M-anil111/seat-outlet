@@ -42,7 +42,7 @@ if ($startDate !== '' && $endDate !== '') {
     $filters[] = "date/date le $endDate";
 } else {
     $filters[] = "country/alphaCode eq 'US'";
-    $filters[] = "date/date ge $today";
+    $filters[] = "date/date ge $today and date/date le " . soEventHorizon();
 }
 
 // Nearest first, and never cut off at a radius: a visitor in Bee Cave, TX who is looking at a New York act sees the closest
