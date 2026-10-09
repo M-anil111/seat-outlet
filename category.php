@@ -27,6 +27,12 @@ $catRaw  = trim($cat['results'][0]['text']['name'] ?? '');
 // Title Case a name that arrives all upper or all lower case, but leave mixed-case and short acronyms (NBA, UFC) as they are.
 $catName = (strlen($catRaw) > 4 && ($catRaw === strtoupper($catRaw) || $catRaw === strtolower($catRaw))) ? ucwords(strtolower($catRaw)) : $catRaw;
 
+// A throttled category lookup comes back empty. A genre or league page we already know by its address keeps its own name and renders
+// (the event list then shows the "loading slowly" card) instead of answering a 503 for the whole page.
+if ($catName === '' && !empty($GLOBALS['tn_degraded'])) {
+	$soGenreKnown = isset($soGenreSlug) ? soGenreBySlug($soGenreSlug) : soGenreById($id);
+	if ($soGenreKnown && trim((string) ($soGenreKnown['label'] ?? '')) !== '') { $catName = trim((string) $soGenreKnown['label']); }
+}
 if ($catName === '') {
 	renderNotFoundPage('Category');
 }

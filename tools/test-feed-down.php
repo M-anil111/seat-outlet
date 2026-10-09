@@ -25,6 +25,9 @@ foreach (['category.php', 'inc/holidays.php', 'inc/discovery-pages.php', 'inc/en
     $s = file_get_contents($root . '/' . $f);
     feedDownCheck("$f uses soFeedDownGate", strpos($s, 'soFeedDownGate(') !== false && strpos($s, 'renderUnavailablePage(') === false);
 }
+$cat = file_get_contents($root . '/category.php');
+feedDownCheck('a throttled category lookup falls back to the genre label before the 404/503 gate',
+    preg_match("/tn_degraded.{0,400}soGenreBySlug.{0,400}\\\$catName = trim.{0,400}if \\(\\\$catName === ''\\) \\{\\s*renderNotFoundPage/s", $cat) === 1);
 $list = file_get_contents($root . '/inc/listing.php');
 feedDownCheck('soRenderListingPage no longer answers 503 after output', strpos($list, "http_response_code(503)") === false);
 feedDownCheck('listing empty state honours the flag', strpos($list, "soFeedDown") !== false);
