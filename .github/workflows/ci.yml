@@ -65,6 +65,10 @@ jobs:
         run: php tools/test-page-param.php
       - name: Contact form same-origin check (live host differs from the public host)
         run: php tools/test-contact-origin.php
+      - name: Pages keep rendering when the ticket feed is down (no empty 503 page)
+        run: php tools/test-feed-down.php
+      - name: Event offer schema and social profiles
+        run: php tools/test-event-offer.php
       - name: Crawl guard
         run: php tools/test-ratelimit.php
       - name: Old address forms still resolve

@@ -2319,6 +2319,7 @@ function seoOffer($url, $price, $validFrom = '') {
     return $offer;
 }
 
+require_once __DIR__ . '/inc/social.php';
 require_once __DIR__ . '/inc/title.php';   // soNormalizeTitle(), soTitle(), seoClampTitle(), SO_TITLE_BRAND
 
 
@@ -2420,6 +2421,29 @@ function unavailableBlockHtml($what) {
         . '<a class="so-linkchip" href="/game-day-tickets">Sports</a>'
         . '<a class="so-linkchip" href="/buy-broadway-tickets">Theater</a>'
         . '</div></div></div>';
+}
+
+/**
+ * A listing or entity page whose ticket feed failed: serve the last good copy if there is one; otherwise carry on rendering the page
+ * (its own text, links and navigation) with the feed marked down, instead of an empty 503 page. The page is never cached (the degraded
+ * flag makes sendPageCacheHeaders answer no-store) and carries noindex,follow, so an empty list is never indexed. Where a page has no
+ * content of its own to show, call renderUnavailablePage() instead.
+ */
+function soFeedDownGate($what = '') {
+    soSnapshotServe();   // the last good copy of this very page beats everything else
+    $GLOBALS['soFeedDown'] = true;
+    $GLOBALS['pageRobots'] = 'noindex, follow';
+    if (!headers_sent()) header('Retry-After: 30');
+}
+
+/** The card that stands in for the event list while the feed is down (same look as the other empty states). */
+function soFeedDownStateHtml() {
+    return '<div class="so-state" role="status">' . soStateIcon('clock')
+        . '<h3 class="so-state__title">Live listings are loading slowly</h3>'
+        . '<p class="so-state__text">Our ticket feed did not answer just now, so the events for this page are not shown. Reload in a few seconds, or browse another page below.</p>'
+        . '<div class="so-state__actions"><a class="so-state__btn" href="">Reload this page</a></div>'
+        . '<div class="so-state__chips"><a class="so-linkchip" href="/buy-tickets-online">Browse all events</a><a class="so-linkchip" href="/concert-tickets-for-sale">Concerts</a>'
+        . '<a class="so-linkchip" href="/game-day-tickets">Sports</a><a class="so-linkchip" href="/buy-broadway-tickets">Theater</a></div></div>';
 }
 
 /** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, never cached. */
@@ -4159,9 +4183,17 @@ function soEventNode(array $event, array $opts = []) {
             'seller' => ['@id' => HOME_URL . '/#organization'],
         ];
         $high = (float) ($event['pricingInfo']['highPrice']['value'] ?? 0);
-        if ($high >= $low) $offer['highPrice'] = number_format($high, 2, '.', '');
+        if ($high >= $low) {
+            $offer['highPrice'] = number_format($high, 2, '.', '');
+        } else {
+            // No highest price in the feed: an AggregateOffer without highPrice is flagged in Search Console, so state what is
+            // known, the lowest listed price, as a plain Offer (no made-up high price).
+            $offer['@type'] = 'Offer';
+            $offer['price'] = $offer['lowPrice'];
+            unset($offer['lowPrice']);
+        }
         $count = (int) ($event['_metadata']['ticketCount'] ?? 0);
-        if ($count > 0) $offer['offerCount'] = $count;
+        if ($count > 0 && $offer['@type'] === 'AggregateOffer') $offer['offerCount'] = $count;
         $from = soEventListedFrom($event);
         if ($from !== '') $offer['validFrom'] = $from;
         $node['offers'] = $offer;
@@ -4198,12 +4230,7 @@ function buildOrganizationSchema() {
             "url" => HOME_URL . "/ticket-customer-service",
             "availableLanguage" => ["English"],
         ],
-        "sameAs" => [
-            "https://www.facebook.com/profile.php?id=61588886945534",
-            "https://www.instagram.com/seatoutlet/",
-            "https://www.youtube.com/@SeatOutlet",
-            "https://linktr.ee/seatoutlet"
-        ]
+        "sameAs" => soSocialSameAs()
     ];
 }
 
@@ -5119,7 +5146,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     $hasRealImage    = soImageIsReal($performerImg);
 
     // A failed feed is a 503 (retry), never a thin 200. A page with no events is noindex,follow and kept out of the sitemap.
-    if ($total_count === 0 && !$events && soApiDegraded()) { renderUnavailablePage('Tickets'); }
+    if ($total_count === 0 && !$events && soApiDegraded()) { soFeedDownGate('Tickets'); }
     $isZero = ($total_count === 0);
     if ($isZero) { $pageRobots = 'noindex, follow'; }
     soZeroPageNote('/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug, $isZero);
@@ -5269,7 +5296,8 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <div class="so-state" role="status">
+                                <?php if (!empty($GLOBALS['soFeedDown'])) { echo soFeedDownStateHtml(); } else { ?>
+<div class="so-state" role="status">
                                     <?php echo soStateIcon('ticket'); ?>
                                     <h3 class="so-state__title">No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
                                     <p class="so-state__text">Dates are added as they are announced. Leave your email and we will tell you when <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> announces dates.</p>
@@ -5278,6 +5306,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                     soRenderEntityAlternatives(['parent' => ['url' => '/artist/' . $canonArtistSlug, 'text' => 'All ' . $artistName . ' tickets']], []);
                                     ?>
                                 </div>
+                                <?php } ?>
                             <?php } ?>
                         </div>
                     <div id="secondary" class="sidebar col-sm-12 col-md-4">
@@ -5454,7 +5483,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     $year        = date('Y');
 
     // A failed feed is a 503 (retry), never a thin 200. A page with no events is noindex,follow and kept out of the sitemap.
-    if ($total_count === 0 && !$events && soApiDegraded()) { renderUnavailablePage($categoryLabel . ' tickets'); }
+    if ($total_count === 0 && !$events && soApiDegraded()) { soFeedDownGate($categoryLabel . ' tickets'); }
     $canonSlug = soSlug($dimension, $locationLabel, $locationValue);
     $isZero = ($total_count === 0);
     if ($isZero) { $pageRobots = 'noindex, follow'; }
@@ -5579,7 +5608,8 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                     </div>
                                 <?php } ?>
                             <?php } else { ?>
-                                <div class="so-state" role="status">
+                                <?php if (!empty($GLOBALS['soFeedDown'])) { echo soFeedDownStateHtml(); } else { ?>
+<div class="so-state" role="status">
                                     <?php echo soStateIcon('pin'); ?>
                                     <h3 class="so-state__title">No <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?> tickets in <?php echo htmlspecialchars($locationLabel, ENT_QUOTES, 'UTF-8'); ?> right now</h3>
                                     <p class="so-state__text">New dates are added all the time.<?php echo $dimension === 'city' ? ' Leave your email and we will tell you when tickets go on sale.' : ''; ?></p>
@@ -5590,6 +5620,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                     soRenderEntityAlternatives(['parent' => ['url' => '/' . (LOCATION_CATEGORY_PAGES[$dimension]['plain'] ?? $dimension) . '/' . $canonSlug, 'text' => 'All events in ' . $locationLabel]], []);
                                     ?>
                                 </div>
+                                <?php } ?>
                             <?php } ?>
                         </div>
                         <?php renderLocationCategoryLinks($dimension, $locationValue, $locationLabel, $urlPrefix); ?>

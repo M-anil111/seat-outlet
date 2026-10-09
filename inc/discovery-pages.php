@@ -47,7 +47,7 @@ function renderCityDiscoveryPage(string $key): void {
     $resp = tnRequest('/catalog/v2/events/', locationListingParams($fragment, $perPage, 1, $when, $sort, $maxPrice));
     $total = (int) ($resp['totalCount'] ?? 0);
     $events = $resp['results'] ?? [];
-    if ($total === 0 && !$events && soApiDegraded()) { renderUnavailablePage($cfg['what'] . ' in ' . $label); }
+    if ($total === 0 && !$events && soApiDegraded()) { soFeedDownGate($cfg['what'] . ' in ' . $label); }
     $path = '/' . $key . '/' . $canonSlug;
     $isZero = $total < SO_DISCOVERY_MIN;
     if ($isZero || $isFiltered) { $pageRobots = 'noindex, follow'; }

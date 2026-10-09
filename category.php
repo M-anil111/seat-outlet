@@ -71,7 +71,7 @@ $pageJsonLdNodes     = array_values(array_filter([
 	buildFaqPageSchema($soCatSeo['faqs']),
 ]));
 
-[$when, $sort, $isFiltered] = listingRequestState('popular');
+[$when, $sort, $isFiltered] = listingRequestState('soonest');
 $maxPrice = soListingMaxPrice();
 if ($maxPrice > 0) { $isFiltered = true; }
 if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // canonical page stays the indexed one
@@ -87,7 +87,7 @@ $eventsResponse = tnRequest('/catalog/v2/events/', $params);
 $total_count = (int) ($eventsResponse['totalCount'] ?? 0);
 $events = $eventsResponse['results'] ?? [];
 // A failed feed is a 503 (retry), never a "0 results" page that looks real; a category that truly has no events stays out of the index.
-if ($total_count === 0 && !$events && soApiDegraded()) { renderUnavailablePage($catLabel . ' tickets'); }
+if ($total_count === 0 && !$events && soApiDegraded()) { soFeedDownGate($catLabel . ' tickets'); }
 // Upcoming events as an ItemList of Event nodes (the same rows the page lists below).
 $pageJsonLdNodes = array_merge($pageJsonLdNodes ?? [], [soEventItemList($events, $pageCanonicalUrl ?? '')]);
 include 'header.php';
@@ -102,6 +102,7 @@ soRenderListingPage([
 	'basePath'    => $catBasePath,
 	'when'        => $when,
 	'sort'        => $sort,
+	'defaultSort' => 'soonest',
 	'max'         => $maxPrice,
 	'explore'     => ['catId' => $id, 'noun' => $catInline . ' events', 'hero' => $soCatHero, 'family' => $soFamily, 'label' => $catLabel],
 	'body'        => [
