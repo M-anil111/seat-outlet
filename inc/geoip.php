@@ -106,7 +106,6 @@ function geoIpLookupIpApi($ip) {
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 2, CURLOPT_TIMEOUT => 3]);
     $body = curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
     $data = $body !== false && $code === 200 ? json_decode($body, true) : null;
     if (empty($data) || ($data['status'] ?? '') !== 'success') {
         return null;

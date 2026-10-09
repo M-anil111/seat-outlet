@@ -92,7 +92,6 @@ function soFactsGet(string $url): ?array {
     ]);
     $body = curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
     if ($code === 429 || $code >= 500) cache_set('wdfacts_backoff', ['until' => time() + 3600]);   // rate limited: pause all lookups for an hour
     if ($body === false || $code !== 200) return null;
     $data = json_decode((string) $body, true);
@@ -150,7 +149,6 @@ function soFactsLiveUrl(string $url): ?string {
     curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $final = (string) curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
-    curl_close($ch);
     if (($code < 200 || $code >= 300) || !preg_match('#^https?://[^\s"<>]+$#', $final)) return null;
     return $final;
 }

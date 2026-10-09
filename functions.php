@@ -117,7 +117,6 @@ function downloadImage($url) {
         $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err  = curl_errno($ch);
         $next = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
-        curl_close($ch);
         if (!$err && in_array($code, [301, 302, 303, 307, 308], true) && $next !== '') { $url = $next; continue; }
         if ($err || $code !== 200 || $data === false || $data === '') return '';
         return $data;
@@ -224,11 +223,9 @@ function getTnAccessToken($rejected = '') {
 
         if ($response === false) {
             $error = curl_error($ch);
-            curl_close($ch);
             \Sentry\captureMessage('TicketNetwork token request failed: ' . $error);
             return '';
         }
-        curl_close($ch);
 
         $data = json_decode($response, true);
         if (empty($data['access_token'])) {
@@ -441,13 +438,11 @@ function tnFetchLive($endpoint, array $params, $method) {
     $token = getTnAccessToken();
     $ch = tnBuildHandle($endpoint, $params, $method, $token);
     $result = tnParseResult($ch, curl_exec($ch));
-    curl_close($ch);
     if (!empty($result['auth'])) {
         $token = getTnAccessToken($token);
         if ($token !== '') {
             $ch = tnBuildHandle($endpoint, $params, $method, $token);
             $result = tnParseResult($ch, curl_exec($ch));
-            curl_close($ch);
         }
     }
     tnProfile($endpoint, false, (microtime(true) - $t0) * 1000);
@@ -669,7 +664,6 @@ function tnRequestMulti(array $requests) {
             if (empty($out[$i])) tnMarkDegraded();
         }
         curl_multi_remove_handle($mh, $ch);
-        curl_close($ch);
     }
     curl_multi_close($mh);
     return $out;
@@ -1055,7 +1049,6 @@ function curlGet($url) {
         CURLOPT_USERAGENT => 'SeatOutlet/1.0 (' . HOME_URL . ')'
     ]);
     $response = curl_exec($ch);
-    curl_close($ch);
     return $response;
 }
 
@@ -5765,7 +5758,6 @@ function fetchRenderedPageHtml($pagePath) {
         $html = curl_exec($ch);
         $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $loc = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
-        curl_close($ch);
         if ($html === false) return null;
         if ($code >= 300 && $code < 400 && $loc !== '') { $url = $loc; continue; }
         return $code === 200 ? $html : null;

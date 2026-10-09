@@ -58,10 +58,8 @@ if ($kind === 'near') {
     $maxIn = soQsInt('max');
     $maxPrice = isset(LISTING_PRICE[$maxIn]) ? $maxIn : 0;                      // "under $X" on the lowest listed price
     $nationwide = !empty($_GET['nw']);   // set by the page once page 1 said the closest event is too far to call "near"
-    if (!$hasGeo) {
-        echo json_encode(['scope' => 'none', 'events' => [], 'hasMore' => false]);
-        exit;
-    }
+    // No usable location (none given, or outside the area we sell in): the whole country's popular events, labelled as such, never an empty list.
+    if (!$hasGeo) { $nationwide = true; }
     $nearKey = 'near_' . ($catId ?: $cat) . '_' . $when . '_' . $nearSort . '_' . $radius . '_' . $maxPrice . '_' . ($nationwide ? 'nw' : 'geo') . '_' . $page . '_' . $lat . '_' . $lng;
     $cachedNear = cache_get('home_feed_' . $nearKey, 600);
     if ($cachedNear !== false) {

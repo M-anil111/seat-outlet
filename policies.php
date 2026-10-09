@@ -17,9 +17,9 @@ include 'header.php';
 			<script type="text/javascript" src="https://tickettransaction.com/?https=true&amp;bid=9250&amp;sitenumber=30&amp;tid=600"></script>
 		</div>
 		<noscript>
-			<p>This page needs JavaScript to show the ticket policies. You can also read our <a href="/terms-and-conditions">Terms of Use</a>, <a href="/privacy-policy">Privacy Policy</a> and <a href="/worry-free-guarantee">guarantee</a>, or email <a href="mailto:info@seatoutlet.com">info@seatoutlet.com</a>.</p>
+			<p>This page needs JavaScript to show the ticket policies. You can also read our <a href="/terms-and-conditions">Terms of Use</a>, <a href="/privacy-policy">Privacy Policy</a> and <a href="/worry-free-guarantee">guarantee</a>, or email <a href="mailto:support@seatoutlet.com">support@seatoutlet.com</a>.</p>
 		</noscript>
-		<p class="small mt-4 mb-0">Questions about an order? Visit <a href="/ticket-customer-service">Customer Service</a> or email <a href="mailto:info@seatoutlet.com">info@seatoutlet.com</a>. See also our <a href="/terms-and-conditions">Terms of Use</a>, <a href="/privacy-policy">Privacy Policy</a> and <a href="/worry-free-guarantee">guarantee</a>.</p>
+		<p class="small mt-4 mb-0">Questions about an order? Visit <a href="/ticket-customer-service">Customer Service</a> or email <a href="mailto:support@seatoutlet.com">support@seatoutlet.com</a>. See also our <a href="/terms-and-conditions">Terms of Use</a>, <a href="/privacy-policy">Privacy Policy</a> and <a href="/worry-free-guarantee">guarantee</a>.</p>
 	</div>
 </section>
 <?php include 'footer.php'; ?>
