@@ -377,7 +377,9 @@ function homepageBootstrapScript() {
   function validLoc(loc){ return loc && loc.city && loc.state && loc.lat && loc.lng; }
   function locLabel(loc){ return validLoc(loc) ? loc.city + ', ' + loc.state : ''; }
   function setCookie(name, value){
-    document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;max-age=2592000;SameSite=Lax;Secure';
+    // Location cookies last a day, as in js/main.js: a wrong lookup or a trip must not stay selected for a month.
+    var maxAge = /^so_(lat|lng|label)$/.test(name) ? 86400 : 2592000;
+    document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;max-age=' + maxAge + ';SameSite=Lax;Secure';
   }
   function applyLoc(loc){
     if (!validLoc(loc)) return '';

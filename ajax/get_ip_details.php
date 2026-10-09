@@ -24,5 +24,5 @@ if (!$geo || $geo['city'] === '') {
     echo json_encode($unknown);
     exit;
 }
-echo json_encode(['city' => $geo['city'], 'state' => $geo['state'], 'lat' => $geo['lat'], 'lng' => $geo['lng'], 'source' => 'maxmind', 'fallback' => false]);
+echo json_encode(['city' => $geo['city'], 'state' => $geo['state'], 'lat' => $geo['lat'], 'lng' => $geo['lng'], 'source' => 'ip', 'fallback' => false]);
 exit;

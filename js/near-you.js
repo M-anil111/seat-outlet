@@ -114,7 +114,8 @@
   }
 
   function load(page) {
-    if (!state.lat || !state.lng) { near.hidden = true; return; }
+    // Without a location the section stays hidden, except for the explicit nationwide list (startNationwide).
+    if ((!state.lat || !state.lng) && !state.anywhere) { near.hidden = true; return; }
     var my = ++state.token;
     state.page = page;
     if (page === 1) { grid.innerHTML = skeleton(4); near.hidden = false; more.hidden = true; state.nw = false; grid.classList.remove('is-expanded'); }
@@ -160,6 +161,7 @@
 
   function setLocation(lat, lng, label, save) {
     state.lat = lat; state.lng = lng; state.label = label || '';
+    state.anywhere = false;
     locLabel.textContent = label || 'Near you';
     syncUi();
     if (save) {
@@ -330,6 +332,7 @@
   function startNationwide() {
     if (state.lat || nationwideStarted) return;
     nationwideStarted = true;
+    state.anywhere = true;
     locLabel.textContent = 'Choose location';
     load(1);
   }

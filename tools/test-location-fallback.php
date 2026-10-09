@@ -9,11 +9,14 @@ $read = function (string $f) use ($root) { return (string) file_get_contents($ro
 $ip = $read('ajax/get_ip_details.php');
 locCheck('PHP lookup has no Austin fallback', stripos($ip, 'austin') === false);
 locCheck('PHP lookup says "unknown" and is not cached when it fails', strpos($ip, "'source' => 'unknown'") !== false && strpos($ip, 'no-store') !== false);
-locCheck('PHP lookup labels a real answer', strpos($ip, "'source' => 'maxmind'") !== false);
+locCheck('PHP lookup labels a real answer without naming a provider it may not have used', strpos($ip, "'source' => 'ip'") !== false && strpos($ip, 'maxmind') === false);
 
 $w = $read('deploy/cloudflare-worker/seatoutlet-blog-proxy.js');
 locCheck('Worker has no Austin location fallback', strpos($w, 'DEFAULT_LOCATION') === false && strpos($w, 'city: "Austin"') === false);
-locCheck('Worker answers "unknown" and does not cache it', strpos($w, 'UNKNOWN_LOCATION') !== false && strpos($w, '"no-store"') !== false);
+preg_match('/async function locationResponse\(.*?\n}\n/s', $w, $lr);
+locCheck('Worker answers "unknown" and does not cache it (checked inside locationResponse)', !empty($lr[0]) && strpos($lr[0], 'UNKNOWN_LOCATION') !== false && preg_match('/known\s*\?\s*"private, max-age=300"\s*:\s*"no-store"/', $lr[0]) === 1);
+preg_match('/function setCookie\(name, value\)\{.*?\n  \}/s', $w, $sc);
+locCheck('Worker location cookies last a day', !empty($sc[0]) && strpos($sc[0], '86400') !== false);
 
 $feed = $read('ajax/get-home-feed.php');
 locCheck('home feed without a location goes nationwide, not scope none', strpos($feed, 'if (!$hasGeo) { $nationwide = true; }') !== false);
