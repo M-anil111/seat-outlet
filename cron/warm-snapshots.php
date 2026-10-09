@@ -66,7 +66,6 @@ foreach (array_slice($due, 0, $limit) as [$age, $path]) {
     ]);
     curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
     if ($code === 200) { $done++; $streak = 0; }
     else {
         $fail++; $streak++;

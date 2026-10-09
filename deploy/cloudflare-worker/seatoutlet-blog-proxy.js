@@ -24,11 +24,14 @@
 // dashboard (Workers, seatoutlet-blog-proxy, Edit code). docs/production-cutover.md retires the Worker at cutover.
 
 var BETA_ORIGIN = "https://beta.seatoutlet.com";
-var DEFAULT_LOCATION = {
-  city: "Austin",
-  state: "TX",
-  lat: "30.29710",
-  lng: "-97.81810"
+// No invented city: a lookup that fails answers "unknown" and the page shows nationwide events (same shape as ajax/get_ip_details.php).
+var UNKNOWN_LOCATION = {
+  city: "",
+  state: "",
+  lat: "",
+  lng: "",
+  source: "unknown",
+  fallback: true
 };
 var CANONICAL_ORIGIN = "https://seatoutlet.com";
 // The same list robots.php prints (SO_ROBOTS_DISALLOW in inc/sitemap-build.php).
@@ -296,10 +299,11 @@ function setHeaderFromRequestOrCf(headers, request, name, cfValue) {
 }
 async function locationResponse(response) {
   const data = await readLocationJson(response);
-  const location = hasLocation(data) ? data : DEFAULT_LOCATION;
+  const known = hasLocation(data);
+  const location = known ? data : UNKNOWN_LOCATION;
   const headers = new Headers(response.headers);
   headers.set("content-type", "application/json; charset=UTF-8");
-  headers.set("cache-control", "private, max-age=300");
+  headers.set("cache-control", known ? "private, max-age=300" : "no-store");
   headers.delete("content-length");
   headers.delete("content-encoding");
   return new Response(JSON.stringify(location), {
@@ -373,7 +377,9 @@ function homepageBootstrapScript() {
   function validLoc(loc){ return loc && loc.city && loc.state && loc.lat && loc.lng; }
   function locLabel(loc){ return validLoc(loc) ? loc.city + ', ' + loc.state : ''; }
   function setCookie(name, value){
-    document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;max-age=2592000;SameSite=Lax;Secure';
+    // Location cookies last a day, as in js/main.js: a wrong lookup or a trip must not stay selected for a month.
+    var maxAge = /^so_(lat|lng|label)$/.test(name) ? 86400 : 2592000;
+    document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;max-age=' + maxAge + ';SameSite=Lax;Secure';
   }
   function applyLoc(loc){
     if (!validLoc(loc)) return '';

@@ -27,7 +27,6 @@ foreach ($topics as $id => $title) {
         curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20, CURLOPT_USERAGENT => 'SeatOutletBot/1.0 (https://seatoutlet.com; category facts)']);
         $body = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
         if ($code !== 429) break;
         sleep(4 * ($try + 1));
     }

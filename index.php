@@ -337,7 +337,7 @@ foreach ($fallbackCategories as $key => $list) {
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://www.millerlite.com/" target="_blank" rel="noopener">
-      <img src="/images/lite.webp" class="img-fluid" alt="Lite" width="115" height="115" loading="lazy">
+      <img src="/images/lite.webp" class="img-fluid" alt="Miller Lite" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>
@@ -361,7 +361,7 @@ foreach ($fallbackCategories as $key => $list) {
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
     <a href="https://www.jimbeam.com/" target="_blank" rel="noopener">
-      <img src="/images/jimbeam.webp" class="img-fluid" alt="Jimbeam" width="115" height="115" loading="lazy">
+      <img src="/images/jimbeam.webp" class="img-fluid" alt="Jim Beam" width="115" height="115" loading="lazy">
     </a>
   </div>
 </div>

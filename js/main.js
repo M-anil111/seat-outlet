@@ -49,7 +49,9 @@ function setCookie(name, value) {
     try { v = decodeURIComponent(v); } catch (e) { /* a literal "%": keep as typed */ }
     // Lax + Secure (on https) + 30-day expiry; these were session cookies with no SameSite flag.
     const secure = location.protocol === 'https:' ? ';Secure' : '';
-    document.cookie = name + '=' + encodeURIComponent(v) + ';path=/;max-age=2592000;SameSite=Lax' + secure;
+    // A location cookie lasts a day, not 30: a wrong lookup, a VPN or a trip must not stay selected for a month.
+    const maxAge = /^so_(lat|lng|label)$/.test(name) ? 86400 : 2592000;
+    document.cookie = name + '=' + encodeURIComponent(v) + ';path=/;max-age=' + maxAge + ';SameSite=Lax' + secure;
 }
 
 /* Paints the visitor's location on the home page "Top picks" heading and its location chip.

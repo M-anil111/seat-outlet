@@ -231,36 +231,8 @@ function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, functi
           }
         };
 
-        fetch(`/ajax/get_ip_details.php`)
-          .then(res => res.json())
-          .then(data => {
-            // Same failure mode as main.js's version of this lookup: an
-            // empty response (rate limited, IP not resolvable, timeout)
-            // must not overwrite the location field with a literal
-            // "undefined, undefined".
-            if (!data || !data.city || !data.state || !data.lat || !data.lng) {
-              loadNationalEvents();
-              return;
-            }
-
-            setCookie('so_lat', encodeURIComponent(data.lat));
-            setCookie('so_lng', encodeURIComponent(data.lng));
-            setCookie('so_label', data.city + ', ' + data.state);
-            if (cityInput) cityInput.value = '';
-            
-            setTimeout(() => {
-              soSetLocText(data.city + ', ' + data.state);
-                          
-              if (typeof reloadActiveTab === 'function') {
-                reloadActiveTab('ll', { lat: data.lat, lng: data.lng });
-              }
-              if (typeof loadNearbyVenues === 'function') {
-                loadNearbyVenues();
-              }             
-            }, 200);
-            
-          })
-        .catch(loadNationalEvents);
+        // Clearing means "no location": show nationwide events. It must not look the visitor's address up again and pick the same place back.
+        loadNationalEvents();
         
       });
     }

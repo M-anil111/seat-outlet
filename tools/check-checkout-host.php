@@ -25,9 +25,9 @@ curl_setopt_array($ch, [CURLOPT_NOBODY => true, CURLOPT_HEADER => true, CURLOPT_
 $out = curl_exec($ch);
 $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 $err = curl_error($ch);
-curl_close($ch);
 if ($out === false) { echo "FAIL: HTTPS HEAD: $err\n"; exit(1); }
 echo "HTTPS HEAD: status $code\n";
 if ($code >= 500 || $code === 0) { echo "FAIL: the checkout host answered with an error.\n"; exit(1); }
+if ($code === 404 || $code === 410) { echo "FAIL: the checkout host answers $code: nothing is served here. Check TN_CHECKOUT_URL and the host's routing; a 404 is not a working checkout.\n"; exit(1); }
 echo "OK: the checkout host resolves and answers. (This does not prove a ticket group opens correctly: place a test order after any change.)\n";
 exit(0);

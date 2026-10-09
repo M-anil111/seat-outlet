@@ -41,4 +41,4 @@
 <details class="so-faq"><summary>Can I refuse all cookies under the cookie policy?</summary><p>Seat Outlet does not currently have a cookie banner or preferences tool, so use your browser settings to block or delete cookies. Some features may stop working.</p></details>
 <details class="so-faq"><summary>Which cookies in the cookie policy are needed for checkout?</summary><p>Strictly necessary cookies enable ticket purchasing, checkout, payment and session security.</p></details>
 <details class="so-faq"><summary>Does Seat Outlet have a mobile app?</summary><p>No, not currently. The cookie policy applies to this website.</p></details>
-<details class="so-faq"><summary>Who do I contact about the cookie policy?</summary><p>Email info@seatoutlet.com, as listed in the cookie policy above.</p></details>
+<details class="so-faq"><summary>Who do I contact about the cookie policy?</summary><p>Email support@seatoutlet.com, as listed in the cookie policy above.</p></details>

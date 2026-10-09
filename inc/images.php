@@ -395,7 +395,6 @@ function imageHttpGet($url, array $headers = []) {
     ]);
     $body = curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
     return [$body === false ? 0 : $code, (string) $body];
 }
 
@@ -761,7 +760,6 @@ function imageUnsplashGet(string $url): array {
     ]);
     $body = curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
     $data = $body === false ? null : json_decode((string) $body, true);
     return [$body === false ? 0 : $code, is_array($data) ? $data : null, $remaining];
 }
