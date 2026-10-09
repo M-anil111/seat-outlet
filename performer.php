@@ -64,7 +64,7 @@ $hasRealImage    = soImageIsReal($performerImg);
 $pageOgImage     = $hasRealImage ? $performer_image : null;
 
 // An outage is not an empty page (503 via the shared guard); a real zero-event artist is noindex,follow and left out of the sitemap.
-if ($total_count === 0 && !$events && soApiDegraded()) { renderUnavailablePage('Performer'); }
+if ($total_count === 0 && !$events && soApiDegraded()) { soFeedDownGate('Performer'); }
 if ($total_count === 0) { $pageRobots = 'noindex, follow'; }
 soZeroPageNote('/artist/' . soSlug('performer', $artistName, $id), $total_count === 0);
 
@@ -334,13 +334,15 @@ soPageHero([
 								</div>
 							<?php } ?>
 						<?php } else { ?>
-							<div class="so-state" role="status">
+							<?php if (!empty($GLOBALS['soFeedDown'])) { echo soFeedDownStateHtml(); } else { ?>
+<div class="so-state" role="status">
 								<?php echo soStateIcon('ticket'); ?>
 <h3 class="so-state__title">No <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> dates are on sale right now</h3>
 								<p class="so-state__text">Tour dates are added as they are announced. Leave your email and we will tell you when <?php echo htmlspecialchars($artistName, ENT_QUOTES, 'UTF-8'); ?> announces dates.</p>
 								<?php echo soLeadForm(['source' => 'artist-empty', 'class' => 'so-nl--compact', 'title' => 'Get alerts when ' . $artistName . ' announces dates', 'text' => 'One email when new dates go on sale. No spam.', 'button' => 'Alert me', 'interest_type' => 'performer', 'interest_id' => (int) $id, 'interest_name' => $artistName, 'names' => false]); ?>
 								<?php soRenderEntityAlternatives(['parent' => ['url' => (string) ($breadcrumbs[1]['url'] ?? '/buy-tickets-online'), 'text' => 'More ' . strtolower((string) ($breadcrumbs[1]['label'] ?? 'event')) . ' tickets']], []); ?>
 							</div>
+							<?php } ?>
 						<?php } ?>
 					</div>	
 

@@ -396,10 +396,11 @@ include 'header.php';
                     <div class="mascot-panel">
                         <p class="mascot-text mb-2 fw-semibold">Follow Seat Outlet</p>
                         <div class="social-icons">
-                            <a href="https://www.facebook.com/profile.php?id=61588886945534" target="_blank" rel="noopener" aria-label="Seat Outlet on Facebook"><i class="bi bi-facebook fs-4"></i></a>
+                            <a href="https://www.facebook.com/seatoutlet.usa" target="_blank" rel="noopener" aria-label="Seat Outlet on Facebook"><i class="bi bi-facebook fs-4"></i></a>
                                                         <a href="https://www.youtube.com/@SeatOutlet" target="_blank" rel="noopener" aria-label="Seat Outlet on YouTube"><i class="bi bi-youtube fs-4"></i></a>
                             <a href="https://www.instagram.com/seatoutlet/" target="_blank" rel="noopener" aria-label="Seat Outlet on Instagram"><i class="bi bi-instagram fs-4"></i></a>
                         </div>
+                        <div class="so-social-more" role="group" aria-label="More Seat Outlet profiles"><?php echo soSocialPillsHtml(); ?></div>
                     </div>
                 </div>
             </aside>
