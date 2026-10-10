@@ -71,6 +71,8 @@ jobs:
         run: php tools/test-feed-down.php
       - name: Event offer schema and social profiles
         run: php tools/test-event-offer.php
+      - name: Event page never says tickets are unavailable when the feed lists them
+        run: php tools/test-widget-mismatch.php
       - name: Crawl guard
         run: php tools/test-ratelimit.php
       - name: Old address forms still resolve
