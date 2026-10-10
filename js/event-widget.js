@@ -179,6 +179,18 @@
     c.showOtherCustomersUrgencyMessagingMobile = true;
     c.showOtherCustomersUrgencyMessagingDesktop = true;
     c.noEventHandler = function () {
+      // Our own listing says tickets exist for this event (the "From $63" on the listing page), so a seat map that reports "no event"
+      // is the map service not having the event ready, not an empty event. Say that, track the mismatch, and try once more by reloading
+      // (guarded so it can never loop); only an event with no listed tickets gets the "not available" message.
+      if (ev.hasTickets && ev.tickets > 0) {
+        var key = 'so_wr_' + ev.id, again = false;
+        try { again = !!sessionStorage.getItem(key); if (!again) sessionStorage.setItem(key, String(Date.now())); } catch (e) { again = true; }
+        pushPlain('widget_no_event_but_listed', { event_id: String(ev.id), retried: again, tickets: ev.tickets });
+        if (!again) { setTimeout(function () { location.reload(); }, 3000); }
+        showState('failed', 'The seat map is not ready for this event yet',
+          'Tickets are listed for this event' + (ev.price ? ' from ' + ev.price : '') + ', but the seat map did not return them just now. ' + (again ? 'Reload the page in a minute. If it keeps happening, contact us and we will help you find tickets.' : 'Trying again in a moment.'), 'no_event_but_listed');
+        return;
+      }
       showEmpty('Tickets are not available to show right now', 'Please try again in a little while, or browse other dates for the same performer, city or venue below.');
     };
     c.noTicketsHandler = function () { showEmpty(); };

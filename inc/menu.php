@@ -30,13 +30,13 @@ $soMenuDef = [
      'groups' => [
         ['title' => 'Festivals', 'links' => [['Upcoming music festivals', '/upcoming-music-festivals'], ['Festival tours', '@category:1877'], ['Christmas shows near me', '/christmas-shows-near-me']]],
      ], 'all' => 'All festivals'],
-    ['key' => 'artists', 'label' => 'Artists & Teams', 'href' => '/all-artists-and-teams', 'tag' => 'Find your favorite, A to Z',
+    ['key' => 'artists', 'label' => 'Artists & Teams', 'href' => '/all-artists-and-teams', 'tag' => 'Find your favorite performers and teams',
      'icon' => '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>',
      'groups' => [
         ['title' => 'Music and shows', 'links' => [['Artists on tour', '/concert-artists'], ['Comedians on tour', '/comedians-on-tour'], ['Broadway shows list', '/broadway-shows'], ['Music festivals list', '/music-festivals-list']]],
         ['title' => 'Sports teams', 'links' => [['All sports teams', '/sports-teams'], ['NFL teams', '/nfl-teams'], ['NBA teams', '/nba-teams'], ['MLB teams', '/mlb-teams'], ['NHL teams', '/nhl-teams'], ['MLS teams', '/mls-teams']]],
-        ['title' => 'Browse', 'links' => [['Everything A to Z', '/all-artists-and-teams']]],
-     ], 'all' => 'Browse A to Z'],
+        ['title' => 'Browse', 'links' => [['All artists, teams and shows', '/all-artists-and-teams']]],
+     ], 'all' => 'Browse all'],
     ['key' => 'cities', 'label' => 'Cities', 'href' => '/city-events', 'tag' => 'Events near you',
      'icon' => '<path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>',
      'groups' => [

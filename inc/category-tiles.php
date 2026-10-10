@@ -78,7 +78,7 @@ function soCategoryTileList() {
         ['MLB', '/mlb-tickets', 'baseball'], ['Pop & rock', '/pop-rock-concert-tickets', 'music'],
         ['MLS', '/mls-tickets', 'soccer'], ['R&B and soul', '/rnb-soul-concert-tickets', 'mic'],
         ['All sports', '/game-day-tickets', 'trophy'], ['Latin music', '/latin-music-tickets', 'music'],
-        ['Broadway', '/buy-broadway-tickets', 'masks'], ['Electronic', '/electronic-music-tickets', 'music'],
+        ['Theater', '/buy-broadway-tickets', 'masks'], ['Electronic', '/electronic-music-tickets', 'music'],
         ['Comedy', '/comedy-show-tickets', 'smile'], ['Metal', '/metal-concert-tickets', 'music'],
         ['Festivals', '/upcoming-music-festivals', 'tent'], ['Jazz & blues', '/jazz-and-blues-tickets', 'music'],
         ['Family shows', '/category/' . soSlug('category', 'Children / Family', 1869), 'family'], ['Classical', '/classical-music-tickets', 'music'],
