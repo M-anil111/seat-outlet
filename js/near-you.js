@@ -133,10 +133,11 @@
         }
         state.scope = data.scope || '';
         state.nw = state.scope === 'nationwide';
+        syncUi();
         setTitle(data);
         grid.innerHTML = '';
       }
-      events.forEach(function (e, i) { e.top = (page === 1 && i < 3) && ((state.sort === 'popular' && state.scope === 'near') || state.scope === 'nationwide'); });
+      events.forEach(function (e, i) { var lead = e.top === true || (e.top === undefined && i < 3); e.top = (page === 1 && lead) && ((state.sort === 'popular' && state.scope === 'near') || state.scope === 'nationwide'); });
       var start = grid.querySelectorAll('.performer-event-item').length;
       var html = events.map(function (e, i) { return card(e, start + i); }).join('');
       if (page === 1) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
@@ -228,6 +229,8 @@
         o.classList.toggle('is-active', on);
         if (on) label.textContent = o.textContent;
       });
+      // With no location the list is the country's best sellers, so the sort chip must not claim "Nearest first".
+      if (key === 'sort' && cur === 'distance' && state.nw) label.textContent = 'Best sellers';
       dd.querySelector('summary').classList.toggle('so-chip--on', key !== 'sort' && cur !== '' && cur !== '0');
     });
     quicks.forEach(function (q) {

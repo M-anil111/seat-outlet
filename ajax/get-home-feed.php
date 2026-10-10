@@ -92,7 +92,20 @@ if ($kind === 'near') {
         $events = soHomeFeedFormat($data['results'] ?? [], 12);
         if ($nearSort === 'distance' && !$nationwide) $events = soHomeFeedImageFirst($events, function ($e) { return $e['dist']; });
         elseif ($nearSort === 'soonest') $events = soHomeFeedImageFirst($events, function ($e) { return $e['iso'] !== '' ? $e['iso'] : null; });
-        elseif ($nearSort === 'popular' || $nationwide) $events = soHomeFeedImageFirst($events);   // a "best sellers" top 12: the same twelve, pictures first
+        elseif ($nearSort === 'popular' || $nationwide) {
+            // A "best sellers" top 12: the same twelve, pictures first to pick the three that carry the "Popular" badge, then listed by date
+            // so the rows read in date order (a popular list in sales order looked like a broken date sequence).
+            $events = soHomeFeedImageFirst($events);
+            foreach ($events as $i => $e) { $events[$i]['top'] = $i < 3; $events[$i]['_i'] = $i; }
+            usort($events, function ($a, $b) {
+                $x = (string) ($a['iso'] ?? ''); $y = (string) ($b['iso'] ?? '');
+                if ($x === $y) return $a['_i'] <=> $b['_i'];
+                if ($x === '') return 1;
+                if ($y === '') return -1;
+                return strcmp($x, $y);
+            });
+            foreach ($events as $i => $e) { unset($events[$i]['_i']); }
+        }
         $dists = array_filter(array_column($events, 'dist'), function ($d) { return $d !== null; });
         $closest = $dists ? min($dists) : null;
         $scope = !$events ? ($radius ? 'empty' : 'near') : ($radius === 0 && $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near');
