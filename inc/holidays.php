@@ -143,14 +143,23 @@ function soHolidayAboutBlock(callable $h, string $label, string $what, array $ev
         if ($d !== '') $dates_[] = $d;
     }
     sort($dates_);
+    // $events holds only the first page of results, so venue, price and date claims are limited to those listed events
+    $partial = $total > count($events);
     $about = [];
     if ($total > 0) {
         $vCount = count($venues);
-        $where = $vCount === 0 ? '' : ($vCount <= 3 ? ' at ' . implode(', ', $venues) : ' at ' . $vCount . ' venues, including ' . implode(', ', array_slice($venues, 0, 3)));
+        if ($vCount === 0) $where = '';
+        elseif (!$partial && $vCount <= 3) $where = ' at ' . implode(', ', $venues);
+        elseif (!$partial) $where = ' at ' . $vCount . ' venues, including ' . implode(', ', array_slice($venues, 0, 3));
+        else $where = ', with venues such as ' . implode(', ', array_slice($venues, 0, 3));
         $about[] = 'Seat Outlet lists ' . number_format($total) . ' ' . ($total === 1 ? 'event' : 'events') . ' in ' . $label . ' for ' . $what . ($win ? ' on ' . $dates : '') . $where . '.';
     }
-    if ($prices) $about[] = 'Tickets for the events on this page start from $' . number_format(min($prices), 0) . ', so compare seats and prices before you choose.';
-    if (count($dates_) >= 2) $about[] = 'The earliest event on this page is on ' . date('F j, Y', strtotime($dates_[0])) . ' and the latest is on ' . date('F j, Y', strtotime(end($dates_))) . '.';
+    if ($prices) {
+        $low = min($prices);
+        $lowText = '$' . number_format($low, fmod($low, 1.0) == 0.0 ? 0 : 2);
+        $about[] = ($partial ? 'The lowest price among the events listed here starts from ' : 'Tickets for the events on this page start from ') . $lowText . ', so compare seats and prices before you choose.';
+    }
+    if (count($dates_) >= 2) $about[] = ($partial ? 'Of the events listed here, the earliest is on ' : 'The earliest event on this page is on ') . date('F j, Y', strtotime($dates_[0])) . ' and the latest is on ' . date('F j, Y', strtotime(end($dates_))) . '.';
     if (!$about) return;
     echo '<div class="container py-4"><h2 class="h4">About ' . $h($what) . ' in ' . $h($label) . '</h2>';
     foreach ($about as $para) echo '<p>' . $h($para) . '</p>';

@@ -23,6 +23,13 @@ tpCheck('states the event count, the date window and the venues', strpos($out, '
 tpCheck('gives the lowest price from the listed events', strpos($out, 'start from $35, so compare') !== false);
 tpCheck('gives the earliest and latest listed dates', strpos($out, 'earliest event on this page is on December 5, 2026 and the latest is on December 20, 2026') !== false);
 
+// Partial results: 3 events shown of 25 total, so venue, price and date claims must be limited to the listed events
+ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', $events, 25, ['from' => '2026-12-01', 'to' => '2026-12-25'], 'Dec 1 to Dec 25, 2026'); $partialOut = ob_get_clean();
+tpCheck('partial results: the total count stays, venue and price claims are scoped to the listed events', strpos($partialOut, 'Seat Outlet lists 25 events') !== false && strpos($partialOut, 'among the events listed here starts from $35') !== false && strpos($partialOut, ' at 2 venues') === false && strpos($partialOut, 'Of the events listed here, the earliest is on December 5') !== false);
+tpCheck('partial results: no unscoped "start from" claim', strpos($partialOut, 'Tickets for the events on this page start from') === false);
+ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', [['venue' => ['text' => ['name' => 'Red Rocks']], 'pricingInfo' => ['lowPrice' => ['value' => 49.5]]]], 1, null, ''); $cents = ob_get_clean();
+tpCheck('keeps cents in the starting price ($49.50, not $50)', strpos($cents, 'start from $49.50') !== false);
+
 ob_start(); soHolidayAboutBlock($h, 'Tiny, XX', 'Christmas shows', [], 0, null, ''); $none = ob_get_clean();
 tpCheck('writes nothing when there are no events (no invented copy)', trim($none) === '');
 
