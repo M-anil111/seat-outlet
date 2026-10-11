@@ -34,7 +34,9 @@ foCheck('no helper field leaks into the answer', !array_key_exists('_i', $out[0]
 $page1 = array_slice($out, 0, 12); $page2 = array_slice($out, 12, 12);
 foCheck('page 2 continues after page 1 in date order', max(array_column($page1, 'iso')) <= min(array_filter(array_column($page2, 'iso'), 'strlen')));
 
-foCheck('the constant is defined before the code that uses it', strpos($feed, 'const SO_HOME_FEED_WIDE') < strpos($feed, 'SO_HOME_FEED_WIDE;') || strpos($feed, 'const SO_HOME_FEED_WIDE') < strpos($feed, '$buildParams'));
+$declared = preg_match('/\bconst SO_HOME_FEED_WIDE\b/', $feed, $dm, PREG_OFFSET_CAPTURE) === 1 ? $dm[0][1] + 6 : -1;   // offset of the name inside the declaration
+$firstUse = strpos($feed, 'SO_HOME_FEED_WIDE');
+foCheck('the constant is declared, and its declaration is the first place the name appears (so it exists before any use)', $declared > 0 && $firstUse !== false && $firstUse === $declared);
 foCheck('the best-sellers request is one wide page', preg_match("/\\\$wide\) \{ \\\$params\['perPage'\] = SO_HOME_FEED_WIDE; \\\$params\['page'\] = 1;/", $feed) === 1);
 foCheck('the far-location fallback uses the same date-ordered set', preg_match("/buildParams\(false, true\)\);\s*\\\$nwAll = soHomeFeedByDate/", $feed) === 1);
 foCheck('hasMore comes from the set when the answer is one', strpos($feed, 'count($wideAll)') !== false);
