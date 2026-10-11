@@ -193,6 +193,11 @@
                         Messages and feedback: the content of messages you send us through the contact form or by email.​
                     </p>
                         </li>
+                        <li>
+                        <p>
+                        Account data: if you sign in or create an account, your email address, the events you choose to save, and the record that keeps you signed in. Accounts use a one-time link sent by email, so no password is created or stored, and the link and the sign-in record are kept only as one-way hashes. You can delete your account at any time on your account page, which removes the account, the saved events and every sign-in record. Orders are placed with our ticket partner at checkout and are not stored in your account.
+                    </p>
+                        </li>
                     </ul>
                     
                     

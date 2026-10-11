@@ -133,10 +133,11 @@
         }
         state.scope = data.scope || '';
         state.nw = state.scope === 'nationwide';
+        syncUi();
         setTitle(data);
         grid.innerHTML = '';
       }
-      events.forEach(function (e, i) { e.top = (page === 1 && i < 3) && ((state.sort === 'popular' && state.scope === 'near') || state.scope === 'nationwide'); });
+      events.forEach(function (e, i) { var lead = e.top === true || (e.top === undefined && i < 3); e.top = (page === 1 && lead) && ((state.sort === 'popular' && state.scope === 'near') || state.scope === 'nationwide'); });
       var start = grid.querySelectorAll('.performer-event-item').length;
       var html = events.map(function (e, i) { return card(e, start + i); }).join('');
       if (page === 1) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
@@ -222,6 +223,8 @@
     dds.forEach(function (dd) {
       var key = dd.getAttribute('data-so-dd');
       var cur = String(state[key]);
+      // With no location the list is the country's best sellers: show (and highlight) "Best sellers", not "Nearest first".
+      if (key === 'sort' && cur === 'distance' && state.nw) cur = 'popular';
       var label = dd.querySelector('[data-so-dd-label]');
       dd.querySelectorAll('[data-val]').forEach(function (o) {
         var on = o.getAttribute('data-val') === cur;
