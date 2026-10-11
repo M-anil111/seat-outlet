@@ -41,7 +41,7 @@ function soListingAboutBlock(callable $h, array $o): void {
     if (($o['intro'] ?? '') !== '') $paras[] = (string) $o['intro'];
     if (!empty($o['cities']) && count($cities) >= 2) {
         $list = array_slice($cities, 0, 3);
-        $paras[] = $scope . ' take place in ' . implode(', ', array_slice($list, 0, -1)) . (count($list) > 1 ? ' and ' . end($list) : $list[0]) . ($partial || count($cities) <= 3 ? '.' : ', among other towns.');
+        $paras[] = $scope . ' take place in ' . implode(', ', array_slice($list, 0, -1)) . (count($list) > 1 ? ' and ' . end($list) : $list[0]) . (count($cities) > 3 ? ', among other towns.' : '.');
     }
     if ($venues) {
         $vCount = count($venues);

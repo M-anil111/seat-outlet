@@ -309,7 +309,7 @@ function soRenderEntityListing(array $c): void {
                             'heading' => 'About ' . $label,
                             'intro'   => $total === 0 ? '' : ($kind === 'county'
                                 ? "This page covers the cities in $label, so events can take place in towns across the county."
-                                : "This page lists the events in $label that are on sale now, with the venues and dates shown below."),
+                                : "This page lists the events in $label that are on sale now, with the venues and dates shown above."),
                             'events'  => $events, 'total' => $total, 'cities' => $kind === 'county',
                         ]);
                     }

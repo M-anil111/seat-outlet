@@ -51,7 +51,24 @@ laCheck('zero events: nothing is printed when the caller passes no intro', trim(
 $entityCall = file_get_contents(__DIR__ . '/../inc/entity-listing.php');
 laCheck('entity listing drops the intro on a zero-result page', strpos($entityCall, "'intro'   => \$total === 0 ? ''") !== false);
 $fnCall = file_get_contents(__DIR__ . '/../functions.php');
-laCheck('category-location page drops the intro on a zero-result page', strpos($fnCall, "\$total_count > 0 ? \"\$categoryLabel listings") !== false);
+laCheck('category-location page drops the intro when no rows are shown', strpos($fnCall, "!empty(\$events) ? \"\$categoryLabel listings") !== false);
+
+// 4c. County fixture: two towns with markup in the name, escaped output, and the "among other towns" qualifier past three towns
+$towns = [
+    ['venue' => ['text' => ['name' => 'Hall <i>One</i>']], 'city' => ['text' => ['name' => 'Town <b>A</b>']], 'date' => ['date' => '2026-12-01']],
+    ['venue' => ['text' => ['name' => 'Hall Two']], 'city' => ['text' => ['name' => 'Town C']], 'date' => ['date' => '2026-12-02']],
+];
+ob_start(); soListingAboutBlock($h, ['heading' => 'About Test County', 'intro' => '', 'events' => $towns, 'total' => 2, 'cities' => true]); $townOut = ob_get_clean();
+laCheck('county: town names are escaped', strpos($townOut, 'Town &lt;b&gt;A&lt;/b&gt;') !== false && strpos($townOut, '<b>A</b>') === false);
+laCheck('county: two towns are named with no qualifier', strpos($townOut, 'take place in Town &lt;b&gt;A&lt;/b&gt; and Town C.') !== false);
+$fourTowns = [];
+foreach (['Alpha', 'Beta', 'Gamma', 'Delta'] as $i => $t) { $fourTowns[] = ['city' => ['text' => ['name' => $t]], 'date' => ['date' => '2026-12-0' . ($i + 1)]]; }
+ob_start(); soListingAboutBlock($h, ['heading' => 'About X', 'intro' => '', 'events' => $fourTowns, 'total' => 4, 'cities' => true]); $four = ob_get_clean();
+laCheck('county: more than three towns names three and says there are others', strpos($four, 'take place in Alpha, Beta and Gamma, among other towns.') !== false);
+ob_start(); soListingAboutBlock($h, ['heading' => 'About X', 'intro' => '', 'events' => $fourTowns, 'total' => 40, 'cities' => true]); $fourPartial = ob_get_clean();
+laCheck('county: more than three towns on a partial page keeps the qualifier', strpos($fourPartial, 'take place in Alpha, Beta and Gamma, among other towns.') !== false);
+laCheck('county: entity listing intro says the rows are shown above', strpos(file_get_contents(__DIR__ . '/../inc/entity-listing.php'), 'shown above.') !== false && strpos(file_get_contents(__DIR__ . '/../inc/entity-listing.php'), 'shown below.') === false);
+laCheck('category page intro refers to the rows above and is gated on rows', strpos(file_get_contents(__DIR__ . '/../functions.php'), "!empty(\$events) ? \"\$categoryLabel listings in \$locationLabel are listed above") !== false);
 
 // 5. Nothing to say: no invented copy
 ob_start(); soListingAboutBlock($h, ['heading' => 'About Empty', 'intro' => '', 'events' => [], 'total' => 0]); $none = ob_get_clean();

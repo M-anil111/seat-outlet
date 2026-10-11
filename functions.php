@@ -5638,7 +5638,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
             <div class="tab-section content-section-detail">
                 <?php soListingAboutBlock(fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'), [
                     'heading' => "About $categoryLabel in $locationLabel",
-                    'intro'   => $total_count > 0 ? "$categoryLabel listings in $locationLabel are below, with the venues, dates and prices on sale now." : '',
+                    'intro'   => !empty($events) ? "$categoryLabel listings in $locationLabel are listed above, with the venues, dates and prices on sale now." : '',
                     'events'  => $events, 'total' => $total_count,
                 ]); ?>
             </div>
