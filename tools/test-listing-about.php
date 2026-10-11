@@ -70,7 +70,10 @@ laCheck('county: more than three towns on a partial page keeps the qualifier', s
 laCheck('county: entity listing intro says the rows are shown above', strpos(file_get_contents(__DIR__ . '/../inc/entity-listing.php'), 'shown above.') !== false && strpos(file_get_contents(__DIR__ . '/../inc/entity-listing.php'), 'shown below.') === false);
 laCheck('category page intro refers to the rows above and is gated on rows', strpos(file_get_contents(__DIR__ . '/../functions.php'), "!empty(\$events) ? \"\$categoryLabel listings in \$locationLabel are listed above") !== false);
 laCheck('category page About block is limited to city pages', strpos(file_get_contents(__DIR__ . '/../functions.php'), "if (\$dimension === 'city') {   // city pages only") !== false);
-laCheck('zero-result category page prints no empty About wrapper', strpos(file_get_contents(__DIR__ . '/../functions.php'), 'content-section-detail">\n                <?php soListingAboutBlock') === false);
+$catSrc = file_get_contents(__DIR__ . '/../functions.php');
+$cityAt = strpos($catSrc, "if (\$dimension === 'city') {   // city pages only");
+$beforeCity = $cityAt === false ? '' : substr($catSrc, 0, $cityAt);
+laCheck('zero-result category page prints no empty About wrapper (no <div> left open before the About call)', $cityAt !== false && strrpos($beforeCity, '<div') < strrpos($beforeCity, '</div>'));
 
 // 5. Nothing to say: no invented copy
 ob_start(); soListingAboutBlock($h, ['heading' => 'About Empty', 'intro' => '', 'events' => [], 'total' => 0]); $none = ob_get_clean();
