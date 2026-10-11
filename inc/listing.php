@@ -419,6 +419,7 @@ function soRenderListingBody(array $o): void {
  *     afterRow / afterSection (optional callables that echo extra blocks).
  */
 function soRenderListingPage(array $o): void {
+    $GLOBALS['soNoBannerAd'] = true;   // no ad directly above the ticket list (see soAdInjectBanner)
     $o += ['tag' => 'h1', 'defaultSort' => 'popular', 'explore' => [], 'body' => [], 'lead' => null, 'afterRow' => null, 'afterSection' => null, 'when' => '', 'sort' => 'popular', 'max' => 0];
     $total = (int) $o['total'];
     // The feed failed (throttled, down): never present that as "0 results". Serve the last good copy of this page; without one,
