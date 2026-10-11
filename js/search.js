@@ -60,7 +60,7 @@ window.loadTopSuggestions = function(keyword) {
     initSuggestionSlider('skeleton');
 
     fetch(`/ajax/get-suggestions.php?q=${encodeURIComponent(keyword)}`)
-        .then(res => res.json())
+        .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
         .then(data => {
 
             if (loadToken !== suggestionLoadToken) return;
@@ -70,6 +70,7 @@ window.loadTopSuggestions = function(keyword) {
                 return;
             }
 
+            document.querySelector('.section-suggestions').classList.remove('d-none');
             const $slider = $('.suggestion-slider');
             if ($slider.hasClass('slick-initialized')) {
                 $slider.slick('unslick');
@@ -113,12 +114,13 @@ window.loadTopSuggestions = function(keyword) {
             container.innerHTML = html;
 
             setTimeout(() => {
-                initSuggestionSlider();
+                if (loadToken === suggestionLoadToken) initSuggestionSlider();
             }, 50);
 
             loadImagesOneByOne(container, loadToken);
         })
         .catch(err => {
+            if (loadToken !== suggestionLoadToken) return;
             console.error('Suggestion error:', err);
             container.innerHTML = '<p>Error loading suggestions</p>';
         });

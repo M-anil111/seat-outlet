@@ -51,9 +51,9 @@ if (!empty($events)) {
         $eventName = $event['text']['name'] ?? '';
         $venueName = $event['venue']['text']['name'] ?? '';
         $evtPerformer = $event['performers'][0]['name'] ?? '';
-        $eventDateRaw = $event['date']['date'];
+        $eventDateRaw = $event['date']['date'] ?? '';
 		$timestamp    = strtotime($eventDateRaw);
-        $time = $event['date']['text']['time'];
+        $time = $event['date']['text']['time'] ?? '';
         $city  = $event['city']['text']['name'] ?? '';
         $state = $event['stateProvince']['text']['abbr'] ?? '';
 
@@ -76,22 +76,18 @@ if (!empty($events)) {
     }
 }
 
-if (empty($output) && $type !== '') {
-    $fallbackKey = "home_events_{$tab}";
-    $fallbackCache = cache_get($fallbackKey);
-
-    if ($fallbackCache !== false) {
-        header('Cache-Control: public, max-age=86400');
-        header('X-Cache-Fallback: HIT');
-        echo json_encode($fallbackCache);
-        exit;
-    }
+// A nationwide fallback must never be presented as results for a chosen location.
+if (!$output && soApiDegraded()) {
+    http_response_code(503);
+    header('Cache-Control: no-store');
+    header('Retry-After: 30');
+    echo json_encode(['error' => 'Ticket listings temporarily unavailable']);
+    exit;
 }
 
 // Same day: events whose performer has a stored picture come first (the date order itself is kept).
 $output = soImageFirst($output, function ($o) { return [imageEntityTypeForPerformer($o['defaultCategory'] ?? []), $o['performer'] !== '' ? $o['performer'] : $o['name'], $o['defaultCategory'] ?? []]; },
     function ($o) { return $o['edate'] !== '' ? date('Y-m-d', (int) $o['edate']) : null; });
-header('Cache-Control: public, max-age=86400');
-header('X-Cache: HIT');
+header('Cache-Control: public, max-age=300');
 echo json_encode($output);
 exit;

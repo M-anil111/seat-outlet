@@ -19,9 +19,7 @@ $snap = soSnapGeo($lat, $lng);
 $latVal = $snap ? $snap[0] : null;
 $lngVal = $snap ? $snap[1] : null;
 
-$datePattern = '/^\d{4}-\d{2}-\d{2}$/';
-if (!preg_match($datePattern, $startDate)) $startDate = '';
-if (!preg_match($datePattern, $endDate))   $endDate   = '';
+[$startDate, $endDate] = soValidDateRange($startDate, $endDate) ?? ['', ''];
 
 $perPage = 20;
 $page = 1;
@@ -71,7 +69,14 @@ try {
     $response = getTnEvents($params);
     $total_count = (int) ($response['totalCount'] ?? 0);
     $total_pages = $perPage > 0 ? (int) ceil($total_count / $perPage) : 0;
-    $results = $response['results'] ?? [];   
+    $results = $response['results'] ?? [];
+    if (!$results && soApiDegraded()) {
+        http_response_code(503);
+        header('Cache-Control: no-store');
+        header('Retry-After: 30');
+        echo json_encode(['error' => 'Ticket listings temporarily unavailable', 'degraded' => true]);
+        exit;
+    }
     $hasMore = ($page < $total_pages);
     $dists = [];
     foreach ($results as $r) {
@@ -93,6 +98,7 @@ try {
     ]);
 } catch (Throwable $e) {
     http_response_code(500);
+    header('Cache-Control: no-store');
     echo json_encode([
         'events'      => [],
         'params'      => [],

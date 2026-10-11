@@ -96,14 +96,14 @@ function soCountyResolvePending(int $limit = 150): array {
 function soCountyOfCity(int $cityId): ?array {
     static $memo = [];
     if (array_key_exists($cityId, $memo)) return $memo[$cityId];
-    $r = MYSQLI->query("SELECT county_fips, county_name, state_abbr FROM city_counties WHERE city_id = " . (int) $cityId . " AND status = 'ok' LIMIT 1");
+    $r = soDbRead("SELECT county_fips, county_name, state_abbr FROM city_counties WHERE city_id = " . (int) $cityId . " AND status = 'ok' LIMIT 1");
     $row = $r ? $r->fetch_assoc() : null;
     return $memo[$cityId] = $row ? [(int) $row['county_fips'], $row['county_name'] . ', ' . $row['state_abbr']] : null;
 }
 
 /** ["Travis County, TX", [cityIds...]] for a county code, or null when no city is in it. Cities come busiest first (events_n from the last sitemap build). */
 function soCountyInfo(int $fips): ?array {
-    $r = MYSQLI->query("SELECT city_id, county_name, state_abbr FROM city_counties WHERE county_fips = " . (int) $fips . " AND status = 'ok' ORDER BY events_n DESC, city_id ASC");
+    $r = soDbRead("SELECT city_id, county_name, state_abbr FROM city_counties WHERE county_fips = " . (int) $fips . " AND status = 'ok' ORDER BY events_n DESC, city_id ASC");
     $ids = []; $label = '';
     while ($r && ($row = $r->fetch_assoc())) { $ids[] = (int) $row['city_id']; $label = $row['county_name'] . ', ' . $row['state_abbr']; }
     return $ids ? [$label, $ids] : null;
@@ -118,24 +118,17 @@ function soCountyFilter(array $cityIds): string {
 /** Cities in a state that have a page of their own (busiest first), as [cityId, "Austin, TX"]. Gives every city page an inbound link from its state page. */
 function soCitiesInState(string $abbr, int $limit = 60): array {
     if (!in_array($abbr, SO_COUNTY_STATES, true) && !in_array($abbr, SO_PROVINCES, true)) return [];
-    $st = MYSQLI->prepare("SELECT city_id, city_name FROM city_counties WHERE state_abbr = ? AND events_n >= " . SO_SITEMAP_CITYPAGE_MIN . " ORDER BY events_n DESC, city_name ASC LIMIT " . max(1, $limit));
-    if (!$st) return [];
-    $st->bind_param('s', $abbr); $st->execute();
+    $r = soDbRead("SELECT city_id, city_name FROM city_counties WHERE state_abbr = ? AND events_n >= " . SO_SITEMAP_CITYPAGE_MIN . " ORDER BY events_n DESC, city_name ASC LIMIT " . max(1, $limit), [$abbr], 's');
     $out = [];
-    $r = $st->get_result();
     while ($r && ($row = $r->fetch_assoc())) $out[] = [(int) $row['city_id'], $row['city_name'] . ', ' . $abbr];
-    $st->close();
     return $out;
 }
 
 /** Counties in a state, as [fips, label] sorted by name (state abbreviation like "TX"). */
 function soCountiesInState(string $abbr, int $limit = 60): array {
     if (!in_array($abbr, SO_COUNTY_STATES, true)) return [];
-    $st = MYSQLI->prepare("SELECT county_fips, county_name, state_abbr, SUM(events_n) AS n FROM city_counties WHERE state_abbr = ? AND status = 'ok' GROUP BY county_fips, county_name, state_abbr HAVING SUM(events_n) >= " . SO_SITEMAP_CITYPAGE_MIN . " ORDER BY county_name ASC LIMIT " . max(1, $limit));
-    $st->bind_param('s', $abbr); $st->execute();
+    $r = soDbRead("SELECT county_fips, county_name, state_abbr, SUM(events_n) AS n FROM city_counties WHERE state_abbr = ? AND status = 'ok' GROUP BY county_fips, county_name, state_abbr HAVING SUM(events_n) >= " . SO_SITEMAP_CITYPAGE_MIN . " ORDER BY county_name ASC LIMIT " . max(1, $limit), [$abbr], 's');
     $out = [];
-    $r = $st->get_result();
     while ($r && ($row = $r->fetch_assoc())) $out[] = [(int) $row['county_fips'], $row['county_name'] . ', ' . $row['state_abbr']];
-    $st->close();
     return $out;
 }

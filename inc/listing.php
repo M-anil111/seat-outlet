@@ -11,8 +11,8 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 | rows are identical (same data attributes, same button text).
 */
 
-/** "Under $X" choices for the listing price filter. TicketNetwork filters on pricingInfo/lowPrice/value (verified in the sandbox). */
-const LISTING_PRICE = [25 => 'Under $25', 50 => 'Under $50', 100 => 'Under $100', 200 => 'Under $200'];
+/** Inclusive "$X or less" choices for the listing price filter. TicketNetwork filters on pricingInfo/lowPrice/value (verified in the sandbox). */
+const LISTING_PRICE = [25 => '$25 or less', 50 => '$50 or less', 100 => '$100 or less', 200 => '$200 or less'];
 
 /** The visitor's price cap from ?max=, limited to the offered choices (anything else means no cap). */
 function soListingMaxPrice(): int {
@@ -515,9 +515,9 @@ function soRenderFilterBar(array $groups, callable $hrefFor, string $ariaLabel =
     echo '<div class="so-filterbar so-filterbar--compact" role="group" aria-label="' . soListingH($ariaLabel) . '">';
     foreach ($groups as $g) {
         $cur = (string) $g['current'];
-        $label = $g['options'][$cur] ?? reset($g['options']);
-        $isOn = $cur !== '' && $cur !== (string) array_key_first($g['options']);
-        echo '<details class="so-dd"><summary class="so-chip' . ($isOn ? ' so-chip--on' : '') . '" aria-label="' . soListingH($g['label']) . '">' . $g['icon'] . '<span>' . soListingH($label) . '</span>' . $caret . '</summary><div class="so-dd__menu">';
+        $label = $g['display'] ?? ($g['options'][$cur] ?? reset($g['options']));
+        $isOn = !empty($g['active']) || ($cur !== '' && $cur !== (string) array_key_first($g['options']));
+        echo '<details class="so-dd"><summary class="so-chip' . ($isOn ? ' so-chip--on' : '') . '" aria-label="' . soListingH($g['label'] . ': ' . $label) . '">' . $g['icon'] . '<span>' . soListingH($label) . '</span>' . $caret . '</summary><div class="so-dd__menu">';
         foreach ($g['options'] as $v => $text) {
             $active = (string) $v === $cur;
             echo '<a class="so-pop__row' . ($active ? ' is-active' : '') . '" href="' . soListingH($hrefFor($g['param'], (string) $v)) . '"' . ($active ? ' aria-current="true"' : '') . '>' . soListingH($text) . '</a>';

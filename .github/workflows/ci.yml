@@ -69,6 +69,19 @@ jobs:
         run: php tools/test-location-fallback.php
       - name: Pages keep rendering when the ticket feed is down (no empty 503 page)
         run: php tools/test-feed-down.php
+      - name: Listing date validation and search filter links
+        run: |
+          php tools/test-listing-controls.php
+          php tools/test-listing-api.php
+      - name: Listing controls in Chromium (mobile and desktop)
+        run: |
+          npm install --prefix /tmp/seatoutlet-browser --no-save playwright@1.58.2
+          /tmp/seatoutlet-browser/node_modules/.bin/playwright install --with-deps chromium
+          NODE_PATH=/tmp/seatoutlet-browser/node_modules node tools/test-listing-browser.cjs
+      - name: Event pages render with admin SEO overrides and partial API data
+        run: php tools/test-event-page.php
+      - name: TicketNetwork authentication, throttling and transport recovery
+        run: php tools/test-tn-reliability.php
       - name: Event offer schema and social profiles
         run: php tools/test-event-offer.php
       - name: Event page never says tickets are unavailable when the feed lists them
@@ -153,6 +166,9 @@ jobs:
 
       - name: Apply again (must be a no-op - proves idempotency)
         run: php db/migrate.php
+
+      - name: Lost connections and partial image migrations recover
+        run: php tools/test-db-recovery.php
 
       - name: URL slug registry (clean slugs, collisions, old form still resolves)
         run: php tools/test-slugs.php

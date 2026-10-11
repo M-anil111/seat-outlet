@@ -130,16 +130,13 @@ function downloadImage($url) {
 // don't persist that between requests, so this was doing a full OAuth2
 // round-trip to key-manager.tn-apis.com on every single page view, even
 // though the token it gets back is valid for a full hour (`expires_in`).
-// APCu caches it across requests for that same lifetime (minus a safety
-// margin), so most page views skip this round-trip entirely. Falls back to
-// the exact previous per-request-only behavior when APCu isn't installed.
-const TN_ACCESS_TOKEN_CACHE_KEY = 'tn_access_token';
+// The shared file is authoritative for every request and long-running process; a separate APCu cache can keep a rejected token.
 const TN_ACCESS_TOKEN_EXPIRY_BUFFER = 60; // seconds
 
 function tnTokenCacheFile() {
     $dir = getenv('TN_TOKEN_DIR');
     $dir = ($dir !== false && $dir !== '') ? rtrim($dir, '/') : rtrim(sys_get_temp_dir(), '/');
-    return $dir . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY . '|' . BASE_URL) . '.json';
+    return $dir . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY) . '.json';
 }
 
 /** Cached token if it is still inside its lifetime, else ''. */
@@ -169,22 +166,7 @@ function tnTokenFromFile() {
  *     if another process already refreshed, otherwise fetch a fresh one.
  */
 function getTnAccessToken($rejected = '') {
-    static $accessToken = null;
-
-    if ($rejected === '' && $accessToken !== null) {
-        return $accessToken;
-    }
-    if ($rejected !== '' && $accessToken === $rejected) {
-        $accessToken = null;
-    }
-
-    if ($rejected === '' && function_exists('apcu_fetch')) {
-        $cached = apcu_fetch(TN_ACCESS_TOKEN_CACHE_KEY, $found);
-        if ($found) {
-            $accessToken = $cached;
-            return $accessToken;
-        }
-    }
+    $accessToken = null;
 
     $fromFile = tnTokenFromFile();
     if ($fromFile !== '' && $fromFile !== $rejected) {
@@ -201,6 +183,14 @@ function getTnAccessToken($rejected = '') {
         }
     }
     try {
+        // Never issue a second token without the shared lock: it invalidates the first one.
+        if (!$locked) {
+            $fromFile = tnTokenFromFile();
+            if ($fromFile !== '' && $fromFile !== $rejected) return $accessToken = $fromFile;
+            soTnAlert('TicketNetwork token store is unavailable or busy; check TN_TOKEN_DIR permissions.');
+            return '';
+        }
+        if (CONSUMER_KEY === '' || CONSUMER_SECRET === '') return '';
         // Someone else may have refreshed while we waited for the lock.
         $fromFile = tnTokenFromFile();
         if ($fromFile !== '' && $fromFile !== $rejected) {
@@ -223,27 +213,27 @@ function getTnAccessToken($rejected = '') {
 
         if ($response === false) {
             $error = curl_error($ch);
-            \Sentry\captureMessage('TicketNetwork token request failed: ' . $error);
+            soTnAlert('TicketNetwork token request failed: ' . $error);
             return '';
         }
 
         $data = json_decode($response, true);
-        if (empty($data['access_token'])) {
-            \Sentry\captureMessage('TicketNetwork token error: ' . substr((string) $response, 0, 500));
+        if ((int) curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200 || !is_array($data) || !is_string($data['access_token'] ?? null) || $data['access_token'] === '') {
+            soTnAlert('TicketNetwork token request rejected (HTTP ' . (int) curl_getinfo($ch, CURLINFO_HTTP_CODE) . ').');
             return '';
         }
 
         $accessToken = $data['access_token'];
-        $ttl = max(60, (int) ($data['expires_in'] ?? 3600) - TN_ACCESS_TOKEN_EXPIRY_BUFFER);
+        $ttl = max(1, (int) ($data['expires_in'] ?? 3600) - TN_ACCESS_TOKEN_EXPIRY_BUFFER);
 
-        if (function_exists('apcu_store')) {
-            apcu_store(TN_ACCESS_TOKEN_CACHE_KEY, $accessToken, $ttl);
-        }
         $file = tnTokenCacheFile();
         $tmp = $file . '.' . uniqid('tmp_', true);
-        if (@file_put_contents($tmp, json_encode(['token' => $accessToken, 'expires_at' => time() + $ttl]), LOCK_EX) !== false) {
-            @chmod($tmp, 0600);
-            @rename($tmp, $file);
+        if (@file_put_contents($tmp, json_encode(['token' => $accessToken, 'expires_at' => time() + $ttl]), LOCK_EX) === false
+            || !@chmod($tmp, 0600) || !@rename($tmp, $file)) {
+            @unlink($tmp);
+            $accessToken = null;
+            soTnAlert('TicketNetwork token could not be saved; check TN_TOKEN_DIR permissions.');
+            return '';
         }
         if ($rejected !== '') {
             \Sentry\captureMessage('TicketNetwork token was rejected (401) and replaced; if this repeats, two processes are using separate token stores - set TN_TOKEN_DIR to a shared directory.', \Sentry\Severity::warning());
@@ -307,7 +297,7 @@ function tnProfile($endpoint, $hit, $ms) {
 | Cache entry, breaker and refresh helpers used by tnRequest()/tnRequestMulti().
 */
 function tnCacheKey($endpoint, array $params, $method = 'GET') {
-    return 'tn_' . md5(WEBSITE_CONFIG_ID . '|' . $method . '|' . trim($endpoint, '/') . '?' . http_build_query($params));
+    return 'tn_' . md5(BASE_URL . '|' . CONSUMER_KEY . '|' . WEBSITE_CONFIG_ID . '|' . $method . '|' . trim($endpoint, '/') . '?' . http_build_query($params));
 }
 
 /** @return array{data:array,age:int}|null */
@@ -410,6 +400,15 @@ function tnParseResult($ch, $response) {
         return ['ok' => false, 'data' => [], 'cacheable' => false, 'error' => curl_error($ch) ?: 'empty response'];
     }
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    // Authentication and throttling are meaningful even when a gateway returns HTML or no body.
+    if ($code === 401) {
+        return ['ok' => false, 'data' => [], 'cacheable' => false, 'error' => 'HTTP 401', 'auth' => true, 'http' => $code];
+    }
+    if ($code === 429) {
+        $retry = defined('CURLINFO_RETRY_AFTER') ? (int) curl_getinfo($ch, CURLINFO_RETRY_AFTER) : 0;
+        return ['ok' => false, 'data' => [], 'cacheable' => false, 'error' => 'throttled (HTTP 429)', 'throttled' => true,
+                'retry_after' => max(TN_BREAKER_THROTTLE_SECONDS, $retry)];
+    }
     $decoded = json_decode((string) $response, true);
     if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
         // A 4xx without a JSON body (for example a gateway answering 400/404 for a junk id) is an answer about THAT request,
@@ -436,8 +435,13 @@ function tnParseResult($ch, $response) {
 function tnFetchLive($endpoint, array $params, $method) {
     $t0 = microtime(true);
     $token = getTnAccessToken();
+    if ($token === '') return ['ok' => false, 'data' => [], 'cacheable' => false, 'error' => 'access token unavailable'];
     $ch = tnBuildHandle($endpoint, $params, $method, $token);
     $result = tnParseResult($ch, curl_exec($ch));
+    if ($method === 'GET' && !$result['ok'] && in_array(curl_errno($ch), [CURLE_RECV_ERROR, CURLE_GOT_NOTHING, CURLE_PARTIAL_FILE], true)) {
+        $ch = tnBuildHandle($endpoint, $params, $method, $token);
+        $result = tnParseResult($ch, curl_exec($ch));
+    }
     if (!empty($result['auth'])) {
         $token = getTnAccessToken($token);
         if ($token !== '') {
@@ -472,7 +476,7 @@ function tnScheduleRefresh($endpoint, array $params, $method, $key) {
             if ($r['ok'] && $r['cacheable']) {
                 cache_set($key, $r['data']);
             } elseif (!$r['ok']) {
-                tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
+                tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? ($r['retry_after'] ?? TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS);
             }
             flock($lock, LOCK_UN);
             fclose($lock);
@@ -580,7 +584,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
     $r = tnFetchLive($endpoint, $params, $method);
 
     if (!$r['ok']) {
-        tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
+        tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? ($r['retry_after'] ?? TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS);
         soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
         if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
@@ -635,6 +639,11 @@ function tnRequestMulti(array $requests) {
     }
 
     $token = getTnAccessToken();
+    if ($token === '') {
+        tnBreakerTrip('access token unavailable');
+        foreach ($todo as $i => $request) { if (empty($out[$i])) tnMarkDegraded(); }
+        return $out;
+    }
     $mh = curl_multi_init();
     $handles = [];
     foreach ($todo as $i => [$endpoint, $params]) {
@@ -660,7 +669,7 @@ function tnRequestMulti(array $requests) {
             if ($ttl > 0 && $r['cacheable']) cache_set($key, $r['data']);
             elseif ($ttl > 0 && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) cache_set($key . '_nf', $r['data']);
         } else {
-            tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
+            tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? ($r['retry_after'] ?? TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS);
             if (empty($out[$i])) tnMarkDegraded();
         }
         curl_multi_remove_handle($mh, $ch);
@@ -1211,41 +1220,16 @@ function set_bio($performerId, $bio, $mysqli = MYSQLI) {
 }
 
 function get_bio($performerId, $mysqli = MYSQLI) {
-
-    $stmt = $mysqli->prepare("
-        SELECT bio FROM bios WHERE performerId = ? LIMIT 1
-    ");
-
-    $stmt->bind_param("d", $performerId);
-    $stmt->execute();
-
-    $result = $stmt->get_result()->fetch_assoc();
-
-    $stmt->close();
-
-    return $result ?? null;
+    $result = soDbRead('SELECT bio FROM bios WHERE performerId = ? LIMIT 1', [$performerId], 'd', $mysqli);
+    $row = $result ? $result->fetch_assoc() : null;
+    return $row ?? null;
 }
 
 function getFaqs($type = null, $mysqli = MYSQLI) {
-
-    $faqs = [];
-
-    if ($type) {
-        $stmt = $mysqli->prepare("SELECT * FROM faq WHERE type LIKE CONCAT('%', ?, '%')");
-        $stmt->bind_param("s", $type);
-        $stmt->execute();
-        $result = $stmt->get_result();
-    } else {
-        $result = $mysqli->query("SELECT * FROM faq");
-    }
-
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $faqs[] = $row;
-        }
-    }
-
-    return $faqs;
+    $result = $type
+        ? soDbRead("SELECT * FROM faq WHERE type LIKE CONCAT('%', ?, '%')", [$type], 's', $mysqli)
+        : soDbRead('SELECT * FROM faq', [], '', $mysqli);
+    return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 }
 
 
@@ -1696,6 +1680,8 @@ const TN_CATEGORY_PATH_FESTIVAL = '.1859.1986.1877.';
 function soEventHorizon() { return date('Y-m-d', strtotime('+3 years')); }
 
 /** [from, to] (Y-m-d) for a "when" quick filter, or null for "any time". */
+require_once __DIR__ . '/inc/date-range.php';
+
 function listingDateRange($when) {
     $today = new DateTimeImmutable('today');
     switch ($when) {
@@ -1712,9 +1698,9 @@ function listingDateRange($when) {
             if ($to < $from) $to = $from->modify('next sunday');
             return [$from->format('Y-m-d'), $to->format('Y-m-d')];
         case 'week':
-            return [$today->format('Y-m-d'), $today->modify('+7 days')->format('Y-m-d')];
+            return [$today->format('Y-m-d'), $today->modify('+6 days')->format('Y-m-d')];
         case 'month':
-            return [$today->format('Y-m-d'), $today->modify('+30 days')->format('Y-m-d')];
+            return [$today->format('Y-m-d'), $today->modify('+29 days')->format('Y-m-d')];
     }
     return null;
 }
@@ -3117,19 +3103,9 @@ function set_image($imageCacheKey, $imageUrl, $mysqli = MYSQLI) {
 }
 
 function get_image($imageCacheKey, $mysqli = MYSQLI) {
-
-    $stmt = $mysqli->prepare("
-        SELECT url FROM images WHERE imgkey = ? LIMIT 1
-    ");
-
-    $stmt->bind_param("s", $imageCacheKey);
-    $stmt->execute();
-
-    $result = $stmt->get_result()->fetch_assoc();
-
-    $stmt->close();
-
-    return $result['url'] ?? null;
+    $result = soDbRead('SELECT url FROM images WHERE imgkey = ? LIMIT 1', [$imageCacheKey], 's', $mysqli);
+    $row = $result ? $result->fetch_assoc() : null;
+    return $row['url'] ?? null;
 }
 
 function set_keyword($keyword, $results, $mysqli = MYSQLI) {
@@ -3158,19 +3134,9 @@ function set_keyword($keyword, $results, $mysqli = MYSQLI) {
 }
 
 function get_keyword($keyword, $mysqli = MYSQLI) {
-
-    $stmt = $mysqli->prepare("
-        SELECT results FROM keywords WHERE keyword = ? LIMIT 1
-    ");
-
-    $stmt->bind_param("s", $keyword);
-    $stmt->execute();
-
-    $result = $stmt->get_result()->fetch_assoc();
-
-    $stmt->close();
-
-    return $result['results'] ?? null;
+    $result = soDbRead('SELECT results FROM keywords WHERE keyword = ? LIMIT 1', [$keyword], 's', $mysqli);
+    $row = $result ? $result->fetch_assoc() : null;
+    return $row['results'] ?? null;
 }
 
 $concertsKeywords = [

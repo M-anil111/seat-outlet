@@ -79,6 +79,7 @@ function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, functi
 
       try {
         const res = await fetch(ajaxUrl);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
   
         if (loadToken !== currentLoadToken) return;
@@ -104,6 +105,7 @@ function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, functi
         $slider.slick('setPosition');
   
       } catch (err) {
+        if (loadToken !== currentLoadToken) return;
         const $slider = $(selector);
         if ($slider.hasClass('slick-initialized')) {
           $slider.slick('unslick');
@@ -300,7 +302,7 @@ function soEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, functi
   
       let scope = 'near';
       fetch(ajaxUrlVenue)
-      .then(res => { scope = res.headers.get('X-So-Venue-Scope') || 'near'; return res.json(); })
+      .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); scope = res.headers.get('X-So-Venue-Scope') || 'near'; return res.json(); })
         .then(data => {
 
           if (loadToken !== venueLoadToken) return;
@@ -656,7 +658,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (kind === 'weekend' && key === 'us') { box.hidden = true; return; }
       const qs = (kind === 'popweekend' ? 'kind=popweekend' : kind === 'weekend' ? 'kind=near&when=weekend&cat=all' : 'kind=' + kind) + (key !== 'us' ? '&lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng) : '');
       fetch('/ajax/get-home-feed.php?' + qs)
-        .then(r => r.json())
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(data => { if (my === token || loaded[kind] === key) render(box, kind, data, label); })
         .catch(() => { if (loaded[kind] === key) { loaded[kind] = ''; box.hidden = true; } });
     });

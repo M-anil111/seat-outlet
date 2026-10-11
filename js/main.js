@@ -165,8 +165,11 @@ function initLocationSearch(inputId, type = '') {
                 locRes.classList.remove('d-none');    
                 locHdg.innerHTML = '';
                 locNoRes.innerHTML = '';    
+                latEvent.value = '';
+                lngEvent.value = '';
+                ['so_lat', 'so_lng', 'so_label'].forEach(name => setCookie(name, ''));
                 updateEventsSection({
-                    flag: 'reset'
+                    startDate: sdateEvent.value, endDate: edateEvent.value, pid: pidEvent ? pidEvent.value : ''
                 });
             };
         
@@ -697,58 +700,52 @@ if (DOM.keywordHeader && DOM.keywordResultsHeader) {
         activeIndex = -1;
     }
   
-    function fetchSuggestions(q) {  
+    function fetchSuggestions(q) {
         if (q.length < minChars) {
+            if (currentController) currentController.abort();
+            lastQuery = '';
+            hideLoader();
             closeSuggestions();
             return;
         }
-  
         if (searchCache[q]) {
+            if (currentController) currentController.abort();
+            lastQuery = '';
             hideLoader();
             renderResults(searchCache[q], q);
             return;
         }
-  
-        const prefixData = getCachedPrefix(q);
-        if (prefixData) {
-            renderResults(prefixData, q);
-        }
-  
-        if (q === lastQuery) return;
+        if (q === lastQuery && currentController && !currentController.signal.aborted) return;
+        if (currentController) currentController.abort();
+        const controller = currentController = new AbortController();
         lastQuery = q;
-  
-        if (currentController) currentController.abort();  
-        currentController = new AbortController();
-  
-        if (!prefixData) showLoader();
-  
-        fetch(`/ajax/keyword-search.php?q=${encodeURIComponent(q)}`, {
-            signal: currentController.signal
-        })
-        .then(res => res.text())
-        .then(text => {
-            const data = JSON.parse(text);
-            hideLoader();  
+        const prefixData = getCachedPrefix(q);
+        if (prefixData) renderResults(prefixData, q);
+        else showLoader();
+        fetch(`/ajax/keyword-search.php?q=${encodeURIComponent(q)}`, { signal: controller.signal })
+        .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+        .then(data => {
+            if (controller !== currentController || controller.signal.aborted) return;
+            if (!data || typeof data !== 'object' || data.error || (Array.isArray(data) && data.length)) throw new Error('Invalid search response');
+            hideLoader();
             searchCache[q] = data;
-            lastResponse = data;    
-            if (normalize(DOM.keywordHeader.value) !== q) return;    
-            renderResults(data, q);
+            lastResponse = data;
+            if (normalize(DOM.keywordHeader.value) === q) renderResults(data, q);
         })
         .catch(err => {
+            if (controller !== currentController) return;
             hideLoader();
+            lastQuery = '';
             if (err.name !== 'AbortError') console.error(err);
         });
     }
-  
+
     DOM.keywordHeader.addEventListener('input', function () {  
         const q = normalize(this.value);
-        sessionStorage.setItem('last_search', q);
+        try { sessionStorage.setItem('last_search', q); } catch (_) { /* Search works when browser storage is unavailable. */ }
         clearTimeout(typingTimer);
-        if (q.length < minChars) {
-            closeSuggestions();
-            return;
-        }  
         fetchSuggestions(q);
+        if (q.length < minChars) return;
         typingTimer = setTimeout(() => {
             fetchSuggestions(q);
         }, typingDelay);

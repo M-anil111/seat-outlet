@@ -17,12 +17,31 @@ if ($id <= 0) {
   }
 }
 
-$event = getTnEventById($id);
+$event = $event ?? getTnEventById($id);
 
 if (tnEntityMissing($event) || empty($event['text']['name'])) {
   echo tnEntityUnavailable($event) ? unavailableBlockHtml('Event') : notFoundBlockHtml('Event');
   include 'footer.php';
   exit;
+}
+
+// Page content must also be initialized when an admin SEO override skips seo-event.php.
+$evKind = soSpecKind((string) ($event['defaultCategory']['path'] ?? ''));
+$evLabel = soSpecLabel((string) $event['text']['name'], $evKind);
+$evSpec = soSpecEventText($evKind, [
+  'label' => $evLabel, 'perf' => (string) ($event['performers'][0]['name'] ?? $evLabel),
+  'venue' => (string) ($event['venue']['text']['name'] ?? ''),
+  'city' => (string) ($event['city']['text']['name'] ?? ''),
+  'state' => (string) ($event['stateProvince']['text']['abbr'] ?? ''),
+  'cat' => soCategoryDisplayName((string) ($event['defaultCategory']['text']['name'] ?? '')),
+  'country' => (string) ($event['country']['text']['name'] ?? 'the United States'),
+  'hasTickets' => !empty($event['_metadata']['hasTickets']),
+]);
+$evCityData = $evCityData ?? soSpecCityEvents($evKind, $event['city']['id'] ?? 0);
+$evVenueData = $evVenueData ?? soSpecVenueEvents(in_array($evKind, ['sports', 'theater'], true) ? $evKind : '', $event['venue']['id'] ?? 0);
+if (!isset($evVenueRec)) {
+  $evVenueId = (int) ($event['venue']['id'] ?? 0);
+  $evVenueRec = $evVenueId > 0 ? tnRequestCached('/catalog/v2/venues/' . $evVenueId, [], 86400) : [];
 }
 
 // Sandbox catalog IDs only resolve in the widget against the sandbox website

@@ -74,3 +74,5 @@ $mysqli->set_charset('utf8mb4');
 
 
 define('MYSQLI', $mysqli);   // never taken from the environment (an env var could swap the handle for a string)
+
+require_once __DIR__ . '/read.php';

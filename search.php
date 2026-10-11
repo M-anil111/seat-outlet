@@ -40,9 +40,8 @@ if (
     $searchInput['latHeader'] !== '' && $searchInput['lngHeader'] !== '' &&
 	$searchInput['locationInputHeader'] !== ''
 ) {
-	$lat = floatval($searchInput['latHeader']);
-    $lng = floatval($searchInput['lngHeader']);
-    $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $lat, $lng);
+	$geo = soSnapGeo($searchInput['latHeader'], $searchInput['lngHeader']);
+    if ($geo) $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $geo[0], $geo[1]);
 }
 
 /*
@@ -82,12 +81,9 @@ if (
 	$searchInput['startInputHeader'] !== '' &&
 	$searchInput['endInputHeader'] !== ''
 ) {
-	$startTimestamp = strtotime($searchInput['startInputHeader']);
-    $endTimestamp   = strtotime($searchInput['endInputHeader']);
-
-    if ($startTimestamp && $endTimestamp) {
-        $startDate = date('Y-m-d', $startTimestamp);
-        $endDate   = date('Y-m-d', $endTimestamp);
+    $range = soValidDateRange($searchInput['startInputHeader'], $searchInput['endInputHeader']);
+    if ($range) {
+        [$startDate, $endDate] = $range;
         $filterParts[] = "date/date ge $startDate and date/date le $endDate";
         $hasHeaderRange = true;
     }
@@ -121,7 +117,7 @@ if ($searchSort === 'soonest' || ($searchSort === '' && $keywordHeader === '')) 
 	$params['sort'] = 'pricingInfo/lowPrice/value';
 }
 
-$isFilteredSearch = $searchWhen !== '' || $searchMax > 0 || $searchSort !== '';
+$isFilteredSearch = $hasHeaderRange || isset($params['geoFilter']) || $searchWhen !== '' || $searchMax > 0 || $searchSort !== '';
 
 // Search results are user-specific, near-infinite URL variants; keep them
 // out of the index. The tab title is set below, once the results are known.
@@ -138,7 +134,7 @@ require_once __DIR__ . '/inc/smart.php';
 $correctedFrom = '';
 $didYouMean = [];
 $noTicketsFallback = false;
-if (empty($results['results']) && $keywordHeader !== '') {
+if (empty($results['results']) && !soApiDegraded() && $keywordHeader !== '') {
     $auto = smartAutoCorrection($keywordHeader);
     if ($auto !== null) {
         $retryParams = $params;
@@ -151,7 +147,7 @@ if (empty($results['results']) && $keywordHeader !== '') {
             $params = $retryParams;          // load-more must continue the corrected search
         }
     }
-    if (empty($results['results'])) {
+    if (empty($results['results']) && !soApiDegraded() && $searchSort !== 'price' && $searchMax === 0) {
         // Nothing on sale: show events with no tickets listed (they can still be opened and watched) before giving up.
         $anyParams = $params;
         $anyParams['filter'] = implode(' and ', $filterParts);
@@ -162,7 +158,7 @@ if (empty($results['results']) && $keywordHeader !== '') {
             $noTicketsFallback = true;
         }
     }
-    if (empty($results['results'])) {
+    if (empty($results['results']) && !soApiDegraded()) {
         $didYouMean = smartDidYouMean($keywordHeader, 4);
     }
 }
@@ -186,6 +182,7 @@ $pageMetaDescription = $displayName !== ''
 $pageFocusKeyword = $displayName !== '' ? $displayName . ' Tickets' : 'Search Event Tickets';
 $pageCrumbLabel = 'Search';
 
+if (!$events && soApiDegraded()) soFeedDownGate('search results');
 include 'header.php';
 
 $filterHref = function ($param, $value) use ($searchInput) {
@@ -194,6 +191,7 @@ $filterHref = function ($param, $value) use ($searchInput) {
 		$v = $k === 'when' || $k === 'sort' || $k === 'max' ? ($_GET[$k] ?? '') : ($searchInput[$k] ?? '');
 		if (is_string($v) && trim($v) !== '') { $q[$k] = $v; }
 	}
+	if ($param === 'when') unset($q['startInputHeader'], $q['endInputHeader']);
 	if ($value === '' || $value === '0') { unset($q[$param]); } else { $q[$param] = $value; }
 	return '/search' . ($q ? '?' . http_build_query($q) : '');
 };
@@ -237,7 +235,7 @@ soPageHero([
 					<?php
 					// Compact filter bar, same chips as the listing pages: date window, price cap, sort.
 					soRenderFilterBar([
-						['label' => 'Dates', 'icon' => $icCal, 'param' => 'when', 'options' => ['' => 'All dates'] + LISTING_WHEN, 'current' => $hasHeaderRange ? '' : $searchWhen],
+						['label' => 'Dates', 'icon' => $icCal, 'param' => 'when', 'options' => ['' => 'All dates'] + LISTING_WHEN, 'current' => $hasHeaderRange ? '' : $searchWhen, 'active' => $hasHeaderRange, 'display' => $hasHeaderRange ? $startDate . ' – ' . $endDate : (LISTING_WHEN[$searchWhen] ?? 'All dates')],
 						['label' => 'Price', 'icon' => $icPrice, 'param' => 'max', 'options' => ['0' => 'Any price'] + array_map('strval', LISTING_PRICE), 'current' => (string) $searchMax],
 						['label' => 'Sort', 'icon' => $icSort, 'param' => 'sort', 'options' => SEARCH_SORT, 'current' => $searchSort],
 					], $filterHref, 'Filter and sort search results');
@@ -253,7 +251,7 @@ soPageHero([
 								'params'  => $params,
 								'type'    => 'search',
 							]);
-						} else { ?>
+						} elseif (soApiDegraded()) { echo soFeedDownStateHtml(); } else { ?>
 							<div class="text-center no-events-found">
 								<h4><?php echo $isFilteredSearch ? 'No events match these filters' : 'No Upcoming Events'; ?></h4>
 								<?php if (!empty($didYouMean)) { ?>

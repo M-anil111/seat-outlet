@@ -53,12 +53,27 @@ foreach ($fallbackCategories as $key => $list) {
   <img class="so-hero2__bg" src="/images/home-slider-1440.webp" srcset="/images/home-slider-640.webp 640w, /images/home-slider-1024.webp 1024w, /images/home-slider-1440.webp 1440w" sizes="100vw" alt="Crowd in a large theater watching a live show on stage" width="1440" height="700" fetchpriority="high" decoding="async">
   <div class="so-hero2__shade" aria-hidden="true"></div>
   <div class="container so-hero2__inner">
-    <h1 class="so-hero2__title">Experience <span>live events</span>,<br class="d-none d-md-block"> made easy.</h1>
+    <p class="so-hero2__eyebrow">Your next great night starts here</p>
+    <h1 class="so-hero2__title">Great seats.<br>Unforgettable <span>moments.</span></h1>
     <p class="so-hero2__sub">Concerts, sports, theater and more. Compare seats and prices from sellers across our marketplace.</p>
+    <div class="so-hero2__actions">
     <button type="button" class="so-hero2__btn" data-so-open-search>Search Events <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <a class="so-hero2__secondary" href="/weekend-events">Explore this weekend <span aria-hidden="true">&rarr;</span></a>
+    </div>
+    <p class="so-hero2__note">Find your event. Compare your seats. Be there.</p>
   </div>
 </section>
 
+
+<section class="so-discover" aria-labelledby="soDiscoverTitle"><div class="container">
+  <div class="so-discover__head"><h2 id="soDiscoverTitle">Find your kind of live</h2><a href="/buy-tickets-online">Browse all events <span aria-hidden="true">&rarr;</span></a></div>
+  <div class="so-discover__grid">
+    <a class="so-discover__card so-discover__card--concerts" href="/concert-tickets-for-sale"><span class="so-discover__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13M9 8l12-2"/><ellipse cx="6" cy="18" rx="3" ry="3"/><ellipse cx="18" cy="16" rx="3" ry="3"/></svg></span><span class="so-discover__copy"><strong>Concerts</strong><span>From arena anthems to intimate sets</span></span><span class="so-discover__arrow" aria-hidden="true">&rarr;</span></a>
+    <a class="so-discover__card so-discover__card--sports" href="/game-day-tickets"><span class="so-discover__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5.6 5.6c8.5 0 12.8 4.3 12.8 12.8M5.6 18.4c0-8.5 4.3-12.8 12.8-12.8"/></svg></span><span class="so-discover__copy"><strong>Sports</strong><span>A seat for every game-day moment</span></span><span class="so-discover__arrow" aria-hidden="true">&rarr;</span></a>
+    <a class="so-discover__card so-discover__card--theater" href="/buy-broadway-tickets"><span class="so-discover__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18v16H3zM8 4v16M16 4v16M3 15h18M8 9l-5 6M16 9l5 6"/></svg></span><span class="so-discover__copy"><strong>Theater</strong><span>Stories best experienced in person</span></span><span class="so-discover__arrow" aria-hidden="true">&rarr;</span></a>
+    <a class="so-discover__card so-discover__card--festivals" href="/upcoming-music-festivals"><span class="so-discover__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20L12 4l9 16H3zM12 4v16M8 20l4-7 4 7M12 4V2h5l-2 2"/></svg></span><span class="so-discover__copy"><strong>Festivals</strong><span>Make a whole weekend of it</span></span><span class="so-discover__arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+</div></section>
 
 <section class="so-feed so-popweek" id="soFeedPopWeekend" data-so-feed="popweekend" aria-labelledby="soFeedPopWeekendTitle">
   <div class="container">

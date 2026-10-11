@@ -57,12 +57,19 @@ try {
         $response = getHeaderSearchEvents($params);
     }else{
         $response = getLoadMoreEvents($params);
-    }       
-    
+    }
+
     $total_count = (int) ($response['totalCount'] ?? 0);
     $total_pages = $perPage > 0 ? (int) ceil($total_count / $perPage) : 0;
 
-    $results = $response['results'] ?? [];   
+    $results = $response['results'] ?? [];
+    if (!$results && soApiDegraded()) {
+        http_response_code(503);
+        header('Cache-Control: no-store');
+        header('Retry-After: 30');
+        echo json_encode(['error' => 'Ticket listings temporarily unavailable', 'degraded' => true]);
+        exit;
+    }
     $hasMore = ($page < $total_pages);
     // A page with no events (throttled or degraded API) must not be kept by a browser or CDN for five minutes.
     if (empty($results)) { header('Cache-Control: no-store'); }
@@ -83,6 +90,7 @@ try {
     ]);
 } catch (Throwable $e) {
     http_response_code(500);
+    header('Cache-Control: no-store');
     echo json_encode([
         'events'      => [],
         'totalCount'  => 0,

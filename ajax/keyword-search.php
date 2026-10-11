@@ -14,8 +14,11 @@ if ($q === '' || strlen($q) < 2) {
 
 try {
     $response = getKeywordSearchSuggestions($q);
+    if (!$response && soApiDegraded()) throw new RuntimeException('Feed unavailable');
 } catch (Throwable $e) {
-    echo json_encode([]);
+    http_response_code(503);
+    header('Cache-Control: no-store');
+    echo json_encode(['error' => 'Search temporarily unavailable']);
     exit;
 }
 

@@ -19,8 +19,8 @@ const soSpinner = () => soById('btnSpinner') || soById('loadMoreBtn')?.querySele
 const soTodayIso = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 
 function getActiveLocation() {
-    const lat = latEvent.value || getCookie('so_lat');
-    const lng = lngEvent.value || getCookie('so_lng');
+    const lat = latEvent?.value || getCookie('so_lat');
+    const lng = lngEvent?.value || getCookie('so_lng');
 
     return (lat && lng) ? { lat, lng } : {};
 }
@@ -150,7 +150,19 @@ function updateHeading(loc = '') {
     }
 }
 
+let soListVersion = 0;
+let soFilterController = null;
+let soMoreController = null;
 function updateEventsSection(location) {
+    const version = ++soListVersion;
+    if (soFilterController) soFilterController.abort();
+    if (soMoreController) soMoreController.abort();
+    soFilterController = new AbortController();
+    const listRegion = soById('eventsSection');
+    if (listRegion) listRegion.setAttribute('aria-busy', 'true');
+    const more = soById('loadMoreBtn');
+    if (more) more.disabled = true;
+    soLoadMoreError(false);
     const params = new URLSearchParams();
     if (location.lat)   params.append('lat', location.lat);
     if (location.lng)   params.append('lng', location.lng);
@@ -162,9 +174,10 @@ function updateEventsSection(location) {
     if (soSort) params.append('sort', soSort);
 
     const noResults = soById('location-no-results');
-    fetch(`/ajax/load-events.php?${params}`)
+    return fetch(`/ajax/load-events.php?${params}`, { signal: soFilterController.signal })
     .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
     .then(data => {
+        if (version !== soListVersion) return;
         const spinner = soSpinner();
         if (spinner) {
             spinner.classList.add('d-none');
@@ -175,6 +188,7 @@ function updateEventsSection(location) {
             resetBtn.classList.remove('d-none');
             resetBtn.onclick = function () {
                 input.value = '';
+                if (results) results.classList.remove('d-none');
                 this.classList.add('d-none');
                 soSetLocLabel('');
                 if (noResults) noResults.innerHTML = '';
@@ -182,6 +196,7 @@ function updateEventsSection(location) {
                 if (heading) heading.innerHTML = '';
                 latEvent.value = '';
                 lngEvent.value = '';
+                ['so_lat', 'so_lng', 'so_label'].forEach(name => setCookie(name, ''));
                 updateEventsSection({
                     startDate: sdateEvent.value,
                     endDate: edateEvent.value,
@@ -190,6 +205,24 @@ function updateEventsSection(location) {
             };
         }
 
+        const list = soById('eventsSection');
+        if (!list) return;
+        list.innerHTML = '';
+        document.querySelectorAll('[data-so-weekends]').forEach(function (b) { b.hidden = true; });
+        const total = Number(data.totalCount) || 0;
+        const rc = soById('results_count');
+        if (rc) rc.textContent = total.toLocaleString('en-US') + (total === 1 ? ' result' : ' results');
+        soSetProgress(list, total);
+        const more = soById('loadMoreBtn');
+        if (more) {
+            more.dataset.page = data.nextPage || 2;
+            more.dataset.total = total;
+            more.dataset.params = JSON.stringify(data.params || {});
+            more.classList.toggle('d-none', !data.hasMore);
+            more.disabled = false;
+        }
+        const back = soById('backToTopJs');
+        if (back) back.classList.toggle('d-none', !!data.hasMore || total === 0);
         const who = (pidEvent && pidEvent.dataset.name) || 'this act';
         const place = (input && input.value) ? input.value : '';
         if (!data.events || data.events.length === 0) {
@@ -215,75 +248,26 @@ function updateEventsSection(location) {
                 noResults.appendChild(nStrong); noResults.appendChild(nP);
             }
         }
-        const list = soById('eventsSection');
-        if (!list) return;
-        list.innerHTML = '';
-        // Filtered results are a different set of rows: the weekend chips no longer apply.
-        document.querySelectorAll('[data-so-weekends]').forEach(function (b) { b.hidden = true; });
-
         soAppendRows(list, data);
-
-        const loaded = data.totalCount;
-        const countmsg = loaded === 1 ? ' result' : ' results';
-        const rc = soById('results_count');
-        if (rc) rc.textContent = Number(loaded).toLocaleString('en-US') + countmsg;
-        const tc = soById('totalCount');
-        if (tc) tc.textContent = loaded;
-
-        // =========================
-        // LOAD MORE BUTTON UPDATE
-        // =========================
-        const loadMoreBtn = soById('loadMoreBtn');
-        const backToTopBtn = soById('backToTopJs');
-        if (!loadMoreBtn) return;
-        loadMoreBtn.dataset.page = 2;
-        loadMoreBtn.dataset.total = data.totalCount;
-
-        const savedParams = {};
-        if (location.lat && location.lng) {
-            savedParams.geoFilter = `nearby(${location.lat},${location.lng},3000mi)`;
-            savedParams.sort = 'distance';
-        }
-        if (location.startDate && location.endDate) {
-            savedParams.filter =
-                `date/date ge ${location.startDate} and date/date le ${location.endDate}`;
-        } else if (data.params && data.params.filter) {
-            savedParams.filter = data.params.filter;   // the server's own window for a quick chip such as "This weekend"
-        } else {
-            savedParams.filter =
-                `country/alphaCode eq 'US' and date/date ge ${soTodayIso()}`;
-        }
-        if(location.pid) {
-            savedParams.performerFilter = `id eq ${location.pid}`;
-        }
-        // The order and the filter the server actually used (a chosen sort, the "has tickets" rule for price order) carry over.
-        if (data.params && data.params.sort) savedParams.sort = data.params.sort;
-        if (data.params && data.params.filter) savedParams.filter = data.params.filter;
-        loadMoreBtn.dataset.params = JSON.stringify(savedParams);
-
-        // show/hide load more
-        if (data.hasMore) {
-            loadMoreBtn.classList.remove('d-none');
-            loadMoreBtn.disabled = false;
-            if (backToTopBtn) backToTopBtn.classList.add('d-none');
-        } else {
-            loadMoreBtn.classList.add('d-none');
-            if (backToTopBtn) backToTopBtn.classList.remove('d-none');
-        }
         soSetProgress(list, data.totalCount);
     })
     .catch(err => {
+        if (version !== soListVersion || err.name === 'AbortError') return;
+        const more = soById('loadMoreBtn');
+        if (more) more.disabled = false;
         const spinner = soSpinner();
         if (spinner) {
             spinner.classList.add('d-none');
         }
         if (noResults) noResults.innerHTML = '<strong>Could not load events right now</strong><p>Please check your connection and try again.</p>';
         console.error('Failed to load events', err);
+    }).finally(() => {
+        if (version === soListVersion && listRegion) listRegion.setAttribute('aria-busy', 'false');
     });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    updateHeading();
+    updateHeading(input?.value || '');
 });
 
 /* Quick date chips (All dates, Today, This weekend, Next 7 days, Next 30 days) and sort chips (Best match, Soonest, Lowest price) */
@@ -298,7 +282,7 @@ document.addEventListener('click', function (e) {
             c.classList.toggle('is-active', on);
             c.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
-        updateEventsSection({ lat: latEvent.value || getCookie('so_lat') || '', lng: lngEvent.value || getCookie('so_lng') || '', when: soWhen, pid: pidEvent.value });
+        updateEventsSection({ lat: latEvent?.value || getCookie('so_lat') || '', lng: lngEvent?.value || getCookie('so_lng') || '', startDate: sdateEvent?.value || '', endDate: edateEvent?.value || '', when: soWhen, pid: pidEvent.value });
         return;
     }
     const chip = e.target.closest && e.target.closest('[data-so-when]');
@@ -311,9 +295,10 @@ document.addEventListener('click', function (e) {
     });
     if (sdateEvent) sdateEvent.value = '';
     if (edateEvent) edateEvent.value = '';
+    if (picker) picker.clear(false);
     updateEventsSection({
-        lat: latEvent.value || getCookie('so_lat') || '',
-        lng: lngEvent.value || getCookie('so_lng') || '',
+        lat: latEvent?.value || getCookie('so_lat') || '',
+        lng: lngEvent?.value || getCookie('so_lng') || '',
         when: soWhen,
         pid: pidEvent.value
     });
@@ -491,14 +476,17 @@ function soLoadMore(btn) {
         params = {};
     }
 
+    const version = soListVersion;
+    soMoreController = new AbortController();
     btn.disabled = true;
     soLoadMoreError(false);
     const spinner = soSpinner();
     if (spinner) spinner.classList.remove('d-none');
     const fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&params=${encodeURIComponent(JSON.stringify(params))}&type=${type || 'all'}`;
-    fetch(fetchUrl)
+    return fetch(fetchUrl, { signal: soMoreController.signal })
     .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
     .then(data => {
+        if (version !== soListVersion) return;
         if (spinner) spinner.classList.add('d-none');
         const got = (data.events || []).length;
         // An empty page while more events are still promised is a failed load (throttled or degraded API), not the end of the list.
@@ -515,6 +503,7 @@ function soLoadMore(btn) {
         soSetProgress(list, total);
     })
     .catch(err => {
+        if (version !== soListVersion || err.name === 'AbortError') return;
         if (spinner) spinner.classList.add('d-none');
         btn.disabled = false;
         soLoadMoreError(true);
@@ -744,5 +733,5 @@ document.addEventListener('click', function (e) {
     d.addEventListener('toggle', function () { if (d.open) all.forEach(function (o) { if (o !== d) o.open = false; }); });
   });
   document.addEventListener('click', function (e) { all.forEach(function (d) { if (d.open && !d.contains(e.target)) d.open = false; }); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') all.forEach(function (d) { d.open = false; }); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') all.forEach(function (d) { if (d.open) { d.open = false; d.querySelector('summary').focus(); } }); });
 })();
