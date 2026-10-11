@@ -303,6 +303,16 @@ function soRenderEntityListing(array $c): void {
                             echo '<div class="so-evv so-evv--page">' . $soVenueCard . '</div>';
                         }
                     }
+                    if (in_array($kind, ['county', 'city'], true)) {
+                        // Unique copy from this page's own listed events (inc/listing-about.php); the intro is a plain description of the place.
+                        soListingAboutBlock($h, [
+                            'heading' => 'About ' . $label,
+                            'intro'   => $total === 0 ? '' : ($kind === 'county'
+                                ? "This page covers the cities in $label, so events can take place in towns across the county."
+                                : "This page lists the events in $label that are on sale now, with the venues and dates shown below."),
+                            'events'  => $events, 'total' => $total, 'cities' => $kind === 'county',
+                        ]);
+                    }
                     soMiniFaq('FAQs about ' . ($kind === 'venue' ? $name : $label) . ' Tickets', array_values(array_filter([
                         $soWhere,
                         [ ($kind === 'venue' ? "How do I buy tickets for events at $name?" : "How do I buy event tickets in $name?"), 'Pick a date above, choose how many tickets you need, compare sections and prices on the seat map and check out securely. Tickets ship in time for at least one delivery attempt before the event.' ],

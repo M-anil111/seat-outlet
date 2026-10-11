@@ -5635,6 +5635,14 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                 <?php echo soSpecPromoHtml('Latest ' . $categoryLabel . ' promo codes ' . $soKwPrep . ' ' . $locationLabel, $soLocShort . ' ' . strtolower($categoryLabel)); ?>
             </div>
 
+            <div class="tab-section content-section-detail">
+                <?php soListingAboutBlock(fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'), [
+                    'heading' => "About $categoryLabel in $locationLabel",
+                    'intro'   => $total_count > 0 ? "$categoryLabel listings in $locationLabel are below, with the venues, dates and prices on sale now." : '',
+                    'events'  => $events, 'total' => $total_count,
+                ]); ?>
+            </div>
+
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
                     <h2 class="so-heading mb-3">FAQs about <?php echo htmlspecialchars("$categoryLabel Tickets $soKwPrep $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
@@ -6378,6 +6386,7 @@ require_once __DIR__ . '/inc/page-spec.php';   // titles, headings, promo block 
 require_once __DIR__ . '/inc/holidays.php';   // /<holiday>-in-<city> pages for the US and Canadian holidays and the /holiday-events hub
 require_once __DIR__ . '/inc/discovery-pages.php';   // /last-minute-tickets, /weekend-events, /cheap-tickets and /best-events for a city
 require_once __DIR__ . '/inc/slugs.php';             // url_slugs table: ids never appear in URLs (soSlug, soEventSlug, soSlugResolve)
+require_once __DIR__ . '/inc/listing-about.php';   // unique About copy from a listing page's own events (county, city, theater-in-city)
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages
 register_shutdown_function('soTopPerformersMaybeRun');   // keeps the home Top performers cards fresh
 register_shutdown_function('soAutoMigrateMaybeRun');   // beta only: keep the schema in step with the code
