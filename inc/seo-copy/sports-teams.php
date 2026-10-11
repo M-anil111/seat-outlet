@@ -12,7 +12,7 @@
 
 <h2>How to use the sports teams list</h2>
 <ol>
-  <li>Scroll the full list to see every team currently listed.</li>
+  <li>Use the page numbers at the bottom of the list to see every team currently listed.</li>
   <li>Open a team to see its schedule with dates, opponents and venues.</li>
   <li>Pick a game and compare sections and prices on the seat map.</li>
   <li>Check the venue and start time on the event page before you travel.</li>

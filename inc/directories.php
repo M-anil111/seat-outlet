@@ -17,7 +17,7 @@ const SO_DIRECTORIES = [
     'all' => [
         'path' => '/all-artists-and-teams', 'category' => null, 'short' => 'Artists, Teams and Shows',
         'h1' => 'Artists, Teams & Shows', 'eyebrow' => 'A to Z',
-        'lead' => 'Browse all artists, teams and shows on Seat Outlet, from A to Z. Scroll the list or search for a name.',
+        'lead' => 'Browse all artists, teams and shows on Seat Outlet, from A to Z. Browse the pages or search for a name.',
         'noun' => 'artists, teams and shows', 'copy' => 'all-artists-and-teams', 'focus' => 'all artists',
     ],
     'concert-artists' => [

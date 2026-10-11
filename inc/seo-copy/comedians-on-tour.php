@@ -12,7 +12,7 @@
 
 <h2>How to use the comedians on tour list</h2>
 <ol>
-  <li>Scroll the full list to see every comedian currently listed.</li>
+  <li>Use the page numbers at the bottom of the list to see every comedian currently listed.</li>
   <li>Open a comedian to see every upcoming date with venue and city.</li>
   <li>Compare sections and prices on the seat map for the show you want.</li>
   <li>Read the event page for the doors and show time.</li>

@@ -1,6 +1,6 @@
 <?php if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); header('X-Robots-Tag: noindex'); exit; } ?>
 <h2>Browse All Artists, Teams and Shows From A to Z</h2>
-<p>This directory lists all artists, teams and shows that have events on Seat Outlet, sorted alphabetically. Scroll the list and load more to see every name. Each card opens a page with that performer's upcoming dates, venues and available seats.</p>
+<p>This directory lists all artists, teams and shows that have events on Seat Outlet, sorted alphabetically. Use the page numbers at the bottom to see more names. Each card opens a page with that performer's upcoming dates, venues and available seats.</p>
 <p>The list comes straight from our event feed, so it changes as tours are announced, seasons start and shows open. If a name is not here yet, it usually means no events are listed for it right now. Check back later, or try the search bar, which looks across events, venues and cities as well.</p>
 
 <div class="so-seo-figs">
@@ -16,7 +16,7 @@
 
 <h2>How to Find an Artist, Team or Show Quickly</h2>
 <ol>
-  <li><strong>Find a name.</strong> The list is in alphabetical order, so scroll to the name you want.</li>
+  <li><strong>Find a name.</strong> The list is in alphabetical order, so you can scan each page for the name you want.</li>
   <li><strong>Open the card.</strong> Select the name to see upcoming events, dates and venues for that performer.</li>
   <li><strong>Compare seats.</strong> On each event page, review the sections and prices, then choose the seats that suit you.</li>
   <li><strong>Check out.</strong> Pay securely, and your order is covered by our guarantee.</li>
@@ -38,7 +38,7 @@
 <ul>
   <li>You can see how many names are listed without guessing keywords.</li>
   <li>You find performers whose names are hard to spell.</li>
-  <li>You can scroll the full list when you have no plan yet.</li>
+  <li>You can browse the pages when you have no plan yet.</li>
   <li>Teams, artists and shows sit in one place, so you can compare nights out.</li>
 </ul>
 <p>Prefer to browse by place? <a href="/city-events">City events</a> shows what is happening in each city, and the <a href="/buy-tickets-online">buy tickets online</a> page lists every upcoming event by date.</p>
@@ -65,7 +65,7 @@
   <li>Read the event details for entry rules, age limits and delivery information.</li>
 </ul>
 <h3>Tips for lesser-known names</h3>
-<p>Smaller acts and local shows often play intimate venues, where almost every seat has a good view. Browsing all artists in alphabetical order is a good way to find them. Scroll past the names you know and open a few unfamiliar ones and see who is coming to your area.</p>
+<p>Smaller acts and local shows often play intimate venues, where almost every seat has a good view. Browsing all artists in alphabetical order is a good way to find them. Skip past the names you know and open a few unfamiliar ones and see who is coming to your area.</p>
 
 <h2>Beyond the Directory: Other Ways to Browse All Artists and Events</h2>
 <p>The A to Z list is one way in. You can also start from a category, a city or a date range. Each route ends at the same event pages, so choose the one that matches how you think about your night out.</p>
