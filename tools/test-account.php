@@ -126,15 +126,27 @@ acctCheck('only the valid, de-duplicated events are kept', array_column($clean, 
 acctCheck('markup in a name is stripped', $clean[0]['name'], 'Good Show');
 acctCheck('the path is rebuilt from the slug', $clean[0]['path'], '/event/good-show-2026-11-01');
 acctCheck('a real date is kept, a bad one is dropped', [$clean[0]['date'], $clean[1]['date']], ['2026-11-01', null]);
-acctCheck('events are saved', soAcctSaveEvents($uid, $clean), 2);
-acctCheck('saving again does not duplicate', [soAcctSaveEvents($uid, $clean), soAcctSavedCount($uid)], [2, 2]);
+acctCheck('events are saved', soAcctSaveEvents($uid, $clean), ['saved' => 2, 'skipped' => 0]);
+acctCheck('saving again does not duplicate', [soAcctSaveEvents($uid, $clean)['saved'], soAcctSavedCount($uid)], [2, 2]);
 acctCheck('the list is soonest first, undated last', array_column(soAcctSavedList($uid), 'id'), [111, 444]);
 soAcctRemoveSaved($uid, 111);
 acctCheck('removing one leaves the other', array_column(soAcctSavedList($uid), 'id'), [444]);
 $many = [];
 for ($i = 1; $i <= 150; $i++) $many[] = ['id' => 7000 + $i, 'slug' => "many-show-$i", 'name' => "Many $i"];
 soAcctSaveEvents($uid, soAcctCleanEvents($many));
+$over = [];
+for ($i = 1; $i <= 30; $i++) $over[] = ['id' => 9000 + $i, 'slug' => "over-$i", 'name' => "Over $i", 'path' => "/event/over-$i", 'date' => null, 'venue' => '', 'city' => ''];
+$capRes = soAcctSaveEvents($uid, $over);
 acctCheck('a person can keep at most ' . SO_ACCT_MAX_SAVED . ' events', soAcctSavedCount($uid) <= SO_ACCT_MAX_SAVED, true);
+acctCheck('events over the cap are reported as skipped', $capRes['saved'] === 0 && $capRes['skipped'] === 30, true);
+
+// ---- Cookie flags
+unset($_SERVER['HTTPS'], $_SERVER['HTTP_X_FORWARDED_PROTO']);
+acctCheck('cookie is not Secure over plain http', soAcctCookieOptions(0)['secure'], false);
+$_SERVER['HTTPS'] = 'on';
+$co = soAcctCookieOptions(0, '/account-verify');
+acctCheck('cookie is Secure, HttpOnly, SameSite=Lax over https and keeps its path', [$co['secure'], $co['httponly'], $co['samesite'], $co['path']], [true, true, 'Lax', '/account-verify']);
+unset($_SERVER['HTTPS']);
 
 // ---- Another person never sees these
 soAcctRequestLink('zq.other@zq-acct.test', '', $mailer);

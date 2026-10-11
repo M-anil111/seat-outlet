@@ -18,9 +18,6 @@ Disallow: /newsletter
 Disallow: /unsubscribe
 Disallow: /thank-you
 Disallow: /order-confirmation
-Disallow: /login
-Disallow: /register
-Disallow: /account
 
 # No Sitemap line on purpose: the live host serves /robots.txt from robots.php (see docs/server-rewrites.md), which writes the
 # sitemap address for the host it runs on. A fixed address here would point search engines at the wrong site.

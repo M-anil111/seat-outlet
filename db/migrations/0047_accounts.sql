@@ -1,5 +1,6 @@
 -- Accounts: passwordless sign-in by emailed link (no passwords are stored anywhere).
--- Every secret value (link token, session token) is stored only as a SHA-256 hash; the visitor's address is stored only as a salted hash.
+-- Every secret value (link token, session token) is stored only as a SHA-256 hash; the visitor's IP address is stored only as a salted hash.
+-- Email addresses are stored as typed (lower-cased): they are how we reach the person. Sign-in link rows are deleted after a day (soAcctPrune()).
 -- A person is created the first time they use a link, so "sign in" and "register" are the same step.
 CREATE TABLE IF NOT EXISTS `users` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,

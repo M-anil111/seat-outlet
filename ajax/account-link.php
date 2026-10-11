@@ -22,7 +22,12 @@ $sentMsg = 'If that address can receive email, a sign-in link is on its way. It 
 if ($post('website') !== '') $say('sent', $sentMsg);   // honeypot: look successful, send nothing
 $ip = function_exists('soClientIp') ? (string) soClientIp() : (string) ($_SERVER['REMOTE_ADDR'] ?? '');
 if (!soLeadVerifyRecaptcha($post('token'), $ip, ['account'])) $say('recaptcha', 'We could not verify that you are human. Reload the page and try again.', 400);
-$res = soAcctRequestLink($post('email'), $post('next'));
+try {
+    $res = soAcctRequestLink($post('email'), $post('next'));
+} catch (Throwable $e) {
+    error_log('account: sign-in request failed: ' . get_class($e) . ' ' . mb_substr($e->getMessage(), 0, 160));   // never the address
+    $res = ['status' => 'error'];
+}
 switch ($res['status']) {
     case 'sent':    $say('sent', $sentMsg);
     case 'invalid': $say('invalid', 'Enter a valid email address.', 422);

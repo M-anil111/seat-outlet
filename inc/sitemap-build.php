@@ -28,7 +28,7 @@ const SO_SITEMAP_FORMAT    = 7;      // bump to rebuild every file once: 2 = ful
 const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>';   // a static file; the web server sends it as text/xsl (docs/server-rewrites.md)
 
 /** Paths robots.txt disallows (robots.php prints them); the sitemap never lists a page under one of them. */
-const SO_ROBOTS_DISALLOW = ['/admin/', '/ajax/', '/cache/', '/vendor/', '/db/', '/tools/', '/cron/', '/deploy/', '/docs/', '/inc/', '/search', '/checkout', '/newsletter', '/unsubscribe', '/thank-you', '/order-confirmation', '/login', '/register', '/account'];
+const SO_ROBOTS_DISALLOW = ['/admin/', '/ajax/', '/cache/', '/vendor/', '/db/', '/tools/', '/cron/', '/deploy/', '/docs/', '/inc/', '/search', '/checkout', '/newsletter', '/unsubscribe', '/thank-you', '/order-confirmation'];
 
 /** Script names in the web root that are not pages of their own (templates behind a slug, the frame, endpoints, utility pages). */
 const SO_SITEMAP_NOT_PAGES = ['404', 'header', 'footer', 'functions', 'robots', 'sitemap', 'sitemap-page', 'search', 'checkout', 'order-confirmation', 'thank-you', 'unsubscribe', 'newsletter-email', 'login', 'register', 'account', 'account-verify'];

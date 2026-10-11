@@ -24,6 +24,7 @@ function soAcctStyle(): string {
  */
 function soAcctMeta(string $title, string $desc): array {
     header('Cache-Control: no-store');
+    header('X-Robots-Tag: noindex, nofollow');   // robots.txt does not block these pages, so crawlers can read this
     return [$title . ' | Seat Outlet', $desc];
 }
 
@@ -102,13 +103,15 @@ function soAcctVerifyBody(?array $ok, string $why): void {
       <h1>Confirm sign in</h1>
       <p class="so-acct__lead">You are signing in as <strong><?php echo soAcctH(soAcctMask($ok['email'])); ?></strong>.</p>
       <form method="post" action="/account-verify">
-        <input type="hidden" name="t" value="<?php echo soAcctH($ok['token']); ?>">
         <button type="submit" class="so-acct__btn">Sign in</button>
       </form>
       <p class="so-acct__note">Not you? Close this page. Nothing happens until you press the button.</p>
     <?php else: ?>
-      <h1><?php echo $why === 'forbidden' ? 'We could not confirm that request' : 'This link has expired'; ?></h1>
-      <p class="so-acct__lead"><?php echo $why === 'forbidden' ? 'Open the link from your email again and press the button on this site.' : 'Sign-in links work once and last 15 minutes. Ask for a new one and it will arrive in a moment.'; ?></p>
+      <h1><?php echo $why === 'forbidden' ? 'We could not confirm that request' : ($why === 'nocookie' ? 'Open the link from your email' : 'This link has expired'); ?></h1>
+      <p class="so-acct__lead"><?php
+        if ($why === 'forbidden') echo 'Open the link from your email again and press the button on this site.';
+        elseif ($why === 'nocookie') echo 'This page continues from the link in your sign-in email, and needs cookies turned on in this browser. Open the link from the email, or ask for a new one.';
+        else echo 'Sign-in links work once and last 15 minutes. Ask for a new one and it will arrive in a moment.'; ?></p>
       <a class="so-acct__btn" style="text-decoration:none" href="/login">Get a new link</a>
     <?php endif; ?>
     </div>

@@ -23,6 +23,19 @@ const SO_ACCT_MAX_SAVED = 100;
 
 function soAcctH($v): string { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); }
 
+/** Every redirect from the account pages carries no-store, so a shared cache can never replay one visitor's redirect to another. */
+function soAcctRedirect(string $to, int $code = 302): void {
+    header('Cache-Control: no-store');
+    header('Location: ' . $to, true, $code);
+    exit;
+}
+
+/** Forget what is no longer needed: links older than a day (the rate limit looks back one hour) and expired sessions. */
+function soAcctPrune(): void {
+    MYSQLI->query('DELETE FROM login_links WHERE created_at < (NOW() - INTERVAL 1 DAY)');
+    MYSQLI->query('DELETE FROM user_sessions WHERE expires_at < NOW()');
+}
+
 function soAcctNewToken(): string { return bin2hex(random_bytes(32)); }
 
 function soAcctHash(string $secret): string { return hash('sha256', $secret); }
@@ -123,6 +136,7 @@ function soAcctSendLinkMail(string $email, string $url, ?callable $send = null):
 function soAcctRequestLink($emailRaw, $nextRaw = '', ?callable $send = null): array {
     $email = soAcctEmail($emailRaw);
     if ($email === '') return ['status' => 'invalid'];
+    if (random_int(1, 20) === 1) soAcctPrune();
     $ipHash = soAcctIpHash();
     $rate = soAcctRateCheck($email, $ipHash);
     if ($rate !== '') return ['status' => $rate];
@@ -194,8 +208,8 @@ function soAcctConsumeLink($token): ?array {
 
 /* ---------- Sessions ---------- */
 
-function soAcctCookieOptions(int $expires): array {
-    return ['expires' => $expires, 'path' => '/', 'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'),
+function soAcctCookieOptions(int $expires, string $path = '/'): array {
+    return ['expires' => $expires, 'path' => $path, 'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'),
             'httponly' => true, 'samesite' => 'Lax'];
 }
 
@@ -288,18 +302,47 @@ function soAcctCleanEvents($list): array {
     return array_values($out);
 }
 
-function soAcctSaveEvents(int $userId, array $events): int {
-    $n = 0;
-    $stmt = MYSQLI->prepare('INSERT INTO user_saved_events (user_id, event_id, name, path, event_date, venue, city) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE name = VALUES(name), path = VALUES(path), event_date = VALUES(event_date), venue = VALUES(venue), city = VALUES(city)');
-    foreach ($events as $e) {
-        if (soAcctSavedCount($userId) >= SO_ACCT_MAX_SAVED && !soAcctHasSaved($userId, $e['id'])) break;
-        $stmt->bind_param('iisssss', $userId, $e['id'], $e['name'], $e['path'], $e['date'], $e['venue'], $e['city']);
+/**
+ * Save events for a person, at most SO_ACCT_MAX_SAVED in all. The person's row is locked for the length of the import, so two devices
+ * importing at once cannot both pass the cap check; the saved ids are read once and counted as events go in.
+ * @return array{saved:int,skipped:int} saved = added or refreshed, skipped = left out because the account is full
+ */
+function soAcctSaveEvents(int $userId, array $events): array {
+    $db = MYSQLI;
+    $saved = 0; $skipped = 0;
+    $db->begin_transaction();
+    try {
+        $stmt = $db->prepare('SELECT id FROM users WHERE id = ? FOR UPDATE');
+        $stmt->bind_param('i', $userId);
         $stmt->execute();
-        $n++;
+        $stmt->store_result();
+        $found = $stmt->num_rows > 0;
+        $stmt->close();
+        if (!$found) { $db->rollback(); return ['saved' => 0, 'skipped' => count($events)]; }
+        $have = [];
+        $stmt = $db->prepare('SELECT event_id FROM user_saved_events WHERE user_id = ?');
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $stmt->bind_result($eid);
+        while ($stmt->fetch()) $have[(int) $eid] = true;
+        $stmt->close();
+        $stmt = $db->prepare('INSERT INTO user_saved_events (user_id, event_id, name, path, event_date, venue, city) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE name = VALUES(name), path = VALUES(path), event_date = VALUES(event_date), venue = VALUES(venue), city = VALUES(city)');
+        foreach ($events as $e) {
+            $isNew = !isset($have[$e['id']]);
+            if ($isNew && count($have) >= SO_ACCT_MAX_SAVED) { $skipped++; continue; }
+            $stmt->bind_param('iisssss', $userId, $e['id'], $e['name'], $e['path'], $e['date'], $e['venue'], $e['city']);
+            $stmt->execute();
+            if ($isNew) $have[$e['id']] = true;
+            $saved++;
+        }
+        $stmt->close();
+        $db->commit();
+    } catch (Throwable $e) {
+        $db->rollback();
+        throw $e;
     }
-    $stmt->close();
-    return $n;
+    return ['saved' => $saved, 'skipped' => $skipped];
 }
 
 function soAcctSavedCount(int $userId): int {
@@ -310,16 +353,6 @@ function soAcctSavedCount(int $userId): int {
     $stmt->fetch();
     $stmt->close();
     return (int) $n;
-}
-
-function soAcctHasSaved(int $userId, int $eventId): bool {
-    $stmt = MYSQLI->prepare('SELECT 1 FROM user_saved_events WHERE user_id = ? AND event_id = ?');
-    $stmt->bind_param('ii', $userId, $eventId);
-    $stmt->execute();
-    $stmt->store_result();
-    $has = $stmt->num_rows > 0;
-    $stmt->close();
-    return $has;
 }
 
 function soAcctRemoveSaved(int $userId, int $eventId): void {

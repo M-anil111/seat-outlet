@@ -6,17 +6,16 @@ require_once __DIR__ . '/inc/account.php';
 require_once __DIR__ . '/inc/account-pages.php';
 
 $user = soAcctUser();
-if ($user === null) { header('Location: /login?next=%2Faccount', true, 302); exit; }
+if ($user === null) soAcctRedirect('/login?next=%2Faccount');
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     header('Cache-Control: no-store');
     $action = isset($_POST['action']) && is_string($_POST['action']) ? $_POST['action'] : '';
     if (!soContactSameOrigin() || !soAcctCsrfOk($user, $_POST['csrf'] ?? null)) { http_response_code(403); echo 'Request could not be confirmed. Go back and try again.'; exit; }
-    if ($action === 'signout') { soAcctSignOut(); header('Location: /?signed_out=1', true, 303); exit; }
-    if ($action === 'delete' && ($_POST['confirm'] ?? '') === 'yes') { soAcctDelete($user['id'], $user['email']); header('Location: /?account_deleted=1', true, 303); exit; }
+    if ($action === 'signout') { soAcctSignOut(); soAcctRedirect('/?signed_out=1', 303); }
+    if ($action === 'delete' && ($_POST['confirm'] ?? '') === 'yes') { soAcctDelete($user['id'], $user['email']); soAcctRedirect('/?account_deleted=1', 303); }
     if ($action === 'remove' && isset($_POST['event_id']) && is_string($_POST['event_id']) && ctype_digit($_POST['event_id'])) { soAcctRemoveSaved($user['id'], (int) $_POST['event_id']); }
-    header('Location: /account', true, 303);
-    exit;
+    soAcctRedirect('/account', 303);
 }
 
 $saved = soAcctSavedList($user['id']);
@@ -58,13 +57,14 @@ $csrf = soAcctH($user['csrf']);
       </div>
 
       <h2 class="so-acct__h2" id="alerts">Your alerts</h2>
-      <?php if ($alerts): ?>
+      <?php if ($alerts):
+          $unsub = ''; foreach ($alerts as $a) { if ($a['unsubscribe'] !== '' && !$a['off']) { $unsub = $a['unsubscribe']; break; } } ?>
         <ul class="so-acct__list">
         <?php foreach ($alerts as $a): ?>
-          <li><span><?php echo soAcctH($a['name'] !== '' ? $a['name'] : ucfirst($a['type'])); ?><span class="so-acct__meta"><?php echo $a['off'] ? 'Emails are off' : 'We email you when something changes'; ?></span></span>
-            <?php if ($a['unsubscribe'] !== '' && !$a['off']): ?><a href="<?php echo soAcctH($a['unsubscribe']); ?>">Turn off</a><?php endif; ?></li>
+          <li><span><?php echo soAcctH($a['name'] !== '' ? $a['name'] : ucfirst($a['type'])); ?><span class="so-acct__meta"><?php echo $a['off'] ? 'Emails are off' : 'We email you when something changes'; ?></span></span></li>
         <?php endforeach; ?>
         </ul>
+        <?php if ($unsub !== ''): ?><p class="so-acct__note"><a href="<?php echo soAcctH($unsub); ?>">Turn off all emails to this address</a> (this stops every alert above).</p><?php endif; ?>
       <?php else: ?>
         <p class="so-acct__lead">No alerts for this address. Use "Notify me" on an event or artist page to add one.</p>
       <?php endif; ?>
@@ -73,7 +73,7 @@ $csrf = soAcctH($user['csrf']);
       <form method="post" action="/account" style="display:inline"><input type="hidden" name="csrf" value="<?php echo $csrf; ?>"><input type="hidden" name="action" value="signout">
         <button type="submit" class="so-acct__btn so-acct__btn--ghost" style="min-height:48px">Sign out</button></form>
       <details style="margin-top:22px"><summary style="cursor:pointer;font-weight:700">Delete my account</summary>
-        <p class="so-acct__note">This removes your account and saved events from Seat Outlet and signs you out everywhere. Alerts you set up by email are managed with the "Turn off" links above. Orders are with our ticket partner and are not affected.</p>
+        <p class="so-acct__note">This removes your account and saved events from Seat Outlet and signs you out everywhere. Alert emails are turned off with the "Turn off all emails" link above. Orders are with our ticket partner and are not affected.</p>
         <form method="post" action="/account"><input type="hidden" name="csrf" value="<?php echo $csrf; ?>"><input type="hidden" name="action" value="delete">
           <label style="font-weight:400"><input type="checkbox" name="confirm" value="yes" required> Yes, delete my account</label>
           <button type="submit" class="so-acct__btn so-acct__btn--danger" style="min-height:48px;margin-top:12px">Delete my account</button></form>
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch('/ajax/account-saved.php', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ csrf: <?php echo json_encode($user['csrf'], JSON_HEX_TAG | JSON_HEX_AMP); ?>, events: list.slice(0, 100) }) })
       .then(function (r) { return r.json(); })
-      .then(function (d) { msg.hidden = false; msg.className = 'so-acct__msg' + (d.status === 'ok' ? ' is-ok' : ''); msg.textContent = d.status === 'ok' ? 'Added. Reloading your list...' : (d.message || 'Could not add them.'); if (d.status === 'ok') setTimeout(function () { location.reload(); }, 700); else btn.disabled = false; })
+      .then(function (d) { msg.hidden = false; msg.className = 'so-acct__msg' + (d.status === 'ok' ? ' is-ok' : ''); var done = d.status === 'ok' || d.status === 'partial'; msg.className = 'so-acct__msg' + (d.status === 'ok' ? ' is-ok' : ''); msg.textContent = d.status === 'ok' ? 'Added. Reloading your list...' : (d.message || 'Could not add them.'); if (done) setTimeout(function () { location.reload(); }, d.status === 'partial' ? 3500 : 700); else btn.disabled = false; })
       .catch(function () { btn.disabled = false; msg.hidden = false; msg.className = 'so-acct__msg'; msg.textContent = 'Could not reach the server. Try again.'; });
   });
 });

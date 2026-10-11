@@ -34,7 +34,10 @@ apCheck('header: the Sign in link has its own class', strpos($hdr, 'class="so-he
 
 // Private pages stay out of search results and the sitemap.
 $robots = $r('robots.txt');
-apCheck('robots.txt blocks the account pages', strpos($robots, 'Disallow: /login') !== false && strpos($robots, 'Disallow: /account') !== false && strpos($robots, 'Disallow: /register') !== false);
+apCheck('robots.txt does not block the account pages (so the noindex header is readable)', strpos($robots, 'Disallow: /login') === false && strpos($robots, 'Disallow: /account') === false && strpos($robots, 'Disallow: /register') === false);
+apCheck('the account pages send an X-Robots-Tag noindex header', strpos($r('inc/account-pages.php'), "header('X-Robots-Tag: noindex, nofollow')") !== false);
+apCheck('the emailed token is not echoed into the page (cookie handoff)', strpos($r('account-verify.php'), 'so_verify') !== false);
+apCheck('CSP allows reCAPTCHA for the account forms', strpos($r('functions.php'), 'google.com/recaptcha') !== false);
 foreach (['login.php', 'register.php', 'account-verify.php', 'account.php'] as $f) { apCheck("$f is noindex and not cached", strpos($r($f), "\$pageRobots = 'noindex, nofollow'") !== false && strpos($r($f), '$pageNoCache = true') !== false); }
 echo $fails ? "$fails failed\n" : "account pages: all passed\n";
 exit($fails ? 1 : 0);
