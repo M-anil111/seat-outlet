@@ -5461,6 +5461,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     soRedirectToCanonicalSlug($urlPrefix, $requestedSlug, soSlug($dimension, $location['label'], $locationValue));
 
     $locationLabel = $location['label'];
+    $GLOBALS['soNoBannerAd'] = true;   // no ad directly above the ticket list (see soAdInjectBanner)
 
     $eventsResponse = getCategoryEventsByLocation($categoryKey, $dimension, $locationValue, [
         'page'    => $page,
