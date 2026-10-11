@@ -12,7 +12,7 @@
 
 <h2>How to use the music festivals list</h2>
 <ol>
-  <li>Pick a letter to see festivals starting with it, or choose All.</li>
+  <li>Use the page numbers at the bottom of the list to see every festival currently listed.</li>
   <li>Open a festival to see its dates and the passes listed.</li>
   <li>Compare the pass type, the days it covers and the price.</li>
   <li>Read the event page for entry rules and lineup details.</li>

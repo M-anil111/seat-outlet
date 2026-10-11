@@ -12,7 +12,7 @@
 
 <h2>How to use the MLS teams list</h2>
 <ol>
-  <li>Pick a letter, or choose All to see every MLS team currently listed.</li>
+  <li>Use the page numbers at the bottom of the list to see every MLS team currently listed.</li>
   <li>Open a team to see its matches with date, opponent and stadium.</li>
   <li>Compare sections on the seat map, from midfield seats to areas behind the goals.</li>
   <li>Check the event page for the kickoff time.</li>

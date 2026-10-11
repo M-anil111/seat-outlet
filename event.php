@@ -364,6 +364,7 @@ $evDirHref = 'https://www.google.com/maps/dir/?api=1&destination=' . rawurlencod
 <?php /* The widget is asked not to bring its own jQuery (includeJQuery=false), so the page must provide it, and before the widget
    script runs. footer.php only loads jQuery on the home, search and about pages, so event pages load it here (once, not deferred). */ ?>
 <script src="/lib/jquery/3.7.1/jquery.min.js"></script>
+<script>document.getElementById('tn-maps').classList.add('so-seatmap--pending');</script>   <!-- JavaScript only: holds the map space before Seatics draws -->
 <script src="<?php echo htmlspecialchars($mapScriptUrl, ENT_QUOTES, 'UTF-8'); ?>"></script>
 
 <?php include 'footer.php'; ?>

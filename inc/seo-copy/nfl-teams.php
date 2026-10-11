@@ -12,7 +12,7 @@
 
 <h2>How to use the NFL teams list</h2>
 <ol>
-  <li>Pick a letter, or choose All to see every NFL team currently listed.</li>
+  <li>Use the page numbers at the bottom of the list to see every NFL team currently listed.</li>
   <li>Open a team to see each home and away game with its date and stadium.</li>
   <li>Compare sections on the seat map, from the lower bowl to the upper deck.</li>
   <li>Read the event page for the kickoff time and any stadium entry rules.</li>
