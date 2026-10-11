@@ -80,6 +80,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
     <li><a href="/ticket-faq">FAQs</a></li>
     <li><a href="/ticket-customer-service">Contact</a></li>
     <li><a href="/blog">Blog</a></li>
+    <li><a href="/login" rel="nofollow">Sign in</a></li>
   </ul>
 </div>
     
@@ -102,7 +103,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 </div>
 
   </div>
-  <div class="policies" aria-label="Browse by name, A to Z">
+  <div class="policies" aria-label="Browse artists, teams and shows by name">
   <ul>
     <li><a href="/concert-artists">Artists on Tour</a></li>
     <li><a href="/comedians-on-tour">Comedians on Tour</a></li>

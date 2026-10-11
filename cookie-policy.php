@@ -171,6 +171,7 @@
                             <li>Allowing you to navigate pages and use secure areas</li>
                             <li>Enabling ticket purchasing, checkout, and payment</li>
                             <li>Maintaining your session and security (e.g., fraud prevention and access control)</li>
+                            <li>Keeping you signed in if you choose to sign in: a first-party authentication cookie named <code>so_session</code>, set only after you confirm a sign-in link and kept for up to 30 days or until you sign out (while you confirm a link, a short-lived cookie named <code>so_verify</code> carries the one-time token for up to 15 minutes)</li>
                         </ul>
                         <p>Without these cookies, some parts of the Platform would not function correctly. These cookies do not require your consent under some laws, but you can still remove or block them via your browser settings; however, this may impact functionality.</p>
                         <p class="sub-heading">3.2 Functional (preference) cookies</p>

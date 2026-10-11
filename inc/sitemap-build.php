@@ -31,7 +31,7 @@ const SO_SITEMAP_STYLE_PI  = '<?xml-stylesheet type="text/xsl" href="/sitemap.xs
 const SO_ROBOTS_DISALLOW = ['/admin/', '/ajax/', '/cache/', '/vendor/', '/db/', '/tools/', '/cron/', '/deploy/', '/docs/', '/inc/', '/search', '/checkout', '/newsletter', '/unsubscribe', '/thank-you', '/order-confirmation'];
 
 /** Script names in the web root that are not pages of their own (templates behind a slug, the frame, endpoints, utility pages). */
-const SO_SITEMAP_NOT_PAGES = ['404', 'header', 'footer', 'functions', 'robots', 'sitemap', 'sitemap-page', 'search', 'checkout', 'order-confirmation', 'thank-you', 'unsubscribe', 'newsletter-email'];
+const SO_SITEMAP_NOT_PAGES = ['404', 'header', 'footer', 'functions', 'robots', 'sitemap', 'sitemap-page', 'search', 'checkout', 'order-confirmation', 'thank-you', 'unsubscribe', 'newsletter-email', 'login', 'register', 'account', 'account-verify'];
 
 /** Pages that are real but that the scan cannot tell from a template behind a slug: the home page and the blog index. */
 const SO_SITEMAP_EXTRA_PATHS = ['/', '/blog'];

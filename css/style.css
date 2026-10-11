@@ -8023,3 +8023,7 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 .so-social-pill:hover, .so-social-pill:focus-visible { background: #fff; color: #0b1120; }
 .mascot-panel .so-social-pill { color: #1d1d1f; border-color: rgba(0,0,0,.25); }
 .mascot-panel .so-social-pill:hover, .mascot-panel .so-social-pill:focus-visible { background: #0b1120; color: #fff; }
+
+/* Header "Sign in" link (desktop). Its own class: the menu scripts treat every .so-mega-top as a mega-menu item. */
+.tm-top-links a.so-header-signin { align-items: center; padding: 10px 14px; margin: 0 4px 0 0; border-radius: 980px; color: #fff; font-weight: 600; font-size: 16px; text-decoration: none; transition: background .15s ease; }
+.tm-top-links a.so-header-signin:hover, .tm-top-links a.so-header-signin:focus-visible { background: rgba(255,255,255,.18); color: #fff; text-decoration: none; }

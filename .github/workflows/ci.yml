@@ -73,6 +73,8 @@ jobs:
         run: php tools/test-event-offer.php
       - name: Event page never says tickets are unavailable when the feed lists them
         run: php tools/test-widget-mismatch.php
+      - name: Account pages keep the sign-in design (single use, CSRF, hashes, noindex)
+        run: php tools/test-account-pages.php
       - name: Popular and nationwide lists read in date order
         run: php tools/test-feed-order.php
       - name: Crawl guard
@@ -154,6 +156,8 @@ jobs:
 
       - name: URL slug registry (clean slugs, collisions, old form still resolves)
         run: php tools/test-slugs.php
+      - name: Accounts (emailed link, single use, sessions, saved events, deletion)
+        run: php tools/test-account.php
 
       - name: Apply the sample seed (must also be safe to run twice)
         run: |

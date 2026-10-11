@@ -366,6 +366,7 @@ include_once 'functions.php';
                             </ul>
                         </nav>
                         <div class="tm-top-links so-header-actions d-flex d-sm-flex d-md-flex align-items-center">
+                            <a class="so-header-signin d-none d-lg-inline-flex" href="/login" rel="nofollow">Sign in</a>
                             <button type="button" class="btn so-icon-btn so-search-toggle p-0" aria-label="Search" aria-expanded="<?php echo $soSearchOpen ? 'true' : 'false'; ?>" aria-controls="soSearch">
                                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span class="so-search-toggle__label">Search</span>
                             </button>
@@ -476,6 +477,7 @@ include_once 'functions.php';
                         <li><a href="/ticket-customer-service">Contact us</a></li>
                         <li><a href="/about-seat-outlet">About Seat Outlet</a></li>
                         <li><a href="/blog">Blog</a></li>
+                        <li><a href="/login" rel="nofollow">Sign in or create account</a></li>
                     </ul>
                 </div>
             </div>

@@ -63,7 +63,7 @@ const SO_CSS_GROUPS = [
         'sql' => true,
     ],
     'checkout' => [
-        'templates' => ['checkout.php', 'order-confirmation.php', 'thank-you.php', 'unsubscribe.php'],
+        'templates' => ['checkout.php', 'order-confirmation.php', 'thank-you.php', 'unsubscribe.php', 'login.php', 'register.php', 'account.php', 'account-verify.php'],
         'js' => [],
         'ajax' => [],
     ],
