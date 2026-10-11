@@ -79,8 +79,9 @@ const SO_AD_HERO_CLASSES = ['hero-section', 'hero-so-why', 'vp-hero', 'tickets-h
 
 function soAdInjectBanner(string $html): string {
     if (!empty($GLOBALS['soNoAds'])) return $html;
-    // 1. Under the hero.
-    if (strpos($html, 'so-ad--banner') === false && ($banner = soAdSlot('banner')) !== '') {
+    // 1. Under the hero. Listing pages turn this off (soNoBannerAd): an ad above the list was the "related search" pills problem
+    //    and pushed the ticket list down. The mid-page and footer ads still show there.
+    if (empty($GLOBALS['soNoBannerAd']) && strpos($html, 'so-ad--banner') === false && ($banner = soAdSlot('banner')) !== '') {
         $alt = implode('|', array_map(function ($c) { return preg_quote($c, '#'); }, SO_AD_HERO_CLASSES));
         // The first opening tag, anywhere in the page body, whose class list has a hero class as a whole word.
         if (preg_match('#<(section|header|div)\b[^>]*\bclass="(?:[^"]*\s)?(?:' . $alt . ')(?:\s[^"]*)?"[^>]*>#i', $html, $m, PREG_OFFSET_CAPTURE)) {

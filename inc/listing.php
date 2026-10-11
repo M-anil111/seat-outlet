@@ -374,6 +374,7 @@ function soListingAltCategories(int $categoryId, int $max = 5): array {
  * page so they all look and behave the same. $o: events, total, count, perPage, params, type ('' | 'search'), empty (array for soRenderListingEmpty), group.
  */
 function soRenderListingBody(array $o): void {
+    $GLOBALS['soNoBannerAd'] = true;   // every ticket list (listing pages and search results) gets no ad directly above it
     $o += ['events' => [], 'total' => 0, 'perPage' => 20, 'params' => [], 'type' => '', 'empty' => null, 'group' => true, 'ranked' => null];
     $events = $o['events'];
     $total = (int) $o['total'];
@@ -419,6 +420,7 @@ function soRenderListingBody(array $o): void {
  *     afterRow / afterSection (optional callables that echo extra blocks).
  */
 function soRenderListingPage(array $o): void {
+    $GLOBALS['soNoBannerAd'] = true;   // no ad directly above the ticket list (see soAdInjectBanner)
     $o += ['tag' => 'h1', 'defaultSort' => 'popular', 'explore' => [], 'body' => [], 'lead' => null, 'afterRow' => null, 'afterSection' => null, 'when' => '', 'sort' => 'popular', 'max' => 0];
     $total = (int) $o['total'];
     // The feed failed (throttled, down): never present that as "0 results". Serve the last good copy of this page; without one,

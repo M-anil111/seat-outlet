@@ -58,6 +58,7 @@ function soNearbyVenuesWithEvents(array $venue, int $limit = 6): array {
  *                 image (getEntityImage result or null), parent/stateParent ['url','text'], cityId, cityLabel
  */
 function soRenderEntityListing(array $c): void {
+    $GLOBALS['soNoBannerAd'] = true;   // no ad directly above the ticket list (see soAdInjectBanner)
     $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
     $kind = $c['kind']; $label = (string) $c['label']; $name = (string) $c['name'];
     $soEntityFacts = $kind === 'venue' ? soEntityFacts($name, 'venue', (string) ($c['entity']['city']['text']['name'] ?? '')) : [];   // Wikidata / Wikipedia / official site, [] until looked up

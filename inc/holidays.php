@@ -128,6 +128,47 @@ function soHolidayFilter(string $key): string {
     return "date/date ge {$w['from']} and date/date le {$w['to']} and _metadata/hasTickets eq true";
 }
 
+/**
+ * Unique text for one holiday-city page, built only from what the page already lists: the venues, the lowest price and the first
+ * and last dates shown. The event count is left to the results count and the FAQ below the block. A sentence is written only when
+ * its fact exists, so no page gets invented copy.
+ */
+function soHolidayAboutBlock(callable $h, string $label, string $what, string $name, array $events, int $total, ?array $win, string $dates): void {
+    $venues = []; $dates_ = []; $low = null; $lowText = '';
+    foreach ($events as $e) {
+        $vn = trim((string) ($e['venue']['text']['name'] ?? ''));
+        if ($vn !== '' && !in_array($vn, $venues, true)) $venues[] = $vn;
+        $lp = (float) ($e['pricingInfo']['lowPrice']['value'] ?? 0);
+        if ($lp > 0 && ($low === null || $lp < $low)) {
+            $low = $lp;
+            // The API's own formatted price (currency and rounding as shown on the event), with cents kept when present
+            $lowText = (string) ($e['pricingInfo']['lowPrice']['text']['formatted'] ?? '');
+            if ($lowText === '') { $lowText = '$' . preg_replace('/\.00$/', '', number_format($lp, 2)); }
+        }
+        $d = (string) ($e['date']['date'] ?? '');
+        if ($d !== '') $dates_[] = $d;
+    }
+    sort($dates_);
+    // $events holds only the first page of results, so venue, price and date claims are limited to those listed events
+    $partial = $total > count($events);
+    $about = [];
+    $vCount = count($venues);
+    if ($vCount > 0) {
+        if (!$partial && $vCount <= 3) $list = implode(', ', $venues);
+        elseif (!$partial) $list = $vCount . ' venues, including ' . implode(', ', array_slice($venues, 0, 3));
+        else $list = 'venues such as ' . implode(', ', array_slice($venues, 0, 3));
+        $about[] = 'Events for ' . $name . ' in ' . $label . ($win ? ' on ' . $dates : '') . ' take place at ' . $list . '.';
+    }
+    if ($lowText !== '') {
+        $about[] = ($partial ? 'The lowest price among the events listed here starts from ' : 'Tickets for the events on this page start from ') . $lowText . ', so compare seats and prices before you choose.';
+    }
+    if (count($dates_) >= 2) $about[] = ($partial ? 'Of the events listed here, the earliest is on ' : 'The earliest event on this page is on ') . date('F j, Y', strtotime($dates_[0])) . ' and the latest is on ' . date('F j, Y', strtotime(end($dates_))) . '.';
+    if (!$about) return;
+    echo '<div class="container py-4"><h2 class="h4">About ' . $h($what) . ' in ' . $h($label) . '</h2>';
+    foreach ($about as $para) echo '<p>' . $h($para) . '</p>';
+    echo '</div>';
+}
+
 function renderCityHolidayPage(string $key = ''): void {
     $key = $key !== '' ? $key : (string) ($_GET['holiday'] ?? '');
     $cfg = SO_HOLIDAYS[$key] ?? null;
@@ -212,8 +253,9 @@ function renderCityHolidayPage(string $key = ''): void {
             'params'  => $params,
             'empty'   => ['basePath' => $path, 'noun' => $nm, 'when' => $when, 'max' => 0, 'fragment' => 'city/id eq ' . (int) $id, 'kind' => 'city', 'id' => $id, 'name' => $label, 'alts' => []],
         ],
-        'afterSection' => function () use ($h, $label, $cityName, $canonSlug, $key, $what, $country, $faqs) {
+        'afterSection' => function () use ($h, $label, $cityName, $canonSlug, $key, $what, $country, $faqs, $events, $total, $win, $dates, $cfg) {
             echo '<div class="container py-4">' . soSpecPromoHtml("Promo codes for $what in $cityName", "$cityName $what") . '</div>';
+            soHolidayAboutBlock($h, $label, $what, (string) $cfg['name'], $events, $total, $win, $dates);
             soMiniFaq("FAQs about $what in $label", $faqs);
             // Links: the city, the other holidays coming up there, then the city's category and discovery pages.
             $links = ['<a href="/city/' . $h($canonSlug) . '">All events in ' . $h($label) . '</a>'];
