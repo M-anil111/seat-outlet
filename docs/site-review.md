@@ -38,7 +38,7 @@ The earlier Sentry repairs and deployment requirements remain documented in [sen
 | Blog, help, policies, guides and contact | Shared content/CSS families inspected; contact origin checks pass | Real article images, forms with reCAPTCHA, delivery to the intended inbox and mobile content layout |
 | Newsletter/lead forms | POST validation, honeypot, reCAPTCHA and rate-limit paths inspected | Real provider delivery, duplicate signup and unsubscribe |
 | Admin | Authentication, CSRF, registration and prepared-write patterns inspected; PHP lint/static checks pass | Authenticated create/edit/delete, reset email, upload and permissions in a disposable test account |
-| Worker, routing and assets | Worker checks, URL/schema checks, stylesheet checks and generated-asset build pass | Production CDN headers, redirects, public/private cache boundaries and dependency audit |
+| Worker, routing and assets | Worker checks, URL/schema checks, stylesheet checks and generated-asset build pass | Production CDN headers, redirects and public/private cache boundaries |
 
 No contact messages, newsletter subscriptions, admin accounts or purchases were created during this review.
 
@@ -67,7 +67,7 @@ Prioritized follow-up work:
 | Medium | Recheck relevance across pagination | Local page ranking can reorder only the current page; it cannot guarantee globally best matches. Prefer a provider-level ranking or a bounded complete result set. |
 | Medium | Add explicit freshness to stale results and avoid presenting stale prices as a guarantee | Existing fallback windows can be long. Verify totals and final prices with the hosted checkout. |
 | Medium | Make optional services optional during local startup | Requiring Maps, image-storage and reCAPTCHA credentials for every page prevents useful partial startup. Introduce explicit development adapters, rather than fake production configuration. |
-| Medium | Finish dependency and deployment checks | Composer advisory access is blocked here; CI must run the audit. Apply migrations and monitor Sentry after deployment. |
+| Medium | Finish dependency and deployment checks | Composer advisory audit passed during release preparation; CI should verify the published branch. Apply migrations and monitor Sentry after deployment. |
 
 ## Reproducing the isolated tests
 
