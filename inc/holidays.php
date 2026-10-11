@@ -130,8 +130,8 @@ function soHolidayFilter(string $key): string {
 
 /**
  * Unique text for one holiday-city page, built only from what the page already lists: the venues, the lowest price and the first
- * and last dates shown. The event count is left to the FAQ above it. A sentence is written only when its fact exists, so no page
- * gets invented copy.
+ * and last dates shown. The event count is left to the results count and the FAQ below the block. A sentence is written only when
+ * its fact exists, so no page gets invented copy.
  */
 function soHolidayAboutBlock(callable $h, string $label, string $what, string $name, array $events, int $total, ?array $win, string $dates): void {
     $venues = []; $dates_ = []; $low = null; $lowText = '';
