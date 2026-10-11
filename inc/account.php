@@ -158,18 +158,37 @@ function soAcctRequestLink($emailRaw, $nextRaw = '', ?callable $send = null): ar
     return ['status' => 'sent'];
 }
 
+/**
+ * The account tables are missing or the database refused a sign-in query (for example db/migrate.php has not been run since 0047).
+ * Signing in must not take a page down with a 500: log it, tell Sentry once an hour as a warning, and let the caller treat it as "no".
+ */
+function soAcctDbFail(Throwable $e): void {
+    error_log('accounts: ' . $e->getMessage());
+    if (!function_exists('\\Sentry\\captureMessage')) return;
+    $flag = sys_get_temp_dir() . '/so_acct_dbfail_' . md5(__FILE__);
+    if (@filemtime($flag) > time() - 3600) return;
+    $lock = @fopen($flag . '.lock', 'c');   // check and touch under a lock: concurrent failures send one warning, not a burst
+    if ($lock) @flock($lock, LOCK_EX);
+    if (@filemtime($flag) > time() - 3600) { if ($lock) { @flock($lock, LOCK_UN); @fclose($lock); } return; }
+    @touch($flag);
+    if ($lock) { @flock($lock, LOCK_UN); @fclose($lock); }
+    \Sentry\captureMessage('Accounts unavailable (run db/migrate.php if migration 0047 is not applied): ' . substr($e->getMessage(), 0, 200), \Sentry\Severity::warning());
+}
+
 /* ---------- Using a link ---------- */
 
 /** The unused, unexpired link for this token, without using it up (the confirmation page shows it). */
 function soAcctPeekLink($token): ?array {
     if (!is_string($token) || !preg_match('/^[a-f0-9]{64}$/', $token)) return null;
     $hash = soAcctHash($token);
-    $stmt = MYSQLI->prepare('SELECT id, email, next_path FROM login_links WHERE token_hash = ? AND used_at IS NULL AND expires_at > NOW()');
-    $stmt->bind_param('s', $hash);
-    $stmt->execute();
-    $stmt->bind_result($id, $email, $next);
-    $row = $stmt->fetch() ? ['id' => (int) $id, 'email' => (string) $email, 'next' => soAcctSafeNext($next)] : null;
-    $stmt->close();
+    try {
+        $stmt = MYSQLI->prepare('SELECT id, email, next_path FROM login_links WHERE token_hash = ? AND used_at IS NULL AND expires_at > NOW()');
+        $stmt->bind_param('s', $hash);
+        $stmt->execute();
+        $stmt->bind_result($id, $email, $next);
+        $row = $stmt->fetch() ? ['id' => (int) $id, 'email' => (string) $email, 'next' => soAcctSafeNext($next)] : null;
+        $stmt->close();
+    } catch (Throwable $e) { soAcctDbFail($e); return null; }
     return $row;
 }
 
@@ -234,18 +253,21 @@ function soAcctUser(?string $cookie = null): ?array {
     if (!preg_match('/^[a-f0-9]{64}$/', $tok)) return null;
     if (array_key_exists($tok, $memo)) return $memo[$tok];
     $hash = soAcctHash($tok);
-    $stmt = MYSQLI->prepare('SELECT u.id, u.email, s.csrf, s.id FROM user_sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > NOW()');
-    $stmt->bind_param('s', $hash);
-    $stmt->execute();
-    $stmt->bind_result($uid, $email, $csrf, $sid);
-    $row = $stmt->fetch() ? ['id' => (int) $uid, 'email' => (string) $email, 'csrf' => (string) $csrf, 'session_id' => (int) $sid] : null;
-    $stmt->close();
-    if ($row) {   // keep a person who is using the site signed in: touch the row at most once an hour
-        $stmt = MYSQLI->prepare('UPDATE user_sessions SET last_seen_at = NOW() WHERE id = ? AND last_seen_at < (NOW() - INTERVAL 1 HOUR)');
-        $stmt->bind_param('i', $row['session_id']);
+    $row = null;
+    try {
+        $stmt = MYSQLI->prepare('SELECT u.id, u.email, s.csrf, s.id FROM user_sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > NOW()');
+        $stmt->bind_param('s', $hash);
         $stmt->execute();
+        $stmt->bind_result($uid, $email, $csrf, $sid);
+        $row = $stmt->fetch() ? ['id' => (int) $uid, 'email' => (string) $email, 'csrf' => (string) $csrf, 'session_id' => (int) $sid] : null;
         $stmt->close();
-    }
+        if ($row) {   // keep a person who is using the site signed in: touch the row at most once an hour
+            $stmt = MYSQLI->prepare('UPDATE user_sessions SET last_seen_at = NOW() WHERE id = ? AND last_seen_at < (NOW() - INTERVAL 1 HOUR)');
+            $stmt->bind_param('i', $row['session_id']);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } catch (Throwable $e) { soAcctDbFail($e); }
     return $memo[$tok] = $row;
 }
 
