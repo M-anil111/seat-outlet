@@ -119,6 +119,47 @@ const html = execFileSync('php', [path.join(__dirname, 'test-listing-controls.ph
     assert.equal(await page.locator('#keywordHeader').getAttribute('aria-expanded'),'false');
     assert.deepEqual(errors, []);
     console.log('ok   autocomplete grouped responses, blocked storage, stale responses, HTTP retry and short-query reset');
+    // Exercise the actual nearby feed script with failed and empty continuation pages.
+    await page.goto('http://fixture.test/');
+    await page.evaluate(() => {
+      document.body.innerHTML = `<main data-so-explore data-sort="price">
+        <button data-so-loc><span data-so-loc-label>Fixture city</span></button>
+        <div data-so-loc-pop hidden><input id="soNearInput"><button data-so-loc-here>Use my current location</button></div>
+        <section data-so-near><h2 data-so-near-title></h2><div data-so-near-grid></div><button data-so-near-more>See more</button></section>
+      </main>`;
+      window.getCookie = n => ({so_lat:'30.1',so_lng:'-97.7',so_label:'Fixture city'}[n] || '');
+      window.nearPending = [];
+      window.fetch = url => new Promise(resolve => nearPending.push({url:String(url),resolve}));
+      window.nearReply = (i, names, hasMore = true, scope = 'near') => nearPending[i].resolve({ok:true,json:()=>Promise.resolve({events:names.map((name,j)=>({id:i*100+j+1,name,iso:'2027-01-01',price:'$50'})),hasMore,scope})});
+    });
+    await page.addScriptTag({content:fs.readFileSync(path.join(root,'js/near-you.js'),'utf8')});
+    await page.waitForFunction(() => nearPending.length === 1);
+    await page.evaluate(() => nearReply(0,['First page']));
+    await page.waitForFunction(() => document.querySelector('[data-so-near-grid]').textContent.includes('First page'));
+    await page.locator('[data-so-near-more]').click();
+    await page.evaluate(() => nearPending[1].resolve({ok:false,status:503}));
+    await page.waitForFunction(() => document.querySelector('[data-so-near-more]').textContent === 'Try again');
+    assert((await page.locator('[data-so-near-grid]').textContent()).includes('First page'));
+    await page.locator('[data-so-near-more]').click();
+    assert.equal(await page.evaluate(() => new URL(nearPending[2].url,location.href).searchParams.get('page')),'2');
+    await page.evaluate(() => nearReply(2,['Second page']));
+    await page.waitForFunction(() => document.querySelector('[data-so-near-grid]').textContent.includes('Second page'));
+    await page.locator('[data-so-near-more]').click();
+    await page.evaluate(() => nearReply(3,[]));
+    await page.waitForFunction(() => document.querySelector('[data-so-near-more]').textContent === 'Try again');
+    await page.locator('[data-so-near-more]').click();
+    assert.equal(await page.evaluate(() => new URL(nearPending[4].url,location.href).searchParams.get('page')),'3');
+    await page.evaluate(() => nearReply(4,['Third page'],false));
+    await page.waitForFunction(() => document.querySelector('[data-so-near-grid]').textContent.includes('Third page'));
+    await page.evaluate(() => document.dispatchEvent(new CustomEvent('so:location',{detail:{}})));
+    await page.waitForFunction(() => nearPending.length === 6);
+    assert.equal(await page.evaluate(() => new URL(nearPending[5].url,location.href).searchParams.get('lat')),'');
+    await page.evaluate(() => nearReply(5,['Nationwide prices'],true,'nationwide'));
+    await page.waitForFunction(() => document.querySelector('[data-so-near-grid]').textContent.includes('Nationwide prices'));
+    assert.equal(await page.locator('[data-so-near-title]').textContent(),'Events nationwide');
+    assert.equal(await page.locator('[data-so-near-grid] .so-row__badge--hot').count(),0);
+    assert.deepEqual(errors, []);
+    console.log('ok   nearby pagination retries preserve page/rows, empty continuation retries, location reset and nationwide price labels');
     console.log('ok   filter races, pagination races, exact continuation, empty counts, API failures, custom date sort and quick-date reset');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode=1; });

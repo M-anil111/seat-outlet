@@ -87,3 +87,14 @@ The browser test needs Playwright and Chromium. `CHROMIUM_PATH` overrides the ex
 The homepage now has a clearer photo-led headline, Search Events and Explore this weekend actions, and four direct category cards. Shared event cards use consistent spacing, borders, typography and blue accents. Listing rows have readable date tiles, prominent prices and visible Buy Tickets/View Event actions; mobile rows place price and action beneath the details. Header search styling and page-title cards use the same visual direction.
 
 Local Chromium previews use the actual header, homepage hero/category markup and shared row renderer with fixture events. Checks at 360, 390, 768 and 1440 pixels found no horizontal overflow; ticket actions are visible, at least 44px high and receive clicks without the row overlay intercepting them. Long event titles and unavailable ticket prices were included. Existing dropdown/autocomplete browser checks, stylesheet size checks, SEO checks and icon coverage also pass. These previews do not establish live inventory or third-party widget layout.
+
+## Related fixes while the issue sheet is inaccessible
+
+The Google Sheets export is blocked by the environment's network tunnel (403), so these findings come from code review and local regressions, rather than the sheet's unread rows:
+
+- Nationwide price and soonest feeds retain their selected order and continue past the first 48 events. The date-ordered best-seller set still applies to popularity and the default nationwide fallback.
+- Nearby “See more” retries repeat the failed page and keep existing rows. An empty page that promises more results is also retryable. Clearing location switches to nationwide results; price-sorted rows do not claim popularity.
+- Homepage feed and autocomplete outages return an error with `no-store`, including failures during suggestion category enrichment. Suggestions tolerate missing optional category/location fields and skip entries without an ID or name.
+- Array-valued date/sort parameters fall back safely instead of crashing the central listing state helper. The last-minute feed uses the same inclusive seven-day window as other date controls.
+
+Validation extends the real endpoint and Chromium suites with five-page nationwide sorting, failed/empty pagination retries, location reset, incomplete suggestions, outage responses and malformed query parameters. Sheet-by-sheet verification remains pending until its contents are available.

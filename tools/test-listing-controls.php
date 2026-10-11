@@ -14,6 +14,17 @@ if (($argv[1] ?? '') !== '--html') {
         [$a,$b] = listingDateRange($key);
         if ((new DateTimeImmutable($a))->diff(new DateTimeImmutable($b))->days + 1 !== $days) throw new RuntimeException('Inclusive date window failed');
     }
+    $guard = file_get_contents(dirname(__DIR__) . '/inc/request-guard.php');
+    if (!preg_match('/function soQs\(.*?\n}\n/s', $guard, $m)) throw new RuntimeException('Missing query helper');
+    eval($m[0]);
+    if (!preg_match('/function listingRequestState\(.*?\n}/s', $source, $m)) throw new RuntimeException('Missing listing state');
+    eval($m[0]);
+    define('LISTING_WHEN', ['today'=>'Today','week'=>'Next 7 days']);
+    define('LISTING_SORT', ['popular'=>'Best sellers','price'=>'Lowest price']);
+    $_GET = ['when'=>['today'], 'sort'=>['price']];
+    if (listingRequestState() !== ['', 'popular', false]) throw new RuntimeException('Array query crashed listing state');
+    $_GET = ['when'=>'week', 'sort'=>'price'];
+    if (listingRequestState() !== ['week', 'price', true]) throw new RuntimeException('Valid listing state rejected');
     // Exercise the real search link builder without bootstrapping integrations.
     $search = file_get_contents(dirname(__DIR__) . '/search.php');
     $from = strpos($search, '$filterHref = function');

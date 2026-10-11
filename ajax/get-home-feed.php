@@ -93,7 +93,7 @@ if ($kind === 'near') {
             if ($wide) { $params['perPage'] = SO_HOME_FEED_WIDE; $params['page'] = 1; }
             return $params;
         };
-        $wideNow = ($nearSort === 'popular' || $nationwide);
+        $wideNow = ($nearSort === 'popular' || ($nationwide && $nearSort === 'distance'));
         $data = tnRequest('/catalog/v2/events/', $buildParams(!$nationwide, $wideNow));
         $total = (int) ($data['totalCount'] ?? 0);
         $wideAll = null;   // the whole date-ordered best-seller set, when this answer is one
@@ -118,6 +118,7 @@ if ($kind === 'near') {
         } elseif ($nationwide) {
             $scope = 'nationwide';
         }
+        if (!$events && soApiDegraded()) throw new SoTnUnavailable('Home feed unavailable');
         $out = [
             'scope' => $scope,
             'radius' => $radius ?: SO_NEAR_MILES,
@@ -131,7 +132,8 @@ if ($kind === 'near') {
         header('Cache-Control: public, max-age=300');
         echo json_encode($out);
     } catch (Throwable $e) {
-        http_response_code(500);
+        http_response_code($e instanceof SoTnUnavailable ? 503 : 500);
+        header('Cache-Control: no-store');
         echo json_encode(['scope' => 'near', 'events' => [], 'hasMore' => false, 'error' => 'Failed to load events']);
     }
     exit;
@@ -149,7 +151,7 @@ soHomeFeedLiveAllowed();
 
 function soHomeFeedFetch(string $kind, ?float $lat, ?float $lng): array {
     $today = date('Y-m-d');
-    $end = $kind === 'lastminute' ? date('Y-m-d', strtotime('+7 days')) : date('Y-m-d', strtotime('+90 days'));
+    $end = $kind === 'lastminute' ? listingDateRange('week')[1] : date('Y-m-d', strtotime('+90 days'));
     if ($kind === 'popweekend') {
         [$today, $end] = listingDateRange('weekend');
     }
@@ -250,6 +252,7 @@ try {
         $events = soHomeFeedFetch($kind, null, null);
         $scope = 'national';
     }
+    if (!$events && soApiDegraded()) throw new SoTnUnavailable('Home feed unavailable');
     $formatted = soHomeFeedFormat($events);
     if ($kind === 'lastminute') $formatted = soHomeFeedImageFirst($formatted, function ($e) { return $e['iso'] !== '' ? $e['iso'] : null; });   // same day: pictures first
     elseif ($kind === 'trending') $formatted = soHomeFeedImageFirst($formatted);   // top sellers: the same set, pictures first
@@ -260,6 +263,7 @@ try {
     header('Cache-Control: public, max-age=300');
     echo json_encode($result);
 } catch (Throwable $e) {
-    http_response_code(500);
+    http_response_code($e instanceof SoTnUnavailable ? 503 : 500);
+    header('Cache-Control: no-store');
     echo json_encode(['scope' => 'national', 'events' => [], 'error' => 'Failed to load events']);
 }

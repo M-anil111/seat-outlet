@@ -1751,8 +1751,10 @@ function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1, 
  * canonical to the base page (see listingRequestState()).
  */
 function listingRequestState($defaultSort = 'popular') {
-    $when = isset($_GET['when']) && isset(LISTING_WHEN[$_GET['when']]) ? $_GET['when'] : '';
-    $sort = isset($_GET['sort']) && isset(LISTING_SORT[$_GET['sort']]) ? $_GET['sort'] : $defaultSort;
+    $whenIn = soQs('when');
+    $sortIn = soQs('sort');
+    $when = isset(LISTING_WHEN[$whenIn]) ? $whenIn : '';
+    $sort = isset(LISTING_SORT[$sortIn]) ? $sortIn : $defaultSort;
     return [$when, $sort, ($when !== '' || $sort !== $defaultSort)];
 }
 

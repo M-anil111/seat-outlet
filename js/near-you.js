@@ -28,7 +28,7 @@
     var d = new Date(p[0], p[1] - 1, p[2]);
     var now = new Date(); now.setHours(0, 0, 0, 0);
     var days = Math.round((d - now) / 86400000);
-    if (days <= 0) return 'Today';
+    if (days === 0) return 'Today';
     if (days === 1) return 'Tomorrow';
     return '';
   }
@@ -86,9 +86,10 @@
     ensureNotice();
     if (scope === 'nationwide') {
       // The nearest event is more than 250 miles away: say what this is instead of calling it "near you".
-      title.textContent = 'Popular ' + noun + ' nationwide' + when;
+      var popular = state.sort === 'popular' || state.sort === 'distance';
+      title.textContent = (popular ? 'Popular ' + noun : cap) + ' nationwide' + when;
       notice.hidden = false;
-      if (!state.lat) { notice.textContent = 'Choose a location to see ' + noun + ' near you. These are the most popular across the country' + (state.when ? ' for those dates' : '') + '.'; return; }
+      if (!state.lat) { notice.textContent = 'Choose a location to see ' + noun + ' near you. ' + (popular ? 'These are the most popular across the country' : 'Showing events across the country') + (state.when ? ' for those dates' : '') + '.'; return; }
       notice.textContent = 'No ' + noun + ' within 250 miles of ' + place + (state.when ? ' for those dates' : '') + '. These are the most popular across the country' + (data.closest ? ' (the nearest is about ' + data.closest + ' miles away).' : '.');
       return;
     }
@@ -117,7 +118,6 @@
     // Without a location the section stays hidden, except for the explicit nationwide list (startNationwide).
     if ((!state.lat || !state.lng) && !state.anywhere) { near.hidden = true; return; }
     var my = ++state.token;
-    state.page = page;
     if (page === 1) { grid.innerHTML = skeleton(4); near.hidden = false; more.hidden = true; state.nw = false; grid.classList.remove('is-expanded'); }
     more.disabled = true;
     if (page > 1) { more.textContent = 'Loading...'; more.setAttribute('aria-busy', 'true'); }
@@ -126,6 +126,8 @@
     fetch('/ajax/get-home-feed.php?' + qs).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (data) {
       if (my !== state.token) return;
       var events = (data && data.events) || [];
+      if (page > 1 && !events.length && data && data.hasMore) throw new Error('Empty page while more events are promised');
+      state.page = page;
       if (page === 1) {
         if (!events.length) {
           if (data && data.scope === 'empty') { showEmpty(data); return; }
@@ -137,7 +139,7 @@
         setTitle(data);
         grid.innerHTML = '';
       }
-      events.forEach(function (e, i) { var lead = e.top === true || (e.top === undefined && i < 3); e.top = (page === 1 && lead) && ((state.sort === 'popular' && state.scope === 'near') || state.scope === 'nationwide'); });
+      events.forEach(function (e, i) { var lead = e.top === true || (e.top === undefined && i < 3); e.top = (page === 1 && lead) && ((state.sort === 'popular' && state.scope === 'near') || (state.scope === 'nationwide' && (state.sort === 'popular' || state.sort === 'distance'))); });
       var start = grid.querySelectorAll('.performer-event-item').length;
       var html = events.map(function (e, i) { return card(e, start + i); }).join('');
       if (page === 1) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
@@ -145,6 +147,7 @@
       more.disabled = false;
       more.textContent = 'See more';
       more.removeAttribute('aria-busy');
+      more.removeAttribute('aria-label');
       // On phones this grid is a sideways carousel, so new cards used to land off-screen and "See more" looked dead. After the
       // first tap the grid opens up into rows and the first new card is brought into view.
       if (page > 1) {
@@ -157,6 +160,7 @@
       more.textContent = 'See more';
       more.removeAttribute('aria-busy');
       if (page === 1) showFailure();
+      else { more.textContent = 'Try again'; more.setAttribute('aria-label', 'Retry loading more events'); }
     });
   }
 
@@ -342,7 +346,11 @@
   document.addEventListener('so:location', function (e) {
     var d = e.detail || {};
     if (d.lat && d.lng && (d.lat != state.lat || d.lng != state.lng)) setLocation(d.lat, d.lng, d.label, false);
-    else if (!d.lat && !d.lng) startNationwide();
+    else if (!d.lat && !d.lng) {
+      state.lat = ''; state.lng = ''; state.label = '';
+      nationwideStarted = false;
+      startNationwide();
+    }
   });
   setTimeout(function () { if (!state.lat && /^Finding/.test(locLabel.textContent)) locLabel.textContent = 'Choose location'; startNationwide(); }, 5000);
 })();
