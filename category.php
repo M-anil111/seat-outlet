@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+soListingStripPage();
 require_once __DIR__ . '/inc/genre-pages.php';
 require_once __DIR__ . '/inc/seo-category.php';
 require_once __DIR__ . '/inc/genre-focus.php';

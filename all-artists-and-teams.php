@@ -275,15 +275,6 @@ try {
 <section class="py-4 py-lg-5">
 	<div class="container">
 
-		<nav class="performer-filter-row" id="performerFilterRow" aria-label="<?php echo htmlspecialchars(ucfirst($soDir['noun']), ENT_QUOTES, 'UTF-8'); ?> starting with">
-			<div class="performer-filter-wrap" id="performerFilterBar">
-				<a class="performer-filter-btn is-all<?php echo $letter === '' ? ' active' : ''; ?>" href="<?php echo $soDirBase; ?>"<?php echo $letter === '' ? ' aria-current="page"' : ''; ?>>All</a>
-				<a class="performer-filter-btn<?php echo $letter === '0-9' ? ' active' : ''; ?>" href="<?php echo htmlspecialchars($soDirUrl('0-9'), ENT_QUOTES, 'UTF-8'); ?>"<?php echo $letter === '0-9' ? ' aria-current="page"' : ''; ?>>0-9</a>
-				<?php foreach (range('A', 'Z') as $l) { ?>
-					<a class="performer-filter-btn<?php echo $letter === $l ? ' active' : ''; ?>" href="<?php echo htmlspecialchars($soDirUrl($l), ENT_QUOTES, 'UTF-8'); ?>"<?php echo $letter === $l ? ' aria-current="page"' : ''; ?>><?php echo $l; ?></a>
-				<?php } ?>
-			</div>
-		</nav>
 
 		<nav class="so-dir__types" aria-label="Browse by type">
 			<?php foreach (soDirectoryLinks($soDirKey) as [$soTypeHref, $soTypeLabel]) { ?><a href="<?php echo htmlspecialchars($soTypeHref, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($soTypeLabel, ENT_QUOTES, 'UTF-8'); ?></a><?php } ?>

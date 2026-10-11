@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+soListingStripPage();
 [$when, $sort, $isFiltered] = listingRequestState();
 $maxPrice = soListingMaxPrice();
 if ($maxPrice > 0) { $isFiltered = true; }

@@ -12,7 +12,7 @@
 
 <h2>How to use the artists on tour list</h2>
 <ol>
-  <li>Tap a letter in the A to Z bar to see artists whose names start with it, or choose All.</li>
+  <li>The list is in alphabetical order, so you can scan for a name quickly.</li>
   <li>Open an artist to see every upcoming date, with the venue and city.</li>
   <li>On a date, compare sections and prices on the seat map before you decide.</li>
   <li>Filter by genre from the <a href="/country-music-tickets">country</a>, <a href="/hip-hop-tickets">hip hop</a> and <a href="/pop-rock-concert-tickets">pop and rock</a> pages if you want a style rather than a name.</li>

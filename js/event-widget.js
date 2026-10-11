@@ -119,6 +119,7 @@
     if (state.empty || (state.failed && kind === 'failed')) return;
     state[kind] = true;
     if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+    if (map) map.classList.remove('so-seatmap--pending');
     if (!box) return;
     var t = document.getElementById('so-no-tickets-title'), x = document.getElementById('so-no-tickets-text');
     if (title && t) t.textContent = title;
@@ -199,6 +200,7 @@
       S.TrackingEvents.registerEventListener(function (type, data) {
         if (type === 'FinishedLoading') {
           state.loaded = true;
+          if (map) map.classList.remove('so-seatmap--pending');
           if (watchdog) { clearTimeout(watchdog); watchdog = null; }
           demoteWidgetH1();
           if (data && data.numTicketGroups === 0) { showEmpty(); return; }
@@ -251,6 +253,7 @@
     s.onload = function () { configure(); };
     s.onerror = function () { showFailed('script_error'); };
     document.body.appendChild(s);
+    if (map) map.classList.add('so-seatmap--pending');   // keeps the space while the map loads (no layout shift)
     watchdog = setTimeout(function () { if (!state.loaded && !state.empty) showFailed('timeout'); }, WATCHDOG_MS);
   }
   load();

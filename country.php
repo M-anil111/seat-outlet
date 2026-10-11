@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+soListingStripPage();
 
 // /country/{name}. Markup in soRenderEntityListing() (inc/entity-listing.php).
 $perPage = 20;

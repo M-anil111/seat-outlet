@@ -16,7 +16,7 @@
 
 <h2>How to Find an Artist, Team or Show Quickly</h2>
 <ol>
-  <li><strong>Pick the first letter.</strong> Tap a letter in the A to Z bar to filter the list to names that start with it. Choose All to see the full list again.</li>
+  <li><strong>Pick a name.</strong> The list is in alphabetical order. Open any name to see its dates, venues and seats and prices.</li>
   <li><strong>Open the card.</strong> Select the name to see upcoming events, dates and venues for that performer.</li>
   <li><strong>Compare seats.</strong> On each event page, review the sections and prices, then choose the seats that suit you.</li>
   <li><strong>Check out.</strong> Pay securely, and your order is covered by our guarantee.</li>

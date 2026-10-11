@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+soListingStripPage();
 
 // /venue/{name}. All markup lives in soRenderEntityListing() (inc/entity-listing.php); this file validates the URL,
 // fetches the venue and its first page of events, and decides 404 / 503 / 301.
