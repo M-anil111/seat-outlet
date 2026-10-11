@@ -1,6 +1,5 @@
 <?php
 require_once 'functions.php';
-soListingStripPage();
 
 // /county/{name}-{state}, United States only (inc/counties.php). Markup in soRenderEntityListing() (inc/entity-listing.php).
 $perPage = 20;

@@ -1,6 +1,5 @@
 <?php
 require_once 'functions.php';
-soListingStripPage();
 require_once __DIR__ . '/inc/directories.php';
 // SEO: this page previously rendered with no <title>/canonical at all.
 $pageMetaTitle       = 'Sports Tickets | Seat Outlet';

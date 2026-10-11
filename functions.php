@@ -1764,23 +1764,6 @@ function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1, 
  * without JS, each state has a URL); filtered variants are noindex,follow and
  * canonical to the base page (see listingRequestState()).
  */
-/**
- * Listing pages load their later events with "Load more" (JavaScript), so a server-side ?page= is not supported.
- * Strip it with a 301 to the same page: one address per list, no duplicate pages. Never returns when it redirects.
- */
-function soListingStripPage(): void {
-    // The visitor's own query string, not $_GET: a rewritten route (/city/boston-ma) adds its own keys such as slug.
-    $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
-    parse_str((string) parse_url($uri, PHP_URL_QUERY), $q);
-    if (!array_key_exists('page', $q) || headers_sent()) return;
-    unset($q['page']);
-    $path = strtok($uri, '?');
-    http_response_code(301);
-    header('Location: ' . $path . ($q ? '?' . http_build_query($q) : ''));
-    header('Cache-Control: public, max-age=3600');
-    exit;
-}
-
 function listingRequestState($defaultSort = 'popular') {
     $when = isset($_GET['when']) && isset(LISTING_WHEN[$_GET['when']]) ? $_GET['when'] : '';
     $sort = isset($_GET['sort']) && isset(LISTING_SORT[$_GET['sort']]) ? $_GET['sort'] : $defaultSort;

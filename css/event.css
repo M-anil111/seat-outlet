@@ -1607,8 +1607,7 @@ font-size: 18px;
        ====================================================================== */
     #tn-maps { max-width: 100%; }
     /* While the seat map loads, hold its space so the page does not jump when it draws (Core Web Vitals CLS). Released by event-widget.js. */
-    #tn-maps.so-seatmap--pending { min-height: 520px; }
-    @media (max-width: 575.98px) { #tn-maps.so-seatmap--pending { min-height: 440px; } }
+    @media (min-width: 992px) { #tn-maps.so-seatmap--pending { min-height: 520px; } }   /* desktop only: on phones and tablets the map is sized to the viewport (100dvh), so a fixed reserve would shrink on load */
     @supports (overflow: clip) { #tn-maps { overflow-x: clip; } }   /* nothing inside the widget can widen the page */
     .seatics .map-list-ctn,
     .seatics .map-ctn { max-width: 100% !important; box-sizing: border-box; }
