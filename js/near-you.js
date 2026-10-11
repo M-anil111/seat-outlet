@@ -223,14 +223,14 @@
     dds.forEach(function (dd) {
       var key = dd.getAttribute('data-so-dd');
       var cur = String(state[key]);
+      // With no location the list is the country's best sellers: show (and highlight) "Best sellers", not "Nearest first".
+      if (key === 'sort' && cur === 'distance' && state.nw) cur = 'popular';
       var label = dd.querySelector('[data-so-dd-label]');
       dd.querySelectorAll('[data-val]').forEach(function (o) {
         var on = o.getAttribute('data-val') === cur;
         o.classList.toggle('is-active', on);
         if (on) label.textContent = o.textContent;
       });
-      // With no location the list is the country's best sellers, so the sort chip must not claim "Nearest first".
-      if (key === 'sort' && cur === 'distance' && state.nw) label.textContent = 'Best sellers';
       dd.querySelector('summary').classList.toggle('so-chip--on', key !== 'sort' && cur !== '' && cur !== '0');
     });
     quicks.forEach(function (q) {

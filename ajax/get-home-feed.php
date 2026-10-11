@@ -13,6 +13,9 @@
  */
 require_once __DIR__ . '/../functions.php';
 
+// How many best sellers are fetched at once, listed by date as one set and paged from (see soHomeFeedByDate()).
+const SO_HOME_FEED_WIDE = 48;
+
 header('Content-Type: application/json; charset=UTF-8');
 
 // "Near" means within this many miles; the nearest-first search itself reaches across the country.
@@ -71,7 +74,7 @@ if ($kind === 'near') {
     try {
         // Always nearest first. The search is not cut off at 50 miles: when nothing is close, the closest events anywhere
         // in the country come back (San Antonio, Houston, Dallas for a Hill Country visitor) and the page says so.
-        $buildParams = function ($useGeo) use ($catId, $catPath, $page, $when, $maxPrice, $nearSort, $radius, $lat, $lng) {
+        $buildParams = function ($useGeo, $wide = false) use ($catId, $catPath, $page, $when, $maxPrice, $nearSort, $radius, $lat, $lng) {
             $params = $catId > 0
                 ? locationListingParams("country/alphaCode eq 'US' and contains(defaultCategory/path, '." . $catId . ".')", 12, $page, $when, 'popular', $maxPrice)
                 : categoryListingParams($catPath, 12, $page, $when, 'popular', $maxPrice);
@@ -85,36 +88,32 @@ if ($kind === 'near') {
             if (strpos((string) ($params['filter'] ?? ''), 'alphaCode') === false) {
                 $params['filter'] = trim(($params['filter'] ?? '') . " and country/alphaCode eq 'US'", ' and');
             }
+            // Best sellers: the top 48 in one request, so they can be listed by date as one set and paged from it ("See more" then continues the
+            // same date order instead of starting a second, separately ordered batch).
+            if ($wide) { $params['perPage'] = SO_HOME_FEED_WIDE; $params['page'] = 1; }
             return $params;
         };
-        $data = tnRequest('/catalog/v2/events/', $buildParams(!$nationwide));
+        $wideNow = ($nearSort === 'popular' || $nationwide);
+        $data = tnRequest('/catalog/v2/events/', $buildParams(!$nationwide, $wideNow));
         $total = (int) ($data['totalCount'] ?? 0);
-        $events = soHomeFeedFormat($data['results'] ?? [], 12);
-        if ($nearSort === 'distance' && !$nationwide) $events = soHomeFeedImageFirst($events, function ($e) { return $e['dist']; });
-        elseif ($nearSort === 'soonest') $events = soHomeFeedImageFirst($events, function ($e) { return $e['iso'] !== '' ? $e['iso'] : null; });
-        elseif ($nearSort === 'popular' || $nationwide) {
-            // A "best sellers" top 12: the same twelve, pictures first to pick the three that carry the "Popular" badge, then listed by date
-            // so the rows read in date order (a popular list in sales order looked like a broken date sequence).
-            $events = soHomeFeedImageFirst($events);
-            foreach ($events as $i => $e) { $events[$i]['top'] = $i < 3; $events[$i]['_i'] = $i; }
-            usort($events, function ($a, $b) {
-                $x = (string) ($a['iso'] ?? ''); $y = (string) ($b['iso'] ?? '');
-                if ($x === $y) return $a['_i'] <=> $b['_i'];
-                if ($x === '') return 1;
-                if ($y === '') return -1;
-                return strcmp($x, $y);
-            });
-            foreach ($events as $i => $e) { unset($events[$i]['_i']); }
+        $wideAll = null;   // the whole date-ordered best-seller set, when this answer is one
+        if ($wideNow) {
+            $wideAll = soHomeFeedByDate(soHomeFeedFormat($data['results'] ?? [], SO_HOME_FEED_WIDE));
+            $events = array_slice($wideAll, ($page - 1) * 12, 12);
+        } else {
+            $events = soHomeFeedFormat($data['results'] ?? [], 12);
+            if ($nearSort === 'distance') $events = soHomeFeedImageFirst($events, function ($e) { return $e['dist']; });
+            elseif ($nearSort === 'soonest') $events = soHomeFeedImageFirst($events, function ($e) { return $e['iso'] !== '' ? $e['iso'] : null; });
         }
         $dists = array_filter(array_column($events, 'dist'), function ($d) { return $d !== null; });
         $closest = $dists ? min($dists) : null;
         $scope = !$events ? ($radius ? 'empty' : 'near') : ($radius === 0 && $closest !== null && $closest > SO_NEAR_MILES ? 'nearest' : 'near');
         // Nothing within 250 miles: "closest" would mean a 1,000 mile trip, so show what is popular across the country instead.
         if ($page === 1 && !$nationwide && $nearSort === 'distance' && $radius === 0 && $events && $closest !== null && $closest > SO_NEAR_FAR_MILES) {
-            $nw = tnRequest('/catalog/v2/events/', $buildParams(false));
-            $nwEvents = soHomeFeedFormat($nw['results'] ?? [], 12);
-            if ($nwEvents) {
-                $events = $nwEvents; $total = (int) ($nw['totalCount'] ?? 0); $scope = 'nationwide'; $nationwide = true;
+            $nw = tnRequest('/catalog/v2/events/', $buildParams(false, true));
+            $nwAll = soHomeFeedByDate(soHomeFeedFormat($nw['results'] ?? [], SO_HOME_FEED_WIDE));
+            if ($nwAll) {
+                $wideAll = $nwAll; $events = array_slice($nwAll, 0, 12); $total = (int) ($nw['totalCount'] ?? 0); $scope = 'nationwide'; $nationwide = true;
             }
         } elseif ($nationwide) {
             $scope = 'nationwide';
@@ -126,7 +125,7 @@ if ($kind === 'near') {
             'closest' => $closest,
             'events' => $events,
             'total' => $total,
-            'hasMore' => $page * 12 < $total,
+            'hasMore' => $wideAll !== null ? $page * 12 < count($wideAll) : $page * 12 < $total,
         ];
         if ($out['events'] || $page > 1) cache_set('home_feed_' . $nearKey, $out);
         header('Cache-Control: public, max-age=300');
@@ -217,6 +216,26 @@ function soHomeFeedFormat(array $events, int $max = 10): array {
 }
 
 /** Pictures first for one home-feed row (see soImageFirst): $primary keeps the row's own order, pictures only break ties. */
+/**
+ * The best sellers (the API's sales-rank order) listed by date. The three best sellers, picture-bearing ones first, carry the "Popular"
+ * flag; events on the same date keep their sales-rank order (taken before any picture ordering); undated events go last.
+ */
+function soHomeFeedByDate(array $ranked): array {
+    foreach ($ranked as $i => $e) { $ranked[$i]['_i'] = $i; }
+    $top = [];
+    foreach (array_slice(soHomeFeedImageFirst(array_slice($ranked, 0, 12)), 0, 3) as $e) { $top[$e['id']] = true; }
+    foreach ($ranked as $i => $e) { $ranked[$i]['top'] = isset($top[$e['id']]); }
+    usort($ranked, function ($a, $b) {
+        $x = (string) ($a['iso'] ?? ''); $y = (string) ($b['iso'] ?? '');
+        if ($x === $y) return $a['_i'] <=> $b['_i'];
+        if ($x === '') return 1;
+        if ($y === '') return -1;
+        return strcmp($x, $y);
+    });
+    foreach ($ranked as $i => $e) { unset($ranked[$i]['_i']); }
+    return array_values($ranked);
+}
+
 function soHomeFeedImageFirst(array $events, ?callable $primary = null): array {
     return soImageFirst($events, function ($ev) {
         return [imageEntityTypeForPerformer($ev['defaultCategory'] ?? []), (string) (($ev['performer'] ?? '') !== '' ? $ev['performer'] : $ev['name']), $ev['defaultCategory'] ?? []];
