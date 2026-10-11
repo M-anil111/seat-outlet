@@ -73,7 +73,7 @@ $csrf = soAcctH($user['csrf']);
       <form method="post" action="/account" style="display:inline"><input type="hidden" name="csrf" value="<?php echo $csrf; ?>"><input type="hidden" name="action" value="signout">
         <button type="submit" class="so-acct__btn so-acct__btn--ghost" style="min-height:48px">Sign out</button></form>
       <details style="margin-top:22px"><summary style="cursor:pointer;font-weight:700">Delete my account</summary>
-        <p class="so-acct__note">This removes your account and saved events from Seat Outlet and signs you out everywhere. Alert emails are turned off with the "Turn off all emails" link above. Orders are with our ticket partner and are not affected.</p>
+        <p class="so-acct__note">This removes your account and saved events from Seat Outlet and signs you out everywhere. Alerts are separate subscriptions and are not removed by deleting the account: turn them off first with the "Turn off all emails" link above. Orders are with our ticket partner and are not affected.</p>
         <form method="post" action="/account"><input type="hidden" name="csrf" value="<?php echo $csrf; ?>"><input type="hidden" name="action" value="delete">
           <label style="font-weight:400"><input type="checkbox" name="confirm" value="yes" required> Yes, delete my account</label>
           <button type="submit" class="so-acct__btn so-acct__btn--danger" style="min-height:48px;margin-top:12px">Delete my account</button></form>
