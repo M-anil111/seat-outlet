@@ -12,36 +12,47 @@ $fails = 0;
 function tpCheck(string $name, bool $ok): void { global $fails; echo ($ok ? 'ok   ' : 'FAIL ') . $name . "\n"; if (!$ok) $fails++; }
 $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
-// 1. Text from real facts only
+// 1. Text from real facts only (the event count is left to the FAQ, so the About block does not repeat it)
 $events = [
-    ['venue' => ['text' => ['name' => 'Red Rocks']], 'pricingInfo' => ['lowPrice' => ['value' => 49.5]], 'date' => ['date' => '2026-12-20']],
-    ['venue' => ['text' => ['name' => 'Ball Arena']], 'pricingInfo' => ['lowPrice' => ['value' => 35]], 'date' => ['date' => '2026-12-05']],
+    ['venue' => ['text' => ['name' => 'Red Rocks']], 'pricingInfo' => ['lowPrice' => ['value' => 49.5, 'text' => ['formatted' => '$49.50']]], 'date' => ['date' => '2026-12-20']],
+    ['venue' => ['text' => ['name' => 'Ball Arena']], 'pricingInfo' => ['lowPrice' => ['value' => 35, 'text' => ['formatted' => '$35']]], 'date' => ['date' => '2026-12-05']],
     ['venue' => ['text' => ['name' => 'Red Rocks']], 'pricingInfo' => [], 'date' => ['date' => '2026-12-12']],
 ];
-ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', $events, 3, ['from' => '2026-12-01', 'to' => '2026-12-25'], 'Dec 1 to Dec 25, 2026'); $out = ob_get_clean();
-tpCheck('states the event count, the date window and the venues', strpos($out, 'Seat Outlet lists 3 events in Denver, CO for Christmas shows on Dec 1 to Dec 25, 2026 at Red Rocks, Ball Arena.') !== false);
-tpCheck('gives the lowest price from the listed events', strpos($out, 'start from $35, so compare') !== false);
+ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', 'Christmas', $events, 3, ['from' => '2026-12-01', 'to' => '2026-12-25'], 'Dec 1 to Dec 25, 2026'); $out = ob_get_clean();
+tpCheck('names the venues and the date window with the short holiday name', strpos($out, 'Events for Christmas in Denver, CO on Dec 1 to Dec 25, 2026 take place at Red Rocks, Ball Arena.') !== false);
+tpCheck('does not repeat the event count (the FAQ owns it)', strpos($out, 'Seat Outlet lists') === false);
+tpCheck('gives the lowest price using the API formatted text', strpos($out, 'start from $35, so compare') !== false);
 tpCheck('gives the earliest and latest listed dates', strpos($out, 'earliest event on this page is on December 5, 2026 and the latest is on December 20, 2026') !== false);
 
 // Partial results: 3 events shown of 25 total, so venue, price and date claims must be limited to the listed events
-ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', $events, 25, ['from' => '2026-12-01', 'to' => '2026-12-25'], 'Dec 1 to Dec 25, 2026'); $partialOut = ob_get_clean();
-tpCheck('partial results: the total count stays, venue and price claims are scoped to the listed events', strpos($partialOut, 'Seat Outlet lists 25 events') !== false && strpos($partialOut, 'among the events listed here starts from $35') !== false && strpos($partialOut, ' at 2 venues') === false && strpos($partialOut, 'Of the events listed here, the earliest is on December 5') !== false);
+ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', 'Christmas', $events, 25, ['from' => '2026-12-01', 'to' => '2026-12-25'], 'Dec 1 to Dec 25, 2026'); $partialOut = ob_get_clean();
+tpCheck('partial results: venue and price claims are scoped to the listed events', strpos($partialOut, 'take place at venues such as Red Rocks, Ball Arena') !== false && strpos($partialOut, 'among the events listed here starts from $35') !== false && strpos($partialOut, ' at 2 venues') === false && strpos($partialOut, 'Of the events listed here, the earliest is on December 5') !== false);
 tpCheck('partial results: no unscoped "start from" claim', strpos($partialOut, 'Tickets for the events on this page start from') === false);
-ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', [['venue' => ['text' => ['name' => 'Red Rocks']], 'pricingInfo' => ['lowPrice' => ['value' => 49.5]]]], 1, null, ''); $cents = ob_get_clean();
-tpCheck('keeps cents in the starting price ($49.50, not $50)', strpos($cents, 'start from $49.50') !== false);
+ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', 'Christmas', [['venue' => ['text' => ['name' => 'Red Rocks']], 'pricingInfo' => ['lowPrice' => ['value' => 49.5]]]], 1, null, ''); $cents = ob_get_clean();
+tpCheck('keeps cents in the starting price when the API gives no text ($49.50, not $50)', strpos($cents, 'start from $49.50') !== false);
+ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', 'Christmas', [['pricingInfo' => ['lowPrice' => ['value' => 35.0]]]], 1, null, ''); $whole = ob_get_clean();
+tpCheck('whole-dollar fallback has no cents ($35, not $35.00)', strpos($whole, 'start from $35,') !== false);
 
-ob_start(); soHolidayAboutBlock($h, 'Tiny, XX', 'Christmas shows', [], 0, null, ''); $none = ob_get_clean();
+ob_start(); soHolidayAboutBlock($h, 'Tiny, XX', 'Christmas shows', 'Christmas', [], 0, null, ''); $none = ob_get_clean();
 tpCheck('writes nothing when there are no events (no invented copy)', trim($none) === '');
 
-ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', [['venue' => ['text' => ['name' => '<b>X</b>']]]], 1, null, ''); $esc = ob_get_clean();
+ob_start(); soHolidayAboutBlock($h, 'Denver, CO', 'Christmas shows', 'Christmas', [['venue' => ['text' => ['name' => '<b>X</b>']]]], 1, null, ''); $esc = ob_get_clean();
 tpCheck('escapes venue names', strpos($esc, '&lt;b&gt;X&lt;/b&gt;') !== false && strpos($esc, '<b>X</b>') === false);
 
-// 2. Banner: listing pages skip it, mid and footer ads are not affected by that flag
-$html = '<html><body><main><section class="hero-section"><h1>T</h1></section><section>a</section></main><!--so-main-end--></main></body></html>';
+// 2. Banner: listing pages skip the banner under the hero. Mid-page and footer ads must still be placed on the same page.
+// The fixture has a hero, six stacked sections (enough for the mid-page ad) and the footer marker.
+$block = '<section><p>' . str_repeat('x', 300) . '</p></section>';
+$html = '<html><body><main><section class="hero-section"><h1>T</h1></section>' . str_repeat($block, 6) . '</main><!--so-main-end--></main></body></html>';
+unset($GLOBALS['soNoBannerAd']); $GLOBALS['soNoAds'] = false;
+$on = soAdInjectBanner($html);
+tpCheck('positive control: without the flag a page gets the banner under its hero', strpos($on, 'so-ad--banner') !== false);
+tpCheck('positive control: without the flag the mid-page ad is placed', strpos($on, 'so-ad--mid') !== false);
+tpCheck('positive control: without the flag the footer ad is placed', strpos($on, 'so-ad--foot') !== false);
 $GLOBALS['soNoBannerAd'] = true;
-$GLOBALS['soNoAds'] = false;
 $off = soAdInjectBanner($html);
 tpCheck('a listing page gets no banner under its hero', strpos($off, 'so-ad--banner') === false);
+tpCheck('a listing page keeps the mid-page ad', strpos($off, 'so-ad--mid') !== false);
+tpCheck('a listing page keeps the footer ad', strpos($off, 'so-ad--foot') !== false);
 unset($GLOBALS['soNoBannerAd']);
 $source = file_get_contents(__DIR__ . '/../inc/adsense.php');
 tpCheck('the banner flag is checked only for the banner (mid and footer still run)', strpos($source, "empty(\$GLOBALS['soNoBannerAd']) && strpos(\$html, 'so-ad--banner')") !== false && substr_count($source, 'soNoBannerAd') === 2);

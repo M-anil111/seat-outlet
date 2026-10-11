@@ -129,16 +129,22 @@ function soHolidayFilter(string $key): string {
 }
 
 /**
- * Unique text for one holiday-city page, built only from what the page already lists: the event count, the venues, the lowest
- * price and the first and last dates shown. A sentence is written only when its fact exists, so no page gets invented copy.
+ * Unique text for one holiday-city page, built only from what the page already lists: the venues, the lowest price and the first
+ * and last dates shown. The event count is left to the FAQ above it. A sentence is written only when its fact exists, so no page
+ * gets invented copy.
  */
-function soHolidayAboutBlock(callable $h, string $label, string $what, array $events, int $total, ?array $win, string $dates): void {
-    $venues = []; $prices = []; $dates_ = [];
+function soHolidayAboutBlock(callable $h, string $label, string $what, string $name, array $events, int $total, ?array $win, string $dates): void {
+    $venues = []; $dates_ = []; $low = null; $lowText = '';
     foreach ($events as $e) {
         $vn = trim((string) ($e['venue']['text']['name'] ?? ''));
         if ($vn !== '' && !in_array($vn, $venues, true)) $venues[] = $vn;
         $lp = (float) ($e['pricingInfo']['lowPrice']['value'] ?? 0);
-        if ($lp > 0) $prices[] = $lp;
+        if ($lp > 0 && ($low === null || $lp < $low)) {
+            $low = $lp;
+            // The API's own formatted price (currency and rounding as shown on the event), with cents kept when present
+            $lowText = (string) ($e['pricingInfo']['lowPrice']['text']['formatted'] ?? '');
+            if ($lowText === '') { $lowText = '$' . preg_replace('/\.00$/', '', number_format($lp, 2)); }
+        }
         $d = (string) ($e['date']['date'] ?? '');
         if ($d !== '') $dates_[] = $d;
     }
@@ -146,17 +152,14 @@ function soHolidayAboutBlock(callable $h, string $label, string $what, array $ev
     // $events holds only the first page of results, so venue, price and date claims are limited to those listed events
     $partial = $total > count($events);
     $about = [];
-    if ($total > 0) {
-        $vCount = count($venues);
-        if ($vCount === 0) $where = '';
-        elseif (!$partial && $vCount <= 3) $where = ' at ' . implode(', ', $venues);
-        elseif (!$partial) $where = ' at ' . $vCount . ' venues, including ' . implode(', ', array_slice($venues, 0, 3));
-        else $where = ', with venues such as ' . implode(', ', array_slice($venues, 0, 3));
-        $about[] = 'Seat Outlet lists ' . number_format($total) . ' ' . ($total === 1 ? 'event' : 'events') . ' in ' . $label . ' for ' . $what . ($win ? ' on ' . $dates : '') . $where . '.';
+    $vCount = count($venues);
+    if ($vCount > 0) {
+        if (!$partial && $vCount <= 3) $list = implode(', ', $venues);
+        elseif (!$partial) $list = $vCount . ' venues, including ' . implode(', ', array_slice($venues, 0, 3));
+        else $list = 'venues such as ' . implode(', ', array_slice($venues, 0, 3));
+        $about[] = 'Events for ' . $name . ' in ' . $label . ($win ? ' on ' . $dates : '') . ' take place at ' . $list . '.';
     }
-    if ($prices) {
-        $low = min($prices);
-        $lowText = '$' . number_format($low, fmod($low, 1.0) == 0.0 ? 0 : 2);
+    if ($lowText !== '') {
         $about[] = ($partial ? 'The lowest price among the events listed here starts from ' : 'Tickets for the events on this page start from ') . $lowText . ', so compare seats and prices before you choose.';
     }
     if (count($dates_) >= 2) $about[] = ($partial ? 'Of the events listed here, the earliest is on ' : 'The earliest event on this page is on ') . date('F j, Y', strtotime($dates_[0])) . ' and the latest is on ' . date('F j, Y', strtotime(end($dates_))) . '.';
@@ -250,9 +253,9 @@ function renderCityHolidayPage(string $key = ''): void {
             'params'  => $params,
             'empty'   => ['basePath' => $path, 'noun' => $nm, 'when' => $when, 'max' => 0, 'fragment' => 'city/id eq ' . (int) $id, 'kind' => 'city', 'id' => $id, 'name' => $label, 'alts' => []],
         ],
-        'afterSection' => function () use ($h, $label, $cityName, $canonSlug, $key, $what, $country, $faqs, $events, $total, $win, $dates) {
+        'afterSection' => function () use ($h, $label, $cityName, $canonSlug, $key, $what, $country, $faqs, $events, $total, $win, $dates, $cfg) {
             echo '<div class="container py-4">' . soSpecPromoHtml("Promo codes for $what in $cityName", "$cityName $what") . '</div>';
-            soHolidayAboutBlock($h, $label, $what, $events, $total, $win, $dates);
+            soHolidayAboutBlock($h, $label, $what, (string) $cfg['name'], $events, $total, $win, $dates);
             soMiniFaq("FAQs about $what in $label", $faqs);
             // Links: the city, the other holidays coming up there, then the city's category and discovery pages.
             $links = ['<a href="/city/' . $h($canonSlug) . '">All events in ' . $h($label) . '</a>'];
