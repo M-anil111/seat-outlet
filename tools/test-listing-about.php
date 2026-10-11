@@ -77,7 +77,7 @@ laCheck('zero-result category page prints no empty About wrapper (no <div> left 
 
 $catFlagSrc = file_get_contents(__DIR__ . '/../functions.php');
 $catAt = strpos($catFlagSrc, 'function renderCategoryLocationPage(');
-laCheck('category-by-city page (theater-city etc.) sets the banner-off flag before its list', $catAt !== false && strpos($catFlagSrc, "\$GLOBALS['soNoBannerAd'] = true;", $catAt) !== false && strpos($catFlagSrc, "\$GLOBALS['soNoBannerAd'] = true;", $catAt) < strpos($catFlagSrc, 'getCategoryEventsByLocation(', $catAt));
+laCheck('category-by-city page sets the banner-off flag for city pages only, before its list', $catAt !== false && strpos($catFlagSrc, "if (\$dimension === 'city') { \$GLOBALS['soNoBannerAd'] = true; }", $catAt) !== false && strpos($catFlagSrc, "if (\$dimension === 'city') { \$GLOBALS['soNoBannerAd'] = true; }", $catAt) < strpos($catFlagSrc, 'getCategoryEventsByLocation(', $catAt));
 
 // 5. Nothing to say: no invented copy
 ob_start(); soListingAboutBlock($h, ['heading' => 'About Empty', 'intro' => '', 'events' => [], 'total' => 0]); $none = ob_get_clean();

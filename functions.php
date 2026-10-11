@@ -5461,7 +5461,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     soRedirectToCanonicalSlug($urlPrefix, $requestedSlug, soSlug($dimension, $location['label'], $locationValue));
 
     $locationLabel = $location['label'];
-    $GLOBALS['soNoBannerAd'] = true;   // no ad directly above the ticket list (see soAdInjectBanner)
+    if ($dimension === 'city') { $GLOBALS['soNoBannerAd'] = true; }   // city pages only: no ad directly above the ticket list (see soAdInjectBanner); state, country and venue keep their banner
 
     $eventsResponse = getCategoryEventsByLocation($categoryKey, $dimension, $locationValue, [
         'page'    => $page,
