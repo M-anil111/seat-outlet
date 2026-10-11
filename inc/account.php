@@ -167,7 +167,11 @@ function soAcctDbFail(Throwable $e): void {
     if (!function_exists('\\Sentry\\captureMessage')) return;
     $flag = sys_get_temp_dir() . '/so_acct_dbfail_' . md5(__FILE__);
     if (@filemtime($flag) > time() - 3600) return;
+    $lock = @fopen($flag . '.lock', 'c');   // check and touch under a lock: concurrent failures send one warning, not a burst
+    if ($lock) @flock($lock, LOCK_EX);
+    if (@filemtime($flag) > time() - 3600) { if ($lock) { @flock($lock, LOCK_UN); @fclose($lock); } return; }
     @touch($flag);
+    if ($lock) { @flock($lock, LOCK_UN); @fclose($lock); }
     \Sentry\captureMessage('Accounts unavailable (run db/migrate.php if migration 0047 is not applied): ' . substr($e->getMessage(), 0, 200), \Sentry\Severity::warning());
 }
 
