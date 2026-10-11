@@ -103,13 +103,15 @@ function soAcctVerifyBody(?array $ok, string $why): void {
       <h1>Confirm sign in</h1>
       <p class="so-acct__lead">You are signing in as <strong><?php echo soAcctH(soAcctMask($ok['email'])); ?></strong>.</p>
       <form method="post" action="/account-verify">
+        <input type="hidden" name="h" value="<?php echo soAcctH($ok['bind'] ?? ''); ?>">
         <button type="submit" class="so-acct__btn">Sign in</button>
       </form>
       <p class="so-acct__note">Not you? Close this page. Nothing happens until you press the button.</p>
     <?php else: ?>
-      <h1><?php echo $why === 'forbidden' ? 'We could not confirm that request' : ($why === 'nocookie' ? 'Open the link from your email' : 'This link has expired'); ?></h1>
+      <h1><?php echo $why === 'forbidden' ? 'We could not confirm that request' : ($why === 'changed' ? 'This page is out of date' : ($why === 'nocookie' ? 'Open the link from your email' : 'This link has expired')); ?></h1>
       <p class="so-acct__lead"><?php
         if ($why === 'forbidden') echo 'Open the link from your email again and press the button on this site.';
+        elseif ($why === 'changed') echo 'You opened a different sign-in link in this browser after this page. Open the newest link from your email, or ask for a new one.';
         elseif ($why === 'nocookie') echo 'This page continues from the link in your sign-in email, and needs cookies turned on in this browser. Open the link from the email, or ask for a new one.';
         else echo 'Sign-in links work once and last 15 minutes. Ask for a new one and it will arrive in a moment.'; ?></p>
       <a class="so-acct__btn" style="text-decoration:none" href="/login">Get a new link</a>

@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS `login_links` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `login_links_token_unique` (`token_hash`),
   KEY `login_links_email_idx` (`email`,`created_at`),
-  KEY `login_links_ip_idx` (`ip_hash`,`created_at`)
+  KEY `login_links_ip_idx` (`ip_hash`,`created_at`),
+  KEY `login_links_created_idx` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `user_sessions` (
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS `user_sessions` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_sessions_token_unique` (`token_hash`),
   KEY `user_sessions_user_idx` (`user_id`),
+  KEY `user_sessions_expires_idx` (`expires_at`),
   CONSTRAINT `user_sessions_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 

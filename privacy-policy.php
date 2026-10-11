@@ -195,7 +195,7 @@
                         </li>
                         <li>
                         <p>
-                        Account data: if you sign in or create an account, your email address, the events you choose to save, and the record that keeps you signed in. Accounts use a one-time link sent by email, so no password is created or stored, and the sign-in link and the sign-in token are kept only as one-way hashes (your email address is stored so we can reach you and show it to you). You can delete your account at any time on your account page, which removes the account, the saved events and every sign-in record. Orders are placed with our ticket partner at checkout and are not stored in your account.
+                        Account data: if you sign in or create an account, your email address, the events you choose to save, the price and new-date alerts tied to your address, and the record that keeps you signed in. Accounts use a one-time link sent by email, so no password is created or stored, and the sign-in link and the sign-in token are kept only as one-way hashes (your email address is stored so we can reach you and show it to you). You can delete your account at any time on your account page, which removes the account, the saved events and every sign-in record. Orders are placed with our ticket partner at checkout and are not stored in your account.
                     </p>
                         </li>
                     </ul>

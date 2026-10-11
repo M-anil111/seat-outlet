@@ -19,8 +19,12 @@ $ok = null; $why = '';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     // A page on another site must not be able to sign a visitor in to someone else's account (login CSRF): the POST has to come from here,
     // and it carries no token of its own: only the cookie this site set for this browser (a cross-site POST does not send it).
+    $bindOk = $cookieTok !== '' && isset($_POST['h']) && is_string($_POST['h']) && hash_equals(substr(soAcctHash($cookieTok), 0, 16), $_POST['h']);
     if (!soContactSameOrigin()) {
         http_response_code(403); $why = 'forbidden';
+    } elseif (!$bindOk) {
+        // The button on this page was for a different link than the one this browser now holds (another link was opened since): do not sign in as someone else.
+        http_response_code(409); $why = 'changed';
     } else {
         $res = soAcctConsumeLink($cookieTok);
         $clearHandoff();
@@ -42,7 +46,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 } else {
     $link = soAcctPeekLink($cookieTok);
     if ($link === null) { http_response_code(410); $why = $cookieTok === '' ? 'nocookie' : 'expired'; }
-    else { $ok = ['email' => $link['email']]; }
+    else { $ok = ['email' => $link['email'], 'bind' => substr(soAcctHash($cookieTok), 0, 16)]; }
 }
 $pageNoCache = true; $pageRobots = 'noindex, nofollow';
 [$pageMetaTitle, $pageMetaDescription] = soAcctMeta('Confirm sign in', 'Confirm your sign-in to Seat Outlet.');
