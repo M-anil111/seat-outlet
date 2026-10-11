@@ -5635,13 +5635,13 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                 <?php echo soSpecPromoHtml('Latest ' . $categoryLabel . ' promo codes ' . $soKwPrep . ' ' . $locationLabel, $soLocShort . ' ' . strtolower($categoryLabel)); ?>
             </div>
 
-            <div class="tab-section content-section-detail">
-                <?php soListingAboutBlock(fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'), [
+            <?php if ($dimension === 'city') {   // city pages only: the state, country and venue wrappers keep their own copy
+                soListingAboutBlock(fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'), [
                     'heading' => "About $categoryLabel in $locationLabel",
                     'intro'   => !empty($events) ? "$categoryLabel listings in $locationLabel are listed above, with the venues, dates and prices on sale now." : '',
                     'events'  => $events, 'total' => $total_count,
-                ]); ?>
-            </div>
+                ]);
+            } ?>
 
             <?php if (!empty($faqs)) { ?>
                 <div class="tab-section content-section-detail" id="faqs">
