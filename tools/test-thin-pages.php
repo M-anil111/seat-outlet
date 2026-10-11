@@ -46,6 +46,11 @@ unset($GLOBALS['soNoBannerAd']);
 $source = file_get_contents(__DIR__ . '/../inc/adsense.php');
 tpCheck('the banner flag is checked only for the banner (mid and footer still run)', strpos($source, "empty(\$GLOBALS['soNoBannerAd']) && strpos(\$html, 'so-ad--banner')") !== false && substr_count($source, 'soNoBannerAd') === 2);
 
+$listingSrc = file_get_contents(__DIR__ . '/../inc/listing.php');
+$bodyStart = strpos($listingSrc, 'function soRenderListingBody(');
+tpCheck('soRenderListingBody (used by search results too) sets the banner-off flag', $bodyStart !== false && strpos(substr($listingSrc, $bodyStart, 300), "\$GLOBALS['soNoBannerAd'] = true;") !== false);
+tpCheck('search results call soRenderListingBody, so they get the flag', strpos(file_get_contents(__DIR__ . '/../search.php'), 'soRenderListingBody(') !== false);
+
 foreach (['inc/listing.php', 'inc/entity-listing.php'] as $f) {
     tpCheck("$f sets the banner-off flag for listing pages", strpos(file_get_contents(__DIR__ . '/../' . $f), "\$GLOBALS['soNoBannerAd'] = true;") !== false);
 }

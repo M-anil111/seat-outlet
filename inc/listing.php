@@ -374,6 +374,7 @@ function soListingAltCategories(int $categoryId, int $max = 5): array {
  * page so they all look and behave the same. $o: events, total, count, perPage, params, type ('' | 'search'), empty (array for soRenderListingEmpty), group.
  */
 function soRenderListingBody(array $o): void {
+    $GLOBALS['soNoBannerAd'] = true;   // every ticket list (listing pages and search results) gets no ad directly above it
     $o += ['events' => [], 'total' => 0, 'perPage' => 20, 'params' => [], 'type' => '', 'empty' => null, 'group' => true, 'ranked' => null];
     $events = $o['events'];
     $total = (int) $o['total'];
