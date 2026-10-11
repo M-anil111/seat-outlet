@@ -17,7 +17,7 @@
 
 <h2>How to use the Broadway shows list</h2>
 <ol>
-  <li>Pick a letter to see titles starting with it, or choose All.</li>
+  <li>Scroll the full list to see every show currently listed.</li>
   <li>Open a show to see its performances with date, time and theater.</li>
   <li>Compare orchestra, mezzanine and balcony sections and their prices.</li>
   <li>Check the event page for the curtain time and any theater rules.</li>

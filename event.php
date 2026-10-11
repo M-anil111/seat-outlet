@@ -112,7 +112,7 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
   </div>
 </section>
 <section class="so-evtix" aria-label="Seat map and available tickets"><div class="container so-evtix__wrap">
-<div id="tn-maps" class="seatics so-seatmap" role="region" aria-label="<?php echo $h('Interactive seating chart and rows map for ' . ($eventVenueName !== '' ? $eventVenueName : 'the venue') . ' during ' . ($event['text']['name'] ?? 'this event')); ?>" aria-live="polite"></div>
+<div id="tn-maps" class="seatics so-seatmap so-seatmap--pending" role="region" aria-label="<?php echo $h('Interactive seating chart and rows map for ' . ($eventVenueName !== '' ? $eventVenueName : 'the venue') . ' during ' . ($event['text']['name'] ?? 'this event')); ?>" aria-live="polite"></div>
 <noscript><p class="so-seatmap__nojs container py-4">The seat map needs JavaScript. Please turn it on, or <a href="/ticket-customer-service">contact us</a> and we will help you find tickets.</p></noscript>
 </div></section>
 <div id="so-no-tickets" class="so-no-tickets d-none" role="region" aria-labelledby="so-no-tickets-title" tabindex="-1">

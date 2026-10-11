@@ -244,6 +244,8 @@
   }
 
   function load() {
+    if (map) map.classList.add('so-seatmap--pending');   // keeps the space while the map loads (no layout shift); released in showState or on FinishedLoading
+    watchdog = setTimeout(function () { if (!state.loaded && !state.empty) showFailed('timeout'); }, WATCHDOG_MS);
     if (window.Seatics) { configure(); return; }
     var url = String(ev.widgetUrl || '');
     if (url.indexOf(WIDGET_HOST) !== 0) { showFailed('bad_url'); return; }
@@ -253,8 +255,6 @@
     s.onload = function () { configure(); };
     s.onerror = function () { showFailed('script_error'); };
     document.body.appendChild(s);
-    if (map) map.classList.add('so-seatmap--pending');   // keeps the space while the map loads (no layout shift)
-    watchdog = setTimeout(function () { if (!state.loaded && !state.empty) showFailed('timeout'); }, WATCHDOG_MS);
   }
   load();
 })();

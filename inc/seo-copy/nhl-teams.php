@@ -12,7 +12,7 @@
 
 <h2>How to use the NHL teams list</h2>
 <ol>
-  <li>Pick a letter, or choose All to see every NHL team currently listed.</li>
+  <li>Scroll the full list to see every NHL team currently listed.</li>
   <li>Open a team to see its games with date, opponent and arena.</li>
   <li>Compare sections on the seat map, from glass seats to the upper bowl.</li>
   <li>Check the event page for the puck drop time.</li>

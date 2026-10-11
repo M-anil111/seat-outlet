@@ -12,7 +12,7 @@
 
 <h2>How to use the NBA teams list</h2>
 <ol>
-  <li>Pick a letter, or choose All to see every NBA team currently listed.</li>
+  <li>Scroll the full list to see every NBA team currently listed.</li>
   <li>Open a team to see its games with date, opponent and arena.</li>
   <li>Compare sections on the seat map, from courtside areas to the upper level.</li>
   <li>Check the event page for the tip off time and arena entry rules.</li>

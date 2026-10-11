@@ -1769,10 +1769,12 @@ function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1, 
  * Strip it with a 301 to the same page: one address per list, no duplicate pages. Never returns when it redirects.
  */
 function soListingStripPage(): void {
-    if (!isset($_GET['page']) || headers_sent()) return;
-    $q = $_GET;
+    // The visitor's own query string, not $_GET: a rewritten route (/city/boston-ma) adds its own keys such as slug.
+    $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    parse_str((string) parse_url($uri, PHP_URL_QUERY), $q);
+    if (!array_key_exists('page', $q) || headers_sent()) return;
     unset($q['page']);
-    $path = strtok((string) ($_SERVER['REQUEST_URI'] ?? '/'), '?');
+    $path = strtok($uri, '?');
     http_response_code(301);
     header('Location: ' . $path . ($q ? '?' . http_build_query($q) : ''));
     header('Cache-Control: public, max-age=3600');
