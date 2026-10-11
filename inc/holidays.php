@@ -128,6 +128,35 @@ function soHolidayFilter(string $key): string {
     return "date/date ge {$w['from']} and date/date le {$w['to']} and _metadata/hasTickets eq true";
 }
 
+/**
+ * Unique text for one holiday-city page, built only from what the page already lists: the event count, the venues, the lowest
+ * price and the first and last dates shown. A sentence is written only when its fact exists, so no page gets invented copy.
+ */
+function soHolidayAboutBlock(callable $h, string $label, string $what, array $events, int $total, ?array $win, string $dates): void {
+    $venues = []; $prices = []; $dates_ = [];
+    foreach ($events as $e) {
+        $vn = trim((string) ($e['venue']['text']['name'] ?? ''));
+        if ($vn !== '' && !in_array($vn, $venues, true)) $venues[] = $vn;
+        $lp = (float) ($e['pricingInfo']['lowPrice']['value'] ?? 0);
+        if ($lp > 0) $prices[] = $lp;
+        $d = (string) ($e['date']['date'] ?? '');
+        if ($d !== '') $dates_[] = $d;
+    }
+    sort($dates_);
+    $about = [];
+    if ($total > 0) {
+        $vCount = count($venues);
+        $where = $vCount === 0 ? '' : ($vCount <= 3 ? ' at ' . implode(', ', $venues) : ' at ' . $vCount . ' venues, including ' . implode(', ', array_slice($venues, 0, 3)));
+        $about[] = 'Seat Outlet lists ' . number_format($total) . ' ' . ($total === 1 ? 'event' : 'events') . ' in ' . $label . ' for ' . $what . ($win ? ' on ' . $dates : '') . $where . '.';
+    }
+    if ($prices) $about[] = 'Tickets for the events on this page start from $' . number_format(min($prices), 0) . ', so compare seats and prices before you choose.';
+    if (count($dates_) >= 2) $about[] = 'The earliest event on this page is on ' . date('F j, Y', strtotime($dates_[0])) . ' and the latest is on ' . date('F j, Y', strtotime(end($dates_))) . '.';
+    if (!$about) return;
+    echo '<div class="container py-4"><h2 class="h4">About ' . $h($what) . ' in ' . $h($label) . '</h2>';
+    foreach ($about as $para) echo '<p>' . $h($para) . '</p>';
+    echo '</div>';
+}
+
 function renderCityHolidayPage(string $key = ''): void {
     $key = $key !== '' ? $key : (string) ($_GET['holiday'] ?? '');
     $cfg = SO_HOLIDAYS[$key] ?? null;
@@ -212,8 +241,9 @@ function renderCityHolidayPage(string $key = ''): void {
             'params'  => $params,
             'empty'   => ['basePath' => $path, 'noun' => $nm, 'when' => $when, 'max' => 0, 'fragment' => 'city/id eq ' . (int) $id, 'kind' => 'city', 'id' => $id, 'name' => $label, 'alts' => []],
         ],
-        'afterSection' => function () use ($h, $label, $cityName, $canonSlug, $key, $what, $country, $faqs) {
+        'afterSection' => function () use ($h, $label, $cityName, $canonSlug, $key, $what, $country, $faqs, $events, $total, $win, $dates) {
             echo '<div class="container py-4">' . soSpecPromoHtml("Promo codes for $what in $cityName", "$cityName $what") . '</div>';
+            soHolidayAboutBlock($h, $label, $what, $events, $total, $win, $dates);
             soMiniFaq("FAQs about $what in $label", $faqs);
             // Links: the city, the other holidays coming up there, then the city's category and discovery pages.
             $links = ['<a href="/city/' . $h($canonSlug) . '">All events in ' . $h($label) . '</a>'];
