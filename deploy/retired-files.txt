@@ -5,3 +5,4 @@ sitemap-serve.php
 sitemap-style.php
 inc/sitemap-legacy.php
 sitemaps/sitemap-index.xml
+css/style.content.3.min.css
