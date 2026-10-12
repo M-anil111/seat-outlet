@@ -1,6 +1,7 @@
 <?php
 // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
+require_once __DIR__ . '/inc/tn-listing-copy.php';
 
 // Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
 // lose the visitor's own query string on the way, so ?when= / ?sort= / ?page=
@@ -8,7 +9,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 // original address, so restore any parameter PHP did not receive. Existing keys
 // (the rewrite's own slug) always win, so this can never override routing.
 if (!empty($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '?') !== false) {
-    parse_str((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY), $so_original_query);
+    $so_original_query = soSafeParseQuery(parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY));
     if (is_array($so_original_query) && $so_original_query) {
         $_GET = $_GET + $so_original_query;
         $_REQUEST = $_REQUEST + $so_original_query;
@@ -577,7 +578,13 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
         return [];
     }
 
+    $t0 = microtime(true);
     $r = tnFetchLive($endpoint, $params, $method);
+    // A fast dropped connection (an SSL EOF or a reset, Sentry SEAT-OUTLET-F/G) gets one retry. Slow timeouts and throttles do not, so
+    // the retry stays inside the request's time budget and never piles onto a throttled API.
+    if (!$r['ok'] && empty($r['throttled']) && (microtime(true) - $t0) < 3 && !tnBreakerOpen()) {
+        $r = tnFetchLive($endpoint, $params, $method);
+    }
 
     if (!$r['ok']) {
         tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
@@ -592,6 +599,10 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
         cache_set($key, $r['data']);
     } elseif ($key !== null && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) {
         cache_set($key . '_nf', $r['data']);   // a definite "no such thing": remember it briefly
+    }
+    // A listing that answered also saves each complete event row, so the event page can show it if the detail call fails later.
+    if ($r['cacheable'] && strpos((string) $endpoint, '/catalog/v2/events') === 0) {
+        tnSaveListingCopies($r['data']);
     }
     if ($key !== null && mt_rand(1, 200) === 1) {
         tnCacheSweep();
@@ -936,8 +947,24 @@ function soEventIsOver(array $event): bool {
 }
 
 function getTnEventById($eventId) {
-    $endpoint = "/catalog/v2/events/" . (int) $eventId;
-    return tnRequest($endpoint);
+    $eventId = (int) $eventId;
+    $event = tnRequest("/catalog/v2/events/" . $eventId);
+    // The detail call failed, but a listing that named this event saved its row: show that, not "temporarily unavailable".
+    // With no complete copy the caller still gets the failure and shows the honest message.
+    if ($eventId > 0 && tnEntityUnavailable($event)) {
+        $copy = cache_get('tn_event_copy_' . $eventId, TN_LISTING_COPY_TTL);
+        if (is_array($copy) && tnListingCopyComplete($copy)) return $copy;
+    }
+    return $event;
+}
+
+/** Saves each complete event row of a listing answer (once every half of the copy window at most). */
+function tnSaveListingCopies($data): void {
+    foreach (tnListRows($data) as $row) {
+        if (!tnListingCopyComplete($row)) continue;
+        $key = 'tn_event_copy_' . (int) $row['id'];
+        if (cache_get($key, TN_LISTING_COPY_TTL / 2) === false) cache_set($key, $row);
+    }
 }
 
 function stripCategoryRootPath($path) {
@@ -2776,7 +2803,7 @@ function soRedirectCanonicalForm() {
     require_once __DIR__ . '/inc/directories.php';
     foreach (SO_DIRECTORIES as $dir) { $paginating[] = $dir['path']; }
     if (!$skip && $qs !== '' && !in_array($clean, $paginating, true)) {
-        parse_str($qs, $qa);
+        $qa = soSafeParseQuery($qs);
         if (array_key_exists('page', $qa) && !is_array($qa['page'])) { unset($qa['page']); $qs = http_build_query($qa); $dropPage = true; }
     }
     if (!$wrongHost && $clean === $path && !$dropPage) return;
@@ -2873,7 +2900,7 @@ function soSnapshotFile(?string $uri = null): ?string {
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET' && $uri === null) return null;
     $uri = $uri ?? (string) ($_SERVER['REQUEST_URI'] ?? '/');
     $path = rtrim((string) parse_url($uri, PHP_URL_PATH), '/') ?: '/';
-    parse_str((string) parse_url($uri, PHP_URL_QUERY), $q);
+    $q = soSafeParseQuery(parse_url($uri, PHP_URL_QUERY));
     unset($q['slug'], $q['loc']);
     if ($q && array_keys($q) !== ['page']) return null;   // filters, sorts, tracking tags: not the page
     if (preg_match('#^/(admin|ajax|cron|checkout|order-confirmation|thank-you|unsubscribe|search|newsletter)(/|$)#', $path)) return null;
