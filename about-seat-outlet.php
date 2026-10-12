@@ -641,6 +641,105 @@
 
 
 
+
+/* SEO copy: "How the marketplace is organized" (inc/seo-copy/about-seat-outlet.php) as cards */
+.so-seo-copy .so-mk p { font-size: 16px; line-height: 1.65; }
+.so-seo-copy .so-mk__cats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin: 22px 0 22px;
+  padding: 0;
+  list-style: none;
+}
+.so-seo-copy .so-mk__cats li { margin: 0; padding: 0; list-style: none; }
+.so-seo-copy .so-mk__cat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding: 22px 14px 20px;
+  border: 1px solid #e3e8f2;
+  border-radius: 14px;
+  background: #fff;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(15, 27, 61, .04);
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.so-seo-copy .so-mk__cat:hover { border-color: #2556e0; box-shadow: 0 10px 24px rgba(37, 86, 224, .12); transform: translateY(-2px); }
+.so-seo-copy .so-mk__cat .so-mk__ic { margin-bottom: 12px; }
+.so-seo-copy .so-mk__cat strong { display: block; margin-bottom: 4px; font-size: 16px; font-weight: 700; line-height: 1.3; color: #0b1120; }
+.so-seo-copy .so-mk__cat span:last-child { font-size: 14px; line-height: 1.45; color: #4b5565; }
+.so-seo-copy .so-mk__ic { display: inline-flex; flex: none; color: #2556e0; }
+.so-seo-copy .so-mk__cat .so-mk__ic svg { width: 30px; height: 30px; }
+.so-seo-copy .so-mk__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+  margin-top: 28px;
+}
+.so-seo-copy .so-mk__side { display: grid; gap: 16px; }
+.so-seo-copy .so-mk__card {
+  padding: 22px 24px;
+  border: 1px solid #e3e8f2;
+  border-radius: 14px;
+  background: #fff;
+}
+.so-seo-copy .so-mk__card--guar { background: #f1f5ff; border-color: #dbe5fc; }
+.so-seo-copy .so-mk__card h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 12px;
+  font-size: 21px;
+  line-height: 1.3;
+}
+.so-seo-copy .so-mk__card h2 .so-mk__ic svg { width: 26px; height: 26px; }
+.so-seo-copy .so-mk__card p:last-child { margin-bottom: 0; }
+.so-seo-copy .so-mk__card--guar ul { margin: 6px 0 16px; padding: 0; }
+.so-seo-copy .so-mk__card--guar li {
+  position: relative;
+  margin: 0 0 12px;
+  padding-left: 34px;
+  list-style: none;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.so-seo-copy .so-mk__card--guar li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2556e0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 14px no-repeat;
+}
+.so-seo-copy .so-mk__note {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 18px 20px;
+  background: #f1f5ff;
+  border-color: #dbe5fc;
+  border-radius: 14px;
+}
+.so-seo-copy .so-mk__note p { margin: 0; font-size: 15px; }
+@media (max-width: 1199.98px) {
+  .so-seo-copy .so-mk__cats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 991.98px) {
+  .so-seo-copy .so-mk__grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 575.98px) {
+  .so-seo-copy .so-mk__cats { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .so-seo-copy .so-mk__cats li:last-child { grid-column: 1 / -1; }
+  .so-seo-copy .so-mk__cat { padding: 18px 12px 16px; }
+  .so-seo-copy .so-mk__card { padding: 18px; }
+  .so-seo-copy .so-mk__card h2 { font-size: 19px; }
+}
 </style>
 
 <div class="about-us-section">
