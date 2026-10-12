@@ -20,7 +20,7 @@ include 'header.php';
 
 soRenderListingPage([
 	'h1'       => 'Buy Broadway Tickets',
-	'crumbs'   => [['label' => 'Home', 'url' => '/'], ['label' => 'Theater']],
+	'crumbs'   => [['label' => 'Home', 'url' => '/'], ['label' => 'Theater', 'url' => '/buy-broadway-tickets'], ['label' => 'Buy Broadway Tickets']],
 	'eyebrow'  => 'Theater',
 	'lead_text' => 'Broadway, touring musicals, plays and comedy, with live seat maps and a 100% guarantee on every order.',
 	'total'    => $total_count,

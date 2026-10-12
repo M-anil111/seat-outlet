@@ -11,7 +11,7 @@ $soMenuDef = [
      'icon' => '<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
      'groups' => [
         ['title' => 'Popular genres', 'links' => [['Pop / Rock', '/pop-rock-concert-tickets'], ['Country / Folk', '/country-music-tickets'], ['Rap / Hip Hop', '/hip-hop-tickets'], ['R&B / Soul', '/rnb-soul-concert-tickets'], ['Latin', '/latin-music-tickets'], ['Alternative', '/alternative-concert-tickets']]],
-        ['title' => 'More to explore', 'links' => [['Hard Rock / Metal', '/metal-concert-tickets'], ['Jazz / Blues', '/jazz-and-blues-tickets'], ['Techno / Electronic', '/electronic-music-tickets'], ['Comedy', '/comedy-show-tickets'], ['Classical', '/classical-music-tickets'], ['Children / Family', '@category:2094']]],
+        ['title' => 'More to explore', 'links' => [['Hard Rock / Metal', '/metal-concert-tickets'], ['Jazz / Blues', '/jazz-and-blues-tickets'], ['Techno / Electronic', '/electronic-music-tickets'], ['Comedy', '/comedy-show-tickets'], ['Classical', '/classical-music-tickets'], ['Children / Family', '/category/children-family']]],
      ], 'all' => 'All concerts'],
     ['key' => 'sports', 'label' => 'Sports', 'href' => '/game-day-tickets', 'tag' => 'Game day, every league',
      'icon' => '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
