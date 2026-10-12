@@ -44,3 +44,15 @@ Empty categories and empty location pages are indexable again; an empty page is 
 ## Crawl guard (per-address page limit)
 
 `inc/crawl-guard.php` counts public page requests per address per minute (files in `cache/ratelimit/`). Over `SO_RL_PER_MIN` (default 120; search engine bots get 3x; 0 turns it off) the visitor gets `429` with `Retry-After`, and no page is built and no ticket API call is made. This stops one site audit or scraper (the 4 to 5 Oct 2026 audit loaded 58,000 pages) from using up the ticket API allowance and turning pages into 503 for everyone. Data endpoints, checkout, admin, cron, sitemaps and robots.txt are not counted. Set audit tools to 1 to 2 threads with a delay, or raise the limit for a known audit address in `inc/env.local.php`. Behind Cloudflare the address comes from `CF-Connecting-IP`.
+
+## Shared call budget (TN_CALLS_PER_SECOND)
+
+Every live TicketNetwork call takes a token from one bucket shared by all PHP processes (web requests, crons, crawlers).
+
+- Default 4 calls a second (`TN_CALLS_PER_SECOND`; 0 turns the budget off). Start lower if 429s continue, and raise it only when TicketNetwork confirms a higher limit for our key.
+- A visitor (web request) may use the whole bucket and waits up to 1.5 seconds for a token. Over budget, the page answers from its stored copy, like an outage, and no call is made.
+- A cron (CLI) may use only the upper half of the bucket, so a warmer cannot use up the calls visitors need.
+- Concurrent requests for the same cold key share one call (single-flight). The others wait up to 3 seconds for its answer.
+- A 429 with a numeric `Retry-After` sets the breaker from that value (5 to 300 seconds). Without it, the breaker stays open for 60 seconds.
+- Code: `inc/tn-budget.php`, `tnBucketAllow()` and `tnFetchStore()` in `functions.php`. Test: `tools/test-tn-budget.php`.
+- Test result (local stub, CLI): 20 simultaneous requests for one cold event made 1 call. 40 requests for 40 cold events made 7 calls at the default rate. Web-request visitor waiting has not been tested.

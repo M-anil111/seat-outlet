@@ -2,6 +2,7 @@
 // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
 require_once __DIR__ . '/inc/tn-listing-copy.php';
+require_once __DIR__ . '/inc/tn-budget.php';
 
 // Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
 // lose the visitor's own query string on the way, so ?when= / ?sort= / ?page=
@@ -398,6 +399,12 @@ function tnBuildHandle($endpoint, array $params, $method, $token) {
         CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_TIMEOUT        => 20,
         CURLOPT_ENCODING       => '',
+        // Keep the server's Retry-After on a throttle (tnThrottleWait() sets the breaker from it).
+        CURLOPT_HEADERFUNCTION => function ($ch, $line) {
+            $after = tnRetryAfterFromHeader($line);
+            if ($after !== null) $GLOBALS['tn_retry_after'] = $after;
+            return strlen($line);
+        },
     ]);
     return $ch;
 }
@@ -578,16 +585,48 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
         return [];
     }
 
+    // One live call per cold key: the first request fetches, the others wait for its answer instead of calling the API again.
+    if ($key === null) return tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry);
+    $flightPath = cache_file_path($key) . '.flight';
+    $flight = tnFlightOpen($flightPath);
+    if ($flight === false) {
+        $shared = tnFlightWait($flightPath, fn() => cache_get($key, $ttl));
+        if ($shared !== false) { tnProfile($endpoint, true, 0); return $shared; }
+        tnMarkDegraded();
+        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+    }
+    try {
+        return tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry);
+    } finally {
+        tnFlightClose($flight);
+    }
+}
+
+/**
+ * The shared call budget for one live call. A visitor waits briefly for a token; a cron uses only the spare part of the bucket.
+ * Over budget, the request answers from the stored copy like an outage, and no call is made.
+ */
+function tnBucketAllow(): bool {
+    return tnBucketWait(PHP_SAPI === 'cli', tnCallsPerSecond(), cache_dir() . 'tn_bucket.json');
+}
+
+/** The live part of a cold request: budget, one call (one retry for a fast drop), the breaker, and storing the answer. */
+function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
+    if (!tnBucketAllow()) {
+        tnMarkDegraded();
+        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+    }
     $t0 = microtime(true);
+    $GLOBALS['tn_retry_after'] = null;
     $r = tnFetchLive($endpoint, $params, $method);
     // A fast dropped connection (an SSL EOF or a reset, Sentry SEAT-OUTLET-F/G) gets one retry. Slow timeouts and throttles do not, so
     // the retry stays inside the request's time budget and never piles onto a throttled API.
-    if (!$r['ok'] && empty($r['throttled']) && (microtime(true) - $t0) < 3 && !tnBreakerOpen()) {
+    if (!$r['ok'] && empty($r['throttled']) && (microtime(true) - $t0) < 3 && !tnBreakerOpen() && tnBucketAllow()) {
         $r = tnFetchLive($endpoint, $params, $method);
     }
 
     if (!$r['ok']) {
-        tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
+        tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($GLOBALS['tn_retry_after'] ?? null, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS);
         soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
         if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
