@@ -278,8 +278,18 @@ include 'header.php';
 .mascot-panel .social-icons a.so-social-brand {
     color: #000;
 }
-.mascot-panel .social-icons a.so-social-brand svg {
-    transform: none; /* the footer's 5px nudge would sit these below the font icons here */
+.mascot-panel .social-icons a i,
+.mascot-panel .social-icons a.so-social-brand {
+    transition: color .2s ease;
+}
+.mascot-panel .social-icons a:hover i,
+.mascot-panel .social-icons a:focus-visible i,
+.mascot-panel .social-icons a.so-social-brand:hover,
+.mascot-panel .social-icons a.so-social-brand:focus-visible {
+    color: #0071e3;
+}
+.mascot-panel .social-icons a:hover svg {
+    fill: currentColor !important; /* the footer's pale hover blue is for its dark background */
 }
 
 .mascot-placeholder {
