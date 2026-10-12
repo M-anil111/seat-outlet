@@ -8031,9 +8031,6 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 .tm-top-links a.so-header-signin { align-items: center; padding: 10px 14px; margin: 0 4px 0 0; border-radius: 980px; color: #fff; font-weight: 600; font-size: 16px; text-decoration: none; transition: background .15s ease; }
 .tm-top-links a.so-header-signin:hover, .tm-top-links a.so-header-signin:focus-visible { background: rgba(255,255,255,.18); color: #fff; text-decoration: none; }
 
-/* QA round 4: the "Popular this weekend" next arrow sits inside the row at 992-1199px (it ran past the viewport at 1024px). */
-@media (min-width: 992px) and (max-width: 1199.98px) { .so-feed__next { right: 8px; } }
-
 /* QA round 4: the footer credit row wraps inside a 360px phone instead of running past the viewport. */
 .creater { max-width: 100%; }
 .creater > div { flex-wrap: wrap; max-width: 100%; }
