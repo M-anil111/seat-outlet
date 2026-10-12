@@ -1,50 +1,88 @@
 <?php include 'header.php'; ?>
 
 <style>
-/* SECTION 1 — HERO */
-.about-us-section .hero-section {
-  background: radial-gradient(circle at 10% 0%, #2e335a 0, #05060a 45%, #000 100%);
-  min-height: 80vh;
-  display: flex;
-  align-items: center;
+/* SECTION 1 — HERO: light banner, copy left, photo right */
+.about-us-section #hero.hero-section {
+  position: relative;
+  overflow: hidden;
+  background: #f6f8fc !important;   /* style.css gives this hero a centred grey look with !important */
+  color: #0f1b3d;
+  min-height: 0 !important;
+  padding: 72px 0 !important;
+  text-align: left !important;
 }
-
-/* Hero circles */
-.about-us-section .hero-visual {
-  width: min(420px, 80vw);
-  aspect-ratio: 1 / 1;
+.about-us-section #hero.hero-section .left-content {
+  flex: 0 0 auto;
+  max-width: none;
+  margin: 0;
 }
-
-.about-us-section .hero-circle {
+.about-us-section #hero.hero-section::before,
+.about-us-section #hero.hero-section::after {
+  content: "";
   position: absolute;
-  border-radius: 999px;
-  transition: transform 0.5s ease, box-shadow 0.5s ease;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
 }
-
-.about-us-section .hero-circle-lg {
-  width: 80%;
-  height: 80%;
-  right: 0;
-  top: 10%;
-  background: radial-gradient(circle at 20% 20%, #ffffff, #d2d5e0);
+.about-us-section #hero.hero-section::before {
+  width: 62%;
+  aspect-ratio: 1;
+  right: -14%;
+  top: -38%;
+  background: radial-gradient(circle at 40% 40%, #dfe8ff 0, #e9efff 55%, rgba(233, 239, 255, 0) 72%);
 }
-
-.about-us-section .hero-circle-sm {
-  width: 60%;
-  height: 60%;
-  left: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 20% 20%, #4d74ff, var(--primary));
-  box-shadow: 0 24px 60px rgba(37, 86, 224, 0.5);
+.about-us-section #hero.hero-section::after {
+  width: 34%;
+  aspect-ratio: 1;
+  left: -12%;
+  bottom: -40%;
+  background: radial-gradient(circle, #edf2ff 0, rgba(237, 242, 255, 0) 70%);
 }
-
-.about-us-section .hero-visual:hover .hero-circle-lg {
-  transform: translate(-10px, 10px);
+.about-us-section #hero.hero-section > .container { position: relative; z-index: 1; }
+.about-us-section #hero.hero-section .main-title {
+  font-size: clamp(30px, 3.4vw, 44px) !important;
+  font-weight: 800;
+  line-height: 1.15 !important;
+  letter-spacing: -.02em;
+  color: #0f1b3d !important;
 }
-
-.about-us-section .hero-visual:hover .hero-circle-sm {
-  transform: translate(12px, -10px);
-  box-shadow: 0 32px 80px rgba(37, 86, 224, 0.7);
+.about-us-section #hero.hero-section .left-content p,
+.about-us-section #hero.hero-section .left-content p.text-white {
+  max-width: 520px;
+  font-size: 16px !important;
+  line-height: 1.65 !important;
+  color: #3f4a5e !important;
+}
+.about-us-section #hero.hero-section .left-content p a,
+.about-us-section #hero.hero-section .left-content p a.text-white {
+  color: #2556e0 !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.about-us-section #hero .hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 26px;
+  border-radius: 10px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(37, 86, 224, .25);
+}
+.about-us-section #hero .hero-cta svg { transition: transform .2s ease; }
+.about-us-section #hero .hero-cta:hover svg { transform: translateX(3px); }
+.about-us-section #hero .hero-photo {
+  margin: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 45px rgba(15, 27, 61, .18);
+}
+.about-us-section #hero .hero-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 11;
+  object-fit: cover;
 }
 
 /* SECTION 2 — ABOUT */
@@ -328,10 +366,6 @@
     font-size: 52px;
   }
 
-  .about-us-section .hero-section {
-    min-height: auto;
-    padding: 80px 0;
-  }
 
   .about-us-section .industry-heading {
     font-size: 40px;
@@ -381,10 +415,11 @@
     padding: 60px 0;
   }
 
-  .about-us-section .hero-section .left-content {
-    max-width: 750px;
-    margin: 0 auto;
-    text-align: center;
+  .about-us-section #hero.hero-section { padding: 56px 0 !important; }
+  .about-us-section #hero.hero-section .left-content { max-width: 640px; }
+  .about-us-section #hero .hero-photo {
+    max-width: 640px;
+    margin-top: 32px;
   }
 }
 
@@ -396,6 +431,9 @@
   .about-us-section .about-image-wrapper {
     margin-inline: auto;
   }
+
+  .about-us-section #hero.hero-section { padding: 40px 0 !important; }
+  .about-us-section #hero .hero-photo { margin-top: 26px; border-radius: 14px; }
 
   .about-us-section .industry-card {
     min-height: 480px;
@@ -445,7 +483,7 @@
 
     <main>
     <!-- SECTION 1 — HERO / OUR STORY -->
-    <section id="hero" class="hero-section text-light">
+    <section id="hero" class="hero-section">
       <div class="container">
         <div class="row align-items-center">
           <!-- Left Column -->
@@ -461,17 +499,17 @@
               Orders are fulfilled through TicketNetwork and covered by its <a class="text-white" href="/worry-free-guarantee">100% guarantee</a>.
               Seat Outlet is an independent resale marketplace and is not affiliated with any venue, team or artist.
             </p>'); ?>
-            <a href="/ticket-partner-program" class="btn-primary btn px-4">
+            <a href="/ticket-partner-program" class="btn-primary btn hero-cta">
               Work With Us
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </a>
           </div>
 
           <!-- Right Column -->
           <div class="col-lg-6">
-            <div class="hero-visual position-relative mx-auto">
-              <div class="hero-circle hero-circle-lg"></div>
-              <div class="hero-circle hero-circle-sm"></div>
-            </div>
+            <figure class="hero-photo">
+              <img src="/images/crowd-at-concert-or-event.webp" alt="Fans cheering at a live concert" width="442" height="442" fetchpriority="high" decoding="async">
+            </figure>
           </div>
         </div>
       </div>
