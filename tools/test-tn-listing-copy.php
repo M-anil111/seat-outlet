@@ -25,6 +25,7 @@ $row = ['id' => 42, 'text' => ['name' => 'Staind'], 'venue' => ['text' => ['name
         'city' => ['text' => ['name' => 'The Woodlands']], 'date' => ['date' => '2026-10-17']];
 tlCheck('a {"events": [...]} answer gives its rows', tnListRows(['events' => [$row]]) === [$row]);
 tlCheck('a plain list answer gives its rows', tnListRows([$row]) === [$row]);
+tlCheck('the live Catalog shape {count, results: [...]} gives its rows (checked against the sandbox)', tnListRows(['count' => 1, 'page' => 1, 'results' => [$row], 'facets' => []]) === [$row]);
 tlCheck('an error object gives no rows', tnListRows(['Message' => 'throttled']) === []);
 tlCheck('a non-array gives no rows', tnListRows(null) === [] && tnListRows('x') === []);
 

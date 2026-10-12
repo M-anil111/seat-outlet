@@ -136,12 +136,12 @@ function downloadImage($url) {
 // margin), so most page views skip this round-trip entirely. Falls back to
 // the exact previous per-request-only behavior when APCu isn't installed.
 const TN_ACCESS_TOKEN_CACHE_KEY = 'tn_access_token';
-const TN_ACCESS_TOKEN_EXPIRY_BUFFER = 60; // seconds
+const TN_ACCESS_TOKEN_EXPIRY_BUFFER = 120; // seconds: the DevPortal guide says to refresh "a couple of minutes" before expiry
 
 function tnTokenCacheFile() {
     $dir = getenv('TN_TOKEN_DIR');
     $dir = ($dir !== false && $dir !== '') ? rtrim($dir, '/') : rtrim(sys_get_temp_dir(), '/');
-    return $dir . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY . '|' . BASE_URL) . '.json';
+    return $dir . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY . '|' . BASE_URL . '|' . tnDeviceScope()) . '.json';
 }
 
 /** Cached token if it is still inside its lifetime, else ''. */
@@ -181,7 +181,7 @@ function getTnAccessToken($rejected = '') {
     }
 
     if ($rejected === '' && function_exists('apcu_fetch')) {
-        $cached = apcu_fetch(TN_ACCESS_TOKEN_CACHE_KEY, $found);
+        $cached = apcu_fetch(TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope(), $found);
         if ($found) {
             $accessToken = $cached;
             return $accessToken;
@@ -217,7 +217,7 @@ function getTnAccessToken($rejected = '') {
                 'Authorization: Basic ' . base64_encode(CONSUMER_KEY . ':' . CONSUMER_SECRET),
                 'Content-Type: application/x-www-form-urlencoded',
             ],
-            CURLOPT_POSTFIELDS     => http_build_query(['grant_type' => 'client_credentials']),
+            CURLOPT_POSTFIELDS     => http_build_query(['grant_type' => 'client_credentials', 'scope' => 'default ' . tnDeviceScope()]),
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_TIMEOUT        => 15,
         ]);
@@ -239,7 +239,7 @@ function getTnAccessToken($rejected = '') {
         $ttl = max(60, (int) ($data['expires_in'] ?? 3600) - TN_ACCESS_TOKEN_EXPIRY_BUFFER);
 
         if (function_exists('apcu_store')) {
-            apcu_store(TN_ACCESS_TOKEN_CACHE_KEY, $accessToken, $ttl);
+            apcu_store(TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope(), $accessToken, $ttl);
         }
         $file = tnTokenCacheFile();
         $tmp = $file . '.' . uniqid('tmp_', true);

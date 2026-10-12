@@ -19,10 +19,15 @@ function soSafeParseQuery($query): array {
     return is_array($out) ? $out : [];
 }
 
-/** The event rows in a TicketNetwork list answer: {"events": [...]} or a plain list. Anything else is no rows. */
+/**
+ * The event rows in a TicketNetwork list answer. The live Catalog API returns {"count", "page", "results": [...], "_links", "facets"}
+ * (checked against the sandbox, 2026-10-12); "events" and a plain list are accepted too. Anything else is no rows.
+ */
 function tnListRows($data): array {
     if (!is_array($data)) return [];
-    if (isset($data['events']) && is_array($data['events'])) return $data['events'];
+    foreach (['results', 'events'] as $key) {
+        if (isset($data[$key]) && is_array($data[$key])) return $data[$key];
+    }
     return array_is_list($data) ? $data : [];
 }
 

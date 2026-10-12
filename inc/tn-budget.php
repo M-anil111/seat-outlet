@@ -98,3 +98,14 @@ function tnFlightWait(string $path, callable $cached, float $maxWait = 3.0) {
     } while (microtime(true) < $deadline);
     return false;
 }
+
+/**
+ * The device scope this process asks for. TicketNetwork's guide: a new token revokes the previous token with the same scopes, so
+ * web requests and cron jobs must not share one token (each one's refresh would log the other out). Web and cron each get their
+ * own device token; set TN_DEVICE_ID per server when more than one web host shares the application.
+ */
+function tnDeviceScope() {
+    $id = getenv('TN_DEVICE_ID');
+    if ($id === false || $id === '') $id = PHP_SAPI === 'cli' ? 'cli' : 'web';
+    return 'device_' . preg_replace('/[^a-z0-9_-]/i', '', $id);
+}

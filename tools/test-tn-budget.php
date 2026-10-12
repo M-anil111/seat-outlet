@@ -34,6 +34,15 @@ tnBucketTake(true, 1.0, $bucket);   // real clock: two tokens at burst 2, the ba
 $start = microtime(true);
 tbCheck('a background call never waits for a token', tnBucketWait(true, 1.0, $bucket) === false && microtime(true) - $start < 0.5);
 
+// 1b. Device scope: web and cron get their own tokens, so one refresh cannot revoke the other's
+putenv('TN_DEVICE_ID');
+tbCheck('a CLI process asks for its own device scope', tnDeviceScope() === 'device_cli' || PHP_SAPI !== 'cli');
+putenv('TN_DEVICE_ID=host-2');
+tbCheck('TN_DEVICE_ID names the device', tnDeviceScope() === 'device_host-2');
+putenv('TN_DEVICE_ID=bad id/../x');
+tbCheck('the device id is cleaned for use in a scope and a file name', tnDeviceScope() === 'device_badidx');
+putenv('TN_DEVICE_ID');
+
 // 2. Retry-After: numeric seconds are read; HTTP dates and other headers are not; the breaker length is clamped
 tbCheck('Retry-After: 30 is read', tnRetryAfterFromHeader("Retry-After: 30\r\n") === 30);
 tbCheck('a Retry-After HTTP date is not read as seconds', tnRetryAfterFromHeader('Retry-After: Wed, 21 Oct 2026 07:28:00 GMT') === null);
@@ -68,6 +77,8 @@ tbCheck('a follower stops early when the leader finished without storing anythin
 
 // 4. Wiring in the live code
 $fn = file_get_contents(__DIR__ . '/../functions.php');
+tbCheck('the token request asks for the device scope', strpos($fn, "'scope' => 'default ' . tnDeviceScope()") !== false);
+tbCheck('the token file and cache key are per device', strpos($fn, "CONSUMER_KEY . '|' . BASE_URL . '|' . tnDeviceScope()") !== false && strpos($fn, "TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope()") !== false);
 tbCheck('functions.php loads the budget helpers', strpos($fn, "require_once __DIR__ . '/inc/tn-budget.php';") !== false);
 tbCheck('every live call passes the shared budget before it goes out', strpos($fn, 'if (!tnBucketAllow()) {') !== false && strpos($fn, 'tnBucketWait(PHP_SAPI === \'cli\'') !== false);
 tbCheck('the cold path is single-flight', strpos($fn, '$flight = tnFlightOpen($flightPath);') !== false && strpos($fn, 'tnFlightClose($flight);') !== false);
