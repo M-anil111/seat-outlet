@@ -275,6 +275,12 @@ include 'header.php';
 .mascot-panel .social-icons a i {    
     color: #000;
 }
+.mascot-panel .social-icons a.so-social-brand {
+    color: #000;
+}
+.mascot-panel .social-icons a.so-social-brand svg {
+    transform: none; /* the footer's 5px nudge would sit these below the font icons here */
+}
 
 .mascot-placeholder {
     width: 100px;
@@ -399,8 +405,8 @@ include 'header.php';
                             <a href="https://www.facebook.com/seatoutlet.usa" target="_blank" rel="noopener" aria-label="Seat Outlet on Facebook"><i class="bi bi-facebook fs-4"></i></a>
                                                         <a href="https://www.youtube.com/@SeatOutlet" target="_blank" rel="noopener" aria-label="Seat Outlet on YouTube"><i class="bi bi-youtube fs-4"></i></a>
                             <a href="https://www.instagram.com/seatoutlet/" target="_blank" rel="noopener" aria-label="Seat Outlet on Instagram"><i class="bi bi-instagram fs-4"></i></a>
+                            <?php echo soSocialIconsHtml(); ?>
                         </div>
-                        <div class="so-social-more" role="group" aria-label="More Seat Outlet profiles"><?php echo soSocialPillsHtml(); ?></div>
                     </div>
                 </div>
             </aside>
