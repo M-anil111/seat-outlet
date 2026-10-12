@@ -13,7 +13,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  */
 function soLeadForm(array $o = []) {
     $o += ['source' => 'site', 'title' => 'Get ticket alerts and new guides in your inbox', 'text' => 'Tour announcements, on-sale news and plain-English ticket advice. No spam.',
-           'button' => 'Sign me up', 'interest_type' => '', 'interest_id' => 0, 'interest_name' => '', 'id' => '', 'names' => true, 'class' => '', 'alert_kind' => '', 'baseline_price' => 0,
+           'button' => 'Get alerts', 'interest_type' => '', 'interest_id' => 0, 'interest_name' => '', 'id' => '', 'names' => true, 'class' => '', 'alert_kind' => '', 'baseline_price' => 0,
            'layout' => ''];
     $h = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); };
     // layout 'split' (home page): bell icon, title and text on the left, the form on the right with visible field labels
