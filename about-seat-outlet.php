@@ -403,6 +403,100 @@
   font-weight: 500;
 }
 
+/* SECTION 4 — FIND EVENTS: dark band with stage photo on the right and outlined link buttons */
+.about-us-section #global.global-section {
+  position: relative;
+  overflow: hidden;
+  background: #0a1430;
+  color: #fff;
+  padding: 64px 0;
+}
+.about-us-section #global.global-section::before,
+.about-us-section #global.global-section::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  pointer-events: none;
+}
+.about-us-section #global.global-section::before {
+  width: 58%;
+  background: url("/images/stage.webp") center 72% / cover no-repeat;
+}
+.about-us-section #global.global-section::after {
+  left: 0;
+  background: linear-gradient(90deg, #0a1430 0%, #0a1430 42%, rgba(10, 20, 48, .82) 62%, rgba(10, 20, 48, .25) 100%);
+}
+.about-us-section #global .container { position: relative; z-index: 1; }
+.about-us-section #global .so-near__title {
+  position: relative;
+  margin: 0;
+  padding-top: 18px;
+  font-size: clamp(24px, 2.6vw, 32px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.about-us-section #global .so-near__title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 36px;
+  height: 3px;
+  background: #fff;
+}
+.about-us-section #global .so-near__text {
+  max-width: 520px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #c9d3ea;
+}
+.about-us-section #global .so-near__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 30px;
+}
+.about-us-section #global .so-near__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  min-width: 150px;
+  padding: 0 22px;
+  border: 1.5px solid #2556e0;
+  border-radius: 8px;
+  background: rgba(37, 86, 224, .12);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color .2s ease, border-color .2s ease;
+}
+.about-us-section #global .so-near__btn svg { flex: none; color: #6f93ff; transition: transform .2s ease, color .2s ease; }
+.about-us-section #global .so-near__btn:hover,
+.about-us-section #global .so-near__btn:focus-visible { background: #2556e0; border-color: #2556e0; color: #fff; }
+.about-us-section #global .so-near__btn:hover svg,
+.about-us-section #global .so-near__btn:focus-visible svg { color: #fff; transform: translateX(3px); }
+@media (max-width: 991.98px) {
+  .about-us-section #global.global-section { padding: 52px 0; }
+  .about-us-section #global.global-section::before { width: 100%; opacity: .45; }
+  .about-us-section #global.global-section::after { background: linear-gradient(180deg, rgba(10, 20, 48, .92) 0%, rgba(10, 20, 48, .85) 100%); }
+  .about-us-section #global .so-near__text { margin-top: 14px; max-width: none; }
+}
+@media (max-width: 575.98px) {
+  .about-us-section #global.global-section { padding: 44px 0; }
+  .about-us-section #global .so-near__links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .about-us-section #global .so-near__btn { min-width: 0; padding: 0 14px; }
+  .about-us-section #global .so-near__btn:last-child { grid-column: 1 / -1; }
+}
+
 /* Scroll reveal */
 .about-us-section .scroll-fade {
   opacity: 1;
@@ -717,23 +811,23 @@
     <!-- SECTION 4 - FIND EVENTS -->
     <section id="global" class="global-section scroll-fade">
       <div class="container">
-        <div class="row mb-lg-4 mb-3">
+        <div class="row align-items-center">
             <div class="col-lg-5">
-                <h2 class="section-title mb-3 mt-0 section-label">Find events near you</h2>
+                <h2 class="so-near__title">Find events near you</h2>
             </div>
             <div class="col-lg-7">
-                <p class="text-dark mb-3">
+                <p class="so-near__text">
                   Pick a category or a city to see what is on sale right now. Listings change as sellers add and remove tickets.
-                </p>
-                <p class="mb-0">
-                  <a href="/city-events">Events by city</a> &middot;
-                  <a href="/concert-tickets-for-sale">Concerts</a> &middot;
-                  <a href="/game-day-tickets">Sports</a> &middot;
-                  <a href="/buy-broadway-tickets">Theater</a> &middot;
-                  <a href="/upcoming-music-festivals">Festivals</a>
                 </p>
             </div>
         </div>
+        <nav class="so-near__links" aria-label="Browse events">
+          <a class="so-near__btn" href="/city-events">Events by city <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="so-near__btn" href="/concert-tickets-for-sale">Concerts <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="so-near__btn" href="/game-day-tickets">Sports <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="so-near__btn" href="/buy-broadway-tickets">Theater <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="so-near__btn" href="/upcoming-music-festivals">Festivals <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </nav>
       </div>
     </section>
   </main>
