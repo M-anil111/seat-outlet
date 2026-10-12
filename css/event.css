@@ -1791,7 +1791,7 @@ font-size: 18px;
 /* ---- Event page layout (event.php), between the header and the footer:
    summary strip, seat map band, About + venue card, How to buy, promo codes + Buyer Guarantee band, FAQ, info cards, more.
    Navy headings, primary #2556e0, white and pale blue bands, rounded cards with thin borders. ---- */
-.so-evbar { background: #fff; padding: 18px 0 16px; border-bottom: 1px solid #e8edf6; }
+section.so-evbar { background: #fff; padding-top: 10px; padding-bottom: 10px; border-bottom: 1px solid #e8edf6; }   /* section. outranks the .so-evbar rules in the style bundle at every width */
 .so-evbar > .container, .so-evp__wrap, .so-evtix__wrap { max-width: 1240px; }
 .so-evbar .so-crumbs { margin-bottom: 8px; }
 .so-evbar .so-crumbs a { color: #2556e0; text-decoration: none; }
