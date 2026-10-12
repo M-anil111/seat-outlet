@@ -45,7 +45,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
     <!-- Column 2 -->
     <div class="tm-footer-col">
-  <h2 class="footer-heading">Trust</h3>
+  <h2 class="footer-heading">Trust</h2>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/worry-free-guarantee">Guarantee</a></li>
@@ -58,7 +58,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
     <!-- Column 3 -->
     <div class="tm-footer-col">
-  <h2 class="footer-heading">Our Network</h3>
+  <h2 class="footer-heading">Our Network</h2>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/grab-tickets-now">Grab Tickets Now</a></li>
@@ -72,7 +72,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
     <!-- Column 4 -->
     <div class="tm-footer-col">
-  <h2 class="footer-heading">About Us</h3>
+  <h2 class="footer-heading">About Us</h2>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/about-seat-outlet">Who we are</a></li>
@@ -87,7 +87,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
     <!-- Column 5 -->
     <div class="tm-footer-col">
-  <h2 class="footer-heading">Tickets</h3>
+  <h2 class="footer-heading">Tickets</h2>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/game-day-tickets">Sports</a></li>

@@ -67,7 +67,7 @@ foreach ($fallbackCategories as $key => $list) {
         <h2 id="soFeedPopWeekendTitle" class="so-feed__title">Popular this weekend</h2>
         <p class="so-feed__sub">Top events across the U.S. this weekend. Don't miss what's happening.</p>
       </div>
-      <a class="so-feed__all so-feed__all--arrow" href="/buy-tickets-online?when=weekend" role="link" tabindex="0" data-go="/buy-tickets-online?when=weekend">See all events <span aria-hidden="true">&rarr;</span></a>
+      <a class="so-feed__all so-feed__all--arrow" href="/buy-tickets-online?when=weekend">See all events <span aria-hidden="true">&rarr;</span></a>
     </div>
     <div class="so-feed__wrap">
       <div class="so-feed__track" data-so-feed-track><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div></div>
@@ -99,7 +99,7 @@ foreach ($fallbackCategories as $key => $list) {
         <h2 id="soFeedWeekendTitle" class="so-feed__title">This weekend near you</h2>
         <p class="so-feed__sub" data-so-feed-sub>Events within 50 miles, Friday to Sunday</p>
       </div>
-      <a class="so-feed__all" href="/buy-tickets-online?when=weekend" role="link" tabindex="0" data-go="/buy-tickets-online?when=weekend">See all</a>
+      <a class="so-feed__all" href="/buy-tickets-online?when=weekend">See all</a>
     </div>
     <div class="so-feed__wrap">
       <div class="so-feed__track" data-so-feed-track></div>
