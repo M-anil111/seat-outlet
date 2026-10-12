@@ -1910,3 +1910,10 @@ font-size: 18px;
   .so-evx__rows--venue .so-evx__t { flex-basis: calc(100% - 40px); }
   .so-evx__rows--venue .so-evx__when { order: 3; flex-basis: 100%; }
 }
+
+/* The widget's own event header (date / name / venue / guarantee) repeats the page header above it, so it is hidden. */
+#tn-maps #event-info-area { display: none !important; }
+
+/* Filters drawer, Quantity: one even grid of equal pills (Any, 1, 2, 3 / 4, 5, 6+) at every width. */
+#tn-maps #sea-filterCard-parent .filters-qty-filter-cnt { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+#tn-maps #sea-filterCard-parent .filters-qty-filter-cnt > .sea-btn { float: none !important; display: flex !important; align-items: center; justify-content: center; width: auto !important; min-width: 0; height: 44px !important; margin: 0 !important; padding: 0 !important; border-radius: 999px !important; line-height: 1 !important; white-space: nowrap; }
