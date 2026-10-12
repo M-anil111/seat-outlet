@@ -381,23 +381,130 @@ include 'header.php';
     }
 }
 
+
+/* ========== Hero redesign (light banner, icon tiles, card sidebar) ========== */
+.so-rvh {
+    position: relative;
+    overflow: hidden;
+    padding: 72px 0 80px;
+    background: linear-gradient(135deg, #f7f9ff 0%, #eef3ff 100%);
+}
+.so-rvh::before,
+.so-rvh::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+}
+.so-rvh::before { width: 60%; aspect-ratio: 1; right: -18%; top: -45%; background: radial-gradient(circle, rgba(220, 231, 255, .9) 0, rgba(220, 231, 255, 0) 70%); }
+.so-rvh::after { width: 45%; aspect-ratio: 1; left: -20%; bottom: -45%; background: radial-gradient(circle, rgba(214, 226, 255, .8) 0, rgba(214, 226, 255, 0) 70%); }
+.so-rvh > .container { position: relative; z-index: 1; }
+.so-rvh__head { display: flex; align-items: center; gap: 22px; margin-bottom: 26px; }
+.so-rvh__tile {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: #e3ebff;
+    color: #2556e0;
+}
+.so-rvh .reviews-title {
+    margin: 0;
+    font-size: clamp(24px, 2.6vw, 34px);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+    color: #0f1b3d;
+}
+.so-rvh .reviews-subtitle {
+    margin: 0 0 22px;
+    font-size: clamp(22px, 2.4vw, 30px);
+    font-weight: 800;
+    line-height: 1.25;
+    color: #0f1b3d;
+}
+.so-rvh__body p { font-size: 17px; line-height: 1.75; color: #2b3445; margin: 0 0 18px; }
+.so-rvh__body a { color: #2556e0; text-underline-offset: 3px; }
+.so-rvh__note {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 26px;
+    padding: 20px 24px;
+    border: 1px solid #d7e2fb;
+    border-radius: 14px;
+    background: rgba(233, 240, 255, .75);
+}
+.so-rvh__note p { margin: 0; font-size: 16px; line-height: 1.6; color: #1d2638; }
+.so-rvh .sidebar-image img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / .95;
+    object-fit: cover;
+    border-radius: 16px !important;
+    box-shadow: 0 18px 40px rgba(15, 27, 61, .16);
+}
+.so-rvh .mascot-panel {
+    padding: 26px 22px 24px;
+    border: 1px solid #e3e8f2;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 10px 28px rgba(15, 27, 61, .07);
+}
+.so-rvh .mascot-text { margin-bottom: 16px !important; font-size: 18px; font-weight: 800 !important; color: #0f1b3d; }
+.so-rvh .mascot-panel .social-icons { gap: 12px; margin: 0; }
+.so-rvh .mascot-panel .social-icons a {
+    width: 54px;
+    height: 54px;
+    border: 1px solid #e3e8f2;
+    border-radius: 50%;
+    background: #fff;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+.so-rvh .mascot-panel .social-icons a:hover,
+.so-rvh .mascot-panel .social-icons a:focus-visible { border-color: #2556e0; box-shadow: 0 6px 16px rgba(37, 86, 224, .16); }
+.so-rvh .mascot-panel .social-icons a i { line-height: 1; }
+.so-rvh .mascot-panel .social-icons a.so-social-brand svg { transform: none; }
+.so-rvh .mascot-panel .social-icons a:hover i,
+.so-rvh .mascot-panel .social-icons a:focus-visible i,
+.so-rvh .mascot-panel .social-icons a.so-social-brand:hover,
+.so-rvh .mascot-panel .social-icons a.so-social-brand:focus-visible { color: #2556e0; }
+@media (max-width: 991.98px) {
+    .so-rvh { padding: 56px 0 64px; }
+}
+@media (max-width: 767.98px) {
+    .so-rvh { padding: 36px 0 48px; }
+    .so-rvh__head { gap: 14px; margin-bottom: 18px; }
+    .so-rvh__tile { width: 52px; height: 52px; border-radius: 14px; }
+    .so-rvh__note { align-items: flex-start; gap: 14px; padding: 16px; }
+    .so-rvh__body p { font-size: 16px; }
+    .so-rvh .mascot-panel .social-icons a { width: 48px; height: 48px; }
+}
 </style>
 
-<div class="reviews-section">
+<div class="reviews-section so-rvh">
     <div class="container">
         <div class="row g-4">
             <!-- Main Content - Left Column -->
             <main class="col-md-8">
                 <!-- Page Header -->
-                <div class="mb-4">
-                    
-                    <h1 class="reviews-title mt-2 mb-lg-4 mb-3">Seat Outlet Reviews: Customer Feedback</h1>
-                    <h2 class="reviews-subtitle">What we can show you today</h2>
+                <div class="so-rvh__head">
+                    <span class="so-rvh__tile" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4H6.5"/><path d="M8 8.5h8M8 12h5"/></svg></span>
+                    <h1 class="reviews-title">Seat Outlet Reviews: Customer Feedback</h1>
                 </div>
+                <h2 class="reviews-subtitle">What we can show you today</h2>
 
-                <section class="mb-4">
-                    <p>We have not published customer reviews on this page yet, and we will not publish sample ones. Reviews will appear here only after they are checked against a real order.</p>
-                    <p>Bought tickets from us? <a href="/ticket-customer-service">Tell our customer service team how it went</a>, good or bad. For independent opinions, you can also look for Seat Outlet on the <a href="https://www.bbb.org/" target="_blank" rel="noopener">Better Business Bureau</a> website and read what the <a href="/worry-free-guarantee">worry-free guarantee</a> and <a href="/ticket-buyer-protection">ticket buyer protection</a> cover before you buy.</p>
+                <section class="so-rvh__body">
+                    <div class="so-rvh__note">
+                        <span class="so-rvh__tile" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4H6.5"/><path d="M8 8.5h8M8 12h5"/></svg></span>
+                        <p>We have not published customer reviews on this page yet, and we will not publish sample ones. Reviews will appear here only after they are checked against a real order.</p>
+                    </div>
+                    <p>Bought tickets from us? <a href="/ticket-customer-service">Tell our customer service team how it went</a>, good or bad.</p>
+                    <p>For independent opinions, you can also look for Seat Outlet on the <a href="https://www.bbb.org/" target="_blank" rel="noopener">Better Business Bureau</a> website and read what the <a href="/worry-free-guarantee">worry-free guarantee</a> and <a href="/ticket-buyer-protection">ticket buyer protection</a> cover before you buy.</p>
                 </section>
             </main>
 
