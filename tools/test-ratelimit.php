@@ -44,6 +44,7 @@ $fn = file_get_contents(__DIR__ . '/../functions.php');
 $guardAt = strpos($fn, "\nsoCrawlGuardPublic();");
 rlOk($guardAt !== false && $guardAt < strpos($fn, "register_shutdown_function('soTopPerformersMaybeRun')"), 'the bootstrap runs the guard before any shutdown hook is registered');
 $cg = file_get_contents(__DIR__ . '/../inc/crawl-guard.php');
+rlOk(strpos($cg, "in_array(\$_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)") !== false, 'the per-address count takes HEAD like GET (soCrawlGuard), not only GET');
 rlOk(preg_match('/\$refuse = soCrawlGuardDecision\(\$_SERVER, .*?\);\s*if \(\$refuse !== null && !headers_sent\(\)\) \{\s*http_response_code\(\$refuse\[\'status\'\]\);.*?exit;/s', $cg) === 1 && strpos($cg, "getenv('SO_BOT_ALLOW')") !== false, 'the bootstrap sends the decision and exits before any page work');
 foreach (glob("$dir/*") ?: [] as $f) unlink($f); @rmdir($dir);
 echo $fail ? "$fail failure(s)\n" : "ratelimit: all passed\n"; exit($fail ? 1 : 0);
