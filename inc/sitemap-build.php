@@ -309,6 +309,8 @@ function soSitemapBuildFiles(string $tmp): array {
     foreach (@file($tmp . '/events.tsv', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
         [$slug, $lm] = array_pad(explode("\t", $line), 2, '');
         if ($slug === '' || isset($seen[$slug])) continue;
+        // A crawl that spans midnight, or a file served a day later, still holds yesterday's events: their pages are gone (SE Ranking: 4xx URLs in the sitemap).
+        if (preg_match('/-(\d{4}-\d{2}-\d{2})(?:-\d+)?$/', $slug, $dm) && $dm[1] < date('Y-m-d')) continue;
         $seen[$slug] = true;
         $entries[] = [$base . '/event/' . $slug, $lm !== '' ? $lm : null];
     }
@@ -328,7 +330,9 @@ function soSitemapBuildFiles(string $tmp): array {
         }
         $list = [];
         soSlugWarm(array_map(fn($i) => [$slugType, $i], array_keys($ents)));
+        $deadIds = $group === 'performers' ? soDeadPerformerIds() : [];   // pages that answered 404: not listed until they are seen alive again
         foreach ($ents as $id => [$name, $lm]) {
+            if (isset($deadIds[$id])) continue;
             $loc = $base . $prefix . soSlug($slugType, $name, $id);
             if ($keep($loc)) $list[] = [$loc, $lm !== '' ? $lm : null];
         }

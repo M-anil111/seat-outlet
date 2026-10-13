@@ -112,8 +112,13 @@ include_once 'functions.php';
     ob_start('soPublicCanonical');   // canonical + og:url name the public address, whatever host served the page
     // Keep titles and descriptions inside what a search result shows.
     if (!empty($pageCanonicalUrl)) { $GLOBALS['pageCanonicalUrl'] = $pageCanonicalUrl; }   // pages rendered inside a function: the output filters read it
-    if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle, !empty($pageTitleMax) ? (int) $pageTitleMax : 59); }   // a page may allow a longer title ($pageTitleMax), e.g. a performer in a city
-    if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription($pageMetaDescription); }
+    // ?page=2 and up list different events under the same title, description and H1 as page one: SE Ranking counted ~2,200 duplicate titles
+    // and ~3,000 duplicate descriptions and H1s from this alone. Each later page names its number (page one is left exactly as it is).
+    $soPageNo = isset($_GET['page']) && !is_array($_GET['page']) && ctype_digit((string) $_GET['page']) ? min(500, (int) $_GET['page']) : 1;
+    $soPageTag = $soPageNo >= 2 ? ' (Page ' . $soPageNo . ')' : '';
+    if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle, (!empty($pageTitleMax) ? (int) $pageTitleMax : 59) - mb_strlen($soPageTag)) . $soPageTag; }   // a page may allow a longer title ($pageTitleMax), e.g. a performer in a city
+    if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription(rtrim($pageMetaDescription), 155 - mb_strlen($soPageTag)) . $soPageTag; }
+    if ($soPageNo >= 2) { $GLOBALS['soPageTag'] = $soPageTag; ob_start('soPageTagH1'); }
 ?>
 
 <!DOCTYPE html>

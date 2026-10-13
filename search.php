@@ -44,6 +44,9 @@ if (
     $lng = floatval($searchInput['lngHeader']);
     $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $lat, $lng);
 }
+// A city typed into the Location box but never picked from the suggestions has no coordinates, so it cannot narrow anything. Say so on
+// the page instead of silently returning the same results for "Chicago" and "Miami" (QA-004).
+$locationUnmatched = trim((string) ($searchInput['locationInputHeader'] ?? '')) !== '' && !isset($params['geoFilter']);
 // The 50-mile filter applies only when the visitor has typed a location. Coordinates alone (for example a stored browser value) never narrow results.
 
 /*
@@ -249,6 +252,9 @@ soPageHero([
 					], $filterHref, 'Filter and sort search results');
 					if ($noTicketsFallback) { ?>
 						<p class="search-note">No tickets are listed for <strong><?php echo htmlspecialchars($keywordHeader, ENT_QUOTES, 'UTF-8'); ?></strong> right now. These dates can still be opened.</p>
+					<?php } ?>
+					<?php if ($locationUnmatched) { ?>
+						<p class="search-note" id="search-location-note">We could not match &ldquo;<?php echo htmlspecialchars((string) $searchInput['locationInputHeader'], ENT_QUOTES, 'UTF-8'); ?>&rdquo; to a place, so these results are not limited to that area. Pick a city from the suggestions in the Location box to search near it.</p>
 					<?php } ?>
 					<div class="list-category-bg pb-3">
 						<?php if (!empty($events)) {

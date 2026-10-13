@@ -42,8 +42,12 @@ function soCategoryDisplayName(string $name): string {
     return implode(' ', $words);
 }
 
-/** The page a sub-category links to. */
+/** The same category listed twice by the API: duplicate id => the id that owns the clean address (category.php 301s the duplicate to it). */
+const SO_CATEGORY_DUPLICATES = [2094 => 1869];   // Children / Family under Concerts => under Theater
+
+/** The page a sub-category links to. A duplicate links straight to the page it would redirect to (a link that 301s is a crawl waste and an SE Ranking "3xx link" on every page). */
 function soCategoryHref(int $id, string $name): string {
+    if (isset(SO_CATEGORY_DUPLICATES[$id])) { $id = SO_CATEGORY_DUPLICATES[$id]; $name = 'Children / Family'; }
     if (function_exists('soGenreById') && ($g = soGenreById($id))) return '/' . $g['slug'];
     return '/category/' . soSlug('category', $name, $id);
 }

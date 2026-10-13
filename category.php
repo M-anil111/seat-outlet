@@ -19,7 +19,6 @@ if ($id <= 0) {
 }
 
 // The ticket API lists a few categories twice under different parents; the small copy sends visitors to the main one (one URL per category).
-const SO_CATEGORY_DUPLICATES = [2094 => 1869];   // Children / Family under Concerts => under Theater
 if (isset(SO_CATEGORY_DUPLICATES[$id])) { soRedirect301(soCategoryHref(SO_CATEGORY_DUPLICATES[$id], 'Children / Family')); }
 
 $cat = getTnCatById($id);
@@ -43,7 +42,7 @@ $soGenre = isset($soGenreSlug) ? soGenreBySlug($soGenreSlug) : soGenreById($id);
 $catBasePath = $soGenre ? '/' . $soGenre['slug'] : '/category/' . soSlug('category', $catName, $id);
 if (!$soGenre && trim((string) $slug, '/') !== substr($catBasePath, 10)) { soRedirect301($catBasePath); }   // the old name-and-id form or another spelling
 if ($soGenre && !isset($soGenreSlug)) {
-	parse_str($_SERVER['QUERY_STRING'] ?? '', $soQs);
+	$soQs = soSafeParseQuery($_SERVER['QUERY_STRING'] ?? '');   // not parse_str(): a bracket flood in the query string raises a warning (Sentry SEAT-OUTLET-Y)
 	unset($soQs['slug']);   // the server rewrite passes the old /category/<name>-<id> path as ?slug=, which must not leak into the clean URL
 	$qs = http_build_query($soQs);
 	header('Location: ' . $catBasePath . ($qs !== '' ? '?' . $qs : ''), true, 301);

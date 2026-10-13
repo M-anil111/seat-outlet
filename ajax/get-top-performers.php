@@ -14,6 +14,12 @@ if ($data === false) {
     exit;
 }
 foreach (['concerts' => 'artist', 'sports' => 'team', 'theater' => 'artist'] as $key => $type) {
+    // The cache can be weeks old; a performer whose page has since answered 404 is dropped when it is served, not only when it is built.
+    if (is_array($data[$key] ?? null)) {
+        $data[$key] = soDropDeadPerformers($data[$key]);
+        $prices = array_filter(array_column($data[$key], 'from'));   // the "from" price belongs to the performers still shown
+        if ($prices) $data['from'][$key] = (int) round(min($prices)); else unset($data['from'][$key]);
+    }
     foreach ($data[$key] ?? [] as $i => $p) {
         $img = ['status' => ''];
         try { $img = getEntityImage($type, (string) ($p['name'] ?? ''), ['resolve' => false]); } catch (Throwable $e) { /* decoration only */ }
