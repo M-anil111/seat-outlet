@@ -88,7 +88,14 @@ $fn = file_get_contents(__DIR__ . '/../functions.php');
 tbCheck('the token request asks for the device scope', strpos($fn, "'scope' => 'default ' . tnDeviceScope()") !== false);
 tbCheck('the token file and cache key are per device', strpos($fn, "CONSUMER_KEY . '|' . BASE_URL . '|' . tnDeviceScope()") !== false && strpos($fn, "TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope()") !== false);
 tbCheck('functions.php loads the budget helpers', strpos($fn, "require_once __DIR__ . '/inc/tn-budget.php';") !== false);
-tbCheck('every live call passes the shared budget before it goes out', strpos($fn, 'if (!tnBucketAllow()) {') !== false && strpos($fn, 'tnBucketWait(PHP_SAPI === \'cli\'') !== false);
+tbCheck('every live call passes the shared budget before it goes out', strpos($fn, 'if (!tnBucketAllow()) {') !== false && strpos($fn, 'tnBucketWait(tnBackgroundCaller()') !== false);
+tbCheck('a batch of prefetched calls waits for tokens like one call would, instead of failing the third on the spot',
+    strpos($fn, '$deadline = microtime(true) + 1.5;') !== false && strpos($fn, 'if (!tnBucketWait($background, tnCallsPerSecond(), $budgetFile, max(0.0, $deadline - microtime(true)))) {') !== false && strpos($fn, 'tnBucketTake(PHP_SAPI') === false);
+unset($_SERVER['HTTP_X_SO_WARM']);
+tbCheck('a cron is a background caller', tnBackgroundCaller() === true);   // this test runs on the CLI
+tbCheck('the snapshot warmer tells the site its visits are background, and nothing counts them as visitor outcomes',
+    strpos(file_get_contents(__DIR__ . '/../cron/warm-snapshots.php'), "CURLOPT_HTTPHEADER => ['X-SO-Warm: 1']") !== false && strpos($fn, "if (tnBackgroundCaller()) return;") !== false
+    && strpos(file_get_contents(__DIR__ . '/../inc/tn-budget.php'), "PHP_SAPI === 'cli' || !empty(\$_SERVER['HTTP_X_SO_WARM'])") !== false);
 tbCheck('the cold path is single-flight', strpos($fn, '$flight = tnFlightOpen($flightPath);') !== false && strpos($fn, 'tnFlightClose($flight);') !== false);
 tbCheck('the breaker after a throttle uses Retry-After', strpos($fn, 'tnThrottleWait($GLOBALS[\'tn_retry_after\'] ?? null') !== false);
 tbCheck('the header callback keeps Retry-After', strpos($fn, 'tnRetryAfterFromHeader($line)') !== false);

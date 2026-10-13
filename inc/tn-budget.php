@@ -49,6 +49,15 @@ function tnCallsPerSecond(): float {
 }
 
 /**
+ * A caller that may only use the spare part of the budget: a cron (CLI), and a page request the snapshot warmer makes to the site
+ * itself (it sends X-SO-Warm, so its visits are not mistaken for visitors and cannot drain the bucket ahead of them). Anyone can send
+ * the header; all it buys is a lower priority.
+ */
+function tnBackgroundCaller(): bool {
+    return PHP_SAPI === 'cli' || !empty($_SERVER['HTTP_X_SO_WARM']);
+}
+
+/**
  * Takes one token if the bucket allows it. Background callers need 1 + half the burst, so they leave the rest for visitors.
  * Fails open when the bucket file cannot be locked: a counter fault must never block a visitor.
  */

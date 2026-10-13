@@ -405,7 +405,7 @@ function tnUnanswered(bool $hadStored): void {
  * ajax/health.php reports today's counts. A counting fault never affects a page.
  */
 function tnCount(string $kind): void {
-    if (PHP_SAPI === 'cli') return;
+    if (tnBackgroundCaller()) return;   // crons and the snapshot warmer's own visits are not visitor outcomes
     // Per-call kinds also count the page once ("pages", and "pages_suspect" for a kept stored list), so a rate can be per page:
     // one page makes several calls, but is one visitor outcome.
     $bump = [$kind];
@@ -664,7 +664,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
  * Over budget, the request answers from the stored copy like an outage, and no call is made.
  */
 function tnBucketAllow(): bool {
-    return tnBucketWait(PHP_SAPI === 'cli', tnCallsPerSecond(), cache_dir() . 'tn_bucket.json');
+    return tnBucketWait(tnBackgroundCaller(), tnCallsPerSecond(), cache_dir() . 'tn_bucket.json');
 }
 
 /** The live part of a cold request: budget, one call (one retry for a fast drop), the breaker, and storing the answer. */
@@ -751,6 +751,8 @@ function tnRequestMulti(array $requests) {
     $mh = curl_multi_init();
     $handles = [];
     $budgetFile = cache_dir() . 'tn_bucket.json';
+    $background = tnBackgroundCaller();
+    $deadline = microtime(true) + 1.5;   // a visitor's batch waits for tokens as one call would (1.5 s in all), a background batch never
     foreach ($todo as $i => [$endpoint, $params]) {
         // A family whose circuit is open is not called (the other families in this batch still are).
         if (tnBreakerOpen(tnBreakerFamily($endpoint))) {
@@ -758,7 +760,10 @@ function tnRequestMulti(array $requests) {
             continue;
         }
         // Every outbound call takes a token from the shared budget. A call over budget is not sent: the page answers from its stored copy.
-        if (!tnBucketTake(PHP_SAPI === 'cli', tnCallsPerSecond(), $budgetFile)) {
+        // The bucket holds a burst of two at the default rate, so a cold page's third prefetched call must be allowed to wait a moment
+        // rather than fail on the spot (that failure was most of the "no data" pages).
+        if (!tnBucketWait($background, tnCallsPerSecond(), $budgetFile, max(0.0, $deadline - microtime(true)))) {
+            tnCount('over_budget');
             tnUnanswered(!empty($out[$i]));
             continue;
         }
