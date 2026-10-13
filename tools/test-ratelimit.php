@@ -29,15 +29,20 @@ rlOk(!soBotBlocked($semrush, false, 'SE Ranking, semrushbot'), 'an allowed audit
 rlOk(soBotBlocked($semrush, false, 'SE Ranking'), 'the allow list only passes the tools it names');
 rlOk(!soBotBlocked('Mozilla/5.0 (Linux; Android 7.0; Cubot X19) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36', false) && !soBotBlocked('UptimeRobot/2.0; http://www.uptimerobot.com/', false) && !soBotBlocked('NewRelicPingerBot/1.0', false), 'a phone or an uptime monitor whose name contains "bot" is not a crawler');
 // Request level: the decision on a whole made-up request, the way the bootstrap sees it (no SAPI needed).
-$req = fn(string $ua, string $uri, string $method = 'GET') => soCrawlGuardDecision(['REQUEST_METHOD' => $method, 'REQUEST_URI' => $uri, 'HTTP_USER_AGENT' => $ua], false, '');
+$req = fn(string $ua, string $uri, string $method = 'GET') => soCrawlGuardDecision(['REQUEST_METHOD' => $method, 'REQUEST_URI' => $uri, 'HTTP_USER_AGENT' => $ua], false, '', true);
+putenv('SO_REFUSE_CRAWLERS');
+rlOk(soCrawlGuardDecision(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/event/foo', 'HTTP_USER_AGENT' => $semrush], false, '') === null && !soCrawlerRefusalOn(), 'the refusal is off unless SO_REFUSE_CRAWLERS is set (live and beta share one PHP install, so it answered 403 to Googlebot on live)');
+putenv('SO_REFUSE_CRAWLERS=1');
+rlOk(soCrawlerRefusalOn() && (soCrawlGuardDecision(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/event/foo', 'HTTP_USER_AGENT' => $semrush], false, '')['status'] ?? 0) === 403, 'SO_REFUSE_CRAWLERS=1 turns it on');
+putenv('SO_REFUSE_CRAWLERS');
 rlOk(($req($semrush, '/event/foo')['status'] ?? 0) === 403, 'a crawler GET on a page of a non-indexable host is refused with 403');
 rlOk(($req($semrush, '/event/foo', 'HEAD')['status'] ?? 0) === 403, 'a crawler HEAD is refused the same way (it built the whole page)');
 rlOk(($req('ShapBot 0.1.0', '/ajax/get-home-feed.php')['status'] ?? 0) === 403 && ($req($semrush, '/ajax/load-events.php?x=1')['status'] ?? 0) === 403, 'the data endpoints that call the ticket API are refused too, not only pages');
 rlOk($req($semrush, '/robots.txt') === null && $req($semrush, '/sitemap-events-1.xml') === null && $req($semrush, '/favicon.ico') === null, 'robots.txt, the sitemaps and the favicon are still served (a crawler may read what it may not crawl)');
 rlOk($req($semrush, '/event/foo', 'POST') === null, 'only GET and HEAD are judged');
 rlOk($req('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1', '/event/foo') === null, 'a visitor request is never refused');
-rlOk(soCrawlGuardDecision(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/event/foo', 'HTTP_USER_AGENT' => $semrush], true, '') === null, 'the same request on the live host is not refused');
-rlOk(soCrawlGuardDecision(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/event/foo', 'HTTP_USER_AGENT' => $semrush], false, 'semrushbot') === null, 'an allowed tool passes at request level');
+rlOk(soCrawlGuardDecision(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/event/foo', 'HTTP_USER_AGENT' => $semrush], true, '', true) === null, 'the same request on an indexable host is not refused');
+rlOk(soCrawlGuardDecision(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/event/foo', 'HTTP_USER_AGENT' => $semrush], false, 'semrushbot', true) === null, 'an allowed tool passes at request level');
 // Wiring: the bootstrap runs the guard before it registers any shutdown hook (exit would still run a hook registered earlier, and
 // the top-performers and sitemap hooks call the ticket API), and the guard sends the decision with no page work in between.
 $fn = file_get_contents(__DIR__ . '/../functions.php');
