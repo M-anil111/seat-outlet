@@ -63,7 +63,9 @@ function tnStatsSummary(array $stats): array {
 function soViaLiveProxy(?array $server = null, ?string $publicHost = null): bool {
     $server = $server ?? $_SERVER;
     $publicHost = $publicHost ?? (defined('SO_PUBLIC_ORIGIN') ? (string) (parse_url(SO_PUBLIC_ORIGIN, PHP_URL_HOST) ?: rtrim((string) SO_PUBLIC_ORIGIN, '/')) : 'seatoutlet.com');
-    $host = strtolower(trim(explode(',', (string) ($server['HTTP_X_FORWARDED_HOST'] ?? ''))[0]));
+    // X-SO-Public-Host is the Worker's own header; X-Forwarded-Host is kept as a fallback, but a proxy layer in front of PHP can rewrite it
+    // to the beta host (13 Oct 2026: /ajax/health.php reported viaProxy false through seatoutlet.com), which is why the Worker sends both.
+    $host = strtolower(trim(explode(',', (string) ($server['HTTP_X_SO_PUBLIC_HOST'] ?? '') ?: (string) ($server['HTTP_X_FORWARDED_HOST'] ?? ''))[0]));
     $host = preg_replace('/:\d+$/', '', $host);
     return $host !== '' && $publicHost !== '' && ($host === strtolower($publicHost) || $host === 'www.' . strtolower($publicHost));
 }

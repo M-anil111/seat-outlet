@@ -139,6 +139,7 @@ tbCheck('the health page and the cron read the counts under a shared lock', strp
 // 7. Who asked: the live Worker versus the beta address, crawlers versus visitors, and the counters that follow
 $fwd = fn($h) => ['HTTP_X_FORWARDED_HOST' => $h];
 tbCheck('a request through the live Worker (X-Forwarded-Host seatoutlet.com) is live', soViaLiveProxy($fwd('seatoutlet.com'), 'seatoutlet.com') === true);
+tbCheck('the Worker\'s own header counts even when X-Forwarded-Host was rewritten to beta', soViaLiveProxy(['HTTP_X_SO_PUBLIC_HOST' => 'seatoutlet.com', 'HTTP_X_FORWARDED_HOST' => 'beta.seatoutlet.com'], 'seatoutlet.com') === true);
 tbCheck('www, a port and a list of hosts still count (the first host decides)', soViaLiveProxy($fwd('www.seatoutlet.com'), 'seatoutlet.com') && soViaLiveProxy($fwd('seatoutlet.com:443'), 'seatoutlet.com') && soViaLiveProxy($fwd('SeatOutlet.com, other.test'), 'seatoutlet.com'));
 tbCheck('a direct hit on the beta address (no header, or the beta host) is not live', !soViaLiveProxy([], 'seatoutlet.com') && !soViaLiveProxy($fwd(''), 'seatoutlet.com') && !soViaLiveProxy($fwd('beta.seatoutlet.com'), 'seatoutlet.com'));
 tbCheck('look-alike hosts are not live', !soViaLiveProxy($fwd('seatoutlet.com.evil.test'), 'seatoutlet.com') && !soViaLiveProxy($fwd('evil.test'), 'seatoutlet.com') && !soViaLiveProxy($fwd('xseatoutlet.com'), 'seatoutlet.com'));
