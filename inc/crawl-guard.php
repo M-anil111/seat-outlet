@@ -33,7 +33,8 @@ function soRlLimit(string $userAgent = ''): int {
  */
 function soBotBlocked(string $userAgent, bool $indexable, string $allow = ''): bool {
     if ($indexable || $userAgent === '') return false;
-    if (!preg_match('/bot|crawl|spider|slurp|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|facebookexternalhit/i', $userAgent)) return false;
+    // Named crawlers and the generic words crawlers use, never a bare "bot": a Cubot phone, UptimeRobot or NewRelicPingerBot is not a crawler.
+    if (!preg_match('/googlebot|bingbot|yandex|baiduspider|duckduckbot|applebot|slurp|semrush|ahrefs|mj12bot|dotbot|petalbot|bytespider|facebookexternalhit|shapbot|screaming frog|seranking|dataforseo|serpstat|gptbot|ccbot|claudebot|amazonbot|crawler|crawl|spider/i', $userAgent)) return false;
     foreach (array_filter(array_map('trim', explode(',', strtolower($allow)))) as $fragment) {
         if (strpos(strtolower($userAgent), $fragment) !== false) return false;
     }
@@ -83,15 +84,7 @@ function soCrawlGuard(): void {
     if (PHP_SAPI === 'cli' || headers_sent()) return;
     // HEAD counts like GET: a crawler's HEAD builds the whole page and makes the same ticket API calls (ShapBot, Sentry SEAT-OUTLET-Q).
     if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
-    $userAgent = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
-    if (soBotBlocked($userAgent, defined('SITE_INDEXABLE') ? (bool) SITE_INDEXABLE : true, (string) getenv('SO_BOT_ALLOW'))) {
-        http_response_code(403);
-        header('Cache-Control: no-store');
-        header('Content-Type: text/plain; charset=UTF-8');
-        echo "This host is not open to crawlers (see robots.txt).\n";
-        exit;
-    }
-    $limit = soRlLimit($userAgent);
+    $limit = soRlLimit((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
     if ($limit === 0) return;
     $n = soRlCount(soRlClientIp());
     if ($n > $limit) {
@@ -110,9 +103,34 @@ function soCrawlGuardApplies(string $path): bool {
         && !preg_match('#^/(robots\.txt|sitemap[^/]*\.xml|favicon\.ico)$#', $path);
 }
 
-/** The bootstrap call: guards public page requests only. */
+/**
+ * The crawler decision for one request, with no side effects (the tests run it on a made-up $_SERVER): ['status' => 403, 'body' => ...]
+ * when this host refuses this crawler, null otherwise. It covers every path except robots.txt, the sitemaps and the favicon (a crawler
+ * may read what it may not crawl), so the data endpoints that call the ticket API (/ajax/get-home-feed.php, /ajax/load-events.php)
+ * are refused too, not only pages. GET and HEAD only: a crawler's HEAD builds the whole page.
+ */
+function soCrawlGuardDecision(array $server, bool $indexable, string $allow): ?array {
+    if (!in_array($server['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return null;
+    $path = (string) parse_url((string) ($server['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+    if (preg_match('#^/(robots\.txt|sitemap[^/]*\.xml|favicon\.ico)$#', $path)) return null;
+    if (!soBotBlocked((string) ($server['HTTP_USER_AGENT'] ?? ''), $indexable, $allow)) return null;
+    return ['status' => 403, 'body' => "This host is not open to crawlers (see robots.txt).\n"];
+}
+
+/**
+ * The bootstrap call. Must run before any register_shutdown_function() in the bootstrap: the refusal ends the request with exit, and a
+ * shutdown hook registered before it (the top-performers refresh, the sitemap crawl) would still run and call the ticket API.
+ */
 function soCrawlGuardPublic(): void {
     if (PHP_SAPI === 'cli') return;
+    $refuse = soCrawlGuardDecision($_SERVER, defined('SITE_INDEXABLE') ? (bool) SITE_INDEXABLE : true, (string) getenv('SO_BOT_ALLOW'));
+    if ($refuse !== null && !headers_sent()) {
+        http_response_code($refuse['status']);
+        header('Cache-Control: no-store');
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $refuse['body'];
+        exit;
+    }
     $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
     if (soCrawlGuardApplies($path)) soCrawlGuard();
 }
