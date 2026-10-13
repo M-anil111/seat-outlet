@@ -140,6 +140,7 @@ var index_default = {
     upstreamHeaders.set("Accept-Encoding", "identity");
     upstreamHeaders.set("Host", "beta.seatoutlet.com");
     upstreamHeaders.set("X-Forwarded-Host", url.hostname);
+    upstreamHeaders.set("X-SO-Public-Host", url.hostname);   // a proxy layer in front of PHP can rewrite X-Forwarded-Host to the beta host; this one is the Worker's own
     applyVisitorHeaders(upstreamHeaders, request);
     const upstreamRequest = new Request(upstreamUrl, {
       body: request.body,
