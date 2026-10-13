@@ -8086,6 +8086,9 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 
 /* Header "Sign in" link (desktop). Its own class: the menu scripts treat every .so-mega-top as a mega-menu item. */
 .tm-top-links a.so-header-signin { align-items: center; padding: 10px 14px; margin: 0 4px 0 0; border-radius: 980px; color: #fff; font-weight: 600; font-size: 16px; text-decoration: none; transition: background .15s ease; }
+.tm-top-links button.so-header-signout { display: inline-flex; align-items: center; padding: 10px 14px; margin: 0 4px 0 0; border: 0; border-radius: 980px; background: transparent; color: #fff; font-weight: 600; font-size: 16px; line-height: inherit; cursor: pointer; transition: background .15s ease; }
+.tm-top-links button.so-header-signout:hover, .tm-top-links button.so-header-signout:focus-visible { background: rgba(255,255,255,.18); }
+.so-menu button.so-menu-signout { display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .tm-top-links a.so-header-signin:hover, .tm-top-links a.so-header-signin:focus-visible { background: rgba(255,255,255,.18); color: #fff; text-decoration: none; }
 
 /* QA round 4: the footer credit row wraps inside a 360px phone instead of running past the viewport. */

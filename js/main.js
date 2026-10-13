@@ -1502,3 +1502,39 @@ document.querySelectorAll('.blog-post-content').forEach(function (box) {
         });
     });
 });
+
+// Header account link. Public pages are cached for everyone, so the server always prints "Sign in"; when the so_in marker cookie says this
+// browser signed in, ask /ajax/account-state.php (never cached) and swap in "Account" and "Sign out". Sign out posts the same form the
+// account page uses (/account, action=signout, with the session's CSRF value).
+(function () {
+    if (document.cookie.indexOf('so_in=1') === -1) return;
+    var link = document.querySelector('[data-so-signin]'), menuLink = document.querySelector('[data-so-signin-menu]');
+    if (!link && !menuLink) return;
+    fetch('/ajax/account-state.php', { credentials: 'same-origin', cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (s) {
+            if (!s || !s.signedIn || !s.csrf) return;
+            var form = document.createElement('form');
+            form.method = 'post'; form.action = '/account'; form.hidden = true;
+            [['csrf', s.csrf], ['action', 'signout']].forEach(function (f) {
+                var i = document.createElement('input'); i.type = 'hidden'; i.name = f[0]; i.value = f[1]; form.appendChild(i);
+            });
+            document.body.appendChild(form);
+            var signOut = function () { form.submit(); };
+            if (link) {
+                link.textContent = 'Account'; link.setAttribute('href', '/account');
+                var b = document.createElement('button');
+                b.type = 'button'; b.className = 'so-header-signout d-none d-lg-inline-flex'; b.textContent = 'Sign out';
+                b.addEventListener('click', signOut);
+                link.parentNode.insertBefore(b, link.nextSibling);
+            }
+            if (menuLink) {
+                menuLink.textContent = 'My account'; menuLink.setAttribute('href', '/account');
+                var li = document.createElement('li'), mb = document.createElement('button');
+                mb.type = 'button'; mb.className = 'so-menu-signout'; mb.textContent = 'Sign out';
+                mb.addEventListener('click', signOut);
+                li.appendChild(mb); menuLink.parentNode.parentNode.insertBefore(li, menuLink.parentNode.nextSibling);
+            }
+        })
+        .catch(function () {});
+})();

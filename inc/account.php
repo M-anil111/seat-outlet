@@ -19,6 +19,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 const SO_ACCT_LINK_MINUTES = 15;
 const SO_ACCT_SESSION_DAYS = 30;
 const SO_ACCT_COOKIE = 'so_session';
+const SO_ACCT_MARKER = 'so_in';   // not a secret and not HttpOnly: tells the header script to ask /ajax/account-state.php (public pages are cached, so they cannot say who is signed in)
 const SO_ACCT_MAX_SAVED = 100;
 
 function soAcctH($v): string { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); }
@@ -242,7 +243,10 @@ function soAcctSessionStart(int $userId, bool $setCookie = true): array {
     $stmt->bind_param('issi', $userId, $hash, $csrf, $days);
     $stmt->execute();
     $stmt->close();
-    if ($setCookie && !headers_sent()) setcookie(SO_ACCT_COOKIE, $token, soAcctCookieOptions(time() + $days * 86400));
+    if ($setCookie && !headers_sent()) {
+        setcookie(SO_ACCT_COOKIE, $token, soAcctCookieOptions(time() + $days * 86400));
+        setcookie(SO_ACCT_MARKER, '1', ['httponly' => false] + soAcctCookieOptions(time() + $days * 86400));
+    }
     return ['token' => $token, 'csrf' => $csrf];
 }
 
@@ -271,6 +275,11 @@ function soAcctUser(?string $cookie = null): ?array {
     return $memo[$tok] = $row;
 }
 
+/** What the header script needs: whether this browser is signed in and the value its sign-out form must post. Never includes the address. */
+function soAcctState(?array $user): array {
+    return $user === null ? ['signedIn' => false] : ['signedIn' => true, 'csrf' => $user['csrf']];
+}
+
 function soAcctCsrfOk(?array $user, $posted): bool {
     return $user !== null && is_string($posted) && $posted !== '' && hash_equals($user['csrf'], $posted);
 }
@@ -284,7 +293,10 @@ function soAcctSignOut(?string $cookie = null): void {
         $stmt->execute();
         $stmt->close();
     }
-    if ($cookie === null && !headers_sent()) setcookie(SO_ACCT_COOKIE, '', soAcctCookieOptions(time() - 3600));
+    if ($cookie === null && !headers_sent()) {
+        setcookie(SO_ACCT_COOKIE, '', soAcctCookieOptions(time() - 3600));
+        setcookie(SO_ACCT_MARKER, '', ['httponly' => false] + soAcctCookieOptions(time() - 3600));
+    }
 }
 
 /** Sign out everywhere, remove the saved events and the account itself (the rows cascade), and forget the address's sign-in links. */
@@ -297,7 +309,10 @@ function soAcctDelete(int $userId, string $email): void {
     $stmt->bind_param('s', $email);
     $stmt->execute();
     $stmt->close();
-    if (!headers_sent()) setcookie(SO_ACCT_COOKIE, '', soAcctCookieOptions(time() - 3600));
+    if (!headers_sent()) {
+        setcookie(SO_ACCT_COOKIE, '', soAcctCookieOptions(time() - 3600));
+        setcookie(SO_ACCT_MARKER, '', ['httponly' => false] + soAcctCookieOptions(time() - 3600));
+    }
 }
 
 /* ---------- Saved events ---------- */
