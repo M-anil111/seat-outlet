@@ -5,14 +5,14 @@
  *
  * Budget: a token bucket shared by every PHP process (web requests, crons, crawlers). Visitors (web requests) may use the whole
  * bucket and wait up to 1.5 seconds for a token. Background work (CLI crons) may use only the upper half, so a warmer can never
- * use up the calls a visitor needs. The rate is TN_CALLS_PER_SECOND (default 4; 0 turns the budget off). Lower it while 429s
+ * use up the calls a visitor needs. The rate is TN_CALLS_PER_SECOND (default 1; 0 turns the budget off). Lower it while 429s
  * continue; raise it only when TicketNetwork confirms a higher limit.
  */
 
 /** Live calls per second the whole site may make to TicketNetwork. */
 function tnCallsPerSecond(): float {
     $v = getenv('TN_CALLS_PER_SECOND');
-    return ($v === false || $v === '' || !is_numeric($v)) ? 4.0 : max(0.0, (float) $v);
+    return ($v === false || $v === '' || !is_numeric($v)) ? 1.0 : max(0.0, (float) $v);
 }
 
 /**

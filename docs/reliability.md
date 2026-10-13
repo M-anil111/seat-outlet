@@ -49,7 +49,7 @@ Empty categories and empty location pages are indexable again; an empty page is 
 
 Every live TicketNetwork call takes a token from one bucket shared by the PHP processes that use the same `cache/` directory (web requests, crons, crawlers on one host). Separate hosts have separate buckets.
 
-- Default 4 calls a second (`TN_CALLS_PER_SECOND`; 0 turns the budget off). Start lower if 429s continue, and raise it only when TicketNetwork confirms a higher limit for our key.
+- Default 1 call a second (`TN_CALLS_PER_SECOND`; 0 turns the budget off). The default was 4 until production kept returning 429 (HTTP throttling) under it; the production limit for our key is not yet confirmed by TicketNetwork. Raise it only when TicketNetwork confirms a higher limit for our key.
 - A visitor (web request) may use the whole bucket and waits up to 1.5 seconds for a token. Over budget, the page answers from its stored copy, like an outage, and no call is made.
 - A cron (CLI) may use only the upper half of the bucket, so a warmer cannot use up the calls visitors need.
 - Concurrent requests for the same cold key share one call (single-flight). The others wait up to 3 seconds for its answer.
