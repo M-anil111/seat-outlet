@@ -102,7 +102,10 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
   .so-htb .so-g-hero.so-htb-hero { padding: 36px 0 !important; }
   .so-htb-hero__actions .so-htb-btn { flex: 1 1 100%; }
   .so-htb-sec { padding: 44px 0; }
-  .so-htb-steps, .so-htb-cats, .so-htb-trust { grid-template-columns: 1fr; gap: 14px; }
+  /* phones: the three card rows swipe sideways instead of stacking */
+  .so-htb-steps, .so-htb-cats, .so-htb-trust { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 82%; gap: 14px; margin: 0 -12px; padding: 2px 12px 14px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 12px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .so-htb-steps::-webkit-scrollbar, .so-htb-cats::-webkit-scrollbar, .so-htb-trust::-webkit-scrollbar { display: none; }
+  .so-htb-steps > li, .so-htb-cats > li, .so-htb-trust > li { scroll-snap-align: start; }
   .so-htb-cta { padding: 28px 20px; }
   .so-htb-cta .so-htb-btn { width: 100%; }
 }
