@@ -131,7 +131,7 @@ $soPcTerms = [
 .so-pc-terms li::before { content: counter(pc-term); flex: none; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: var(--pc-pale); font-size: 14px; font-weight: 800; color: var(--pc-blue); }
 
 /* SEO copy below (inc/seo-copy/tickets-promo-code.php), laid out as cards */
-.so-seo-copy:has(.so-pc-copy) { padding-top: 6px; background: #fff; }
+.so-seo-copy.so-qa:has(.so-pc-copy) { padding-top: 56px; background: #fff; }
 .so-seo-copy:has(.so-pc-copy) > .container { max-width: 1180px !important; }
 .so-seo-copy .so-pc-copy h2.so-pc-h2 { margin: 0 0 14px; font-size: clamp(22px, 2.4vw, 28px); font-weight: 800; line-height: 1.2; color: var(--pc-navy); }
 .so-seo-copy .so-pc-copy .so-pc-duo h2 { margin: 0 0 8px; font-size: 18px; }
@@ -146,11 +146,14 @@ $soPcTerms = [
 .so-pc-copy .so-pc-duo p { margin: 0 0 8px; }
 .so-pc-copy .so-pc-duo ul { margin: 0 0 8px; padding-left: 18px; }
 .so-pc-copy .so-pc-duo .so-pc-ic { width: 60px; height: 60px; }
-.so-pc-copy .so-pc-cats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 18px 0 36px; padding: 0; list-style: none; }
-.so-pc-copy .so-pc-cats a { display: block; overflow: hidden; height: 100%; border: 1px solid var(--pc-line); border-radius: 12px; background: #fff; color: var(--pc-navy); text-decoration: none; box-shadow: 0 6px 18px rgba(15, 27, 61, .05); transition: transform .15s ease, box-shadow .15s ease; }
-.so-pc-copy .so-pc-cats a:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(15, 27, 61, .1); }
-.so-pc-copy .so-pc-cats img { display: block; width: 100%; height: 120px; object-fit: cover; }
-.so-pc-copy .so-pc-cats span { position: relative; display: block; padding: 12px 44px 14px 16px; }
+/* Three image cards: equal columns, the same 16:9 image frame (cropped, never stretched) and equal card heights */
+.so-seo-copy .so-pc-copy ul.so-pc-cats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 20px; margin: 18px 0 36px; padding: 0; list-style: none; }
+.so-seo-copy .so-pc-copy ul.so-pc-cats > li { display: flex; min-width: 0; }
+.so-seo-copy .so-pc-copy .so-pc-cats a { display: flex; flex-direction: column; flex: 1 1 auto; width: 100%; overflow: hidden; padding: 0; border: 1px solid var(--pc-line); border-radius: 12px; background: #fff; color: var(--pc-navy); text-decoration: none; box-shadow: 0 6px 18px rgba(15, 27, 61, .05); transition: transform .15s ease, box-shadow .15s ease; }
+.so-seo-copy .so-pc-copy .so-pc-cats a::after { display: none; }
+.so-seo-copy .so-pc-copy .so-pc-cats a:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(15, 27, 61, .1); }
+.so-seo-copy .so-pc-copy .so-pc-cats img { display: block; flex: none; width: 100%; max-width: none; height: auto; aspect-ratio: 16 / 9; margin: 0; border-radius: 0; object-fit: cover; object-position: center; }
+.so-seo-copy .so-pc-copy .so-pc-cats span { position: relative; display: flex; flex-direction: column; justify-content: center; flex: 1 1 auto; padding: 14px 44px 16px 16px; }
 .so-pc-copy .so-pc-cats strong { display: block; font-size: 15px; font-weight: 700; }
 .so-pc-copy .so-pc-cats small { display: block; margin-top: 2px; font-size: 13px; color: var(--pc-blue); text-decoration: underline; }
 .so-pc-copy .so-pc-cats span::after { content: ""; position: absolute; right: 18px; top: 50%; width: 9px; height: 9px; margin-top: -5px; border-top: 2px solid var(--pc-navy); border-right: 2px solid var(--pc-navy); transform: rotate(45deg); }
@@ -163,6 +166,8 @@ $soPcTerms = [
   .so-pc-terms ol { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px; }
   .so-pc-terms li:nth-child(odd) { padding-left: 0; border-left: 0; }
   .so-pc-copy .so-pc-duo { grid-template-columns: minmax(0, 1fr); }
+  .so-seo-copy.so-qa:has(.so-pc-copy) { padding-top: 48px; }
+  .so-seo-copy .so-pc-copy ul.so-pc-cats { gap: 16px; }
 }
 @media (max-width: 767.98px) {
   .so-pc-sec { padding: 32px 0; }
@@ -173,7 +178,12 @@ $soPcTerms = [
   .so-pc-more { display: block; }
   .so-pc-faq .so-minifaq { grid-template-columns: minmax(0, 1fr); }
   .so-pc-faq .so-minifaq > details:first-of-type, .so-pc-faq .so-minifaq > details:not(:first-of-type) { grid-column: 1; grid-row: auto; }
-  .so-pc-copy .so-pc-cats { grid-template-columns: minmax(0, 1fr); }
+  .so-seo-copy.so-qa:has(.so-pc-copy) { padding-top: 40px; }
+  /* phones: the three image cards swipe sideways instead of stacking */
+  .so-seo-copy .so-pc-copy ul.so-pc-cats { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%; gap: 14px; margin-left: -12px; margin-right: -12px; padding: 2px 12px 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 12px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .so-seo-copy .so-pc-copy ul.so-pc-cats::-webkit-scrollbar { display: none; }
+  .so-seo-copy .so-pc-copy ul.so-pc-cats > li { scroll-snap-align: start; }
+  .so-seo-copy .so-pc-copy .so-pc-cats a:hover { transform: none; }
 }
 @media (max-width: 575.98px) {
   .so-pc-hero__grid { grid-template-columns: minmax(0, 1fr); }
