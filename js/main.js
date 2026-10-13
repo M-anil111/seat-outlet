@@ -1490,3 +1490,15 @@ document.addEventListener('click', function (e) {
         legacy();
     }
 });
+
+// Blog article FAQ: one answer open at a time. The questions share a <details name> (inc/blog-render.php), which current
+// browsers already treat as one group; this covers older ones. Clicking the open question still closes it.
+document.querySelectorAll('.blog-post-content').forEach(function (box) {
+    var items = box.querySelectorAll('details.so-faq');
+    items.forEach(function (d) {
+        d.addEventListener('toggle', function () {
+            if (!d.open) return;
+            items.forEach(function (o) { if (o !== d && o.open) o.open = false; });
+        });
+    });
+});
