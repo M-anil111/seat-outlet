@@ -33,23 +33,21 @@ try {
 }
 
 // Today's TicketNetwork outcomes from visitor requests (counts only): live calls, stale answers, event copies, no-data pages, trips.
-// Read under a shared lock: tnCount() rewrites this file under an exclusive lock, so a read cannot catch it half-written.
-$tnStats = [];
-$tnFh = @fopen(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json', 'r');
-if ($tnFh) {
-    if (flock($tnFh, LOCK_SH)) {
-        $decoded = json_decode((string) stream_get_contents($tnFh), true);
-        $tnStats = is_array($decoded) ? $decoded : [];
-        flock($tnFh, LOCK_UN);
-    }
-    fclose($tnFh);
-}
+$tnStats = tnStatsToday();   // read under a shared lock, so it never catches tnCount() mid-rewrite
 // The live call rate this server uses (TN_CALLS_PER_SECOND or the default) and whether each family's circuit is open right now.
 $out['ticketnetwork'] = [
     'today' => $tnStats,
     'callsPerSecond' => tnCallsPerSecond(),
     'circuitOpen' => ['events' => tnBreakerOpen('events'), 'reference' => tnBreakerOpen('reference')],
 ];
+// Per-page shares for today: pages that got no TicketNetwork answer, pages that kept a stored list over an empty live answer, and
+// whether either is worth a look (see tnStatsSummary()).
+$tnSummary = tnStatsSummary($tnStats);
+$out['ticketnetwork']['pages'] = $tnSummary['pages'];
+$out['ticketnetwork']['noDataRate'] = $tnSummary['pages'] > 0 ? $tnSummary['rate'] : null;
+$out['ticketnetwork']['emptySuspectRate'] = $tnSummary['pages'] > 0 ? $tnSummary['suspectRate'] : null;
+$out['ticketnetwork']['alert'] = $tnSummary['alert'];
+if ($tnSummary['alert']) $out['ok'] = false;
 
 try {
     $img = ['byStatus' => []];

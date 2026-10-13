@@ -107,9 +107,22 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 <?php
 $eventSchema = null;
 // The city's other events of this kind: feeds the "similar events" section and its ItemList. Cached by the API layer; [] when the feed is down.
-$evCityData = (!empty($event) && $evName !== '') ? soSpecCityEvents($evKind, $event['city']['id'] ?? 0) : [];
+// The secondary lookups are independent of each other: fetched together, one round trip instead of three in a row on a cold page.
+if (!empty($event) && $evName !== '') {
+    $evPre = [];
+    if (!empty($event['performers'][0]['id'])) $evPre[] = performerPageEventsSpec((int) $event['performers'][0]['id'], 8);   // "other dates", event.php
+    $evPreVenueId = (int) ($event['venue']['id'] ?? 0);
+    if ($evPreVenueId > 0) {
+        $evPre[] = ['/catalog/v2/venues/' . $evPreVenueId, [], 86400];
+        $evPreSpec = categoryEventsByLocationSpec(in_array($evKind, ['sports', 'theater'], true) ? soSpecCategoryKey($evKind) : 'events', 'venue', $evPreVenueId, ['perPage' => 24, 'page' => 1, 'sort' => 'date/date', 'includeTotalCount' => 'true']);
+        if ($evPreSpec !== null) $evPre[] = $evPreSpec;
+    }
+    if ($evPre) tnRequestMulti($evPre);
+}
 // The venue's other events (sports and theater: the same kind; concerts and festivals: everything there). The sections read "Top Upcoming Performances at <Venue>" and the like.
 $evVenueData = (!empty($event) && $evName !== '') ? soSpecVenueEvents(in_array($evKind, ['sports', 'theater'], true) ? $evKind : '', $event['venue']['id'] ?? 0) : [];
+// The city's other events are only the fallback for a venue with nothing else on sale: skipping the call otherwise is one live call fewer per event page.
+$evCityData = (!empty($event) && $evName !== '' && empty($evVenueData['events'])) ? soSpecCityEvents($evKind, $event['city']['id'] ?? 0) : [];
 if (!empty($event) && $evName !== '') {
     // The venue's own record adds the street address, postal code and map position (cached a day: venues rarely change).
     $evVenueId = (int) ($event['venue']['id'] ?? 0);

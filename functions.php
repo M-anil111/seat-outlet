@@ -406,13 +406,24 @@ function tnUnanswered(bool $hadStored): void {
  */
 function tnCount(string $kind): void {
     if (PHP_SAPI === 'cli') return;
+    // Per-call kinds also count the page once ("pages", and "pages_suspect" for a kept stored list), so a rate can be per page:
+    // one page makes several calls, but is one visitor outcome.
+    $bump = [$kind];
+    if (in_array($kind, ['live_call', 'stale_on_error', 'no_data', 'empty_suspect', 'event_copy', 'event_snapshot'], true) && empty($GLOBALS['tn_page_counted'])) {
+        $GLOBALS['tn_page_counted'] = true;
+        $bump[] = 'pages';
+    }
+    if ($kind === 'empty_suspect' && empty($GLOBALS['tn_page_suspect'])) {
+        $GLOBALS['tn_page_suspect'] = true;
+        $bump[] = 'pages_suspect';
+    }
     try {
         $fh = @fopen(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json', 'c+');
         if (!$fh) return;
         if (flock($fh, LOCK_EX)) {
             $data = json_decode((string) stream_get_contents($fh), true);
             $data = is_array($data) ? $data : [];
-            $data[$kind] = ($data[$kind] ?? 0) + 1;
+            foreach ($bump as $k) { $data[$k] = ($data[$k] ?? 0) + 1; }
             ftruncate($fh, 0);
             rewind($fh);
             fwrite($fh, json_encode($data));
@@ -677,6 +688,12 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
         return [];
     }
 
+    // An empty list while the stored list (inside its stale window) had rows is a flapping feed, not an emptied category: keep the stored
+    // answer and try again at the next refresh. Counted so the health page shows how often it happens.
+    if ($r['cacheable'] && $entry !== null && $entry['age'] <= tnStaleLimit($endpoint) && tnEmptyListSuspect($endpoint, $r['data'], $entry['data'])) {
+        tnCount('empty_suspect');
+        return $entry['data'];
+    }
     if ($key !== null && $r['cacheable']) {
         cache_set($key, $r['data']);
     } elseif ($key !== null && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) {
@@ -773,6 +790,8 @@ function tnRequestMulti(array $requests) {
         }
         if ($skipped) {
             tnUnanswered(!empty($out[$i]));
+        } elseif ($r['ok'] && $r['cacheable'] && !empty($out[$i]) && tnEmptyListSuspect($endpoint, $r['data'], $out[$i])) {
+            tnCount('empty_suspect');   // the stored list (still inside its stale window) stands; see tnFetchStore()
         } elseif ($r['ok']) {
             $out[$i] = $r['data'];
             tnCount('live_call');
@@ -2645,8 +2664,9 @@ function unavailableBlockHtml($what) {
 function soFeedDownGate($what = '') {
     soSnapshotServe();   // the last good copy of this very page beats everything else
     $GLOBALS['soFeedDown'] = true;
-    $GLOBALS['pageRobots'] = 'noindex, follow';
-    if (!headers_sent()) header('Retry-After: 30');
+    // The page still renders (with the "loading slowly" card), but as a 503 with Retry-After: crawlers come back later instead of
+    // indexing an empty page. No noindex: a noindex on a temporary failure can drop a page that was fine an hour ago.
+    if (!headers_sent()) { http_response_code(503); header('Retry-After: 30'); }
 }
 
 /** The card that stands in for the event list while the feed is down (same look as the other empty states). */
@@ -3162,6 +3182,21 @@ function getTnCityEvents($cityId = 0, $params = []) {
  * button stopped 10 pages in. includeTotalCount gives the real figure
  * from a 1-row request.
  */
+/** Today's counts, read under a shared lock so a read never catches tnCount() mid-rewrite (an empty day would hide an alert). */
+function tnStatsToday(): array {
+    $stats = [];
+    $fh = @fopen(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json', 'r');
+    if ($fh) {
+        if (flock($fh, LOCK_SH)) {
+            $decoded = json_decode((string) stream_get_contents($fh), true);
+            $stats = is_array($decoded) ? $decoded : [];
+            flock($fh, LOCK_UN);
+        }
+        fclose($fh);
+    }
+    return $stats;
+}
+
 function tnCountEvents(array $params) {
     $params['page']    = 1;
     $params['perPage'] = 1;
@@ -4847,9 +4882,10 @@ function getPerformerEventsByLocation(int $performerId, string $dimension, $loca
  * is one of LOCATION_CATEGORY_PATHS's keys ('events' has no category
  * constraint at all, matching how events-city/events-state work today).
  */
-function getCategoryEventsByLocation(string $categoryKey, string $dimension, $locationValue, array $params = []) {
+/** [endpoint, params] for a category's events at one location (null for an unknown location), so a page can prefetch the exact request. */
+function categoryEventsByLocationSpec(string $categoryKey, string $dimension, $locationValue, array $params = []) {
     $locationFilter = getLocationFilterFragment($dimension, $locationValue);
-    if ($locationFilter === null) return ['results' => [], 'totalCount' => 0];
+    if ($locationFilter === null) return null;
 
     $today = date('Y-m-d');
     $categoryPath = LOCATION_CATEGORY_PATHS[$categoryKey] ?? null;
@@ -4861,8 +4897,13 @@ function getCategoryEventsByLocation(string $categoryKey, string $dimension, $lo
 
     $params['filter'] = implode(' and ', $filterParts);
     $params['includeTotalCount'] = $params['includeTotalCount'] ?? 'true';
+    return ['/catalog/v2/events/', $params];
+}
 
-    return tnRequest('/catalog/v2/events/', $params);
+function getCategoryEventsByLocation(string $categoryKey, string $dimension, $locationValue, array $params = []) {
+    $spec = categoryEventsByLocationSpec($categoryKey, $dimension, $locationValue, $params);
+    if ($spec === null) return ['results' => [], 'totalCount' => 0];
+    return tnRequest($spec[0], $spec[1]);
 }
 
 /**

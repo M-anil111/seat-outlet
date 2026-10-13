@@ -170,6 +170,8 @@ if (empty($results['results']) && $keywordHeader !== '') {
 }
 $total_count = (int) ($results['totalCount'] ?? 0);
 $events = $results['results'] ?? [];
+// The feed failed (throttled, down): a 503 to retry, never a "0 results" page for a search that would normally find events.
+if ($total_count === 0 && !$events && soApiDegraded()) { soFeedDownGate('Search'); }
 // Exact name first, tribute and similar acts last, in-stock before the rest (Best match only; a chosen sort is respected).
 // Best match ranks the fetched page: in-stock dates first, exact names next, tribute acts last. It reorders the results, it never
 // removes one. Each page is ranked on its own, so the order across a page boundary is not one global order.
@@ -257,6 +259,7 @@ soPageHero([
 								'params'  => $params,
 								'type'    => 'search',
 							]);
+						} elseif (!empty($GLOBALS['soFeedDown'])) { echo soFeedDownStateHtml();   // the feed failed: say so, never "No Upcoming Events"
 						} else { ?>
 							<div class="text-center no-events-found">
 								<h4><?php echo $isFilteredSearch ? 'No events match these filters' : 'No Upcoming Events'; ?></h4>

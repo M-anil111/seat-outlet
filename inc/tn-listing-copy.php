@@ -50,6 +50,19 @@ function tnListRows($data): array {
     return array_is_list($data) ? $data : [];
 }
 
+/**
+ * True when a list answer came back empty while the stored answer (still inside its stale window) had rows. TicketNetwork answers
+ * with an empty list under load now and then; replacing a good list with it would show "0 results" as if it were real. The caller
+ * keeps the stored list and tries again at the next refresh. Only event lists and search: a detail answer has no "results" key.
+ */
+function tnEmptyListSuspect($endpoint, $new, $old): bool {
+    if (strpos(trim((string) $endpoint, '/'), 'catalog/v2/events') !== 0) return false;
+    if (!is_array($new) || tnListRows($new) !== []) return false;
+    // every list shape tnListRows() accepts counts as an empty list; a detail answer (no list key, not a list) does not
+    if (!array_key_exists('results', $new) && !array_key_exists('events', $new) && !array_is_list($new)) return false;
+    return is_array($old) && tnListRows($old) !== [];
+}
+
 /** True when a listing row has what the event page renders: an id, a name, a venue, a city and a date. */
 function tnListingCopyComplete($row): bool {
     if (!is_array($row) || (int) ($row['id'] ?? 0) <= 0) return false;
