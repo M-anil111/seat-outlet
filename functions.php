@@ -949,9 +949,12 @@ function getTnPerformerById($performerId) {
 
     if (function_exists('apcu_fetch')) {
         $cached = apcu_fetch($cacheKey, $found);
-        if ($found) {
+        if ($found && is_array($cached) && isset($cached['id'])) {
             return $cached;
         }
+        // An entry without a record is a failed call kept by the code before this guard (it outlives a deploy that does not restart
+        // PHP-FPM): drop it and look again, instead of answering 503 for the rest of its hour.
+        if ($found && function_exists('apcu_delete')) apcu_delete($cacheKey);
     }
 
     // File cache (6h) so hosts without APCu don't refetch on every view.

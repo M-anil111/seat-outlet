@@ -50,11 +50,12 @@ function tnCallsPerSecond(): float {
 
 /**
  * A caller that may only use the spare part of the budget: a cron (CLI), and a page request the snapshot warmer makes to the site
- * itself (it sends X-SO-Warm, so its visits are not mistaken for visitors and cannot drain the bucket ahead of them). Anyone can send
- * the header; all it buys is a lower priority.
+ * itself (it sends X-SO-Warm with its own user agent, so its visits are not mistaken for visitors and cannot drain the bucket ahead
+ * of them). Both are required: a background caller is also left out of the visitor counts on the health page, and a bot must not be
+ * able to take its failures out of those counts by sending one header.
  */
 function tnBackgroundCaller(): bool {
-    return PHP_SAPI === 'cli' || !empty($_SERVER['HTTP_X_SO_WARM']);
+    return PHP_SAPI === 'cli' || (!empty($_SERVER['HTTP_X_SO_WARM']) && ($_SERVER['HTTP_USER_AGENT'] ?? '') === 'SeatOutletSnapshotWarmer/1.0');
 }
 
 /**
