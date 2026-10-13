@@ -50,6 +50,10 @@ $out['ticketnetwork']['emptySuspectRate'] = $tnSummary['pages'] > 0 ? $tnSummary
 // means the local rate is the bottleneck; the reverse means the API's limit is lower than the rate we send.
 $out['ticketnetwork']['throttled'] = $tnSummary['throttled'];
 $out['ticketnetwork']['overBudget'] = $tnSummary['overBudget'];
+// Who the demand is: crawlers and hits on the beta address (not through the live Worker) as shares of today's pages, live calls and
+// no-data pages, and whether THIS request came through the Worker (curl the health URL on each hostname to see the difference).
+$out['ticketnetwork']['demand'] = $tnSummary['demand'];
+$out['ticketnetwork']['viaProxy'] = soViaLiveProxy();
 $out['ticketnetwork']['alert'] = $tnSummary['alert'];
 if ($tnSummary['alert']) $out['ok'] = false;
 

@@ -2,6 +2,7 @@
 // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
 require_once __DIR__ . '/inc/tn-listing-copy.php';
+require_once __DIR__ . '/inc/dead-performers.php';   // performers whose page answers 404 are left out of the lists that link to them
 require_once __DIR__ . '/inc/tn-budget.php';
 
 // Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
@@ -407,16 +408,19 @@ function tnUnanswered(bool $hadStored): void {
 function tnCount(string $kind): void {
     if (tnBackgroundCaller()) return;   // crons and the snapshot warmer's own visits are not visitor outcomes
     // Per-call kinds also count the page once ("pages", and "pages_suspect" for a kept stored list), so a rate can be per page:
-    // one page makes several calls, but is one visitor outcome.
-    $bump = [$kind];
+    // one page makes several calls, but is one visitor outcome. tnCountKeys() adds the crawler and beta-address splits.
+    $firstOfPage = false;
     if (in_array($kind, ['live_call', 'stale_on_error', 'no_data', 'empty_suspect', 'event_copy', 'event_snapshot'], true) && empty($GLOBALS['tn_page_counted'])) {
         $GLOBALS['tn_page_counted'] = true;
-        $bump[] = 'pages';
+        $firstOfPage = true;
     }
+    $firstSuspect = false;
     if ($kind === 'empty_suspect' && empty($GLOBALS['tn_page_suspect'])) {
         $GLOBALS['tn_page_suspect'] = true;
-        $bump[] = 'pages_suspect';
+        $firstSuspect = true;
     }
+    if (!isset($GLOBALS['tn_client_class'])) $GLOBALS['tn_client_class'] = [soClientIsCrawler(), !soViaLiveProxy()];
+    $bump = tnCountKeys($kind, $firstOfPage, $firstSuspect, $GLOBALS['tn_client_class'][0], $GLOBALS['tn_client_class'][1]);
     try {
         $fh = @fopen(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json', 'c+');
         if (!$fh) return;
@@ -1020,6 +1024,7 @@ function getTnPerformers(array $params = []) {
         if (tnBreakerOpen('reference') || !empty($GLOBALS['tn_degraded'])) throw new SoTnUnavailable('TicketNetwork performers request failed');
         throw new RuntimeException('TicketNetwork performers request failed');
     }
+    if (is_array($data['results'] ?? null)) $data['results'] = soDropDeadPerformers($data['results']);   // no link to a page that answers 404
     return $data;
 }
 
@@ -1273,7 +1278,7 @@ function getRelatedPerformers($categoryPath, $currentPerformerId, $limit = 20) {
     [$endpoint, $params, $ttl] = relatedPerformersSpec($categoryPath, $limit);
     $data = tnRequest($endpoint, $params, 'GET', $ttl);
 
-    $related = array_filter($data['results'] ?? [], function ($p) use ($currentPerformerId) {
+    $related = array_filter(soDropDeadPerformers($data['results'] ?? []), function ($p) use ($currentPerformerId) {
         return $p['id'] != $currentPerformerId;
     });
 
@@ -1482,18 +1487,42 @@ function get_bio($performerId, $mysqli = MYSQLI) {
     return $result ?? null;
 }
 
+/**
+ * Run database work and, if the server dropped the connection ("MySQL server has gone away", error 2006, or "lost connection during
+ * query", 2013), reconnect once on the same handle and run it again. The FAQ query is one of the last things an artist page does, after
+ * TicketNetwork calls that can take seconds each, and a connection that sat idle that long was sometimes already closed (Sentry
+ * SEAT-OUTLET-R, SEAT-OUTLET-12). Only for reads and other statements that are safe to repeat: nothing here protects a transaction.
+ * real_connect() on the same object is what makes it work (MYSQLI is a constant, the handle cannot be replaced); the connection falls
+ * back to latin1 afterwards, so the charset is set again.
+ */
+function soDbRetry(callable $fn, $mysqli = MYSQLI) {
+    try {
+        return $fn($mysqli);
+    } catch (mysqli_sql_exception $e) {
+        if (!in_array($e->getCode(), [2006, 2013], true)) throw $e;
+        try {
+            if (!$mysqli->real_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int) DB_PORT)) throw $e;
+            $mysqli->set_charset('utf8mb4');
+        } catch (Throwable $reconnectFailed) {
+            throw $e;   // the original error is the useful one
+        }
+        return $fn($mysqli);
+    }
+}
+
 function getFaqs($type = null, $mysqli = MYSQLI) {
 
     $faqs = [];
 
-    if ($type) {
-        $stmt = $mysqli->prepare("SELECT * FROM faq WHERE type LIKE CONCAT('%', ?, '%')");
-        $stmt->bind_param("s", $type);
-        $stmt->execute();
-        $result = $stmt->get_result();
-    } else {
-        $result = $mysqli->query("SELECT * FROM faq");
-    }
+    $result = soDbRetry(function ($db) use ($type) {
+        if ($type) {
+            $stmt = $db->prepare("SELECT * FROM faq WHERE type LIKE CONCAT('%', ?, '%')");
+            $stmt->bind_param("s", $type);
+            $stmt->execute();
+            return $stmt->get_result();
+        }
+        return $db->query("SELECT * FROM faq");
+    }, $mysqli);
 
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
@@ -3570,7 +3599,7 @@ function getTopPerformersByCategory($categoryPath) {
     $performers = [];
 
     if (!empty($data['results'])) {
-        foreach ($data['results'] as $item) {
+        foreach (soDropDeadPerformers($data['results']) as $item) {   // a performer whose page answers 404 is not offered on the home cards
             $performers[] = [
                 'id'   => $item['id'] ?? '',
                 'name' => $item['text']['name'] ?? '',

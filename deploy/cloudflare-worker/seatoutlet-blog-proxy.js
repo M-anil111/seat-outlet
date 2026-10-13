@@ -158,7 +158,9 @@ var index_default = {
       return Response.redirect(CANONICAL_ORIGIN + "/images/favicon-32.png", 301);
     }
     // The web server's own "File not found." (16 bytes) or default nginx 404 page: show the site's branded 404 instead, still with status 404.
-    if (response.status === 404 && (request.method === "GET" || request.method === "HEAD") && Number(response.headers.get("content-length") || 0) > 0 && Number(response.headers.get("content-length")) < 500) {
+    // Only page addresses: a missing image, script or font keeps the small answer (a 130 KB page would be worse than the 404).
+    // Not the blog posts and /policies: they have their own fallback pages below, which must still run when the origin answers 404.
+    if (response.status === 404 && (request.method === "GET" || request.method === "HEAD") && !STATIC_PATH.test(url.pathname) && !BLOG_POSTS[url.pathname] && url.pathname !== "/policies" && await isBareNotFound(response)) {
       const branded = await brandedNotFound(url);
       if (branded) return branded;
     }
@@ -216,6 +218,28 @@ function legacyPhpUrl(url) {
   }
   return null;
 }
+const STATIC_PATH = /^\/(images|js|css|lib|fonts|ajax|admin|cdn-cgi|\.well-known)\//;
+// True for the web server's own short 404 body. The origin sends it chunked, with no content-length header (QA-008: the header check
+// alone never matched, so unknown addresses stayed plain text), so without a length the small body is read. The site's own branded 404
+// page is large, so it is never mistaken for this.
+async function isBareNotFound(response) {
+  const declared = Number(response.headers.get("content-length") || 0);
+  if (declared > 0) return declared < 500;
+  try {
+    const reader = response.clone().body.getReader();   // read at most 500 bytes: the branded page is never buffered whole
+    let total = 0;
+    while (total < 500) {
+      const part = await reader.read();
+      if (part.done) break;
+      total += part.value.length;
+    }
+    if (total >= 500) { reader.cancel().catch(() => {}); return false; }   // not awaited: a cancel on a cloned body waits for the other branch
+    return total > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
 async function brandedNotFound(requestUrl) {
   try {
     const page = await fetch(BETA_ORIGIN + "/404", { headers: { "Accept-Encoding": "identity", "Host": "beta.seatoutlet.com" }, redirect: "follow" });
@@ -579,5 +603,6 @@ export {
   isBlockedPath,
   cleanPagePath,
   legacyPhpUrl,
+  isBareNotFound,
   SECURITY_TXT
 };

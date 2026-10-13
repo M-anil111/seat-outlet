@@ -132,6 +132,9 @@ function soTopFromEvents(array $events, int $limit = 6): array {
         }
     }
     $sort = function (array $a) use ($limit) { usort($a, fn($x, $y) => $y['count'] <=> $x['count']); return array_slice($a, 0, $limit); };
+    // Performers whose own page answers 404 are not offered as links (inc/dead-performers.php); filtered before the cut so the chips still fill up.
+    $dead = function_exists('soDeadPerformerIds') ? soDeadPerformerIds() : [];
+    if ($dead) $perf = array_diff_key($perf, $dead);
     return ['performers' => $sort(array_values($perf)), 'venues' => $sort(array_values($ven))];
 }
 
