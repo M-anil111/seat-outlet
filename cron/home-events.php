@@ -51,8 +51,11 @@ foreach ($tabs as $tab) {
         }
     }
 
-    $cacheKey = "home_events_{$tab}";
-    cache_set($cacheKey, $output);    
+    // An empty answer (a throttled or failed fetch) keeps the last good list instead of blanking the home page.
+    // Readers stop using any list older than 2 days, so a list TicketNetwork has dropped does not linger.
+    if ($output) {
+        cache_set("home_events_{$tab}", $output);
+    }
 
 }
 

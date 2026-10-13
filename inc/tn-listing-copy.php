@@ -4,8 +4,11 @@
  * tools/test-tn-listing-copy.php can load them without the rest of the site.
  */
 
-/** How long a saved listing copy of an event may answer for it when its detail call fails (14 days, as the stale-on-error cache). */
-const TN_LISTING_COPY_TTL = 1209600;
+/**
+ * How long a saved copy of an event may answer for it when its live call fails: 24 hours. TicketNetwork drops events from its feed,
+ * and an event it no longer lists must not be shown from an old copy for weeks. A confirmed "not found" deletes the copies at once.
+ */
+const TN_LISTING_COPY_TTL = 86400;
 
 /**
  * parse_str() for a visitor's query string. A nested-bracket flood (a[a][a]...) runs into PHP's nesting limit and logs a warning

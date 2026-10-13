@@ -328,7 +328,14 @@ function tnGrace($ttl) {
 }
 
 /** Longest a stale entry may stand in for a failed live call (the API throttling us must not empty a page that was fine yesterday). */
-const TN_STALE_ON_ERROR = 1209600;   // 14 days
+const TN_STALE_ON_ERROR = 1209600;   // 14 days: reference data (performers, venues, categories)
+const TN_STALE_LISTING = 7200;       // 2 hours: event lists and event details. An event TicketNetwork drops must leave the site within hours.
+
+/** How old a stored answer may be when a live call fails. Event data is short-lived; reference data is not. */
+function tnStaleLimit($endpoint): int {
+    $e = trim((string) $endpoint, '/');
+    return (strpos($e, 'catalog/v2/events') === 0 || strpos($e, 'events/search') !== false) ? TN_STALE_LISTING : TN_STALE_ON_ERROR;
+}
 
 /** Thrown by helpers that need live API data when the API is down or throttling us; the outage alert has already been sent. */
 class SoTnUnavailable extends RuntimeException {}
@@ -580,7 +587,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
 
     // Circuit open: do not queue more 20s timeouts behind a dead API.
     if (tnBreakerOpen()) {
-        if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
+        if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) return $entry['data'];
         tnMarkDegraded();
         return [];
     }
@@ -596,7 +603,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
         });
         if ($shared !== false) { tnProfile($endpoint, true, 0); return $shared; }
         tnMarkDegraded();
-        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+        return ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) ? $entry['data'] : [];
     }
     try {
         return tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry);
@@ -617,7 +624,7 @@ function tnBucketAllow(): bool {
 function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     if (!tnBucketAllow()) {
         tnMarkDegraded();
-        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+        return ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) ? $entry['data'] : [];
     }
     $t0 = microtime(true);
     $GLOBALS['tn_retry_after'] = null;
@@ -632,7 +639,7 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
         tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($GLOBALS['tn_retry_after'] ?? null, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS);
         soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
-        if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
+        if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) return $entry['data'];
         tnMarkDegraded();
         return [];
     }
@@ -676,7 +683,7 @@ function tnRequestMulti(array $requests) {
         }
         if (tnIdOutOfRange($endpoint)) { $out[$i] = ['Message' => 'The requested resource was not found.']; continue; }
         if ($entry === null && $ttl > 0 && ($neg = cache_get($key . '_nf', TN_NEGATIVE_TTL)) !== false) { $out[$i] = $neg; continue; }
-        $out[$i] = ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+        $out[$i] = ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) ? $entry['data'] : [];
         $todo[$i] = [$endpoint, $params, $ttl, $key];
     }
     if (!$todo) {
@@ -1006,14 +1013,16 @@ function getTnEventById($eventId) {
     $event = tnRequest("/catalog/v2/events/" . $eventId);
     if ($eventId <= 0) return $event;
     if (!tnEntityUnavailable($event)) {
+        // TicketNetwork confirmed the event is gone: drop the stored copies so no fallback can show it again.
+        if (tnEntityDefinitelyMissing($event)) { tnForgetEventCopies($eventId); return $event; }
         tnSnapshotSave($eventId, $event);   // a live answer is the freshest copy: keep it where a backup and a throttle cannot lose it
         return $event;
     }
-    // The live call failed. Fall back to the last good copy: first the file copy a listing saved, then the durable snapshot.
-    // With neither, the caller gets the failure and shows the honest message (no invented details).
+    // The live call failed. Fall back to the last good copy, no older than TN_LISTING_COPY_TTL: first the file copy a listing saved,
+    // then the durable snapshot. With neither, the caller gets the failure and shows the honest message (no invented details).
     $copy = cache_get('tn_event_copy_' . $eventId, TN_LISTING_COPY_TTL);
     if (is_array($copy) && tnListingCopyComplete($copy)) return soCleanTnNames($copy);
-    $snap = tnSnapshotGet($eventId);
+    $snap = tnSnapshotGet($eventId, TN_LISTING_COPY_TTL);
     if ($snap !== false && tnListingCopyComplete($snap)) return soCleanTnNames($snap);
     return $event;
 }
@@ -1025,7 +1034,7 @@ function tnSaveListingCopies($data): void {
         $row = soCleanTnNames($row);   // the same display names as a live answer, so every stored copy has one shape
         $id = (int) $row['id'];
         $key = 'tn_event_copy_' . $id;
-        if (cache_get($key, TN_LISTING_COPY_TTL / 2) === false) cache_set($key, $row);
+        if (cache_get($key, TN_LISTING_COPY_TTL / 2) === false) cache_set($key, $row);   // refreshed at least every 12 hours while listed
         tnSnapshotSave($id, $row);
     }
 }
@@ -1059,13 +1068,26 @@ function tnSnapshotSave(int $id, $row): void {
     }
 }
 
-/** The stored copy of an event, or false. */
-function tnSnapshotGet(int $id) {
+/** Deletes the stored copies of an event TicketNetwork no longer has (file copy and database snapshot). */
+function tnForgetEventCopies(int $id): void {
+    if ($id <= 0) return;
+    @unlink(cache_file_path('tn_event_copy_' . $id));
+    if (!tnSnapshotDb()) return;
+    try {
+        $stmt = MYSQLI->prepare('DELETE FROM tn_event_snapshot WHERE event_id = ?');
+        if ($stmt) { $stmt->bind_param('i', $id); $stmt->execute(); $stmt->close(); }
+    } catch (Throwable $e) {
+        // a database hiccup leaves the copy to expire within TN_LISTING_COPY_TTL
+    }
+}
+
+/** The stored copy of an event seen within $maxAge seconds, or false. */
+function tnSnapshotGet(int $id, int $maxAge = TN_LISTING_COPY_TTL) {
     if ($id <= 0 || !tnSnapshotDb()) return false;
     try {
-        $stmt = MYSQLI->prepare('SELECT payload FROM tn_event_snapshot WHERE event_id = ?');
+        $stmt = MYSQLI->prepare('SELECT payload FROM tn_event_snapshot WHERE event_id = ? AND seen_at >= NOW() - INTERVAL ? SECOND');
         if (!$stmt) return false;
-        $stmt->bind_param('i', $id);
+        $stmt->bind_param('ii', $id, $maxAge);
         $stmt->execute();
         $stmt->bind_result($payload);
         $found = $stmt->fetch();

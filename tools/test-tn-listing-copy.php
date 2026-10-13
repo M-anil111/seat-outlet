@@ -38,7 +38,11 @@ tlCheck('a row with no date is not a copy', !tnListingCopyComplete(array_merge($
 tlCheck('a nested name that is an array is not a copy (fails closed)', !tnListingCopyComplete(array_merge($row, ['text' => ['name' => ['Staind']]])));
 tlCheck('a scalar where a nested object belongs is not a copy', !tnListingCopyComplete(array_merge($row, ['venue' => 'Arena'])));
 tlCheck('a row with no id is not a copy', !tnListingCopyComplete(array_merge($row, ['id' => 0])));
-tlCheck('a copy window of 14 days', TN_LISTING_COPY_TTL === 14 * 86400);
+tlCheck('a copy window of 24 hours (an event TicketNetwork drops leaves within a day)', TN_LISTING_COPY_TTL === 86400);
+$fnSrc = file_get_contents(__DIR__ . '/../functions.php');
+tlCheck('event lists and details stop standing in for a failed call after 2 hours', strpos($fnSrc, 'const TN_STALE_LISTING = 7200;') !== false);
+tlCheck('reference data (performers, venues) may stand in for 14 days', strpos($fnSrc, 'const TN_STALE_ON_ERROR = 1209600;') !== false);
+tlCheck('no stale check uses the fixed 14-day limit (each picks its limit by endpoint)', strpos($fnSrc, "['age'] <= TN_STALE_ON_ERROR") === false && substr_count($fnSrc, "['age'] <= tnStaleLimit(\$endpoint)") === 5);
 
 // 4. Wiring: the live code uses these helpers in the places the fix depends on
 $fn = file_get_contents(__DIR__ . '/../functions.php');

@@ -282,7 +282,7 @@ soPageHero([
 								<?php
 								$popular = [];
 								foreach (['concerts', 'sports', 'theatre', 'festival'] as $popTab) {
-									foreach (array_slice(cache_get('home_events_' . $popTab, 30 * 86400) ?: [], 0, 2) as $popEv) { $popular[] = $popEv; }
+									foreach (array_slice(cache_get('home_events_' . $popTab, 2 * 86400) ?: [], 0, 2) as $popEv) { $popular[] = $popEv; }
 								}
 								if (!empty($popular)) { ?>
 									<div class="search-popular text-start mt-4">
