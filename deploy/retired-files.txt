@@ -6,3 +6,5 @@ sitemap-style.php
 inc/sitemap-legacy.php
 sitemaps/sitemap-index.xml
 css/style.content.3.min.css
+css/style.event.3.min.css
+css/style.home.3.min.css
