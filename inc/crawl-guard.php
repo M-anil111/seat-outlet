@@ -109,7 +109,18 @@ function soCrawlGuardApplies(string $path): bool {
  * may read what it may not crawl), so the data endpoints that call the ticket API (/ajax/get-home-feed.php, /ajax/load-events.php)
  * are refused too, not only pages. GET and HEAD only: a crawler's HEAD builds the whole page.
  */
-function soCrawlGuardDecision(array $server, bool $indexable, string $allow): ?array {
+/**
+ * The refusal is opt-in (SO_REFUSE_CRAWLERS=1 in inc/env.local.php) and off by default. Found on 13 Oct 2026, minutes after it went
+ * live: seatoutlet.com and beta.seatoutlet.com are served by the same PHP install, whose HOME_URL is the beta address, so every request
+ * counts as "not indexable" and the guard answered 403 to Googlebot on the live site. Until the two hosts are told apart (a HOME_URL or
+ * SITE_INDEXABLE per host), the refusal must not be on by itself.
+ */
+function soCrawlerRefusalOn(): bool {
+    return in_array(strtolower((string) getenv('SO_REFUSE_CRAWLERS')), ['1', 'true', 'yes'], true);
+}
+
+function soCrawlGuardDecision(array $server, bool $indexable, string $allow, ?bool $on = null): ?array {
+    if (!($on ?? soCrawlerRefusalOn())) return null;
     if (!in_array($server['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return null;
     $path = (string) parse_url((string) ($server['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
     if (preg_match('#^/(robots\.txt|sitemap[^/]*\.xml|favicon\.ico)$#', $path)) return null;
