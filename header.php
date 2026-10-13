@@ -127,7 +127,7 @@ include_once 'functions.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <?php echo function_exists('soAdsenseMetaTag') ? soAdsenseMetaTag() . "\n" : ''; ?>
-    <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); /* a feed failure is a 503 (soFeedDownGate), never a noindex */ ?>">
+    <meta name="robots" content="<?php /* a feed failure is a 503 (soFeedDownGate), never a noindex: it also overrides a page's own "0 results" noindex, which was set before the page knew the feed had failed */ echo htmlspecialchars($pageRule['robots'] ?? (!empty($GLOBALS['soFeedDown']) ? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow') : ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow'))), ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16.png">

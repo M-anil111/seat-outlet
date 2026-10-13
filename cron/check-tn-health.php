@@ -11,12 +11,16 @@ require_once __DIR__ . '/../functions.php';
 
 $problems = [];
 
-$stats = json_decode((string) @file_get_contents(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json'), true);
-$sum = tnStatsSummary(is_array($stats) ? $stats : []);
-echo sprintf("today: %d pages needed an answer, %d got none (%d%%)\n", $sum['needed'], $sum['noData'], (int) round($sum['rate'] * 100));
-if ($sum['alert']) $problems[] = sprintf('%d%% of %d visitor pages got no TicketNetwork data today', (int) round($sum['rate'] * 100), $sum['needed']);
+$sum = tnStatsSummary(tnStatsToday());   // locked read: never a half-written file read as an empty day
+echo sprintf("today: %d pages needed an answer, %d got none (%d%%), %d kept a stored list over an empty answer (%d%%)\n",
+    $sum['pages'], $sum['noData'], (int) round($sum['rate'] * 100), $sum['suspect'], (int) round($sum['suspectRate'] * 100));
+if ($sum['alert']) {
+    $problems[] = sprintf('%d%% of %d visitor pages got no TicketNetwork data today, %d%% kept a stored list over an empty live answer',
+        (int) round($sum['rate'] * 100), $sum['pages'], (int) round($sum['suspectRate'] * 100));
+}
 
-// Three listing pages that always have events: a 503 means the feed is down, "0 results" with a 200 means the empty-answer guard failed.
+// Three listing pages that always have events: a 503 means the feed is down, "0 results" with a 200 means the empty-answer guard
+// failed, and a 200 without the result count is an error page or a broken template.
 foreach (['/concert-tickets-for-sale', '/game-day-tickets', '/buy-broadway-tickets'] as $path) {
     $ch = curl_init(HOME_URL . $path);
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 40, CURLOPT_USERAGENT => 'SeatOutlet health check', CURLOPT_HEADER => false]);
@@ -26,6 +30,7 @@ foreach (['/concert-tickets-for-sale', '/game-day-tickets', '/buy-broadway-ticke
     $count = preg_match('/results_count">\s*([\d,]+)/', $body, $m) ? (int) str_replace(',', '', $m[1]) : null;
     echo sprintf("%s: HTTP %d, %s\n", $path, $code, $count === null ? 'no result count' : "$count results");
     if ($code !== 200) $problems[] = "$path answered HTTP $code";
+    elseif ($count === null) $problems[] = "$path answered 200 without a result count (an error page, or the template changed)";
     elseif ($count === 0) $problems[] = "$path shows 0 results";
     sleep(2);
 }

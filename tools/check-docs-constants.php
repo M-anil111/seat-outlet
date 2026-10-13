@@ -41,7 +41,7 @@ $fails = 0;
 foreach ($expect as $file => $needles) {
     $doc = file_get_contents($root . '/' . $file);
     foreach ($needles as $n) {
-        $ok = strpos($doc, $n) !== false;
+        $ok = preg_match('/(?<!\w)' . preg_quote($n, '/') . '/u', $doc) === 1;   // "2 hours" must not be satisfied by "12 hours"
         echo ($ok ? 'ok   ' : 'FAIL ') . "$file states \"$n\"\n";
         if (!$ok) $fails++;
     }

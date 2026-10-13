@@ -406,13 +406,24 @@ function tnUnanswered(bool $hadStored): void {
  */
 function tnCount(string $kind): void {
     if (PHP_SAPI === 'cli') return;
+    // Per-call kinds also count the page once ("pages", and "pages_suspect" for a kept stored list), so a rate can be per page:
+    // one page makes several calls, but is one visitor outcome.
+    $bump = [$kind];
+    if (in_array($kind, ['live_call', 'stale_on_error', 'no_data', 'empty_suspect', 'event_copy', 'event_snapshot'], true) && empty($GLOBALS['tn_page_counted'])) {
+        $GLOBALS['tn_page_counted'] = true;
+        $bump[] = 'pages';
+    }
+    if ($kind === 'empty_suspect' && empty($GLOBALS['tn_page_suspect'])) {
+        $GLOBALS['tn_page_suspect'] = true;
+        $bump[] = 'pages_suspect';
+    }
     try {
         $fh = @fopen(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json', 'c+');
         if (!$fh) return;
         if (flock($fh, LOCK_EX)) {
             $data = json_decode((string) stream_get_contents($fh), true);
             $data = is_array($data) ? $data : [];
-            $data[$kind] = ($data[$kind] ?? 0) + 1;
+            foreach ($bump as $k) { $data[$k] = ($data[$k] ?? 0) + 1; }
             ftruncate($fh, 0);
             rewind($fh);
             fwrite($fh, json_encode($data));
@@ -3171,6 +3182,21 @@ function getTnCityEvents($cityId = 0, $params = []) {
  * button stopped 10 pages in. includeTotalCount gives the real figure
  * from a 1-row request.
  */
+/** Today's counts, read under a shared lock so a read never catches tnCount() mid-rewrite (an empty day would hide an alert). */
+function tnStatsToday(): array {
+    $stats = [];
+    $fh = @fopen(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json', 'r');
+    if ($fh) {
+        if (flock($fh, LOCK_SH)) {
+            $decoded = json_decode((string) stream_get_contents($fh), true);
+            $stats = is_array($decoded) ? $decoded : [];
+            flock($fh, LOCK_UN);
+        }
+        fclose($fh);
+    }
+    return $stats;
+}
+
 function tnCountEvents(array $params) {
     $params['page']    = 1;
     $params['perPage'] = 1;

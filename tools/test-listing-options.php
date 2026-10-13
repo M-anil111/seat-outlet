@@ -51,7 +51,7 @@ foreach (array_merge([''], array_keys(LISTING_WHEN)) as $when) {
             $ok = preg_match('/date\/date ge \d{4}-\d{2}-\d{2} and date\/date le \d{4}-\d{2}-\d{2}/', $f) === 1
                 && strpos($f, '_metadata/hasTickets eq true') !== false
                 && (($max > 0) === (strpos($f, 'pricingInfo/lowPrice/value le ' . $max) !== false))
-                && ($sort === 'soonest' ? ($p['sort'] ?? '') === 'date/date' : ($sort === 'price' ? ($p['sort'] ?? '') === 'pricingInfo/lowPrice/value' : ($p['sort'] ?? '') === '-salesRank' && isset($p['salesRankOptions'])))
+                && ($sort === 'soonest' ? ($p['sort'] ?? '') === 'date/date' : ($sort === 'price' ? ($p['sort'] ?? '') === 'pricingInfo/lowPrice/value' : ($p['sort'] ?? '') === '-salesRank' && ($p['salesRankOptions'] ?? '') === '{"interval":"day","metric":"orderVolume"}'))
                 && $p['perPage'] === 20 && $p['page'] === 1 && $p['includeTotalCount'] === 'true'
                 && soLoadMoreFilterOk($f);
             if (!$ok) loCheck("$label builds a valid request", false);

@@ -68,7 +68,15 @@ tlCheck('the bulk fetch keeps the stored list too', strpos($fnSrc, "tnEmptyListS
 tlCheck('event page: the H1 falls back to the event name when the spec is missing', strpos($evSrc, "trim((string) (\$evSpec['h1'] ?? '')) !== '' ? (string) \$evSpec['h1'] : (string) (\$event['text']['name'] ?? '')") !== false);
 tlCheck('event page: every heading key the sections read has a default', strpos($evSrc, "array_merge(['kind' => '', 'venue' => '', 'guide' => '', 'other' => '', 'tickets' => '', 'promo' => '', 'faqs' => '', 'about' => '']") !== false);
 $seoEv = file_get_contents(__DIR__ . '/../inc/seo-event.php');
-tlCheck('event page: the secondary lookups are prefetched together', strpos($seoEv, 'tnRequestMulti($evPre)') !== false && strpos($seoEv, 'categoryEventsByLocationSpec(') !== false);
+$evPreStart = strpos($seoEv, '$evPre = [];');
+$evPreEnd = strpos($seoEv, 'if ($evPre) tnRequestMulti($evPre);');
+$evPreBlock = ($evPreStart !== false && $evPreEnd !== false && $evPreEnd > $evPreStart) ? substr($seoEv, $evPreStart, $evPreEnd - $evPreStart) : '';
+tlCheck('event page: performer dates, the venue record and the venue events are all queued before the one batch call', $evPreBlock !== ''
+    && strpos($evPreBlock, '$evPre[] = performerPageEventsSpec(') !== false
+    && strpos($evPreBlock, "'/catalog/v2/venues/'") !== false
+    && strpos($evPreBlock, '$evPreSpec = categoryEventsByLocationSpec(') !== false
+    && strpos($evPreBlock, '$evPre[] = $evPreSpec;') !== false);
+tlCheck('an empty answer in the "events" or plain-list shape is suspect too', tnEmptyListSuspect('/catalog/v2/events/', ['events' => []], $full) && tnEmptyListSuspect('/catalog/v2/events/', [], $full));
 tlCheck('event page: the city events call is skipped when the venue has other events', strpos($seoEv, "&& empty(\$evVenueData['events'])) ? soSpecCityEvents(") !== false);
 
 // 4. Wiring: the live code uses these helpers in the places the fix depends on

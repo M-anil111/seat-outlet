@@ -259,6 +259,7 @@ soPageHero([
 								'params'  => $params,
 								'type'    => 'search',
 							]);
+						} elseif (!empty($GLOBALS['soFeedDown'])) { echo soFeedDownStateHtml();   // the feed failed: say so, never "No Upcoming Events"
 						} else { ?>
 							<div class="text-center no-events-found">
 								<h4><?php echo $isFilteredSearch ? 'No events match these filters' : 'No Upcoming Events'; ?></h4>

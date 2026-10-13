@@ -105,12 +105,18 @@ tbCheck('the request path trips only the call\'s own family', substr_count($fnBr
 tbCheck('performer lookups check the reference family', strpos($fnBreaker, "tnBreakerOpen('reference')") !== false);
 
 // 6. Health summary: the no-data share and when it is worth an alert
-$s = tnStatsSummary(['live_call' => 80, 'stale_on_error' => 10, 'no_data' => 30]);
-tbCheck('the no-data share counts pages that needed an answer', $s['needed'] === 120 && $s['noData'] === 30 && $s['rate'] === 0.25);
+$s = tnStatsSummary(['pages' => 120, 'live_call' => 400, 'no_data' => 30]);
+tbCheck('the no-data share is per page, not per call (400 calls on 120 pages do not dilute it)', $s['pages'] === 120 && $s['noData'] === 30 && $s['rate'] === 0.25);
 tbCheck('25% over 120 pages is an alert', $s['alert'] === true);
-tbCheck('30% over 10 pages is not (too few pages to mean anything)', tnStatsSummary(['live_call' => 7, 'no_data' => 3])['alert'] === false);
-tbCheck('10% over 1000 pages is not', tnStatsSummary(['live_call' => 900, 'no_data' => 100])['alert'] === false);
-tbCheck('an empty day is rate 0 and no alert', tnStatsSummary([]) === ['needed' => 0, 'noData' => 0, 'rate' => 0.0, 'alert' => false]);
+tbCheck('30% over 10 pages is not (too few pages to mean anything)', tnStatsSummary(['pages' => 10, 'no_data' => 3])['alert'] === false);
+tbCheck('10% over 1000 pages is not', tnStatsSummary(['pages' => 1000, 'no_data' => 100])['alert'] === false);
+$flap = tnStatsSummary(['pages' => 100, 'no_data' => 2, 'pages_suspect' => 30]);
+tbCheck('a long empty-feed flap (30% of pages kept a stored list) is an alert even with a low no-data rate', $flap['suspectRate'] === 0.3 && $flap['alert'] === true);
+$empty = tnStatsSummary([]);
+tbCheck('an empty day is rate 0 and no alert', $empty['pages'] === 0 && $empty['rate'] === 0.0 && $empty['suspectRate'] === 0.0 && $empty['alert'] === false);
+$fnStats = file_get_contents(__DIR__ . '/../functions.php');
+tbCheck('tnCount counts the page once (pages) and a kept stored list once per page (pages_suspect)', strpos($fnStats, "\$GLOBALS['tn_page_counted'] = true;\n        \$bump[] = 'pages';") !== false && strpos($fnStats, "\$GLOBALS['tn_page_suspect'] = true;\n        \$bump[] = 'pages_suspect';") !== false);
+tbCheck('the health page and the cron read the counts under a shared lock', strpos($fnStats, 'function tnStatsToday(): array') !== false && strpos($fnStats, 'flock($fh, LOCK_SH)') !== false && strpos(file_get_contents(__DIR__ . '/../ajax/health.php'), 'tnStatsToday()') !== false && strpos(file_get_contents(__DIR__ . '/../cron/check-tn-health.php'), 'tnStatsToday()') !== false);
 
 // tidy up
 @unlink($bucket); @unlink($bucket . '.lock'); @unlink($flight); @rmdir($dir);

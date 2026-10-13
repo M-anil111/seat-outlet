@@ -22,14 +22,19 @@ function tnBreakerFamily($endpoint): string {
 }
 
 /**
- * Today's TicketNetwork outcome counts (cache/tn_stats_<date>.json) as a share: how many visitor pages that needed an answer got none.
- * The alert flag is on from 20% over at least 50 pages, so a quiet hour with one failure does not page anyone.
+ * Today's TicketNetwork outcome counts (cache/tn_stats_<date>.json) as per-page shares. "pages" is counted once per visitor page that
+ * needed an answer (tnCount), "no_data" once per page that got none, "pages_suspect" once per page that kept a stored list because the
+ * live answer came back empty. The alert flag is on when either share passes 20% over at least 50 pages, so a quiet hour with one
+ * failure does not page anyone, and a long empty-feed flap is not hidden behind a low no-data rate.
  */
 function tnStatsSummary(array $stats): array {
+    $pages = (int) ($stats['pages'] ?? 0);
     $noData = (int) ($stats['no_data'] ?? 0);
-    $needed = (int) ($stats['live_call'] ?? 0) + (int) ($stats['stale_on_error'] ?? 0) + $noData;
-    $rate = $needed > 0 ? $noData / $needed : 0.0;
-    return ['needed' => $needed, 'noData' => $noData, 'rate' => round($rate, 3), 'alert' => $needed >= 50 && $rate > 0.2];
+    $suspect = (int) ($stats['pages_suspect'] ?? 0);
+    $rate = $pages > 0 ? $noData / $pages : 0.0;
+    $suspectRate = $pages > 0 ? $suspect / $pages : 0.0;
+    return ['pages' => $pages, 'noData' => $noData, 'rate' => round($rate, 3), 'suspect' => $suspect, 'suspectRate' => round($suspectRate, 3),
+            'alert' => $pages >= 50 && ($rate > 0.2 || $suspectRate > 0.2)];
 }
 
 /** Live calls per second the whole site may make to TicketNetwork. */

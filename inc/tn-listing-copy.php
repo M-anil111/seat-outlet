@@ -57,7 +57,9 @@ function tnListRows($data): array {
  */
 function tnEmptyListSuspect($endpoint, $new, $old): bool {
     if (strpos(trim((string) $endpoint, '/'), 'catalog/v2/events') !== 0) return false;
-    if (!is_array($new) || !array_key_exists('results', $new) || tnListRows($new) !== []) return false;
+    if (!is_array($new) || tnListRows($new) !== []) return false;
+    // every list shape tnListRows() accepts counts as an empty list; a detail answer (no list key, not a list) does not
+    if (!array_key_exists('results', $new) && !array_key_exists('events', $new) && !array_is_list($new)) return false;
     return is_array($old) && tnListRows($old) !== [];
 }
 

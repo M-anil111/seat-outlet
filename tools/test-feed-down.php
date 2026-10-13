@@ -21,10 +21,13 @@ feedDownCheck('gate serves a snapshot first', strpos($m3[0], 'soSnapshotServe()'
 feedDownCheck('gate answers 503 with Retry-After (never a 200 that a crawler would index as empty)', strpos($m3[0], 'http_response_code(503)') !== false && strpos($m3[0], "header('Retry-After: 30')") !== false);
 feedDownCheck('gate does not set noindex (a 503 already says come back later)', strpos($m3[0], "pageRobots'] = 'noindex") === false);
 $hdr = file_get_contents($root . '/header.php');
-feedDownCheck('header: a degraded page with nothing to show goes through the gate before any output', strpos($hdr, "soApiDegraded() && isset(\$total_count) && (int) \$total_count === 0 && empty(\$events) && http_response_code() === 200") !== false && strpos($hdr, 'soFeedDownGate();') < strpos($hdr, '<!DOCTYPE html>'));
+$gatePos = strpos($hdr, 'soFeedDownGate();');
+feedDownCheck('header: a degraded page with nothing to show goes through the gate before any output', strpos($hdr, "soApiDegraded() && isset(\$total_count) && (int) \$total_count === 0 && empty(\$events) && http_response_code() === 200") !== false && $gatePos !== false && $gatePos < strpos($hdr, '<!DOCTYPE html>'));
 feedDownCheck('header: the robots tag never carries a noindex for a feed failure', strpos($hdr, "soFeedDown']) ||") === false);
+feedDownCheck('header: a feed failure overrides a page\'s own "0 results" noindex', strpos($hdr, "!empty(\$GLOBALS['soFeedDown']) ? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow') : (\$pageRobots ??") !== false);
 $srch = file_get_contents($root . '/search.php');
 feedDownCheck('search.php uses soFeedDownGate when the feed is down', strpos($srch, "soFeedDownGate('Search')") !== false);
+feedDownCheck('search.php shows the feed-down card, not "No Upcoming Events", when the feed is down', strpos($srch, "} elseif (!empty(\$GLOBALS['soFeedDown'])) { echo soFeedDownStateHtml();") !== false);
 
 // Every listing and entity page that used to stop on the 503 page now goes through the gate.
 foreach (['category.php', 'inc/holidays.php', 'inc/discovery-pages.php', 'inc/entity-listing.php', 'performer.php'] as $f) {
