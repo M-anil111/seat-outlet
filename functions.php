@@ -5541,7 +5541,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             <div class="tab-section section-performer-content" id="default">
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
-                        <div class="list-category-bg pb-3">
+                        <div class="list-category-bg py-4">
                             <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Buy <?php echo htmlspecialchars("$soTix $soPrep $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
                             <?php if (!empty($events)) { ?>
                                 <div id="eventsSection" class="section-artist-content event-row-all">
@@ -5854,7 +5854,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
             <div class="tab-section section-performer-content" id="default">
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
-                        <div class="list-category-bg pb-3">
+                        <div class="list-category-bg py-4">
                             <?php if (!empty($events)) { ?>
                                 <div id="eventsSection" class="section-artist-content event-row-all">
                                     <?php foreach ($events as $event) {

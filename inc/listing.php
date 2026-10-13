@@ -421,8 +421,8 @@ function soRenderListingBody(array $o): void {
  */
 function soRenderListingPage(array $o): void {
     $GLOBALS['soNoBannerAd'] = true;   // no ad directly above the ticket list (see soAdInjectBanner)
-    // bodyPad: the spacing class on the .list-category-bg wrapper around the rows (category pages pass py-4).
-    $o += ['bodyPad' => 'pb-3', 'tag' => 'h1', 'defaultSort' => 'popular', 'explore' => [], 'body' => [], 'lead' => null, 'afterRow' => null, 'afterSection' => null, 'when' => '', 'sort' => 'popular', 'max' => 0];
+    // bodyPad: the spacing class on the .list-category-bg wrapper around the rows (py-4 on every listing page; a caller may still pass its own class).
+    $o += ['bodyPad' => 'py-4', 'tag' => 'h1', 'defaultSort' => 'popular', 'explore' => [], 'body' => [], 'lead' => null, 'afterRow' => null, 'afterSection' => null, 'when' => '', 'sort' => 'popular', 'max' => 0];
     $total = (int) $o['total'];
     // The feed failed (throttled, down): never present that as "0 results". Serve the last good copy of this page; without one,
     // answer 503 (retry) so neither visitors nor search engines keep an empty page.

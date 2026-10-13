@@ -256,7 +256,7 @@ soPageHero([
 					<?php if ($locationUnmatched) { ?>
 						<p class="search-note" id="search-location-note">We could not match &ldquo;<?php echo htmlspecialchars((string) $searchInput['locationInputHeader'], ENT_QUOTES, 'UTF-8'); ?>&rdquo; to a place, so these results are not limited to that area. Pick a city from the suggestions in the Location box to search near it.</p>
 					<?php } ?>
-					<div class="list-category-bg pb-3">
+					<div class="list-category-bg py-4">
 						<?php if (!empty($events)) {
 							soRenderListingBody([
 								'events'  => $events,
