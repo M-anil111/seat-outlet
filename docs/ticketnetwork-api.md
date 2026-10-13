@@ -110,7 +110,7 @@ Commercial model: Inference only. Because the checkout is TicketNetwork's hosted
 
 - `/catalog/v2/events` answers HTTP 429 or a JSON error with a code matching `9008xx` ("Message throttled out", quota exceeded). `tnParseResult()` in `functions.php` treats both as throttling.
 - Sentry shows 9 throttle events in 2 hours on 2026-10-04 (`docs/reliability.md`). Cold pages and crawler traffic trigger it. The `docs/reliability.md` text says "Ask TicketNetwork support for the per-second and daily limits on our key".
-- The `9008xx` code pattern and the phrase "Message throttled out" are WSO2 API Manager throttling responses. Inference: the limits are WSO2 subscription tier or application-level throttling policies, which TicketNetwork sets per application, so they can be raised on request.
+- The `9008xx` code pattern and the phrase "Message throttled out" are WSO2 API Manager throttling responses. Verified on 13 Oct 2026 (Sentry, the 429 body): the code is **900804**, which in WSO2 is the *subscription-level* throttle (900800 API level, 900803 application level, 900804 subscription level). So the limit is the throttling tier TicketNetwork attached to our application's subscription to the Catalog API, and only they can change it. Measured the same day: a steady 1 call a second is almost never refused (2 in ten minutes), 2 a second with bursts of 4 is refused 37 times in ten minutes with the same number of calls that got through, so the tier is about one request a second with little or no burst allowance.
 
 ### 3.2 What TicketNetwork documents publicly
 
@@ -118,7 +118,7 @@ Verified: nothing. No public page states a request-per-second, per-minute or dai
 
 ### 3.3 What the repo already does to stay within limits (Verified, repo)
 
-File cache per endpoint (reference data 6 h, event lists 10 min, search 5 min, suggest 1 h), stale-while-revalidate, a circuit breaker per family of calls (events and reference data; 20 s for ordinary errors, `TN_BREAKER_SECONDS`; 60 s or the server's `Retry-After` for a throttle, `TN_BREAKER_THROTTLE_SECONDS`), a shared call budget (`TN_CALLS_PER_SECOND`, default 2), stale-on-error limits (event lists and details 2 h, stored event copies 24 h, reference data 14 days), page snapshots, parallel prefetch limited, crons that stop when throttled. The warmer visits event details in batches of up to 40 per 15-minute run with a stored cursor.
+File cache per endpoint (reference data 6 h, event lists 10 min, search 5 min, suggest 1 h), stale-while-revalidate, a circuit breaker per family of calls (events and reference data; 20 s for ordinary errors, `TN_BREAKER_SECONDS`; 60 s or the server's `Retry-After` for a throttle, `TN_BREAKER_THROTTLE_SECONDS`), a shared call budget (`TN_CALLS_PER_SECOND`, default 1), stale-on-error limits (event lists and details 2 h, stored event copies 24 h, reference data 14 days), page snapshots, parallel prefetch limited, crons that stop when throttled. The warmer visits event details in batches of up to 40 per 15-minute run with a stored cursor.
 
 The code constants are the source of truth. `docs/reliability.md` ("Removed events and stale answers") and CONTRIBUTING.md list the same windows.
 
@@ -234,8 +234,8 @@ Orders and revenue
 9. Please set up DNS for `checkout.seatoutlet.com` (or tell us the host to use) and confirm that `tgid`, `qty` and `prc` pass through unchanged.
 
 Limits and terms
-10. What are the exact request limits on our application (per second, per minute, per day) for sandbox and live? How is throttling applied (per application, IP, website config)?
-11. Can you raise the live limit? We receive HTTP 429 on `/catalog/v2/events` from crawler and cache-warming traffic. Is there a `Retry-After` or quota header we should read?
+10. What are the exact request limits on our application (per second, per minute, per day) for sandbox and live? How is throttling applied (per application, IP, website config)? Our 429 responses carry WSO2 code 900804 ("Message throttled out", subscription level): which throttling tier is our Catalog API subscription on, and what are its exact figures?
+11. Can you move our subscription to a higher tier? We measured that about one request a second gets through and anything above it is refused with 900804; our pages need about 1.2 to 3 calls a second at normal traffic. Is there a `Retry-After` or quota header we should read (the 429s we see carry none)?
 12. What are the rules for caching and storing API data (maximum age for prices and availability, allowed storage, display of stale prices, use in schema.org markup)?
 13. Is there a bulk or catalog feed, or a changes-since endpoint, we can use instead of per-page calls?
 14. Are ticket-group or listing-level fields (section, row, quantity, delivery method, price including fees) available through the API for display on comparison pages?
