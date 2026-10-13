@@ -37,13 +37,16 @@ function soBlogSafeUrl($url) {
  * Email sign-up box: the shared soLeadForm (inc/leads.php, bound by js/lead-capture.js, posts to /ajax/subscribe.php).
  * Options: id, title, text, source (where it sits: blog, blog-end, blog-index), interest_type / interest_name (what the
  * article is about, so alerts can be targeted).
+ * Every blog page (list, article end, mid-article, [newsletter] shortcode) uses this one box: the split layout (bell, heading
+ * and text beside the labelled form) on a pale blue card. The .so-nlbox wrapper is a size container, so the box stacks when
+ * its column is narrow (inside an article) and not only on small screens.
  */
 function soBlogNewsletterBox(array $a = []) {
-    $o = ['source' => preg_replace('/[^a-z0-9_-]/', '', strtolower((string) ($a['source'] ?? 'blog'))) ?: 'blog', 'class' => 'so-nl--blog'];
+    $o = ['source' => preg_replace('/[^a-z0-9_-]/', '', strtolower((string) ($a['source'] ?? 'blog'))) ?: 'blog', 'class' => 'so-nl--blog so-nl--band', 'layout' => 'split'];
     foreach (['id', 'title', 'text', 'interest_type', 'interest_id', 'interest_name'] as $k) {
         if (isset($a[$k]) && $a[$k] !== '') $o[$k] = $a[$k];
     }
-    return soLeadForm($o);
+    return '<div class="so-nlbox">' . soLeadForm($o) . '</div>';
 }
 
 function soBlogCtaBox(array $a) {

@@ -6865,6 +6865,29 @@ a.so-trust__cta:focus-visible { outline: 3px solid #9db6f4; outline-offset: 3px;
   .so-nl--split .so-nl__fields { grid-template-columns: minmax(0, 1fr); gap: 16px; }
 }
 
+/* Blog "Get ticket alerts and new guides in your inbox" (soBlogNewsletterBox, every blog page): the home split layout on a pale blue
+   card. .so-nlbox is a size container, so the card stacks by its own width (an article column) as well as by screen width. */
+.so-nlbox { container-type: inline-size; margin: 2.5em 0; }
+.so-nlbox .so-nl--band { position: relative; overflow: hidden; margin: 0; padding: clamp(28px, 4.4vw, 60px) clamp(22px, 4.4vw, 64px); border: 1px solid #e3eafa; border-radius: 28px; background: linear-gradient(135deg, #f6f9ff 0%, #ecf2fe 100%); text-align: left; }
+.so-nlbox .so-nl--band::before { content: ""; position: absolute; right: -90px; top: -110px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(37,86,224,.12), transparent 68%); pointer-events: none; }
+.so-nlbox .so-nl--band > * { position: relative; }
+.so-nlbox .so-nl--band .so-nl__title { font-size: clamp(28px, 3vw, 40px); }
+.so-nlbox .so-nl--band .so-nl__fields button { width: 100%; box-shadow: 0 10px 24px rgba(37,86,224,.25); }
+.so-nlbox .so-nl--band .so-nl__fields input { width: 100%; }
+.blog-post-content .so-nlbox .so-nl__title, .blog-post-content .so-nlbox .so-nl__sub, .blog-post-content .so-nlbox .so-nl__legal { margin-left: 0; margin-right: 0; }
+@container (max-width: 900px) {
+  .so-nl--band { grid-template-columns: minmax(0, 1fr); }
+  .so-nl--band .so-nl__sub { max-width: 640px; }
+  .so-nl--band .so-nl__intro { padding: 0 0 24px; margin-bottom: 24px; border-bottom: 1px solid #d9e2f5; }
+  .so-nl--band .so-nl__form { padding-left: 0; border-left: 0; }
+}
+@container (max-width: 480px) {
+  .so-nl--band .so-nl__icon { width: 60px; height: 60px; border-radius: 16px; }
+  .so-nl--band .so-nl__icon svg { width: 32px; height: 32px; }
+  .so-nl--band .so-nl__title { margin-top: 18px; }
+  .so-nl--band .so-nl__fields { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+
 /* Home: long SEO text clamped behind "Read more" (the full text stays in the HTML) */
 .so-readmore.is-clamped .so-readmore__body { max-height: 220px; overflow: hidden; position: relative; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); }
 .so-readmore__btn { display: block; margin: 12px auto 0; min-height: 44px; padding: 0 24px; border: 1px solid #2556e0; border-radius: 999px; background: #fff; color: #2556e0; font-weight: 600; cursor: pointer; }
