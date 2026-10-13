@@ -856,7 +856,7 @@ function renderImageCredit(array $img, $class = 'img-credit') {
         $html = $h(substr($credit, 0, $pos)) . '<a href="' . $h($licUrl) . '" rel="license noopener nofollow" target="_blank">' . $h(substr($credit, $pos, strlen($license))) . '</a>' . $h(substr($credit, $pos + strlen($license)));
     } else {
         $html = $h($credit);
-        if ($license !== '') {
+        if ($license !== '' && stripos($credit, $license) === false) {   // the stored credit often names the licence already ("..., Attribution"): say it once
             $html .= ($html !== '' ? ', ' : '') . ($licUrl !== '' ? '<a href="' . $h($licUrl) . '" rel="license noopener nofollow" target="_blank">' . $h($license) . '</a>' : $h($license));
         }
     }
