@@ -6178,6 +6178,7 @@ main.terms-page .policy-section, main.cookie-page .policy-section { padding-top:
 
 /* ---- Phone menu: icon rail on the left, links on the right, one big Search button at the bottom ---- */
 .offcanvas.so-menu { --bs-offcanvas-width: min(100vw, 460px); background: #fff; display: flex; flex-direction: column; z-index: 1111; } /* above the header (.tm-header is z-index 1100) */
+.offcanvas.offcanvas-start { z-index: 1111; }   /* the mobile sidebar opens above the header */
 .so-menu__head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #2556e0; }
 .so-menu__logo img { display: block; width: 168px; height: auto; }
 .so-menu__close { width: 44px; height: 44px; border: 0; border-radius: 14px; background: rgba(255,255,255,.18); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
