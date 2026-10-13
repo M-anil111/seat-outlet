@@ -41,8 +41,7 @@ function soDeadPerformerSet(int $id, bool $dead, ?string $dir = null, ?int $now 
     $now = $now ?? time();
     try {
         $file = soDeadPerformerFile($dir);
-        clearstatcache(true, $file);
-        if (!$dead && (!is_file($file) || (int) @filesize($file) <= 2)) return;   // no file, or an empty list ("[]")   // the common case on a healthy page: nothing to read, nothing to write
+        if (!$dead && !is_file($file)) return;   // the common case on a healthy page: nothing to read, nothing to write
         $fh = @fopen($file, 'c+');
         if (!$fh) return;
         if (flock($fh, LOCK_EX)) {
