@@ -181,7 +181,7 @@ soPageHero([
 							</div>
 						</div>
 					</div>
-					<div class="list-category-bg pb-3">
+					<div class="list-category-bg py-4">
 						<div class="filter-bar">
 							<input type="hidden" id="latEvent" value="">
 							<input type="hidden" id="lngEvent" value="">

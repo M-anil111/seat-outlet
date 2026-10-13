@@ -186,7 +186,7 @@ function soRenderEntityListing(array $c): void {
                         </div>
                     </div>
                     <?php renderListingFilters($c['path'], $c['when'], $c['sort'], $total, $c['defaultSort']); ?>
-                    <div class="list-category-bg <?php echo $kind === 'venue' ? 'py-4' : 'pb-3'; /* venue pages: padding above and below the event rows */ ?>">
+                    <div class="list-category-bg py-4">
                         <?php if (!empty($events)) { ?>
                             <?php $soCap = 10; $soCapped = count($events) > $soCap + 2; ?>
                             <div id="eventsSection" class="section-artist-content event-row-all<?php echo $soCapped ? ' so-rows--capped' : ''; ?>"<?php echo $soCapped ? ' data-so-cap="' . $soCap . '"' : ''; ?>>

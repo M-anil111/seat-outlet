@@ -1491,14 +1491,27 @@ document.addEventListener('click', function (e) {
     }
 });
 
-// Blog article FAQ: one answer open at a time. The questions share a <details name> (inc/blog-render.php), which current
-// browsers already treat as one group; this covers older ones. Clicking the open question still closes it.
-document.querySelectorAll('.blog-post-content').forEach(function (box) {
-    var items = box.querySelectorAll('details.so-faq');
-    items.forEach(function (d) {
-        d.addEventListener('toggle', function () {
-            if (!d.open) return;
-            items.forEach(function (o) { if (o !== d && o.open) o.open = false; });
+// FAQ questions: one answer open at a time, on every page. Questions of one group share a <details name> (blog articles in
+// inc/blog-render.php, page copy, the mini FAQ in inc/trust-block.php, the event page); current browsers already treat that as one
+// group, and this covers older ones. A <details class="so-faq"> without a name is grouped with its siblings. Clicking the open
+// question still closes it.
+(function () {
+    var named = Object.create(null), byParent = new Map(), groups = [];
+    document.querySelectorAll('details.so-faq').forEach(function (d) {
+        var n = d.getAttribute('name'), list;
+        if (n) { list = named[n] = named[n] || []; }
+        else { list = byParent.get(d.parentNode); if (!list) { list = []; byParent.set(d.parentNode, list); } }
+        list.push(d);
+    });
+    Object.keys(named).forEach(function (k) { groups.push(named[k]); });
+    byParent.forEach(function (list) { groups.push(list); });
+    groups.forEach(function (items) {
+        if (items.length < 2) return;
+        items.forEach(function (d) {
+            d.addEventListener('toggle', function () {
+                if (!d.open) return;
+                items.forEach(function (o) { if (o !== d && o.open) o.open = false; });
+            });
         });
     });
-});
+})();
