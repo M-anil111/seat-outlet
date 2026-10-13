@@ -109,6 +109,7 @@ soRenderListingPage([
 	'sort'        => $sort,
 	'defaultSort' => 'soonest',
 	'max'         => $maxPrice,
+	'bodyPad'     => 'py-4',
 	'explore'     => ['catId' => $id, 'noun' => $catInline . ' events', 'hero' => $soCatHero, 'family' => $soFamily, 'label' => $catLabel],
 	'body'        => [
 		'events'  => $events,
