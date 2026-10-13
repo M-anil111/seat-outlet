@@ -118,7 +118,7 @@ Verified: nothing. No public page states a request-per-second, per-minute or dai
 
 ### 3.3 What the repo already does to stay within limits (Verified, repo)
 
-File cache per endpoint (reference data 6 h, event lists 10 min, search 5 min, suggest 1 h), stale-while-revalidate, a circuit breaker per family of calls (events and reference data; 20 s for ordinary errors, `TN_BREAKER_SECONDS`; 60 s or the server's `Retry-After` for a throttle, `TN_BREAKER_THROTTLE_SECONDS`), a shared call budget (`TN_CALLS_PER_SECOND`, default 1), stale-on-error limits (event lists and details 2 h, stored event copies 24 h, reference data 14 days), page snapshots, parallel prefetch limited, crons that stop when throttled. The warmer visits event details in batches of up to 40 per 15-minute run with a stored cursor.
+File cache per endpoint (reference data 6 h, event lists 10 min, search 5 min, suggest 1 h), stale-while-revalidate, a circuit breaker per family of calls (events and reference data; 20 s for ordinary errors, `TN_BREAKER_SECONDS`; 60 s or the server's `Retry-After` for a throttle, `TN_BREAKER_THROTTLE_SECONDS`), a shared call budget (`TN_CALLS_PER_SECOND`, default 2), stale-on-error limits (event lists and details 2 h, stored event copies 24 h, reference data 14 days), page snapshots, parallel prefetch limited, crons that stop when throttled. The warmer visits event details in batches of up to 40 per 15-minute run with a stored cursor.
 
 The code constants are the source of truth. `docs/reliability.md` ("Removed events and stale answers") and CONTRIBUTING.md list the same windows.
 
