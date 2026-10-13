@@ -330,7 +330,9 @@ function soSitemapBuildFiles(string $tmp): array {
         }
         $list = [];
         soSlugWarm(array_map(fn($i) => [$slugType, $i], array_keys($ents)));
+        $deadIds = $group === 'performers' ? soDeadPerformerIds() : [];   // pages that answered 404: not listed until they are seen alive again
         foreach ($ents as $id => [$name, $lm]) {
+            if (isset($deadIds[$id])) continue;
             $loc = $base . $prefix . soSlug($slugType, $name, $id);
             if ($keep($loc)) $list[] = [$loc, $lm !== '' ? $lm : null];
         }

@@ -66,5 +66,8 @@ $search = file_get_contents($root . '/search.php');
 loCheck('search: a typed start date in the past is clamped to today', strpos($search, "\$startDate = max(date('Y-m-d'), date('Y-m-d', \$startTimestamp));") !== false);
 loCheck('search: the ticket flag is asked for first, the whole list only as the fallback', strpos($search, "'_metadata/hasTickets eq true'") !== false);
 
+// QA-004: a typed city that was never picked from the suggestions has no coordinates; the page says so instead of ignoring it silently
+loCheck('search: a typed location without coordinates is flagged (no geoFilter was built)', strpos($search, "\$locationUnmatched = trim((string) (\$searchInput['locationInputHeader'] ?? '')) !== '' && !isset(\$params['geoFilter']);") !== false);
+loCheck('search: the note names what was typed, escaped, and tells the visitor to pick a city from the list', strpos($search, 'We could not match &ldquo;<?php echo htmlspecialchars((string) $searchInput[\'locationInputHeader\']') !== false && strpos($search, 'Pick a city from the suggestions in the Location box') !== false);
 echo $fails ? "\n$fails failed\n" : "\nlisting options: all passed\n";
 exit($fails ? 1 : 0);
