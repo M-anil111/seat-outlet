@@ -3596,10 +3596,12 @@ h3,
         left: calc(50% - 309px) !important;
         right: auto !important;
     }
-    .so-date-picker-custom::before,
-    .so-date-picker-custom::after {
-        display: none;
-    }
+}
+/* The header calendar is placed by the rules above, not beside the field, so flatpickr's pointer triangle
+   (.arrowTop/.arrowBottom ::before/::after) points at nothing: hide it at every screen size. */
+.so-date-picker-custom.flatpickr-calendar::before,
+.so-date-picker-custom.flatpickr-calendar::after {
+    display: none;
 }
 @media (max-width: 768px) {
 
