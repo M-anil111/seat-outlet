@@ -19,7 +19,6 @@ if ($id <= 0) {
 }
 
 // The ticket API lists a few categories twice under different parents; the small copy sends visitors to the main one (one URL per category).
-const SO_CATEGORY_DUPLICATES = [2094 => 1869];   // Children / Family under Concerts => under Theater
 if (isset(SO_CATEGORY_DUPLICATES[$id])) { soRedirect301(soCategoryHref(SO_CATEGORY_DUPLICATES[$id], 'Children / Family')); }
 
 $cat = getTnCatById($id);

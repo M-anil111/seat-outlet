@@ -132,6 +132,12 @@ function soFactsPick(array $search, string $name, string $kind, string $context 
     if (count($hits) > 1 && $context !== '') {
         $hits = array_values(array_filter($hits, fn($r) => mb_stripos((string) $r['description'], $context) !== false));
     }
+    // A lone match that says it is "in" some other place is another venue with the same name (the Palace of Fine Arts in San Francisco
+    // against the one in Mexico City): linking its official site from our page would send visitors to the wrong building.
+    if (count($hits) === 1 && $kind === 'venue' && $context !== '') {
+        $d = mb_strtolower((string) $hits[0]['description']);
+        if (strpos($d, ' in ') !== false && mb_strpos($d, mb_strtolower($context)) === false) return null;
+    }
     if (count($hits) !== 1) return null;   // none, or ambiguous
     return preg_match('/^Q\d+$/', (string) ($hits[0]['id'] ?? '')) ? $hits[0] : null;
 }

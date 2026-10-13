@@ -3019,6 +3019,13 @@ function soNoindexPrivatePaths() {
 }
 
 /** Output filter: canonical and og:url point at SO_PUBLIC_ORIGIN instead of this server's own HOME_URL. */
+/** Output filter for page two and up of a listing: the first plain-text H1 gets the page number, so it differs from page one's. */
+function soPageTagH1($html) {
+    $tag = (string) ($GLOBALS['soPageTag'] ?? '');
+    if ($tag === '') return $html;
+    return preg_replace_callback('#(<h1\b[^>]*>)([^<]*)(</h1>)#i', function ($m) use ($tag) { return $m[2] === '' ? $m[0] : $m[1] . $m[2] . $tag . $m[3]; }, $html, 1);
+}
+
 function soPublicCanonical($html) {
     // Cloudflare's email obfuscation rewrites every address into a /cdn-cgi/l/email-protection link, which answers 404 to a crawler.
     // Cloudflare skips whatever sits between these two comments, so addresses (and mailto links) stay as written.
