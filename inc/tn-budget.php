@@ -29,11 +29,16 @@ function tnBreakerFamily($endpoint): string {
  */
 function tnStatsSummary(array $stats): array {
     $pages = (int) ($stats['pages'] ?? 0);
-    $noData = (int) ($stats['no_data'] ?? 0);
-    $suspect = (int) ($stats['pages_suspect'] ?? 0);
+    // Both are counted once per page, so no_data can never exceed pages. A larger value is what a day's file holds when the "pages"
+    // counter was added mid-day (deployed after no_data had been counting): clamp, so the share is never over 100% and a stale
+    // leftover cannot raise an alert.
+    $noData = min($pages, (int) ($stats['no_data'] ?? 0));
+    $suspect = min($pages, (int) ($stats['pages_suspect'] ?? 0));
     $rate = $pages > 0 ? $noData / $pages : 0.0;
     $suspectRate = $pages > 0 ? $suspect / $pages : 0.0;
     return ['pages' => $pages, 'noData' => $noData, 'rate' => round($rate, 3), 'suspect' => $suspect, 'suspectRate' => round($suspectRate, 3),
+            // per call, not per page: how many live calls the API refused (429) and how many our own budget held back
+            'throttled' => (int) ($stats['throttled'] ?? 0), 'overBudget' => (int) ($stats['over_budget'] ?? 0),
             'alert' => $pages >= 50 && ($rate > 0.2 || $suspectRate > 0.2)];
 }
 

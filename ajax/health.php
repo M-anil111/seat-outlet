@@ -46,6 +46,10 @@ $tnSummary = tnStatsSummary($tnStats);
 $out['ticketnetwork']['pages'] = $tnSummary['pages'];
 $out['ticketnetwork']['noDataRate'] = $tnSummary['pages'] > 0 ? $tnSummary['rate'] : null;
 $out['ticketnetwork']['emptySuspectRate'] = $tnSummary['pages'] > 0 ? $tnSummary['suspectRate'] : null;
+// Per call: 429s from TicketNetwork against calls our own TN_CALLS_PER_SECOND budget held back. A high overBudget with few throttled
+// means the local rate is the bottleneck; the reverse means the API's limit is lower than the rate we send.
+$out['ticketnetwork']['throttled'] = $tnSummary['throttled'];
+$out['ticketnetwork']['overBudget'] = $tnSummary['overBudget'];
 $out['ticketnetwork']['alert'] = $tnSummary['alert'];
 if ($tnSummary['alert']) $out['ok'] = false;
 

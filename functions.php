@@ -485,7 +485,10 @@ function tnParseResult($ch, $response) {
     // Throttled ("Message throttled out", quota exceeded): a failure to retry later, not an answer.
     // Treating it as data skipped the stale fallback and rendered empty listings as 200 pages.
     if ($code === 429 || (isset($decoded['code']) && preg_match('/^9008\d\d$/', (string) $decoded['code']))) {
-        return ['ok' => false, 'data' => $decoded, 'cacheable' => false, 'error' => 'throttled (HTTP ' . $code . ')', 'throttled' => true];
+        // The gateway's own code and message say which limit was hit (per-second spike, application quota, subscription tier), which
+        // is what TicketNetwork support needs to hear and what decides TN_CALLS_PER_SECOND.
+        $why = trim(implode(' ', array_filter([(string) ($decoded['code'] ?? ''), (string) ($decoded['message'] ?? $decoded['Message'] ?? '')])));
+        return ['ok' => false, 'data' => $decoded, 'cacheable' => false, 'error' => 'throttled (HTTP ' . $code . ($why !== '' ? ', ' . substr($why, 0, 120) : '') . ')', 'throttled' => true];
     }
     $cacheable = $code === 200 && !isset($decoded['code']) && !isset($decoded['Message']);
     return ['ok' => true, 'data' => $decoded, 'cacheable' => $cacheable, 'error' => '', 'auth' => $code === 401, 'http' => $code];
@@ -667,8 +670,10 @@ function tnBucketAllow(): bool {
 /** The live part of a cold request: budget, one call (one retry for a fast drop), the breaker, and storing the answer. */
 function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     if (!tnBucketAllow()) {
+        tnCount('over_budget');   // our own limit, not the API's: tells a local bottleneck apart from a throttle on the health page
+        if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
         tnMarkDegraded();
-        return ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) ? $entry['data'] : [];
+        return [];
     }
     $t0 = microtime(true);
     $GLOBALS['tn_retry_after'] = null;
@@ -680,6 +685,7 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     }
 
     if (!$r['ok']) {
+        if (!empty($r['throttled'])) tnCount('throttled');
         tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($GLOBALS['tn_retry_after'] ?? null, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS, tnBreakerFamily($endpoint));
         soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
@@ -801,6 +807,7 @@ function tnRequestMulti(array $requests) {
         } else {
             // The Retry-After of the call that actually failed: the retry's header if a retry was sent, else this handle's.
             $after = $retried ? ($GLOBALS['tn_retry_after'] ?? null) : $afterFirst;
+            if (!empty($r['throttled'])) tnCount('throttled');
             tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($after, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS, tnBreakerFamily($endpoint));
             tnUnanswered(!empty($out[$i]));
         }
@@ -945,7 +952,9 @@ function getTnPerformerById($performerId) {
     // File cache (6h) so hosts without APCu don't refetch on every view.
     $result = tnRequestCached('/catalog/v2/performers/' . $performerId, [], 6 * 3600);
 
-    if (function_exists('apcu_store')) {
+    // Only a real record goes into APCu. A failed call answers [] (throttled, over budget, circuit open), and keeping that for an hour
+    // made every later visit to the artist page answer 503 from APCu, without reading the file copy or trying the API again.
+    if (function_exists('apcu_store') && isset($result['id'])) {
         apcu_store($cacheKey, $result, 3600);
     }
 
