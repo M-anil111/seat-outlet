@@ -176,7 +176,29 @@ function soBlogShortcodes($html) {
  * Give every h2/h3 an id, drop any hand-written contents box (it would duplicate the generated one), and put the
  * newsletter box before the middle section of a long article. Returns [html, toc] where toc is [[level, id, text], ...].
  */
+/**
+ * Posts written before the clean-address registry link to "/concerts-city/new-york-ny-3027" and "/category/children-family-1869", which
+ * each answer a 301 (two hops for /event-city/). Point them at the final address when the registry knows it, so a reader and a crawler
+ * land in one step. $resolve(type, name, id) returns the registry slug; the default is soSlug(), which hands back the old form when the
+ * registry has nothing, so an unknown link stays exactly as written.
+ */
+function soBlogModernLinks($html, ?callable $resolve = null) {
+    $resolve = $resolve ?? function ($type, $name, $id) { return function_exists('soSlug') ? soSlug($type, $name, $id) : $name . '-' . $id; };
+    $name = function ($slug) { return ucwords(str_replace('-', ' ', $slug)); };
+    $html = preg_replace_callback('#href="/(concerts-city|theater-city|sports-city|festival-city|event-city)/([a-z0-9-]+?)-(\d+)"#', function ($m) use ($resolve, $name) {
+        $slug = $resolve('city', $name($m[2]), (int) $m[3]);
+        if ($slug === $m[2] . '-' . $m[3]) return $m[0];
+        return 'href="/' . ($m[1] === 'event-city' ? 'city' : $m[1]) . '/' . $slug . '"';
+    }, (string) $html);
+    return preg_replace_callback('#href="/category/([a-z0-9-]+?)-(\d+)"#', function ($m) use ($name) {
+        if (!function_exists('soCategoryHref')) return $m[0];
+        $href = soCategoryHref((int) $m[2], $name($m[1]));
+        return preg_match('#^/[a-z0-9/-]+$#', $href) && $href !== '/category/' . $m[1] . '-' . $m[2] ? 'href="' . $href . '"' : $m[0];
+    }, $html);
+}
+
 function soBlogProcess($html, $addMidNewsletter = true, array $nlArgs = []) {
+    $html = soBlogModernLinks($html);
     $doc = new DOMDocument();
     libxml_use_internal_errors(true);
     $doc->loadHTML('<?xml encoding="utf-8"?><div id="so-root">' . $html . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);

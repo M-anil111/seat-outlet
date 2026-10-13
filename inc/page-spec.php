@@ -352,6 +352,10 @@ function soSpecEventText(string $kind, array $c): array {
                 'faqs' => "FAQs about $P Tickets at $at", 'venue' => "About $at" . ($place !== '' && $V !== '' ? " in $place" : ''), 'kind' => "$P Tour Dates Across $country",
                 'guide' => "Complete $P Concert Guide at $at", 'other' => "Top Upcoming Performances at $at"];
     }
+    // Search Console: "<show> promo code" queries reach these pages at positions 5 to 8 with no clicks, and the snippet never mentioned a code.
+    // The page does carry the two site codes (soSpecPromoCards), so every description variant says so; the phrase is short enough that
+    // soSpecPick() still takes the longest variant that fits 155 characters.
+    $out['descs'] = array_map(fn($d) => $d . ' See current promo codes.', $out['descs']);
     $out['titles'] = array_values($out['titles']);
     return $out;
 }

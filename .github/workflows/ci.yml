@@ -85,6 +85,8 @@ jobs:
         run: |
           php tools/test-entity-facts-pick.php
           php tools/test-page-tag.php
+          php tools/test-event-promo-meta.php
+          php tools/test-blog-links.php
       - name: Reliability docs state the same windows and limits as the code
         run: php tools/check-docs-constants.php
       - name: Event offer schema and social profiles
