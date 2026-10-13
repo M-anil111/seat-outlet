@@ -249,7 +249,7 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
   </div>
 </section>
 
-<section class="so-htb-sec so-htb-sec--cta" id="support">
+<section class="so-htb-sec--cta" id="support">
   <div class="container">
     <div class="so-htb-cta">
       <div>
