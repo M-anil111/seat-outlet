@@ -110,7 +110,7 @@ Commercial model: Inference only. Because the checkout is TicketNetwork's hosted
 
 - `/catalog/v2/events` answers HTTP 429 or a JSON error with a code matching `9008xx` ("Message throttled out", quota exceeded). `tnParseResult()` in `functions.php` treats both as throttling.
 - Sentry shows 9 throttle events in 2 hours on 2026-10-04 (`docs/reliability.md`). Cold pages and crawler traffic trigger it. The `docs/reliability.md` text says "Ask TicketNetwork support for the per-second and daily limits on our key".
-- The `9008xx` code pattern and the phrase "Message throttled out" are WSO2 API Manager throttling responses. Inference: the limits are WSO2 subscription tier or application-level throttling policies, which TicketNetwork sets per application, so they can be raised on request.
+- The `9008xx` code pattern and the phrase "Message throttled out" are WSO2 API Manager throttling responses. Verified on 13 Oct 2026 (Sentry, the 429 body): the code is **900804**, which in WSO2 is the *subscription-level* throttle (900800 API level, 900803 application level, 900804 subscription level). So the limit is the throttling tier TicketNetwork attached to our application's subscription to the Catalog API, and only they can change it. Measured the same day: a steady 1 call a second is almost never refused (2 in ten minutes), 2 a second with bursts of 4 is refused 37 times in ten minutes with the same number of calls that got through, so the tier is about one request a second with little or no burst allowance.
 
 ### 3.2 What TicketNetwork documents publicly
 
@@ -118,13 +118,13 @@ Verified: nothing. No public page states a request-per-second, per-minute or dai
 
 ### 3.3 What the repo already does to stay within limits (Verified, repo)
 
-File cache per endpoint (reference data 6 h, event lists 10 min, search 5 min, suggest 1 h), stale-while-revalidate, a circuit breaker (20 s in code, `TN_BREAKER_SECONDS`; `docs/reliability.md` says 60 s, which is out of date), 14-day stale-on-error, page snapshots, parallel prefetch limited, crons that stop when throttled. The warmer visits sitemap URLs at one per second.
+File cache per endpoint (reference data 6 h, event lists 10 min, search 5 min, suggest 1 h), stale-while-revalidate, a circuit breaker per family of calls (events and reference data; 20 s for ordinary errors, `TN_BREAKER_SECONDS`; 60 s or the server's `Retry-After` for a throttle, `TN_BREAKER_THROTTLE_SECONDS`), a shared call budget (`TN_CALLS_PER_SECOND`, default 1), stale-on-error limits (event lists and details 2 h, stored event copies 24 h, reference data 14 days), page snapshots, parallel prefetch limited, crons that stop when throttled. The warmer visits event details in batches of up to 40 per 15-minute run with a stored cursor.
 
-Note on documentation drift: `docs/reliability.md` and CONTRIBUTING.md differ on stale windows (24 h vs 14 days) and breaker length. The code constants are the source of truth; update the docs when convenient.
+The code constants are the source of truth. `docs/reliability.md` ("Removed events and stale answers") and CONTRIBUTING.md list the same windows.
 
 ### 3.4 Terms-of-use risk on cached data
 
-Inference and Needs confirmation. The site stores API responses on disk for up to 14 days when the API fails, and stores full rendered pages (including prices) for up to 14 days and serves them as 200 pages. Prices and availability change in minutes. If TicketNetwork's terms limit how long catalog or price data may be cached or displayed, or require showing live prices, the 14-day price snapshots may breach them and may also show stale prices to buyers. Ask for the written caching rule before launch and, until answered, consider showing "price at last update" wording or omitting prices on snapshot-served pages. Also confirm whether structured data (schema.org Offer/price) from cached prices is allowed.
+Inference and Needs confirmation. When the live call fails, the site serves stored event data for at most 2 hours (event lists and details), 24 hours (stored event copies and the database snapshot), or 14 days (reference data only: performers, venues, categories). Full rendered page snapshots (`soSnapshotServe()`) can also be served for up to 14 days and may contain event prices that have since changed. Prices and availability change in minutes. If TicketNetwork's terms limit caching or display of catalog or price data, or require showing live prices, these copies and 14-day page snapshots may breach them. Until the rule is answered, copy-served event pages should show "prices as of" the time the copy was seen (done for event pages), and snapshot-served pages should identify the price date or omit stale prices. Also confirm whether structured data (schema.org Offer/price) from cached prices is allowed.
 
 ### 3.5 What to ask TicketNetwork to raise
 
@@ -234,8 +234,8 @@ Orders and revenue
 9. Please set up DNS for `checkout.seatoutlet.com` (or tell us the host to use) and confirm that `tgid`, `qty` and `prc` pass through unchanged.
 
 Limits and terms
-10. What are the exact request limits on our application (per second, per minute, per day) for sandbox and live? How is throttling applied (per application, IP, website config)?
-11. Can you raise the live limit? We receive HTTP 429 on `/catalog/v2/events` from crawler and cache-warming traffic. Is there a `Retry-After` or quota header we should read?
+10. What are the exact request limits on our application (per second, per minute, per day) for sandbox and live? How is throttling applied (per application, IP, website config)? Our 429 responses carry WSO2 code 900804 ("Message throttled out", subscription level): which throttling tier is our Catalog API subscription on, and what are its exact figures?
+11. Can you move our subscription to a higher tier? We measured 2 refusals (900804) in ten minutes at a steady 1 request a second and 37 in ten minutes at 2 a second with bursts of 4, with the same number of requests (about 460) getting through either way; our pages need about 1.2 to 3 calls a second at normal traffic. Is there a `Retry-After` or quota header we should read (the 429s we see carry none)?
 12. What are the rules for caching and storing API data (maximum age for prices and availability, allowed storage, display of stale prices, use in schema.org markup)?
 13. Is there a bulk or catalog feed, or a changes-since endpoint, we can use instead of per-page calls?
 14. Are ticket-group or listing-level fields (section, row, quantity, delivery method, price including fees) available through the API for display on comparison pages?
@@ -260,3 +260,17 @@ Official TicketNetwork (fetched 2026-10-04):
 Third party (context only, not authoritative): https://stackoverflow.com/questions/17573040/get-events-from-site-ticket-network (older SOAP service, confirms access is by registration and IP authorization).
 
 Repo files: `functions.php` (tnRequest and related), `inc/constants.php`, `checkout.php`, `order-confirmation.php`, `.github/workflows/tn-check.yml`, `.env.example`, `CONTRIBUTING.md`, `docs/reliability.md`, `docs/launch-checklist.md`, `docs/seatics-checkout-thankyou-implementation.md`.
+
+## 6. Verified against the sandbox (2026-10-12)
+
+Source: the TicketNetwork "API Authorization" guide (V1.0) and the "API Client DevPortal Guide" (v4.0, 12/26/2025), plus live sandbox calls with the TestApplication. Credentials were used for these calls only and are not stored anywhere in the repo.
+
+- **Token:** `POST https://key-manager.tn-apis.com/oauth2/token`, HTTP Basic (consumer key and secret), `grant_type=client_credentials`. Response: `access_token`, `token_type` Bearer, `expires_in` 3600. Refresh a couple of minutes before expiry (the code refreshes 120 s early).
+- **Device scopes:** `scope=default device_<name>` gives one token per device. A new token revokes the previous token with the same scopes, so web and cron use separate device tokens (`device_web`, `device_cli`; set `TN_DEVICE_ID` per host). Two device tokens were checked together: both stayed valid.
+- **Expired or revoked token:** HTTP 401 with fault code 900901. The guide says to generate a new token and retry once. Single requests refresh and retry once for JSON 401 responses; bulk prefetches may make an additional request before that retry.
+- **Identity header:** `X-Listing-Context: website-config-id=12498` returns 200 with results on the sandbox. `X-Identity-Context` returns 400 with the same config id (tested 2026-10-12). The code keeps `X-Listing-Context`. Check with TicketNetwork (IntegrationSupport@TicketNetwork.com) if their documentation names `X-Identity-Context`.
+- **Throttling:** the DevPortal says the subscription tier controls throttling. The sandbox subscription is the Trial tier. The sandbox responses carried no rate-limit headers (no Retry-After, no quota headers). The production tier and limits must come from TicketNetwork WebSupport.
+- **List answers:** `GET /catalog/v2/events/` returns `{count, page, results: [...], _links, facets, spellcheck}`. Each row has `id`, `text.name`, `venue.text.name`, `city.text.name`, `date.date`, `stateProvince`, `country.alphaCode`, `defaultCategory`, `_metadata`. Before this check, `tnListRows()` read only an `events` key, so listing copies were never saved. Fixed.
+- **Detail answers:** `GET /catalog/v2/events/{id}` has the same fields plus `_metadata.hasTickets`. `pricingInfo` was absent for an event without tickets; the event page already handles that.
+- **Other paths checked (200):** `/catalog/v2/events/search?q=...`, `/catalog/v2/performers`, `/catalog/v2/performers/{id}`, `/catalog/v2/venues/`, `/catalog/v2/venues/{id}`, `/catalog/v2/cities`, `/catalog/v2/cities/{id}`, `/catalog/v2/suggest?q=...`, `/catalog/v2/categories/`, `/catalog/v2/stateProvinces/{id}`, `/catalog/v2/countries/{alpha}`, `/catalog/v2/postalCodes/`. A bad event id (999999999999) returns 400, which the code treats as "not found".
+- **Credentials:** the DevPortal guide contains a plain-text login for the store account, and the consumer secret was shared in chat. Both should be rotated. Production keys come from TicketNetwork WebSupport, not the DevPortal.

@@ -31,7 +31,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
  <path d="M0.2,33.1h24.2L7.1,16.7l9.5-9.6L33,23.8V0h14.2v23.8L63.6,7.1l9.5,9.6L55.8,33H80v13.5H55.7l17.3,16.7l-9.5,9.4L40,49.1  L16.5,72.7L7,63.2l17.3-16.7H0V33.1H0.2z M33.1,65.8h14.2v32H33.1V65.8z">
  </path>
 </svg><span class="visually-hidden">Linktree</span></a>
-        <?php echo soSocialIconsHtml(); ?>
+        <?php if (function_exists('soSocialIconsHtml')) echo soSocialIconsHtml(); ?>
       </div>
      
 
@@ -45,7 +45,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
     <!-- Column 2 -->
     <div class="tm-footer-col">
-  <h3 class="footer-heading">Trust</h3>
+  <h2 class="footer-heading">Trust</h2>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/worry-free-guarantee">Guarantee</a></li>
@@ -58,7 +58,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
     <!-- Column 3 -->
     <div class="tm-footer-col">
-  <h3 class="footer-heading">Our Network</h3>
+  <h2 class="footer-heading">Our Network</h2>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/grab-tickets-now">Grab Tickets Now</a></li>
@@ -72,7 +72,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
     <!-- Column 4 -->
     <div class="tm-footer-col">
-  <h3 class="footer-heading">About Us</h3>
+  <h2 class="footer-heading">About Us</h2>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/about-seat-outlet">Who we are</a></li>
@@ -87,7 +87,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 
     <!-- Column 5 -->
     <div class="tm-footer-col">
-  <h3 class="footer-heading">Tickets</h3>
+  <h2 class="footer-heading">Tickets</h2>
   <div class="section-divider"></div>
   <ul>
     <li><a href="/game-day-tickets">Sports</a></li>

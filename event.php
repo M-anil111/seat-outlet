@@ -18,6 +18,9 @@ if ($id <= 0) {
 }
 
 $event = getTnEventById($id);
+// A saved copy (TicketNetwork did not answer) has no live prices: they are not shown, and the visitor is told when it was saved.
+$evAsOf = $GLOBALS['so_event_as_of'] ?? null;
+if ($evAsOf !== null) { unset($event['pricingInfo']); }
 
 if (tnEntityMissing($event) || empty($event['text']['name'])) {
   echo tnEntityUnavailable($event) ? unavailableBlockHtml('Event') : notFoundBlockHtml('Event');
@@ -77,6 +80,9 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
 }
 ?>
 <?php /* Slim title strip: the one H1, where and when, and the resale disclosure. The seat map and the tickets follow straight away, above the fold. */ ?>
+<?php if ($evAsOf !== null) { /* Served from a saved copy: say so, and that prices are not shown from it. */ ?>
+<p class="container small text-muted py-2 mb-0" role="status">Event details saved on <?php echo $h(date('M j, Y g:i A', $evAsOf)); ?>. Ticket prices are not shown from a saved copy. Check the seat map below for current prices when it loads.</p>
+<?php } ?>
 <section class="so-evbar">
   <div class="container">
     <?php if (!empty($evTrail)) { /* the same trail as the BreadcrumbList in the head: up to the category and the performer */ ?>
@@ -88,7 +94,8 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
     <h1 class="ev-title so-evbar__title"><?php
       // The page's one H1 (no keyword strip on event pages): the spec's "Buy <Performer> Tickets for <Venue> Show in <City>, <ST>". The date
       // is in the line below and in the title tag, so the heading stays one readable line.
-      echo $h($evSpec['h1']);
+      // The spec is built only for events with a name; without one the H1 falls back to the event name (Sentry SEAT-OUTLET-T).
+      echo $h(is_array($evSpec ?? null) && trim((string) ($evSpec['h1'] ?? '')) !== '' ? (string) $evSpec['h1'] : (string) ($event['text']['name'] ?? ''));
     ?></h1>
     <?php if ($eventTimestamp || $eventVenueParts || $eventInfoLink) {
       // Date, time, venue and place, each with its icon; the venue and the city keep their links.
@@ -200,7 +207,8 @@ $evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $
 // Spec sections (inc/page-spec.php): every one is built from data this page already holds and is left out when there is none.
 $evStateAbbr = (string) ($event['stateProvince']['text']['abbr'] ?? '');
 $evPerfName = (string) ($primaryPerformer['name'] ?? $evLabel);
-$evH2 = $evSpec['h2'];
+// Every heading key the sections below read has a value, so a spec that lacks one (or is missing) prints an empty heading, not an error (Sentry SEAT-OUTLET-V/T/10/11).
+$evH2 = array_merge(['kind' => '', 'venue' => '', 'guide' => '', 'other' => '', 'tickets' => '', 'promo' => '', 'faqs' => '', 'about' => ''], is_array($evSpec['h2'] ?? null) ? array_map('strval', $evSpec['h2']) : []);
 $evVenueEvents = $evVenueData['events'] ?? [];
 $evShownIds = [(int) $id];
 $evVenueHref = $eventVenueId ? '/venue/' . soVenueSlug($eventVenueName, $eventVenueId, $eventCityLabel) : '';
@@ -234,7 +242,7 @@ if ($evKind === 'concert' && $evOther) {
 }
 // Venue info: address, directions, transit, the official site and the weather, from the venue record and Wikidata (no policies are stated).
 $evVenueFacts = $eventVenueName !== '' ? soEntityFacts($eventVenueName, 'venue', (string) $eventCityName) : [];
-$evVenueInfoHtml = soSpecVenueInfoHtml($evH2['venue'], (string) $eventVenueName, (string) $eventCityName, $evStateAbbr, $evVenueHref, is_array($evVenueRec ?? null) ? $evVenueRec : [], $evVenueFacts, (int) ($evVenueData['total'] ?? 0), true);
+$evVenueInfoHtml = soSpecVenueInfoHtml((string) ($evH2['venue'] ?? ''), (string) $eventVenueName, (string) $eventCityName, $evStateAbbr, $evVenueHref, is_array($evVenueRec ?? null) ? $evVenueRec : [], $evVenueFacts, (int) ($evVenueData['total'] ?? 0), true);
 $evGuideHtml = soSpecGuideHtml($evH2['guide'], $evLabel, [
   'when' => $evWhenLong !== '' ? $evWhenLong . ($eventTimeText !== '' ? ' at ' . $eventTimeText : '') : '',
   'venue' => $eventVenueName, 'venueHref' => $evVenueHref,

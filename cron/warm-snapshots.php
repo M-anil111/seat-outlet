@@ -63,6 +63,7 @@ foreach (array_slice($due, 0, $limit) as [$age, $path]) {
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => false, CURLOPT_TIMEOUT => 40, CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_USERAGENT => 'SeatOutletSnapshotWarmer/1.0', CURLOPT_ENCODING => '',
+        CURLOPT_HTTPHEADER => ['X-SO-Warm: 1'],   // a background caller on the shared TicketNetwork budget (tnBackgroundCaller), not a visitor
     ]);
     curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);

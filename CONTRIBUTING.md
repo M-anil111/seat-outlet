@@ -155,11 +155,17 @@ no APCu, so the APCu-only caches never worked in production).
   visitor after an expiry does not pay API latency and a crowd cannot stampede
   the API.
 - *Circuit breaker.* After a live failure (network error, invalid JSON, HTTP
-  5xx) live calls are skipped for 20 seconds and stale data (up to 24 h) or an
-  empty result is served, instead of every request waiting out a 20-second
-  timeout. Scoped per `BASE_URL`.
-- *Stale on error.* A failed live call falls back to any cached copy younger
-  than 24 h.
+  5xx) live calls are skipped for 20 seconds (60 seconds, or the server's
+  `Retry-After` from 5 to 300 s, after a throttle), and stale data or an empty
+  result is served instead of every request waiting out a 20-second timeout.
+  Scoped per `BASE_URL` and per family of calls: event lists, details and search
+  (`events`) pause separately from performers, venues and categories
+  (`reference`), so a throttle on one does not stop the other (`tnBreakerFamily()`).
+- *Stale on error.* A failed live call falls back to a cached copy only within
+  its window: event lists and event details 2 hours (`TN_STALE_LISTING`), stored
+  event copies 24 hours (`TN_LISTING_COPY_TTL`), reference data such as
+  performers, venues and categories 14 days (`TN_STALE_ON_ERROR`). See
+  `docs/reliability.md`, "Removed events and stale answers".
 - *Parallel prefetch.* `tnRequestMulti()` fetches independent requests with
   `curl_multi` and fills the cache; pages call it once at the top and the
   normal calls below hit the cache (performer, artist-by-location, sitemap,
@@ -185,7 +191,9 @@ Crons (all safe to run concurrently with traffic):
 |---|---|---|
 | `cron/home-events.php`, `home-top-performers.php`, `home-venues.php`, `home-categories.php` | hourly | homepage feeds |
 | `cron/warm-listings.php` | every 5 min | keeps /tickets, /concerts, /sports, /theater, /festival, top category and top city feeds warm so no visitor waits on the API |
+| `cron/warm-event-details.php` | every 15 min | refreshes the event details behind the listed events, 15 per run (`php cron/warm-event-details.php 40` for more); skipped while the TicketNetwork breaker is open |
 | `cron/warm-snapshots.php` | every 30 min | visits the sitemap URLs slowly (1 per second, 400 per run) so every page has a stored last good copy, served instead of an error when TicketNetwork throttles or is down (docs/reliability.md) |
+| `cron/check-tn-health.php` | every 15 min | raises a Sentry warning (fingerprint `tn-health-check`) when today's no-data share passes 20% over 50+ pages, or a key listing page answers 503 or "0 results"; exits 1 so a cron mailer notices too. `/ajax/health.php` shows the same `noDataRate` and `alert` |
 | `cron/resolve-images.php` | every 10–15 min | entity image queue |
 | `cron/prune-vitals.php` | weekly | deletes real-user speed measurements older than 90 days |
 | `cron/send-alerts.php` | daily (for example 14:00 server time) | emails people who asked for alerts about a performer: at most one alert per performer per 7 days, up to 5 events with tickets, unsubscribe link in every mail. `--dry-run` lists what would be sent without sending or marking anything; `--limit`, `--pause-ms`, `--max-performers` bound a run (defaults 40 mails, 1 second apart, 40 performers) |

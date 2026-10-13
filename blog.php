@@ -79,7 +79,7 @@ $featured = ($page === 1 && !empty($posts)) ? array_shift($posts) : null;
 <section class="so-np">
     <div class="container">
         <header class="so-np__head">
-            <h1>Ticket Buying Tips &amp; Event Guides</h1>
+            <h1><?php echo htmlspecialchars($activeCat ? $baseTitle : 'Ticket Buying Tips & Event Guides', ENT_QUOTES, 'UTF-8'); ?></h1>
             <p class="so-np__sub">Plain-English guides to buying tickets safely, planning your night out and finding the right seats.</p>
             <?php if ($categories) { ?>
             <form class="so-np__pick" method="get" action="/blog">

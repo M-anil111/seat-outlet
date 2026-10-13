@@ -75,7 +75,7 @@ if ($perfId > 0) {
 }
 if (count($moreEvents) < 4) {
     foreach (['concerts', 'sports', 'theatre'] as $tab) {
-        foreach (array_slice(cache_get('home_events_' . $tab, 30 * 86400) ?: [], 0, 2) as $ev) {
+        foreach (array_slice(cache_get('home_events_' . $tab, 2 * 86400) ?: [], 0, 2) as $ev) {
             if (!empty($ev['id']) && (int) $ev['id'] !== $eventId && count($moreEvents) < 5) $moreEvents[] = $ev;
         }
     }

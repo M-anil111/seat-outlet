@@ -86,7 +86,7 @@ function soCategoryProfile($key) {
                 ['Hip-hop (Wikipedia)', 'https://en.wikipedia.org/wiki/Hip-hop'],
                 ['1520 Sedgwick Avenue (Wikipedia)', 'https://en.wikipedia.org/wiki/1520_Sedgwick_Avenue'],
                 ['Billboard Hip-Hop/R&B Songs chart', 'https://www.billboard.com/charts/r-b-hip-hop-songs/'],
-                ['The Recording Academy (Grammy Awards)', 'https://www.recordingacademy.com/'],
+                ['The Recording Academy (Grammy Awards)', 'https://www.grammy.com/'],
             ],
             'blog' => [['Best concert venues in the US', '/blog/best-concert-venues-in-the-us'], ['Upcoming concert tours', '/blog/upcoming-concert-tours'], ['How to avoid ticket scams', '/blog/how-to-avoid-ticket-scams']],
         ];

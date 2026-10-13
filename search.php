@@ -44,6 +44,7 @@ if (
     $lng = floatval($searchInput['lngHeader']);
     $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $lat, $lng);
 }
+// The 50-mile filter applies only when the visitor has typed a location. Coordinates alone (for example a stored browser value) never narrow results.
 
 /*
 |--------------------------------------------------------------------------
@@ -86,7 +87,8 @@ if (
     $endTimestamp   = strtotime($searchInput['endInputHeader']);
 
     if ($startTimestamp && $endTimestamp) {
-        $startDate = date('Y-m-d', $startTimestamp);
+        // Past dates are not searched: the window starts today at the earliest, and an end date before today ends the search.
+        $startDate = max(date('Y-m-d'), date('Y-m-d', $startTimestamp));
         $endDate   = date('Y-m-d', $endTimestamp);
         $filterParts[] = "date/date ge $startDate and date/date le $endDate";
         $hasHeaderRange = true;
@@ -168,7 +170,11 @@ if (empty($results['results']) && $keywordHeader !== '') {
 }
 $total_count = (int) ($results['totalCount'] ?? 0);
 $events = $results['results'] ?? [];
+// The feed failed (throttled, down): a 503 to retry, never a "0 results" page for a search that would normally find events.
+if ($total_count === 0 && !$events && soApiDegraded()) { soFeedDownGate('Search'); }
 // Exact name first, tribute and similar acts last, in-stock before the rest (Best match only; a chosen sort is respected).
+// Best match ranks the fetched page: in-stock dates first, exact names next, tribute acts last. It reorders the results, it never
+// removes one. Each page is ranked on its own, so the order across a page boundary is not one global order.
 if ($searchSort === '' && $keywordHeader !== '') {
     $events = soRankSearchEvents($events, $keywordHeader);
 }
@@ -253,6 +259,7 @@ soPageHero([
 								'params'  => $params,
 								'type'    => 'search',
 							]);
+						} elseif (!empty($GLOBALS['soFeedDown'])) { echo soFeedDownStateHtml();   // the feed failed: say so, never "No Upcoming Events"
 						} else { ?>
 							<div class="text-center no-events-found">
 								<h4><?php echo $isFilteredSearch ? 'No events match these filters' : 'No Upcoming Events'; ?></h4>
@@ -282,7 +289,7 @@ soPageHero([
 								<?php
 								$popular = [];
 								foreach (['concerts', 'sports', 'theatre', 'festival'] as $popTab) {
-									foreach (array_slice(cache_get('home_events_' . $popTab, 30 * 86400) ?: [], 0, 2) as $popEv) { $popular[] = $popEv; }
+									foreach (array_slice(cache_get('home_events_' . $popTab, 2 * 86400) ?: [], 0, 2) as $popEv) { $popular[] = $popEv; }
 								}
 								if (!empty($popular)) { ?>
 									<div class="search-popular text-start mt-4">

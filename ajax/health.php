@@ -32,6 +32,27 @@ try {
     $out['ok'] = false;
 }
 
+// Today's TicketNetwork outcomes from visitor requests (counts only): live calls, stale answers, event copies, no-data pages, trips.
+$tnStats = tnStatsToday();   // read under a shared lock, so it never catches tnCount() mid-rewrite
+// The live call rate this server uses (TN_CALLS_PER_SECOND or the default) and whether each family's circuit is open right now.
+$out['ticketnetwork'] = [
+    'today' => $tnStats,
+    'callsPerSecond' => tnCallsPerSecond(),
+    'circuitOpen' => ['events' => tnBreakerOpen('events'), 'reference' => tnBreakerOpen('reference')],
+];
+// Per-page shares for today: pages that got no TicketNetwork answer, pages that kept a stored list over an empty live answer, and
+// whether either is worth a look (see tnStatsSummary()).
+$tnSummary = tnStatsSummary($tnStats);
+$out['ticketnetwork']['pages'] = $tnSummary['pages'];
+$out['ticketnetwork']['noDataRate'] = $tnSummary['pages'] > 0 ? $tnSummary['rate'] : null;
+$out['ticketnetwork']['emptySuspectRate'] = $tnSummary['pages'] > 0 ? $tnSummary['suspectRate'] : null;
+// Per call: 429s from TicketNetwork against calls our own TN_CALLS_PER_SECOND budget held back. A high overBudget with few throttled
+// means the local rate is the bottleneck; the reverse means the API's limit is lower than the rate we send.
+$out['ticketnetwork']['throttled'] = $tnSummary['throttled'];
+$out['ticketnetwork']['overBudget'] = $tnSummary['overBudget'];
+$out['ticketnetwork']['alert'] = $tnSummary['alert'];
+if ($tnSummary['alert']) $out['ok'] = false;
+
 try {
     $img = ['byStatus' => []];
     $res = @MYSQLI->query('SELECT status, COUNT(*) FROM images GROUP BY status');

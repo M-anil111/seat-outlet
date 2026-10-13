@@ -4,7 +4,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 	<div class="modal-dialog modal-dialog-centered">
 		<div class="modal-content pb-4">
 			<div class="modal-header">
-				<h5 class="modal-title" id="staticBackdropLabel">Our 100% Guarantee</h5>
+				<h2 class="modal-title h5" id="staticBackdropLabel">Our 100% Guarantee</h2>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">

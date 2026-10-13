@@ -4,7 +4,7 @@ require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/inc/account.php';
 require_once __DIR__ . '/inc/account-pages.php';
 if (soAcctUser() !== null) soAcctRedirect('/account');
-$pageNoCache = true; $pageRobots = 'noindex, nofollow';
+$pageNoCache = true; $pageRobots = 'noindex, nofollow'; $pageCanonicalUrl = HOME_URL . '/login';
 [$pageMetaTitle, $pageMetaDescription] = soAcctMeta('Sign in', 'Sign in or create a Seat Outlet account with an emailed link. No password.');
 include 'header.php';
 echo soAcctStyle();
