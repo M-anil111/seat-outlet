@@ -155,11 +155,17 @@ no APCu, so the APCu-only caches never worked in production).
   visitor after an expiry does not pay API latency and a crowd cannot stampede
   the API.
 - *Circuit breaker.* After a live failure (network error, invalid JSON, HTTP
-  5xx) live calls are skipped for 20 seconds and stale data (up to 24 h) or an
-  empty result is served, instead of every request waiting out a 20-second
-  timeout. Scoped per `BASE_URL`.
-- *Stale on error.* A failed live call falls back to any cached copy younger
-  than 24 h.
+  5xx) live calls are skipped for 20 seconds (60 seconds, or the server's
+  `Retry-After` from 5 to 300 s, after a throttle), and stale data or an empty
+  result is served instead of every request waiting out a 20-second timeout.
+  Scoped per `BASE_URL` and per family of calls: event lists, details and search
+  (`events`) pause separately from performers, venues and categories
+  (`reference`), so a throttle on one does not stop the other (`tnBreakerFamily()`).
+- *Stale on error.* A failed live call falls back to a cached copy only within
+  its window: event lists and event details 2 hours (`TN_STALE_LISTING`), stored
+  event copies 24 hours (`TN_LISTING_COPY_TTL`), reference data such as
+  performers, venues and categories 14 days (`TN_STALE_ON_ERROR`). See
+  `docs/reliability.md`, "Removed events and stale answers".
 - *Parallel prefetch.* `tnRequestMulti()` fetches independent requests with
   `curl_multi` and fills the cache; pages call it once at the top and the
   normal calls below hit the cache (performer, artist-by-location, sitemap,

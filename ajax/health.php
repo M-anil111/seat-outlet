@@ -32,6 +32,10 @@ try {
     $out['ok'] = false;
 }
 
+// Today's TicketNetwork outcomes from visitor requests (counts only): live calls, stale answers, event copies, no-data pages, trips.
+$tnStats = @file_get_contents(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json');
+$out['ticketnetwork'] = ['today' => $tnStats !== false ? (json_decode($tnStats, true) ?: []) : []];
+
 try {
     $img = ['byStatus' => []];
     $res = @MYSQLI->query('SELECT status, COUNT(*) FROM images GROUP BY status');

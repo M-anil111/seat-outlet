@@ -51,8 +51,8 @@ foreach ($tabs as $tab) {
         }
     }
 
-    // An empty answer (a throttled or failed fetch) keeps the last good list instead of blanking the home page.
-    // Readers stop using any list older than 2 days, so a list TicketNetwork has dropped does not linger.
+    // An empty answer (a throttled or failed fetch) keeps the last good list instead of blanking the home page. Every reader of
+    // home_events_* uses a 2-day limit (site pages, search, order confirmation, image warm-up and the SEO schema file).
     if ($output) {
         cache_set("home_events_{$tab}", $output);
     }

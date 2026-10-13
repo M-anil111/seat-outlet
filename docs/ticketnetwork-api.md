@@ -118,13 +118,13 @@ Verified: nothing. No public page states a request-per-second, per-minute or dai
 
 ### 3.3 What the repo already does to stay within limits (Verified, repo)
 
-File cache per endpoint (reference data 6 h, event lists 10 min, search 5 min, suggest 1 h), stale-while-revalidate, a circuit breaker (20 s in code, `TN_BREAKER_SECONDS`; `docs/reliability.md` says 60 s, which is out of date), 14-day stale-on-error, page snapshots, parallel prefetch limited, crons that stop when throttled. The warmer visits sitemap URLs at one per second.
+File cache per endpoint (reference data 6 h, event lists 10 min, search 5 min, suggest 1 h), stale-while-revalidate, a circuit breaker per family of calls (events and reference data; 20 s for ordinary errors, `TN_BREAKER_SECONDS`; 60 s or the server's `Retry-After` for a throttle, `TN_BREAKER_THROTTLE_SECONDS`), a shared call budget (`TN_CALLS_PER_SECOND`, default 1), stale-on-error limits (event lists and details 2 h, stored event copies 24 h, reference data 14 days), page snapshots, parallel prefetch limited, crons that stop when throttled. The warmer visits event details in batches of up to 40 per 15-minute run with a stored cursor.
 
-Note on documentation drift: `docs/reliability.md` and CONTRIBUTING.md differ on stale windows (24 h vs 14 days) and breaker length. The code constants are the source of truth; update the docs when convenient.
+The code constants are the source of truth. `docs/reliability.md` ("Removed events and stale answers") and CONTRIBUTING.md list the same windows.
 
 ### 3.4 Terms-of-use risk on cached data
 
-Inference and Needs confirmation. The site stores API responses on disk for up to 14 days when the API fails, and stores full rendered pages (including prices) for up to 14 days and serves them as 200 pages. Prices and availability change in minutes. If TicketNetwork's terms limit how long catalog or price data may be cached or displayed, or require showing live prices, the 14-day price snapshots may breach them and may also show stale prices to buyers. Ask for the written caching rule before launch and, until answered, consider showing "price at last update" wording or omitting prices on snapshot-served pages. Also confirm whether structured data (schema.org Offer/price) from cached prices is allowed.
+Inference and Needs confirmation. When the live call fails, the site serves stored event data for at most 2 hours (event lists and details), 24 hours (stored event copies and the database snapshot), or 14 days (reference data only: performers, venues, categories). Event copies carry prices, and prices change in minutes. If TicketNetwork's terms limit how long catalog or price data may be cached or displayed, or require showing live prices, the 24-hour copies may still breach them. Until the rule is answered, copy-served event pages should show "prices as of" the time the copy was seen, or omit prices. Also confirm whether structured data (schema.org Offer/price) from cached prices is allowed.
 
 ### 3.5 What to ask TicketNetwork to raise
 

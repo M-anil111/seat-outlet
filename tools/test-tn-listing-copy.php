@@ -41,8 +41,16 @@ tlCheck('a scalar where a nested object belongs is not a copy', !tnListingCopyCo
 tlCheck('a row with no id is not a copy', !tnListingCopyComplete(array_merge($row, ['id' => 0])));
 tlCheck('a copy window of 24 hours (an event TicketNetwork drops leaves within a day)', TN_LISTING_COPY_TTL === 86400);
 $fnSrc = file_get_contents(__DIR__ . '/../functions.php');
-tlCheck('event lists and details stop standing in for a failed call after 2 hours', strpos($fnSrc, 'const TN_STALE_LISTING = 7200;') !== false);
-tlCheck('reference data (performers, venues) may stand in for 14 days', strpos($fnSrc, 'const TN_STALE_ON_ERROR = 1209600;') !== false);
+tlCheck('event lists and details stop standing in for a failed call after 2 hours', TN_STALE_LISTING === 7200);
+tlCheck('reference data (performers, venues) may stand in for 14 days', TN_STALE_ON_ERROR === 14 * 86400);
+$evSrc = file_get_contents(__DIR__ . '/../event.php');
+tlCheck('a copy-served event page drops its prices and says when the copy was saved', strpos($evSrc, "unset(\$event['pricingInfo']);") !== false && strpos($evSrc, 'Event details saved on') !== false);
+tlCheck('the copy time is recorded when a copy or snapshot answers', strpos($fnSrc, "\$GLOBALS['so_event_as_of'] = (int) @filemtime") !== false && strpos($fnSrc, "\$GLOBALS['so_event_as_of'] = (int) (\$GLOBALS['so_snapshot_seen']") !== false);
+tlCheck('event list endpoint gets the 2-hour limit', tnStaleLimit('/catalog/v2/events/') === 7200);
+tlCheck('event detail endpoint gets the 2-hour limit', tnStaleLimit('/catalog/v2/events/8139366') === 7200);
+tlCheck('event search endpoint gets the 2-hour limit', tnStaleLimit('/catalog/v2/events/search') === 7200);
+tlCheck('performer endpoint gets the 14-day limit', tnStaleLimit('/catalog/v2/performers/1451') === 14 * 86400);
+tlCheck('venue endpoint gets the 14-day limit', tnStaleLimit('/catalog/v2/venues/') === 14 * 86400);
 tlCheck('no stale check uses the fixed 14-day limit (each picks its limit by endpoint)', strpos($fnSrc, "['age'] <= TN_STALE_ON_ERROR") === false && substr_count($fnSrc, "['age'] <= tnStaleLimit(\$endpoint)") === 5);
 
 // 4. Wiring: the live code uses these helpers in the places the fix depends on

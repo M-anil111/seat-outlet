@@ -44,6 +44,7 @@ if (
     $lng = floatval($searchInput['lngHeader']);
     $params['geoFilter'] = sprintf('nearby(%F, %F, 50mi)', $lat, $lng);
 }
+// The 50-mile filter applies only when the visitor has typed a location. Coordinates alone (for example a stored browser value) never narrow results.
 
 /*
 |--------------------------------------------------------------------------
@@ -86,7 +87,8 @@ if (
     $endTimestamp   = strtotime($searchInput['endInputHeader']);
 
     if ($startTimestamp && $endTimestamp) {
-        $startDate = date('Y-m-d', $startTimestamp);
+        // Past dates are not searched: the window starts today at the earliest, and an end date before today ends the search.
+        $startDate = max(date('Y-m-d'), date('Y-m-d', $startTimestamp));
         $endDate   = date('Y-m-d', $endTimestamp);
         $filterParts[] = "date/date ge $startDate and date/date le $endDate";
         $hasHeaderRange = true;
@@ -169,6 +171,8 @@ if (empty($results['results']) && $keywordHeader !== '') {
 $total_count = (int) ($results['totalCount'] ?? 0);
 $events = $results['results'] ?? [];
 // Exact name first, tribute and similar acts last, in-stock before the rest (Best match only; a chosen sort is respected).
+// Best match ranks the fetched page: in-stock dates first, exact names next, tribute acts last. It reorders the results, it never
+// removes one. Each page is ranked on its own, so the order across a page boundary is not one global order.
 if ($searchSort === '' && $keywordHeader !== '') {
     $events = soRankSearchEvents($events, $keywordHeader);
 }

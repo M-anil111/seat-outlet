@@ -93,6 +93,17 @@ tbCheck('the cold path is single-flight', strpos($fn, '$flight = tnFlightOpen($f
 tbCheck('the breaker after a throttle uses Retry-After', strpos($fn, 'tnThrottleWait($GLOBALS[\'tn_retry_after\'] ?? null') !== false);
 tbCheck('the header callback keeps Retry-After', strpos($fn, 'tnRetryAfterFromHeader($line)') !== false);
 
+// 5. Breaker families: event lists, details and search pause together; reference data has its own circuit
+tbCheck('an event list is in the events family', tnBreakerFamily('/catalog/v2/events/') === 'events');
+tbCheck('an event detail is in the events family', tnBreakerFamily('/catalog/v2/events/8139366') === 'events');
+tbCheck('event search is in the events family', tnBreakerFamily('/catalog/v2/events/search') === 'events');
+tbCheck('a performer lookup is in the reference family', tnBreakerFamily('/catalog/v2/performers/1451') === 'reference');
+tbCheck('the two families are the ones the breaker tracks', TN_BREAKER_FAMILIES === ['events', 'reference']);
+$fnBreaker = file_get_contents(__DIR__ . '/../functions.php');
+tbCheck('the request path checks the breaker of the call\'s own family', substr_count($fnBreaker, 'tnBreakerOpen(tnBreakerFamily($endpoint))') >= 4);
+tbCheck('the request path trips only the call\'s own family', substr_count($fnBreaker, ', tnBreakerFamily($endpoint));') >= 3);
+tbCheck('performer lookups check the reference family', strpos($fnBreaker, "tnBreakerOpen('reference')") !== false);
+
 // tidy up
 @unlink($bucket); @unlink($bucket . '.lock'); @unlink($flight); @rmdir($dir);
 

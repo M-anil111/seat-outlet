@@ -4,6 +4,18 @@
  * tools/test-tn-listing-copy.php can load them without the rest of the site.
  */
 
+/** Longest a stale answer may stand in for a failed live call: reference data (performers, venues, categories), 14 days. */
+const TN_STALE_ON_ERROR = 1209600;
+
+/** Longest a stale event list or event detail may stand in for a failed live call: 2 hours. A dropped event must leave the site within hours. */
+const TN_STALE_LISTING = 7200;
+
+/** How old a stored answer may be when a live call fails. Event data is short-lived; reference data is not. */
+function tnStaleLimit($endpoint): int {
+    $e = trim((string) $endpoint, '/');
+    return (strpos($e, 'catalog/v2/events') === 0 || strpos($e, 'events/search') !== false) ? TN_STALE_LISTING : TN_STALE_ON_ERROR;
+}
+
 /**
  * How long a saved copy of an event may answer for it when its live call fails: 24 hours. TicketNetwork drops events from its feed,
  * and an event it no longer lists must not be shown from an old copy for weeks. A confirmed "not found" deletes the copies at once.

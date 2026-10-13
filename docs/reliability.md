@@ -49,7 +49,8 @@ Empty categories and empty location pages are indexable again; an empty page is 
 
 Every live TicketNetwork call takes a token from one bucket shared by the PHP processes that use the same `cache/` directory (web requests, crons, crawlers on one host). Separate hosts have separate buckets.
 
-- Default 1 call a second (`TN_CALLS_PER_SECOND`; 0 turns the budget off). The default was 4 until production kept returning 429 (HTTP throttling) under it; the production limit for our key is not yet confirmed by TicketNetwork. Raise it only when TicketNetwork confirms a higher limit for our key.
+- Default 1 call a second (`TN_CALLS_PER_SECOND`; 0 turns the budget off).
+- The circuit breaker is kept per family: event lists, details and search (`events`), and performers, venues, cities and categories (`reference`). A throttle on one family does not stop the other. The default was 4 until production kept returning 429 (HTTP throttling) under it; the production limit for our key is not yet confirmed by TicketNetwork. Raise it only when TicketNetwork confirms a higher limit for our key.
 - A visitor (web request) may use the whole bucket and waits up to 1.5 seconds for a token. Over budget, the page answers from its stored copy, like an outage, and no call is made.
 - A cron (CLI) may use only the upper half of the bucket, so a warmer cannot use up the calls visitors need.
 - Concurrent requests for the same cold key share one call (single-flight). The others wait up to 3 seconds for its answer.
@@ -67,12 +68,13 @@ TicketNetwork is the only source of what is on sale. The site may show an older 
 
 | What | Stale answer allowed when the live call fails | Where it is set |
 |---|---|---|
-| Event lists (artist, city, venue, category, search, home feed) and event details | 2 hours | `TN_STALE_LISTING`, `tnStaleLimit()` in `functions.php` |
+| Live event lists (artist, city, venue, category, search, load-more) and event details | 2 hours | `TN_STALE_LISTING`, `tnStaleLimit()` in `functions.php` |
 | Stored event copies and snapshots (event page fallback) | 24 hours | `TN_LISTING_COPY_TTL` in `inc/tn-listing-copy.php` |
 | Reference data (performers, venues, categories) | 14 days | `TN_STALE_ON_ERROR` in `functions.php` |
 | Home event lists (`home_events_*`, written by `cron/home-events.php`) | 2 days, and an empty answer does not overwrite the last list | `search.php`, `order-confirmation.php`, `cron/home-events.php` |
 
-- A successful answer replaces the old one. An event that TicketNetwork no longer returns leaves a list on the next successful refresh (normally within about 40 minutes, the cache TTL plus grace).
+- A successful answer replaces the old one. An event that TicketNetwork no longer returns leaves a live list on the next successful refresh (normally within about 40 minutes, the cache TTL plus grace).
+- The home lists (`home_events_*`, written by `cron/home-events.php`) are the exception. They are precomputed, so an empty refresh keeps the previous list, and every reader stops using a list older than 2 days (home pages, search, order confirmation, image warm-up, and the SEO schema file).
 - A confirmed "not found" on an event detail deletes its stored copies at once (`tnForgetEventCopies()`), so no fallback can show it again.
 - During a throttle or outage an event may stay visible for up to 2 hours (lists) or 24 hours (copies). That trade-off keeps pages up while the API is limited. Lower `TN_STALE_LISTING` if removals must show faster during outages.
 

@@ -9,6 +9,18 @@
  * continue; raise it only when TicketNetwork confirms a higher limit.
  */
 
+/**
+ * Each family of live calls has its own circuit, so a throttle on event lists does not stop performer or venue lookups (and the
+ * other way round). Calls with no endpoint in hand (crons, the sitemap build) check every family.
+ */
+const TN_BREAKER_FAMILIES = ['events', 'reference'];
+
+/** The family of an endpoint: event lists, details and search are "events"; everything else is "reference". */
+function tnBreakerFamily($endpoint): string {
+    $e = trim((string) $endpoint, '/');
+    return (strpos($e, 'catalog/v2/events') === 0 || strpos($e, 'events/search') !== false) ? 'events' : 'reference';
+}
+
 /** Live calls per second the whole site may make to TicketNetwork. */
 function tnCallsPerSecond(): float {
     $v = getenv('TN_CALLS_PER_SECOND');
@@ -48,7 +60,10 @@ function tnBucketWait(bool $background, float $rate, string $file, float $maxWai
     $deadline = microtime(true) + $maxWait;
     do {
         if (tnBucketTake(false, $rate, $file)) return true;
-        usleep(150000);
+        // Sleep no longer than the time left, so the wait never runs past $maxWait by a whole polling step.
+        $left = $deadline - microtime(true);
+        if ($left <= 0) break;
+        usleep((int) (min(0.15, $left) * 1000000));
     } while (microtime(true) < $deadline);
     return false;
 }

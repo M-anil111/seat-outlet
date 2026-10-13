@@ -78,7 +78,7 @@ if (!empty($events)) {
 
 if (empty($output) && $type !== '') {
     $fallbackKey = "home_events_{$tab}";
-    $fallbackCache = cache_get($fallbackKey);
+    $fallbackCache = cache_get($fallbackKey, 2 * 86400);   // the same 2-day limit as every other reader of the home lists
 
     if ($fallbackCache !== false) {
         header('Cache-Control: public, max-age=86400');

@@ -30,7 +30,10 @@ tsCheck('tnSnapshotGet catches its own errors (a database fault never breaks a p
 tsCheck('snapshot checks the database handle before using it', strpos($fn, 'function tnSnapshotDb(): bool {') !== false && strpos($fn, 'return defined(\'MYSQLI\') && MYSQLI instanceof mysqli;') !== false);
 tsCheck('listing answers also refresh the snapshot', strpos($fn, '        tnSnapshotSave($id, $row);') !== false);
 tsCheck('a snapshot older than the copy window is not used', strpos($fn, 'AND seen_at >= NOW() - INTERVAL ? SECOND') !== false);
-tsCheck('a confirmed "not found" deletes the stored copies (file and snapshot)', strpos($fn, 'function tnForgetEventCopies') !== false && strpos($fn, 'tnEntityDefinitelyMissing($event)) { tnForgetEventCopies($eventId); return $event; }') !== false && strpos($fn, "DELETE FROM tn_event_snapshot WHERE event_id = ?") !== false);
+$forget = $body('function tnForgetEventCopies');
+tsCheck('a confirmed "not found" calls the helper that deletes the stored copies', strpos($fn, 'tnEntityDefinitelyMissing($event)) { tnForgetEventCopies($eventId); return $event; }') !== false);
+tsCheck('the helper deletes the file copy (tn_event_copy_<id>)', strpos($forget, "unlink(cache_file_path('tn_event_copy_' . \$id))") !== false);
+tsCheck('the helper deletes the database snapshot row', strpos($forget, 'DELETE FROM tn_event_snapshot WHERE event_id = ?') !== false);
 
 $cron = file_get_contents(__DIR__ . '/../cron/warm-event-details.php');
 tsCheck('the warm-up job prunes snapshots unseen for 180 days', strpos($cron, 'INTERVAL 180 DAY') !== false);

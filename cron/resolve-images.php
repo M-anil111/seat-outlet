@@ -32,7 +32,7 @@ foreach (['concerts' => 'artist', 'sports' => 'team', 'theater' => 'artist'] as 
     }
 }
 foreach (['concerts', 'sports', 'theatre', 'festival'] as $tab) {
-    foreach (cache_get('home_events_' . $tab, 30 * 86400) ?: [] as $ev) {
+    foreach (cache_get('home_events_' . $tab, 2 * 86400) ?: [] as $ev) {   // the same 2-day limit as the site's home lists
         if (empty($ev['performer'])) continue;
         $type = imageEntityTypeForPerformer($ev['defaultCategory'] ?? []);
         if (imageQueue($type, $ev['performer'], $ev['placeholder'] ?? imageFallbackUrl($type, $ev['defaultCategory'] ?? [], $tab))) $queued++;
