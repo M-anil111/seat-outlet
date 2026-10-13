@@ -36,11 +36,11 @@ tbCheck('a background call never waits for a token', tnBucketWait(true, 1.0, $bu
 
 // 1b. Device scope: web and cron get their own tokens, so one refresh cannot revoke the other's
 putenv('TN_DEVICE_ID');
-tbCheck('a CLI process asks for its own device scope', tnDeviceScope() === 'device_cli' || PHP_SAPI !== 'cli');
+tbCheck('a CLI process with no configured id asks for device_cli', tnDeviceScope() === 'device_cli');
 putenv('TN_DEVICE_ID=host-2');
-tbCheck('TN_DEVICE_ID names the device', tnDeviceScope() === 'device_host-2');
+tbCheck('TN_DEVICE_ID names the device and the role (cli here)', tnDeviceScope() === 'device_host-2_cli');
 putenv('TN_DEVICE_ID=bad id/../x');
-tbCheck('the device id is cleaned for use in a scope and a file name', tnDeviceScope() === 'device_badidx');
+tbCheck('the device id is cleaned for use in a scope and a file name', tnDeviceScope() === 'device_badidx_cli');
 putenv('TN_DEVICE_ID');
 
 // 2. Retry-After: numeric seconds are read; HTTP dates and other headers are not; the breaker length is clamped
@@ -58,7 +58,8 @@ $lead = tnFlightOpen($flight);
 tbCheck('the first request leads', is_resource($lead));
 tbCheck('a second request while the first is fetching is a follower', tnFlightOpen($flight) === false);
 $stored = ['id' => 7];
-tbCheck('a follower returns the answer once the leader stores it', tnFlightWait($flight, fn() => $stored, 1.0) === $stored);
+$polls = 0;
+tbCheck('a follower waits and returns the answer once the leader stores it', tnFlightWait($flight, function () use (&$polls, $stored) { return ++$polls > 1 ? $stored : false; }, 1.0) === $stored && $polls >= 2);
 tnFlightClose($lead);
 tbCheck('after the leader closes, a new request leads again', is_resource($nextLead = tnFlightOpen($flight)));
 tnFlightClose($nextLead);

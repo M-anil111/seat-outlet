@@ -12,7 +12,7 @@
 /** Live calls per second the whole site may make to TicketNetwork. */
 function tnCallsPerSecond(): float {
     $v = getenv('TN_CALLS_PER_SECOND');
-    return ($v === false || $v === '') ? 4.0 : max(0.0, (float) $v);
+    return ($v === false || $v === '' || !is_numeric($v)) ? 4.0 : max(0.0, (float) $v);
 }
 
 /**
@@ -25,7 +25,10 @@ function tnBucketTake(bool $background, float $rate, string $file, ?float $now =
     $burst = max(2.0, $rate * 2);
     $fh = @fopen($file . '.lock', 'c');
     if (!$fh) return true;
-    flock($fh, LOCK_EX);
+    if (!flock($fh, LOCK_EX)) {   // no lock: do not block and do not count (fail open, as above)
+        fclose($fh);
+        return true;
+    }
     $state = is_file($file) ? json_decode((string) @file_get_contents($file), true) : null;
     $tokens = is_array($state) ? (float) ($state['tokens'] ?? $burst) : $burst;
     $last = is_array($state) ? (float) ($state['t'] ?? $now) : $now;
@@ -45,7 +48,7 @@ function tnBucketWait(bool $background, float $rate, string $file, float $maxWai
     $deadline = microtime(true) + $maxWait;
     do {
         if (tnBucketTake(false, $rate, $file)) return true;
-        usleep(50000);
+        usleep(150000);
     } while (microtime(true) < $deadline);
     return false;
 }
@@ -93,7 +96,10 @@ function tnFlightWait(string $path, callable $cached, float $maxWait = 3.0) {
         $free = flock($fh, LOCK_EX | LOCK_NB);
         if ($free) flock($fh, LOCK_UN);
         fclose($fh);
-        if ($free) return false;
+        if ($free) {   // the leader is done: its answer may have been stored just before it let go
+            $hit = $cached();
+            return $hit !== false ? $hit : false;
+        }
         usleep(100000);
     } while (microtime(true) < $deadline);
     return false;
@@ -106,6 +112,7 @@ function tnFlightWait(string $path, callable $cached, float $maxWait = 3.0) {
  */
 function tnDeviceScope() {
     $id = getenv('TN_DEVICE_ID');
-    if ($id === false || $id === '') $id = PHP_SAPI === 'cli' ? 'cli' : 'web';
-    return 'device_' . preg_replace('/[^a-z0-9_-]/i', '', $id);
+    $id = ($id === false || $id === '') ? '' : preg_replace('/[^a-z0-9_-]/i', '', $id) . '_';
+    // The role is part of the scope, so web and cron keep separate tokens even when they share one configured id.
+    return 'device_' . $id . (PHP_SAPI === 'cli' ? 'cli' : 'web');
 }

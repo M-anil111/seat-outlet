@@ -402,7 +402,7 @@ function tnBuildHandle($endpoint, array $params, $method, $token) {
         // Keep the server's Retry-After on a throttle (tnThrottleWait() sets the breaker from it).
         CURLOPT_HEADERFUNCTION => function ($ch, $line) {
             $after = tnRetryAfterFromHeader($line);
-            if ($after !== null) $GLOBALS['tn_retry_after'] = $after;
+            if ($after !== null) { $GLOBALS['tn_retry_after'] = $after; $GLOBALS['tn_retry_after_ch'][spl_object_id($ch)] = $after; }
             return strlen($line);
         },
     ]);
@@ -590,7 +590,10 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
     $flightPath = cache_file_path($key) . '.flight';
     $flight = tnFlightOpen($flightPath);
     if ($flight === false) {
-        $shared = tnFlightWait($flightPath, fn() => cache_get($key, $ttl));
+        $shared = tnFlightWait($flightPath, function () use ($key, $ttl) {
+            $hit = cache_get($key, $ttl);
+            return $hit !== false ? $hit : cache_get($key . '_nf', TN_NEGATIVE_TTL);
+        });
         if ($shared !== false) { tnProfile($endpoint, true, 0); return $shared; }
         tnMarkDegraded();
         return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
@@ -687,9 +690,19 @@ function tnRequestMulti(array $requests) {
     $token = getTnAccessToken();
     $mh = curl_multi_init();
     $handles = [];
+    $budgetFile = cache_dir() . 'tn_bucket.json';
     foreach ($todo as $i => [$endpoint, $params]) {
+        // Every outbound call takes a token from the shared budget. A call over budget is not sent: the page answers from its stored copy.
+        if (!tnBucketTake(PHP_SAPI === 'cli', tnCallsPerSecond(), $budgetFile)) {
+            if (empty($out[$i])) tnMarkDegraded();
+            continue;
+        }
         $handles[$i] = tnBuildHandle($endpoint, $params, 'GET', $token);
         curl_multi_add_handle($mh, $handles[$i]);
+    }
+    if (!$handles) {
+        curl_multi_close($mh);
+        return $out;
     }
     $running = null;
     do {
@@ -707,10 +720,12 @@ function tnRequestMulti(array $requests) {
         }
         if ($r['ok']) {
             $out[$i] = $r['data'];
+            if ($r['cacheable'] && strpos((string) $endpoint, '/catalog/v2/events') === 0) tnSaveListingCopies($r['data']);
             if ($ttl > 0 && $r['cacheable']) cache_set($key, $r['data']);
             elseif ($ttl > 0 && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) cache_set($key . '_nf', $r['data']);
         } else {
-            tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
+            $after = $GLOBALS['tn_retry_after_ch'][spl_object_id($ch)] ?? null;
+            tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($after, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS);
             if (empty($out[$i])) tnMarkDegraded();
         }
         curl_multi_remove_handle($mh, $ch);
@@ -741,6 +756,7 @@ function tnCacheSweep() {
     }
     foreach ((glob($dir . '*.json.tmp_*') ?: []) as $file) { if ((int) @filemtime($file) < $now - 3600) @unlink($file); }
     foreach ((glob($dir . '*.lock') ?: []) as $file) { if ((int) @filemtime($file) < $now - 3600) @unlink($file); }
+    foreach ((glob($dir . '*.flight') ?: []) as $file) { if ((int) @filemtime($file) < $now - 3600) @unlink($file); }
 }
 
 /** Kept for existing callers; tnRequest() itself now caches. */
@@ -996,9 +1012,9 @@ function getTnEventById($eventId) {
     // The live call failed. Fall back to the last good copy: first the file copy a listing saved, then the durable snapshot.
     // With neither, the caller gets the failure and shows the honest message (no invented details).
     $copy = cache_get('tn_event_copy_' . $eventId, TN_LISTING_COPY_TTL);
-    if (is_array($copy) && tnListingCopyComplete($copy)) return $copy;
+    if (is_array($copy) && tnListingCopyComplete($copy)) return soCleanTnNames($copy);
     $snap = tnSnapshotGet($eventId);
-    if ($snap !== false && tnListingCopyComplete($snap)) return $snap;
+    if ($snap !== false && tnListingCopyComplete($snap)) return soCleanTnNames($snap);
     return $event;
 }
 
@@ -1006,6 +1022,7 @@ function getTnEventById($eventId) {
 function tnSaveListingCopies($data): void {
     foreach (tnListRows($data) as $row) {
         if (!tnListingCopyComplete($row)) continue;
+        $row = soCleanTnNames($row);   // the same display names as a live answer, so every stored copy has one shape
         $id = (int) $row['id'];
         $key = 'tn_event_copy_' . $id;
         if (cache_get($key, TN_LISTING_COPY_TTL / 2) === false) cache_set($key, $row);
@@ -1027,7 +1044,7 @@ function tnSnapshotSave(int $id, $row): void {
     if ($id <= 0 || !is_array($row) || !tnListingCopyComplete($row) || !tnSnapshotDb()) return;
     $throttle = 'tn_snap_w_' . $id;
     if (cache_get($throttle, 3600) !== false) return;
-    cache_set($throttle, 1);
+    cache_set($throttle, ['seen' => 1]);
     try {
         $json = json_encode($row, JSON_UNESCAPED_UNICODE);
         if ($json === false) return;

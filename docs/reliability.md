@@ -47,7 +47,7 @@ Empty categories and empty location pages are indexable again; an empty page is 
 
 ## Shared call budget (TN_CALLS_PER_SECOND)
 
-Every live TicketNetwork call takes a token from one bucket shared by all PHP processes (web requests, crons, crawlers).
+Every live TicketNetwork call takes a token from one bucket shared by the PHP processes that use the same `cache/` directory (web requests, crons, crawlers on one host). Separate hosts have separate buckets.
 
 - Default 4 calls a second (`TN_CALLS_PER_SECOND`; 0 turns the budget off). Start lower if 429s continue, and raise it only when TicketNetwork confirms a higher limit for our key.
 - A visitor (web request) may use the whole bucket and waits up to 1.5 seconds for a token. Over budget, the page answers from its stored copy, like an outage, and no call is made.
@@ -59,7 +59,7 @@ Every live TicketNetwork call takes a token from one bucket shared by all PHP pr
 
 ## Event data backup (tn_event_snapshot)
 
-Every event the site loads successfully, and every complete event row a listing returns, is also stored in the database table `tn_event_snapshot` (migration 0048). The event page uses the last stored copy when the live TicketNetwork call fails: first the file copy from a listing (14 days), then the database snapshot (kept until the event has not been seen for 180 days). Rows are written at most once an hour per event.
+Every complete event the site loads successfully, and every complete event row a listing returns, is also stored in the database table `tn_event_snapshot` (migration 0048). The event page uses the last stored copy when the live TicketNetwork call fails: first the file copy from a listing (14 days), then the database snapshot (kept until the event has not been seen for 180 days). Rows are written at most once an hour per event.
 
 - The nightly database dump (`cron/backup-db.php`) includes the table, so the event copies are backed up with the rest of the data. The file cache is not backed up; it is only a fast copy.
 - A brand-new event that has never been listed or opened still has no copy until TicketNetwork answers.

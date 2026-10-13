@@ -13,7 +13,7 @@ const TN_LISTING_COPY_TTL = 1209600;
  */
 function soSafeParseQuery($query): array {
     $query = (string) $query;
-    if ($query === '' || strlen($query) > 2000 || substr_count($query, '[') > 16) return [];
+    if ($query === '' || strlen($query) > 2000 || substr_count(urldecode($query), '[') > 16) return [];
     $out = [];
     parse_str($query, $out);
     return is_array($out) ? $out : [];
@@ -34,8 +34,8 @@ function tnListRows($data): array {
 /** True when a listing row has what the event page renders: an id, a name, a venue, a city and a date. */
 function tnListingCopyComplete($row): bool {
     if (!is_array($row) || (int) ($row['id'] ?? 0) <= 0) return false;
-    return trim((string) ($row['text']['name'] ?? '')) !== ''
-        && trim((string) ($row['venue']['text']['name'] ?? '')) !== ''
-        && trim((string) ($row['city']['text']['name'] ?? '')) !== ''
-        && trim((string) ($row['date']['date'] ?? '')) !== '';
+    return is_array($row['text'] ?? null) && is_string($row['text']['name'] ?? null) && trim($row['text']['name']) !== ''
+        && is_array($row['venue'] ?? null) && is_array($row['venue']['text'] ?? null) && is_string($row['venue']['text']['name'] ?? null) && trim($row['venue']['text']['name']) !== ''
+        && is_array($row['city'] ?? null) && is_array($row['city']['text'] ?? null) && is_string($row['city']['text']['name'] ?? null) && trim($row['city']['text']['name']) !== ''
+        && is_array($row['date'] ?? null) && is_string($row['date']['date'] ?? null) && trim($row['date']['date']) !== '';
 }

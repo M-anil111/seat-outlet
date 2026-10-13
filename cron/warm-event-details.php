@@ -28,7 +28,10 @@ foreach (['', TN_CATEGORY_PATH_CONCERTS, TN_CATEGORY_PATH_SPORTS, TN_CATEGORY_PA
 
 $ok = 0;
 $failed = 0;
-foreach (array_slice(array_keys($ids), 0, $batch) as $id) {
+$allIds = array_keys($ids);
+$start = $allIds ? ((int) floor(time() / 900) * $batch) % count($allIds) : 0;   // another window each 15-minute run
+$window = $allIds ? array_slice(array_merge(array_slice($allIds, $start), $allIds), 0, min($batch, count($allIds))) : [];
+foreach ($window as $id) {
     $event = getTnEventById($id);   // a fresh cache answers without a call; a stale one is refreshed
     if (!tnEntityUnavailable($event)) $ok++; else $failed++;
     usleep(500000);   // half a second between calls

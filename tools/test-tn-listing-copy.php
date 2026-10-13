@@ -17,6 +17,7 @@ tlCheck('an empty query string gives nothing', soSafeParseQuery('') === [] && so
 $flood = str_repeat('a[', 70) . 'b=1';
 tlCheck('a bracket flood is ignored', soSafeParseQuery($flood) === []);
 tlCheck('a bracket flood logs no PHP warning', $warnings === 0);
+tlCheck('an encoded bracket flood (a%5B...) is ignored too', soSafeParseQuery(str_repeat('a%5B', 70) . 'b=1') === []);
 tlCheck('an oversized query string is ignored', soSafeParseQuery('x=' . str_repeat('a', 2001)) === []);
 restore_error_handler();
 
@@ -34,6 +35,8 @@ tlCheck('a complete row is a usable copy', tnListingCopyComplete($row));
 tlCheck('a row with no venue is not a copy', !tnListingCopyComplete(array_diff_key($row, ['venue' => 1])));
 tlCheck('a row with no city is not a copy', !tnListingCopyComplete(array_merge($row, ['city' => []])));
 tlCheck('a row with no date is not a copy', !tnListingCopyComplete(array_merge($row, ['date' => ['date' => '']])));
+tlCheck('a nested name that is an array is not a copy (fails closed)', !tnListingCopyComplete(array_merge($row, ['text' => ['name' => ['Staind']]])));
+tlCheck('a scalar where a nested object belongs is not a copy', !tnListingCopyComplete(array_merge($row, ['venue' => 'Arena'])));
 tlCheck('a row with no id is not a copy', !tnListingCopyComplete(array_merge($row, ['id' => 0])));
 tlCheck('a copy window of 14 days', TN_LISTING_COPY_TTL === 14 * 86400);
 

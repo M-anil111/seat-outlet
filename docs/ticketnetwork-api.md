@@ -261,13 +261,13 @@ Third party (context only, not authoritative): https://stackoverflow.com/questio
 
 Repo files: `functions.php` (tnRequest and related), `inc/constants.php`, `checkout.php`, `order-confirmation.php`, `.github/workflows/tn-check.yml`, `.env.example`, `CONTRIBUTING.md`, `docs/reliability.md`, `docs/launch-checklist.md`, `docs/seatics-checkout-thankyou-implementation.md`.
 
-## 5. Verified against the sandbox (2026-10-12)
+## 6. Verified against the sandbox (2026-10-12)
 
 Source: the TicketNetwork "API Authorization" guide (V1.0) and the "API Client DevPortal Guide" (v4.0, 12/26/2025), plus live sandbox calls with the TestApplication. Credentials were used for these calls only and are not stored anywhere in the repo.
 
 - **Token:** `POST https://key-manager.tn-apis.com/oauth2/token`, HTTP Basic (consumer key and secret), `grant_type=client_credentials`. Response: `access_token`, `token_type` Bearer, `expires_in` 3600. Refresh a couple of minutes before expiry (the code refreshes 120 s early).
 - **Device scopes:** `scope=default device_<name>` gives one token per device. A new token revokes the previous token with the same scopes, so web and cron use separate device tokens (`device_web`, `device_cli`; set `TN_DEVICE_ID` per host). Two device tokens were checked together: both stayed valid.
-- **Expired or revoked token:** HTTP 401 with fault code 900901. The guide says to generate a new token and retry once. The code refreshes on any 401 and retries.
+- **Expired or revoked token:** HTTP 401 with fault code 900901. The guide says to generate a new token and retry once. The code refreshes and retries once for JSON 401 responses.
 - **Identity header:** `X-Listing-Context: website-config-id=12498` returns 200 with results on the sandbox. `X-Identity-Context` returns 400 with the same config id (tested 2026-10-12). The code keeps `X-Listing-Context`. Check with TicketNetwork (IntegrationSupport@TicketNetwork.com) if their documentation names `X-Identity-Context`.
 - **Throttling:** the DevPortal says the subscription tier controls throttling. The sandbox subscription is the Trial tier. The sandbox responses carried no rate-limit headers (no Retry-After, no quota headers). The production tier and limits must come from TicketNetwork WebSupport.
 - **List answers:** `GET /catalog/v2/events/` returns `{count, page, results: [...], _links, facets, spellcheck}`. Each row has `id`, `text.name`, `venue.text.name`, `city.text.name`, `date.date`, `stateProvince`, `country.alphaCode`, `defaultCategory`, `_metadata`. Before this check, `tnListRows()` read only an `events` key, so listing copies were never saved. Fixed.
