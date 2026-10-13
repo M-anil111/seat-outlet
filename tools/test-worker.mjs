@@ -76,6 +76,20 @@ globalThis.fetch = originWith404('/artist/real-page');
 r = await worker.fetch(new Request('https://seatoutlet.com/artist/real-page'));
 body = await r.text();
 eqj([r.status, body.includes('Page not found')], [404, true], 'a bare 404 under a deeper page path is branded too');
+// The pages that have their own fallback keep it when the origin answers a bare 404 (the generic branded 404 must not replace it)
+const SHELL = '<!doctype html><html><head><title>Terms</title><meta name="description" content="x"></head><body><main id="main">terms</main></body></html>';
+globalThis.fetch = async (input) => {
+  const u = new URL(typeof input === 'string' ? input : input.url);
+  if (u.pathname === '/terms-and-conditions') return new Response(SHELL, { status: 200, headers: { 'content-type': 'text/html; charset=UTF-8' } });
+  if (u.pathname === '/404') return new Response(BRANDED, { status: 404, headers: { 'content-type': 'text/html; charset=UTF-8' } });
+  return res404('File not found.\n');
+};
+r = await worker.fetch(new Request('https://seatoutlet.com/blog/how-to-avoid-ticket-scams'));
+body = await r.text();
+eqj([r.status, body.includes('Quick Guide'), body.includes('Page not found | Seat Outlet')], [200, true, false], 'a known blog post keeps its fallback page when the origin answers a bare 404');
+r = await worker.fetch(new Request('https://seatoutlet.com/policies'));
+body = await r.text();
+eqj([r.status, body.includes('Ticket Policies'), body.includes('Page not found | Seat Outlet')], [200, true, false], '/policies keeps its fallback page when the origin answers a bare 404');
 globalThis.fetch = realFetch;
 
 console.log(fail ? `${fail} failure(s)` : 'worker helpers: all passed');

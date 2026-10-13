@@ -46,5 +46,7 @@ $fn = file_get_contents($root . '/functions.php');
 dpCheck('functions.php loads the module and filters both performer lists', strpos($fn, "require_once __DIR__ . '/inc/dead-performers.php';") !== false && strpos($fn, "\$data['results'] = soDropDeadPerformers(\$data['results']);") !== false && strpos($fn, 'array_filter(soDropDeadPerformers($data[\'results\'] ?? [])') !== false, true);
 $ep = file_get_contents($root . '/inc/entity-pages.php');
 dpCheck('the top performer chips skip dead ids before the cut', strpos($ep, '$perf = array_diff_key($perf, $dead);') !== false && strpos($ep, '$perf = array_diff_key($perf, $dead);') < strpos($ep, "return ['performers' => \$sort("), true);
+$tp = file_get_contents($root . '/ajax/get-top-performers.php');
+dpCheck('the home cards drop dead performers when built and when served from the cache', strpos($fn, 'foreach (soDropDeadPerformers($data[\'results\']) as $item) {') !== false && strpos($tp, "\$data[\$key] = soDropDeadPerformers(\$data[\$key]);") !== false && strpos($tp, 'soDropDeadPerformers') < strpos($tp, 'getEntityImage'), true);
 echo $fail ? "$fail failed\n" : "dead performers: all passed\n";
 exit($fail ? 1 : 0);

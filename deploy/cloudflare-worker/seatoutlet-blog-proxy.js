@@ -159,7 +159,8 @@ var index_default = {
     }
     // The web server's own "File not found." (16 bytes) or default nginx 404 page: show the site's branded 404 instead, still with status 404.
     // Only page addresses: a missing image, script or font keeps the small answer (a 130 KB page would be worse than the 404).
-    if (response.status === 404 && (request.method === "GET" || request.method === "HEAD") && !STATIC_PATH.test(url.pathname) && await isBareNotFound(response)) {
+    // Not the blog posts and /policies: they have their own fallback pages below, which must still run when the origin answers 404.
+    if (response.status === 404 && (request.method === "GET" || request.method === "HEAD") && !STATIC_PATH.test(url.pathname) && !BLOG_POSTS[url.pathname] && url.pathname !== "/policies" && await isBareNotFound(response)) {
       const branded = await brandedNotFound(url);
       if (branded) return branded;
     }

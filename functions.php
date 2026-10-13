@@ -3599,7 +3599,7 @@ function getTopPerformersByCategory($categoryPath) {
     $performers = [];
 
     if (!empty($data['results'])) {
-        foreach ($data['results'] as $item) {
+        foreach (soDropDeadPerformers($data['results']) as $item) {   // a performer whose page answers 404 is not offered on the home cards
             $performers[] = [
                 'id'   => $item['id'] ?? '',
                 'name' => $item['text']['name'] ?? '',
