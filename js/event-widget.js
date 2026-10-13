@@ -141,9 +141,20 @@
     showState('failed', 'The seat map did not load',
       'This can happen with an ad blocker, a slow connection or when our ticket partner is busy. Reload the page to try again. If it keeps happening, contact us and we will help you find tickets.', reason);
   }
+  /* While "The seat map is not ready for this event yet" is showing, the seat map section (.so-evtix) holds only the hidden map, so
+     its band would sit empty above the message: drop the so-evtix class then, and put it back if the map recovers. */
+  var NOT_READY_TITLE = 'The seat map is not ready for this event yet';
+  var mapBand = map && map.closest ? map.closest('section.so-evtix') : null;
+  function setMapBand() {
+    if (!mapBand) return;
+    var t = document.getElementById('so-no-tickets-title');
+    var notReady = state.failed && box && !box.classList.contains('d-none') && t && t.textContent === NOT_READY_TITLE;
+    mapBand.classList.toggle('so-evtix', !notReady);
+  }
   function recover() {
     if (!state.failed) return;
     state.failed = false;
+    setMapBand();
     root.classList.remove('so-ev-empty');
     if (box) box.classList.add('d-none');
     if (map) map.style.display = '';
@@ -188,8 +199,9 @@
         try { again = !!sessionStorage.getItem(key); if (!again) sessionStorage.setItem(key, String(Date.now())); } catch (e) { again = true; }
         pushPlain('widget_no_event_but_listed', { event_id: String(ev.id), retried: again, tickets: ev.tickets });
         if (!again) { setTimeout(function () { location.reload(); }, 3000); }
-        showState('failed', 'The seat map is not ready for this event yet',
+        showState('failed', NOT_READY_TITLE,
           'Tickets are listed for this event' + (ev.price ? ' from ' + ev.price : '') + ', but the seat map did not return them just now. ' + (again ? 'Reload the page in a minute. If it keeps happening, contact us and we will help you find tickets.' : 'Trying again in a moment.'), 'no_event_but_listed');
+        setMapBand();
         return;
       }
       showEmpty('Tickets are not available to show right now', 'Please try again in a little while, or browse other dates for the same performer, city or venue below.');
