@@ -5,14 +5,26 @@
  *
  * Budget: a token bucket shared by every PHP process (web requests, crons, crawlers). Visitors (web requests) may use the whole
  * bucket and wait up to 1.5 seconds for a token. Background work (CLI crons) may use only the upper half, so a warmer can never
- * use up the calls a visitor needs. The rate is TN_CALLS_PER_SECOND (default 4; 0 turns the budget off). Lower it while 429s
+ * use up the calls a visitor needs. The rate is TN_CALLS_PER_SECOND (default 1; 0 turns the budget off). Lower it while 429s
  * continue; raise it only when TicketNetwork confirms a higher limit.
  */
+
+/**
+ * Each family of live calls has its own circuit, so a throttle on event lists does not stop performer or venue lookups (and the
+ * other way round). Calls with no endpoint in hand (crons, the sitemap build) check every family.
+ */
+const TN_BREAKER_FAMILIES = ['events', 'reference'];
+
+/** The family of an endpoint: event lists, details and search are "events"; everything else is "reference". */
+function tnBreakerFamily($endpoint): string {
+    $e = trim((string) $endpoint, '/');
+    return (strpos($e, 'catalog/v2/events') === 0 || strpos($e, 'events/search') !== false) ? 'events' : 'reference';
+}
 
 /** Live calls per second the whole site may make to TicketNetwork. */
 function tnCallsPerSecond(): float {
     $v = getenv('TN_CALLS_PER_SECOND');
-    return ($v === false || $v === '') ? 4.0 : max(0.0, (float) $v);
+    return ($v === false || $v === '' || !is_numeric($v)) ? 1.0 : max(0.0, (float) $v);
 }
 
 /**
@@ -25,7 +37,10 @@ function tnBucketTake(bool $background, float $rate, string $file, ?float $now =
     $burst = max(2.0, $rate * 2);
     $fh = @fopen($file . '.lock', 'c');
     if (!$fh) return true;
-    flock($fh, LOCK_EX);
+    if (!flock($fh, LOCK_EX)) {   // no lock: do not block and do not count (fail open, as above)
+        fclose($fh);
+        return true;
+    }
     $state = is_file($file) ? json_decode((string) @file_get_contents($file), true) : null;
     $tokens = is_array($state) ? (float) ($state['tokens'] ?? $burst) : $burst;
     $last = is_array($state) ? (float) ($state['t'] ?? $now) : $now;
@@ -45,7 +60,10 @@ function tnBucketWait(bool $background, float $rate, string $file, float $maxWai
     $deadline = microtime(true) + $maxWait;
     do {
         if (tnBucketTake(false, $rate, $file)) return true;
-        usleep(50000);
+        // Sleep no longer than the time left, so the wait never runs past $maxWait by a whole polling step.
+        $left = $deadline - microtime(true);
+        if ($left <= 0) break;
+        usleep((int) (min(0.15, $left) * 1000000));
     } while (microtime(true) < $deadline);
     return false;
 }
@@ -93,7 +111,10 @@ function tnFlightWait(string $path, callable $cached, float $maxWait = 3.0) {
         $free = flock($fh, LOCK_EX | LOCK_NB);
         if ($free) flock($fh, LOCK_UN);
         fclose($fh);
-        if ($free) return false;
+        if ($free) {   // the leader is done: its answer may have been stored just before it let go
+            $hit = $cached();
+            return $hit !== false ? $hit : false;
+        }
         usleep(100000);
     } while (microtime(true) < $deadline);
     return false;
@@ -106,6 +127,7 @@ function tnFlightWait(string $path, callable $cached, float $maxWait = 3.0) {
  */
 function tnDeviceScope() {
     $id = getenv('TN_DEVICE_ID');
-    if ($id === false || $id === '') $id = PHP_SAPI === 'cli' ? 'cli' : 'web';
-    return 'device_' . preg_replace('/[^a-z0-9_-]/i', '', $id);
+    $id = ($id === false || $id === '') ? '' : preg_replace('/[^a-z0-9_-]/i', '', $id) . '_';
+    // The role is part of the scope, so web and cron keep separate tokens even when they share one configured id.
+    return 'device_' . $id . (PHP_SAPI === 'cli' ? 'cli' : 'web');
 }

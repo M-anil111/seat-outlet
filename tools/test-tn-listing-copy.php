@@ -17,6 +17,8 @@ tlCheck('an empty query string gives nothing', soSafeParseQuery('') === [] && so
 $flood = str_repeat('a[', 70) . 'b=1';
 tlCheck('a bracket flood is ignored', soSafeParseQuery($flood) === []);
 tlCheck('a bracket flood logs no PHP warning', $warnings === 0);
+tlCheck('an encoded bracket flood (a%5B...) is ignored too, with no PHP warning', soSafeParseQuery(str_repeat('a%5B', 70) . 'b=1') === [] && $warnings === 0);
+tlCheck('a bracket inside a value does not hide a normal parameter (page 2 keeps its query)', soSafeParseQuery('page=2&x=' . str_repeat('%5B', 17)) === ['page' => '2', 'x' => str_repeat('[', 17)] && $warnings === 0);
 tlCheck('an oversized query string is ignored', soSafeParseQuery('x=' . str_repeat('a', 2001)) === []);
 restore_error_handler();
 
@@ -34,8 +36,22 @@ tlCheck('a complete row is a usable copy', tnListingCopyComplete($row));
 tlCheck('a row with no venue is not a copy', !tnListingCopyComplete(array_diff_key($row, ['venue' => 1])));
 tlCheck('a row with no city is not a copy', !tnListingCopyComplete(array_merge($row, ['city' => []])));
 tlCheck('a row with no date is not a copy', !tnListingCopyComplete(array_merge($row, ['date' => ['date' => '']])));
+tlCheck('a nested name that is an array is not a copy (fails closed)', !tnListingCopyComplete(array_merge($row, ['text' => ['name' => ['Staind']]])));
+tlCheck('a scalar where a nested object belongs is not a copy', !tnListingCopyComplete(array_merge($row, ['venue' => 'Arena'])));
 tlCheck('a row with no id is not a copy', !tnListingCopyComplete(array_merge($row, ['id' => 0])));
-tlCheck('a copy window of 14 days', TN_LISTING_COPY_TTL === 14 * 86400);
+tlCheck('a copy window of 24 hours (an event TicketNetwork drops leaves within a day)', TN_LISTING_COPY_TTL === 86400);
+$fnSrc = file_get_contents(__DIR__ . '/../functions.php');
+tlCheck('event lists and details stop standing in for a failed call after 2 hours', TN_STALE_LISTING === 7200);
+tlCheck('reference data (performers, venues) may stand in for 14 days', TN_STALE_ON_ERROR === 14 * 86400);
+$evSrc = file_get_contents(__DIR__ . '/../event.php');
+tlCheck('a copy-served event page drops its prices and says when the copy was saved', strpos($evSrc, "unset(\$event['pricingInfo']);") !== false && strpos($evSrc, 'Event details saved on') !== false);
+tlCheck('the copy time is recorded when a copy or snapshot answers', strpos($fnSrc, "\$GLOBALS['so_event_as_of'] = (int) @filemtime") !== false && strpos($fnSrc, "\$GLOBALS['so_event_as_of'] = (int) (\$GLOBALS['so_snapshot_seen']") !== false);
+tlCheck('event list endpoint gets the 2-hour limit', tnStaleLimit('/catalog/v2/events/') === 7200);
+tlCheck('event detail endpoint gets the 2-hour limit', tnStaleLimit('/catalog/v2/events/8139366') === 7200);
+tlCheck('event search endpoint gets the 2-hour limit', tnStaleLimit('/catalog/v2/events/search') === 7200);
+tlCheck('performer endpoint gets the 14-day limit', tnStaleLimit('/catalog/v2/performers/1451') === 14 * 86400);
+tlCheck('venue endpoint gets the 14-day limit', tnStaleLimit('/catalog/v2/venues/') === 14 * 86400);
+tlCheck('no stale check uses the fixed 14-day limit (each picks its limit by endpoint)', strpos($fnSrc, "['age'] <= TN_STALE_ON_ERROR") === false && substr_count($fnSrc, "['age'] <= tnStaleLimit(\$endpoint)") === 5);
 
 // 4. Wiring: the live code uses these helpers in the places the fix depends on
 $fn = file_get_contents(__DIR__ . '/../functions.php');

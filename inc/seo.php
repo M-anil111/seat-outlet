@@ -88,6 +88,8 @@ $eventsSchema = [];
 foreach ($eventFiles as $file) {
 
   if (!file_exists($file)) continue;
+  // The same 2-day limit as the site: an older list may hold events TicketNetwork has dropped, so it is not used for schema.
+  if (time() - (int) @filemtime($file) > 2 * 86400) continue;
 
   $tab = str_replace(['cache/home_events_', '.json'], '', $file);
 

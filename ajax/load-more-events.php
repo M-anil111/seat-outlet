@@ -31,6 +31,8 @@ const LOAD_MORE_ALLOWED_RANK_OPTIONS = [
     '{"interval":"week","metric":"ticketVolume"}',
 ];
 
+require_once __DIR__ . '/../inc/listing-filter.php';   // the allowed filter shapes (LOAD_MORE_FILTER_CLAUSES, soLoadMoreFilterOk)
+
 try {
     $params = [];
     if (soQs('params') !== '' && strlen(soQs('params')) <= 4000) {
@@ -43,10 +45,15 @@ try {
             if (isset($params['sort']) && !in_array($params['sort'], LOAD_MORE_ALLOWED_SORTS, true)) { unset($params['sort']); }
             if (isset($params['salesRankOptions']) && !in_array($params['salesRankOptions'], LOAD_MORE_ALLOWED_RANK_OPTIONS, true)) { unset($params['salesRankOptions']); }
             if (isset($params['q'])) { $params['q'] = mb_substr(trim($params['q']), 0, 100); }
-            // The filter strings the site itself builds only use these characters (field paths, quotes, dates, parentheses, comparison words).
-            // Anything else, or a very long one, is dropped instead of being forwarded to the API.
-            foreach (['filter', 'geoFilter', 'performerFilter'] as $fk) {
-                if (isset($params[$fk]) && (strlen($params[$fk]) > 700 || !preg_match("#^[A-Za-z0-9_ /().,'\\-:%+]*$#", $params[$fk]))) { unset($params[$fk]); }
+            // Each filter must match one of the shapes the site itself builds (see LOAD_MORE_FILTER_CLAUSES). A filter that does not is
+            // refused with an empty page, not forwarded, and not dropped: dropping a date clause would widen the results.
+            $badFilter = (isset($params['filter']) && !soLoadMoreFilterOk($params['filter']))
+                || (isset($params['geoFilter']) && !preg_match(LOAD_MORE_GEO_FILTER, $params['geoFilter']))
+                || (isset($params['performerFilter']) && !preg_match(LOAD_MORE_PERFORMER_FILTER, $params['performerFilter']));
+            if ($badFilter) {
+                header('Cache-Control: no-store');
+                echo json_encode(['events' => [], 'html' => '', 'totalCount' => 0, 'currentPage' => $page, 'nextPage' => null, 'hasMore' => false]);
+                exit;
             }
         }
     }

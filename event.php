@@ -18,6 +18,9 @@ if ($id <= 0) {
 }
 
 $event = getTnEventById($id);
+// A saved copy (TicketNetwork did not answer) has no live prices: they are not shown, and the visitor is told when it was saved.
+$evAsOf = $GLOBALS['so_event_as_of'] ?? null;
+if ($evAsOf !== null) { unset($event['pricingInfo']); }
 
 if (tnEntityMissing($event) || empty($event['text']['name'])) {
   echo tnEntityUnavailable($event) ? unavailableBlockHtml('Event') : notFoundBlockHtml('Event');
@@ -77,6 +80,9 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
 }
 ?>
 <?php /* Slim title strip: the one H1, where and when, and the resale disclosure. The seat map and the tickets follow straight away, above the fold. */ ?>
+<?php if ($evAsOf !== null) { /* Served from a saved copy: say so, and that prices are not shown from it. */ ?>
+<p class="container small text-muted py-2 mb-0" role="status">Event details saved on <?php echo $h(date('M j, Y g:i A', $evAsOf)); ?>. Ticket prices are not shown from a saved copy. Check the seat map below for current prices when it loads.</p>
+<?php } ?>
 <section class="so-evbar">
   <div class="container">
     <?php if (!empty($evTrail)) { /* the same trail as the BreadcrumbList in the head: up to the category and the performer */ ?>

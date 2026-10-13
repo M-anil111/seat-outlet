@@ -328,7 +328,7 @@ function tnGrace($ttl) {
 }
 
 /** Longest a stale entry may stand in for a failed live call (the API throttling us must not empty a page that was fine yesterday). */
-const TN_STALE_ON_ERROR = 1209600;   // 14 days
+// TN_STALE_ON_ERROR, TN_STALE_LISTING and tnStaleLimit() live in inc/tn-listing-copy.php (loaded above), so the tests can check them.
 
 /** Thrown by helpers that need live API data when the API is down or throttling us; the outage alert has already been sent. */
 class SoTnUnavailable extends RuntimeException {}
@@ -349,31 +349,38 @@ function soTnAlert($message) {
     });
 }
 
-function tnBreakerFile() {
-    return rtrim(sys_get_temp_dir(), '/') . '/seatoutlet_tn_breaker_' . md5(BASE_URL) . '.txt';
-}
-
 /** Seconds the circuit stays open after an outage, and after the API throttles us (quota windows are longer). */
 const TN_BREAKER_SECONDS = 20;
 const TN_BREAKER_THROTTLE_SECONDS = 60;
 
-/** True while a recent live failure holds the circuit open: skip live calls, serve stale or empty. */
-function tnBreakerOpen() {
-    $f = tnBreakerFile();
-    if (!is_file($f)) return false;
-    $hold = (int) @file_get_contents($f);   // the file holds how long this trip lasts (empty = default)
-    if ($hold <= 0) $hold = TN_BREAKER_SECONDS;
-    return (time() - (int) @filemtime($f)) < $hold;
+// TN_BREAKER_FAMILIES and tnBreakerFamily() live in inc/tn-budget.php (loaded above), so the budget tests can check them.
+
+function tnBreakerFile(string $family): string {
+    return rtrim(sys_get_temp_dir(), '/') . '/seatoutlet_tn_breaker_' . md5(BASE_URL) . '_' . $family . '.txt';
 }
 
-function tnBreakerTrip($why, $seconds = TN_BREAKER_SECONDS) {
-    // Never shorten a longer trip that is still running.
-    if (tnBreakerOpen() && (int) @file_get_contents(tnBreakerFile()) > $seconds) {
-        return;
+/** True while a recent live failure holds the circuit open: skip live calls, serve stale or empty. $family null = any family. */
+function tnBreakerOpen(?string $family = null): bool {
+    foreach ($family === null ? TN_BREAKER_FAMILIES : [$family] as $f) {
+        $file = tnBreakerFile($f);
+        if (!is_file($file)) continue;
+        $hold = (int) @file_get_contents($file);   // the file holds how long this trip lasts (empty = default)
+        if ($hold <= 0) $hold = TN_BREAKER_SECONDS;
+        if ((time() - (int) @filemtime($file)) < $hold) return true;
     }
-    @file_put_contents(tnBreakerFile(), (string) (int) $seconds);
-    @touch(tnBreakerFile());
-    soTnAlert('TicketNetwork API unavailable, circuit opened for ' . (int) $seconds . 's: ' . $why);
+    return false;
+}
+
+/** Opens the circuit for one family (or every family when $family is null). A longer trip still running is never shortened. */
+function tnBreakerTrip($why, $seconds = TN_BREAKER_SECONDS, ?string $family = null) {
+    tnCount('trip_' . ($family ?? 'all'));
+    foreach ($family === null ? TN_BREAKER_FAMILIES : [$family] as $f) {
+        $file = tnBreakerFile($f);
+        if (tnBreakerOpen($f) && (int) @file_get_contents($file) > $seconds) continue;
+        @file_put_contents($file, (string) (int) $seconds);
+        @touch($file);
+    }
+    soTnAlert('TicketNetwork API unavailable, circuit opened for ' . (int) $seconds . 's (' . ($family ?? 'all families') . '): ' . $why);
 }
 
 /**
@@ -382,7 +389,40 @@ function tnBreakerTrip($why, $seconds = TN_BREAKER_SECONDS) {
  * reads this flag and answers no-store.
  */
 function tnMarkDegraded() {
+    if (empty($GLOBALS['tn_degraded'])) tnCount('no_data');   // counted once per request, on the first transition
     $GLOBALS['tn_degraded'] = true;
+}
+
+/** A bulk lookup that could not be answered live: a stored answer stands in (counted as stale), otherwise the page is degraded. */
+function tnUnanswered(bool $hadStored): void {
+    if ($hadStored) { tnCount('stale_on_error'); return; }
+    tnMarkDegraded();
+}
+
+/**
+ * Counts one kind of TicketNetwork outcome for the day (visitor requests only), so the real failure rate is measured, not guessed.
+ * Kinds: live_call, stale_on_error, event_copy, event_snapshot, no_data, trip_<family>. The file is cache/tn_stats_<date>.json;
+ * ajax/health.php reports today's counts. A counting fault never affects a page.
+ */
+function tnCount(string $kind): void {
+    if (PHP_SAPI === 'cli') return;
+    try {
+        $fh = @fopen(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json', 'c+');
+        if (!$fh) return;
+        if (flock($fh, LOCK_EX)) {
+            $data = json_decode((string) stream_get_contents($fh), true);
+            $data = is_array($data) ? $data : [];
+            $data[$kind] = ($data[$kind] ?? 0) + 1;
+            ftruncate($fh, 0);
+            rewind($fh);
+            fwrite($fh, json_encode($data));
+            fflush($fh);
+            flock($fh, LOCK_UN);
+        }
+        fclose($fh);
+    } catch (Throwable $e) {
+        // counting never breaks a page
+    }
 }
 
 function tnBuildHandle($endpoint, array $params, $method, $token) {
@@ -402,7 +442,7 @@ function tnBuildHandle($endpoint, array $params, $method, $token) {
         // Keep the server's Retry-After on a throttle (tnThrottleWait() sets the breaker from it).
         CURLOPT_HEADERFUNCTION => function ($ch, $line) {
             $after = tnRetryAfterFromHeader($line);
-            if ($after !== null) $GLOBALS['tn_retry_after'] = $after;
+            if ($after !== null) { $GLOBALS['tn_retry_after'] = $after; $GLOBALS['tn_retry_after_ch'][spl_object_id($ch)] = $after; }
             return strlen($line);
         },
     ]);
@@ -473,14 +513,14 @@ function tnScheduleRefresh($endpoint, array $params, $method, $key) {
             @fastcgi_finish_request();
         }
         foreach ($queued as $key => [$endpoint, $params, $method]) {
-            if (tnBreakerOpen()) break;
+            if (tnBreakerOpen(tnBreakerFamily($endpoint))) continue;   // this family is paused; the others still refresh
             $lock = @fopen(cache_file_path($key) . '.lock', 'c');
             if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) { if ($lock) fclose($lock); continue; }
             $r = tnFetchLive($endpoint, $params, $method);
             if ($r['ok'] && $r['cacheable']) {
                 cache_set($key, $r['data']);
             } elseif (!$r['ok']) {
-                tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
+                tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS, tnBreakerFamily($endpoint));
             }
             flock($lock, LOCK_UN);
             fclose($lock);
@@ -563,7 +603,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
             // not pay the API latency (and a herd of them doesn't stampede it).
             if ($entry['age'] <= $ttl + tnGrace($ttl)) {
                 tnProfile($endpoint, true, 0);
-                if (!tnBreakerOpen()) tnScheduleRefresh($endpoint, $params, $method, $key);
+                if (!tnBreakerOpen(tnBreakerFamily($endpoint))) tnScheduleRefresh($endpoint, $params, $method, $key);
                 return $entry['data'];
             }
         }
@@ -578,9 +618,9 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
         }
     }
 
-    // Circuit open: do not queue more 20s timeouts behind a dead API.
-    if (tnBreakerOpen()) {
-        if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
+    // Circuit open for this family: do not queue more 20s timeouts behind a dead API.
+    if (tnBreakerOpen(tnBreakerFamily($endpoint))) {
+        if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
         tnMarkDegraded();
         return [];
     }
@@ -590,10 +630,13 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
     $flightPath = cache_file_path($key) . '.flight';
     $flight = tnFlightOpen($flightPath);
     if ($flight === false) {
-        $shared = tnFlightWait($flightPath, fn() => cache_get($key, $ttl));
+        $shared = tnFlightWait($flightPath, function () use ($key, $ttl) {
+            $hit = cache_get($key, $ttl);
+            return $hit !== false ? $hit : cache_get($key . '_nf', TN_NEGATIVE_TTL);
+        });
         if ($shared !== false) { tnProfile($endpoint, true, 0); return $shared; }
         tnMarkDegraded();
-        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+        return ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) ? $entry['data'] : [];
     }
     try {
         return tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry);
@@ -614,22 +657,22 @@ function tnBucketAllow(): bool {
 function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     if (!tnBucketAllow()) {
         tnMarkDegraded();
-        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+        return ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) ? $entry['data'] : [];
     }
     $t0 = microtime(true);
     $GLOBALS['tn_retry_after'] = null;
     $r = tnFetchLive($endpoint, $params, $method);
     // A fast dropped connection (an SSL EOF or a reset, Sentry SEAT-OUTLET-F/G) gets one retry. Slow timeouts and throttles do not, so
     // the retry stays inside the request's time budget and never piles onto a throttled API.
-    if (!$r['ok'] && empty($r['throttled']) && (microtime(true) - $t0) < 3 && !tnBreakerOpen() && tnBucketAllow()) {
+    if (!$r['ok'] && empty($r['throttled']) && (microtime(true) - $t0) < 3 && !tnBreakerOpen(tnBreakerFamily($endpoint)) && tnBucketAllow()) {
         $r = tnFetchLive($endpoint, $params, $method);
     }
 
     if (!$r['ok']) {
-        tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($GLOBALS['tn_retry_after'] ?? null, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS);
+        tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($GLOBALS['tn_retry_after'] ?? null, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS, tnBreakerFamily($endpoint));
         soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
-        if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
+        if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
         tnMarkDegraded();
         return [];
     }
@@ -643,6 +686,7 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     if ($r['cacheable'] && strpos((string) $endpoint, '/catalog/v2/events') === 0) {
         tnSaveListingCopies($r['data']);
     }
+    tnCount('live_call');
     if ($key !== null && mt_rand(1, 200) === 1) {
         tnCacheSweep();
     }
@@ -673,23 +717,34 @@ function tnRequestMulti(array $requests) {
         }
         if (tnIdOutOfRange($endpoint)) { $out[$i] = ['Message' => 'The requested resource was not found.']; continue; }
         if ($entry === null && $ttl > 0 && ($neg = cache_get($key . '_nf', TN_NEGATIVE_TTL)) !== false) { $out[$i] = $neg; continue; }
-        $out[$i] = ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+        $out[$i] = ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) ? $entry['data'] : [];
         $todo[$i] = [$endpoint, $params, $ttl, $key];
     }
     if (!$todo) {
-        return $out;
-    }
-    if (tnBreakerOpen()) {
-        foreach ($todo as $i => $_) { if (empty($out[$i])) tnMarkDegraded(); }
         return $out;
     }
 
     $token = getTnAccessToken();
     $mh = curl_multi_init();
     $handles = [];
+    $budgetFile = cache_dir() . 'tn_bucket.json';
     foreach ($todo as $i => [$endpoint, $params]) {
+        // A family whose circuit is open is not called (the other families in this batch still are).
+        if (tnBreakerOpen(tnBreakerFamily($endpoint))) {
+            tnUnanswered(!empty($out[$i]));
+            continue;
+        }
+        // Every outbound call takes a token from the shared budget. A call over budget is not sent: the page answers from its stored copy.
+        if (!tnBucketTake(PHP_SAPI === 'cli', tnCallsPerSecond(), $budgetFile)) {
+            tnUnanswered(!empty($out[$i]));
+            continue;
+        }
         $handles[$i] = tnBuildHandle($endpoint, $params, 'GET', $token);
         curl_multi_add_handle($mh, $handles[$i]);
+    }
+    if (!$handles) {
+        curl_multi_close($mh);
+        return $out;
     }
     $running = null;
     do {
@@ -699,19 +754,36 @@ function tnRequestMulti(array $requests) {
 
     foreach ($handles as $i => $ch) {
         [$endpoint, $callParams, $ttl, $key] = $todo[$i];
+        $hid = spl_object_id($ch);
+        $afterFirst = $GLOBALS['tn_retry_after_ch'][$hid] ?? null;   // read once, then cleared: a reused handle id must not inherit it
+        unset($GLOBALS['tn_retry_after_ch'][$hid]);
         $r = tnParseResult($ch, curl_multi_getcontent($ch));
         tnProfile($endpoint, false, curl_getinfo($ch, CURLINFO_TOTAL_TIME) * 1000);
+        $retried = false;
+        $skipped = false;
         if (!empty($r['auth'])) {
-            // Rotated token: refresh (once, shared) and retry this request.
-            $r = tnFetchLive($endpoint, $callParams, 'GET');
+            // Rotated token: refresh and retry this request. The retry is a real call, so it takes a token from the shared budget first.
+            if (tnBucketAllow()) {
+                $GLOBALS['tn_retry_after'] = null;
+                $r = tnFetchLive($endpoint, $callParams, 'GET');
+                $retried = true;
+            } else {
+                $skipped = true;
+            }
         }
-        if ($r['ok']) {
+        if ($skipped) {
+            tnUnanswered(!empty($out[$i]));
+        } elseif ($r['ok']) {
             $out[$i] = $r['data'];
+            tnCount('live_call');
+            if ($r['cacheable'] && strpos((string) $endpoint, '/catalog/v2/events') === 0) tnSaveListingCopies($r['data']);
             if ($ttl > 0 && $r['cacheable']) cache_set($key, $r['data']);
             elseif ($ttl > 0 && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) cache_set($key . '_nf', $r['data']);
         } else {
-            tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
-            if (empty($out[$i])) tnMarkDegraded();
+            // The Retry-After of the call that actually failed: the retry's header if a retry was sent, else this handle's.
+            $after = $retried ? ($GLOBALS['tn_retry_after'] ?? null) : $afterFirst;
+            tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($after, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS, tnBreakerFamily($endpoint));
+            tnUnanswered(!empty($out[$i]));
         }
         curl_multi_remove_handle($mh, $ch);
     }
@@ -741,6 +813,7 @@ function tnCacheSweep() {
     }
     foreach ((glob($dir . '*.json.tmp_*') ?: []) as $file) { if ((int) @filemtime($file) < $now - 3600) @unlink($file); }
     foreach ((glob($dir . '*.lock') ?: []) as $file) { if ((int) @filemtime($file) < $now - 3600) @unlink($file); }
+    foreach ((glob($dir . '*.flight') ?: []) as $file) { if ((int) @filemtime($file) < $now - 3600) @unlink($file); }
 }
 
 /** Kept for existing callers; tnRequest() itself now caches. */
@@ -908,7 +981,7 @@ function getTnPerformers(array $params = []) {
     $data = tnRequest('/catalog/v2/performers', $params, 'GET', 6 * 3600);
     if (!is_array($data) || !array_key_exists('results', $data)) {
         // API down or throttling (already alerted by the circuit breaker) versus an unexpected answer (worth an error report).
-        if (tnBreakerOpen() || !empty($GLOBALS['tn_degraded'])) throw new SoTnUnavailable('TicketNetwork performers request failed');
+        if (tnBreakerOpen('reference') || !empty($GLOBALS['tn_degraded'])) throw new SoTnUnavailable('TicketNetwork performers request failed');
         throw new RuntimeException('TicketNetwork performers request failed');
     }
     return $data;
@@ -987,18 +1060,29 @@ function soEventIsOver(array $event): bool {
 
 function getTnEventById($eventId) {
     $eventId = (int) $eventId;
+    $GLOBALS['so_event_as_of'] = null;   // set below when the answer comes from a saved copy: the time it was seen (unix)
     $event = tnRequest("/catalog/v2/events/" . $eventId);
     if ($eventId <= 0) return $event;
     if (!tnEntityUnavailable($event)) {
+        // TicketNetwork confirmed the event is gone: drop the stored copies so no fallback can show it again.
+        if (tnEntityDefinitelyMissing($event)) { tnForgetEventCopies($eventId); return $event; }
         tnSnapshotSave($eventId, $event);   // a live answer is the freshest copy: keep it where a backup and a throttle cannot lose it
         return $event;
     }
-    // The live call failed. Fall back to the last good copy: first the file copy a listing saved, then the durable snapshot.
-    // With neither, the caller gets the failure and shows the honest message (no invented details).
+    // The live call failed. Fall back to the last good copy, no older than TN_LISTING_COPY_TTL: first the file copy a listing saved,
+    // then the durable snapshot. With neither, the caller gets the failure and shows the honest message (no invented details).
     $copy = cache_get('tn_event_copy_' . $eventId, TN_LISTING_COPY_TTL);
-    if (is_array($copy) && tnListingCopyComplete($copy)) return $copy;
-    $snap = tnSnapshotGet($eventId);
-    if ($snap !== false && tnListingCopyComplete($snap)) return $snap;
+    if (is_array($copy) && tnListingCopyComplete($copy)) {
+        tnCount('event_copy');
+        $GLOBALS['so_event_as_of'] = (int) @filemtime(cache_file_path('tn_event_copy_' . $eventId));
+        return soCleanTnNames($copy);
+    }
+    $snap = tnSnapshotGet($eventId, TN_LISTING_COPY_TTL);
+    if ($snap !== false && tnListingCopyComplete($snap)) {
+        tnCount('event_snapshot');
+        $GLOBALS['so_event_as_of'] = (int) ($GLOBALS['so_snapshot_seen'] ?? time());
+        return soCleanTnNames($snap);
+    }
     return $event;
 }
 
@@ -1006,9 +1090,10 @@ function getTnEventById($eventId) {
 function tnSaveListingCopies($data): void {
     foreach (tnListRows($data) as $row) {
         if (!tnListingCopyComplete($row)) continue;
+        $row = soCleanTnNames($row);   // the same display names as a live answer, so every stored copy has one shape
         $id = (int) $row['id'];
         $key = 'tn_event_copy_' . $id;
-        if (cache_get($key, TN_LISTING_COPY_TTL / 2) === false) cache_set($key, $row);
+        if (cache_get($key, TN_LISTING_COPY_TTL / 2) === false) cache_set($key, $row);   // refreshed at least every 12 hours while listed
         tnSnapshotSave($id, $row);
     }
 }
@@ -1027,7 +1112,7 @@ function tnSnapshotSave(int $id, $row): void {
     if ($id <= 0 || !is_array($row) || !tnListingCopyComplete($row) || !tnSnapshotDb()) return;
     $throttle = 'tn_snap_w_' . $id;
     if (cache_get($throttle, 3600) !== false) return;
-    cache_set($throttle, 1);
+    cache_set($throttle, ['seen' => 1]);
     try {
         $json = json_encode($row, JSON_UNESCAPED_UNICODE);
         if ($json === false) return;
@@ -1042,18 +1127,32 @@ function tnSnapshotSave(int $id, $row): void {
     }
 }
 
-/** The stored copy of an event, or false. */
-function tnSnapshotGet(int $id) {
+/** Deletes the stored copies of an event TicketNetwork no longer has (file copy and database snapshot). */
+function tnForgetEventCopies(int $id): void {
+    if ($id <= 0) return;
+    @unlink(cache_file_path('tn_event_copy_' . $id));
+    if (!tnSnapshotDb()) return;
+    try {
+        $stmt = MYSQLI->prepare('DELETE FROM tn_event_snapshot WHERE event_id = ?');
+        if ($stmt) { $stmt->bind_param('i', $id); $stmt->execute(); $stmt->close(); }
+    } catch (Throwable $e) {
+        // a database hiccup leaves the copy to expire within TN_LISTING_COPY_TTL
+    }
+}
+
+/** The stored copy of an event seen within $maxAge seconds, or false. */
+function tnSnapshotGet(int $id, int $maxAge = TN_LISTING_COPY_TTL) {
     if ($id <= 0 || !tnSnapshotDb()) return false;
     try {
-        $stmt = MYSQLI->prepare('SELECT payload FROM tn_event_snapshot WHERE event_id = ?');
+        $stmt = MYSQLI->prepare('SELECT payload, UNIX_TIMESTAMP(seen_at) FROM tn_event_snapshot WHERE event_id = ? AND seen_at >= NOW() - INTERVAL ? SECOND');
         if (!$stmt) return false;
-        $stmt->bind_param('i', $id);
+        $stmt->bind_param('ii', $id, $maxAge);
         $stmt->execute();
-        $stmt->bind_result($payload);
+        $stmt->bind_result($payload, $seenAt);
         $found = $stmt->fetch();
         $stmt->close();
         if (!$found) return false;
+        $GLOBALS['so_snapshot_seen'] = (int) $seenAt;
         $row = json_decode((string) $payload, true);
         return is_array($row) ? $row : false;
     } catch (Throwable $e) {

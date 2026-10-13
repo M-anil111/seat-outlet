@@ -118,13 +118,13 @@ Verified: nothing. No public page states a request-per-second, per-minute or dai
 
 ### 3.3 What the repo already does to stay within limits (Verified, repo)
 
-File cache per endpoint (reference data 6 h, event lists 10 min, search 5 min, suggest 1 h), stale-while-revalidate, a circuit breaker (20 s in code, `TN_BREAKER_SECONDS`; `docs/reliability.md` says 60 s, which is out of date), 14-day stale-on-error, page snapshots, parallel prefetch limited, crons that stop when throttled. The warmer visits sitemap URLs at one per second.
+File cache per endpoint (reference data 6 h, event lists 10 min, search 5 min, suggest 1 h), stale-while-revalidate, a circuit breaker per family of calls (events and reference data; 20 s for ordinary errors, `TN_BREAKER_SECONDS`; 60 s or the server's `Retry-After` for a throttle, `TN_BREAKER_THROTTLE_SECONDS`), a shared call budget (`TN_CALLS_PER_SECOND`, default 1), stale-on-error limits (event lists and details 2 h, stored event copies 24 h, reference data 14 days), page snapshots, parallel prefetch limited, crons that stop when throttled. The warmer visits event details in batches of up to 40 per 15-minute run with a stored cursor.
 
-Note on documentation drift: `docs/reliability.md` and CONTRIBUTING.md differ on stale windows (24 h vs 14 days) and breaker length. The code constants are the source of truth; update the docs when convenient.
+The code constants are the source of truth. `docs/reliability.md` ("Removed events and stale answers") and CONTRIBUTING.md list the same windows.
 
 ### 3.4 Terms-of-use risk on cached data
 
-Inference and Needs confirmation. The site stores API responses on disk for up to 14 days when the API fails, and stores full rendered pages (including prices) for up to 14 days and serves them as 200 pages. Prices and availability change in minutes. If TicketNetwork's terms limit how long catalog or price data may be cached or displayed, or require showing live prices, the 14-day price snapshots may breach them and may also show stale prices to buyers. Ask for the written caching rule before launch and, until answered, consider showing "price at last update" wording or omitting prices on snapshot-served pages. Also confirm whether structured data (schema.org Offer/price) from cached prices is allowed.
+Inference and Needs confirmation. When the live call fails, the site serves stored event data for at most 2 hours (event lists and details), 24 hours (stored event copies and the database snapshot), or 14 days (reference data only: performers, venues, categories). Full rendered page snapshots (`soSnapshotServe()`) can also be served for up to 14 days and may contain event prices that have since changed. Prices and availability change in minutes. If TicketNetwork's terms limit caching or display of catalog or price data, or require showing live prices, these copies and 14-day page snapshots may breach them. Until the rule is answered, copy-served event pages should show "prices as of" the time the copy was seen (done for event pages), and snapshot-served pages should identify the price date or omit stale prices. Also confirm whether structured data (schema.org Offer/price) from cached prices is allowed.
 
 ### 3.5 What to ask TicketNetwork to raise
 
@@ -261,13 +261,13 @@ Third party (context only, not authoritative): https://stackoverflow.com/questio
 
 Repo files: `functions.php` (tnRequest and related), `inc/constants.php`, `checkout.php`, `order-confirmation.php`, `.github/workflows/tn-check.yml`, `.env.example`, `CONTRIBUTING.md`, `docs/reliability.md`, `docs/launch-checklist.md`, `docs/seatics-checkout-thankyou-implementation.md`.
 
-## 5. Verified against the sandbox (2026-10-12)
+## 6. Verified against the sandbox (2026-10-12)
 
 Source: the TicketNetwork "API Authorization" guide (V1.0) and the "API Client DevPortal Guide" (v4.0, 12/26/2025), plus live sandbox calls with the TestApplication. Credentials were used for these calls only and are not stored anywhere in the repo.
 
 - **Token:** `POST https://key-manager.tn-apis.com/oauth2/token`, HTTP Basic (consumer key and secret), `grant_type=client_credentials`. Response: `access_token`, `token_type` Bearer, `expires_in` 3600. Refresh a couple of minutes before expiry (the code refreshes 120 s early).
 - **Device scopes:** `scope=default device_<name>` gives one token per device. A new token revokes the previous token with the same scopes, so web and cron use separate device tokens (`device_web`, `device_cli`; set `TN_DEVICE_ID` per host). Two device tokens were checked together: both stayed valid.
-- **Expired or revoked token:** HTTP 401 with fault code 900901. The guide says to generate a new token and retry once. The code refreshes on any 401 and retries.
+- **Expired or revoked token:** HTTP 401 with fault code 900901. The guide says to generate a new token and retry once. Single requests refresh and retry once for JSON 401 responses; bulk prefetches may make an additional request before that retry.
 - **Identity header:** `X-Listing-Context: website-config-id=12498` returns 200 with results on the sandbox. `X-Identity-Context` returns 400 with the same config id (tested 2026-10-12). The code keeps `X-Listing-Context`. Check with TicketNetwork (IntegrationSupport@TicketNetwork.com) if their documentation names `X-Identity-Context`.
 - **Throttling:** the DevPortal says the subscription tier controls throttling. The sandbox subscription is the Trial tier. The sandbox responses carried no rate-limit headers (no Retry-After, no quota headers). The production tier and limits must come from TicketNetwork WebSupport.
 - **List answers:** `GET /catalog/v2/events/` returns `{count, page, results: [...], _links, facets, spellcheck}`. Each row has `id`, `text.name`, `venue.text.name`, `city.text.name`, `date.date`, `stateProvince`, `country.alphaCode`, `defaultCategory`, `_metadata`. Before this check, `tnListRows()` read only an `events` key, so listing copies were never saved. Fixed.
