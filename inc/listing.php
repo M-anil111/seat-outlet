@@ -421,7 +421,8 @@ function soRenderListingBody(array $o): void {
  */
 function soRenderListingPage(array $o): void {
     $GLOBALS['soNoBannerAd'] = true;   // no ad directly above the ticket list (see soAdInjectBanner)
-    $o += ['tag' => 'h1', 'defaultSort' => 'popular', 'explore' => [], 'body' => [], 'lead' => null, 'afterRow' => null, 'afterSection' => null, 'when' => '', 'sort' => 'popular', 'max' => 0];
+    // bodyPad: the spacing class on the .list-category-bg wrapper around the rows (category pages pass py-4).
+    $o += ['bodyPad' => 'pb-3', 'tag' => 'h1', 'defaultSort' => 'popular', 'explore' => [], 'body' => [], 'lead' => null, 'afterRow' => null, 'afterSection' => null, 'when' => '', 'sort' => 'popular', 'max' => 0];
     $total = (int) $o['total'];
     // The feed failed (throttled, down): never present that as "0 results". Serve the last good copy of this page; without one,
     // answer 503 (retry) so neither visitors nor search engines keep an empty page.
@@ -450,7 +451,7 @@ function soRenderListingPage(array $o): void {
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">
 					<?php renderListingFilters($o['basePath'], $o['when'], $o['sort'], $total, $o['defaultSort'], $o['explore'] + ['max' => (int) $o['max']]); ?>
-					<div class="list-category-bg pb-3">
+					<div class="list-category-bg <?php echo soListingH($o['bodyPad']); ?>">
 						<?php soRenderListingBody($o['body'] + ['total' => $total]); ?>
 					</div>
 					<?php if ($o['lead'] && !empty($o['body']['events']) && function_exists('soLeadForm')) { ?>
