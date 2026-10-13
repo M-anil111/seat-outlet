@@ -16,7 +16,11 @@ const TN_LISTING_COPY_TTL = 86400;
  */
 function soSafeParseQuery($query): array {
     $query = (string) $query;
-    if ($query === '' || strlen($query) > 2000 || substr_count(urldecode($query), '[') > 16) return [];
+    if ($query === '' || strlen($query) > 2000) return [];
+    // Brackets count in parameter names only: a bracket inside a value is just text. Names are decoded first, so an encoded flood is caught too.
+    foreach (explode('&', $query) as $pair) {
+        if (substr_count(urldecode(explode('=', $pair, 2)[0]), '[') > 16) return [];
+    }
     $out = [];
     parse_str($query, $out);
     return is_array($out) ? $out : [];

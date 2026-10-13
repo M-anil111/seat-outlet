@@ -17,7 +17,8 @@ tlCheck('an empty query string gives nothing', soSafeParseQuery('') === [] && so
 $flood = str_repeat('a[', 70) . 'b=1';
 tlCheck('a bracket flood is ignored', soSafeParseQuery($flood) === []);
 tlCheck('a bracket flood logs no PHP warning', $warnings === 0);
-tlCheck('an encoded bracket flood (a%5B...) is ignored too', soSafeParseQuery(str_repeat('a%5B', 70) . 'b=1') === []);
+tlCheck('an encoded bracket flood (a%5B...) is ignored too, with no PHP warning', soSafeParseQuery(str_repeat('a%5B', 70) . 'b=1') === [] && $warnings === 0);
+tlCheck('a bracket inside a value does not hide a normal parameter (page 2 keeps its query)', soSafeParseQuery('page=2&x=' . str_repeat('%5B', 17)) === ['page' => '2', 'x' => str_repeat('[', 17)] && $warnings === 0);
 tlCheck('an oversized query string is ignored', soSafeParseQuery('x=' . str_repeat('a', 2001)) === []);
 restore_error_handler();
 

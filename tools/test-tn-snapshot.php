@@ -20,10 +20,13 @@ tsCheck('the fallback order is file copy, then snapshot, then the honest failure
     return $a !== false && $b !== false && $c !== false && $a < $b && $b < $c;
 })());
 tsCheck('snapshot writes are throttled to one an hour per event, storing a value the reader accepts', strpos($fn, "cache_get(\$throttle, 3600) !== false") !== false && strpos($fn, "cache_set(\$throttle, ['seen' => 1])") !== false);
-$snapStart = strpos($fn, 'function tnSnapshotSave');
-$snapEnd = strpos($fn, "\n}\n", strpos($fn, 'function tnSnapshotGet')) + 3;
-$snapBlock = substr($fn, $snapStart, $snapEnd - $snapStart);
-tsCheck('snapshot save and get catch every error (a database fault never breaks a page)', substr_count($snapBlock, 'catch (Throwable $e)') >= 2);
+$body = function (string $sig) use ($fn) {   // one function's source, from its signature to the closing brace in column 0
+    $s = strpos($fn, $sig);
+    $e = $s === false ? false : strpos($fn, "\n}\n", $s);
+    return ($s === false || $e === false) ? '' : substr($fn, $s, $e - $s);
+};
+tsCheck('tnSnapshotSave catches its own errors (a database fault never breaks a page)', substr_count($body('function tnSnapshotSave'), 'catch (Throwable $e)') === 1);
+tsCheck('tnSnapshotGet catches its own errors (a database fault never breaks a page)', substr_count($body('function tnSnapshotGet'), 'catch (Throwable $e)') === 1);
 tsCheck('snapshot checks the database handle before using it', strpos($fn, 'function tnSnapshotDb(): bool {') !== false && strpos($fn, 'return defined(\'MYSQLI\') && MYSQLI instanceof mysqli;') !== false);
 tsCheck('listing answers also refresh the snapshot', strpos($fn, '        tnSnapshotSave($id, $row);') !== false);
 tsCheck('a snapshot older than the copy window is not used', strpos($fn, 'AND seen_at >= NOW() - INTERVAL ? SECOND') !== false);
