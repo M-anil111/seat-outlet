@@ -62,6 +62,9 @@ include 'header.php';
 
 /* FAQ: the shared .so-qa accordion design (style.css); only the card around it is page-specific */
 .so-bbb-faq { padding: 8px 0 72px; }
+.so-bbb-sec.so-bbb-faq { padding-top: 64px; }
+@media (max-width: 991.98px) { .so-bbb-sec.so-bbb-faq { padding-top: 52px; } }
+@media (max-width: 575.98px) { .so-bbb-sec.so-bbb-faq { padding-top: 40px; } }
 .so-bbb-faq .so-bbb-h2 { margin-bottom: 20px; }
 .so-bbb-faq__card { padding: 10px; border: 1px solid var(--bbb-line); border-radius: 16px; background: #fff; box-shadow: 0 10px 30px rgba(15, 27, 61, .06); }
 .so-bbb-faq__card .so-qa.so-qa .accordion-item:first-of-type { border-top: 0; }
