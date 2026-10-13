@@ -2783,7 +2783,7 @@ function soAsset($rel) {
 
 /**
  * Baseline response headers for every HTML page (called from header.php
- * before any output). No CSP yet: the pages load Bootstrap, Slick, Seatics,
+ * before any output). Only a report-only CSP (nothing is enforced): the pages load Bootstrap, Slick, Seatics,
  * Google Maps and fonts from several CDNs, so a strict policy needs its own
  * pass with reporting first.
  */
@@ -2806,7 +2806,7 @@ function sendSecurityHeaders() {
  * (default 120, 0 = send nothing). Prices and inventory shown in cached HTML can be that many seconds old;
  * the hosted checkout always re-prices. Pages that must never be cached can set $pageNoCache = true first.
  */
-/** Security headers for public pages. No CSP on purpose: AdSense, GTM and the ticket widgets load scripts and frames from many hosts, so a policy needs a report-only trial first. HSTS stays a Cloudflare setting (docs/lighthouse-and-cloudflare.md). */
+/** Security headers for public pages. The CSP is report-only on purpose (CSP_ENFORCE=1 enforces it): AdSense, GTM and the ticket widgets load scripts and frames from many hosts, so a policy needs a report-only trial first. HSTS stays a Cloudflare setting (docs/lighthouse-and-cloudflare.md). */
 function soSendSecurityHeaders() {
     if (headers_sent()) return;
     header('X-Content-Type-Options: nosniff');
@@ -2816,9 +2816,11 @@ function soSendSecurityHeaders() {
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=(self)');
+    // The Seatics seat map (mapwidget3.seatics.com, assets on the one CloudFront distribution header.php names) is the main source of report-only violations on event pages (QA-017): its hosts are listed so
+    // the report log shows real problems. It also evaluates strings ('unsafe-eval'); that is left out on purpose, so enforcing this policy would need that decision first.
     // Report-only: nothing is blocked. Violations go to ajax/csp-report.php (PHP error log). Read the log for a week, add the missing hosts, then switch the header name to Content-Security-Policy.
     // CSP_ENFORCE=1 in inc/env.local.php turns the same policy from report-only into enforced (no code change, no redeploy needed beyond the settings file).
-    header((getenv('CSP_ENFORCE') === '1' ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only") . ": default-src 'self'; script-src 'self' 'unsafe-inline' https://tickettransaction.com https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://static.cloudflareinsights.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://fundingchoicesmessages.google.com https://*.adtrafficquality.google; style-src 'self' 'unsafe-inline' https://tickettransaction.com https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://tickettransaction.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google https://*.google-analytics.com https://*.analytics.google.com https://*.googlesyndication.com https://*.doubleclick.net https://cloudflareinsights.com https://www.google.com/recaptcha/; frame-src 'self' https://tickettransaction.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google https://*.googlesyndication.com https://*.doubleclick.net https://www.googletagmanager.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; object-src 'none'; base-uri 'self'" . (getenv('CSP_ENFORCE') === '1' ? '; frame-ancestors \'self\'' : '') . "; report-uri /ajax/csp-report.php");
+    header((getenv('CSP_ENFORCE') === '1' ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only") . ": default-src 'self'; script-src 'self' 'unsafe-inline' https://tickettransaction.com https://*.seatics.com https://d1s8091zjpj5vh.cloudfront.net https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://static.cloudflareinsights.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://fundingchoicesmessages.google.com https://*.adtrafficquality.google; style-src 'self' 'unsafe-inline' https://tickettransaction.com https://*.seatics.com https://d1s8091zjpj5vh.cloudfront.net https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://d1s8091zjpj5vh.cloudfront.net; connect-src 'self' https://tickettransaction.com https://*.tickettransaction.com https://*.seatics.com https://d1s8091zjpj5vh.cloudfront.net https://fundingchoicesmessages.google.com https://*.adtrafficquality.google https://*.google-analytics.com https://*.analytics.google.com https://*.googlesyndication.com https://*.doubleclick.net https://cloudflareinsights.com https://www.google.com/recaptcha/; frame-src 'self' https://tickettransaction.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google https://*.googlesyndication.com https://*.doubleclick.net https://www.googletagmanager.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; object-src 'none'; base-uri 'self'" . (getenv('CSP_ENFORCE') === '1' ? '; frame-ancestors \'self\'' : '') . "; report-uri /ajax/csp-report.php");
 }
 
 function sendPageCacheHeaders() {
