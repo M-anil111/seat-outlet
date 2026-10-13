@@ -36,3 +36,12 @@ foreach (array_slice(array_keys($ids), 0, $batch) as $id) {
 }
 
 echo 'Listed events: ' . count($ids) . "; checked: " . ($ok + $failed) . "; ok: $ok; unavailable: $failed\n";
+
+// Snapshots of events nobody has seen for 180 days are pruned (their event is long past). Failure here is harmless.
+if (tnSnapshotDb()) {
+    try {
+        MYSQLI->query('DELETE FROM tn_event_snapshot WHERE seen_at < NOW() - INTERVAL 180 DAY');
+    } catch (Throwable $e) {
+        echo "snapshot prune skipped\n";
+    }
+}

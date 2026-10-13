@@ -988,12 +988,17 @@ function soEventIsOver(array $event): bool {
 function getTnEventById($eventId) {
     $eventId = (int) $eventId;
     $event = tnRequest("/catalog/v2/events/" . $eventId);
-    // The detail call failed, but a listing that named this event saved its row: show that, not "temporarily unavailable".
-    // With no complete copy the caller still gets the failure and shows the honest message.
-    if ($eventId > 0 && tnEntityUnavailable($event)) {
-        $copy = cache_get('tn_event_copy_' . $eventId, TN_LISTING_COPY_TTL);
-        if (is_array($copy) && tnListingCopyComplete($copy)) return $copy;
+    if ($eventId <= 0) return $event;
+    if (!tnEntityUnavailable($event)) {
+        tnSnapshotSave($eventId, $event);   // a live answer is the freshest copy: keep it where a backup and a throttle cannot lose it
+        return $event;
     }
+    // The live call failed. Fall back to the last good copy: first the file copy a listing saved, then the durable snapshot.
+    // With neither, the caller gets the failure and shows the honest message (no invented details).
+    $copy = cache_get('tn_event_copy_' . $eventId, TN_LISTING_COPY_TTL);
+    if (is_array($copy) && tnListingCopyComplete($copy)) return $copy;
+    $snap = tnSnapshotGet($eventId);
+    if ($snap !== false && tnListingCopyComplete($snap)) return $snap;
     return $event;
 }
 
@@ -1001,8 +1006,58 @@ function getTnEventById($eventId) {
 function tnSaveListingCopies($data): void {
     foreach (tnListRows($data) as $row) {
         if (!tnListingCopyComplete($row)) continue;
-        $key = 'tn_event_copy_' . (int) $row['id'];
+        $id = (int) $row['id'];
+        $key = 'tn_event_copy_' . $id;
         if (cache_get($key, TN_LISTING_COPY_TTL / 2) === false) cache_set($key, $row);
+        tnSnapshotSave($id, $row);
+    }
+}
+
+/** True when the database handle is usable. */
+function tnSnapshotDb(): bool {
+    return defined('MYSQLI') && MYSQLI instanceof mysqli;
+}
+
+/**
+ * Stores the last good copy of an event in tn_event_snapshot (migration 0048), so a throttle or an outage cannot empty an event page
+ * that was once loaded, and the nightly database dump keeps it. At most one write an hour per event. A database error never breaks a
+ * page: the file copy still serves.
+ */
+function tnSnapshotSave(int $id, $row): void {
+    if ($id <= 0 || !is_array($row) || !tnListingCopyComplete($row) || !tnSnapshotDb()) return;
+    $throttle = 'tn_snap_w_' . $id;
+    if (cache_get($throttle, 3600) !== false) return;
+    cache_set($throttle, 1);
+    try {
+        $json = json_encode($row, JSON_UNESCAPED_UNICODE);
+        if ($json === false) return;
+        $stmt = MYSQLI->prepare('INSERT INTO tn_event_snapshot (event_id, payload, seen_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE payload = VALUES(payload), seen_at = NOW()');
+        if ($stmt) {
+            $stmt->bind_param('is', $id, $json);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } catch (Throwable $e) {
+        // logged by the database layer; the page keeps working without the snapshot
+    }
+}
+
+/** The stored copy of an event, or false. */
+function tnSnapshotGet(int $id) {
+    if ($id <= 0 || !tnSnapshotDb()) return false;
+    try {
+        $stmt = MYSQLI->prepare('SELECT payload FROM tn_event_snapshot WHERE event_id = ?');
+        if (!$stmt) return false;
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $stmt->bind_result($payload);
+        $found = $stmt->fetch();
+        $stmt->close();
+        if (!$found) return false;
+        $row = json_decode((string) $payload, true);
+        return is_array($row) ? $row : false;
+    } catch (Throwable $e) {
+        return false;
     }
 }
 

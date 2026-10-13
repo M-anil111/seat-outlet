@@ -56,3 +56,11 @@ Every live TicketNetwork call takes a token from one bucket shared by all PHP pr
 - A 429 with a numeric `Retry-After` sets the breaker from that value (5 to 300 seconds). Without it, the breaker stays open for 60 seconds.
 - Code: `inc/tn-budget.php`, `tnBucketAllow()` and `tnFetchStore()` in `functions.php`. Test: `tools/test-tn-budget.php`.
 - Test result (local stub, CLI): 20 simultaneous requests for one cold event made 1 call. 40 requests for 40 cold events made 7 calls at the default rate. Web-request visitor waiting has not been tested.
+
+## Event data backup (tn_event_snapshot)
+
+Every event the site loads successfully, and every complete event row a listing returns, is also stored in the database table `tn_event_snapshot` (migration 0048). The event page uses the last stored copy when the live TicketNetwork call fails: first the file copy from a listing (14 days), then the database snapshot (kept until the event has not been seen for 180 days). Rows are written at most once an hour per event.
+
+- The nightly database dump (`cron/backup-db.php`) includes the table, so the event copies are backed up with the rest of the data. The file cache is not backed up; it is only a fast copy.
+- A brand-new event that has never been listed or opened still has no copy until TicketNetwork answers.
+- Restore is the usual database restore; no code step is needed. Check after a restore with `SELECT COUNT(*) FROM tn_event_snapshot`.
