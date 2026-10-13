@@ -12,6 +12,9 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  *
  * Counts live in small files under cache/ratelimit (one per address, per minute), so it needs nothing but PHP. Tune with
  * putenv('SO_RL_PER_MIN=120') in inc/env.local.php; 0 turns it off.
+ *
+ * On a host that is not indexable (SITE_INDEXABLE false: beta, staging) crawlers are refused outright with 403 before any page is built
+ * (soBotBlocked), except the user agents named in SO_BOT_ALLOW.
  */
 
 /** Allowed public page requests per minute for one address (0 = no limit). */
@@ -20,6 +23,21 @@ function soRlLimit(string $userAgent = ''): int {
     $base = ($env === false || $env === '') ? 120 : max(0, (int) $env);
     if ($base === 0) return 0;
     return preg_match('/googlebot|bingbot|duckduckbot|applebot|yandexbot|baiduspider|slurp/i', $userAgent) ? $base * 3 : $base;
+}
+
+/**
+ * True when the host is not meant to be indexed (beta, staging) and the request comes from a crawler that is not on the allow list.
+ * Such a host says "Disallow: /" in robots.txt, but SEO crawlers (SemrushBot, ShapBot on 12 and 13 Oct 2026) load its pages anyway, and
+ * every uncached page costs a call against the one production TicketNetwork subscription that live visitors need. $allow is
+ * SO_BOT_ALLOW: comma-separated user agent fragments (case-insensitive) for the audit tools that may crawl the host.
+ */
+function soBotBlocked(string $userAgent, bool $indexable, string $allow = ''): bool {
+    if ($indexable || $userAgent === '') return false;
+    if (!preg_match('/bot|crawl|spider|slurp|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|facebookexternalhit/i', $userAgent)) return false;
+    foreach (array_filter(array_map('trim', explode(',', strtolower($allow)))) as $fragment) {
+        if (strpos(strtolower($userAgent), $fragment) !== false) return false;
+    }
+    return true;
 }
 
 /** The visitor's address as the Cloudflare Worker or Cloudflare passes it on, '' when it cannot be told. */
@@ -63,8 +81,17 @@ function soRlCount(string $ip, ?string $dir = null, ?int $now = null): int {
 /** Call at the start of a public page. Sends 429 and stops when the address is over its allowance. */
 function soCrawlGuard(): void {
     if (PHP_SAPI === 'cli' || headers_sent()) return;
-    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
-    $limit = soRlLimit((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+    // HEAD counts like GET: a crawler's HEAD builds the whole page and makes the same ticket API calls (ShapBot, Sentry SEAT-OUTLET-Q).
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
+    $userAgent = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+    if (soBotBlocked($userAgent, defined('SITE_INDEXABLE') ? (bool) SITE_INDEXABLE : true, (string) getenv('SO_BOT_ALLOW'))) {
+        http_response_code(403);
+        header('Cache-Control: no-store');
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo "This host is not open to crawlers (see robots.txt).\n";
+        exit;
+    }
+    $limit = soRlLimit($userAgent);
     if ($limit === 0) return;
     $n = soRlCount(soRlClientIp());
     if ($n > $limit) {
