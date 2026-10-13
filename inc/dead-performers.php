@@ -20,7 +20,12 @@ function soDeadPerformerFile(?string $dir = null): string {
 /** @return array<int,int> performer id => unix time it was last seen dead, only the entries still inside the window */
 function soDeadPerformerIds(?string $dir = null, ?int $now = null): array {
     $now = $now ?? time();
-    $raw = @file_get_contents(soDeadPerformerFile($dir));
+    $raw = false;
+    $fh = @fopen(soDeadPerformerFile($dir), 'r');
+    if ($fh) {
+        if (flock($fh, LOCK_SH)) { $raw = stream_get_contents($fh); flock($fh, LOCK_UN); }   // shared lock: never read between the writer's truncate and write
+        fclose($fh);
+    }
     $all = $raw === false || $raw === '' ? [] : json_decode($raw, true);
     if (!is_array($all)) return [];
     $fresh = [];
@@ -46,7 +51,9 @@ function soDeadPerformerSet(int $id, bool $dead, ?string $dir = null, ?int $now 
             $before = $all;
             foreach ($all as $k => $seen) { if ((int) $seen <= $now - SO_DEAD_PERFORMER_TTL) unset($all[$k]); }
             if ($dead) $all[$id] = $now; else unset($all[$id]);
-            if ($all !== $before) {
+            if ($all !== $before && !$all) {
+                $emptied = true;   // nothing dead any more: the file goes, so healthy pages stop opening it
+            } elseif ($all !== $before) {
                 ftruncate($fh, 0);
                 rewind($fh);
                 fwrite($fh, json_encode($all));
@@ -55,6 +62,7 @@ function soDeadPerformerSet(int $id, bool $dead, ?string $dir = null, ?int $now 
             flock($fh, LOCK_UN);
         }
         fclose($fh);
+        if (!empty($emptied)) @unlink($file);
     } catch (Throwable $e) {
         // remembering never breaks a page
     }

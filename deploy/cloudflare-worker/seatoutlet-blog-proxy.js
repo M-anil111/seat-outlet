@@ -218,7 +218,7 @@ function legacyPhpUrl(url) {
   }
   return null;
 }
-const STATIC_PATH = /^\/(images|js|css|lib|fonts|cdn-cgi|\.well-known)\//;
+const STATIC_PATH = /^\/(images|js|css|lib|fonts|ajax|admin|cdn-cgi|\.well-known)\//;
 // True for the web server's own short 404 body. The origin sends it chunked, with no content-length header (QA-008: the header check
 // alone never matched, so unknown addresses stayed plain text), so without a length the small body is read. The site's own branded 404
 // page is large, so it is never mistaken for this.
@@ -226,8 +226,15 @@ async function isBareNotFound(response) {
   const declared = Number(response.headers.get("content-length") || 0);
   if (declared > 0) return declared < 500;
   try {
-    const text = await response.clone().text();
-    return text.length > 0 && text.length < 500;
+    const reader = response.clone().body.getReader();   // read at most 500 bytes: the branded page is never buffered whole
+    let total = 0;
+    while (total < 500) {
+      const part = await reader.read();
+      if (part.done) break;
+      total += part.value.length;
+    }
+    if (total >= 500) { reader.cancel().catch(() => {}); return false; }   // not awaited: a cancel on a cloned body waits for the other branch
+    return total > 0;
   } catch (error) {
     return false;
   }

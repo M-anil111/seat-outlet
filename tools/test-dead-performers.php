@@ -13,6 +13,7 @@ function dpCheck(string $what, $got, $want): void {
 }
 $dir = sys_get_temp_dir() . '/so-dead-' . getmypid() . '/';
 @mkdir($dir, 0775, true);
+@unlink($dir . 'dead_performers.json');   // a run that was interrupted before may have left state under a reused PID
 $t = 1800000000;
 
 dpCheck('nothing is remembered at first', soDeadPerformerIds($dir, $t), []);

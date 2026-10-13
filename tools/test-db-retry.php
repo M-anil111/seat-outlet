@@ -31,9 +31,9 @@ $kill();
 $stmtRows = soDbRetry(function ($db) { $st = $db->prepare('SELECT ?'); $x = 'ok'; $st->bind_param('s', $x); $st->execute(); return $st->get_result()->fetch_row()[0]; });
 drCheck('a prepared statement on a dropped connection is retried too', $stmtRows, 'ok');
 
-$other = null;
-try { soDbRetry(fn($db) => $db->query('SELECT * FROM no_such_table_zq')); } catch (mysqli_sql_exception $e) { $other = $e->getCode(); }
-drCheck('any other database error is passed on, not retried', $other, 1146);
+$other = null; $otherCalls = 0;
+try { soDbRetry(function ($db) use (&$otherCalls) { $otherCalls++; return $db->query('SELECT * FROM no_such_table_zq'); }); } catch (mysqli_sql_exception $e) { $other = $e->getCode(); }
+drCheck('any other database error is passed on, not retried', [$other, $otherCalls], [1146, 1]);
 
 $calls = 0; $threw = false;
 try { soDbRetry(function ($db) use (&$calls) { $calls++; throw new mysqli_sql_exception('MySQL server has gone away', 2006); }, MYSQLI); } catch (mysqli_sql_exception $e) { $threw = $e->getCode() === 2006; }

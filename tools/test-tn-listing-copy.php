@@ -98,7 +98,7 @@ tlCheck('warm-up job is capped at 40 per run', strpos($cron, 'min(40,') !== fals
 
 // SEAT-OUTLET-Y: the genre redirect in category.php reads the visitor's query string through the safe parser, never parse_str() directly
 $catSrc = file_get_contents(__DIR__ . '/../category.php');
-tlCheck('category.php parses the query string with soSafeParseQuery, not parse_str', strpos($catSrc, "\$soQs = soSafeParseQuery(\$_SERVER['QUERY_STRING'] ?? '');") !== false && preg_match('/^\s*parse_str\(/m', $catSrc) === 0);
+tlCheck('category.php parses the query string with soSafeParseQuery, not parse_str', strpos($catSrc, "\$soQs = soSafeParseQuery(\$_SERVER['QUERY_STRING'] ?? '');") !== false && preg_match('/(?<![\w>:])parse_str\(/', preg_replace('#//[^\n]*#', '', $catSrc)) === 0);
 tlCheck('a bracket flood parses to nothing (no warning) and a normal query still parses', soSafeParseQuery(str_repeat('a[', 40) . 'b' . str_repeat(']', 40) . '=1') === [] && soSafeParseQuery('page=2&x=y') === ['page' => '2', 'x' => 'y']);
 echo $fails ? "\n$fails failed\n" : "\ntn listing copy: all passed\n";
 exit($fails ? 1 : 0);

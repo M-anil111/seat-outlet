@@ -62,16 +62,16 @@ function tnStatsSummary(array $stats): array {
  */
 function soViaLiveProxy(?array $server = null, ?string $publicHost = null): bool {
     $server = $server ?? $_SERVER;
-    $publicHost = $publicHost ?? (defined('SO_PUBLIC_ORIGIN') ? (string) parse_url(SO_PUBLIC_ORIGIN, PHP_URL_HOST) : 'seatoutlet.com');
+    $publicHost = $publicHost ?? (defined('SO_PUBLIC_ORIGIN') ? (string) (parse_url(SO_PUBLIC_ORIGIN, PHP_URL_HOST) ?: rtrim((string) SO_PUBLIC_ORIGIN, '/')) : 'seatoutlet.com');
     $host = strtolower(trim(explode(',', (string) ($server['HTTP_X_FORWARDED_HOST'] ?? ''))[0]));
     $host = preg_replace('/:\d+$/', '', $host);
     return $host !== '' && $publicHost !== '' && ($host === strtolower($publicHost) || $host === 'www.' . strtolower($publicHost));
 }
 
-/** A crawler or script rather than a person, for the demand counters only (never to refuse anyone), so the broad pattern is fine. */
+/** A crawler or script rather than a person, for the demand counters only (never to refuse anyone), so the pattern is broad but names crawlers rather than matching a bare "bot" (UptimeRobot, a Cubot phone). */
 function soClientIsCrawler(?string $userAgent = null): bool {
     $ua = $userAgent ?? (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
-    return $ua !== '' && preg_match('/bot|crawl|spider|slurp|semrush|ahrefs|mj12|petalbot|bytespider|facebookexternalhit|scrapy|python-requests|go-http-client|wget|curl\//i', $ua) === 1;
+    return $ua !== '' && preg_match('/\bbot\b|googlebot|bingbot|yandex|baiduspider|duckduckbot|applebot|slurp|semrush|ahrefs|mj12|dotbot|shapbot|petalbot|bytespider|facebookexternalhit|crawl|spider|scrapy|python-requests|go-http-client|wget|curl\//i', $ua) === 1;
 }
 
 /**

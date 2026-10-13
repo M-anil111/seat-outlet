@@ -37,7 +37,7 @@ Empty categories and empty location pages are indexable again; an empty page is 
 
 ## Who the demand is (crawlers and the beta address)
 
-`tnCount()` also counts every outcome under `_bot` (a crawler or script, `soClientIsCrawler()`) and `_direct` (a request that did not come through the live Worker, `soViaLiveProxy()`), and once per page as `pages_bot` and `pages_direct`. `/ajax/health.php` reports them as shares under `ticketnetwork.demand`: `botPageShare`, `botCallShare`, `botNoDataShare` and the same three with `direct`. Read them before adding another traffic control: if crawlers are most of the live calls, serve known crawlers from stored page snapshots; if they are not, the ceiling is real visitor traffic and only a higher TicketNetwork tier or edge caching helps.
+`tnCount()` also counts the live calls, no-data pages, over-budget waits, throttles and stale answers under `_bot` (a crawler or script, `soClientIsCrawler()`) and `_direct` (a request that did not come through the live Worker, `soViaLiveProxy()`), and once per page as `pages_bot` and `pages_direct`. `/ajax/health.php` reports them as shares under `ticketnetwork.demand`: `botPageShare`, `botCallShare`, `botNoDataShare` and the same three with `direct`. Read them before adding another traffic control: if crawlers are most of the live calls, serve known crawlers from stored page snapshots; if they are not, the ceiling is real visitor traffic and only a higher TicketNetwork tier or edge caching helps.
 
 ## Database connection dropped mid-request
 
