@@ -200,7 +200,7 @@ $evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $
 // Spec sections (inc/page-spec.php): every one is built from data this page already holds and is left out when there is none.
 $evStateAbbr = (string) ($event['stateProvince']['text']['abbr'] ?? '');
 $evPerfName = (string) ($primaryPerformer['name'] ?? $evLabel);
-$evH2 = $evSpec['h2'];
+$evH2 = $evSpec['h2'] ?? [];   // a spec without headings leaves nothing to index: the sections below then print no heading (Sentry SEAT-OUTLET-V/T)
 $evVenueEvents = $evVenueData['events'] ?? [];
 $evShownIds = [(int) $id];
 $evVenueHref = $eventVenueId ? '/venue/' . soVenueSlug($eventVenueName, $eventVenueId, $eventCityLabel) : '';
@@ -234,7 +234,7 @@ if ($evKind === 'concert' && $evOther) {
 }
 // Venue info: address, directions, transit, the official site and the weather, from the venue record and Wikidata (no policies are stated).
 $evVenueFacts = $eventVenueName !== '' ? soEntityFacts($eventVenueName, 'venue', (string) $eventCityName) : [];
-$evVenueInfoHtml = soSpecVenueInfoHtml($evH2['venue'], (string) $eventVenueName, (string) $eventCityName, $evStateAbbr, $evVenueHref, is_array($evVenueRec ?? null) ? $evVenueRec : [], $evVenueFacts, (int) ($evVenueData['total'] ?? 0), true);
+$evVenueInfoHtml = soSpecVenueInfoHtml((string) ($evH2['venue'] ?? ''), (string) $eventVenueName, (string) $eventCityName, $evStateAbbr, $evVenueHref, is_array($evVenueRec ?? null) ? $evVenueRec : [], $evVenueFacts, (int) ($evVenueData['total'] ?? 0), true);
 $evGuideHtml = soSpecGuideHtml($evH2['guide'], $evLabel, [
   'when' => $evWhenLong !== '' ? $evWhenLong . ($eventTimeText !== '' ? ' at ' . $eventTimeText : '') : '',
   'venue' => $eventVenueName, 'venueHref' => $evVenueHref,

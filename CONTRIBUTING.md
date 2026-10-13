@@ -185,6 +185,7 @@ Crons (all safe to run concurrently with traffic):
 |---|---|---|
 | `cron/home-events.php`, `home-top-performers.php`, `home-venues.php`, `home-categories.php` | hourly | homepage feeds |
 | `cron/warm-listings.php` | every 5 min | keeps /tickets, /concerts, /sports, /theater, /festival, top category and top city feeds warm so no visitor waits on the API |
+| `cron/warm-event-details.php` | every 15 min | refreshes the event details behind the listed events, 15 per run (`php cron/warm-event-details.php 40` for more); skipped while the TicketNetwork breaker is open |
 | `cron/warm-snapshots.php` | every 30 min | visits the sitemap URLs slowly (1 per second, 400 per run) so every page has a stored last good copy, served instead of an error when TicketNetwork throttles or is down (docs/reliability.md) |
 | `cron/resolve-images.php` | every 10–15 min | entity image queue |
 | `cron/prune-vitals.php` | weekly | deletes real-user speed measurements older than 90 days |

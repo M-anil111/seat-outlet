@@ -1,6 +1,8 @@
 <?php
 // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
+require_once __DIR__ . '/inc/tn-listing-copy.php';
+require_once __DIR__ . '/inc/tn-budget.php';
 
 // Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
 // lose the visitor's own query string on the way, so ?when= / ?sort= / ?page=
@@ -8,7 +10,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 // original address, so restore any parameter PHP did not receive. Existing keys
 // (the rewrite's own slug) always win, so this can never override routing.
 if (!empty($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '?') !== false) {
-    parse_str((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY), $so_original_query);
+    $so_original_query = soSafeParseQuery(parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY));
     if (is_array($so_original_query) && $so_original_query) {
         $_GET = $_GET + $so_original_query;
         $_REQUEST = $_REQUEST + $so_original_query;
@@ -134,12 +136,12 @@ function downloadImage($url) {
 // margin), so most page views skip this round-trip entirely. Falls back to
 // the exact previous per-request-only behavior when APCu isn't installed.
 const TN_ACCESS_TOKEN_CACHE_KEY = 'tn_access_token';
-const TN_ACCESS_TOKEN_EXPIRY_BUFFER = 60; // seconds
+const TN_ACCESS_TOKEN_EXPIRY_BUFFER = 120; // seconds: the DevPortal guide says to refresh "a couple of minutes" before expiry
 
 function tnTokenCacheFile() {
     $dir = getenv('TN_TOKEN_DIR');
     $dir = ($dir !== false && $dir !== '') ? rtrim($dir, '/') : rtrim(sys_get_temp_dir(), '/');
-    return $dir . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY . '|' . BASE_URL) . '.json';
+    return $dir . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY . '|' . BASE_URL . '|' . tnDeviceScope()) . '.json';
 }
 
 /** Cached token if it is still inside its lifetime, else ''. */
@@ -179,7 +181,7 @@ function getTnAccessToken($rejected = '') {
     }
 
     if ($rejected === '' && function_exists('apcu_fetch')) {
-        $cached = apcu_fetch(TN_ACCESS_TOKEN_CACHE_KEY, $found);
+        $cached = apcu_fetch(TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope(), $found);
         if ($found) {
             $accessToken = $cached;
             return $accessToken;
@@ -215,7 +217,7 @@ function getTnAccessToken($rejected = '') {
                 'Authorization: Basic ' . base64_encode(CONSUMER_KEY . ':' . CONSUMER_SECRET),
                 'Content-Type: application/x-www-form-urlencoded',
             ],
-            CURLOPT_POSTFIELDS     => http_build_query(['grant_type' => 'client_credentials']),
+            CURLOPT_POSTFIELDS     => http_build_query(['grant_type' => 'client_credentials', 'scope' => 'default ' . tnDeviceScope()]),
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_TIMEOUT        => 15,
         ]);
@@ -237,7 +239,7 @@ function getTnAccessToken($rejected = '') {
         $ttl = max(60, (int) ($data['expires_in'] ?? 3600) - TN_ACCESS_TOKEN_EXPIRY_BUFFER);
 
         if (function_exists('apcu_store')) {
-            apcu_store(TN_ACCESS_TOKEN_CACHE_KEY, $accessToken, $ttl);
+            apcu_store(TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope(), $accessToken, $ttl);
         }
         $file = tnTokenCacheFile();
         $tmp = $file . '.' . uniqid('tmp_', true);
@@ -397,6 +399,12 @@ function tnBuildHandle($endpoint, array $params, $method, $token) {
         CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_TIMEOUT        => 20,
         CURLOPT_ENCODING       => '',
+        // Keep the server's Retry-After on a throttle (tnThrottleWait() sets the breaker from it).
+        CURLOPT_HEADERFUNCTION => function ($ch, $line) {
+            $after = tnRetryAfterFromHeader($line);
+            if ($after !== null) $GLOBALS['tn_retry_after'] = $after;
+            return strlen($line);
+        },
     ]);
     return $ch;
 }
@@ -577,10 +585,48 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
         return [];
     }
 
+    // One live call per cold key: the first request fetches, the others wait for its answer instead of calling the API again.
+    if ($key === null) return tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry);
+    $flightPath = cache_file_path($key) . '.flight';
+    $flight = tnFlightOpen($flightPath);
+    if ($flight === false) {
+        $shared = tnFlightWait($flightPath, fn() => cache_get($key, $ttl));
+        if ($shared !== false) { tnProfile($endpoint, true, 0); return $shared; }
+        tnMarkDegraded();
+        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+    }
+    try {
+        return tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry);
+    } finally {
+        tnFlightClose($flight);
+    }
+}
+
+/**
+ * The shared call budget for one live call. A visitor waits briefly for a token; a cron uses only the spare part of the bucket.
+ * Over budget, the request answers from the stored copy like an outage, and no call is made.
+ */
+function tnBucketAllow(): bool {
+    return tnBucketWait(PHP_SAPI === 'cli', tnCallsPerSecond(), cache_dir() . 'tn_bucket.json');
+}
+
+/** The live part of a cold request: budget, one call (one retry for a fast drop), the breaker, and storing the answer. */
+function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
+    if (!tnBucketAllow()) {
+        tnMarkDegraded();
+        return ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) ? $entry['data'] : [];
+    }
+    $t0 = microtime(true);
+    $GLOBALS['tn_retry_after'] = null;
     $r = tnFetchLive($endpoint, $params, $method);
+    // A fast dropped connection (an SSL EOF or a reset, Sentry SEAT-OUTLET-F/G) gets one retry. Slow timeouts and throttles do not, so
+    // the retry stays inside the request's time budget and never piles onto a throttled API.
+    if (!$r['ok'] && empty($r['throttled']) && (microtime(true) - $t0) < 3 && !tnBreakerOpen() && tnBucketAllow()) {
+        $r = tnFetchLive($endpoint, $params, $method);
+    }
 
     if (!$r['ok']) {
-        tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? TN_BREAKER_THROTTLE_SECONDS : TN_BREAKER_SECONDS);
+        tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($GLOBALS['tn_retry_after'] ?? null, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS);
         soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
         if ($entry !== null && $entry['age'] <= TN_STALE_ON_ERROR) return $entry['data'];
@@ -592,6 +638,10 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
         cache_set($key, $r['data']);
     } elseif ($key !== null && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) {
         cache_set($key . '_nf', $r['data']);   // a definite "no such thing": remember it briefly
+    }
+    // A listing that answered also saves each complete event row, so the event page can show it if the detail call fails later.
+    if ($r['cacheable'] && strpos((string) $endpoint, '/catalog/v2/events') === 0) {
+        tnSaveListingCopies($r['data']);
     }
     if ($key !== null && mt_rand(1, 200) === 1) {
         tnCacheSweep();
@@ -936,8 +986,79 @@ function soEventIsOver(array $event): bool {
 }
 
 function getTnEventById($eventId) {
-    $endpoint = "/catalog/v2/events/" . (int) $eventId;
-    return tnRequest($endpoint);
+    $eventId = (int) $eventId;
+    $event = tnRequest("/catalog/v2/events/" . $eventId);
+    if ($eventId <= 0) return $event;
+    if (!tnEntityUnavailable($event)) {
+        tnSnapshotSave($eventId, $event);   // a live answer is the freshest copy: keep it where a backup and a throttle cannot lose it
+        return $event;
+    }
+    // The live call failed. Fall back to the last good copy: first the file copy a listing saved, then the durable snapshot.
+    // With neither, the caller gets the failure and shows the honest message (no invented details).
+    $copy = cache_get('tn_event_copy_' . $eventId, TN_LISTING_COPY_TTL);
+    if (is_array($copy) && tnListingCopyComplete($copy)) return $copy;
+    $snap = tnSnapshotGet($eventId);
+    if ($snap !== false && tnListingCopyComplete($snap)) return $snap;
+    return $event;
+}
+
+/** Saves each complete event row of a listing answer (once every half of the copy window at most). */
+function tnSaveListingCopies($data): void {
+    foreach (tnListRows($data) as $row) {
+        if (!tnListingCopyComplete($row)) continue;
+        $id = (int) $row['id'];
+        $key = 'tn_event_copy_' . $id;
+        if (cache_get($key, TN_LISTING_COPY_TTL / 2) === false) cache_set($key, $row);
+        tnSnapshotSave($id, $row);
+    }
+}
+
+/** True when the database handle is usable. */
+function tnSnapshotDb(): bool {
+    return defined('MYSQLI') && MYSQLI instanceof mysqli;
+}
+
+/**
+ * Stores the last good copy of an event in tn_event_snapshot (migration 0048), so a throttle or an outage cannot empty an event page
+ * that was once loaded, and the nightly database dump keeps it. At most one write an hour per event. A database error never breaks a
+ * page: the file copy still serves.
+ */
+function tnSnapshotSave(int $id, $row): void {
+    if ($id <= 0 || !is_array($row) || !tnListingCopyComplete($row) || !tnSnapshotDb()) return;
+    $throttle = 'tn_snap_w_' . $id;
+    if (cache_get($throttle, 3600) !== false) return;
+    cache_set($throttle, 1);
+    try {
+        $json = json_encode($row, JSON_UNESCAPED_UNICODE);
+        if ($json === false) return;
+        $stmt = MYSQLI->prepare('INSERT INTO tn_event_snapshot (event_id, payload, seen_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE payload = VALUES(payload), seen_at = NOW()');
+        if ($stmt) {
+            $stmt->bind_param('is', $id, $json);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } catch (Throwable $e) {
+        // logged by the database layer; the page keeps working without the snapshot
+    }
+}
+
+/** The stored copy of an event, or false. */
+function tnSnapshotGet(int $id) {
+    if ($id <= 0 || !tnSnapshotDb()) return false;
+    try {
+        $stmt = MYSQLI->prepare('SELECT payload FROM tn_event_snapshot WHERE event_id = ?');
+        if (!$stmt) return false;
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $stmt->bind_result($payload);
+        $found = $stmt->fetch();
+        $stmt->close();
+        if (!$found) return false;
+        $row = json_decode((string) $payload, true);
+        return is_array($row) ? $row : false;
+    } catch (Throwable $e) {
+        return false;
+    }
 }
 
 function stripCategoryRootPath($path) {
@@ -2776,7 +2897,7 @@ function soRedirectCanonicalForm() {
     require_once __DIR__ . '/inc/directories.php';
     foreach (SO_DIRECTORIES as $dir) { $paginating[] = $dir['path']; }
     if (!$skip && $qs !== '' && !in_array($clean, $paginating, true)) {
-        parse_str($qs, $qa);
+        $qa = soSafeParseQuery($qs);
         if (array_key_exists('page', $qa) && !is_array($qa['page'])) { unset($qa['page']); $qs = http_build_query($qa); $dropPage = true; }
     }
     if (!$wrongHost && $clean === $path && !$dropPage) return;
@@ -2873,7 +2994,7 @@ function soSnapshotFile(?string $uri = null): ?string {
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET' && $uri === null) return null;
     $uri = $uri ?? (string) ($_SERVER['REQUEST_URI'] ?? '/');
     $path = rtrim((string) parse_url($uri, PHP_URL_PATH), '/') ?: '/';
-    parse_str((string) parse_url($uri, PHP_URL_QUERY), $q);
+    $q = soSafeParseQuery(parse_url($uri, PHP_URL_QUERY));
     unset($q['slug'], $q['loc']);
     if ($q && array_keys($q) !== ['page']) return null;   // filters, sorts, tracking tags: not the page
     if (preg_match('#^/(admin|ajax|cron|checkout|order-confirmation|thank-you|unsubscribe|search|newsletter)(/|$)#', $path)) return null;
