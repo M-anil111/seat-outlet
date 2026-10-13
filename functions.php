@@ -6667,6 +6667,7 @@ require_once __DIR__ . '/inc/discovery-pages.php';   // /last-minute-tickets, /w
 require_once __DIR__ . '/inc/slugs.php';             // url_slugs table: ids never appear in URLs (soSlug, soEventSlug, soSlugResolve)
 require_once __DIR__ . '/inc/listing-about.php';   // unique About copy from a listing page's own events (county, city, theater-in-city)
 require_once __DIR__ . '/inc/entity-listing.php';   // shared renderer for the venue/city/state/country pages
+soCrawlGuardPublic();   // first: a refused crawler exits here, before any shutdown hook below is registered (they call the ticket API)
 register_shutdown_function('soTopPerformersMaybeRun');   // keeps the home Top performers cards fresh
 register_shutdown_function('soAutoMigrateMaybeRun');   // beta only: keep the schema in step with the code
 register_shutdown_function('soSitemapMaybeRun');   // background sitemap crawl, see inc/sitemap-build.php
@@ -6674,4 +6675,3 @@ register_shutdown_function('imageWorkerMaybeRun');   // background image queue, 
 
 soRedirectCanonicalForm();
 soNoindexPrivatePaths();
-soCrawlGuardPublic();
