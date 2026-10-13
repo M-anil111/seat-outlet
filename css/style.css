@@ -7213,6 +7213,10 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 /* Location chip (e.g. "Ahmedabad"): on hover the place name, map icon and caret turn blue (the hover background is light,
    so white would vanish); the background, border and size keep their existing styles. */
 [data-so-loc-toggle]:hover > *, .so-chips .so-chip--on:hover > *, .so-chips--compact .so-chip--on:hover > *, .so-filterbar .so-chip--on:hover > *, .so-dd[open] > .so-chip:hover > * { color: #0071e3 !important; } /* the label, icon and caret are the chip's only children; applies to every active chip (location, filters, open dropdowns), not only the artist page */
+/* Listing filter chips (.so-filterbar: the date and sort dropdowns): on hover the chip turns blue, like a selected chip, and its
+   label, icon and caret turn white. */
+.so-filterbar .so-chip:hover, .so-filterbar .so-dd[open] > .so-chip:hover { background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important; }
+.so-filterbar .so-chip:hover > *, .so-filterbar .so-dd[open] > .so-chip:hover > * { color: #fff !important; }
 @media (max-width: 575.98px) {
   .so-explore .so-chips, .so-filterbar--compact, .so-chips--compact { flex-wrap: nowrap !important; overflow-x: auto; margin: 0 -12px 10px; padding: 2px 12px 4px; scrollbar-width: none; scroll-snap-type: x proximity; }
   .so-chips > *, .so-chips--compact > * { flex: 0 0 auto; scroll-snap-align: start; }
