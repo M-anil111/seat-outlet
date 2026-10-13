@@ -29,11 +29,16 @@ function tnBreakerFamily($endpoint): string {
  */
 function tnStatsSummary(array $stats): array {
     $pages = (int) ($stats['pages'] ?? 0);
-    $noData = (int) ($stats['no_data'] ?? 0);
-    $suspect = (int) ($stats['pages_suspect'] ?? 0);
+    // Both are counted once per page, so no_data can never exceed pages. A larger value is what a day's file holds when the "pages"
+    // counter was added mid-day (deployed after no_data had been counting): clamp, so the share is never over 100% and a stale
+    // leftover cannot raise an alert.
+    $noData = min($pages, (int) ($stats['no_data'] ?? 0));
+    $suspect = min($pages, (int) ($stats['pages_suspect'] ?? 0));
     $rate = $pages > 0 ? $noData / $pages : 0.0;
     $suspectRate = $pages > 0 ? $suspect / $pages : 0.0;
     return ['pages' => $pages, 'noData' => $noData, 'rate' => round($rate, 3), 'suspect' => $suspect, 'suspectRate' => round($suspectRate, 3),
+            // per call, not per page: how many live calls the API refused (429) and how many our own budget held back
+            'throttled' => (int) ($stats['throttled'] ?? 0), 'overBudget' => (int) ($stats['over_budget'] ?? 0),
             'alert' => $pages >= 50 && ($rate > 0.2 || $suspectRate > 0.2)];
 }
 
@@ -41,6 +46,16 @@ function tnStatsSummary(array $stats): array {
 function tnCallsPerSecond(): float {
     $v = getenv('TN_CALLS_PER_SECOND');
     return ($v === false || $v === '' || !is_numeric($v)) ? 1.0 : max(0.0, (float) $v);
+}
+
+/**
+ * A caller that may only use the spare part of the budget: a cron (CLI), and a page request the snapshot warmer makes to the site
+ * itself (it sends X-SO-Warm with its own user agent, so its visits are not mistaken for visitors and cannot drain the bucket ahead
+ * of them). Both are required: a background caller is also left out of the visitor counts on the health page, and a bot must not be
+ * able to take its failures out of those counts by sending one header.
+ */
+function tnBackgroundCaller(): bool {
+    return PHP_SAPI === 'cli' || (!empty($_SERVER['HTTP_X_SO_WARM']) && ($_SERVER['HTTP_USER_AGENT'] ?? '') === 'SeatOutletSnapshotWarmer/1.0');
 }
 
 /**

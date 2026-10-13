@@ -405,7 +405,7 @@ function tnUnanswered(bool $hadStored): void {
  * ajax/health.php reports today's counts. A counting fault never affects a page.
  */
 function tnCount(string $kind): void {
-    if (PHP_SAPI === 'cli') return;
+    if (tnBackgroundCaller()) return;   // crons and the snapshot warmer's own visits are not visitor outcomes
     // Per-call kinds also count the page once ("pages", and "pages_suspect" for a kept stored list), so a rate can be per page:
     // one page makes several calls, but is one visitor outcome.
     $bump = [$kind];
@@ -485,7 +485,10 @@ function tnParseResult($ch, $response) {
     // Throttled ("Message throttled out", quota exceeded): a failure to retry later, not an answer.
     // Treating it as data skipped the stale fallback and rendered empty listings as 200 pages.
     if ($code === 429 || (isset($decoded['code']) && preg_match('/^9008\d\d$/', (string) $decoded['code']))) {
-        return ['ok' => false, 'data' => $decoded, 'cacheable' => false, 'error' => 'throttled (HTTP ' . $code . ')', 'throttled' => true];
+        // The gateway's own code and message say which limit was hit (per-second spike, application quota, subscription tier), which
+        // is what TicketNetwork support needs to hear and what decides TN_CALLS_PER_SECOND.
+        $why = trim(implode(' ', array_filter([(string) ($decoded['code'] ?? ''), (string) ($decoded['message'] ?? $decoded['Message'] ?? '')])));
+        return ['ok' => false, 'data' => $decoded, 'cacheable' => false, 'error' => 'throttled (HTTP ' . $code . ($why !== '' ? ', ' . substr($why, 0, 120) : '') . ')', 'throttled' => true];
     }
     $cacheable = $code === 200 && !isset($decoded['code']) && !isset($decoded['Message']);
     return ['ok' => true, 'data' => $decoded, 'cacheable' => $cacheable, 'error' => '', 'auth' => $code === 401, 'http' => $code];
@@ -661,14 +664,16 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
  * Over budget, the request answers from the stored copy like an outage, and no call is made.
  */
 function tnBucketAllow(): bool {
-    return tnBucketWait(PHP_SAPI === 'cli', tnCallsPerSecond(), cache_dir() . 'tn_bucket.json');
+    return tnBucketWait(tnBackgroundCaller(), tnCallsPerSecond(), cache_dir() . 'tn_bucket.json');
 }
 
 /** The live part of a cold request: budget, one call (one retry for a fast drop), the breaker, and storing the answer. */
 function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     if (!tnBucketAllow()) {
+        tnCount('over_budget');   // our own limit, not the API's: tells a local bottleneck apart from a throttle on the health page
+        if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
         tnMarkDegraded();
-        return ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) ? $entry['data'] : [];
+        return [];
     }
     $t0 = microtime(true);
     $GLOBALS['tn_retry_after'] = null;
@@ -680,6 +685,7 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     }
 
     if (!$r['ok']) {
+        if (!empty($r['throttled'])) tnCount('throttled');
         tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($GLOBALS['tn_retry_after'] ?? null, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS, tnBreakerFamily($endpoint));
         soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
@@ -745,6 +751,8 @@ function tnRequestMulti(array $requests) {
     $mh = curl_multi_init();
     $handles = [];
     $budgetFile = cache_dir() . 'tn_bucket.json';
+    $background = tnBackgroundCaller();
+    $deadline = microtime(true) + 1.5;   // a visitor's batch waits for tokens as one call would (1.5 s in all), a background batch never
     foreach ($todo as $i => [$endpoint, $params]) {
         // A family whose circuit is open is not called (the other families in this batch still are).
         if (tnBreakerOpen(tnBreakerFamily($endpoint))) {
@@ -752,7 +760,10 @@ function tnRequestMulti(array $requests) {
             continue;
         }
         // Every outbound call takes a token from the shared budget. A call over budget is not sent: the page answers from its stored copy.
-        if (!tnBucketTake(PHP_SAPI === 'cli', tnCallsPerSecond(), $budgetFile)) {
+        // The bucket holds a burst of two at the default rate, so a cold page's third prefetched call must be allowed to wait a moment
+        // rather than fail on the spot (that failure was most of the "no data" pages).
+        if (!tnBucketWait($background, tnCallsPerSecond(), $budgetFile, max(0.0, $deadline - microtime(true)))) {
+            tnCount('over_budget');
             tnUnanswered(!empty($out[$i]));
             continue;
         }
@@ -801,6 +812,7 @@ function tnRequestMulti(array $requests) {
         } else {
             // The Retry-After of the call that actually failed: the retry's header if a retry was sent, else this handle's.
             $after = $retried ? ($GLOBALS['tn_retry_after'] ?? null) : $afterFirst;
+            if (!empty($r['throttled'])) tnCount('throttled');
             tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($after, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS, tnBreakerFamily($endpoint));
             tnUnanswered(!empty($out[$i]));
         }
@@ -937,15 +949,20 @@ function getTnPerformerById($performerId) {
 
     if (function_exists('apcu_fetch')) {
         $cached = apcu_fetch($cacheKey, $found);
-        if ($found) {
+        if ($found && is_array($cached) && isset($cached['id'])) {
             return $cached;
         }
+        // An entry without a record is a failed call kept by the code before this guard (it outlives a deploy that does not restart
+        // PHP-FPM): drop it and look again, instead of answering 503 for the rest of its hour.
+        if ($found && function_exists('apcu_delete')) apcu_delete($cacheKey);
     }
 
     // File cache (6h) so hosts without APCu don't refetch on every view.
     $result = tnRequestCached('/catalog/v2/performers/' . $performerId, [], 6 * 3600);
 
-    if (function_exists('apcu_store')) {
+    // Only a real record goes into APCu. A failed call answers [] (throttled, over budget, circuit open), and keeping that for an hour
+    // made every later visit to the artist page answer 503 from APCu, without reading the file copy or trying the API again.
+    if (function_exists('apcu_store') && isset($result['id'])) {
         apcu_store($cacheKey, $result, 3600);
     }
 

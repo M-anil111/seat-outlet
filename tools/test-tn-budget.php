@@ -88,7 +88,14 @@ $fn = file_get_contents(__DIR__ . '/../functions.php');
 tbCheck('the token request asks for the device scope', strpos($fn, "'scope' => 'default ' . tnDeviceScope()") !== false);
 tbCheck('the token file and cache key are per device', strpos($fn, "CONSUMER_KEY . '|' . BASE_URL . '|' . tnDeviceScope()") !== false && strpos($fn, "TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope()") !== false);
 tbCheck('functions.php loads the budget helpers', strpos($fn, "require_once __DIR__ . '/inc/tn-budget.php';") !== false);
-tbCheck('every live call passes the shared budget before it goes out', strpos($fn, 'if (!tnBucketAllow()) {') !== false && strpos($fn, 'tnBucketWait(PHP_SAPI === \'cli\'') !== false);
+tbCheck('every live call passes the shared budget before it goes out', strpos($fn, 'if (!tnBucketAllow()) {') !== false && strpos($fn, 'tnBucketWait(tnBackgroundCaller()') !== false);
+tbCheck('a batch of prefetched calls waits for tokens like one call would, instead of failing the third on the spot',
+    strpos($fn, '$deadline = microtime(true) + 1.5;') !== false && strpos($fn, 'if (!tnBucketWait($background, tnCallsPerSecond(), $budgetFile, max(0.0, $deadline - microtime(true)))) {') !== false && strpos($fn, 'tnBucketTake(PHP_SAPI') === false);
+unset($_SERVER['HTTP_X_SO_WARM']);
+tbCheck('a cron is a background caller', tnBackgroundCaller() === true);   // this test runs on the CLI
+tbCheck('the snapshot warmer tells the site its visits are background, and nothing counts them as visitor outcomes',
+    strpos(file_get_contents(__DIR__ . '/../cron/warm-snapshots.php'), "CURLOPT_HTTPHEADER => ['X-SO-Warm: 1']") !== false && strpos($fn, "if (tnBackgroundCaller()) return;") !== false
+    && strpos(file_get_contents(__DIR__ . '/../inc/tn-budget.php'), "(!empty(\$_SERVER['HTTP_X_SO_WARM']) && (\$_SERVER['HTTP_USER_AGENT'] ?? '') === 'SeatOutletSnapshotWarmer/1.0')") !== false);
 tbCheck('the cold path is single-flight', strpos($fn, '$flight = tnFlightOpen($flightPath);') !== false && strpos($fn, 'tnFlightClose($flight);') !== false);
 tbCheck('the breaker after a throttle uses Retry-After', strpos($fn, 'tnThrottleWait($GLOBALS[\'tn_retry_after\'] ?? null') !== false);
 tbCheck('the header callback keeps Retry-After', strpos($fn, 'tnRetryAfterFromHeader($line)') !== false);
@@ -114,6 +121,17 @@ $flap = tnStatsSummary(['pages' => 100, 'no_data' => 2, 'pages_suspect' => 30]);
 tbCheck('a long empty-feed flap (30% of pages kept a stored list) is an alert even with a low no-data rate', $flap['suspectRate'] === 0.3 && $flap['alert'] === true);
 $empty = tnStatsSummary([]);
 tbCheck('an empty day is rate 0 and no alert', $empty['pages'] === 0 && $empty['rate'] === 0.0 && $empty['suspectRate'] === 0.0 && $empty['alert'] === false);
+$left = tnStatsSummary(['pages' => 60, 'no_data' => 1442, 'pages_suspect' => 70]);   // the live file on the day "pages" was added
+tbCheck('a no_data count older than the pages counter is clamped to the pages: the share is never over 100%', $left['noData'] === 60 && $left['rate'] === 1.0 && $left['suspect'] === 60 && $left['alert'] === true);
+tbCheck('throttled and over-budget calls are reported separately (per call)', tnStatsSummary(['throttled' => 7, 'over_budget' => 12])['throttled'] === 7 && tnStatsSummary(['over_budget' => 12])['overBudget'] === 12 && $empty['throttled'] === 0 && $empty['overBudget'] === 0);
+$fnStats = file_get_contents(__DIR__ . '/../functions.php');
+tbCheck('a call our own budget holds back is counted (over_budget), a 429 is counted (throttled), in both request paths',
+    substr_count($fnStats, "tnCount('over_budget');") === 2 && substr_count($fnStats, "if (!empty(\$r['throttled'])) tnCount('throttled');") === 2);
+tbCheck('a throttle names the gateway code and message, so Sentry says which limit was hit', strpos($fnStats, "'throttled (HTTP ' . \$code . (\$why !== '' ? ', ' . substr(\$why, 0, 120) : '') . ')'") !== false);
+tbCheck('a failed performer lookup is never kept in APCu (one throttled call used to 503 the artist page for an hour)',
+    preg_match("/if \(function_exists\('apcu_store'\) && isset\(\\\$result\['id'\]\)\) \{\s*apcu_store\(\\\$cacheKey, \\\$result, 3600\);/", $fnStats) === 1);
+tbCheck('an APCu entry without a record (kept before the guard, outliving the deploy) is dropped, not returned',
+    strpos($fnStats, "if (\$found && is_array(\$cached) && isset(\$cached['id'])) {") !== false && strpos($fnStats, "if (\$found && function_exists('apcu_delete')) apcu_delete(\$cacheKey);") !== false);
 $fnStats = file_get_contents(__DIR__ . '/../functions.php');
 tbCheck('tnCount counts the page once (pages) and a kept stored list once per page (pages_suspect)', strpos($fnStats, "\$GLOBALS['tn_page_counted'] = true;\n        \$bump[] = 'pages';") !== false && strpos($fnStats, "\$GLOBALS['tn_page_suspect'] = true;\n        \$bump[] = 'pages_suspect';") !== false);
 tbCheck('the health page and the cron read the counts under a shared lock', strpos($fnStats, 'function tnStatsToday(): array') !== false && strpos($fnStats, 'flock($fh, LOCK_SH)') !== false && strpos(file_get_contents(__DIR__ . '/../ajax/health.php'), 'tnStatsToday()') !== false && strpos(file_get_contents(__DIR__ . '/../cron/check-tn-health.php'), 'tnStatsToday()') !== false);
