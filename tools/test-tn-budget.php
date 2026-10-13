@@ -104,6 +104,14 @@ tbCheck('the request path checks the breaker of the call\'s own family in all fi
 tbCheck('the request path trips only the call\'s own family', substr_count($fnBreaker, ', tnBreakerFamily($endpoint));') >= 3);
 tbCheck('performer lookups check the reference family', strpos($fnBreaker, "tnBreakerOpen('reference')") !== false);
 
+// 6. Health summary: the no-data share and when it is worth an alert
+$s = tnStatsSummary(['live_call' => 80, 'stale_on_error' => 10, 'no_data' => 30]);
+tbCheck('the no-data share counts pages that needed an answer', $s['needed'] === 120 && $s['noData'] === 30 && $s['rate'] === 0.25);
+tbCheck('25% over 120 pages is an alert', $s['alert'] === true);
+tbCheck('30% over 10 pages is not (too few pages to mean anything)', tnStatsSummary(['live_call' => 7, 'no_data' => 3])['alert'] === false);
+tbCheck('10% over 1000 pages is not', tnStatsSummary(['live_call' => 900, 'no_data' => 100])['alert'] === false);
+tbCheck('an empty day is rate 0 and no alert', tnStatsSummary([]) === ['needed' => 0, 'noData' => 0, 'rate' => 0.0, 'alert' => false]);
+
 // tidy up
 @unlink($bucket); @unlink($bucket . '.lock'); @unlink($flight); @rmdir($dir);
 

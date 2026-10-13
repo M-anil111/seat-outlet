@@ -21,6 +21,17 @@ function tnBreakerFamily($endpoint): string {
     return (strpos($e, 'catalog/v2/events') === 0 || strpos($e, 'events/search') !== false) ? 'events' : 'reference';
 }
 
+/**
+ * Today's TicketNetwork outcome counts (cache/tn_stats_<date>.json) as a share: how many visitor pages that needed an answer got none.
+ * The alert flag is on from 20% over at least 50 pages, so a quiet hour with one failure does not page anyone.
+ */
+function tnStatsSummary(array $stats): array {
+    $noData = (int) ($stats['no_data'] ?? 0);
+    $needed = (int) ($stats['live_call'] ?? 0) + (int) ($stats['stale_on_error'] ?? 0) + $noData;
+    $rate = $needed > 0 ? $noData / $needed : 0.0;
+    return ['needed' => $needed, 'noData' => $noData, 'rate' => round($rate, 3), 'alert' => $needed >= 50 && $rate > 0.2];
+}
+
 /** Live calls per second the whole site may make to TicketNetwork. */
 function tnCallsPerSecond(): float {
     $v = getenv('TN_CALLS_PER_SECOND');

@@ -50,6 +50,11 @@ $out['ticketnetwork'] = [
     'callsPerSecond' => tnCallsPerSecond(),
     'circuitOpen' => ['events' => tnBreakerOpen('events'), 'reference' => tnBreakerOpen('reference')],
 ];
+// The share of visitor pages that needed a TicketNetwork answer today and got none, and whether that is worth a look (see tnStatsSummary()).
+$tnSummary = tnStatsSummary($tnStats);
+$out['ticketnetwork']['noDataRate'] = $tnSummary['needed'] > 0 ? $tnSummary['rate'] : null;
+$out['ticketnetwork']['alert'] = $tnSummary['alert'];
+if ($tnSummary['alert']) $out['ok'] = false;
 
 try {
     $img = ['byStatus' => []];

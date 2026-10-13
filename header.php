@@ -103,6 +103,11 @@ include_once 'functions.php';
             soEventRemember($soEvCheck);
         }
     }
+    // A page whose feed failed and that has nothing to show answers 503 + Retry-After, never 200: a crawler would index an empty page.
+    // Listing pages do this through soFeedDownGate(); this catches any page (search, for one) that reached here without it.
+    if (empty($GLOBALS['soFeedDown']) && function_exists('soApiDegraded') && soApiDegraded() && isset($total_count) && (int) $total_count === 0 && empty($events) && http_response_code() === 200) {
+        soFeedDownGate();
+    }
     sendPageCacheHeaders();   // after the 404 check above: the status decides the policy
     ob_start('soPublicCanonical');   // canonical + og:url name the public address, whatever host served the page
     // Keep titles and descriptions inside what a search result shows.
@@ -122,7 +127,7 @@ include_once 'functions.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <?php echo function_exists('soAdsenseMetaTag') ? soAdsenseMetaTag() . "\n" : ''; ?>
-    <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? (!empty($GLOBALS['soFeedDown']) || (function_exists('soApiDegraded') && soApiDegraded() && isset($total_count) && (int) $total_count === 0) ? 'noindex, follow' : ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow'))), ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="robots" content="<?php echo htmlspecialchars($pageRule['robots'] ?? ($pageRobots ?? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow')), ENT_QUOTES, 'UTF-8'); /* a feed failure is a 503 (soFeedDownGate), never a noindex */ ?>">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16.png">

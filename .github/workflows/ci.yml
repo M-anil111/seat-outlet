@@ -69,6 +69,18 @@ jobs:
         run: php tools/test-location-fallback.php
       - name: Pages keep rendering when the ticket feed is down (no empty 503 page)
         run: php tools/test-feed-down.php
+      - name: TicketNetwork call budget, single-flight, Retry-After and breaker families
+        run: php tools/test-tn-budget.php
+      - name: TicketNetwork listing copies, stale windows, empty-answer guard and query guard
+        run: php tools/test-tn-listing-copy.php
+      - name: TicketNetwork event snapshot (migration 0048) and its fallback order
+        run: php tools/test-tn-snapshot.php
+      - name: Listing filter allowlist accepts every filter shape the site builds
+        run: php tools/test-listing-filter.php
+      - name: Every date, price and sort option builds a valid listing request
+        run: php tools/test-listing-options.php
+      - name: Reliability docs state the same windows and limits as the code
+        run: php tools/check-docs-constants.php
       - name: Event offer schema and social profiles
         run: php tools/test-event-offer.php
       - name: Event page never says tickets are unavailable when the feed lists them

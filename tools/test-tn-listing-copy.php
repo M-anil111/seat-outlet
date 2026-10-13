@@ -51,7 +51,25 @@ tlCheck('event detail endpoint gets the 2-hour limit', tnStaleLimit('/catalog/v2
 tlCheck('event search endpoint gets the 2-hour limit', tnStaleLimit('/catalog/v2/events/search') === 7200);
 tlCheck('performer endpoint gets the 14-day limit', tnStaleLimit('/catalog/v2/performers/1451') === 14 * 86400);
 tlCheck('venue endpoint gets the 14-day limit', tnStaleLimit('/catalog/v2/venues/') === 14 * 86400);
-tlCheck('no stale check uses the fixed 14-day limit (each picks its limit by endpoint)', strpos($fnSrc, "['age'] <= TN_STALE_ON_ERROR") === false && substr_count($fnSrc, "['age'] <= tnStaleLimit(\$endpoint)") === 5);
+// five stale fallbacks plus the empty-answer guard in tnFetchStore all pick the limit by endpoint
+tlCheck('no stale check uses the fixed 14-day limit (each picks its limit by endpoint)', strpos($fnSrc, "['age'] <= TN_STALE_ON_ERROR") === false && substr_count($fnSrc, "['age'] <= tnStaleLimit(\$endpoint)") === 6);
+
+// 3b. Empty-answer guard: an empty list never replaces a stored list that still has rows (a flapping feed), but a real emptying passes
+$full = ['count' => 1, 'results' => [$row]];
+$none = ['count' => 0, 'results' => []];
+tlCheck('an empty list answer while the stored list has rows is suspect', tnEmptyListSuspect('/catalog/v2/events/', $none, $full));
+tlCheck('an empty search answer while the stored one has rows is suspect', tnEmptyListSuspect('/catalog/v2/events/search', $none, $full));
+tlCheck('an empty answer with no stored rows is accepted (nothing better to keep)', !tnEmptyListSuspect('/catalog/v2/events/', $none, $none) && !tnEmptyListSuspect('/catalog/v2/events/', $none, null));
+tlCheck('a non-empty answer is never suspect', !tnEmptyListSuspect('/catalog/v2/events/', $full, $full));
+tlCheck('a detail answer (no results key) is never suspect', !tnEmptyListSuspect('/catalog/v2/events/42', ['id' => 42], $full));
+tlCheck('reference data is never subject to the guard', !tnEmptyListSuspect('/catalog/v2/performers/', $none, $full));
+tlCheck('the scalar fetch keeps the stored list and counts the suspect answer', strpos($fnSrc, "tnEmptyListSuspect(\$endpoint, \$r['data'], \$entry['data'])") !== false && strpos($fnSrc, "tnCount('empty_suspect');\n        return \$entry['data'];") !== false);
+tlCheck('the bulk fetch keeps the stored list too', strpos($fnSrc, "tnEmptyListSuspect(\$endpoint, \$r['data'], \$out[\$i])") !== false);
+tlCheck('event page: the H1 falls back to the event name when the spec is missing', strpos($evSrc, "trim((string) (\$evSpec['h1'] ?? '')) !== '' ? (string) \$evSpec['h1'] : (string) (\$event['text']['name'] ?? '')") !== false);
+tlCheck('event page: every heading key the sections read has a default', strpos($evSrc, "array_merge(['kind' => '', 'venue' => '', 'guide' => '', 'other' => '', 'tickets' => '', 'promo' => '', 'faqs' => '', 'about' => '']") !== false);
+$seoEv = file_get_contents(__DIR__ . '/../inc/seo-event.php');
+tlCheck('event page: the secondary lookups are prefetched together', strpos($seoEv, 'tnRequestMulti($evPre)') !== false && strpos($seoEv, 'categoryEventsByLocationSpec(') !== false);
+tlCheck('event page: the city events call is skipped when the venue has other events', strpos($seoEv, "&& empty(\$evVenueData['events'])) ? soSpecCityEvents(") !== false);
 
 // 4. Wiring: the live code uses these helpers in the places the fix depends on
 $fn = file_get_contents(__DIR__ . '/../functions.php');
@@ -62,7 +80,7 @@ tlCheck('the detail call falls back to a complete copy only when it is unavailab
 tlCheck('listing answers save their rows', strpos($fn, "strpos((string) \$endpoint, '/catalog/v2/events') === 0") !== false && strpos($fn, 'tnSaveListingCopies($r[\'data\'])') !== false);
 tlCheck('a fast dropped connection is retried once; throttles are not', strpos($fn, "empty(\$r['throttled']) && (microtime(true) - \$t0) < 3") !== false);
 $ev = file_get_contents(__DIR__ . '/../event.php');
-tlCheck('event page: the heading map defaults to an array', strpos($ev, "\$evH2 = \$evSpec['h2'] ?? [];") !== false);
+tlCheck('event page: the heading map is an array whatever the spec holds', strpos($ev, "\$evH2 = array_merge([") !== false && strpos($ev, "is_array(\$evSpec['h2'] ?? null) ? array_map('strval', \$evSpec['h2']) : []") !== false);
 tlCheck('event page: the venue heading is a string', strpos($ev, "soSpecVenueInfoHtml((string) (\$evH2['venue'] ?? '')") !== false);
 $ft = file_get_contents(__DIR__ . '/../footer.php');
 tlCheck('footer: the social icons are called only when defined', strpos($ft, "if (function_exists('soSocialIconsHtml')) echo soSocialIconsHtml();") !== false);

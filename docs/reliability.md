@@ -78,6 +78,12 @@ TicketNetwork is the only source of what is on sale. The site may show an older 
 - A confirmed "not found" on an event detail deletes its stored copies at once (`tnForgetEventCopies()`), so no fallback can show it again.
 - During a throttle or outage an event may stay visible for up to 2 hours (lists) or 24 hours (copies). That trade-off keeps pages up while the API is limited. Lower `TN_STALE_LISTING` if removals must show faster during outages.
 
+## Empty answers, and never a "0 results" page that looks real
+
+- An empty list answer while the stored list (inside its 2-hour window) still had rows is treated as a flapping feed (`tnEmptyListSuspect()`): the stored list stands and is tried again at the next refresh. It is counted as `empty_suspect` on the health page. A category that really empties shows that within 2 hours.
+- A page whose feed failed and that has nothing to show answers **503 with `Retry-After: 30`**, with the page still rendered and the "loading slowly" card in place of the list (`soFeedDownGate()`, also applied by `header.php` to any page that reached it degraded with no results, search included). It never answers 200 with `noindex`: a crawler would index an empty page, or drop a page that was fine an hour ago.
+- `/ajax/health.php` reports today's `noDataRate` (pages that needed a TicketNetwork answer and got none) and an `alert` flag (over 20% on 50+ pages); `cron/check-tn-health.php` sends that and a three-page listing check to Sentry every 15 minutes.
+
 - The nightly database dump (`cron/backup-db.php`) includes the table, so the event copies are backed up with the rest of the data. The file cache is not backed up; it is only a fast copy.
 - A brand-new event that has never been listed or opened still has no copy until TicketNetwork answers.
 - Restore is the usual database restore; no code step is needed. Check after a restore with `SELECT COUNT(*) FROM tn_event_snapshot`.
