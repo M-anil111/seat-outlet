@@ -7,7 +7,7 @@ require_once __DIR__ . '/../inc/cli-guard.php';
 require_once __DIR__ . '/../inc/listing-filter.php';
 
 $fails = 0;
-function lfCheck(string $name, bool $ok): void { global $fails; echo ($ok ? 'ok   ' : 'FAIL ') . $name . "\n"; if (!$ok) $fails++; }
+function lfilterCheck(string $name, bool $ok): void { global $fails; echo ($ok ? 'ok   ' : 'FAIL ') . $name . "\n"; if (!$ok) $fails++; }
 
 $accept = [
     'listing date window' => "date/date ge 2026-10-13 and date/date le 2029-10-13",
@@ -29,7 +29,7 @@ $accept = [
     'repeated clause' => "country/alphaCode eq 'US' and country/alphaCode eq 'US'",
 ];
 foreach ($accept as $label => $f) {
-    lfCheck("accepts: $label", soLoadMoreFilterOk($f));
+    lfilterCheck("accepts: $label", soLoadMoreFilterOk($f));
 }
 
 $reject = [
@@ -45,14 +45,14 @@ $reject = [
     'nested or in a clause' => "(id eq 1 or id eq 2) and id eq 3 or 1 eq 1",
 ];
 foreach ($reject as $label => $f) {
-    lfCheck("refuses: $label", !soLoadMoreFilterOk($f));
+    lfilterCheck("refuses: $label", !soLoadMoreFilterOk($f));
 }
 
 // Geo and performer parameters have their own fixed shapes.
-lfCheck('geo: nearby with coordinates and a radius', preg_match(LOAD_MORE_GEO_FILTER, 'nearby(40.7128,-74.0060,3000mi)') === 1);
-lfCheck('geo: refuses an OR appended to the radius', preg_match(LOAD_MORE_GEO_FILTER, 'nearby(40.7,-74.0,3000mi) or 1 eq 1') !== 1);
-lfCheck('performer: id eq N accepted', preg_match(LOAD_MORE_PERFORMER_FILTER, 'id eq 12') === 1);
-lfCheck('performer: refuses an OR appended', preg_match(LOAD_MORE_PERFORMER_FILTER, 'id eq 1 or 1 eq 1') !== 1);
+lfilterCheck('geo: nearby with coordinates and a radius', preg_match(LOAD_MORE_GEO_FILTER, 'nearby(40.7128,-74.0060,3000mi)') === 1);
+lfilterCheck('geo: refuses an OR appended to the radius', preg_match(LOAD_MORE_GEO_FILTER, 'nearby(40.7,-74.0,3000mi) or 1 eq 1') !== 1);
+lfilterCheck('performer: id eq N accepted', preg_match(LOAD_MORE_PERFORMER_FILTER, 'id eq 12') === 1);
+lfilterCheck('performer: refuses an OR appended', preg_match(LOAD_MORE_PERFORMER_FILTER, 'id eq 1 or 1 eq 1') !== 1);
 
 echo $fails ? "\n$fails failed\n" : "\nlisting filter: all passed\n";
 exit($fails ? 1 : 0);
