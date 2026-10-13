@@ -204,6 +204,11 @@ function soBlogProcess($html, $addMidNewsletter = true, array $nlArgs = []) {
         $used[$id] = true;
         $toc[] = [strtolower($h->nodeName) === 'h2' ? 2 : 3, $id, $text];
     }
+    // FAQ questions share one <details name>: current browsers then keep one answer open at a time (js/main.js covers
+    // older ones). The question and answer markup is left as written.
+    foreach ($xp->query('//details[contains(concat(" ", normalize-space(@class), " "), " so-faq ")]') as $faq) {
+        if (!$faq->hasAttribute('name')) $faq->setAttribute('name', 'so-blog-faq');
+    }
     $mid = '<!--so-mid-->';
     $h2s = array_values(array_filter($heads, function ($h) { return strtolower($h->nodeName) === 'h2' && trim($h->textContent) !== ''; }));
     $hasNl = $xp->query('//*[contains(@class,"so-nl")]')->length > 0;

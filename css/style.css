@@ -5816,8 +5816,10 @@ main.terms-page .policy-section, main.cookie-page .policy-section { padding-top:
 .blog-post-content h2 { font-size: clamp(26px, 3.4vw, 34px); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; margin: 2.2em 0 .6em; scroll-margin-top: 90px; }
 .blog-post-content h3 { font-size: clamp(20px, 2.4vw, 24px); font-weight: 600; letter-spacing: -.01em; margin: 1.6em 0 .5em; }
 .blog-post-content p { margin: 0 0 1.1em; }
-.blog-post-content ul, .blog-post-content ol { padding-left: 1.3em; margin: 0 0 1.2em; }
-.blog-post-content ul li { list-style: disc; }
+/* Article lists. The live events block (.so-live__list) sits inside the article but is a card list, not text: keep the
+   bullets and indent off it. */
+.blog-post-content ul:not(.so-live__list), .blog-post-content ol { padding-left: 1.3em; margin: 0 0 1.2em; }
+.blog-post-content ul:not(.so-live__list) li { list-style: disc; }
 .blog-post-content ol li { list-style: decimal; }
 .blog-post-content li { margin-bottom: .45em; padding-left: .2em; }
 .blog-post-content a { color: #0056d6; text-underline-offset: 3px; }
