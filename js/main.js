@@ -1496,7 +1496,7 @@ document.addEventListener('click', function (e) {
 // group, and this covers older ones. A <details class="so-faq"> without a name is grouped with its siblings. Clicking the open
 // question still closes it.
 (function () {
-    var named = {}, byParent = new Map(), groups = [];
+    var named = Object.create(null), byParent = new Map(), groups = [];
     document.querySelectorAll('details.so-faq').forEach(function (d) {
         var n = d.getAttribute('name'), list;
         if (n) { list = named[n] = named[n] || []; }
