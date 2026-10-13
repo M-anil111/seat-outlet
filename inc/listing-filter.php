@@ -12,6 +12,7 @@ const LOAD_MORE_FILTER_CLAUSES = [
     '#^_metadata/hasTickets eq true$#',
     '#^(country/alphaCode|stateProvince/alphaCode|defaultCategory/parentCategory/path) eq \'[A-Za-z.0-9]{1,20}\'$#',
     '#^\((country/alphaCode eq \'[A-Z]{2}\'( or country/alphaCode eq \'[A-Z]{2}\')*)\)$#',
+    '#^\(city/id eq \d+( or city/id eq \d+)*\)$#',   // a county: the cities in it, as one OR group
     '#^[a-zA-Z/]+/id eq \d+$#',
     '#^id eq \d+$#',
     '#^id in \(\d+(,\d+)*\)$#',

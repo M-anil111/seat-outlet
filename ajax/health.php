@@ -33,8 +33,18 @@ try {
 }
 
 // Today's TicketNetwork outcomes from visitor requests (counts only): live calls, stale answers, event copies, no-data pages, trips.
-$tnStats = @file_get_contents(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json');
-$out['ticketnetwork'] = ['today' => $tnStats !== false ? (json_decode($tnStats, true) ?: []) : []];
+// Read under a shared lock: tnCount() rewrites this file under an exclusive lock, so a read cannot catch it half-written.
+$tnStats = [];
+$tnFh = @fopen(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json', 'r');
+if ($tnFh) {
+    if (flock($tnFh, LOCK_SH)) {
+        $decoded = json_decode((string) stream_get_contents($tnFh), true);
+        $tnStats = is_array($decoded) ? $decoded : [];
+        flock($tnFh, LOCK_UN);
+    }
+    fclose($tnFh);
+}
+$out['ticketnetwork'] = ['today' => $tnStats];
 
 try {
     $img = ['byStatus' => []];

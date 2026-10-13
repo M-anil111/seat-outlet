@@ -100,7 +100,7 @@ tbCheck('event search is in the events family', tnBreakerFamily('/catalog/v2/eve
 tbCheck('a performer lookup is in the reference family', tnBreakerFamily('/catalog/v2/performers/1451') === 'reference');
 tbCheck('the two families are the ones the breaker tracks', TN_BREAKER_FAMILIES === ['events', 'reference']);
 $fnBreaker = file_get_contents(__DIR__ . '/../functions.php');
-tbCheck('the request path checks the breaker of the call\'s own family', substr_count($fnBreaker, 'tnBreakerOpen(tnBreakerFamily($endpoint))') >= 4);
+tbCheck('the request path checks the breaker of the call\'s own family in all five places', substr_count($fnBreaker, 'tnBreakerOpen(tnBreakerFamily($endpoint))') === 5);
 tbCheck('the request path trips only the call\'s own family', substr_count($fnBreaker, ', tnBreakerFamily($endpoint));') >= 3);
 tbCheck('performer lookups check the reference family', strpos($fnBreaker, "tnBreakerOpen('reference')") !== false);
 

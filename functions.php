@@ -389,8 +389,14 @@ function tnBreakerTrip($why, $seconds = TN_BREAKER_SECONDS, ?string $family = nu
  * reads this flag and answers no-store.
  */
 function tnMarkDegraded() {
+    if (empty($GLOBALS['tn_degraded'])) tnCount('no_data');   // counted once per request, on the first transition
     $GLOBALS['tn_degraded'] = true;
-    tnCount('no_data');
+}
+
+/** A bulk lookup that could not be answered live: a stored answer stands in (counted as stale), otherwise the page is degraded. */
+function tnUnanswered(bool $hadStored): void {
+    if ($hadStored) { tnCount('stale_on_error'); return; }
+    tnMarkDegraded();
 }
 
 /**
@@ -725,12 +731,12 @@ function tnRequestMulti(array $requests) {
     foreach ($todo as $i => [$endpoint, $params]) {
         // A family whose circuit is open is not called (the other families in this batch still are).
         if (tnBreakerOpen(tnBreakerFamily($endpoint))) {
-            if (empty($out[$i])) tnMarkDegraded();
+            tnUnanswered(!empty($out[$i]));
             continue;
         }
         // Every outbound call takes a token from the shared budget. A call over budget is not sent: the page answers from its stored copy.
         if (!tnBucketTake(PHP_SAPI === 'cli', tnCallsPerSecond(), $budgetFile)) {
-            if (empty($out[$i])) tnMarkDegraded();
+            tnUnanswered(!empty($out[$i]));
             continue;
         }
         $handles[$i] = tnBuildHandle($endpoint, $params, 'GET', $token);
@@ -766,9 +772,10 @@ function tnRequestMulti(array $requests) {
             }
         }
         if ($skipped) {
-            if (empty($out[$i])) tnMarkDegraded();
+            tnUnanswered(!empty($out[$i]));
         } elseif ($r['ok']) {
             $out[$i] = $r['data'];
+            tnCount('live_call');
             if ($r['cacheable'] && strpos((string) $endpoint, '/catalog/v2/events') === 0) tnSaveListingCopies($r['data']);
             if ($ttl > 0 && $r['cacheable']) cache_set($key, $r['data']);
             elseif ($ttl > 0 && in_array($r['http'] ?? 0, [400, 404], true) && isset($r['data']['Message'])) cache_set($key . '_nf', $r['data']);
@@ -776,7 +783,7 @@ function tnRequestMulti(array $requests) {
             // The Retry-After of the call that actually failed: the retry's header if a retry was sent, else this handle's.
             $after = $retried ? ($GLOBALS['tn_retry_after'] ?? null) : $afterFirst;
             tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($after, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS, tnBreakerFamily($endpoint));
-            if (empty($out[$i])) tnMarkDegraded();
+            tnUnanswered(!empty($out[$i]));
         }
         curl_multi_remove_handle($mh, $ch);
     }

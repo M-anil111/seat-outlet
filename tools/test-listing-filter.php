@@ -27,6 +27,8 @@ $accept = [
     'price cap' => "pricingInfo/lowPrice/value le 250",
     'country by code' => "country/alphaCode eq 'CA'",
     'repeated clause' => "country/alphaCode eq 'US' and country/alphaCode eq 'US'",
+    'county: its cities as one OR group' => "(city/id eq 1 or city/id eq 2 or city/id eq 30) and date/date ge 2026-10-13",
+    'county: a single city' => "(city/id eq 7) and _metadata/hasTickets eq true",
 ];
 foreach ($accept as $label => $f) {
     lfilterCheck("accepts: $label", soLoadMoreFilterOk($f));
