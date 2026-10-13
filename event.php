@@ -94,7 +94,8 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
     <h1 class="ev-title so-evbar__title"><?php
       // The page's one H1 (no keyword strip on event pages): the spec's "Buy <Performer> Tickets for <Venue> Show in <City>, <ST>". The date
       // is in the line below and in the title tag, so the heading stays one readable line.
-      echo $h($evSpec['h1']);
+      // The spec is built only for events with a name; without one the H1 falls back to the event name (Sentry SEAT-OUTLET-T).
+      echo $h(is_array($evSpec ?? null) && trim((string) ($evSpec['h1'] ?? '')) !== '' ? (string) $evSpec['h1'] : (string) ($event['text']['name'] ?? ''));
     ?></h1>
     <?php if ($eventTimestamp || $eventVenueParts || $eventInfoLink) {
       // Date, time, venue and place, each with its icon; the venue and the city keep their links.
@@ -206,7 +207,8 @@ $evJsonLd = buildFaqPageSchema(array_map(function ($f) { return ['question' => $
 // Spec sections (inc/page-spec.php): every one is built from data this page already holds and is left out when there is none.
 $evStateAbbr = (string) ($event['stateProvince']['text']['abbr'] ?? '');
 $evPerfName = (string) ($primaryPerformer['name'] ?? $evLabel);
-$evH2 = $evSpec['h2'] ?? [];   // a spec without headings leaves nothing to index: the sections below then print no heading (Sentry SEAT-OUTLET-V/T)
+// Every heading key the sections below read has a value, so a spec that lacks one (or is missing) prints an empty heading, not an error (Sentry SEAT-OUTLET-V/T/10/11).
+$evH2 = array_merge(['kind' => '', 'venue' => '', 'guide' => '', 'other' => '', 'tickets' => '', 'promo' => '', 'faqs' => '', 'about' => ''], is_array($evSpec['h2'] ?? null) ? array_map('strval', $evSpec['h2']) : []);
 $evVenueEvents = $evVenueData['events'] ?? [];
 $evShownIds = [(int) $id];
 $evVenueHref = $eventVenueId ? '/venue/' . soVenueSlug($eventVenueName, $eventVenueId, $eventCityLabel) : '';
