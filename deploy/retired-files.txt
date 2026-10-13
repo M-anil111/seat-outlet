@@ -8,3 +8,11 @@ sitemaps/sitemap-index.xml
 css/style.content.3.min.css
 css/style.event.3.min.css
 css/style.home.3.min.css
+login.php
+register.php
+account.php
+account-verify.php
+ajax/account-link.php
+ajax/account-saved.php
+inc/account.php
+inc/account-pages.php
