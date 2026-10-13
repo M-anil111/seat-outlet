@@ -13,4 +13,6 @@ $js = file_get_contents(__DIR__ . '/../js/main.js');
 asCheck('script asks the endpoint only when the marker cookie is set and posts the account page sign out', strpos($js, "indexOf('so_in=1') === -1") !== false && strpos($js, "form.action = '/account'") !== false && strpos($js, "['action', 'signout']") !== false);
 $acct = file_get_contents(__DIR__ . '/../inc/account.php');
 asCheck('sign in sets and sign out clears the marker', substr_count($acct, 'SO_ACCT_MARKER') >= 4);
+$ep = file_get_contents(__DIR__ . '/../ajax/account-state.php');
+asCheck('the endpoint loads the file that defines soContactSameOrigin()', strpos($ep, "inc/contact.php") !== false && strpos(file_get_contents(__DIR__ . '/../inc/contact.php'), 'function soContactSameOrigin') !== false);
 exit($fail ? 1 : 0);
