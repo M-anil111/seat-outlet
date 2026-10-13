@@ -47,7 +47,7 @@ function tnCallsPerSecond(): float {
     $v = getenv('TN_CALLS_PER_SECOND');
     // Default 1. Measured on 13 Oct 2026 (ten minutes each): at 1, 286 calls held back by this budget against 2 throttled by
     // TicketNetwork; at 2, 37 throttled and 38 breaker openings with the same number of live calls (460), so the gateway's limit
-    // (code 900804, the subscription tier) is about one call a second and bursts above it are refused. Only TicketNetwork can
+    // (code 900804, the subscription tier) lets about one call a second through and refuses most of a burst. Only TicketNetwork can
     // raise that tier; a higher rate here just turns budget holds into 429s.
     return ($v === false || $v === '' || !is_numeric($v)) ? 1.0 : max(0.0, (float) $v);
 }

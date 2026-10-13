@@ -235,7 +235,7 @@ Orders and revenue
 
 Limits and terms
 10. What are the exact request limits on our application (per second, per minute, per day) for sandbox and live? How is throttling applied (per application, IP, website config)? Our 429 responses carry WSO2 code 900804 ("Message throttled out", subscription level): which throttling tier is our Catalog API subscription on, and what are its exact figures?
-11. Can you move our subscription to a higher tier? We measured that about one request a second gets through and anything above it is refused with 900804; our pages need about 1.2 to 3 calls a second at normal traffic. Is there a `Retry-After` or quota header we should read (the 429s we see carry none)?
+11. Can you move our subscription to a higher tier? We measured 2 refusals (900804) in ten minutes at a steady 1 request a second and 37 in ten minutes at 2 a second with bursts of 4, with the same number of requests (about 460) getting through either way; our pages need about 1.2 to 3 calls a second at normal traffic. Is there a `Retry-After` or quota header we should read (the 429s we see carry none)?
 12. What are the rules for caching and storing API data (maximum age for prices and availability, allowed storage, display of stale prices, use in schema.org markup)?
 13. Is there a bulk or catalog feed, or a changes-since endpoint, we can use instead of per-page calls?
 14. Are ticket-group or listing-level fields (section, row, quantity, delivery method, price including fees) available through the API for display on comparison pages?
