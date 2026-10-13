@@ -44,7 +44,12 @@ if ($tnFh) {
     }
     fclose($tnFh);
 }
-$out['ticketnetwork'] = ['today' => $tnStats];
+// The live call rate this server uses (TN_CALLS_PER_SECOND or the default) and whether each family's circuit is open right now.
+$out['ticketnetwork'] = [
+    'today' => $tnStats,
+    'callsPerSecond' => tnCallsPerSecond(),
+    'circuitOpen' => ['events' => tnBreakerOpen('events'), 'reference' => tnBreakerOpen('reference')],
+];
 
 try {
     $img = ['byStatus' => []];
