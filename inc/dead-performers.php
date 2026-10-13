@@ -41,7 +41,8 @@ function soDeadPerformerSet(int $id, bool $dead, ?string $dir = null, ?int $now 
     $now = $now ?? time();
     try {
         $file = soDeadPerformerFile($dir);
-        if (!$dead && !is_file($file)) return;   // the common case on a healthy page: nothing to read, nothing to write
+        clearstatcache(true, $file);
+        if (!$dead && (!is_file($file) || (int) @filesize($file) <= 2)) return;   // no file, or an empty list ("[]")   // the common case on a healthy page: nothing to read, nothing to write
         $fh = @fopen($file, 'c+');
         if (!$fh) return;
         if (flock($fh, LOCK_EX)) {
@@ -51,9 +52,7 @@ function soDeadPerformerSet(int $id, bool $dead, ?string $dir = null, ?int $now 
             $before = $all;
             foreach ($all as $k => $seen) { if ((int) $seen <= $now - SO_DEAD_PERFORMER_TTL) unset($all[$k]); }
             if ($dead) $all[$id] = $now; else unset($all[$id]);
-            if ($all !== $before && !$all) {
-                $emptied = true;   // nothing dead any more: the file goes, so healthy pages stop opening it
-            } elseif ($all !== $before) {
+            if ($all !== $before) {
                 ftruncate($fh, 0);
                 rewind($fh);
                 fwrite($fh, json_encode($all));
@@ -62,7 +61,6 @@ function soDeadPerformerSet(int $id, bool $dead, ?string $dir = null, ?int $now 
             flock($fh, LOCK_UN);
         }
         fclose($fh);
-        if (!empty($emptied)) @unlink($file);
     } catch (Throwable $e) {
         // remembering never breaks a page
     }
