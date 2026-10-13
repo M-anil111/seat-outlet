@@ -79,6 +79,10 @@ jobs:
         run: php tools/test-listing-filter.php
       - name: Every date, price and sort option builds a valid listing request
         run: php tools/test-listing-options.php
+      - name: Wrong-city venue facts and page numbers in titles
+        run: |
+          php tools/test-entity-facts-pick.php
+          php tools/test-page-tag.php
       - name: Reliability docs state the same windows and limits as the code
         run: php tools/check-docs-constants.php
       - name: Event offer schema and social profiles
