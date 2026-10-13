@@ -7212,7 +7212,11 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-chips .so-chip--on svg, .so-dd[open] .so-chip svg { color: #fff; }
 /* Location chip (e.g. "Ahmedabad"): on hover the place name, map icon and caret turn blue (the hover background is light,
    so white would vanish); the background, border and size keep their existing styles. */
-[data-so-loc-toggle]:hover > *, .so-chips .so-chip--on:hover > *, .so-chips--compact .so-chip--on:hover > *, .so-filterbar .so-chip--on:hover > *, .so-dd[open] > .so-chip:hover > * { color: #0071e3 !important; } /* the label, icon and caret are the chip's only children; applies to every active chip (location, filters, open dropdowns), not only the artist page */
+[data-so-loc-toggle]:hover > * { color: #0071e3 !important; } /* the label, icon and caret are the chip's only children */
+/* Active chips (a selected filter or location, an open dropdown): hovering keeps the active blue background and the white label,
+   icon and caret. Before, the hover turned the label blue, which vanished on the blue background of an open dropdown. */
+.so-chips .so-chip--on:hover, .so-chips--compact .so-chip--on:hover, .so-filterbar .so-chip--on:hover, .so-dd[open] > .so-chip:hover { background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important; }
+.so-chips .so-chip--on:hover > *, .so-chips--compact .so-chip--on:hover > *, .so-filterbar .so-chip--on:hover > *, .so-dd[open] > .so-chip:hover > * { color: #fff !important; }
 /* Listing filter chips (.so-filterbar: the date and sort dropdowns): on hover the chip turns blue, like a selected chip, and its
    label, icon and caret turn white. */
 .so-filterbar .so-chip:hover, .so-filterbar .so-dd[open] > .so-chip:hover { background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important; }
