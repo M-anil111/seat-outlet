@@ -133,8 +133,29 @@ tbCheck('a failed performer lookup is never kept in APCu (one throttled call use
 tbCheck('an APCu entry without a record (kept before the guard, outliving the deploy) is dropped, not returned',
     strpos($fnStats, "if (\$found && is_array(\$cached) && isset(\$cached['id'])) {") !== false && strpos($fnStats, "if (\$found && function_exists('apcu_delete')) apcu_delete(\$cacheKey);") !== false);
 $fnStats = file_get_contents(__DIR__ . '/../functions.php');
-tbCheck('tnCount counts the page once (pages) and a kept stored list once per page (pages_suspect)', strpos($fnStats, "\$GLOBALS['tn_page_counted'] = true;\n        \$bump[] = 'pages';") !== false && strpos($fnStats, "\$GLOBALS['tn_page_suspect'] = true;\n        \$bump[] = 'pages_suspect';") !== false);
+tbCheck('tnCount counts the page once (pages) and a kept stored list once per page (pages_suspect)', strpos($fnStats, "\$GLOBALS['tn_page_counted'] = true;\n        \$firstOfPage = true;") !== false && strpos($fnStats, "\$GLOBALS['tn_page_suspect'] = true;\n        \$firstSuspect = true;") !== false && tnCountKeys('empty_suspect', true, true, false, false) === ['empty_suspect', 'pages', 'pages_suspect']);
 tbCheck('the health page and the cron read the counts under a shared lock', strpos($fnStats, 'function tnStatsToday(): array') !== false && strpos($fnStats, 'flock($fh, LOCK_SH)') !== false && strpos(file_get_contents(__DIR__ . '/../ajax/health.php'), 'tnStatsToday()') !== false && strpos(file_get_contents(__DIR__ . '/../cron/check-tn-health.php'), 'tnStatsToday()') !== false);
+
+// 7. Who asked: the live Worker versus the beta address, crawlers versus visitors, and the counters that follow
+$fwd = fn($h) => ['HTTP_X_FORWARDED_HOST' => $h];
+tbCheck('a request through the live Worker (X-Forwarded-Host seatoutlet.com) is live', soViaLiveProxy($fwd('seatoutlet.com'), 'seatoutlet.com') === true);
+tbCheck('www, a port and a list of hosts still count (the first host decides)', soViaLiveProxy($fwd('www.seatoutlet.com'), 'seatoutlet.com') && soViaLiveProxy($fwd('seatoutlet.com:443'), 'seatoutlet.com') && soViaLiveProxy($fwd('SeatOutlet.com, other.test'), 'seatoutlet.com'));
+tbCheck('a direct hit on the beta address (no header, or the beta host) is not live', !soViaLiveProxy([], 'seatoutlet.com') && !soViaLiveProxy($fwd(''), 'seatoutlet.com') && !soViaLiveProxy($fwd('beta.seatoutlet.com'), 'seatoutlet.com'));
+tbCheck('look-alike hosts are not live', !soViaLiveProxy($fwd('seatoutlet.com.evil.test'), 'seatoutlet.com') && !soViaLiveProxy($fwd('evil.test'), 'seatoutlet.com') && !soViaLiveProxy($fwd('xseatoutlet.com'), 'seatoutlet.com'));
+tbCheck('crawlers and scripts are told apart from visitors', soClientIsCrawler('Mozilla/5.0 (compatible; SemrushBot/7~bl)') && soClientIsCrawler('Mozilla/5.0 (compatible; Googlebot/2.1)') && soClientIsCrawler('ShapBot 0.1.0') && soClientIsCrawler('curl/8.5.0') && !soClientIsCrawler('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1') && !soClientIsCrawler('') && !soClientIsCrawler('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120 Safari/537.36'));
+tbCheck('a visitor on live: the outcome, and the page once', tnCountKeys('live_call', true, false, false, false) === ['live_call', 'pages'] && tnCountKeys('live_call', false, false, false, false) === ['live_call']);
+tbCheck('a crawler: the same outcome and page again under _bot', tnCountKeys('live_call', true, false, true, false) === ['live_call', 'pages', 'live_call_bot', 'pages_bot'] && tnCountKeys('no_data', false, false, true, false) === ['no_data', 'no_data_bot']);
+tbCheck('a direct hit on beta: under _direct; both at once when a crawler hits beta directly', tnCountKeys('no_data', true, false, false, true) === ['no_data', 'pages', 'no_data_direct', 'pages_direct'] && tnCountKeys('live_call', true, false, true, true) === ['live_call', 'pages', 'live_call_bot', 'pages_bot', 'live_call_direct', 'pages_direct']);
+tbCheck('throttles and budget holds are split too, without counting a page', tnCountKeys('throttled', false, false, true, false) === ['throttled', 'throttled_bot'] && tnCountKeys('over_budget', false, false, false, true) === ['over_budget', 'over_budget_direct']);
+tbCheck('an outcome that is not a demand figure is not split, only the page is', tnCountKeys('event_copy', true, false, true, false) === ['event_copy', 'pages', 'pages_bot']);
+$dm = tnStatsSummary(['pages' => 100, 'pages_bot' => 60, 'live_call' => 200, 'live_call_bot' => 150, 'no_data' => 70, 'no_data_bot' => 63, 'pages_direct' => 10, 'live_call_direct' => 20, 'no_data_direct' => 7])['demand'];
+tbCheck('the demand shares: crawlers 60% of pages, 75% of live calls, 90% of the no-data pages', $dm['botPageShare'] === 0.6 && $dm['botCallShare'] === 0.75 && $dm['botNoDataShare'] === 0.9);
+tbCheck('the beta-address shares', $dm['directPageShare'] === 0.1 && $dm['directCallShare'] === 0.1 && $dm['directNoDataShare'] === 0.1);
+tbCheck('shares are 0 on an empty day and never over 100%', tnStatsSummary([])['demand']['botPageShare'] === 0.0 && tnStatsSummary(['pages' => 10, 'pages_bot' => 99])['demand']['botPageShare'] === 1.0);
+$fnW = file_get_contents(__DIR__ . '/../functions.php');
+tbCheck('tnCount takes its keys from tnCountKeys, with the client class worked out once per request', strpos($fnW, '$bump = tnCountKeys($kind, $firstOfPage, $firstSuspect, $GLOBALS[\'tn_client_class\'][0], $GLOBALS[\'tn_client_class\'][1]);') !== false && strpos($fnW, "if (!isset(\$GLOBALS['tn_client_class'])) \$GLOBALS['tn_client_class'] = [soClientIsCrawler(), !soViaLiveProxy()];") !== false);
+$hl = file_get_contents(__DIR__ . '/../ajax/health.php');
+tbCheck('the health page reports the demand split and whether this request came through the Worker', strpos($hl, "['demand'] = \$tnSummary['demand']") !== false && strpos($hl, "['viaProxy'] = soViaLiveProxy()") !== false);
 
 // tidy up
 @unlink($bucket); @unlink($bucket . '.lock'); @unlink($flight); @rmdir($dir);

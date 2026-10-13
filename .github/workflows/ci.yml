@@ -79,6 +79,8 @@ jobs:
         run: php tools/test-listing-filter.php
       - name: Every date, price and sort option builds a valid listing request
         run: php tools/test-listing-options.php
+      - name: Dead performer links
+        run: php tools/test-dead-performers.php
       - name: Reliability docs state the same windows and limits as the code
         run: php tools/check-docs-constants.php
       - name: Event offer schema and social profiles
@@ -170,6 +172,8 @@ jobs:
         run: php tools/test-slugs.php
       - name: Accounts (emailed link, single use, sessions, saved events, deletion)
         run: php tools/test-account.php
+      - name: Database reconnect (soDbRetry)
+        run: php tools/test-db-retry.php
 
       - name: Apply the sample seed (must also be safe to run twice)
         run: |

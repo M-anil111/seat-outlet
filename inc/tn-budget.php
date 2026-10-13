@@ -36,10 +36,61 @@ function tnStatsSummary(array $stats): array {
     $suspect = min($pages, (int) ($stats['pages_suspect'] ?? 0));
     $rate = $pages > 0 ? $noData / $pages : 0.0;
     $suspectRate = $pages > 0 ? $suspect / $pages : 0.0;
+    $liveCalls = (int) ($stats['live_call'] ?? 0);
+    $share = fn(int $part, int $whole): float => $whole > 0 ? round(min(1.0, $part / $whole), 3) : 0.0;
+    $botPages = min($pages, (int) ($stats['pages_bot'] ?? 0));
+    $directPages = min($pages, (int) ($stats['pages_direct'] ?? 0));
+    $botCalls = min($liveCalls, (int) ($stats['live_call_bot'] ?? 0));
+    $directCalls = min($liveCalls, (int) ($stats['live_call_direct'] ?? 0));
     return ['pages' => $pages, 'noData' => $noData, 'rate' => round($rate, 3), 'suspect' => $suspect, 'suspectRate' => round($suspectRate, 3),
             // per call, not per page: how many live calls the API refused (429) and how many our own budget held back
             'throttled' => (int) ($stats['throttled'] ?? 0), 'overBudget' => (int) ($stats['over_budget'] ?? 0),
+            // who asked: crawlers (_bot) and hits on the beta address (_direct), as a share of pages, of the live calls, and of the no-data pages
+            'demand' => [
+                'botPageShare' => $share($botPages, $pages), 'botCallShare' => $share($botCalls, $liveCalls),
+                'botNoDataShare' => $share(min($noData, (int) ($stats['no_data_bot'] ?? 0)), $noData),
+                'directPageShare' => $share($directPages, $pages), 'directCallShare' => $share($directCalls, $liveCalls),
+                'directNoDataShare' => $share(min($noData, (int) ($stats['no_data_direct'] ?? 0)), $noData),
+            ],
             'alert' => $pages >= 50 && ($rate > 0.2 || $suspectRate > 0.2)];
+}
+
+/**
+ * True when the request came through the live Cloudflare Worker, which fetches every page from the beta origin and sets
+ * X-Forwarded-Host to the public host; false for a direct hit on the beta address. seatoutlet.com is not a separate server: both names
+ * reach one PHP install, so this header is the only way to tell them apart. $server and $publicHost are for tests.
+ */
+function soViaLiveProxy(?array $server = null, ?string $publicHost = null): bool {
+    $server = $server ?? $_SERVER;
+    $publicHost = $publicHost ?? (defined('SO_PUBLIC_ORIGIN') ? (string) parse_url(SO_PUBLIC_ORIGIN, PHP_URL_HOST) : 'seatoutlet.com');
+    $host = strtolower(trim(explode(',', (string) ($server['HTTP_X_FORWARDED_HOST'] ?? ''))[0]));
+    $host = preg_replace('/:\d+$/', '', $host);
+    return $host !== '' && $publicHost !== '' && ($host === strtolower($publicHost) || $host === 'www.' . strtolower($publicHost));
+}
+
+/** A crawler or script rather than a person, for the demand counters only (never to refuse anyone), so the broad pattern is fine. */
+function soClientIsCrawler(?string $userAgent = null): bool {
+    $ua = $userAgent ?? (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+    return $ua !== '' && preg_match('/bot|crawl|spider|slurp|semrush|ahrefs|mj12|petalbot|bytespider|facebookexternalhit|scrapy|python-requests|go-http-client|wget|curl\//i', $ua) === 1;
+}
+
+/**
+ * The counters one TicketNetwork outcome bumps in the day's stats file. The outcome itself; "pages" once per page (the first
+ * outcome of a page request); "pages_suspect" once per page that kept a stored list; and, for a crawler (_bot) or a hit on the beta
+ * address instead of the live Worker (_direct), the same outcome and page again under that suffix, so the health page can say who the
+ * demand and the no-data pages are. $firstOfPage and $firstSuspect are decided by the caller (once per request).
+ */
+function tnCountKeys(string $kind, bool $firstOfPage, bool $firstSuspect, bool $crawler, bool $direct): array {
+    $keys = [$kind];
+    if ($firstOfPage) $keys[] = 'pages';
+    if ($firstSuspect) $keys[] = 'pages_suspect';
+    $split = ['live_call', 'no_data', 'over_budget', 'throttled', 'stale_on_error'];
+    foreach ([['_bot', $crawler], ['_direct', $direct]] as [$suffix, $on]) {
+        if (!$on) continue;
+        if (in_array($kind, $split, true)) $keys[] = $kind . $suffix;
+        if ($firstOfPage) $keys[] = 'pages' . $suffix;
+    }
+    return $keys;
 }
 
 /** Live calls per second the whole site may make to TicketNetwork. */
