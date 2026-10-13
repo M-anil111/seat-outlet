@@ -151,7 +151,7 @@
                     <div class="policy-body">
                         <p>We use cookies and similar technologies on the Platform for the following purposes:</p>
                         <ul>
-                            <li>To enable the Platform to function properly and securely (for example, to keep you logged in and carry out ticket purchases).</li>
+                            <li>To enable the Platform to function properly and securely (for example, to keep the site secure and carry out ticket purchases).</li>
                             <li>To remember your preferences and improve your experience.</li>
                             <li>To understand how visitors use the Platform so we can improve performance and services.</li>
                             <li>To deliver and measure advertising and marketing, including personalized offers and recommendations where permitted by law.</li>
@@ -171,7 +171,6 @@
                             <li>Allowing you to navigate pages and use secure areas</li>
                             <li>Enabling ticket purchasing, checkout, and payment</li>
                             <li>Maintaining your session and security (e.g., fraud prevention and access control)</li>
-                            <li>Keeping you signed in if you choose to sign in: a first-party authentication cookie named <code>so_session</code>, set only after you confirm a sign-in link and kept for up to 30 days or until you sign out (while you confirm a link, a short-lived cookie named <code>so_verify</code> carries the one-time token for up to 15 minutes)</li>
                         </ul>
                         <p>Without these cookies, some parts of the Platform would not function correctly. These cookies do not require your consent under some laws, but you can still remove or block them via your browser settings; however, this may impact functionality.</p>
                         <p class="sub-heading">3.2 Functional (preference) cookies</p>
@@ -271,7 +270,7 @@
                     <div class="policy-body">
                         <p>If you choose to disable or reject cookies, some parts of the Platform may not operate correctly or may be less tailored to you. For example:</p>
                         <ul>
-                            <li>You may not be able to stay logged in or use certain secure features.</li>
+                            <li>You may not be able to use certain secure features.</li>
                             <li>You may not be able to complete ticket purchases or see correct pricing and availability.</li>
                             <li>Recommendations and personalized content may be less relevant.</li>
                         </ul>

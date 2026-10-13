@@ -80,7 +80,6 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
     <li><a href="/ticket-faq">FAQs</a></li>
     <li><a href="/ticket-customer-service">Contact</a></li>
     <li><a href="/blog">Blog</a></li>
-    <li><a href="/login" rel="nofollow">Sign in</a></li>
   </ul>
 </div>
     
