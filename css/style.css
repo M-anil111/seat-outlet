@@ -7584,8 +7584,9 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
   .so-feed__next { right: -23px; }
 }
 @media (min-width: 1200px) { .so-feed .so-feed__track { --so-pw-n: 4; } }
-/* QA-024: from 992px the arrow sat 23px outside the row, which ran it past the viewport edge at 1024px. Keep it inside until the page is wide enough to have a margin for it. */
-@media (min-width: 992px) and (max-width: 1279.98px) { .so-feed__next { right: 4px; } }
+/* QA-024: from 992px the arrow sat 23px outside the row (half over the last card, as on wide screens), which ran it past the viewport edge at 1024px,
+   where the row has only the 12px page gutter. 10px outside keeps the same look inside that gutter; wide screens keep -23px. */
+@media (min-width: 992px) and (max-width: 1279.98px) { .so-feed__next { right: -10px; } }
 @media (max-width: 1279.98px) {
   .top-picks .custom-slider.new-slider .slick-prev { left: 4px; }
   .top-picks .custom-slider.new-slider .slick-next { right: 4px; }
