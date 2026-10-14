@@ -6,6 +6,7 @@
  *   GET /ajax/health.php
  */
 require_once __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../inc/tn-bulk.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store');
@@ -56,6 +57,24 @@ $out['ticketnetwork']['demand'] = $tnSummary['demand'];
 $out['ticketnetwork']['viaProxy'] = soViaLiveProxy();
 $out['ticketnetwork']['alert'] = $tnSummary['alert'];
 if ($tnSummary['alert']) $out['ok'] = false;
+// The local event catalog filled by cron/tn-bulk-import.php (off until TN_BULK_ENABLED=1): how old the last good full refresh and
+// changes pull are, how many events the last full refresh saw, and why the last run stopped. Information only; it never fails the check.
+try {
+    $bulk = ['enabled' => tnBulkEnabled()];
+    if ($bulk['enabled']) {
+        $st = [];
+        $res = @MYSQLI->query('SELECT name, value FROM tn_bulk_state');
+        if ($res) { while ($r = $res->fetch_row()) { $st[$r[0]] = $r[1]; } }
+        $age = function ($k) use ($st) { return isset($st[$k]) ? max(0, time() - (int) $st[$k]) : null; };
+        $bulk['fullAgeSeconds'] = $age('last_full_ok');
+        $bulk['changesAgeSeconds'] = $age('last_incremental_ok');
+        $bulk['events'] = isset($st['last_full_count']) ? (int) $st['last_full_count'] : null;
+        $bulk['lastError'] = isset($st['last_error']) ? substr($st['last_error'], 0, 160) : null;
+    }
+    $out['ticketnetwork']['bulk'] = $bulk;
+} catch (Throwable $e) {
+    $out['ticketnetwork']['bulk'] = ['error' => 'could not read'];
+}
 
 try {
     $img = ['byStatus' => []];

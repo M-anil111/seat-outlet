@@ -71,6 +71,8 @@ jobs:
         run: php tools/test-feed-down.php
       - name: TicketNetwork call budget, single-flight, Retry-After and breaker families
         run: php tools/test-tn-budget.php
+      - name: TicketNetwork bulk importer helpers (parameters, event mapping, run choice, delete safety)
+        run: php tools/test-tn-bulk.php
       - name: TicketNetwork listing copies, stale windows, empty-answer guard and query guard
         run: php tools/test-tn-listing-copy.php
       - name: TicketNetwork event snapshot (migration 0048) and its fallback order
