@@ -5,7 +5,7 @@
  *
  * Budget: a token bucket shared by every PHP process (web requests, crons, crawlers). Visitors (web requests) may use the whole
  * bucket and wait up to 1.5 seconds for a token. Background work (CLI crons) may use only the upper half, so a warmer can never
- * use up the calls a visitor needs. The rate is TN_CALLS_PER_SECOND (default 1; 0 turns the budget off). Lower it while 429s
+ * use up the calls a visitor needs. The rate is TN_CALLS_PER_SECOND (default 0.75, which is 45 a minute; 0 turns the budget off). Lower it while 429s
  * continue; raise it only when TicketNetwork confirms a higher limit.
  */
 
@@ -98,11 +98,12 @@ function tnCountKeys(string $kind, bool $firstOfPage, bool $firstSuspect, bool $
 /** Live calls per second the whole site may make to TicketNetwork. */
 function tnCallsPerSecond(): float {
     $v = getenv('TN_CALLS_PER_SECOND');
-    // Default 1. Measured on 13 Oct 2026 (ten minutes each): at 1, 286 calls held back by this budget against 2 throttled by
-    // TicketNetwork; at 2, 37 throttled and 38 breaker openings with the same number of live calls (460), so the gateway's limit
-    // (code 900804, the subscription tier) lets about one call a second through and refuses most of a burst. Only TicketNetwork can
-    // raise that tier; a higher rate here just turns budget holds into 429s.
-    return ($v === false || $v === '' || !is_numeric($v)) ? 1.0 : max(0.0, (float) $v);
+    // Default 0.75 (45 a minute). TicketNetwork support confirmed on 14 Oct 2026 that the Catalog API limit is 50 requests a minute
+    // (code 900804, the subscription tier). Measured on 13 Oct 2026 (ten minutes each): at 1 a second, about 460 calls got through
+    // (46 a minute) and 2 were refused; at 2, 37 were refused with the same number getting through. A default of 1 is 60 a minute plus
+    // a burst of two, above the limit; 0.75 leaves headroom for the burst and for a window that is not aligned with ours. Only
+    // TicketNetwork can raise the tier; a higher rate here just turns budget holds into 429s.
+    return ($v === false || $v === '' || !is_numeric($v)) ? 0.75 : max(0.0, (float) $v);
 }
 
 /**
