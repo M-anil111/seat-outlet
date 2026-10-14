@@ -5653,7 +5653,8 @@ a.next-event-name { display: block; margin-top: 8px; font-size: 18px; font-weigh
 .so-search-toggle.is-open i { color: #1c47c7; }
 @media (max-width: 991.98px) {
     .keyword-topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px; min-height: 34px; }
-    .keyword-topbar .so-keyword-h1 { padding: 8px 0; text-align: left; font-size: 12px; letter-spacing: .08em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    /* QA-026: the page label wraps instead of being cut with an ellipsis ("HOW TO BUY BROADWAY TIC..."). */
+    .keyword-topbar .so-keyword-h1 { padding: 8px 0; text-align: left; font-size: 12px; line-height: 1.3; letter-spacing: .08em; white-space: normal; overflow-wrap: anywhere; min-width: 0; }
     .so-strip-guarantee { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; font-size: 12px; font-weight: 700; letter-spacing: .02em; color: #fff; text-decoration: none; white-space: nowrap; }
     .so-strip-guarantee::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #7cf7a8; }
     .tm-topbar { display: none; }
@@ -7583,6 +7584,8 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
   .so-feed__next { right: -23px; }
 }
 @media (min-width: 1200px) { .so-feed .so-feed__track { --so-pw-n: 4; } }
+/* QA-024: from 992px the arrow sat 23px outside the row, which ran it past the viewport edge at 1024px. Keep it inside until the page is wide enough to have a margin for it. */
+@media (min-width: 992px) and (max-width: 1279.98px) { .so-feed__next { right: 4px; } }
 @media (max-width: 1279.98px) {
   .top-picks .custom-slider.new-slider .slick-prev { left: 4px; }
   .top-picks .custom-slider.new-slider .slick-next { right: 4px; }
