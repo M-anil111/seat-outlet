@@ -247,6 +247,34 @@ Brand and copy
 18. Is there any restriction on describing Seat Outlet as a comparison site and TicketNetwork as the fulfillment partner?
 19. Can Seat Outlet also join your affiliate program (Impact, CJ or Rakuten) for editorial links, without conflict with the API relationship?
 
+## 7. SOAP v4 reference reviewed (2026-10-14)
+
+Source: the TNWebservices v4.0 SOAP/HTTP action reference pasted from the DevPortal by the site owner. It documents a second, older API on the same host (`https://www.tn-apis.com/TNWebservices/v4`, Bearer token, `websiteConfigID` sent as a parameter). It is not the `/catalog/v2/` REST API this site calls. The pasted text is request and response templates only: it states no rate limit, tier, caching rule, or which subscriptions include it.
+
+**Verdict: no change needed to the current REST implementation.** Nothing in the reference contradicts how `tnRequest()`, the token flow, caching or the throttle handling work. The value is in what it shows exists.
+
+Actions listed: GetCategories, GetCategoriesMasterList, GetCountries, GetCountryByID, GetStates, GetSublevelCategories, GetEvents, GetEventsCompressed, SearchEvents, SearchPerformers, GetPerformerByCategory, GetPerformerByCategoryCompressed, GetEventPerformers, GetHighInventoryPerformers, GetHighSalesPerformers, GetPricingInfo, GetTickets, GetTicketsCompressed, GetEventTickets, GetEventTickets2, GetEventTickets3, GetEventTickets4, GetVenue, GetVenueConfigurations. No order, hold or purchase action appears, which matches section 2: orders are Mercury, not this API.
+
+What it adds to the open questions (Verified from the reference that it is documented; Needs confirmation that our subscription can call it):
+
+| Open item | What the SOAP reference shows |
+|---|---|
+| Ticket-group data (question 14, opportunity 3) | `GetEventTickets4` returns ticket groups: section, row, low and high seat, quantity, valid splits, notes, rating, delivery options, `ActualPrice`, `RetailPrice`, `PreDiscountPrice`, `FacePrice`, currency and converted price. Parameters include `numberOfRecords`, price range, split, `whereClause`, `orderByClause`. |
+| Bulk feed (question 13, opportunity 4) | `GetEventsCompressed`, `GetPerformerByCategoryCompressed` and `GetTicketsCompressed` return one compressed string for a whole result. `GetEvents` also takes `modificationDate`, which looks like a changes-since filter. |
+| Per-event price summary | `GetPricingInfo` returns tickets available, low, high and weighted average price for one event. The REST `pricingInfo` already gives low and average. |
+| Popularity | `GetHighSalesPerformers` and `GetHighInventoryPerformers` return performers with a percent. REST already supports `-salesRank`. |
+| Event to performer map | `GetEventPerformers` returns every event and performer pair in one call. |
+| Compliance | `GetEventTickets4` returns `PossibleJurisdictionDisclaimers` (text, enforcement location, validation level). If we ever show ticket-group listings, TicketNetwork may expect these shown. Needs confirmation. |
+
+Cautions before any build:
+- `WholesalePrice` and `IsMine` are in the ticket group payload. Wholesale is broker cost. It must never be rendered, logged to the page, or put in structured data.
+- Which price field is the customer price and whether it includes fees is not stated (`ActualPrice` vs `RetailPrice` vs `ConvertedActualPrice`). Do not display one until TicketNetwork confirms (question 15).
+- `whereClause` and `orderByClause` are free-text clauses. Never build them from visitor input.
+- The throttle may be shared with the Catalog subscription (WSO2 tier is per subscription) or this API may need its own subscription. A 403 "API Subscription validation failed" means not subscribed, as with Mercury.
+- "v4.0" SOAP may be the legacy surface. Ask whether TicketNetwork plans to retire it before building on it.
+
+Next step if wanted: a read-only probe run with the sandbox key from environment variables (GetPricingInfo, GetEventTickets4 with numberOfRecords=5, GetEventsCompressed with a recent modificationDate) that prints field names and counts only. That answers subscription access and the price-field question without touching production code.
+
 ## Sources
 
 Official TicketNetwork (fetched 2026-10-04):
