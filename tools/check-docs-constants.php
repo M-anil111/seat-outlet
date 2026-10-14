@@ -25,7 +25,7 @@ $expect = [
         '| ' . $human($read('inc/tn-listing-copy.php', 'TN_STALE_LISTING')) . ' |',
         '| ' . $human($read('inc/tn-listing-copy.php', 'TN_LISTING_COPY_TTL')) . ' |',
         '| ' . $human($read('inc/tn-listing-copy.php', 'TN_STALE_ON_ERROR')) . ' |',
-        'Default ' . rtrim(rtrim(number_format($defaultRate, 1), '0'), '.') . ' call' . ($defaultRate == 1 ? '' : 's') . ' a second',
+        'Default ' . rtrim(rtrim(number_format($defaultRate, 2), '0'), '.') . ' call' . ($defaultRate == 1 ? '' : 's') . ' a second',
         'open for ' . $read('functions.php', 'TN_BREAKER_THROTTLE_SECONDS') . ' seconds',
     ],
     'CONTRIBUTING.md' => [
