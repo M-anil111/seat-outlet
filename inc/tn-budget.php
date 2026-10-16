@@ -38,11 +38,22 @@ function tnStatsSummary(array $stats): array {
     $suspectRate = $pages > 0 ? $suspect / $pages : 0.0;
     $liveCalls = (int) ($stats['live_call'] ?? 0);
     $share = fn(int $part, int $whole): float => $whole > 0 ? round(min(1.0, $part / $whole), 3) : 0.0;
+    // Visitors only: pages and no-data pages left after the crawlers and the beta-address hits. A crawler held to its share of the
+    // budget is expected to get stored copies or a 503, so the alert is about people; the figures above stay for every page. A bot hit on
+    // the beta address is in both groups, so the visitor count can be slightly low, never high.
+    $visitorPages = max(0, $pages - min($pages, (int) ($stats['pages_bot'] ?? 0)) - min($pages, (int) ($stats['pages_direct'] ?? 0)));
+    $visitorNoData = min($visitorPages, max(0, $noData - min($noData, (int) ($stats['no_data_bot'] ?? 0)) - min($noData, (int) ($stats['no_data_direct'] ?? 0))));
+    $visitorRate = $visitorPages > 0 ? $visitorNoData / $visitorPages : 0.0;
+    $families = [];
+    foreach (['google', 'bing', 'search_other', 'seo', 'ai', 'other'] as $fam) {
+        $row = ['liveCalls' => (int) ($stats['live_call_bot_' . $fam] ?? 0), 'overBudget' => (int) ($stats['over_budget_bot_' . $fam] ?? 0), 'noData' => (int) ($stats['no_data_bot_' . $fam] ?? 0)];
+        if ($row['liveCalls'] || $row['overBudget'] || $row['noData']) $families[$fam] = $row;
+    }
     $botPages = min($pages, (int) ($stats['pages_bot'] ?? 0));
     $directPages = min($pages, (int) ($stats['pages_direct'] ?? 0));
     $botCalls = min($liveCalls, (int) ($stats['live_call_bot'] ?? 0));
     $directCalls = min($liveCalls, (int) ($stats['live_call_direct'] ?? 0));
-    return ['pages' => $pages, 'noData' => $noData, 'rate' => round($rate, 3), 'suspect' => $suspect, 'suspectRate' => round($suspectRate, 3),
+    return ['pages' => $pages, 'noData' => $noData, 'rate' => round($rate, 3), 'visitorPages' => $visitorPages, 'visitorNoData' => $visitorNoData, 'visitorRate' => round($visitorRate, 3), 'suspect' => $suspect, 'suspectRate' => round($suspectRate, 3),
             // per call, not per page: how many live calls the API refused (429) and how many our own budget held back
             'throttled' => (int) ($stats['throttled'] ?? 0), 'overBudget' => (int) ($stats['over_budget'] ?? 0),
             // who asked: crawlers (_bot) and hits on the beta address (_direct), as a share of pages, of the live calls, and of the no-data pages
@@ -51,8 +62,9 @@ function tnStatsSummary(array $stats): array {
                 'botNoDataShare' => $share(min($noData, (int) ($stats['no_data_bot'] ?? 0)), $noData),
                 'directPageShare' => $share($directPages, $pages), 'directCallShare' => $share($directCalls, $liveCalls),
                 'directNoDataShare' => $share(min($noData, (int) ($stats['no_data_direct'] ?? 0)), $noData),
+                'botFamilies' => $families,
             ],
-            'alert' => $pages >= 50 && ($rate > 0.2 || $suspectRate > 0.2)];
+            'alert' => ($visitorPages >= 50 && $visitorRate > 0.2) || ($pages >= 50 && $suspectRate > 0.2)];
 }
 
 /**
@@ -70,10 +82,43 @@ function soViaLiveProxy(?array $server = null, ?string $publicHost = null): bool
     return $host !== '' && $publicHost !== '' && ($host === strtolower($publicHost) || $host === 'www.' . strtolower($publicHost));
 }
 
-/** A crawler or script rather than a person, for the demand counters only (never to refuse anyone), so the pattern is broad but names crawlers rather than matching a bare "bot" (UptimeRobot, a Cubot phone). */
-function soClientIsCrawler(?string $userAgent = null): bool {
+/**
+ * Which kind of crawler a user agent is, or '' for a person. Used for the demand counters and for the crawler share of the call budget
+ * (never to refuse anyone). The set is small and fixed so the counters cannot grow without limit. A user agent can be faked, so a fake
+ * Googlebot only gets the crawler share of the budget, which is capped, never more.
+ *   google, bing, search_other  search engines          seo   SEO tools and link crawlers
+ *   ai                          AI and data crawlers     other scripts and any other named crawler (not a bare "bot": UptimeRobot, a Cubot phone)
+ */
+function soCrawlerFamily(?string $userAgent = null): string {
     $ua = $userAgent ?? (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
-    return $ua !== '' && preg_match('/\bbot\b|googlebot|bingbot|yandex|baiduspider|duckduckbot|applebot|slurp|semrush|ahrefs|mj12|dotbot|shapbot|petalbot|bytespider|facebookexternalhit|crawl|spider|scrapy|python-requests|go-http-client|wget|curl\//i', $ua) === 1;
+    if ($ua === '') return '';
+    if (preg_match('/googlebot|google-inspectiontool|googleother|adsbot-google|mediapartners-google|apis-google|storebot-google/i', $ua)) return 'google';
+    if (preg_match('/bingbot|bingpreview|adidxbot|msnbot/i', $ua)) return 'bing';
+    if (preg_match('/duckduckbot|applebot|yandex|baiduspider|slurp|sogou|seznambot|naver|yeti\//i', $ua)) return 'search_other';
+    if (preg_match('/semrush|ahrefs|mj12|dotbot|serpstat|seranking|se ranking|screaming frog|sitebulb|rogerbot|blexbot|dataforseo|barkrowler|megaindex|zoominfo|seekport|petalbot/i', $ua)) return 'seo';
+    if (preg_match('/gptbot|chatgpt-user|oai-searchbot|claudebot|claude-web|anthropic-ai|ccbot|amazonbot|perplexity|bytespider|meta-externalagent|facebookbot|diffbot|cohere-ai|ia_archiver|archive\.org_bot/i', $ua)) return 'ai';
+    return preg_match('/\bbot\b|shapbot|facebookexternalhit|crawl|spider|scrapy|python-requests|go-http-client|wget|curl\//i', $ua) === 1 ? 'other' : '';
+}
+
+/** A crawler or script rather than a person, for the demand counters only (never to refuse anyone). */
+function soClientIsCrawler(?string $userAgent = null): bool {
+    return soCrawlerFamily($userAgent) !== '';
+}
+
+/** The budget class of a crawler family: search engines share one capped bucket, every other crawler a smaller one. */
+function tnCrawlerClass(string $family): string {
+    return in_array($family, ['google', 'bing', 'search_other'], true) ? 'search' : 'tool';
+}
+
+/**
+ * The most of the call rate a crawler class may use: TN_BOT_SHARE for search engines (default 0.35, about 16 calls a minute at the
+ * default rate) and TN_TOOL_SHARE for SEO tools, AI crawlers and scripts (default 0.10, about 4 a minute). A share of 0 gives that
+ * class no live calls (it is served from stored copies); visitors always get what the crawlers leave, which is the larger part.
+ */
+function tnCrawlerShare(string $class): float {
+    $v = getenv($class === 'search' ? 'TN_BOT_SHARE' : 'TN_TOOL_SHARE');
+    $default = $class === 'search' ? 0.35 : 0.10;
+    return ($v === false || $v === '' || !is_numeric($v)) ? $default : max(0.0, min(1.0, (float) $v));
 }
 
 /**
@@ -82,7 +127,7 @@ function soClientIsCrawler(?string $userAgent = null): bool {
  * address instead of the live Worker (_direct), the same outcome and page again under that suffix, so the health page can say who the
  * demand and the no-data pages are. $firstOfPage and $firstSuspect are decided by the caller (once per request).
  */
-function tnCountKeys(string $kind, bool $firstOfPage, bool $firstSuspect, bool $crawler, bool $direct): array {
+function tnCountKeys(string $kind, bool $firstOfPage, bool $firstSuspect, bool $crawler, bool $direct, string $family = ''): array {
     $keys = [$kind];
     if ($firstOfPage) $keys[] = 'pages';
     if ($firstSuspect) $keys[] = 'pages_suspect';
@@ -92,6 +137,8 @@ function tnCountKeys(string $kind, bool $firstOfPage, bool $firstSuspect, bool $
         if (in_array($kind, $split, true)) $keys[] = $kind . $suffix;
         if ($firstOfPage) $keys[] = 'pages' . $suffix;
     }
+    // Which crawler family: only for the three figures worth a breakdown (live calls, calls held back, pages without data).
+    if ($crawler && $family !== '' && in_array($kind, ['live_call', 'over_budget', 'no_data'], true)) $keys[] = $kind . '_bot_' . $family;
     return $keys;
 }
 
@@ -141,6 +188,34 @@ function tnBucketTake(bool $background, float $rate, string $file, ?float $now =
     flock($fh, LOCK_UN);
     fclose($fh);
     return $ok;
+}
+
+/**
+ * 'background' for crons and the snapshot warmer, 'search' or 'tool' for a named crawler (see tnCrawlerClass()), else 'visitor'.
+ * Worked out once per request.
+ */
+function tnCallerClass(): string {
+    static $class = null;
+    if ($class !== null) return $class;
+    if (tnBackgroundCaller()) return $class = 'background';
+    $family = soCrawlerFamily();
+    return $class = $family === '' ? 'visitor' : tnCrawlerClass($family);
+}
+
+/**
+ * One call's place in the shared budget, by caller class. A visitor may use the whole bucket and waits a moment for a token. A cron
+ * uses only the upper half. A crawler first takes a token from its own small bucket (the class share of the rate; it never waits),
+ * and then one from the shared bucket on a cron's terms, so crawlers can never use more than their share and always leave visitors the
+ * rest. $dir is the cache directory (the bucket files live there).
+ */
+function tnBudgetWait(string $class, float $rate, string $dir, float $maxWait = 1.5): bool {
+    $main = $dir . 'tn_bucket.json';
+    if ($class === 'visitor') return tnBucketWait(false, $rate, $main, $maxWait);
+    if ($class === 'background') return tnBucketWait(true, $rate, $main);
+    if ($rate <= 0) return true;                       // budget off
+    $share = tnCrawlerShare($class);
+    if ($share <= 0) return false;                     // this class gets stored copies only
+    return tnBucketTake(false, $rate * $share, $dir . 'tn_bucket_' . $class . '.json') && tnBucketTake(true, $rate, $main);
 }
 
 /** A visitor waits up to $maxWait seconds for a token; a background caller never waits. */

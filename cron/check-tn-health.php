@@ -12,11 +12,11 @@ require_once __DIR__ . '/../functions.php';
 $problems = [];
 
 $sum = tnStatsSummary(tnStatsToday());   // locked read: never a half-written file read as an empty day
-echo sprintf("today: %d pages needed an answer, %d got none (%d%%), %d kept a stored list over an empty answer (%d%%)\n",
-    $sum['pages'], $sum['noData'], (int) round($sum['rate'] * 100), $sum['suspect'], (int) round($sum['suspectRate'] * 100));
+echo sprintf("today: %d pages needed an answer, %d got none (%d%%); visitors only: %d pages, %d got none (%d%%); %d kept a stored list over an empty answer (%d%%)\n",
+    $sum['pages'], $sum['noData'], (int) round($sum['rate'] * 100), $sum['visitorPages'], $sum['visitorNoData'], (int) round($sum['visitorRate'] * 100), $sum['suspect'], (int) round($sum['suspectRate'] * 100));
 if ($sum['alert']) {
-    $problems[] = sprintf('%d%% of %d visitor pages got no TicketNetwork data today, %d%% kept a stored list over an empty live answer',
-        (int) round($sum['rate'] * 100), $sum['pages'], (int) round($sum['suspectRate'] * 100));
+    $problems[] = sprintf('%d%% of %d visitor pages got no TicketNetwork data today (crawlers excluded), %d%% of all pages kept a stored list over an empty live answer',
+        (int) round($sum['visitorRate'] * 100), $sum['visitorPages'], (int) round($sum['suspectRate'] * 100));
 }
 
 // Three listing pages that always have events: a 503 means the feed is down, "0 results" with a 200 means the empty-answer guard

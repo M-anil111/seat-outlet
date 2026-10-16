@@ -419,8 +419,8 @@ function tnCount(string $kind): void {
         $GLOBALS['tn_page_suspect'] = true;
         $firstSuspect = true;
     }
-    if (!isset($GLOBALS['tn_client_class'])) $GLOBALS['tn_client_class'] = [soClientIsCrawler(), !soViaLiveProxy()];
-    $bump = tnCountKeys($kind, $firstOfPage, $firstSuspect, $GLOBALS['tn_client_class'][0], $GLOBALS['tn_client_class'][1]);
+    if (!isset($GLOBALS['tn_client_class'])) { $fam = soCrawlerFamily(); $GLOBALS['tn_client_class'] = [$fam !== '', !soViaLiveProxy(), $fam]; }
+    $bump = tnCountKeys($kind, $firstOfPage, $firstSuspect, $GLOBALS['tn_client_class'][0], $GLOBALS['tn_client_class'][1], $GLOBALS['tn_client_class'][2]);
     try {
         $fh = @fopen(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json', 'c+');
         if (!$fh) return;
@@ -668,7 +668,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
  * Over budget, the request answers from the stored copy like an outage, and no call is made.
  */
 function tnBucketAllow(): bool {
-    return tnBucketWait(tnBackgroundCaller(), tnCallsPerSecond(), cache_dir() . 'tn_bucket.json');
+    return tnBudgetWait(tnCallerClass(), tnCallsPerSecond(), cache_dir());
 }
 
 /** The live part of a cold request: budget, one call (one retry for a fast drop), the breaker, and storing the answer. */
@@ -754,8 +754,7 @@ function tnRequestMulti(array $requests) {
     $token = getTnAccessToken();
     $mh = curl_multi_init();
     $handles = [];
-    $budgetFile = cache_dir() . 'tn_bucket.json';
-    $background = tnBackgroundCaller();
+    $callerClass = tnCallerClass();   // visitor, background (cron) or a crawler class: see tnBudgetWait()
     $deadline = microtime(true) + 1.5;   // a visitor's batch waits for tokens as one call would (1.5 s in all), a background batch never
     foreach ($todo as $i => [$endpoint, $params]) {
         // A family whose circuit is open is not called (the other families in this batch still are).
@@ -766,7 +765,7 @@ function tnRequestMulti(array $requests) {
         // Every outbound call takes a token from the shared budget. A call over budget is not sent: the page answers from its stored copy.
         // The bucket holds a burst of two at the default rate, so a cold page's third prefetched call must be allowed to wait a moment
         // rather than fail on the spot (that failure was most of the "no data" pages).
-        if (!tnBucketWait($background, tnCallsPerSecond(), $budgetFile, max(0.0, $deadline - microtime(true)))) {
+        if (!tnBudgetWait($callerClass, tnCallsPerSecond(), cache_dir(), max(0.0, $deadline - microtime(true)))) {
             tnCount('over_budget');
             tnUnanswered(!empty($out[$i]));
             continue;
