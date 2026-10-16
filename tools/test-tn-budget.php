@@ -88,9 +88,9 @@ $fn = file_get_contents(__DIR__ . '/../functions.php');
 tbCheck('the token request asks for the device scope', strpos($fn, "'scope' => 'default ' . tnDeviceScope()") !== false);
 tbCheck('the token file and cache key are per device', strpos($fn, "CONSUMER_KEY . '|' . BASE_URL . '|' . tnDeviceScope()") !== false && strpos($fn, "TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope()") !== false);
 tbCheck('functions.php loads the budget helpers', strpos($fn, "require_once __DIR__ . '/inc/tn-budget.php';") !== false);
-tbCheck('every live call passes the shared budget before it goes out', strpos($fn, 'if (!tnBucketAllow()) {') !== false && strpos($fn, 'tnBucketWait(tnBackgroundCaller()') !== false);
+tbCheck('every live call passes the shared budget before it goes out', strpos($fn, 'if (!tnBucketAllow()) {') !== false && strpos($fn, 'return tnBudgetWait(tnCallerClass(), tnCallsPerSecond(), cache_dir());') !== false);
 tbCheck('a batch of prefetched calls waits for tokens like one call would, instead of failing the third on the spot',
-    strpos($fn, '$deadline = microtime(true) + 1.5;') !== false && strpos($fn, 'if (!tnBucketWait($background, tnCallsPerSecond(), $budgetFile, max(0.0, $deadline - microtime(true)))) {') !== false && strpos($fn, 'tnBucketTake(PHP_SAPI') === false);
+    strpos($fn, '$deadline = microtime(true) + 1.5;') !== false && strpos($fn, 'if (!tnBudgetWait($callerClass, tnCallsPerSecond(), cache_dir(), max(0.0, $deadline - microtime(true)))) {') !== false && strpos($fn, 'tnBucketTake(PHP_SAPI') === false);
 unset($_SERVER['HTTP_X_SO_WARM']);
 tbCheck('a cron is a background caller', tnBackgroundCaller() === true);   // this test runs on the CLI
 tbCheck('the snapshot warmer tells the site its visits are background, and nothing counts them as visitor outcomes',
@@ -154,12 +154,65 @@ tbCheck('the demand shares: crawlers 60% of pages, 75% of live calls, 90% of the
 tbCheck('the beta-address shares', $dm['directPageShare'] === 0.1 && $dm['directCallShare'] === 0.1 && $dm['directNoDataShare'] === 0.1);
 tbCheck('shares are 0 on an empty day and never over 100%', tnStatsSummary([])['demand']['botPageShare'] === 0.0 && tnStatsSummary(['pages' => 10, 'pages_bot' => 99])['demand']['botPageShare'] === 1.0);
 $fnW = file_get_contents(__DIR__ . '/../functions.php');
-tbCheck('tnCount takes its keys from tnCountKeys, with the client class worked out once per request', strpos($fnW, '$bump = tnCountKeys($kind, $firstOfPage, $firstSuspect, $GLOBALS[\'tn_client_class\'][0], $GLOBALS[\'tn_client_class\'][1]);') !== false && strpos($fnW, "if (!isset(\$GLOBALS['tn_client_class'])) \$GLOBALS['tn_client_class'] = [soClientIsCrawler(), !soViaLiveProxy()];") !== false);
+tbCheck('tnCount takes its keys from tnCountKeys, with the client class worked out once per request', strpos($fnW, '$bump = tnCountKeys($kind, $firstOfPage, $firstSuspect, $GLOBALS[\'tn_client_class\'][0], $GLOBALS[\'tn_client_class\'][1], $GLOBALS[\'tn_client_class\'][2]);') !== false && strpos($fnW, "if (!isset(\$GLOBALS['tn_client_class'])) { \$fam = soCrawlerFamily(); \$GLOBALS['tn_client_class'] = [\$fam !== '', !soViaLiveProxy(), \$fam]; }") !== false);
 $hl = file_get_contents(__DIR__ . '/../ajax/health.php');
 tbCheck('the health page reports the demand split and whether this request came through the Worker', strpos($hl, "['demand'] = \$tnSummary['demand']") !== false && strpos($hl, "['viaProxy'] = soViaLiveProxy()") !== false);
 
 // tidy up
 @unlink($bucket); @unlink($bucket . '.lock'); @unlink($flight); @rmdir($dir);
+
+
+// --- Crawler families, the crawler share of the budget, and the visitor-only alert -------------------------------------------------
+tbCheck('crawler families', soCrawlerFamily('Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)') === 'google' && soCrawlerFamily('Mozilla/5.0 (compatible; bingbot/2.0)') === 'bing'
+    && soCrawlerFamily('Mozilla/5.0 (compatible; DuckDuckBot/1.1)') === 'search_other' && soCrawlerFamily('Mozilla/5.0 (compatible; SemrushBot/7~bl)') === 'seo'
+    && soCrawlerFamily('Mozilla/5.0 (compatible; SERankingBacklinksBot/1.0)') === 'seo' && soCrawlerFamily('Mozilla/5.0 AppleWebKit/537.36 (compatible; GPTBot/1.2)') === 'ai'
+    && soCrawlerFamily('ClaudeBot/1.0') === 'ai' && soCrawlerFamily('python-requests/2.31') === 'other' && soCrawlerFamily('ShapBot 0.1.0') === 'other');
+tbCheck('people and monitors are not crawlers', soCrawlerFamily('') === '' && soCrawlerFamily('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1') === ''
+    && soCrawlerFamily('Mozilla/5.0 (Linux; Android 12; Cubot P50) Chrome/120 Mobile Safari/537.36') === '' && soCrawlerFamily('UptimeRobot/2.0') === '');
+tbCheck('search engines share one class, every other crawler the smaller one', tnCrawlerClass('google') === 'search' && tnCrawlerClass('bing') === 'search' && tnCrawlerClass('search_other') === 'search'
+    && tnCrawlerClass('seo') === 'tool' && tnCrawlerClass('ai') === 'tool' && tnCrawlerClass('other') === 'tool');
+putenv('TN_BOT_SHARE'); putenv('TN_TOOL_SHARE');
+tbCheck('crawler shares default to 0.35 for search engines and 0.10 for the rest', tnCrawlerShare('search') === 0.35 && tnCrawlerShare('tool') === 0.10);
+putenv('TN_BOT_SHARE=0.5'); putenv('TN_TOOL_SHARE=7');
+tbCheck('shares can be set, and are kept between 0 and 1', tnCrawlerShare('search') === 0.5 && tnCrawlerShare('tool') === 1.0);
+putenv('TN_BOT_SHARE=abc'); tbCheck('a bad share falls back to the default', tnCrawlerShare('search') === 0.35);
+putenv('TN_BOT_SHARE'); putenv('TN_TOOL_SHARE');
+
+$cdir = sys_get_temp_dir() . '/so-tn-crawler-test-' . getmypid() . '/';
+@mkdir($cdir, 0777, true);
+$wipe = function () use ($cdir) { foreach (glob($cdir . 'tn_bucket*') ?: [] as $f) @unlink($f); };
+$wipe();
+tbCheck('a crawler may take a token when the bucket is full, and leaves the rest for visitors', tnBudgetWait('search', 1.0, $cdir) === true && tnBudgetWait('visitor', 1.0, $cdir, 0.0) === true);
+$wipe();
+$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('search', 1.0, $cdir)) $ok++; }
+tbCheck('thirty crawler tries in one instant take at most one token (the cron rule on the shared bucket)', $ok === 1);
+tbCheck('...and a visitor still gets the token the crawlers left', tnBudgetWait('visitor', 1.0, $cdir, 0.0) === true);
+$wipe();
+$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('search', 10.0, $cdir)) $ok++; }
+tbCheck('at 10 calls a second search crawlers stop at their own bucket (7 = burst of 2 x 3.5 a second), not at the shared one', $ok === 7);
+$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('tool', 10.0, $cdir)) $ok++; }
+tbCheck('SEO tools and AI crawlers have their own, smaller bucket (burst 2) that search engines do not use up', $ok === 2);
+tbCheck('visitors still have the rest of the shared bucket after the crawlers took theirs', tnBudgetWait('visitor', 10.0, $cdir, 0.0) === true && tnBudgetWait('visitor', 10.0, $cdir, 0.0) === true);
+$wipe();
+putenv('TN_BOT_SHARE=0'); tbCheck('a share of 0 gives that class no live calls', tnBudgetWait('search', 1.0, $cdir) === false); putenv('TN_BOT_SHARE');
+tbCheck('with the budget off (rate 0) crawlers are not held back either', tnBudgetWait('search', 0.0, $cdir) === true && tnBudgetWait('tool', 0.0, $cdir) === true);
+$wipe();
+tbCheck('a cron keeps the cron rule', tnBudgetWait('background', 1.0, $cdir) === true && tnBudgetWait('background', 1.0, $cdir) === false);
+foreach (glob($cdir . '*') ?: [] as $f) @unlink($f); @rmdir($cdir);
+tbCheck('the caller class of this CLI test is background', tnCallerClass() === 'background');
+
+tbCheck('a crawler family is counted for live calls, held-back calls and no-data pages only', tnCountKeys('live_call', true, false, true, false, 'seo') === ['live_call', 'pages', 'live_call_bot', 'pages_bot', 'live_call_bot_seo']
+    && tnCountKeys('over_budget', false, false, true, false, 'google') === ['over_budget', 'over_budget_bot', 'over_budget_bot_google']
+    && tnCountKeys('event_copy', false, false, true, false, 'google') === ['event_copy']
+    && tnCountKeys('live_call', true, false, false, false, 'seo') === ['live_call', 'pages']);
+$fam = tnStatsSummary(['pages' => 10, 'live_call_bot_google' => 5, 'over_budget_bot_google' => 9, 'live_call_bot_seo' => 2, 'no_data_bot_ai' => 3]);
+tbCheck('the summary lists each crawler family with its calls, held-back calls and no-data pages', $fam['demand']['botFamilies']['google'] === ['liveCalls' => 5, 'overBudget' => 9, 'noData' => 0] && $fam['demand']['botFamilies']['seo']['liveCalls'] === 2 && $fam['demand']['botFamilies']['ai']['noData'] === 3 && !isset($fam['demand']['botFamilies']['bing']));
+$v = tnStatsSummary(['pages' => 1000, 'pages_bot' => 900, 'no_data' => 720, 'no_data_bot' => 715]);
+tbCheck('crawlers with no data do not raise the alert when visitors are served', $v['rate'] === 0.72 && $v['visitorPages'] === 100 && $v['visitorNoData'] === 5 && $v['visitorRate'] === 0.05 && $v['alert'] === false);
+$v = tnStatsSummary(['pages' => 1000, 'pages_bot' => 900, 'no_data' => 800, 'no_data_bot' => 700]);
+tbCheck('visitors without data do raise it (100 visitor pages, all without data)', $v['visitorRate'] === 1.0 && $v['alert'] === true);
+tbCheck('fewer than 50 visitor pages never raises the no-data alert', tnStatsSummary(['pages' => 1000, 'pages_bot' => 970, 'no_data' => 900, 'no_data_bot' => 880])['alert'] === false);
+tbCheck('visitor figures are never negative or over the page count', tnStatsSummary(['pages' => 10, 'pages_bot' => 99, 'no_data' => 5])['visitorPages'] === 0 && tnStatsSummary(['pages' => 10, 'no_data' => 50])['visitorNoData'] <= 10);
 
 echo $fails ? "\n$fails failed\n" : "\ntn budget: all passed\n";
 exit($fails ? 1 : 0);
