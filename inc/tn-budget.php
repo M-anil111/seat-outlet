@@ -44,6 +44,16 @@ function tnStatsSummary(array $stats): array {
     $visitorPages = max(0, $pages - min($pages, (int) ($stats['pages_bot'] ?? 0)) - min($pages, (int) ($stats['pages_direct'] ?? 0)));
     $visitorNoData = min($visitorPages, max(0, $noData - min($noData, (int) ($stats['no_data_bot'] ?? 0)) - min($noData, (int) ($stats['no_data_direct'] ?? 0))));
     $visitorRate = $visitorPages > 0 ? $visitorNoData / $visitorPages : 0.0;
+    // Why pages had no data, for visitors and for crawlers (keys no_data_why_<reason>, with the crawler share under _bot; beta-address hits
+    // are not separated here). The reasons are a fixed set written by tnMarkDegraded(): breaker, budget, throttled, api_error, coalesced, unknown.
+    $why = ['visitor' => [], 'bot' => []];
+    foreach ($stats as $k => $n) {
+        if (strpos((string) $k, 'no_data_why_') !== 0 || substr((string) $k, -4) === '_bot' || substr((string) $k, -7) === '_direct') continue;
+        $reason = substr((string) $k, strlen('no_data_why_'));
+        $bot = min((int) $n, (int) ($stats[$k . '_bot'] ?? 0));
+        if ($bot > 0) $why['bot'][$reason] = $bot;
+        if ((int) $n - $bot > 0) $why['visitor'][$reason] = (int) $n - $bot;
+    }
     $families = [];
     foreach (['google', 'bing', 'search_other', 'seo', 'ai', 'other'] as $fam) {
         $row = ['liveCalls' => (int) ($stats['live_call_bot_' . $fam] ?? 0), 'overBudget' => (int) ($stats['over_budget_bot_' . $fam] ?? 0), 'noData' => (int) ($stats['no_data_bot_' . $fam] ?? 0)];
@@ -64,6 +74,7 @@ function tnStatsSummary(array $stats): array {
                 'directNoDataShare' => $share(min($noData, (int) ($stats['no_data_direct'] ?? 0)), $noData),
                 'botFamilies' => $families,
             ],
+            'noDataWhy' => $why,
             'alert' => ($visitorPages >= 50 && $visitorRate > 0.2) || ($pages >= 50 && $suspectRate > 0.2)];
 }
 
@@ -132,9 +143,11 @@ function tnCountKeys(string $kind, bool $firstOfPage, bool $firstSuspect, bool $
     if ($firstOfPage) $keys[] = 'pages';
     if ($firstSuspect) $keys[] = 'pages_suspect';
     $split = ['live_call', 'no_data', 'over_budget', 'throttled', 'stale_on_error'];
+    // The reason a page had no data (no_data_why_<reason>) is split like no_data itself.
+    $isWhy = strpos($kind, 'no_data_why_') === 0;
     foreach ([['_bot', $crawler], ['_direct', $direct]] as [$suffix, $on]) {
         if (!$on) continue;
-        if (in_array($kind, $split, true)) $keys[] = $kind . $suffix;
+        if ($isWhy || in_array($kind, $split, true)) $keys[] = $kind . $suffix;
         if ($firstOfPage) $keys[] = 'pages' . $suffix;
     }
     // Which crawler family: only for the three figures worth a breakdown (live calls, calls held back, pages without data).
@@ -167,10 +180,10 @@ function tnBackgroundCaller(): bool {
  * Takes one token if the bucket allows it. Background callers need 1 + half the burst, so they leave the rest for visitors.
  * Fails open when the bucket file cannot be locked: a counter fault must never block a visitor.
  */
-function tnBucketTake(bool $background, float $rate, string $file, ?float $now = null): bool {
+function tnBucketTake(bool $background, float $rate, string $file, ?float $now = null, ?float $burst = null): bool {
     if ($rate <= 0) return true;
     $now = $now ?? microtime(true);
-    $burst = max(2.0, $rate * 2);
+    $burst = $burst ?? max(2.0, $rate * 2);
     $fh = @fopen($file . '.lock', 'c');
     if (!$fh) return true;
     if (!flock($fh, LOCK_EX)) {   // no lock: do not block and do not count (fail open, as above)
@@ -204,9 +217,11 @@ function tnCallerClass(): string {
 
 /**
  * One call's place in the shared budget, by caller class. A visitor may use the whole bucket and waits a moment for a token. A cron
- * uses only the upper half. A crawler first takes a token from its own small bucket (the class share of the rate; it never waits),
- * and then one from the shared bucket on a cron's terms, so crawlers can never use more than their share and always leave visitors the
- * rest. $dir is the cache directory (the bucket files live there).
+ * uses only the upper half and never waits. A crawler first takes a token from its own small bucket (the class share of the rate, with a
+ * burst of 4 so the three or four calls of one cold page can all go out; it never waits for this one), then one from the shared bucket on
+ * a cron's terms (it leaves the visitors the upper half), waiting up to $maxWait for it as a visitor does. A crawler therefore can never
+ * use more than its share, always leaves visitors the rest, and a page of several calls can finish. If the shared bucket gives nothing in
+ * time, the class token is given back. $dir is the cache directory (the bucket files live there).
  */
 function tnBudgetWait(string $class, float $rate, string $dir, float $maxWait = 1.5): bool {
     $main = $dir . 'tn_bucket.json';
@@ -215,7 +230,36 @@ function tnBudgetWait(string $class, float $rate, string $dir, float $maxWait = 
     if ($rate <= 0) return true;                       // budget off
     $share = tnCrawlerShare($class);
     if ($share <= 0) return false;                     // this class gets stored copies only
-    return tnBucketTake(false, $rate * $share, $dir . 'tn_bucket_' . $class . '.json') && tnBucketTake(true, $rate, $main);
+    $classRate = $rate * $share;
+    $classBurst = max(4.0, $classRate * 2);
+    $classFile = $dir . 'tn_bucket_' . $class . '.json';
+    if (!tnBucketTake(false, $classRate, $classFile, null, $classBurst)) return false;
+    $deadline = microtime(true) + max(0.0, $maxWait);
+    while (true) {
+        if (tnBucketTake(true, $rate, $main)) return true;
+        $left = $deadline - microtime(true);
+        if ($left <= 0) break;
+        usleep((int) (min(0.15, $left) * 1000000));
+    }
+    tnBucketGive($classFile, $classRate, $classBurst);   // no call was made, so the class does not pay for it
+    return false;
+}
+
+/** Gives one token back to a bucket (never above $burst), for a call that took a token and then made no call. */
+function tnBucketGive(string $file, float $rate, float $burst, ?float $now = null): void {
+    if ($rate <= 0) return;
+    $now = $now ?? microtime(true);
+    $fh = @fopen($file . '.lock', 'c');
+    if (!$fh) return;
+    if (flock($fh, LOCK_EX)) {
+        $state = is_file($file) ? json_decode((string) @file_get_contents($file), true) : null;
+        $tokens = is_array($state) ? (float) ($state['tokens'] ?? 0) : 0.0;
+        $last = is_array($state) ? (float) ($state['t'] ?? $now) : $now;
+        $tokens = min($burst, min($burst, $tokens + max(0.0, $now - $last) * $rate) + 1.0);
+        @file_put_contents($file, json_encode(['tokens' => $tokens, 't' => $now]), LOCK_EX);
+        flock($fh, LOCK_UN);
+    }
+    fclose($fh);
 }
 
 /** A visitor waits up to $maxWait seconds for a token; a background caller never waits. */

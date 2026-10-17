@@ -58,6 +58,9 @@ $out['ticketnetwork']['overBudget'] = $tnSummary['overBudget'];
 // Who the demand is: crawlers and hits on the beta address (not through the live Worker) as shares of today's pages, live calls and
 // no-data pages, and whether THIS request came through the Worker (curl the health URL on each hostname to see the difference).
 $out['ticketnetwork']['demand'] = $tnSummary['demand'];
+// Why pages had no data today, for visitors and for crawlers: breaker (circuit open), budget (our own call limit), throttled (HTTP 429),
+// api_error (timeout or 5xx), coalesced (waited on another request's call and got nothing), unknown.
+$out['ticketnetwork']['noDataWhy'] = $tnSummary['noDataWhy'];
 $out['ticketnetwork']['viaProxy'] = soViaLiveProxy();
 $out['ticketnetwork']['alert'] = $tnSummary['alert'];
 if ($tnSummary['alert']) $out['ok'] = false;
