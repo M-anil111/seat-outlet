@@ -389,15 +389,18 @@ function tnBreakerTrip($why, $seconds = TN_BREAKER_SECONDS, ?string $family = nu
  * nothing stale to show) must not be kept by a CDN: sendPageCacheHeaders()
  * reads this flag and answers no-store.
  */
-function tnMarkDegraded() {
-    if (empty($GLOBALS['tn_degraded'])) tnCount('no_data');   // counted once per request, on the first transition
+function tnMarkDegraded(string $why = 'unknown') {
+    if (empty($GLOBALS['tn_degraded'])) {
+        tnCount('no_data');   // counted once per request, on the first transition
+        tnCount('no_data_why_' . $why);   // and why: breaker, budget, throttled, api_error, coalesced, unknown (see tnCountKeys())
+    }
     $GLOBALS['tn_degraded'] = true;
 }
 
 /** A bulk lookup that could not be answered live: a stored answer stands in (counted as stale), otherwise the page is degraded. */
-function tnUnanswered(bool $hadStored): void {
+function tnUnanswered(bool $hadStored, string $why = 'unknown'): void {
     if ($hadStored) { tnCount('stale_on_error'); return; }
-    tnMarkDegraded();
+    tnMarkDegraded($why);
 }
 
 /**
@@ -639,7 +642,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
     // Circuit open for this family: do not queue more 20s timeouts behind a dead API.
     if (tnBreakerOpen(tnBreakerFamily($endpoint))) {
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
-        tnMarkDegraded();
+        tnMarkDegraded('breaker');
         return [];
     }
 
@@ -653,7 +656,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
             return $hit !== false ? $hit : cache_get($key . '_nf', TN_NEGATIVE_TTL);
         });
         if ($shared !== false) { tnProfile($endpoint, true, 0); return $shared; }
-        tnMarkDegraded();
+        tnMarkDegraded('coalesced');
         return ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) ? $entry['data'] : [];
     }
     try {
@@ -676,7 +679,7 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     if (!tnBucketAllow()) {
         tnCount('over_budget');   // our own limit, not the API's: tells a local bottleneck apart from a throttle on the health page
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
-        tnMarkDegraded();
+        tnMarkDegraded('budget');
         return [];
     }
     $t0 = microtime(true);
@@ -694,7 +697,7 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
         soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
-        tnMarkDegraded();
+        tnMarkDegraded(!empty($r['throttled']) ? 'throttled' : 'api_error');
         return [];
     }
 
@@ -759,7 +762,7 @@ function tnRequestMulti(array $requests) {
     foreach ($todo as $i => [$endpoint, $params]) {
         // A family whose circuit is open is not called (the other families in this batch still are).
         if (tnBreakerOpen(tnBreakerFamily($endpoint))) {
-            tnUnanswered(!empty($out[$i]));
+            tnUnanswered(!empty($out[$i]), 'breaker');
             continue;
         }
         // Every outbound call takes a token from the shared budget. A call over budget is not sent: the page answers from its stored copy.
@@ -767,7 +770,7 @@ function tnRequestMulti(array $requests) {
         // rather than fail on the spot (that failure was most of the "no data" pages).
         if (!tnBudgetWait($callerClass, tnCallsPerSecond(), cache_dir(), max(0.0, $deadline - microtime(true)))) {
             tnCount('over_budget');
-            tnUnanswered(!empty($out[$i]));
+            tnUnanswered(!empty($out[$i]), 'budget');
             continue;
         }
         $handles[$i] = tnBuildHandle($endpoint, $params, 'GET', $token);
@@ -803,7 +806,7 @@ function tnRequestMulti(array $requests) {
             }
         }
         if ($skipped) {
-            tnUnanswered(!empty($out[$i]));
+            tnUnanswered(!empty($out[$i]), 'budget');
         } elseif ($r['ok'] && $r['cacheable'] && !empty($out[$i]) && tnEmptyListSuspect($endpoint, $r['data'], $out[$i])) {
             tnCount('empty_suspect');   // the stored list (still inside its stale window) stands; see tnFetchStore()
         } elseif ($r['ok']) {
@@ -817,7 +820,7 @@ function tnRequestMulti(array $requests) {
             $after = $retried ? ($GLOBALS['tn_retry_after'] ?? null) : $afterFirst;
             if (!empty($r['throttled'])) tnCount('throttled');
             tnBreakerTrip($endpoint . ' ' . $r['error'], !empty($r['throttled']) ? tnThrottleWait($after, TN_BREAKER_THROTTLE_SECONDS) : TN_BREAKER_SECONDS, tnBreakerFamily($endpoint));
-            tnUnanswered(!empty($out[$i]));
+            tnUnanswered(!empty($out[$i]), !empty($r['throttled']) ? 'throttled' : 'api_error');
         }
         curl_multi_remove_handle($mh, $ch);
     }
@@ -1050,14 +1053,16 @@ function soEventRedirectTarget($event, int $eventId): string {
     $path = (string) ($event['defaultCategory']['path'] ?? '');
     if ($perfId <= 0 && $eventId > 0) {
         try {
-            $stmt = MYSQLI->prepare('SELECT performer_id, performer_name, category_path FROM event_redirects WHERE event_id = ?');
-            if ($stmt) {
+            $row = soDbRetry(function ($db) use ($eventId) {
+                $stmt = $db->prepare('SELECT performer_id, performer_name, category_path FROM event_redirects WHERE event_id = ?');
+                if (!$stmt) return null;
                 $stmt->bind_param('i', $eventId);
                 $stmt->execute();
-                $row = $stmt->get_result()->fetch_assoc();
+                $r = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
-                if ($row) { $perfId = (int) $row['performer_id']; $perfName = (string) $row['performer_name']; $path = (string) $row['category_path']; }
-            }
+                return $r;
+            });
+            if ($row) { $perfId = (int) $row['performer_id']; $perfName = (string) $row['performer_name']; $path = (string) $row['category_path']; }
         } catch (\Throwable $e) {
             // The table may not exist yet: carry on with the category data above.
         }
@@ -1184,13 +1189,17 @@ function tnForgetEventCopies(int $id): void {
 function tnSnapshotGet(int $id, int $maxAge = TN_LISTING_COPY_TTL) {
     if ($id <= 0 || !tnSnapshotDb()) return false;
     try {
-        $stmt = MYSQLI->prepare('SELECT payload, UNIX_TIMESTAMP(seen_at) FROM tn_event_snapshot WHERE event_id = ? AND seen_at >= NOW() - INTERVAL ? SECOND');
-        if (!$stmt) return false;
-        $stmt->bind_param('ii', $id, $maxAge);
-        $stmt->execute();
-        $stmt->bind_result($payload, $seenAt);
-        $found = $stmt->fetch();
-        $stmt->close();
+        // The stored copy is read when the live call just failed or timed out, so the connection may have been dropped (soDbRetry()).
+        [$found, $payload, $seenAt] = soDbRetry(function ($db) use ($id, $maxAge) {
+            $stmt = $db->prepare('SELECT payload, UNIX_TIMESTAMP(seen_at) FROM tn_event_snapshot WHERE event_id = ? AND seen_at >= NOW() - INTERVAL ? SECOND');
+            if (!$stmt) return [false, null, null];
+            $stmt->bind_param('ii', $id, $maxAge);
+            $stmt->execute();
+            $stmt->bind_result($pl, $sa);
+            $hit = $stmt->fetch();
+            $stmt->close();
+            return [$hit, $pl, $sa];
+        });
         if (!$found) return false;
         $GLOBALS['so_snapshot_seen'] = (int) $seenAt;
         $row = json_decode((string) $payload, true);
@@ -1472,25 +1481,27 @@ function set_bio($performerId, $bio, $mysqli = MYSQLI) {
 
 function get_bio($performerId, $mysqli = MYSQLI) {
 
-    $stmt = $mysqli->prepare("
-        SELECT bio FROM bios WHERE performerId = ? LIMIT 1
-    ");
-
-    $stmt->bind_param("d", $performerId);
-    $stmt->execute();
-
-    $result = $stmt->get_result()->fetch_assoc();
-
-    $stmt->close();
+    // Runs after the TicketNetwork calls of an artist page, so the connection may have been dropped meanwhile (soDbRetry()).
+    $result = soDbRetry(function ($db) use ($performerId) {
+        $stmt = $db->prepare("
+            SELECT bio FROM bios WHERE performerId = ? LIMIT 1
+        ");
+        $stmt->bind_param("d", $performerId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row;
+    }, $mysqli);
 
     return $result ?? null;
 }
 
 /**
  * Run database work and, if the server dropped the connection ("MySQL server has gone away", error 2006, or "lost connection during
- * query", 2013), reconnect once on the same handle and run it again. The FAQ query is one of the last things an artist page does, after
- * TicketNetwork calls that can take seconds each, and a connection that sat idle that long was sometimes already closed (Sentry
- * SEAT-OUTLET-R, SEAT-OUTLET-12). Only for reads and other statements that are safe to repeat: nothing here protects a transaction.
+ * query", 2013), reconnect once on the same handle and run it again. The FAQ, bio, image, keyword, page-rule, content-block and stored-event
+ * reads are among the last things a page does, after TicketNetwork calls that can take seconds each (or time out after 20), and a connection
+ * that sat idle that long was sometimes already closed (Sentry SEAT-OUTLET-R, SEAT-OUTLET-12). Every public-page read that can run after a
+ * TicketNetwork call goes through it; admin reads and writes do not need to. Only for reads and other statements that are safe to repeat: nothing here protects a transaction.
  * real_connect() on the same object is what makes it work (MYSQLI is a constant, the handle cannot be replaced); the connection falls
  * back to latin1 afterwards, so the charset is set again.
  */
@@ -3427,16 +3438,16 @@ function set_image($imageCacheKey, $imageUrl, $mysqli = MYSQLI) {
 
 function get_image($imageCacheKey, $mysqli = MYSQLI) {
 
-    $stmt = $mysqli->prepare("
-        SELECT url FROM images WHERE imgkey = ? LIMIT 1
-    ");
-
-    $stmt->bind_param("s", $imageCacheKey);
-    $stmt->execute();
-
-    $result = $stmt->get_result()->fetch_assoc();
-
-    $stmt->close();
+    $result = soDbRetry(function ($db) use ($imageCacheKey) {
+        $stmt = $db->prepare("
+            SELECT url FROM images WHERE imgkey = ? LIMIT 1
+        ");
+        $stmt->bind_param("s", $imageCacheKey);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row;
+    }, $mysqli);
 
     return $result['url'] ?? null;
 }
@@ -3468,16 +3479,16 @@ function set_keyword($keyword, $results, $mysqli = MYSQLI) {
 
 function get_keyword($keyword, $mysqli = MYSQLI) {
 
-    $stmt = $mysqli->prepare("
-        SELECT results FROM keywords WHERE keyword = ? LIMIT 1
-    ");
-
-    $stmt->bind_param("s", $keyword);
-    $stmt->execute();
-
-    $result = $stmt->get_result()->fetch_assoc();
-
-    $stmt->close();
+    $result = soDbRetry(function ($db) use ($keyword) {
+        $stmt = $db->prepare("
+            SELECT results FROM keywords WHERE keyword = ? LIMIT 1
+        ");
+        $stmt->bind_param("s", $keyword);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row;
+    }, $mysqli);
 
     return $result['results'] ?? null;
 }
@@ -3716,11 +3727,14 @@ function getPageRuleByPath($urlPath, $mysqli = MYSQLI) {
     // must not take every page down: fall back to the per-page-type defaults
     // and don't cache the miss, so rules take effect as soon as it exists.
     try {
-        $stmt = $mysqli->prepare('SELECT * FROM page_rules WHERE url_path = ? AND is_active = 1 LIMIT 1');
-        $stmt->bind_param('s', $urlPath);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
+        $row = soDbRetry(function ($db) use ($urlPath) {
+            $stmt = $db->prepare('SELECT * FROM page_rules WHERE url_path = ? AND is_active = 1 LIMIT 1');
+            $stmt->bind_param('s', $urlPath);
+            $stmt->execute();
+            $r = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $r;
+        }, $mysqli);
     } catch (mysqli_sql_exception $e) {
         error_log('page_rules lookup failed (run php db/migrate.php?): ' . $e->getMessage());
         return null;
@@ -3867,11 +3881,14 @@ function getContentBlock($pagePath, $blockKey, $defaultHtml, $mysqli = MYSQLI) {
 
     // Same fallback as getPageRuleByPath(): no table yet means default copy.
     try {
-        $stmt = $mysqli->prepare('SELECT content FROM page_content_blocks WHERE page_path = ? AND block_key = ? LIMIT 1');
-        $stmt->bind_param('ss', $pagePath, $blockKey);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
+        $row = soDbRetry(function ($db) use ($pagePath, $blockKey) {
+            $stmt = $db->prepare('SELECT content FROM page_content_blocks WHERE page_path = ? AND block_key = ? LIMIT 1');
+            $stmt->bind_param('ss', $pagePath, $blockKey);
+            $stmt->execute();
+            $r = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $r;
+        }, $mysqli);
     } catch (mysqli_sql_exception $e) {
         error_log('page_content_blocks lookup failed (run php db/migrate.php?): ' . $e->getMessage());
         return $defaultHtml;

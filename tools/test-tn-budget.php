@@ -27,6 +27,15 @@ tbCheck('the held-back tokens are still there for a visitor', tnBucketTake(false
 tbCheck('tokens refill with time (one second at 2 a second adds 2)', tnBucketTake(false, 2.0, $bucket, $t + 1.0) && tnBucketTake(false, 2.0, $bucket, $t + 1.0) && tnBucketTake(false, 2.0, $bucket, $t + 1.0) && !tnBucketTake(false, 2.0, $bucket, $t + 1.0));
 @unlink($bucket); @unlink($bucket . '.lock');
 
+$bf = $dir . '/burst.json'; @unlink($bf); @unlink($bf . '.lock');
+$n = 0; for ($i = 0; $i < 10; $i++) { if (tnBucketTake(false, 0.1, $bf, 5000.0, 5.0)) $n++; }
+tbCheck('an explicit burst sets the bucket size (5 tokens, not the default 2)', $n === 5);
+tnBucketGive($bf, 0.1, 5.0, 5000.0);
+tbCheck('a token given back can be taken again, and never above the burst', tnBucketTake(false, 0.1, $bf, 5000.0, 5.0) && !tnBucketTake(false, 0.1, $bf, 5000.0, 5.0));
+for ($i = 0; $i < 20; $i++) tnBucketGive($bf, 0.1, 5.0, 5000.0);
+$n = 0; for ($i = 0; $i < 10; $i++) { if (tnBucketTake(false, 0.1, $bf, 5000.0, 5.0)) $n++; }
+tbCheck('giving back many tokens stops at the burst', $n === 5);
+@unlink($bf); @unlink($bf . '.lock');
 tbCheck('rate 0 turns the budget off', tnBucketTake(false, 0.0, $bucket, 3000.0) && tnBucketTake(true, 0.0, $bucket, 3000.0));
 tbCheck('fails open when the bucket file cannot be locked (a counter fault never blocks a visitor)', tnBucketTake(false, 2.0, '/nonexistent-so-dir/x/bucket.json', 1.0));
 @unlink($bucket); @unlink($bucket . '.lock');
@@ -182,20 +191,29 @@ $cdir = sys_get_temp_dir() . '/so-tn-crawler-test-' . getmypid() . '/';
 @mkdir($cdir, 0777, true);
 $wipe = function () use ($cdir) { foreach (glob($cdir . 'tn_bucket*') ?: [] as $f) @unlink($f); };
 $wipe();
-tbCheck('a crawler may take a token when the bucket is full, and leaves the rest for visitors', tnBudgetWait('search', 1.0, $cdir) === true && tnBudgetWait('visitor', 1.0, $cdir, 0.0) === true);
+tbCheck('a crawler may take a token when the bucket is full, and leaves the rest for visitors', tnBudgetWait('search', 1.0, $cdir, 0.0) === true && tnBudgetWait('visitor', 1.0, $cdir, 0.0) === true);
 $wipe();
-$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('search', 1.0, $cdir)) $ok++; }
-tbCheck('thirty crawler tries in one instant take at most one token (the cron rule on the shared bucket)', $ok === 1);
+$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('search', 1.0, $cdir, 0.0)) $ok++; }
+tbCheck('thirty crawler tries in one instant take one token and never wait (the cron rule on the shared bucket)', $ok === 1);
+$cls = json_decode((string) file_get_contents($cdir . 'tn_bucket_search.json'), true);
+tbCheck('a crawler that was refused by the shared bucket gets its class token back (3 of the burst of 4 are left, not 0)', is_array($cls) && $cls['tokens'] >= 2.9);
 tbCheck('...and a visitor still gets the token the crawlers left', tnBudgetWait('visitor', 1.0, $cdir, 0.0) === true);
 $wipe();
-$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('search', 10.0, $cdir)) $ok++; }
+$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('search', 10.0, $cdir, 0.0)) $ok++; }
 tbCheck('at 10 calls a second search crawlers stop at their own bucket (7 = burst of 2 x 3.5 a second), not at the shared one', $ok === 7);
-$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('tool', 10.0, $cdir)) $ok++; }
-tbCheck('SEO tools and AI crawlers have their own, smaller bucket (burst 2) that search engines do not use up', $ok === 2);
+$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('tool', 10.0, $cdir, 0.0)) $ok++; }
+tbCheck('SEO tools and AI crawlers have their own, smaller bucket (burst 4) that search engines do not use up; here the shared bucket stops them at 3', $ok === 3);
 tbCheck('visitors still have the rest of the shared bucket after the crawlers took theirs', tnBudgetWait('visitor', 10.0, $cdir, 0.0) === true && tnBudgetWait('visitor', 10.0, $cdir, 0.0) === true);
 $wipe();
-putenv('TN_BOT_SHARE=0'); tbCheck('a share of 0 gives that class no live calls', tnBudgetWait('search', 1.0, $cdir) === false); putenv('TN_BOT_SHARE');
-tbCheck('with the budget off (rate 0) crawlers are not held back either', tnBudgetWait('search', 0.0, $cdir) === true && tnBudgetWait('tool', 0.0, $cdir) === true);
+putenv('TN_BOT_SHARE=0'); tbCheck('a share of 0 gives that class no live calls', tnBudgetWait('search', 1.0, $cdir, 0.0) === false); putenv('TN_BOT_SHARE');
+tbCheck('with the budget off (rate 0) crawlers are not held back either', tnBudgetWait('search', 0.0, $cdir, 0.0) === true && tnBudgetWait('tool', 0.0, $cdir, 0.0) === true);
+$wipe();
+$t0 = microtime(true);
+$first = tnBudgetWait('search', 1.0, $cdir, 1.6); $second = tnBudgetWait('search', 1.0, $cdir, 1.6); $took = microtime(true) - $t0;
+tbCheck('the second call of a crawler page waits for the shared bucket to refill and then goes out (1 call a second: about 1.3 s)', $first === true && $second === true && $took > 0.9 && $took < 1.65);
+$wipe();
+$t0 = microtime(true);
+tbCheck('a crawler waits no longer than it is allowed to', tnBudgetWait('search', 1.0, $cdir, 0.0) === true && tnBudgetWait('search', 1.0, $cdir, 0.3) === false && microtime(true) - $t0 < 0.6);
 $wipe();
 tbCheck('a cron keeps the cron rule', tnBudgetWait('background', 1.0, $cdir) === true && tnBudgetWait('background', 1.0, $cdir) === false);
 foreach (glob($cdir . '*') ?: [] as $f) @unlink($f); @rmdir($cdir);
@@ -213,6 +231,18 @@ $v = tnStatsSummary(['pages' => 1000, 'pages_bot' => 900, 'no_data' => 800, 'no_
 tbCheck('visitors without data do raise it (100 visitor pages, all without data)', $v['visitorRate'] === 1.0 && $v['alert'] === true);
 tbCheck('fewer than 50 visitor pages never raises the no-data alert', tnStatsSummary(['pages' => 1000, 'pages_bot' => 970, 'no_data' => 900, 'no_data_bot' => 880])['alert'] === false);
 tbCheck('visitor figures are never negative or over the page count', tnStatsSummary(['pages' => 10, 'pages_bot' => 99, 'no_data' => 5])['visitorPages'] === 0 && tnStatsSummary(['pages' => 10, 'no_data' => 50])['visitorNoData'] <= 10);
+
+
+// --- Why a page had no data ------------------------------------------------------------------------------------------------------
+tbCheck('a no-data reason is counted for everyone and again under _bot for a crawler', tnCountKeys('no_data_why_budget', false, false, false, false) === ['no_data_why_budget']
+    && tnCountKeys('no_data_why_budget', false, false, true, false, 'seo') === ['no_data_why_budget', 'no_data_why_budget_bot']
+    && tnCountKeys('no_data_why_breaker', false, false, true, true, 'google') === ['no_data_why_breaker', 'no_data_why_breaker_bot', 'no_data_why_breaker_direct']);
+$wy = tnStatsSummary(['pages' => 100, 'no_data' => 20, 'no_data_why_budget' => 10, 'no_data_why_budget_bot' => 7, 'no_data_why_api_error' => 2, 'no_data_why_breaker' => 4, 'no_data_why_breaker_bot' => 4]);
+tbCheck('the summary splits the reasons into visitors and crawlers', $wy['noDataWhy']['visitor'] === ['budget' => 3, 'api_error' => 2] && $wy['noDataWhy']['bot'] === ['budget' => 7, 'breaker' => 4]);
+tbCheck('no reasons on an empty day', tnStatsSummary([])['noDataWhy'] === ['visitor' => [], 'bot' => []]);
+$fnAll = file_get_contents(__DIR__ . '/../functions.php');
+tbCheck('every page that ends without data says why (no bare tnMarkDegraded() or tnUnanswered() call is left)', preg_match('/tnMarkDegraded\(\);/', $fnAll) === 0 && strpos($fnAll, 'tnUnanswered(!empty($out[$i]));') === false);
+tbCheck('the reasons used are the fixed set', (function () use ($fnAll) { preg_match_all("/tn(?:MarkDegraded|Unanswered)\((?:!empty\(\\\$out\[\\\$i\]\), )?('[a-z_]+'|!empty\(\\\$r\['throttled'\]\) \? 'throttled' : 'api_error')\)/", $fnAll, $m); $set = []; foreach ($m[1] as $x) { preg_match_all("/'([a-z_]+)'/", $x, $q); foreach ($q[1] as $r) $set[$r] = true; } $ok = ['breaker', 'budget', 'throttled', 'api_error', 'coalesced']; return !array_diff(array_keys($set), $ok) && count($set) === count($ok); })());
 
 echo $fails ? "\n$fails failed\n" : "\ntn budget: all passed\n";
 exit($fails ? 1 : 0);

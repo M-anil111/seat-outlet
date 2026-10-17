@@ -40,5 +40,10 @@ try { soDbRetry(function ($db) use (&$calls) { $calls++; throw new mysqli_sql_ex
 drCheck('work that keeps failing is tried twice, then the error is thrown', [$calls, $threw], [2, true]);
 
 drCheck('getFaqs goes through it', preg_match('/function getFaqs\(.*?soDbRetry\(function/s', $src) === 1, true);
+// Every public-page read that can run after a (slow) TicketNetwork call goes through it too (Sentry SEAT-OUTLET-R was get_bio on an artist page).
+foreach (['get_bio', 'get_image', 'get_keyword', 'getPageRuleByPath', 'getContentBlock', 'tnSnapshotGet', 'soEventRedirectTarget'] as $reader) {
+    // Inside this function's own body only (stop at the next top-level function), so a later function's call cannot satisfy it.
+    drCheck("$reader goes through soDbRetry", preg_match('/\nfunction ' . $reader . '\((?:(?!\nfunction ).)*?soDbRetry\(function/s', $src) === 1, true);
+}
 echo $fail ? "$fail failed\n" : "db retry: all passed\n";
 exit($fail ? 1 : 0);
