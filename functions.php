@@ -4529,6 +4529,16 @@ function soEventNode(array $event, array $opts = []) {
         $from = soEventListedFrom($event);
         if ($from !== '') $offer['validFrom'] = $from;
         $node['offers'] = $offer;
+    } elseif (array_key_exists('hasTickets', (array) ($event['_metadata'] ?? []))) {
+        // TicketNetwork answered and says no tickets are listed: SoldOut at this URL, no price. Stated only when the feed says so
+        // (an event with no _metadata at all gets no offers, nothing is assumed).
+        $node['offers'] = [
+            '@type' => 'Offer',
+            'url' => $url,
+            'priceCurrency' => 'USD',
+            'availability' => 'https://schema.org/SoldOut',
+            'seller' => ['@id' => HOME_URL . '/#organization'],
+        ];
     }
     return $node;
 }
