@@ -1510,12 +1510,23 @@ function soDbRetry(callable $fn, $mysqli = MYSQLI) {
         return $fn($mysqli);
     } catch (mysqli_sql_exception $e) {
         if (!in_array($e->getCode(), [2006, 2013], true)) throw $e;
-        try {
-            if (!$mysqli->real_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int) DB_PORT)) throw $e;
-            $mysqli->set_charset('utf8mb4');
-        } catch (Throwable $reconnectFailed) {
-            throw $e;   // the original error is the useful one
+        // Sentry SEAT-OUTLET-13/18: several requests lost their connection in the same second and the reconnect failed with "Error while
+        // reading greeting packet" (the server was restarting or briefly refusing handshakes). Three tries over about half a second
+        // ride that out; a server that is really down still fails fast.
+        $connected = false;
+        foreach ([0, 150000, 350000] as $pauseMicros) {
+            if ($pauseMicros > 0) usleep($pauseMicros);
+            try {
+                if ($mysqli->real_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int) DB_PORT)) {
+                    $mysqli->set_charset('utf8mb4');
+                    $connected = true;
+                    break;
+                }
+            } catch (Throwable $reconnectFailed) {
+                // try again, then give up with the original error (the useful one)
+            }
         }
+        if (!$connected) throw $e;
         return $fn($mysqli);
     }
 }
