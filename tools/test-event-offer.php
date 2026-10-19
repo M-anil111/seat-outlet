@@ -38,7 +38,9 @@ $noPrice = call_user_func('soEventNode', $base);
 $o = $noPrice['offers'] ?? [];
 offerCheck(($o['@type'] ?? '') === 'Offer' && ($o['availability'] ?? '') === 'https://schema.org/InStock' && !isset($o['price'], $o['lowPrice']), 'tickets listed, no price: Offer without a price');
 $noTickets = call_user_func('soEventNode', ['_metadata' => ['hasTickets' => false]] + $base);
-offerCheck(!isset($noTickets['offers']), 'no tickets: no offers');
+offerCheck(($noTickets['offers']['availability'] ?? '') === 'https://schema.org/SoldOut' && !isset($noTickets['offers']['price'], $noTickets['offers']['lowPrice']), 'no tickets listed: SoldOut Offer without a price');
+$noMeta = $base; unset($noMeta['_metadata']);
+offerCheck(!isset(call_user_func('soEventNode', $noMeta)['offers']), 'no _metadata: no offers (nothing assumed)');
 
 $sa = soSocialSameAs();
 offerCheck(in_array('https://x.com/SeatOutlet', $sa, true) && count($sa) >= 11, 'sameAs lists the social profiles');
