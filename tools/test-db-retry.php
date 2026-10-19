@@ -39,6 +39,29 @@ $calls = 0; $threw = false;
 try { soDbRetry(function ($db) use (&$calls) { $calls++; throw new mysqli_sql_exception('MySQL server has gone away', 2006); }, MYSQLI); } catch (mysqli_sql_exception $e) { $threw = $e->getCode() === 2006; }
 drCheck('work that keeps failing is tried twice, then the error is thrown', [$calls, $threw], [2, true]);
 
+// The server refuses the first two reconnect attempts (greeting packet error, Sentry SEAT-OUTLET-13): the third gets through.
+class DrFlakyMysqli extends mysqli {
+    public int $refuse = 2;
+    public int $attempts = 0;
+    #[\ReturnTypeWillChange]
+    public function real_connect(...$a) {
+        $this->attempts++;
+        if ($this->refuse-- > 0) throw new mysqli_sql_exception('Error while reading greeting packet', 2013);
+        return parent::real_connect(...$a);
+    }
+}
+$flaky = new DrFlakyMysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int) DB_PORT);
+$killer->query('KILL CONNECTION ' . (int) $flaky->thread_id);
+usleep(200000);
+$flakyVal = soDbRetry(fn($db) => $db->query('SELECT 9')->fetch_row()[0], $flaky);
+drCheck('a reconnect refused twice succeeds on the third try', [$flakyVal, $flaky->attempts], ['9', 3]);
+$down = new DrFlakyMysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int) DB_PORT);
+$down->refuse = 99;
+$killer->query('KILL CONNECTION ' . (int) $down->thread_id);
+usleep(200000);
+$downCode = null;
+try { soDbRetry(fn($db) => $db->query('SELECT 1'), $down); } catch (mysqli_sql_exception $e) { $downCode = $e->getCode(); }
+drCheck('a server that stays down: three tries, then the original error', [$downCode, $down->attempts], [2006, 3]);
 drCheck('getFaqs goes through it', preg_match('/function getFaqs\(.*?soDbRetry\(function/s', $src) === 1, true);
 // Every public-page read that can run after a (slow) TicketNetwork call goes through it too (Sentry SEAT-OUTLET-R was get_bio on an artist page).
 foreach (['get_bio', 'get_image', 'get_keyword', 'getPageRuleByPath', 'getContentBlock', 'tnSnapshotGet', 'soEventRedirectTarget'] as $reader) {
