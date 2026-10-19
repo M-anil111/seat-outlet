@@ -33,6 +33,13 @@ $o = $noHigh['offers'] ?? [];
 offerCheck(($o['@type'] ?? '') === 'Offer' && ($o['price'] ?? '') === '40.00' && !isset($o['highPrice'], $o['lowPrice'], $o['offerCount']), 'no high price: plain Offer with price only');
 foreach (['eventStatus', 'performer', 'startDate', 'location'] as $k) offerCheck(!empty($noHigh[$k]), "node has $k");
 
+// Tickets listed but no price in the payload: an Offer with no price (nothing invented); no tickets at all: no offers.
+$noPrice = call_user_func('soEventNode', $base);
+$o = $noPrice['offers'] ?? [];
+offerCheck(($o['@type'] ?? '') === 'Offer' && ($o['availability'] ?? '') === 'https://schema.org/InStock' && !isset($o['price'], $o['lowPrice']), 'tickets listed, no price: Offer without a price');
+$noTickets = call_user_func('soEventNode', ['_metadata' => ['hasTickets' => false]] + $base);
+offerCheck(!isset($noTickets['offers']), 'no tickets: no offers');
+
 $sa = soSocialSameAs();
 offerCheck(in_array('https://x.com/SeatOutlet', $sa, true) && count($sa) >= 11, 'sameAs lists the social profiles');
 $bad = array_filter($sa, function ($u) { return strpos($u, 'https://') !== 0 || preg_match('/password|passwd|pwd/i', $u); });

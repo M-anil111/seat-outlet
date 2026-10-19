@@ -4516,6 +4516,19 @@ function soEventNode(array $event, array $opts = []) {
         $from = soEventListedFrom($event);
         if ($from !== '') $offer['validFrom'] = $from;
         $node['offers'] = $offer;
+    } elseif (!empty($event['_metadata']['hasTickets'])) {
+        // Tickets are listed but this payload carries no lowest price: say what is known (on sale at this URL) and leave the
+        // price out rather than invent one. Search Console flags an Event with no offers at all ("Missing field offers").
+        $offer = [
+            '@type' => 'Offer',
+            'url' => $url,
+            'priceCurrency' => 'USD',
+            'availability' => 'https://schema.org/InStock',
+            'seller' => ['@id' => HOME_URL . '/#organization'],
+        ];
+        $from = soEventListedFrom($event);
+        if ($from !== '') $offer['validFrom'] = $from;
+        $node['offers'] = $offer;
     }
     return $node;
 }
