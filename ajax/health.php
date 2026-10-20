@@ -50,6 +50,12 @@ $out['ticketnetwork']['noDataRate'] = $tnSummary['pages'] > 0 ? $tnSummary['rate
 // share of the call budget is expected to get a stored copy or a 503.
 $out['ticketnetwork']['visitorPages'] = $tnSummary['visitorPages'];
 $out['ticketnetwork']['visitorNoDataRate'] = $tnSummary['visitorPages'] > 0 ? $tnSummary['visitorRate'] : null;
+// Of the visitor pages, those from requests that look like a browser (Accept-Language plus Sec-Fetch-Mode or a cookie) against those that
+// do not (probably scripts the crawler list does not know). likelyHumanNoDataRate is the one about real people.
+$out['ticketnetwork']['likelyHumanPages'] = $tnSummary['likelyHumanPages'];
+$out['ticketnetwork']['likelyHumanNoDataRate'] = $tnSummary['likelyHumanPages'] > 0 ? $tnSummary['likelyHumanRate'] : null;
+$out['ticketnetwork']['nonBrowserPages'] = $tnSummary['nonBrowserPages'];
+$out['ticketnetwork']['nonBrowserLiveCalls'] = $tnSummary['nonBrowserLiveCalls'];
 $out['ticketnetwork']['emptySuspectRate'] = $tnSummary['pages'] > 0 ? $tnSummary['suspectRate'] : null;
 // Per call: 429s from TicketNetwork against calls our own TN_CALLS_PER_SECOND budget held back. A high overBudget with few throttled
 // means the local rate is the bottleneck; the reverse means the API's limit is lower than the rate we send.

@@ -163,7 +163,7 @@ tbCheck('the demand shares: crawlers 60% of pages, 75% of live calls, 90% of the
 tbCheck('the beta-address shares', $dm['directPageShare'] === 0.1 && $dm['directCallShare'] === 0.1 && $dm['directNoDataShare'] === 0.1);
 tbCheck('shares are 0 on an empty day and never over 100%', tnStatsSummary([])['demand']['botPageShare'] === 0.0 && tnStatsSummary(['pages' => 10, 'pages_bot' => 99])['demand']['botPageShare'] === 1.0);
 $fnW = file_get_contents(__DIR__ . '/../functions.php');
-tbCheck('tnCount takes its keys from tnCountKeys, with the client class worked out once per request', strpos($fnW, '$bump = tnCountKeys($kind, $firstOfPage, $firstSuspect, $GLOBALS[\'tn_client_class\'][0], $GLOBALS[\'tn_client_class\'][1], $GLOBALS[\'tn_client_class\'][2]);') !== false && strpos($fnW, "if (!isset(\$GLOBALS['tn_client_class'])) { \$fam = soCrawlerFamily(); \$GLOBALS['tn_client_class'] = [\$fam !== '', !soViaLiveProxy(), \$fam]; }") !== false);
+tbCheck('tnCount takes its keys from tnCountKeys, with the client class worked out once per request', strpos($fnW, '$bump = tnCountKeys($kind, $firstOfPage, $firstSuspect, $GLOBALS[\'tn_client_class\'][0], $GLOBALS[\'tn_client_class\'][1], $GLOBALS[\'tn_client_class\'][2], $GLOBALS[\'tn_client_class\'][3]);') !== false && strpos($fnW, "if (!isset(\$GLOBALS['tn_client_class'])) { \$fam = soCrawlerFamily(); \$GLOBALS['tn_client_class'] = [\$fam !== '', !soViaLiveProxy(), \$fam, \$fam === '' && !soLooksLikeBrowser()]; }") !== false);
 $hl = file_get_contents(__DIR__ . '/../ajax/health.php');
 tbCheck('the health page reports the demand split and whether this request came through the Worker', strpos($hl, "['demand'] = \$tnSummary['demand']") !== false && strpos($hl, "['viaProxy'] = soViaLiveProxy()") !== false);
 
@@ -219,6 +219,10 @@ tbCheck('a cron keeps the cron rule', tnBudgetWait('background', 1.0, $cdir) ===
 foreach (glob($cdir . '*') ?: [] as $f) @unlink($f); @rmdir($cdir);
 tbCheck('the caller class of this CLI test is background', tnCallerClass() === 'background');
 
+tbCheck('a visitor with no browser signals is counted again under _nobrowser (outcome, page and reason)', tnCountKeys('no_data', true, false, false, false, '', true) === ['no_data', 'pages', 'no_data_nobrowser', 'pages_nobrowser'] && tnCountKeys('no_data_why_budget', false, false, false, false, '', true) === ['no_data_why_budget', 'no_data_why_budget_nobrowser'] && tnCountKeys('live_call', true, false, false, false, '', false) === ['live_call', 'pages']);
+tbCheck('soLooksLikeBrowser: needs Accept-Language plus Sec-Fetch-Mode or a cookie', soLooksLikeBrowser(['HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9', 'HTTP_SEC_FETCH_MODE' => 'navigate']) && soLooksLikeBrowser(['HTTP_ACCEPT_LANGUAGE' => 'en', 'HTTP_COOKIE' => 'a=b']) && !soLooksLikeBrowser(['HTTP_ACCEPT_LANGUAGE' => 'en']) && !soLooksLikeBrowser(['HTTP_SEC_FETCH_MODE' => 'navigate']) && !soLooksLikeBrowser([]));
+$likely = tnStatsSummary(['pages' => 100, 'no_data' => 80, 'pages_bot' => 20, 'no_data_bot' => 10, 'pages_nobrowser' => 60, 'no_data_nobrowser' => 58, 'live_call' => 50, 'live_call_nobrowser' => 30]);
+tbCheck('health splits visitors into likely-human and no-browser pages', $likely['visitorPages'] === 80 && $likely['nonBrowserPages'] === 60 && $likely['likelyHumanPages'] === 20 && $likely['likelyHumanNoData'] === 12 && $likely['likelyHumanRate'] === 0.6 && $likely['nonBrowserLiveCalls'] === 30);
 tbCheck('a crawler family is counted for live calls, held-back calls and no-data pages only', tnCountKeys('live_call', true, false, true, false, 'seo') === ['live_call', 'pages', 'live_call_bot', 'pages_bot', 'live_call_bot_seo']
     && tnCountKeys('over_budget', false, false, true, false, 'google') === ['over_budget', 'over_budget_bot', 'over_budget_bot_google']
     && tnCountKeys('event_copy', false, false, true, false, 'google') === ['event_copy']

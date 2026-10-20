@@ -422,8 +422,8 @@ function tnCount(string $kind): void {
         $GLOBALS['tn_page_suspect'] = true;
         $firstSuspect = true;
     }
-    if (!isset($GLOBALS['tn_client_class'])) { $fam = soCrawlerFamily(); $GLOBALS['tn_client_class'] = [$fam !== '', !soViaLiveProxy(), $fam]; }
-    $bump = tnCountKeys($kind, $firstOfPage, $firstSuspect, $GLOBALS['tn_client_class'][0], $GLOBALS['tn_client_class'][1], $GLOBALS['tn_client_class'][2]);
+    if (!isset($GLOBALS['tn_client_class'])) { $fam = soCrawlerFamily(); $GLOBALS['tn_client_class'] = [$fam !== '', !soViaLiveProxy(), $fam, $fam === '' && !soLooksLikeBrowser()]; }
+    $bump = tnCountKeys($kind, $firstOfPage, $firstSuspect, $GLOBALS['tn_client_class'][0], $GLOBALS['tn_client_class'][1], $GLOBALS['tn_client_class'][2], $GLOBALS['tn_client_class'][3]);
     try {
         $fh = @fopen(cache_dir() . 'tn_stats_' . date('Y-m-d') . '.json', 'c+');
         if (!$fh) return;
