@@ -81,6 +81,8 @@ function tnStatsSummary(array $stats): array {
                 'botFamilies' => $families,
             ],
             'noDataWhy' => $why,
+            // background refreshes of stored answers: made (each took a budget token) and skipped for lack of one
+            'refresh' => ['calls' => (int) ($stats['refresh_call'] ?? 0), 'skipped' => (int) ($stats['refresh_skipped'] ?? 0)],
             'alert' => ($visitorPages >= 50 && $visitorRate > 0.2) || ($pages >= 50 && $suspectRate > 0.2)];
 }
 

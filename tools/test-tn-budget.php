@@ -223,6 +223,15 @@ tbCheck('a visitor with no browser signals is counted again under _nobrowser (ou
 tbCheck('soLooksLikeBrowser: needs Accept-Language plus Sec-Fetch-Mode or a cookie', soLooksLikeBrowser(['HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9', 'HTTP_SEC_FETCH_MODE' => 'navigate']) && soLooksLikeBrowser(['HTTP_ACCEPT_LANGUAGE' => 'en', 'HTTP_COOKIE' => 'a=b']) && !soLooksLikeBrowser(['HTTP_ACCEPT_LANGUAGE' => 'en']) && !soLooksLikeBrowser(['HTTP_SEC_FETCH_MODE' => 'navigate']) && !soLooksLikeBrowser([]));
 $likely = tnStatsSummary(['pages' => 100, 'no_data' => 80, 'pages_bot' => 20, 'no_data_bot' => 10, 'pages_nobrowser' => 60, 'no_data_nobrowser' => 58, 'live_call' => 50, 'live_call_nobrowser' => 30]);
 tbCheck('health splits visitors into likely-human and no-browser pages', $likely['visitorPages'] === 80 && $likely['nonBrowserPages'] === 60 && $likely['likelyHumanPages'] === 20 && $likely['likelyHumanNoData'] === 12 && $likely['likelyHumanRate'] === 0.6 && $likely['nonBrowserLiveCalls'] === 30);
+// A stale-while-revalidate refresh is a live call: it takes a background-class budget token (and gives up without one), and is counted.
+$refBody = (preg_match('/function tnScheduleRefresh\(.*?\n}\n/s', $fnStats, $rm) ? $rm[0] : '');
+tbCheck('a background refresh takes a budget token before the live call, and is skipped (lock released) without one',
+    $refBody !== ''
+    && preg_match('/tnBudgetWait\(\'background\', tnCallsPerSecond\(\), cache_dir\(\)\)\) \{\s*tnCount\(\'refresh_skipped\'\);\s*flock\(\$lock, LOCK_UN\);\s*fclose\(\$lock\);\s*continue;/s', $refBody) === 1
+    && strpos($refBody, "tnBudgetWait('background'") < strpos($refBody, 'tnFetchLive(')
+    && strpos($refBody, "tnCount('refresh_call')") > strpos($refBody, 'tnFetchLive('));
+$refSum = tnStatsSummary(['pages' => 10, 'refresh_call' => 7, 'refresh_skipped' => 3]);
+tbCheck('health reports refresh calls made and skipped', $refSum['refresh'] === ['calls' => 7, 'skipped' => 3] && tnStatsSummary([])['refresh'] === ['calls' => 0, 'skipped' => 0]);
 tbCheck('a crawler family is counted for live calls, held-back calls and no-data pages only', tnCountKeys('live_call', true, false, true, false, 'seo') === ['live_call', 'pages', 'live_call_bot', 'pages_bot', 'live_call_bot_seo']
     && tnCountKeys('over_budget', false, false, true, false, 'google') === ['over_budget', 'over_budget_bot', 'over_budget_bot_google']
     && tnCountKeys('event_copy', false, false, true, false, 'google') === ['event_copy']

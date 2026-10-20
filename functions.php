@@ -537,7 +537,18 @@ function tnScheduleRefresh($endpoint, array $params, $method, $key) {
             if (tnBreakerOpen(tnBreakerFamily($endpoint))) continue;   // this family is paused; the others still refresh
             $lock = @fopen(cache_file_path($key) . '.lock', 'c');
             if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) { if ($lock) fclose($lock); continue; }
+            // A refresh is a live call like any other: it takes a token from the shared budget on a cron's terms (the upper half of the
+            // bucket only, never waiting), so it can neither push the real rate past what TicketNetwork allows (a 429 opens the breaker
+            // and every page of that family gets no data for a minute) nor starve cold pages. With no token the stored copy keeps
+            // answering inside its grace window and the next request asks again.
+            if (!tnBudgetWait('background', tnCallsPerSecond(), cache_dir())) {
+                tnCount('refresh_skipped');
+                flock($lock, LOCK_UN);
+                fclose($lock);
+                continue;
+            }
             $r = tnFetchLive($endpoint, $params, $method);
+            tnCount('refresh_call');
             if ($r['ok'] && $r['cacheable']) {
                 cache_set($key, $r['data']);
             } elseif (!$r['ok']) {

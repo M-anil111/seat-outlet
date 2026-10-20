@@ -56,6 +56,7 @@ $out['ticketnetwork']['likelyHumanPages'] = $tnSummary['likelyHumanPages'];
 $out['ticketnetwork']['likelyHumanNoDataRate'] = $tnSummary['likelyHumanPages'] > 0 ? $tnSummary['likelyHumanRate'] : null;
 $out['ticketnetwork']['nonBrowserPages'] = $tnSummary['nonBrowserPages'];
 $out['ticketnetwork']['nonBrowserLiveCalls'] = $tnSummary['nonBrowserLiveCalls'];
+$out['ticketnetwork']['refresh'] = $tnSummary['refresh'];   // stale-while-revalidate refreshes: made (took a budget token) and skipped (no token)
 $out['ticketnetwork']['emptySuspectRate'] = $tnSummary['pages'] > 0 ? $tnSummary['suspectRate'] : null;
 // Per call: 429s from TicketNetwork against calls our own TN_CALLS_PER_SECOND budget held back. A high overBudget with few throttled
 // means the local rate is the bottleneck; the reverse means the API's limit is lower than the rate we send.
