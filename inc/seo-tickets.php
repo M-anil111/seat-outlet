@@ -38,7 +38,7 @@ if (!empty($results['results'])) {
 
       // The same Event node as every other page (image, description, offers with validFrom).
       $node = soEventNode($event);
-      if (empty($event['_metadata']['hasTickets'])) unset($node['offers']);
+      if (!soEventHasOffer($node)) continue;   // no price, no Event markup (see soEventNode())
       $eventsSchema[] = $node;
   }
 }

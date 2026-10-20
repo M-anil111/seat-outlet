@@ -18,6 +18,7 @@ foreach ([
     'soEventListedFrom($e) { return ""; }',
 ] as $stub) { eval('function ' . $stub); }
 eval($m[0]);
+foreach (["soEventHasOffer", "soEventItemList"] as $fn) { preg_match("/(?:\\/\\*\\*(?:(?!\\*\\/).)*\\*\\/\\n)?function $fn\\(.*?\\n}\\n/s", $src, $mm); if (!$mm) { fwrite(STDERR, "FAIL: could not find $fn\n"); exit(1); } eval(preg_replace("/^\\/\\*\\*.*?\\*\\/\\n/s", "", $mm[0])); }
 require_once __DIR__ . '/../inc/social.php';
 
 $base = ['id' => 1, 'text' => ['name' => 'Test Show'], 'date' => ['date' => '2027-01-01'], '_metadata' => ['hasTickets' => true, 'ticketCount' => 5],
@@ -33,14 +34,21 @@ $o = $noHigh['offers'] ?? [];
 offerCheck(($o['@type'] ?? '') === 'Offer' && ($o['price'] ?? '') === '40.00' && !isset($o['highPrice'], $o['lowPrice'], $o['offerCount']), 'no high price: plain Offer with price only');
 foreach (['eventStatus', 'performer', 'startDate', 'location'] as $k) offerCheck(!empty($noHigh[$k]), "node has $k");
 
-// Tickets listed but no price in the payload: an Offer with no price (nothing invented); no tickets at all: no offers.
+// An event with no real price (tickets listed but no lowest price, or no tickets at all) gets no offers key, and every list and the
+// event page leave it out: Search Console flags an Event without an offer ("Missing field offers") and an offer without a price.
 $noPrice = call_user_func('soEventNode', $base);
-$o = $noPrice['offers'] ?? [];
-offerCheck(($o['@type'] ?? '') === 'Offer' && ($o['availability'] ?? '') === 'https://schema.org/InStock' && !isset($o['price'], $o['lowPrice']), 'tickets listed, no price: Offer without a price');
+offerCheck(!isset($noPrice['offers']) && !soEventHasOffer($noPrice), 'tickets listed but no price: no offers key');
 $noTickets = call_user_func('soEventNode', ['_metadata' => ['hasTickets' => false]] + $base);
-offerCheck(($noTickets['offers']['availability'] ?? '') === 'https://schema.org/SoldOut' && !isset($noTickets['offers']['price'], $noTickets['offers']['lowPrice']), 'no tickets listed: SoldOut Offer without a price');
-$noMeta = $base; unset($noMeta['_metadata']);
-offerCheck(!isset(call_user_func('soEventNode', $noMeta)['offers']), 'no _metadata: no offers (nothing assumed)');
+offerCheck(!isset($noTickets['offers']) && !soEventHasOffer($noTickets), 'no tickets: no offers key');
+offerCheck(soEventHasOffer($withHigh) && soEventHasOffer($noHigh), 'a priced event passes soEventHasOffer');
+$priced = $base + ['pricingInfo' => ['lowPrice' => ['value' => 40]]];
+$list = soEventItemList([$priced, ['id' => 2, '_metadata' => ['hasTickets' => false]] + $base, $base], 'https://seatoutlet.com/x');
+offerCheck(is_array($list) && ($list['numberOfItems'] ?? 0) === 1 && count($list['itemListElement']) === 1, 'a list keeps only the priced event');
+offerCheck(soEventItemList([$base, ['_metadata' => ['hasTickets' => false]] + $base], 'https://seatoutlet.com/x') === null, 'a list of unpriced events is no list at all');
+foreach (['inc/seo-event.php' => '!soEventHasOffer($eventSchema)', 'inc/seo-tickets.php' => '!soEventHasOffer($node)', 'inc/entity-pages.php' => '!soEventHasOffer($evNode)', 'inc/seo.php' => 'if (!$offer) continue;'] as $file => $needle) {
+    offerCheck(strpos((string) file_get_contents(__DIR__ . '/../' . $file), $needle) !== false, "$file leaves an unpriced event out");
+}
+offerCheck(preg_match('/foreach \(array_slice\(\$events, 0, 20\) as \$event\) \{.*?soEventHasOffer\(\$evNode\)\) \$nodes\[\] = \$evNode;/s', $src) === 1, 'the artist page leaves an unpriced event out');
 
 $sa = soSocialSameAs();
 offerCheck(in_array('https://x.com/SeatOutlet', $sa, true) && count($sa) >= 11, 'sameAs lists the social profiles');
