@@ -59,11 +59,17 @@ function tnStatsSummary(array $stats): array {
         $row = ['liveCalls' => (int) ($stats['live_call_bot_' . $fam] ?? 0), 'overBudget' => (int) ($stats['over_budget_bot_' . $fam] ?? 0), 'noData' => (int) ($stats['no_data_bot_' . $fam] ?? 0)];
         if ($row['liveCalls'] || $row['overBudget'] || $row['noData']) $families[$fam] = $row;
     }
+    // Visitors who send no browser signals (see soLooksLikeBrowser()): probably scripts the crawler list does not know. The rest are
+    // the likely-human pages, the figure that says whether real people are being turned away.
+    $nonBrowserPages = min($visitorPages, (int) ($stats['pages_nobrowser'] ?? 0));
+    $nonBrowserNoData = min($nonBrowserPages, (int) ($stats['no_data_nobrowser'] ?? 0));
+    $humanPages = max(0, $visitorPages - $nonBrowserPages);
+    $humanNoData = min($humanPages, max(0, $visitorNoData - $nonBrowserNoData));
     $botPages = min($pages, (int) ($stats['pages_bot'] ?? 0));
     $directPages = min($pages, (int) ($stats['pages_direct'] ?? 0));
     $botCalls = min($liveCalls, (int) ($stats['live_call_bot'] ?? 0));
     $directCalls = min($liveCalls, (int) ($stats['live_call_direct'] ?? 0));
-    return ['pages' => $pages, 'noData' => $noData, 'rate' => round($rate, 3), 'visitorPages' => $visitorPages, 'visitorNoData' => $visitorNoData, 'visitorRate' => round($visitorRate, 3), 'suspect' => $suspect, 'suspectRate' => round($suspectRate, 3),
+    return ['pages' => $pages, 'noData' => $noData, 'rate' => round($rate, 3), 'visitorPages' => $visitorPages, 'visitorNoData' => $visitorNoData, 'visitorRate' => round($visitorRate, 3), 'likelyHumanPages' => $humanPages, 'likelyHumanNoData' => $humanNoData, 'likelyHumanRate' => $humanPages > 0 ? round($humanNoData / $humanPages, 3) : 0.0, 'nonBrowserPages' => $nonBrowserPages, 'nonBrowserLiveCalls' => min($liveCalls, (int) ($stats['live_call_nobrowser'] ?? 0)), 'suspect' => $suspect, 'suspectRate' => round($suspectRate, 3),
             // per call, not per page: how many live calls the API refused (429) and how many our own budget held back
             'throttled' => (int) ($stats['throttled'] ?? 0), 'overBudget' => (int) ($stats['over_budget'] ?? 0),
             // who asked: crawlers (_bot) and hits on the beta address (_direct), as a share of pages, of the live calls, and of the no-data pages
@@ -116,6 +122,17 @@ function soClientIsCrawler(?string $userAgent = null): bool {
     return soCrawlerFamily($userAgent) !== '';
 }
 
+/**
+ * Whether a request carries the signals every real browser sends: an Accept-Language header and either Sec-Fetch-Mode or a cookie.
+ * Scripts and many crawlers send neither. Used only to count (health), never to refuse or slow a request, so a privacy tool that strips
+ * the headers just lands in the "probably script" count.
+ */
+function soLooksLikeBrowser(?array $server = null): bool {
+    $server = $server ?? $_SERVER;
+    $lang = trim((string) ($server['HTTP_ACCEPT_LANGUAGE'] ?? ''));
+    return $lang !== '' && (trim((string) ($server['HTTP_SEC_FETCH_MODE'] ?? '')) !== '' || trim((string) ($server['HTTP_COOKIE'] ?? '')) !== '');
+}
+
 /** The budget class of a crawler family: search engines share one capped bucket, every other crawler a smaller one. */
 function tnCrawlerClass(string $family): string {
     return in_array($family, ['google', 'bing', 'search_other'], true) ? 'search' : 'tool';
@@ -136,16 +153,18 @@ function tnCrawlerShare(string $class): float {
  * The counters one TicketNetwork outcome bumps in the day's stats file. The outcome itself; "pages" once per page (the first
  * outcome of a page request); "pages_suspect" once per page that kept a stored list; and, for a crawler (_bot) or a hit on the beta
  * address instead of the live Worker (_direct), the same outcome and page again under that suffix, so the health page can say who the
- * demand and the no-data pages are. $firstOfPage and $firstSuspect are decided by the caller (once per request).
+ * demand and the no-data pages are. $nonBrowser marks a request that is not a known crawler and sends none of the signals a browser
+ * sends (soLooksLikeBrowser()): the same counters again under _nobrowser, so the health page can show how many of the "visitor" pages
+ * are probably scripts. $firstOfPage and $firstSuspect are decided by the caller (once per request).
  */
-function tnCountKeys(string $kind, bool $firstOfPage, bool $firstSuspect, bool $crawler, bool $direct, string $family = ''): array {
+function tnCountKeys(string $kind, bool $firstOfPage, bool $firstSuspect, bool $crawler, bool $direct, string $family = '', bool $nonBrowser = false): array {
     $keys = [$kind];
     if ($firstOfPage) $keys[] = 'pages';
     if ($firstSuspect) $keys[] = 'pages_suspect';
     $split = ['live_call', 'no_data', 'over_budget', 'throttled', 'stale_on_error'];
     // The reason a page had no data (no_data_why_<reason>) is split like no_data itself.
     $isWhy = strpos($kind, 'no_data_why_') === 0;
-    foreach ([['_bot', $crawler], ['_direct', $direct]] as [$suffix, $on]) {
+    foreach ([['_bot', $crawler], ['_direct', $direct], ['_nobrowser', $nonBrowser]] as [$suffix, $on]) {
         if (!$on) continue;
         if ($isWhy || in_array($kind, $split, true)) $keys[] = $kind . $suffix;
         if ($firstOfPage) $keys[] = 'pages' . $suffix;
