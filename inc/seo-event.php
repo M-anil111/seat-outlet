@@ -137,6 +137,8 @@ if (!empty($event) && $evName !== '') {
         'venue' => (is_array($evVenueRec) && !tnEntityMissing($evVenueRec)) ? $evVenueRec : null,
         'image' => ($evOgImg !== '' && strpos($evOgImg, 'seatoutlet-logo') === false) ? $evOgImg : '',
     ]);
+    // An event with no listed price (nothing on sale) gets no Event markup: Search Console flags one without an offer or without a price.
+    if (!soEventHasOffer($eventSchema)) $eventSchema = null;
 }
 
 // Breadcrumb: Home > category hub > performer > this event (the same trail the page links up through).

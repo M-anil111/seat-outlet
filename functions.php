@@ -944,7 +944,8 @@ function buildPerformerPageJsonLd(string $artistName, int $performerId, array $e
 
     foreach (array_slice($events, 0, 20) as $event) {
         if (empty($event['date']['date']) && empty($event['date']['datetime'])) continue;
-        $nodes[] = soEventNode($event, ['image' => $imageUrl]);
+        $evNode = soEventNode($event, ['image' => $imageUrl]);
+        if (soEventHasOffer($evNode)) $nodes[] = $evNode;
     }
     return $nodes;
 }
@@ -4373,7 +4374,9 @@ function soEventItemList(array $events, $pageUrl) {
     $items = [];
     foreach (array_slice($events, 0, 20) as $ev) {
         if (empty($ev['text']['name']) || (empty($ev['date']['date']) && empty($ev['date']['datetime']))) continue;
-        $items[] = ['@type' => 'ListItem', 'position' => count($items) + 1, 'item' => soEventNode($ev)];
+        $evNode = soEventNode($ev);
+        if (!soEventHasOffer($evNode)) continue;   // an event nobody can buy has no price to state (see soEventNode())
+        $items[] = ['@type' => 'ListItem', 'position' => count($items) + 1, 'item' => $evNode];
     }
     if (!$items) return null;
     $list = ['@type' => 'ItemList', 'itemListOrder' => 'https://schema.org/ItemListOrderAscending', 'numberOfItems' => count($items), 'itemListElement' => $items];
@@ -4451,6 +4454,12 @@ function soEventSchemaDescription(array $event): string {
  */
 if (!defined('SO_EVENT_DEFAULT_HOURS')) define('SO_EVENT_DEFAULT_HOURS', 3);
 
+/** Whether an Event node from soEventNode() carries an offer with a real price (the only kind that goes into the markup). */
+function soEventHasOffer(array $node): bool {
+    $o = $node['offers'] ?? null;
+    return is_array($o) && (isset($o['price']) || isset($o['lowPrice']));
+}
+
 function soEventNode(array $event, array $opts = []) {
     $name = (string) ($event['text']['name'] ?? '');
     $id = (int) ($event['id'] ?? 0);
@@ -4527,30 +4536,10 @@ function soEventNode(array $event, array $opts = []) {
         $from = soEventListedFrom($event);
         if ($from !== '') $offer['validFrom'] = $from;
         $node['offers'] = $offer;
-    } elseif (!empty($event['_metadata']['hasTickets'])) {
-        // Tickets are listed but this payload carries no lowest price: say what is known (on sale at this URL) and leave the
-        // price out rather than invent one. Search Console flags an Event with no offers at all ("Missing field offers").
-        $offer = [
-            '@type' => 'Offer',
-            'url' => $url,
-            'priceCurrency' => 'USD',
-            'availability' => 'https://schema.org/InStock',
-            'seller' => ['@id' => HOME_URL . '/#organization'],
-        ];
-        $from = soEventListedFrom($event);
-        if ($from !== '') $offer['validFrom'] = $from;
-        $node['offers'] = $offer;
-    } elseif (array_key_exists('hasTickets', (array) ($event['_metadata'] ?? []))) {
-        // TicketNetwork answered and says no tickets are listed: SoldOut at this URL, no price. Stated only when the feed says so
-        // (an event with no _metadata at all gets no offers, nothing is assumed).
-        $node['offers'] = [
-            '@type' => 'Offer',
-            'url' => $url,
-            'priceCurrency' => 'USD',
-            'availability' => 'https://schema.org/SoldOut',
-            'seller' => ['@id' => HOME_URL . '/#organization'],
-        ];
     }
+    // No offers key when there is no real price (nothing listed, or no lowest price in the feed): Search Console flags an Event with no
+    // offers ("Missing field offers") and an offer with no price ("Missing field price"), and a price is not made up. Every list of Event
+    // nodes and the event page itself leave such an event out of the markup instead (soEventHasOffer()).
     return $node;
 }
 

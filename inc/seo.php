@@ -108,6 +108,9 @@ foreach ($eventFiles as $file) {
 
       $startDate = date('Y-m-d', $event['edate']);
       $price = $event['price'] ?? null;   // "$10" style text from the cached feed; seoOffer() parses it, no invented default
+      // No price in the feed, no Event markup: Search Console flags an Event without an offer or without a price, and none is made up.
+      $offer = seoOffer(HOME_URL . "/event/" . soEventSlug($event), $price);
+      if (!$offer) continue;
 
       $eventsSchema[] = [
           "@type" => "Event",
@@ -136,10 +139,7 @@ foreach ($eventFiles as $file) {
           ],
 
       ];
-      $offer = seoOffer(HOME_URL . "/event/" . soEventSlug($event), $price);
-      if ($offer) {
-          $eventsSchema[array_key_last($eventsSchema)]["offers"] = $offer;
-      }
+      $eventsSchema[array_key_last($eventsSchema)]["offers"] = $offer;
 
       $imageCacheKey = 'so_img_' . md5($tab . '|' . $event['name'] . '|' . $event['performer']);
       $cachedImage = get_image($imageCacheKey);

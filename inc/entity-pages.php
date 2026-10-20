@@ -159,7 +159,9 @@ function soBuildEventItemListSchema(array $events, string $listName, int $limit 
     foreach (array_slice($events, 0, $limit) as $ev) {
         $name = trim((string) ($ev['text']['name'] ?? ''));
         if ((empty($ev['date']['datetime']) && empty($ev['date']['date'])) || $name === '' || empty($ev['id'])) continue;
-        $items[] = ['@type' => 'ListItem', 'position' => $pos++, 'item' => soEventNode($ev)];
+        $evNode = soEventNode($ev);
+        if (!soEventHasOffer($evNode)) continue;   // no price, no Event markup (see soEventNode())
+        $items[] = ['@type' => 'ListItem', 'position' => $pos++, 'item' => $evNode];
     }
     if (!$items) return null;
     return ['@type' => 'ItemList', 'name' => $listName, 'numberOfItems' => count($items), 'itemListElement' => $items];
