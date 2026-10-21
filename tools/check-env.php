@@ -63,6 +63,9 @@ $add($effIdx ? 'OK' : ($production ? 'FAIL' : 'WARN'), 'SITE_INDEXABLE', $effIdx
 
 // Site features
 $add($env('GTM_ID') !== '' ? 'OK' : 'WARN', 'GTM_ID', $env('GTM_ID') !== '' ? 'set' : 'not set: no Google Tag Manager (no analytics or ad conversion tags)');
+require_once __DIR__ . '/../inc/php-security.php';
+$php = soPhpPatchStatus();
+$add($php['patched'] ? 'OK' : 'BETA', 'PHP security release', $php['note'] . ($php['patched'] ? '' : ' (see docs/security-php-2026-10.md; this is the command-line PHP, check the web server PHP too)'));
 $add($env('RECAPTCHA_SITE_KEY') !== '' ? 'OK' : 'WARN', 'RECAPTCHA_SITE_KEY', $env('RECAPTCHA_SITE_KEY') !== '' ? 'set' : 'not set: the key built into inc/constants.php is used; check in the Google reCAPTCHA console that it allows the live domain and matches RECAPTCHA_SECRET_KEY');
 $add($env('SMTP_USER') !== '' && $env('SMTP_PASS') !== '' ? 'OK' : 'WARN', 'SMTP_USER / SMTP_PASS', $env('SMTP_USER') !== '' && $env('SMTP_PASS') !== '' ? 'set' : 'not set: no sign-up, alert or password reset emails are sent');
 $add($env('SO_MAIL_ADDRESS') !== '' ? 'OK' : 'WARN', 'SO_MAIL_ADDRESS', $env('SO_MAIL_ADDRESS') !== '' ? 'set' : 'not set: marketing emails go out without the postal address US law asks for');
