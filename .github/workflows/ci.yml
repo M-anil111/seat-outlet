@@ -93,6 +93,8 @@ jobs:
         run: php tools/check-docs-constants.php
       - name: Event offer schema and social profiles
         run: php tools/test-event-offer.php
+      - name: PHP security release table (offline)
+        run: php tools/test-php-patch.php
       - name: Event page never says tickets are unavailable when the feed lists them
         run: php tools/test-widget-mismatch.php
       - name: Popular and nationwide lists read in date order
