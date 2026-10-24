@@ -187,6 +187,10 @@ jobs:
         run: php tools/test-order-verify-db.php
       - name: Email sign-ups (new, repeat, same answer to the visitor)
         run: php tools/test-leads-db.php
+      - name: Bulk catalog read side and zero-event pages
+        run: |
+          php tools/test-tn-bulk-read.php
+          php tools/test-zero-pages.php
       - name: Removed-event redirects (performer, category, bulk fallback, unknown stays 404)
         run: php tools/test-event-redirects-db.php
 

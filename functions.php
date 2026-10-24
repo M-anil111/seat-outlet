@@ -4,6 +4,8 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 require_once __DIR__ . '/inc/tn-listing-copy.php';
 require_once __DIR__ . '/inc/dead-performers.php';   // performers whose page answers 404 are left out of the lists that link to them
 require_once __DIR__ . '/inc/tn-budget.php';
+require_once __DIR__ . '/inc/tn-bulk.php';          // tnBulkEnabled() and the bulk row mapping (also loaded by the importer)
+require_once __DIR__ . '/inc/tn-bulk-read.php';     // tnBulkFallback(): listings from the local catalog copy when a live call cannot be made
 require_once __DIR__ . '/inc/event-redirects.php';   // what a removed event page redirects to, remembered from visits, performer pages and the bulk import
 
 // Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
@@ -654,6 +656,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
     // Circuit open for this family: do not queue more 20s timeouts behind a dead API.
     if (tnBreakerOpen(tnBreakerFamily($endpoint))) {
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
+        $bulk = tnBulkFallback($endpoint, $params); if ($bulk !== null) return $bulk;   // the local catalog copy, when it is switched on and fresh
         tnMarkDegraded('breaker');
         return [];
     }
@@ -668,8 +671,10 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
             return $hit !== false ? $hit : cache_get($key . '_nf', TN_NEGATIVE_TTL);
         });
         if ($shared !== false) { tnProfile($endpoint, true, 0); return $shared; }
+        if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnMarkDegraded('coalesced'); return $entry['data']; }
+        $bulk = tnBulkFallback($endpoint, $params); if ($bulk !== null) return $bulk;
         tnMarkDegraded('coalesced');
-        return ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) ? $entry['data'] : [];
+        return [];
     }
     try {
         return tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry);
@@ -691,6 +696,7 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     if (!tnBucketAllow()) {
         tnCount('over_budget');   // our own limit, not the API's: tells a local bottleneck apart from a throttle on the health page
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
+        $bulk = tnBulkFallback($endpoint, $params); if ($bulk !== null) return $bulk;
         tnMarkDegraded('budget');
         return [];
     }
@@ -709,6 +715,7 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
         soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
+        $bulk = tnBulkFallback($endpoint, $params); if ($bulk !== null) return $bulk;
         tnMarkDegraded(!empty($r['throttled']) ? 'throttled' : 'api_error');
         return [];
     }
