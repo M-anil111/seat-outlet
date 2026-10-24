@@ -89,6 +89,7 @@ jobs:
           php tools/test-page-tag.php
           php tools/test-event-promo-meta.php
           php tools/test-promo-claims.php
+          php tools/test-order-verify.php
           php tools/test-blog-links.php
       - name: Reliability docs state the same windows and limits as the code
         run: php tools/check-docs-constants.php
@@ -181,6 +182,8 @@ jobs:
         run: php tools/test-slugs.php
       - name: Database reconnect (soDbRetry)
         run: php tools/test-db-retry.php
+      - name: Verified orders (record once, claim the purchase once)
+        run: php tools/test-order-verify-db.php
 
       - name: Apply the sample seed (must also be safe to run twice)
         run: |
