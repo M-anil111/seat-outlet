@@ -1,0 +1,4 @@
+{
+  "_note": "Violations the browser check accepts, each with the reason. Keep this list empty or short: a new entry needs a line in docs/csp.md. directive + blocked (exact blocked-uri, e.g. inline or eval) or blockedHost (substring).",
+  "known": []
+}
