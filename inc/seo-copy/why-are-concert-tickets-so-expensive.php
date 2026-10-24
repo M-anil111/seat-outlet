@@ -32,6 +32,6 @@
 <p>Questions about delivery or entry? The <a href="/ticket-faq">ticket FAQ</a> has short answers. Want a plain-English walk through a purchase? Read <a href="/how-to-buy-tickets-online">how to buy tickets online</a>.</p>
 
 <h2>Questions</h2>
-<details class="so-faq"><summary>Why are prices high for some shows and low for others?</summary><p>Prices depend on demand, seat location, event popularity and availability, plus fees. Popular tours with few dates tend to cost the most.</p></details>
+<details class="so-faq"><summary>Why are prices high for some shows and low for others?</summary><p>Prices depend on demand, seat location, event popularity and availability. Any fees that apply are shown at checkout. Popular tours with few dates tend to cost the most.</p></details>
 <details class="so-faq"><summary>Are resale tickets always more expensive than face value?</summary><p>No. Sellers set resale prices, so they can be above or below face value.</p></details>
 <details class="so-faq"><summary>Where can I find a better price?</summary><p>Compare sections, check totals, and watch <a href="/ticket-deals">ticket deals</a>. No marketplace can promise the lowest price for every event.</p></details>

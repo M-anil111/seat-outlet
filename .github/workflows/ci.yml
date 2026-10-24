@@ -94,6 +94,7 @@ jobs:
           php tools/test-dir-sort.php
           php tools/test-photo-credits-link.php
           php tools/check-csp.php
+          php tools/test-fee-claims.php
           php tools/test-csp-summary.php
           php tools/test-blog-links.php
       - name: Reliability docs state the same windows and limits as the code
@@ -293,6 +294,9 @@ jobs:
 
       - name: Open the pages and read the violations
         run: node tools/test-csp-browser.mjs http://127.0.0.1:8161
+
+      - name: Event page seat-map wiring (precheckout modes, begin_checkout once, no broken state)
+        run: node tools/test-event-widget.mjs
 
       - name: Site log (on failure)
         if: failure()
