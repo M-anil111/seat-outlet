@@ -142,11 +142,23 @@ jobs:
         run: composer audit --no-interaction || (echo "::error::composer audit found a vulnerability advisory - see output above" && exit 1)
 
   migrations:
-    name: Database migrations apply cleanly
+    # Production runs MariaDB, so every database step below also runs against a MariaDB image. The MySQL job keeps its original name, which
+    # is the check name branch protection may require; the MariaDB job adds its own name. Both start from an empty database.
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Database migrations apply cleanly
+            image: mysql:8.0
+            ping: mysqladmin ping -pci_root_password
+          - name: Database migrations apply cleanly (MariaDB 10.11)
+            image: mariadb:10.11
+            ping: mariadb-admin ping -pci_root_password
     services:
       mysql:
-        image: mysql:8.0
+        image: ${{ matrix.image }}
         env:
           # db/config.php deliberately treats an empty DB_PASS as "not set"
           # and refuses to connect (see the same check in the real app) -
@@ -156,7 +168,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -pci_root_password"
+          --health-cmd="${{ matrix.ping }}"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=10
@@ -174,6 +186,9 @@ jobs:
         with:
           php-version: '8.3'
           extensions: mysqli
+
+      - name: Show the database server version
+        run: php -r 'mysqli_report(MYSQLI_REPORT_OFF); $m = new mysqli(getenv("DB_HOST"), getenv("DB_USER"), getenv("DB_PASS"), getenv("DB_NAME"), (int) getenv("DB_PORT")); echo $m->server_info, "\n";'
 
       - name: Apply migrations against a fresh database
         run: php db/migrate.php
