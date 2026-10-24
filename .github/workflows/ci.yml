@@ -90,6 +90,7 @@ jobs:
           php tools/test-event-promo-meta.php
           php tools/test-promo-claims.php
           php tools/test-order-verify.php
+          php tools/test-newsletter-consolidation.php
           php tools/test-blog-links.php
       - name: Reliability docs state the same windows and limits as the code
         run: php tools/check-docs-constants.php
@@ -184,6 +185,8 @@ jobs:
         run: php tools/test-db-retry.php
       - name: Verified orders (record once, claim the purchase once)
         run: php tools/test-order-verify-db.php
+      - name: Email sign-ups (new, repeat, same answer to the visitor)
+        run: php tools/test-leads-db.php
       - name: Removed-event redirects (performer, category, bulk fallback, unknown stays 404)
         run: php tools/test-event-redirects-db.php
 

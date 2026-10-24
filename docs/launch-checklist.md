@@ -87,7 +87,7 @@ For the owner
 - Production robots: serve robots.php at /robots.txt (docs/server-rewrites.md). The static robots.txt has no Sitemap line on purpose.
 - Blog: the seven launch posts repeat their focus phrase 34 to 51 times (SEO tool now warns). Have the author vary the wording. Review dates and facts before re-publishing.
 - Blog post image alt texts were written from the pictures; replace generic stock images with relevant ones when available.
-- The old iContact page /newsletter and newsletter-email.php: retire or noindex (WS1 area).
+- Newsletter: one path now. Every form is `soLeadForm()` posting to `/ajax/subscribe.php`; a repeat address gets the same answer as a new one (no "already subscribed" oracle). `ajax/check-email.php` no longer reads anything (it only checks the address looks valid) and `newsletter-email.php` redirects GET to the home page and still accepts a stale POST; both log each call (`legacy ... called`). Delete both files once the error log shows none. Guarded by `tools/test-newsletter-consolidation.php` and `tools/test-leads-db.php`. The old iContact page /newsletter is not part of this site.
 
 For counsel (not drafted, deliberately)
 - Privacy policy: US state privacy rights section (CCPA/CPRA and other states): categories, sale/share, "Do Not Sell or Share", Global Privacy Control, request methods, response times. Section on targeted advertising/retargeting: confirm whether it applies; GTM is only loaded when GTM_ID is set.
