@@ -93,6 +93,8 @@ jobs:
           php tools/test-newsletter-consolidation.php
           php tools/test-dir-sort.php
           php tools/test-photo-credits-link.php
+          php tools/check-csp.php
+          php tools/test-csp-summary.php
           php tools/test-blog-links.php
       - name: Reliability docs state the same windows and limits as the code
         run: php tools/check-docs-constants.php
@@ -215,3 +217,84 @@ jobs:
         run: |
           php db/migrate.php --seed=page_rules_sample
           php db/migrate.php --seed=page_rules_sample
+
+  csp-browser:
+    # The policy is report-only, so nothing breaks when it is wrong. This opens the site's own pages in Chromium, reads the browser's
+    # securitypolicyviolation events and fails on any that tools/csp-known-violations.json does not list (docs/csp.md).
+    name: CSP in a real browser
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_password
+          MYSQL_DATABASE: seatoutlet_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -pci_root_password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: seatoutlet_ci
+      DB_USER: root
+      DB_PASS: ci_root_password
+      # Placeholders: the pages checked need no TicketNetwork, mail or reCAPTCHA call to succeed. HOME_URL is the origin the check opens,
+      # because the site writes absolute asset addresses from it and 'self' must match.
+      HOME_URL: http://127.0.0.1:8161
+      CONSUMER_KEY: ci-placeholder
+      CONSUMER_SECRET: ci-placeholder
+      GAPI_KEY: ci-placeholder
+      AWS_ACCESS_KEY: ci-placeholder
+      AWS_SECRET_KEY: ci-placeholder
+      RECAPTCHA_SECRET_KEY: ci-placeholder
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, curl, mbstring, json, gd
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Create the database tables
+        run: php db/migrate.php
+
+      - name: Install Chromium for the check
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+
+      - name: Start the site
+        run: |
+          # A router so clean addresses (/privacy-policy) reach their script, like the web server's rewrite rules.
+          cat > /tmp/csp-router.php <<'ROUTER'
+          <?php
+          $p = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+          $root = getenv('GITHUB_WORKSPACE');
+          chdir($root);
+          if ($p === '/') { require $root . '/index.php'; return true; }
+          if (is_file($root . $p) && !preg_match('/\.php$/', $p)) return false;
+          $f = $root . rtrim($p, '/') . '.php';
+          if (is_file($f)) { $_SERVER['SCRIPT_NAME'] = rtrim($p, '/') . '.php'; require $f; return true; }
+          return false;
+          ROUTER
+          nohup php -S 127.0.0.1:8161 -t "$GITHUB_WORKSPACE" /tmp/csp-router.php > /tmp/csp-site.log 2>&1 &
+          for i in $(seq 1 20); do curl -fsS -o /dev/null http://127.0.0.1:8161/privacy-policy && break; sleep 1; done
+          curl -fsS -o /dev/null http://127.0.0.1:8161/privacy-policy
+
+      - name: Open the pages and read the violations
+        run: node tools/test-csp-browser.mjs http://127.0.0.1:8161
+
+      - name: Site log (on failure)
+        if: failure()
+        run: tail -n 60 /tmp/csp-site.log
+
