@@ -54,7 +54,7 @@
   <li><strong>Stay on the official checkout.</strong> Pay only inside the checkout. The FTC offers general advice on <a href="https://consumer.ftc.gov/articles/online-shopping" target="_blank" rel="noopener">shopping online safely</a>.</li>
 </ul>
 <div class="so-callout">
-  <p><strong>Good to know:</strong> Looking for a lower total? Visit our <a href="/tickets-promo-code">tickets promo code</a> page to see current offers, or browse <a href="/ticket-deals">ticket deals</a> for more ways to save.</p>
+  <p><strong>Good to know:</strong> Looking for a lower total? Visit our <a href="/tickets-promo-code">tickets promo code</a> page to see how promotions work, or browse <a href="/ticket-deals">ticket deals</a> for more ways to save.</p>
 </div>
 
 <h2>Choosing Seats When You Buy Event Tickets</h2>

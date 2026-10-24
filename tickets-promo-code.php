@@ -3,7 +3,7 @@ require_once 'functions.php';
 // SEO: this page previously relied on header.php's generic fallback
 // title/canonical.
 $pageMetaTitle       = 'Deals & Promotions – Ticket Discount Codes | Seat Outlet';
-$pageMetaDescription = 'Promo codes listed for Seat Outlet orders, how to try one at checkout, and honest tips for paying less on concert, sports and theater tickets.';
+$pageMetaDescription = 'How promotions work at Seat Outlet checkout, how to try a promo code if one is offered, and honest tips for paying less on concert, sports and theater tickets.';
 $pageCanonicalUrl    = HOME_URL . '/tickets-promo-code';
 include 'header.php';
 $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); };
@@ -39,7 +39,7 @@ $soPcWays = [
 ];
 $soPcTerms = [
     'Codes apply only at checkout and only where the checkout accepts them.',
-    'Minimum order amounts apply as shown next to each code.',
+    soPromoCodes() ? 'Minimum order amounts apply as shown next to each code.' : 'Minimum order amounts and other conditions apply as shown at checkout.',
     'Codes may not be combined with other offers.',
     'Codes can change or stop working without notice.',
 ];
@@ -210,7 +210,7 @@ $soPcTerms = [
             <div class="so-pc-hero__grid">
                 <div>
                     <h1>Ticket Promo Codes and Deals</h1>
-                    <p>Find a tickets promo code for concerts, sports and theater, plus tips on using it at checkout.</p>
+                    <p>How promotions work at checkout for concerts, sports and theater, plus honest ways to pay less.</p>
                 </div>
                 <div class="so-pc-hero__art" aria-hidden="true">
                     <svg viewBox="0 0 360 240" focusable="false">
@@ -231,15 +231,18 @@ $soPcTerms = [
         <div class="container">
             <h2 class="so-pc-h2" id="soPcCodes">Latest Ticket Promo Codes</h2>
             <div class="so-pc-codes">
-                <?php foreach (SO_PROMO_CODES as $p) { ?>
+                <?php foreach (soPromoCodes() as $p) { ?>
                 <div class="so-pc-coupon">
                     <div class="so-pc-coupon__deal"><strong><?php echo (int) $p['pct']; ?>% OFF</strong><span>Orders of $<?php echo (int) $p['min']; ?> or more</span></div>
                     <div class="so-pc-coupon__use"><span class="so-pc-coupon__code"><?php echo $e($p['code']); ?></span><button type="button" class="btn offer-copy-btn" data-code="<?php echo $e($p['code']); ?>" aria-label="Copy code <?php echo $e($p['code']); ?>">Copy code</button></div>
                 </div>
                 <?php } ?>
+                <?php if (!soPromoCodes()) { ?>
+                <div class="so-pc-coupon"><div class="so-pc-coupon__deal"><strong>Offers at checkout</strong><span>Any available promotion appears at checkout</span></div></div>
+                <?php } ?>
             </div>
             <div class="so-pc-note">
-                <p>Below are the promo codes we list for orders placed through Seat Outlet. Whether a code applies is decided at checkout, which is hosted by TicketNetwork, so we cannot promise that a code will work on every event or every order. If a code does not apply, nothing is charged extra: you simply pay the price shown.</p>
+                <p><?php echo soPromoCodes() ? 'Below are the promo codes we list for orders placed through Seat Outlet.' : 'We are not listing a promo code at the moment.'; ?> Whether a code applies is decided at checkout, which is hosted by TicketNetwork, so we cannot promise that a code will work on every event or every order. If a code does not apply, nothing is charged extra: you simply pay the price shown.</p>
                 <p>Seat Outlet is a resale marketplace. Prices are set by sellers and may be above or below face value, so comparing seats usually saves more than any code. See all <a href="/buy-tickets-online">ticket listings</a> to get started.</p>
             </div>
         </div>
@@ -278,7 +281,7 @@ $soPcTerms = [
     <section class="so-pc-sec so-pc-faq" style="padding-top:8px">
         <div class="container">
             <?php ob_start(); soMiniFaq('Promo code questions', [
-                ['Which promo codes can I use?', 'We list TAKE5 (5% off orders of $199 or more) and TAKE10 (10% off orders of $349 or more). Whether a code applies to your order is decided at checkout.'],
+                ['Which promo codes can I use?', soPromoCodes() ? 'Whether a code applies to your order is decided at checkout. The codes we list are shown at the top of this page.' : 'We do not list a promo code right now. If the checkout, which is hosted by TicketNetwork, offers a promotion for your order, it appears there and you can check the new total before you pay.'],
                 ['Where do I enter a promo code?', 'At checkout, in the promo code field, when the checkout shows one. Check the new total before you pay.'],
                 ['Why did my promo code not work?', 'Codes apply only where the checkout accepts them, the order must meet the minimum shown next to the code, and codes cannot be combined with other offers. If it still fails, contact customer service with your order details.'],
                 ['Can I use a promo code on any event?', 'Not always. Some events or listings may not accept codes, and codes can change or stop working without notice.'],
