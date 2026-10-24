@@ -52,7 +52,7 @@ Do not rewrite links after the fact with JavaScript (for example, replacing `gra
 - `includeJQuery=false` means jQuery must already be on the page.
 - Hooks in use: `noEventHandler` (event over), `noTicketsHandler` (no inventory), `onBuyButtonClicked`, and `Seatics.TrackingEvents.registerEventListener` for `FinishedLoading` and `BuyButtonClicked`.
 - Replace the default "Sorry, this event has expired" dead end with your own block linking to other dates, the city and the venue.
-- Fires dataLayer events: `view_item`, `select_item`, `begin_checkout`, `no_inventory`.
+- Fires dataLayer events: `view_item`, `select_item`, `begin_checkout`, `no_inventory`. Their payload figures come through the adapter in `js/event-widget.js`, which labels guessed event names and estimated values; `?so_seatics_debug=1` records the widget's real event names and field names (docs/launch-checklist.md, "Widget events").
 
 For a travel site: place the map below a clear event summary (name, date, city, venue) and above the fold on mobile. Do not restyle the widget with fragile CSS; use the Maps Configuration tool.
 

@@ -2,6 +2,8 @@
    - loads the widget script after the page is parsed (async), so a slow third party cannot block the page;
    - settings for the widget (checkout address, quantity sheet, sort order);
    - GA4 ecommerce events: view_item, select_item (listing click), begin_checkout (Buy click), no_inventory, widget_load_failed;
+   - one adapter (soSeaticsAdapter) turns whatever the widget reports into the same shape, says where each figure came from, and a capture
+     mode (add ?so_seatics_debug=1 to an event address) records the real event names and payload fields so the guesses can be replaced;
    - a watchdog: if the widget never answers, show a visible message instead of an empty box;
    - one consistent "no tickets" / "could not load" state (hero text, button, nudge) with an email alert form.
    The facts come from the JSON block event.php prints (#so-event-data). */
@@ -17,7 +19,7 @@
   var WIDGET_HOST = 'https://mapwidget3.seatics.com/';
   var CUR = ev.currency || 'USD';
   var reviewStep = ev.precheckout === 'review';
-  var state = { loaded: false, empty: false, failed: false, buyTimer: null, buyPayloads: [], lastBuy: 0, buys: 0, reviewSeen: false };
+  var state = { loaded: false, empty: false, failed: false, buyTimer: null, buyPayloads: [], lastBuy: 0, buys: 0, reviewSeen: false, viewSent: false };
   var selected = {};
   var watchdog = null;
   var root = document.documentElement;
@@ -49,26 +51,75 @@
     var n = parseFloat(String(v).replace(/[^0-9.]/g, ''));
     return isFinite(n) && n > 0 ? n : null;
   }
-  /* The shape of the widget's click payload is not documented, so look for the usual field names (one level deep) and use nothing that is missing. */
-  function dig(o, keys) {
+  /* ---- The seat-map adapter -------------------------------------------------------------------------------------------------------------
+     What is known (docs/seatics-checkout-thankyou-implementation.md): the tracking listener reports "FinishedLoading" and "BuyButtonClicked"; the
+     config callback onBuyButtonClicked reports the same click. What is NOT known: the name of a listing-click event, the name of the review-screen
+     event, and the field names of any payload (the Integration Guide is not in the repository). The lists below are guesses and are labelled as such
+     in every event that depends on them: a figure from a guessed name carries its source ("payload:price", "payload.nested:qty"), a price that is
+     missing is replaced by the lowest listed price and marked value_estimated, a quantity that is missing becomes 1 and is marked
+     quantity_estimated, and the payload's price is taken as per ticket (price_basis) until the capture mode shows otherwise. */
+  var PRICE_KEYS = ['price', 'pricePerTicket', 'ticketPrice', 'unitPrice', 'retailPrice'];
+  var QTY_KEYS = ['quantity', 'qty', 'ticketQuantity', 'numTickets', 'selectedQuantity'];
+  var TG_KEYS = ['ticketGroupId', 'tgId', 'tgid', 'ticketGroupID'];
+  var KNOWN_TYPES = { FinishedLoading: 'loaded', BuyButtonClicked: 'buy' };
+  var GUESSED_TYPES = [['listing', /listing|ticketgroup|ticket_group|tgselect|tgclick/i], ['precheckout', /pre.?checkout/i]];
+  function scalar(v) { return v !== undefined && v !== null && typeof v !== 'object'; }
+  /* The first of keys found in o (one level deep): { value, from } where from is "payload:key" or "payload.<parent>:key"; null when absent. */
+  function pick(o, keys) {
     if (!o || typeof o !== 'object') return null;
     var i, k;
-    for (i = 0; i < keys.length; i++) if (o[keys[i]] !== undefined && o[keys[i]] !== null && typeof o[keys[i]] !== 'object') return o[keys[i]];
+    for (i = 0; i < keys.length; i++) if (scalar(o[keys[i]])) return { value: o[keys[i]], from: 'payload:' + keys[i] };
     for (k in o) {
       if (o[k] && typeof o[k] === 'object' && !Array.isArray(o[k])) {
-        for (i = 0; i < keys.length; i++) if (o[k][keys[i]] !== undefined && o[k][keys[i]] !== null && typeof o[k][keys[i]] !== 'object') return o[k][keys[i]];
+        for (i = 0; i < keys.length; i++) if (scalar(o[k][keys[i]])) return { value: o[k][keys[i]], from: 'payload.' + String(k).slice(0, 20) + ':' + keys[i] };
       }
     }
     return null;
   }
-  var PRICE_KEYS = ['price', 'pricePerTicket', 'ticketPrice', 'unitPrice', 'retailPrice'];
-  var QTY_KEYS = ['quantity', 'qty', 'ticketQuantity', 'numTickets', 'selectedQuantity'];
-  var TG_KEYS = ['ticketGroupId', 'tgId', 'tgid', 'ticketGroupID'];
-  function details(data) {
-    var price = num(dig(data, PRICE_KEYS));
-    var qty = parseInt(dig(data, QTY_KEYS), 10);
-    var tg = dig(data, TG_KEYS);
-    return { price: price, qty: qty > 0 && qty < 100 ? qty : null, tg: tg !== null ? String(tg) : '' };
+  function classify(type) {
+    var t = String(type);
+    if (Object.prototype.hasOwnProperty.call(KNOWN_TYPES, t)) return { kind: KNOWN_TYPES[t], named: true };
+    for (var i = 0; i < GUESSED_TYPES.length; i++) if (GUESSED_TYPES[i][1].test(t)) return { kind: GUESSED_TYPES[i][0], named: false };
+    return { kind: 'other', named: false };
+  }
+  /* One event from the widget in one shape. price and qty are null when the payload has no usable figure; *From says where a figure came from. */
+  function normalize(type, data) {
+    var c = classify(type), p = pick(data, PRICE_KEYS), q = pick(data, QTY_KEYS), g = pick(data, TG_KEYS);
+    var price = p ? num(p.value) : null;
+    var qty = q ? parseInt(q.value, 10) : NaN;
+    return { kind: c.kind, nameKnown: c.named, price: price, priceFrom: price !== null ? p.from : '', qty: qty > 0 && qty < 100 ? qty : null, qtyFrom: qty > 0 && qty < 100 ? q.from : '', tg: g ? String(g.value) : '', tgFrom: g ? g.from : '' };
+  }
+  function details(data) { return normalize('', data); }
+  window.soSeaticsAdapter = { classify: classify, normalize: normalize };   // read by tools/test-event-widget.mjs
+
+  /* ---- Capture mode: ?so_seatics_debug=1 (kept for the browser tab session) records every event the widget reports, as names and field types
+     only (plus the price, quantity and listing figures the adapter found), so the real names can be read from GA4 DebugView, the console or
+     window.__soSeaticsCapture. Off by default: nothing is recorded or sent without the flag. ---- */
+  var CAPTURE = false;
+  try {
+    if (/[?&]so_seatics_debug=1(?:&|$)/.test(location.search)) sessionStorage.setItem('so_seatics_debug', '1');
+    CAPTURE = sessionStorage.getItem('so_seatics_debug') === '1';
+  } catch (e) { CAPTURE = /[?&]so_seatics_debug=1(?:&|$)/.test(location.search); }
+  var t0 = Date.now();
+  function shape(o, depth) {
+    var out = [], k, v;
+    if (!o || typeof o !== 'object') return typeof o;
+    for (k in o) {
+      if (!Object.prototype.hasOwnProperty.call(o, k)) continue;
+      v = o[k];
+      out.push(String(k).slice(0, 30) + ':' + (v && typeof v === 'object' ? (depth > 0 ? '{' + shape(v, depth - 1) + '}' : Array.isArray(v) ? 'array' : 'object') : typeof v));
+      if (out.length >= 40) break;
+    }
+    return out.join(',');
+  }
+  function capture(source, type, data) {
+    if (!CAPTURE) return;
+    var n = normalize(type, data);
+    var rec = { ms: Date.now() - t0, source: source, type: String(type).slice(0, 60), kind: n.kind, nameKnown: n.nameKnown, fields: shape(data, 1),
+                price: n.price, priceFrom: n.priceFrom, qty: n.qty, qtyFrom: n.qtyFrom, tg: n.tg, tgFrom: n.tgFrom };
+    (window.__soSeaticsCapture = window.__soSeaticsCapture || []).push(rec);
+    try { console.info('[seatics]', JSON.stringify(rec)); } catch (e) {}
+    dl().push({ event: 'seatics_capture', seatics_source: source, seatics_type: rec.type, seatics_kind: n.kind, seatics_name_known: n.nameKnown, seatics_fields: rec.fields.slice(0, 200), event_id: String(ev.id) });
   }
   function round2(n) { return Math.round(n * 100) / 100; }
 
@@ -85,20 +136,22 @@
     // that is one checkout started, so only the first is sent for this page view.
     if (reviewStep && state.buys > 0) { state.buyPayloads = []; return; }
     state.buys++;
-    var d = { price: null, qty: null, tg: '' };
+    var d = { price: null, qty: null, tg: '', priceFrom: '', qtyFrom: '' };
     state.buyPayloads.forEach(function (p) {
       var x = details(p);
-      if (d.price === null) d.price = x.price;
-      if (d.qty === null) d.qty = x.qty;
+      if (d.price === null && x.price !== null) { d.price = x.price; d.priceFrom = x.priceFrom; }
+      if (d.qty === null && x.qty !== null) { d.qty = x.qty; d.qtyFrom = x.qtyFrom; }
       if (!d.tg) d.tg = x.tg;
     });
     state.buyPayloads = [];
     var estimated = d.price === null;
     var price = estimated ? ev.lowPrice : d.price;      // no price in the click: fall back to the lowest listed price and say so
+    var qtyEstimated = d.qty === null;
     var qty = d.qty || 1;
     var ec = { currency: CUR, items: [item({ price: price, quantity: qty, item_variant: d.tg })] };
     if (price !== null && price !== undefined) ec.value = round2(price * qty);
-    pushEc('begin_checkout', ec, { event_id: String(ev.id), value_estimated: estimated });
+    pushEc('begin_checkout', ec, { event_id: String(ev.id), value_estimated: estimated, quantity_estimated: qtyEstimated,
+      price_source: estimated ? 'lowest_listed_price' : d.priceFrom, quantity_source: qtyEstimated ? 'default_1' : d.qtyFrom, price_basis: 'per_ticket_assumed' });
     setCheckoutCookie();
   }
   function onBuy(data) {
@@ -116,7 +169,9 @@
     var price = d.price !== null ? d.price : null;
     var ec = { currency: CUR, items: [item({ price: price, quantity: d.qty, item_variant: d.tg })] };
     if (price !== null) ec.value = round2(price * (d.qty || 1));
-    pushEc('select_item', ec, { event_id: String(ev.id), item_list_name: 'ticket_listings' });
+    // The event name that led here is a guess (the widget's listing-click name is not documented): event_name_guessed says so.
+    pushEc('select_item', ec, { event_id: String(ev.id), item_list_name: 'ticket_listings', event_name_guessed: true, widget_event: String(type).slice(0, 60),
+      price_source: price !== null ? d.priceFrom : 'none', price_basis: 'per_ticket_assumed' });
   }
 
   /* ---- Empty and failed states: the same text everywhere on the page ---- */
@@ -214,9 +269,10 @@
       showEmpty('Tickets are not available to show right now', 'Please try again in a little while, or browse other dates for the same performer, city or venue below.');
     };
     c.noTicketsHandler = function () { showEmpty(); };
-    c.onBuyButtonClicked = function (data) { onBuy(data); };
+    c.onBuyButtonClicked = function (data) { capture('config', 'onBuyButtonClicked', data); onBuy(data); };
     if (S.TrackingEvents && S.TrackingEvents.registerEventListener) {
       S.TrackingEvents.registerEventListener(function (type, data) {
+        capture('listener', type, data);
         if (type === 'FinishedLoading') {
           state.loaded = true;
           if (map) map.classList.remove('so-seatmap--pending');
@@ -226,13 +282,15 @@
           recover();
           var ec = { currency: CUR, items: [item({ price: ev.lowPrice })] };
           if (ev.lowPrice !== null && ev.lowPrice !== undefined) ec.value = ev.lowPrice;
-          pushEc('view_item', ec, { event_id: String(ev.id), ticket_groups: data && data.numTicketGroups, tickets_available: data && data.numTickets });
+          if (state.viewSent) return;   // the widget can report FinishedLoading again when it redraws: one view_item per page view
+          state.viewSent = true;
+          pushEc('view_item', ec, { event_id: String(ev.id), ticket_groups: data && data.numTicketGroups, tickets_available: data && data.numTickets, value_estimated: true, price_source: 'lowest_listed_price' });
         } else if (type === 'BuyButtonClicked') {
           onBuy(data);
-        } else if (/pre.?checkout/i.test(String(type))) {
+        } else if (classify(type).kind === 'precheckout') {
           // The review screen was shown (the event name is a guess at the widget's naming; tools/test-event-widget.mjs and the capture mode check it).
           if (reviewStep && !state.reviewSeen) { state.reviewSeen = true; pushPlain('precheckout_viewed', { widget_event: String(type).slice(0, 60) }); }
-        } else if (/listing|ticketgroup|ticket_group|tgselect|tgclick/i.test(String(type))) {
+        } else if (classify(type).kind === 'listing') {
           onListingClick(type, data);
         }
       });
