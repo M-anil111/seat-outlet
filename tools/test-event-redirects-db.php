@@ -5,6 +5,8 @@ require_once __DIR__ . '/../inc/cli-guard.php';
  * import, what a refresh keeps, and where a removed event goes. Needs the migrated database (run after db/migrate.php).
  * Uses event ids 9100001 and up and deletes them at the end. Run: php tools/test-event-redirects-db.php
  */
+// functions.php refuses to load without the API and mail settings; the test never calls those services, so placeholders do.
+foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) { if ((string) getenv($k) === '') putenv($k . '=test-placeholder'); }
 require_once __DIR__ . '/../functions.php';
 require_once __DIR__ . '/../inc/tn-bulk.php';
 
