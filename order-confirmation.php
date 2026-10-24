@@ -10,28 +10,26 @@ require_once 'functions.php';
 | for anything money-related and nothing grants access to tickets:
 |   - the page says "Purchase complete" only for a plausible order number
 |     AND a visitor who really clicked Buy on one of our event pages in the
-|     last 24 hours (first-party cookie `so_checkout`, set by
-|     js/event-widget.js; the cookie is used up when the purchase event
-|     is written, so a refresh or a shared link cannot repeat it);
-|   - the GA4 `purchase` event is written only in that case, once per order
-|     number, with the total only if it is a sane amount;
-|   - the e-mail address is never read from the URL (it ended up in logs and
-|     referrers) and never echoed or pushed.
-| This is hardening, not proof: real revenue attribution needs TicketNetwork's
-| server-side order webhook (docs/launch-checklist.md).
+|     last 24 hours (first-party cookie `so_checkout`, set by js/event-widget.js);
+|   - an unsigned return (?oid=&total=) NEVER writes a GA4 `purchase`: it writes
+|     `order_return` (no value) and `purchase_pending`, once per order per browser;
+|   - the `purchase` event is written only for an order verified outside the
+|     browser (inc/order-verify.php: a signed return link, or the order webhook
+|     /ajax/tn-order-webhook.php), once per order (verified_orders.ga4_fired_at is
+|     claimed atomically), with the VERIFIED total, never the URL's;
+|   - the e-mail address is never read from the URL and never echoed or pushed.
+| Verification needs TN_RETURN_SECRET or TN_WEBHOOK_SECRET and a sender that signs
+| (docs/launch-checklist.md); without them every return stays pending.
 |
-| Accepted parameters: oid | orderId | order (order number), total, eid (event id, for the summary and the calendar).
+| Accepted parameters: oid | orderId | order (order number), eid (event id, for the summary and the calendar); total, ts and sig only with a signature.
 */
 
 const SO_CHECKOUT_COOKIE_MAX_AGE = 86400;      // a purchase can only follow a Buy click made within the last 24 hours
-const SO_PURCHASE_MAX_TOTAL = 25000;           // dollars; anything above is treated as not credible and sent without a value
+require_once __DIR__ . '/inc/order-verify.php';
+header('Cache-Control: private, no-store');
+header('X-Robots-Tag: noindex, nofollow');
 
-$orderNumber = trim((string) ($_GET['oid'] ?? $_GET['orderId'] ?? $_GET['order'] ?? ''));
-$orderNumber = preg_replace('/[^A-Za-z0-9\-]/', '', $orderNumber);
-// A plausible order number: 4 to 40 characters with at least one digit. Anything else is treated as "no order number".
-if (!preg_match('/^(?=.*\d)[A-Za-z0-9\-]{4,40}$/', $orderNumber)) $orderNumber = '';
-$totalRaw = $_GET['total'] ?? null;
-$total = (is_string($totalRaw) && preg_match('/^\d{1,6}(\.\d{1,2})?$/', $totalRaw) && (float) $totalRaw > 0 && (float) $totalRaw <= SO_PURCHASE_MAX_TOTAL) ? round((float) $totalRaw, 2) : null;
+$orderNumber = soOrderNumber($_GET['oid'] ?? $_GET['orderId'] ?? $_GET['order'] ?? '');   // "no order number" when implausible
 $eventId = (int) ($_GET['eid'] ?? 0);
 if ($eventId < 0 || $eventId > 2000000000) $eventId = 0;
 
@@ -43,7 +41,7 @@ if (!empty($_COOKIE['so_checkout']) && preg_match('/^(\d{9,11})\.(\d{1,10})$/', 
     $cookieOk = $age >= -300 && $age <= SO_CHECKOUT_COOKIE_MAX_AGE && ($eventId === 0 || $eventId === $cookieEvent);
 }
 if ($eventId === 0 && $cookieOk) $eventId = $cookieEvent;   // the redirect may not carry the event id: the Buy click did
-$confirmed = $orderNumber !== '' && $cookieOk;           // show "Purchase complete" and fire the purchase event
+$confirmed = $orderNumber !== '' && $cookieOk;           // show "Purchase complete" (a display state only: revenue needs soOrderDecide() to verify)
 $state = $confirmed ? 'complete' : ($orderNumber !== '' ? 'received' : 'neutral');
 
 $event = $eventId > 0 ? getTnEventById($eventId) : [];
@@ -52,11 +50,28 @@ $evTs = $hasEvent && !empty($event['date']['date']) ? strtotime($event['date']['
 $venueName = $hasEvent ? (string) ($event['venue']['text']['name'] ?? '') : '';
 $cityLabel = $hasEvent ? trim((string) ($event['city']['text']['name'] ?? '') . ', ' . (string) ($event['stateProvince']['text']['abbr'] ?? ''), ', ') : '';
 
-// Only the buyer's own browser may fire the purchase event, once: use the marker up now (the page is rendered with it present, so the script below runs once).
-$firePurchase = $confirmed;
-if ($firePurchase && !headers_sent()) {
-    setcookie('so_checkout', '', ['expires' => time() - 3600, 'path' => '/', 'samesite' => 'Lax']);
+// Verified or not? A signed return link or the order webhook makes an order verified; the URL's total is never used as revenue.
+$soDb = (defined('MYSQLI') && MYSQLI instanceof mysqli) ? MYSQLI : null;
+$soVerdict = ['oid' => $orderNumber, 'verified' => false, 'value' => null, 'eid' => 0, 'reason' => $orderNumber === '' ? 'no_order' : 'unverified'];
+if ($orderNumber !== '' && $soDb) {
+    try {
+        $soVerdict = soOrderDecide($_GET, $cookieOk, (string) getenv('TN_RETURN_SECRET'),
+            fn($o, $e, $t) => soOrderRecordVerified($soDb, $o, $e, $t, 'signed_return'),
+            fn($o) => soOrderLookup($soDb, $o));
+    } catch (Throwable $t) { /* no database: the order stays unverified and no purchase is written */ }
 }
+// Only the buyer's own browser may fire the purchase event, once per order: the claim is one atomic UPDATE, and the Buy-click marker is used up with it.
+$firePurchase = false; $purchaseValue = null;
+if ($soVerdict['verified'] && $soDb) {
+    try { $firePurchase = soOrderClaimPurchase($soDb, $orderNumber); } catch (Throwable $t) { $firePurchase = false; }
+    if ($firePurchase) {
+        $purchaseValue = $soVerdict['value'];
+        if (!headers_sent()) setcookie('so_checkout', '', ['expires' => time() - 3600, 'path' => '/', 'samesite' => 'Lax']);
+    }
+}
+// Unverified (or already counted) return: tell analytics the buyer came back, without revenue.
+$fireReturn = $orderNumber !== '' && !$firePurchase;
+$returnEvent = $soVerdict['verified'] ? 'order_return' : 'purchase_pending';
 
 // More to see: other dates of the same performer first (cached API call), then the already-cached homepage feeds.
 $moreEvents = [];
@@ -195,15 +210,14 @@ include 'header.php';
 <script src="<?php echo htmlspecialchars(soAsset('js/event-actions.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
 
-<?php if ($firePurchase) { ?>
+<?php if ($firePurchase || $fireReturn) { ?>
 <script>
 (function () {
-  // GA4 purchase event: only for a visitor who clicked Buy here in the last 24 hours (checked on the server), once per order number in this browser.
-  // The value is the total from the return link when it is a sane amount; it is NOT verified (see docs/launch-checklist.md, TicketNetwork order webhook).
+  // GA4: `purchase` only for an order verified on the server and claimed once (value = the verified total). Anything else is an
+  // `order_return` / `purchase_pending` event with no value, once per order in this browser. The URL's total is never read.
   try {
-    var key = 'so_purchase_' + <?php echo json_encode($orderNumber); ?>;
-    if (window.localStorage && localStorage.getItem(key)) return;
     window.dataLayer = window.dataLayer || [];
+    <?php if ($firePurchase) { ?>
     window.dataLayer.push({ ecommerce: null });
     var ec = {
       transaction_id: <?php echo json_encode($orderNumber); ?>,
@@ -211,10 +225,15 @@ include 'header.php';
       affiliation: 'Seat Outlet',
       items: [<?php echo $hasEvent ? json_encode(['item_id' => (string) $eventId, 'item_name' => $event['text']['name'], 'affiliation' => 'Seat Outlet']) : ''; ?>]
     };
-    <?php if ($total !== null) { ?>ec.value = <?php echo json_encode($total); ?>;<?php } ?>
+    <?php if ($purchaseValue !== null) { ?>ec.value = <?php echo json_encode($purchaseValue); ?>;<?php } ?>
 
-    window.dataLayer.push({ event: 'purchase', ecommerce: ec, value_verified: false });
+    window.dataLayer.push({ event: 'purchase', ecommerce: ec, value_verified: true });
+    <?php } else { ?>
+    var key = 'so_return_' + <?php echo json_encode($orderNumber); ?>;
+    if (window.localStorage && localStorage.getItem(key)) return;
+    window.dataLayer.push({ event: <?php echo json_encode($returnEvent); ?>, transaction_id: <?php echo json_encode($orderNumber); ?>, event_id: <?php echo json_encode((string) $eventId); ?>, value_verified: false });
     if (window.localStorage) localStorage.setItem(key, '1');
+    <?php } ?>
   } catch (e) {}
 })();
 </script>
