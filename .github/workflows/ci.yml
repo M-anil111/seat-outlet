@@ -95,6 +95,7 @@ jobs:
           php tools/test-photo-credits-link.php
           php tools/check-csp.php
           php tools/test-fee-claims.php
+          php tools/test-launch-checklist.php
           php tools/test-csp-summary.php
           php tools/test-blog-links.php
       - name: Reliability docs state the same windows and limits as the code
