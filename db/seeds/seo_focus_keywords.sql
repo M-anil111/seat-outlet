@@ -71,7 +71,7 @@ VALUES
      NULL, 1, NOW(), NOW()),
 
     ('/deals-promotions', 'promo codes',
-     'Promo Codes: Save 10% on Tickets Today | Seat Outlet',
+     'Promo Codes: Save up to 10% on Tickets | Seat Outlet',
      'Save with the latest Seat Outlet promo codes for concert, sports, and event tickets. Browse discount codes and savings tips.',
      NULL, 1, NOW(), NOW())
 ON DUPLICATE KEY UPDATE

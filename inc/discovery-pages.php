@@ -96,7 +96,7 @@ function renderCityDiscoveryPage(string $key): void {
         ],
         'afterSection' => function () use ($h, $label, $cityName, $canonSlug, $key, $lower, $what) {
             // Promo codes, then the links that tie the page to its city: the city page, each category in the city and the other views.
-            echo '<div class="container py-4">' . soSpecPromoHtml('Promo codes for ' . $cityName . ' ' . $lower, $cityName . ' event') . '</div>';
+            echo '<div class="container py-4">' . soSpecPromoHtml('Promo codes for ' . $cityName . ' ' . $lower, $cityName . ' event', 'discovery') . '</div>';
             $links = ['<a href="/city/' . $h($canonSlug) . '">All events in ' . $h($label) . '</a>'];
             foreach (['concerts-city' => 'Concerts', 'sports-city' => 'Sports', 'theater-city' => 'Theater', 'festivals-city' => 'Festivals'] as $p => $l) {
                 $links[] = '<a href="/' . $p . '/' . $h($canonSlug) . '">' . $l . ' in ' . $h($cityName) . '</a>';

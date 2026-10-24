@@ -210,7 +210,7 @@ Purpose: stay accurate about the business model and avoid claiming things only T
 - "No hidden fees" or "all-in price" until TicketNetwork confirms that displayed prices include fees (open question in `docs/launch-checklist.md`).
 - "Verified seats", "tickets together", "instant delivery" unless TicketNetwork confirms the specific claim.
 - "Refund guaranteed" or any refund promise stated in Seat Outlet's own voice; refer to TicketNetwork's policy.
-- Promo codes TAKE5 and TAKE10 until TicketNetwork confirms them (launch checklist).
+- Promo codes TAKE5 and TAKE10 until TicketNetwork confirms them (launch checklist). Owner-confirmed 2026-10-24; SO_PROMOS_OFF=1 hides them.
 - "Partner of" or using TicketNetwork logos or marks beyond what TicketNetwork's brand terms allow. Needs confirmation of brand usage rules.
 
 ### 5.3 Where to apply it

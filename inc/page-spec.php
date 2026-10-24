@@ -15,11 +15,33 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  *   performer (/artist/...)                 "<Performer> Tickets"
  */
 
-/** The two site-wide promo codes and their terms (docs/launch-checklist.md: TicketNetwork confirms them). */
-const SO_PROMO_CODES = [
+/**
+ * The two site-wide promo codes. The owner confirmed both on 2026-10-24 (written TicketNetwork confirmation is not in the repo).
+ * SO_PROMOS_OFF=1 hides them everywhere again, e.g. if TicketNetwork withdraws a code.
+ */
+const SO_PROMO_CANDIDATES = [
     ['code' => 'TAKE5',  'pct' => 5,  'min' => 199],
     ['code' => 'TAKE10', 'pct' => 10, 'min' => 349],
 ];
+
+/** The codes to show: all of them unless SO_PROMOS_OFF=1. */
+function soPromoCodes(): array {
+    return getenv('SO_PROMOS_OFF') === '1' ? [] : SO_PROMO_CANDIDATES;
+}
+
+/** Page-specific wording for the promo block: [intro sentence, card line]. %s is the page's subject, %d the percent, %m the minimum. */
+function soPromoCopy(string $context): array {
+    $map = [
+        'event'     => ['Add a code at checkout when you buy %s tickets. Both codes work on the same event, so pick the one that fits your order size.', 'Take %d%% off your %s tickets when your order is $%m or more.'],
+        'performer' => ['Planning to see %s on tour? Use a code at checkout on any %s date and save on the whole order.', 'Save %d%% on %s tickets with orders of $%m or more.'],
+        'venue'     => ['Buying seats at %s? Enter a code at checkout to take money off your order for any show there.', 'Take %d%% off tickets for %s on orders of $%m or more.'],
+        'city'      => ['Heading to a show in %s? These codes come off your total at checkout on %s tickets.', '%d%% off %s tickets when you spend $%m or more.'],
+        'category'  => ['Looking for %s tickets? Enter a code at checkout and the discount comes off your order total.', '%d%% off %s tickets on orders of $%m or more.'],
+        'holiday'   => ['Booking %s? Enter a code at checkout for money off your tickets.', 'Take %d%% off %s tickets with a $%m order or more.'],
+        'discovery' => ['Browsing %s tickets? Use a code at checkout to lower your total.', 'Save %d%% on %s tickets when you spend $%m or more.'],
+    ];
+    return $map[$context] ?? ['Promo codes are available for %s tickets. Enter the code in the promo code field at checkout.', 'Take %d%% off your %s tickets when you spend $%m or more.'];
+}
 
 /** concert, sports, theater (comedy is listed with the shows) or festival, from the event's or performer's category path. */
 function soSpecKind(string $path): string {
@@ -75,31 +97,43 @@ function soSpecPromoHeading(string $label, string $kind, string $city, string $s
 }
 
 /**
- * The promo code block for performer, venue, city, category and holiday pages: TAKE5 and TAKE10 with their terms, named for the
+ * The promo code block for performer, venue, city, category and holiday pages: the verified codes with their terms (none until SO_PROMOS_VERIFIED=1: then the checkout-offers note), named for the
  * page's subject, as the same cards the event page uses (one column here, because these pages have a sidebar). $heading '' leaves
  * the heading to the caller. js/events-listing.js wires the Copy code buttons.
  */
-function soSpecPromoHtml(string $heading, string $subject): string {
-    return soSpecPromoMarkup($heading, $subject, false);
+function soSpecPromoHtml(string $heading, string $subject, string $context = ''): string {
+    return soSpecPromoMarkup($heading, $subject, false, $context);
 }
 
-/** One promo card: ticket icon, % off, code, minimum order and a Copy code button. $p is a SO_PROMO_CODES entry. */
-function soSpecPromoCard(array $p, string $subject): string {
+/** One promo card: ticket icon, % off, code, minimum order and a Copy code button. $p is a soPromoCodes() entry. */
+function soSpecPromoCard(array $p, string $subject, string $context = ''): string {
     $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
     $icon = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2556e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 0 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z"/><path d="M14 5v2M14 11v2M14 17v2"/></svg>';
     return '<div class="so-evp-promo__card"><span class="so-evp-promo__icon">' . $icon . '</span>'
         . '<div class="so-evp-promo__txt"><strong>' . (int) $p['pct'] . '% OFF</strong><span>Code: <b>' . $e($p['code']) . '</b></span>'
-        . '<small>Take ' . (int) $p['pct'] . '% off your ' . $e($subject) . ' tickets when you spend $' . (int) $p['min'] . ' or more.</small></div>'
+        . '<small>' . $e(soPromoFill(soPromoCopy($context)[1], $subject, $p)) . '</small></div>'
         . '<button type="button" class="btn btn-primary text-white offer-copy-btn so-evp-promo__btn" data-code="' . $e($p['code']) . '" aria-label="Copy code ' . $e($p['code']) . '">Copy code</button></div>';
 }
 
 /** The whole promo block. $wide: two cards side by side under the event page's own heading style; otherwise one card per row. */
-function soSpecPromoMarkup(string $heading, string $subject, bool $wide): string {
+/** Fills a soPromoCopy() template: %s subject, %d percent, %m minimum order. */
+function soPromoFill(string $t, string $subject, array $p = []): string {
+    return strtr(str_replace('%%', '%', $t), ['%s' => $subject, '%d' => (string) (int) ($p['pct'] ?? 0), '%m' => (string) (int) ($p['min'] ?? 0)]);
+}
+
+function soSpecPromoMarkup(string $heading, string $subject, bool $wide, string $context = ''): string {
     $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+    $codes = soPromoCodes();
+    // Kill switch (SO_PROMOS_OFF=1): the heading must not promise codes, so "Latest X Promo Codes for ..." becomes "X Promotions for ...".
+    if (!$codes) $heading = preg_replace('/\bpromo codes\b/i', 'Promotions', preg_replace('/^Latest /i', '', $heading));
     $out = '<div class="so-evp-promo' . ($wide ? '' : ' so-evp-promo--stack') . '" id="promocode">'
-        . ($heading !== '' ? '<h2 class="' . ($wide ? 'so-evp__h' : 'so-heading fw-bold fs-4 mb-3 text-black') . '">' . $e($heading) . '</h2>' : '')
-        . '<p class="so-evp-promo__sub">Two promo codes are available for ' . $e($subject) . ' tickets. Enter the code in the promo code field at checkout.</p><div class="so-evp-promo__grid">';
-    foreach (SO_PROMO_CODES as $p) $out .= soSpecPromoCard($p, $subject);
+        . ($heading !== '' ? '<h2 class="' . ($wide ? 'so-evp__h' : 'so-heading fw-bold fs-4 mb-3 text-black') . '">' . $e($heading) . '</h2>' : '');
+    if (!$codes) {
+        return $out . '<p class="so-evp-promo__sub">Available promotions for ' . $e($subject) . ' tickets appear at checkout when one applies to your order. Seat Outlet cannot promise a discount on any event.</p>'
+            . '<p class="so-evp-promo__note">Offers are decided at checkout, can change without notice, and may not apply to every event or order. See <a href="/tickets-promo-code">how promotions work</a>.</p></div>';
+    }
+    $out .= '<p class="so-evp-promo__sub">' . $e(soPromoFill(soPromoCopy($context)[0], $subject)) . '</p><div class="so-evp-promo__grid">';
+    foreach ($codes as $p) $out .= soSpecPromoCard($p, $subject, $context);
     return $out . '</div><p class="so-evp-promo__note">Codes apply only where the checkout accepts them, minimum order amounts apply, and codes can change or stop working without notice. See <a href="/tickets-promo-code">all ticket promo codes</a>.</p></div>';
 }
 
@@ -155,7 +189,7 @@ function soSpecCityInfoHtml(string $city, string $state, array $cityData, string
 
 /** Event page promo block: the same two codes and wording as soSpecPromoHtml(), two cards side by side. id="promocode" stays the anchor. */
 function soSpecPromoCards(string $heading, string $subject): string {
-    return soSpecPromoMarkup($heading, $subject, true);
+    return soSpecPromoMarkup($heading, $subject, true, 'event');
 }
 
 /**
@@ -353,9 +387,10 @@ function soSpecEventText(string $kind, array $c): array {
                 'guide' => "Complete $P Concert Guide at $at", 'other' => "Top Upcoming Performances at $at"];
     }
     // Search Console: "<show> promo code" queries reach these pages at positions 5 to 8 with no clicks, and the snippet never mentioned a code.
-    // The page does carry the two site codes (soSpecPromoCards), so every description variant says so; the phrase is short enough that
-    // soSpecPick() still takes the longest variant that fits 155 characters.
-    $out['descs'] = array_map(fn($d) => $d . ' See current promo codes.', $out['descs']);
+    // The description says the page carries codes only while soPromoCodes() is non-empty; the kill switch swaps it for checkout offers.
+    // The phrase is short enough that soSpecPick() still takes the longest variant that fits 155 characters.
+    $tail = soPromoCodes() ? ' See current promo codes.' : ' See checkout offers.';
+    $out['descs'] = array_map(fn($d) => $d . $tail, $out['descs']);
     $out['titles'] = array_values($out['titles']);
     return $out;
 }

@@ -254,7 +254,7 @@ function renderCityHolidayPage(string $key = ''): void {
             'empty'   => ['basePath' => $path, 'noun' => $nm, 'when' => $when, 'max' => 0, 'fragment' => 'city/id eq ' . (int) $id, 'kind' => 'city', 'id' => $id, 'name' => $label, 'alts' => []],
         ],
         'afterSection' => function () use ($h, $label, $cityName, $canonSlug, $key, $what, $country, $faqs, $events, $total, $win, $dates, $cfg) {
-            echo '<div class="container py-4">' . soSpecPromoHtml("Promo codes for $what in $cityName", "$cityName $what") . '</div>';
+            echo '<div class="container py-4">' . soSpecPromoHtml("Promo codes for $what in $cityName", "$cityName $what", 'holiday') . '</div>';
             soHolidayAboutBlock($h, $label, $what, (string) $cfg['name'], $events, $total, $win, $dates);
             soMiniFaq("FAQs about $what in $label", $faqs);
             // Links: the city, the other holidays coming up there, then the city's category and discovery pages.
