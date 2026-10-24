@@ -27,6 +27,8 @@ foreach (soSitemapStaticPaths() as $path) {
     $label = $plan && !empty($plan['keyword']) ? soKeywordLabel($plan['keyword']) : ucwords(str_replace('-', ' ', ltrim($path, '/')));
     $other[$path] = $label;
 }
+// Pages that are noindex for search engines but that visitors need to find, so the scan above leaves them out: listed here by hand.
+foreach (['/image-credits' => 'Photo credits'] as $path => $label) { if (!isset($inMenu[$path])) $other[$path] = $label; }
 asort($other, SORT_NATURAL | SORT_FLAG_CASE);
 include 'header.php';
 ?>
