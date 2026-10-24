@@ -80,6 +80,7 @@ function tbWriteRows(array $events, string $seenAt): int {
             $n++;
         }
         MYSQLI->commit();
+        soEventRememberMany($events, 'bulk');   // the removed-event redirect knows the performer and category of every event in the catalog
     } catch (Throwable $e) {
         MYSQLI->rollback();
         throw $e;
