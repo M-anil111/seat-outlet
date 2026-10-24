@@ -184,6 +184,8 @@ jobs:
         run: php tools/test-db-retry.php
       - name: Verified orders (record once, claim the purchase once)
         run: php tools/test-order-verify-db.php
+      - name: Removed-event redirects (performer, category, bulk fallback, unknown stays 404)
+        run: php tools/test-event-redirects-db.php
 
       - name: Apply the sample seed (must also be safe to run twice)
         run: |

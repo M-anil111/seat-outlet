@@ -4,6 +4,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 require_once __DIR__ . '/inc/tn-listing-copy.php';
 require_once __DIR__ . '/inc/dead-performers.php';   // performers whose page answers 404 are left out of the lists that link to them
 require_once __DIR__ . '/inc/tn-budget.php';
+require_once __DIR__ . '/inc/event-redirects.php';   // what a removed event page redirects to, remembered from visits, performer pages and the bulk import
 
 // Some server configs rewrite pretty URLs (/city/slug -> city.php?slug=slug) and
 // lose the visitor's own query string on the way, so ?when= / ?sort= / ?page=
@@ -913,7 +914,13 @@ function performerPageEventsSpec($performerId, $perPage = 20) {
 
 function getPerformerPageEvents($performerId, $perPage = 20) {
     [$endpoint, $params] = performerPageEventsSpec($performerId, $perPage);
-    return [$params, tnRequest($endpoint, $params, 'GET', 600)];
+    $resp = tnRequest($endpoint, $params, 'GET', 600);
+    // Remember these events (performer, category, slug, date) so their pages redirect sensibly once TicketNetwork drops them; once an hour per performer.
+    if (is_array($resp) && !empty($resp['results']) && is_array($resp['results']) && (int) $performerId > 0 && cache_get('evredir_p' . (int) $performerId, 3600) === false) {
+        cache_set('evredir_p' . (int) $performerId, 1);
+        soEventRememberMany($resp['results'], 'catalog');
+    }
+    return [$params, $resp];
 }
 
 /** Cheapest "From" price and range across a set of listed events. */
@@ -1065,46 +1072,27 @@ function soEventRedirectTarget($event, int $eventId): string {
     $path = (string) ($event['defaultCategory']['path'] ?? '');
     if ($perfId <= 0 && $eventId > 0) {
         try {
-            $row = soDbRetry(function ($db) use ($eventId) {
-                $stmt = $db->prepare('SELECT performer_id, performer_name, category_path FROM event_redirects WHERE event_id = ?');
-                if (!$stmt) return null;
-                $stmt->bind_param('i', $eventId);
-                $stmt->execute();
-                $r = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
-                return $r;
-            });
-            if ($row) { $perfId = (int) $row['performer_id']; $perfName = (string) $row['performer_name']; $path = (string) $row['category_path']; }
+            // What an earlier visit, a performer page or the bulk import remembered about the event (soEventRedirectLookup()).
+            $row = soEventRedirectLookup($eventId);
+            if ($row) { $perfId = (int) $row['performer_id']; $perfName = (string) $row['performer_name']; if ($path === '') $path = (string) $row['category_path']; }
         } catch (\Throwable $e) {
             // The table may not exist yet: carry on with the category data above.
         }
     }
-    if ($perfId > 0 && $perfName !== '') return '/artist/' . soSlug('performer', $perfName, $perfId);
-    if (strpos($path, '.1988.') !== false) return '/game-day-tickets';
-    if (strpos($path, '.1989.') !== false) return '/buy-broadway-tickets';
-    if (strpos($path, '.1877.') !== false || strpos($path, '.2065.') !== false) return '/upcoming-music-festivals';
-    if (strpos($path, '.1986.') !== false) return '/concert-tickets-for-sale';
-    return '/buy-tickets-online';
+    return soEventRedirectDestination($perfId, $perfName, $path);
 }
 
-/** Remembers the performer and category of a live event page (one insert the first time, nothing afterwards). */
+/** Remembers the performer, category, slug and date of a live event page. One read per view; a write only when something is missing. */
 function soEventRemember(array $event): void {
     $id = (int) ($event['id'] ?? 0);
     if ($id <= 0) return;
-    $perfId = (int) ($event['performers'][0]['id'] ?? 0);
-    $perfName = (string) ($event['performers'][0]['name'] ?? '');
-    $path = (string) ($event['defaultCategory']['path'] ?? '');
     try {
-        $chk = MYSQLI->prepare('SELECT 1 FROM event_redirects WHERE event_id = ?');
-        if ($chk) { $chk->bind_param('i', $id); $chk->execute(); $has = $chk->get_result()->num_rows > 0; $chk->close(); if ($has) return; }
-        $stmt = MYSQLI->prepare('INSERT IGNORE INTO event_redirects (event_id, performer_id, performer_name, category_path, created_at) VALUES (?, ?, ?, ?, NOW())');
-        if (!$stmt) return;
-        $stmt->bind_param('iiss', $id, $perfId, $perfName, $path);
-        $stmt->execute();
-        $stmt->close();
+        $chk = MYSQLI->prepare('SELECT 1 FROM event_redirects WHERE event_id = ? AND event_slug IS NOT NULL AND event_slug <> \'\' AND event_date IS NOT NULL AND performer_id > 0');
+        if ($chk) { $chk->bind_param('i', $id); $chk->execute(); $has = $chk->get_result()->num_rows > 0; $chk->close(); if ($has && (int) ($event['performers'][0]['id'] ?? 0) > 0) return; }
     } catch (\Throwable $e) {
-        // A missing table or a database hiccup must never break an event page.
+        return;   // a missing table or a database hiccup must never break an event page
     }
+    soEventRememberMany([$event], 'visit');
 }
 
 /** True once the event has started more than 6 hours ago (the catalog time carries the venue's UTC offset). */

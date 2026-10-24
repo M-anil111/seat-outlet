@@ -64,9 +64,12 @@ try { soDbRetry(fn($db) => $db->query('SELECT 1'), $down); } catch (mysqli_sql_e
 drCheck('a server that stays down: three tries, then the original error', [$downCode, $down->attempts], [2006, 3]);
 drCheck('getFaqs goes through it', preg_match('/function getFaqs\(.*?soDbRetry\(function/s', $src) === 1, true);
 // Every public-page read that can run after a (slow) TicketNetwork call goes through it too (Sentry SEAT-OUTLET-R was get_bio on an artist page).
-foreach (['get_bio', 'get_image', 'get_keyword', 'getPageRuleByPath', 'getContentBlock', 'tnSnapshotGet', 'soEventRedirectTarget'] as $reader) {
+foreach (['get_bio', 'get_image', 'get_keyword', 'getPageRuleByPath', 'getContentBlock', 'tnSnapshotGet'] as $reader) {
     // Inside this function's own body only (stop at the next top-level function), so a later function's call cannot satisfy it.
     drCheck("$reader goes through soDbRetry", preg_match('/\nfunction ' . $reader . '\((?:(?!\nfunction ).)*?soDbRetry\(function/s', $src) === 1, true);
 }
+// The removed-event redirect reads through soEventRedirectLookup() (inc/event-redirects.php), which wraps both of its queries.
+$redir = (string) file_get_contents(__DIR__ . '/../inc/event-redirects.php');
+drCheck('soEventRedirectLookup goes through soDbRetry (both queries)', preg_match('/function soEventRedirectLookup\(.*?soDbRetry\(function.*?soDbRetry\(function/s', $redir) === 1 && strpos((string) $src, 'soEventRedirectLookup($eventId)') !== false, true);
 echo $fail ? "$fail failed\n" : "db retry: all passed\n";
 exit($fail ? 1 : 0);
