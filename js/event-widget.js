@@ -16,7 +16,8 @@
   var WATCHDOG_MS = 12000;
   var WIDGET_HOST = 'https://mapwidget3.seatics.com/';
   var CUR = ev.currency || 'USD';
-  var state = { loaded: false, empty: false, failed: false, buyTimer: null, buyPayloads: [], lastBuy: 0 };
+  var reviewStep = ev.precheckout === 'review';
+  var state = { loaded: false, empty: false, failed: false, buyTimer: null, buyPayloads: [], lastBuy: 0, buys: 0, reviewSeen: false };
   var selected = {};
   var watchdog = null;
   var root = document.documentElement;
@@ -80,6 +81,10 @@
   }
   function sendBuy() {
     state.buyTimer = null;
+    // With the review screen on, the widget may report a buy click when the screen opens and again when "Continue" leaves for the checkout:
+    // that is one checkout started, so only the first is sent for this page view.
+    if (reviewStep && state.buys > 0) { state.buyPayloads = []; return; }
+    state.buys++;
     var d = { price: null, qty: null, tg: '' };
     state.buyPayloads.forEach(function (p) {
       var x = details(p);
@@ -178,8 +183,10 @@
     c.tgMarkTooltipText = 'We recommend this seller&#039;s tickets.';
     c.enableMyList = true;
     c.showCents = false;
-    c.skipPrecheckoutMobile = true;
-    c.skipPrecheckoutDesktop = true;
+    // The widget's review screen before the hosted checkout. Skipped by default; ev.precheckout === 'review' (SO_PRECHECKOUT=review on the
+    // server) shows it on both mobile and desktop. Nothing else changes: the checkout address, domain and analytics are set the same way.
+    c.skipPrecheckoutMobile = !reviewStep;
+    c.skipPrecheckoutDesktop = !reviewStep;
     c.showZoomControls = true;
     c.ticketListOnRight = true;
     c.legendExpanded = true;
@@ -222,6 +229,9 @@
           pushEc('view_item', ec, { event_id: String(ev.id), ticket_groups: data && data.numTicketGroups, tickets_available: data && data.numTickets });
         } else if (type === 'BuyButtonClicked') {
           onBuy(data);
+        } else if (/pre.?checkout/i.test(String(type))) {
+          // The review screen was shown (the event name is a guess at the widget's naming; tools/test-event-widget.mjs and the capture mode check it).
+          if (reviewStep && !state.reviewSeen) { state.reviewSeen = true; pushPlain('precheckout_viewed', { widget_event: String(type).slice(0, 60) }); }
         } else if (/listing|ticketgroup|ticket_group|tgselect|tgclick/i.test(String(type))) {
           onListingClick(type, data);
         }

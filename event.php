@@ -180,6 +180,10 @@ $soEventData = [
   'hasTickets' => !empty($event['_metadata']['hasTickets']),
   'widgetUrl'   => $mapScriptUrl,
   'checkoutUrl' => TN_CHECKOUT_URL,
+  // The seat map's own review screen before the hosted checkout. 'skip' (the default) goes straight to checkout as before; SO_PRECHECKOUT=review
+  // shows it on mobile and desktop. Only turn it on once beta shows the screen states quantity, price, every mandatory fee and the final total
+  // (docs/launch-checklist.md, "Precheckout review step").
+  'precheckout' => getenv('SO_PRECHECKOUT') === 'review' ? 'review' : 'skip',
   'checkoutDomain' => (string) parse_url(TN_CHECKOUT_URL, PHP_URL_HOST),   // Seatics.config.c3CheckoutDomain: the host only (checkout.seatoutlet.com)
   'venueId'  => (int) ($eventVenueId ?? 0),
 ];

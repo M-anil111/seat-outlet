@@ -34,7 +34,7 @@ $soPcWays = [
     ['ticket', 'Explore ticket deals', 'Check the <a href="/ticket-deals">ticket deals page</a> for lower-priced events.'],
     ['cal', 'Be flexible on dates', 'Be flexible on dates when you can.'],
     ['bars', 'Understand ticket pricing', 'Read why <a href="/why-are-concert-tickets-so-expensive">concert tickets cost what they do</a> so you know what you are paying for.'],
-    ['dollar', 'Compare the full cost', 'Look at the all-in price before you choose a listing, not only the price per ticket.'],
+    ['dollar', 'Compare the full cost', 'Look at the total you will pay at checkout before you choose a listing, not only the price per ticket.'],
     ['bell', 'Set a price alert', 'Set a price alert on an event you want, and we email you if the price drops.'],
 ];
 $soPcTerms = [

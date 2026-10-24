@@ -224,8 +224,8 @@ function soLeadAlertMessage(array $lead, array $groups) {
             $text .= 'All events: ' . $g['url'] . "\n";
         }
     }
-    $html .= '<p style="margin:22px 0 0;font-size:12px;color:#6b7280">Prices are set by sellers, change often and are shown before fees. You will not hear from us about the same performer more than once a week.</p>';
-    $text .= "\nPrices are set by sellers, change often and are shown before fees. You will not hear from us about the same performer more than once a week.\n" . soMailTextFooter($unsub);
+    $html .= '<p style="margin:22px 0 0;font-size:12px;color:#6b7280">Prices are set by sellers and change often. Check the total at checkout before you pay. You will not hear from us about the same performer more than once a week.</p>';
+    $text .= "\nPrices are set by sellers and change often. Check the total at checkout before you pay. You will not hear from us about the same performer more than once a week.\n" . soMailTextFooter($unsub);
     return [$subject, soMailLayout($subject, $html, $unsub), $text];
 }
 
@@ -254,7 +254,7 @@ function soLeadPriceAlertMessage(array $lead, array $items) {
             . '</td></tr></table>';
         $text .= "\n- " . $e['name'] . ', ' . $e['date'] . ', ' . $where . '. Was ' . $e['was'] . ', now from ' . $e['now'] . "\n  " . $e['url'] . "\n";
     }
-    $note = 'Prices are set by sellers, change often and are shown before fees. We only email when the lowest price falls at least 10% below the last price we told you about.';
+    $note = 'Prices are set by sellers and change often. Check the total at checkout before you pay. We only email when the lowest price falls at least 10% below the last price we told you about.';
     $html .= '<p style="margin:18px 0 0;font-size:12px;color:#6b7280">' . $note . '</p>';
     $text .= "\n" . $note . "\n" . soMailTextFooter($unsub);
     return [$subject, soMailLayout($subject, $html, $unsub), $text];
