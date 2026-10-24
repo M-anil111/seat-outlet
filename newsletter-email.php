@@ -1,8 +1,9 @@
 <?php
 /**
- * Legacy newsletter form target (home page and blog article forms still post here until they move to soLeadForm()).
- * All the work is in inc/leads-core.php, shared with /ajax/subscribe.php: server-side reCAPTCHA, validation, rate limits,
- * insert first, then the welcome email after the redirect has been sent. A duplicate address is not an error.
+ * Retired newsletter form target. No page on the site posts here any more: every form is soLeadForm() (inc/leads.php) and posts to
+ * /ajax/subscribe.php. A GET goes to the home page. A POST from a stale cached page is still accepted through the shared handler in
+ * inc/leads-core.php (reCAPTCHA, validation, rate limits, insert first, welcome email after the redirect) and logged, so the file can be
+ * deleted once the log shows no posts. A duplicate address is not an error and is not revealed.
  */
 ini_set('display_errors', '0');
 require_once __DIR__ . '/db/config.php';
@@ -10,10 +11,10 @@ require_once __DIR__ . '/inc/constants.php';
 require_once __DIR__ . '/inc/leads-core.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
-    http_response_code(405);
-    header('Allow: POST');
+    header('Location: ' . rtrim(HOME_URL, '/') . '/', true, 301);
     exit;
 }
+error_log('legacy newsletter-email.php POST (retired; delete the file when this stops)');
 
 $thanks = rtrim(HOME_URL, '/') . '/thank-you';
 if (soPost('company') !== '') {   // honeypot: look successful, store nothing

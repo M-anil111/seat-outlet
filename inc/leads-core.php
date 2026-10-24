@@ -4,11 +4,11 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 /**
  * Email lead capture: the server half of soLeadForm() (inc/leads.php) and js/lead-capture.js.
  *
- * One entry point, soLeadSubmit(), used by /ajax/subscribe.php and by the two legacy endpoints
- * (newsletter-email.php, ajax/check-email.php). Order of work, on purpose:
+ * One entry point, soLeadSubmit(), used by /ajax/subscribe.php and by the legacy POST target newsletter-email.php
+ * (ajax/check-email.php no longer looks anything up). Order of work, on purpose:
  *   1. validate and normalize the input, rate limit per address and per email
  *   2. verify the reCAPTCHA v3 token on the server
- *   3. INSERT INTO leads first (a duplicate email adds an interest and answers 'duplicate')
+ *   3. INSERT INTO leads first (a duplicate email adds an interest; the visitor is told the same as for a new address, see soLeadPublic())
  *   4. only then mail: the welcome email and the Brevo upsert run after the JSON answer was sent,
  *      are best-effort, and are logged on failure. A mail outage can never lose a lead or break the page.
  *
@@ -245,8 +245,23 @@ function soLeadAfterSignup(array $lead) {
     }
 }
 
+/**
+ * What the visitor is told. A repeat sign-up is handled as before (soLeadSubmit adds the interest and fills in a missing name), but the
+ * answer is the same as for a new address: a form that says "already on the list" tells anyone who types an address whether that
+ * person subscribed, so the status stays 'duplicate' inside the server and goes out as 'success' with the new-signup wording.
+ */
+function soLeadPublic(array $res): array {
+    if (($res['status'] ?? '') === 'duplicate') {
+        $price = strpos((string) ($res['message'] ?? ''), 'price') !== false;
+        $res['status'] = 'success';
+        $res['message'] = $price ? 'Done. We will email you if the price drops.' : 'You are in. Watch your inbox.';
+    }
+    return $res;
+}
+
 /** Send the JSON answer, then run the slow work (mail, CRM) without making the visitor wait for it. */
 function soLeadRespond(array $res, $httpStatus = null) {
+    $res = soLeadPublic($res);
     $codes = ['success' => 200, 'duplicate' => 200, 'invalid' => 400, 'recaptcha' => 403, 'rate' => 429, 'error' => 500];
     if (!headers_sent()) {
         http_response_code($httpStatus ?: ($codes[$res['status']] ?? 500));
