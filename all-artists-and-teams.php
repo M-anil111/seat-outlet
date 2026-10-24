@@ -54,9 +54,17 @@ $soIsJunk = function ($name) {
 };
 
 try {
-	$response   = getTnPerformers($params);
-	$totalCount = (int) ($response['totalCount'] ?? 0);
-	$totalPages = (int) ceil($totalCount / $perPage);
+	if ($letter !== '') {
+		// A letter page is cut from the whole letter in directory order (the name without a leading "The "), so "The 1975" is under 0-9 and
+		// "The Beatles" under B, and a name is on exactly one page (soDirLetterRows).
+		[$pageRows, $totalCount] = soDirPageOf(soDirLetterRows($soDir, $letter), $page, $perPage);
+		$totalPages = (int) ceil($totalCount / $perPage);
+		$response = ['results' => array_map(fn($r) => ['id' => $r['id'], 'text' => ['name' => $r['name']], 'uriComponent' => $r['uri'], 'defaultCategory' => $r['category']], $pageRows)];
+	} else {
+		$response   = getTnPerformers($params);
+		$totalCount = (int) ($response['totalCount'] ?? 0);
+		$totalPages = (int) ceil($totalCount / $perPage);
+	}
 	foreach ($response['results'] ?? [] as $performer) {
 		$name = trim((string) ($performer['text']['name'] ?? ''));
 		$uriComponent = $performer['uriComponent'] ?? '';
