@@ -84,6 +84,11 @@ try {
         $bulk['changesAgeSeconds'] = $age('last_incremental_ok');
         $bulk['events'] = isset($st['last_full_count']) ? (int) $st['last_full_count'] : null;
         $bulk['lastError'] = isset($st['last_error']) ? substr($st['last_error'], 0, 160) : null;
+        // Whether listings may fall back to the copy right now (switch on and last full refresh within TN_BULK_MAX_AGE_SECONDS), and how many
+        // pages it has answered today because a live call could not be made.
+        $bulk['readReady'] = tnBulkFresh($st, time());
+        $bulk['maxAgeSeconds'] = TN_BULK_MAX_AGE_SECONDS;
+        $bulk['servedToday'] = (int) ($tnStats['bulk_served'] ?? 0);
     }
     $out['ticketnetwork']['bulk'] = $bulk;
 } catch (Throwable $e) {

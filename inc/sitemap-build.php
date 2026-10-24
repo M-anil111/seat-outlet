@@ -280,7 +280,10 @@ function soSitemapBuildFiles(string $tmp): array {
         }
     };
 
-    // Pages: the site's own pages, published blog posts, the top cities with their category pages, and the homepage category pages.
+    // Category pages are checked against the bulk catalog copy when it is switched on and fresh: a category with no event on sale in it is
+    // left out. Decided here from the table, with no call per URL; null (bulk off, stale, unreadable) leaves every category listed as before.
+    $bulkCats = (function_exists('tnBulkReady') && tnBulkReady()) ? tnBulkCategoryCounts() : null;
+    $catHasEvents = fn(int $id) => $bulkCats === null || ($bulkCats[$id] ?? 0) > 0;
     $pages = [];
     foreach (soSitemapStaticPaths() as $p) { $pages[$base . $p] = [$base . $p, null]; }
     foreach (listBlogPosts() as $post) {
@@ -290,14 +293,14 @@ function soSitemapBuildFiles(string $tmp): array {
     }
     foreach ((cache_get('top_categories', 30 * 86400) ?: []) as $bucket) {
         foreach ((array) $bucket as $cat) {   // the final address, from id and name: the cached slug can be an old name-and-id form that redirects
-            if (empty($cat['id']) || empty($cat['name']) || (int) $cat['id'] === 2094) continue;
+            if (empty($cat['id']) || empty($cat['name']) || (int) $cat['id'] === 2094 || !$catHasEvents((int) $cat['id'])) continue;
             $loc = $base . soCategoryHref((int) $cat['id'], (string) $cat['name']); $pages[$loc] = [$loc, null];
         }
     }
     // Every sub-category the ticket API lists under concerts, sports and theater that has tickets on sale (the same list as the sub-category pills).
     if (function_exists('soHubSubcategories')) {
         foreach (array_keys(SO_HUB_ROOTS) as $hub) {
-            foreach (soHubSubcategories($hub) as $sub) { if ((int) ($sub['id'] ?? 0) === 2094) continue; $loc = $base . $sub['href']; $pages[$loc] = [$loc, null]; }
+            foreach (soHubSubcategories($hub) as $sub) { if ((int) ($sub['id'] ?? 0) === 2094 || !$catHasEvents((int) ($sub['id'] ?? 0))) continue; $loc = $base . $sub['href']; $pages[$loc] = [$loc, null]; }
         }
     }
     $emit('pages', array_values($pages));

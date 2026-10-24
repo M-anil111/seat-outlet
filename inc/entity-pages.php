@@ -81,6 +81,9 @@ const SO_ZERO_PAGES_TTL_DAYS = 14;
  * render: a rare cache write only when the state changes. The sitemap never calls the API per URL; it only reads this.
  */
 function soZeroPageNote(string $path, bool $isZero): void {
+    // An answer that could not be had (outage, throttle, open circuit, call budget) is a failure, not a confirmed zero: it must neither list
+    // a page nor hide one, so it is not recorded. Only a page rendered from a real answer counts.
+    if ($isZero && (soApiDegraded() || !empty($GLOBALS['so_bulk_served']))) return;
     $map = cache_get(SO_ZERO_PAGES_KEY, 365 * 86400);
     if (!is_array($map)) $map = [];
     $has = isset($map[$path]);
