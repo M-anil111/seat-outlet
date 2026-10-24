@@ -63,7 +63,7 @@
 <h2>Planning a trip around city events</h2>
 <p>If you are traveling for a show, book lodging with the event date in mind, since large city events can fill hotels. Look at transit options and plan how you will get to and from the venue, especially after a late finish. It also helps to check the venue's website for rules about bags, re-entry and what you can bring inside.</p>
 <p>For general guidance on safe online purchases, the Federal Trade Commission offers advice on <a href="https://consumer.ftc.gov/articles/online-shopping" target="_blank" rel="noopener">shopping online</a>. You can also read about how an <a href="https://en.wikipedia.org/wiki/Arena" target="_blank" rel="noopener">arena</a> is typically laid out if you want to understand seating levels before you choose.</p>
-<p>Looking for savings? Compare <a href="/ticket-deals">ticket deals</a> and our <a href="/tickets-promo-code">promo code page</a> for how promotions work before you check out.</p>
+<p>Looking for savings? Compare <a href="/ticket-deals">ticket deals</a> and our <a href="/tickets-promo-code">promo code page</a> for current offers before you check out.</p>
 
 <h2>Getting more out of city events</h2>
 <p>The best nights out often come from mixing categories. A weekend in a new town can pair an afternoon game with an evening concert, and browsing city events together makes that easy to see. Look at dates across all five groups, then build a plan that leaves time to travel between venues.</p>

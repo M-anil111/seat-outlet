@@ -65,7 +65,7 @@ $SEO_PLAN = [
     '/buy-tickets-online' => ['buy tickets online', 'Find and Buy Tickets Online for Any Event',
         'Find and buy tickets online for concerts, sports, theater and festivals. Compare seats and prices from sellers. Orders carry the TicketNetwork guarantee.', 1300, 75, true],
     '/tickets-promo-code' => ['ticket promo code', 'Ticket Promo Code and Ways to Save',
-        'Looking for a ticket promo code? See how promotions work at Seat Outlet checkout, how to try a code if one is offered, and honest ways to pay less for concerts and games.', 760, 29, true],
+        'Looking for a ticket promo code? See current Seat Outlet offers, how to apply a code at checkout, and honest ways to pay less for concerts and games.', 760, 29, true],
     '/ticket-deals' => ['ticket deals', 'Ticket Deals on Concerts and Sports',
         'Ticket deals on concerts, sports and live events. Compare prices from many sellers, sort by lowest price and find seats that fit your budget today.', 480, 51, true],
     '/hunt-tickets' => ['hunt tickets', 'Hunt Tickets Event Ticket Search',

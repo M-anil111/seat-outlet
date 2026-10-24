@@ -5683,7 +5683,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
             </div>
 
             <div class="tab-section content-section-detail">
-                <?php echo soSpecPromoHtml(($dimension === 'venue' ? "$soLabel Promo Codes for $locationLabel event" : soSpecPromoHeading($soLabel, $soKind, $soLocShort, preg_match('/,\s*([A-Z]{2})$/', (string) $locationLabel, $soSm) ? $soSm[1] : '')), $soLabel); ?>
+                <?php echo soSpecPromoHtml(($dimension === 'venue' ? "$soLabel Promo Codes for $locationLabel event" : soSpecPromoHeading($soLabel, $soKind, $soLocShort, preg_match('/,\s*([A-Z]{2})$/', (string) $locationLabel, $soSm) ? $soSm[1] : '')), $soLabel, $dimension === 'venue' ? 'venue' : 'city'); ?>
             </div>
 
             <div class="tab-section content-section-detail" id="about">
@@ -5999,7 +5999,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
             </div>
 
             <div class="tab-section content-section-detail">
-                <?php echo soSpecPromoHtml('Latest ' . $categoryLabel . ' promo codes ' . $soKwPrep . ' ' . $locationLabel, $soLocShort . ' ' . strtolower($categoryLabel)); ?>
+                <?php echo soSpecPromoHtml('Latest ' . $categoryLabel . ' promo codes ' . $soKwPrep . ' ' . $locationLabel, $soLocShort . ' ' . strtolower($categoryLabel), 'category'); ?>
             </div>
 
             <?php if ($dimension === 'city') {   // city pages only: the state, country and venue wrappers keep their own copy

@@ -351,7 +351,7 @@ soPageHero([
 					</div>	
 
 					<div class="tab-section content-section-detail mb-0">
-						<?php echo soSpecPromoHtml('Promo codes for ' . $artistName . ' tickets', $artistName); ?>
+						<?php echo soSpecPromoHtml('Promo codes for ' . $artistName . ' tickets', $artistName, 'performer'); ?>
 					</div>
 				</div>
 				<div id="secondary" class="sidebar col-sm-12 col-md-4">

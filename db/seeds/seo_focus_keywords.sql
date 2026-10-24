@@ -71,8 +71,8 @@ VALUES
      NULL, 1, NOW(), NOW()),
 
     ('/deals-promotions', 'promo codes',
-     'Ticket Promotions and Savings Tips | Seat Outlet',
-     'How promotions work at Seat Outlet checkout for concert, sports, and event tickets, plus savings tips.',
+     'Promo Codes: Save up to 10% on Tickets | Seat Outlet',
+     'Save with the latest Seat Outlet promo codes for concert, sports, and event tickets. Browse discount codes and savings tips.',
      NULL, 1, NOW(), NOW())
 ON DUPLICATE KEY UPDATE
     `focus_keyword`    = VALUES(`focus_keyword`),

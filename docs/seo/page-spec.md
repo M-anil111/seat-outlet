@@ -11,7 +11,7 @@ Decisions
   - performer in a city (`/artist-city/...`): "<Performer> Concert Tickets in <City>" ("Tickets in" for sports, shows, festivals)
   - one event (`/event/...`): "<Event> Tickets at <Venue> on <Mon D>"
   - performer (`/artist/...`): "<Performer> Tickets"
-- Promo block: says that available promotions appear at checkout, named for the page's subject ("Promotions for Metallica tickets"), and shows no code, percentage or minimum. TAKE5 and TAKE10 stay in `SO_PROMO_CANDIDATES` and render only when `SO_PROMOS_VERIFIED=1`, which needs TicketNetwork's written confirmation (docs/launch-checklist.md).
+- Promo codes: TAKE5 (5% off orders of $199 or more) and TAKE10 (10% off orders of $349 or more), owner-confirmed 2026-10-24. Every page type has its own wording (`soPromoCopy()`: event, performer, venue, city, category, holiday, discovery), named for the page's subject. `SO_PROMOS_OFF=1` hides them.
 - Schema: the most specific Event type (MusicEvent, SportsEvent with the two teams as competitors, TheaterEvent, ComedyEvent, Festival), organizer and end time (earlier release), inLanguage, isAccessibleForFree false, an ItemList of similar events on event pages and of listed events on performer-in-city pages, and `about` on the page node. HowTo is not used: Google no longer shows it.
 - Alt text: "<Performer> live concert in <City>", "<A vs B> game in <City>", "<Show> live show in <City>", "<Festival> festival in <City>".
 

@@ -320,7 +320,7 @@ function soRenderEntityListing(array $c): void {
                         [ 'What happens if an event is canceled?', 'You get a full refund (delivery fees excluded). If the event is rescheduled, your tickets stay valid for the new date. Every order is covered by our 100% guarantee.' ],
                     ])));
                     ?>
-                    <?php echo soSpecPromoHtml(($kind === 'venue' ? 'Promo codes for ' . $name . ' tickets' : 'Latest promo codes for ' . $label . ' event tickets'), ($kind === 'venue' ? $name : $label . ' event')); ?>
+                    <?php echo soSpecPromoHtml(($kind === 'venue' ? 'Promo codes for ' . $name . ' tickets' : 'Latest promo codes for ' . $label . ' event tickets'), ($kind === 'venue' ? $name : $label . ' event'), $kind === 'venue' ? 'venue' : 'category'); ?>
                     <?php if ($kind === 'city') {
                         // Links that tie the city to its category and discovery pages (inc/discovery-pages.php).
                         $soCs = basename((string) $c['path']);   // the city's own slug, from /city/<slug>

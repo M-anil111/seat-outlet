@@ -126,7 +126,7 @@ include 'header.php';
                 <!-- 3 -->
                 <div class="policy-section" id="section-3">
                     <h2>Promo codes</h2>
-                    <p>Any promotion available for your order appears at checkout. See <a href="/tickets-promo-code">how promotions work</a>. Whether a code applies is decided at checkout.</p>
+                    <p>We list the promo codes we have on the <a href="/tickets-promo-code">promo codes page</a>. Whether a code applies is decided at checkout.</p>
                 </div>
 
                 <!-- 4 -->

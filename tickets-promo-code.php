@@ -3,7 +3,7 @@ require_once 'functions.php';
 // SEO: this page previously relied on header.php's generic fallback
 // title/canonical.
 $pageMetaTitle       = 'Deals & Promotions – Ticket Discount Codes | Seat Outlet';
-$pageMetaDescription = 'How promotions work at Seat Outlet checkout, how to try a promo code if one is offered, and honest tips for paying less on concert, sports and theater tickets.';
+$pageMetaDescription = 'Promo codes TAKE5 and TAKE10 for Seat Outlet orders, how to use one at checkout, and honest tips for paying less on concert, sports and theater tickets.';
 $pageCanonicalUrl    = HOME_URL . '/tickets-promo-code';
 include 'header.php';
 $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); };
@@ -210,7 +210,7 @@ $soPcTerms = [
             <div class="so-pc-hero__grid">
                 <div>
                     <h1>Ticket Promo Codes and Deals</h1>
-                    <p>How promotions work at checkout for concerts, sports and theater, plus honest ways to pay less.</p>
+                    <p>Find a tickets promo code for concerts, sports and theater, plus tips on using it at checkout.</p>
                 </div>
                 <div class="so-pc-hero__art" aria-hidden="true">
                     <svg viewBox="0 0 360 240" focusable="false">
@@ -281,7 +281,7 @@ $soPcTerms = [
     <section class="so-pc-sec so-pc-faq" style="padding-top:8px">
         <div class="container">
             <?php ob_start(); soMiniFaq('Promo code questions', [
-                ['Which promo codes can I use?', soPromoCodes() ? 'Whether a code applies to your order is decided at checkout. The codes we list are shown at the top of this page.' : 'We do not list a promo code right now. If the checkout, which is hosted by TicketNetwork, offers a promotion for your order, it appears there and you can check the new total before you pay.'],
+                ['Which promo codes can I use?', soPromoCodes() ? 'TAKE5 takes 5% off orders of $199 or more, and TAKE10 takes 10% off orders of $349 or more. Enter one code in the promo code field at checkout and check the new total before you pay.' : 'We do not list a promo code right now. If the checkout, which is hosted by TicketNetwork, offers a promotion for your order, it appears there and you can check the new total before you pay.'],
                 ['Where do I enter a promo code?', 'At checkout, in the promo code field, when the checkout shows one. Check the new total before you pay.'],
                 ['Why did my promo code not work?', 'Codes apply only where the checkout accepts them, the order must meet the minimum shown next to the code, and codes cannot be combined with other offers. If it still fails, contact customer service with your order details.'],
                 ['Can I use a promo code on any event?', 'Not always. Some events or listings may not accept codes, and codes can change or stop working without notice.'],
