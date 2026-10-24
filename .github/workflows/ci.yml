@@ -91,6 +91,7 @@ jobs:
           php tools/test-promo-claims.php
           php tools/test-order-verify.php
           php tools/test-newsletter-consolidation.php
+          php tools/test-dir-sort.php
           php tools/test-blog-links.php
       - name: Reliability docs state the same windows and limits as the code
         run: php tools/check-docs-constants.php

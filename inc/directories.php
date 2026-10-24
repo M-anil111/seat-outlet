@@ -162,3 +162,95 @@ function soDirectoryLinksHtml(string $path, int $max = 6): string {
     $links[] = '<a href="' . $h(SO_DIRECTORIES['all']['path']) . '">All artists, teams and shows</a>';
     return '<nav class="container py-4" aria-label="Browse by name, A to Z"><p class="mb-0"><strong>Browse by name:</strong> ' . implode(' &middot; ', $links) . '</p></nav>';
 }
+
+/* ------------------------------------------------------------------ A to Z order */
+
+const SO_DIR_FETCH_PER_PAGE = 200;
+const SO_DIR_FETCH_MAX_PAGES = 60;       // 12,000 names for one letter; far above any real letter
+const SO_DIR_INDEX_TTL = 6 * 3600;
+
+/** The name without a leading "The " (display, links and slugs keep the full name). */
+function soDirStripArticle(string $name): string {
+    $n = trim($name);
+    $s = preg_replace('/^the\s+(?=\S)/i', '', $n);
+    return $s === null ? $n : $s;
+}
+
+/** Sort key: the name without a leading "The ", accents folded, lower case. "The 1975" sorts as "1975", "The Beatles" as "beatles". */
+function soDirSortKey(string $name): string {
+    $s = soDirStripArticle($name);
+    if (function_exists('soAsciiFold')) $s = soAsciiFold($s);
+    return strtolower($s);
+}
+
+/** The directory letter a name belongs under: 'A' to 'Z', '0-9', or '' (starts with something else, listed under no letter). */
+function soDirLetterOf(string $name): string {
+    $c = strtoupper(substr(soDirStripArticle($name), 0, 1));
+    if ($c !== '' && ctype_digit($c)) return '0-9';
+    return ($c !== '' && $c >= 'A' && $c <= 'Z') ? $c : '';
+}
+
+/** The API filter that fetches everything that could belong under a letter: names starting with it, and "The ..." names starting with it after "The ". */
+function soDirLetterFilter(string $letter): string {
+    $starts = $letter === '0-9' ? range(0, 9) : [$letter];
+    $parts = [];
+    foreach ($starts as $d) {
+        $d = tnEscapeFilterValue((string) $d);
+        $parts[] = "startswith(text/name,'$d')";
+        $parts[] = "startswith(text/name,'The $d')";
+    }
+    return '(' . implode(' or ', $parts) . ')';
+}
+
+/** Test and placeholder entries ("000000_TL", names with no letters, an underscore) are not artists, teams or shows. */
+function soDirIsJunk(string $name): bool {
+    return !preg_match('/\p{L}/u', $name) || strpos($name, '_') !== false || preg_match('/^0{3,}/', $name);
+}
+
+/**
+ * Everything under one letter of a directory, from the API, as plain rows [name, id, uri, category]. All pages are read (200 a call), because
+ * the order is the name without "The ", which the API cannot sort on: a page of 48 can only be cut from the whole letter. Stored for six hours
+ * under one key, so the pages of a letter cost the calls of one pass (fewer than paging 48 at a time). A failed call throws: a part of a
+ * letter is never stored or shown. $fetch(array $params): array defaults to getTnPerformers().
+ * @return array<int,array{name:string,id:int,uri:string,category:array}>
+ */
+function soDirLetterRows(array $dir, string $letter, ?callable $fetch = null): array {
+    $key = 'dir_letter_' . md5(($dir['path'] ?? '') . '|' . $letter);
+    $useCache = $fetch === null;   // a fetcher passed in (tests) is never stored
+    if ($useCache) {
+        $hit = cache_get($key, SO_DIR_INDEX_TTL);
+        if (is_array($hit)) return $hit;
+        $fetch = 'getTnPerformers';
+    }
+    $filter = soDirLetterFilter($letter);
+    if (!empty($dir['category'])) $filter .= " and startswith(defaultCategory/path, '" . tnEscapeFilterValue($dir['category']) . "')";
+    $rows = [];
+    for ($page = 1; $page <= SO_DIR_FETCH_MAX_PAGES; $page++) {
+        $r = $fetch(['filter' => $filter, 'sort' => 'text/name', 'perPage' => SO_DIR_FETCH_PER_PAGE, 'page' => $page, 'includeTotalCount' => 'true']);
+        $results = is_array($r['results'] ?? null) ? $r['results'] : [];
+        foreach ($results as $p) {
+            $name = trim((string) ($p['text']['name'] ?? ''));
+            $uri = (string) ($p['uriComponent'] ?? '');
+            if ($name === '' || $uri === '' || soDirIsJunk($name) || soDirLetterOf($name) !== $letter) continue;
+            $rows[] = ['name' => $name, 'id' => (int) ($p['id'] ?? 0), 'uri' => $uri, 'category' => (array) ($p['defaultCategory'] ?? [])];
+        }
+        $total = (int) ($r['totalCount'] ?? 0);
+        if (!$results || $page * SO_DIR_FETCH_PER_PAGE >= $total) break;
+    }
+    $rows = soDirSortRows($rows);
+    if ($useCache) cache_set($key, $rows);
+    return $rows;
+}
+
+/** Rows in directory order: sort key, then the full name, then id (so two pages never show a name twice or skip one). */
+function soDirSortRows(array $rows): array {
+    usort($rows, function ($a, $b) {
+        return strcmp(soDirSortKey($a['name']), soDirSortKey($b['name'])) ?: strcmp($a['name'], $b['name']) ?: ($a['id'] <=> $b['id']);
+    });
+    return array_values($rows);
+}
+
+/** One page of a sorted letter: [rows, total]. */
+function soDirPageOf(array $rows, int $page, int $perPage): array {
+    return [array_slice($rows, (max(1, $page) - 1) * $perPage, $perPage), count($rows)];
+}
