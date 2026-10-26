@@ -47,6 +47,9 @@ jobs:
       - name: SEO titles and descriptions follow the site rules
         run: php tools/check-seo-titles.php
 
+      - name: Event titles stay unique per showing (long names keep the day, same-day showings add the time)
+        run: php tools/test-event-titles.php
+
       - name: Page type stylesheets and critical CSS are in place and under the size limits
         run: php tools/check-css-groups.php
 

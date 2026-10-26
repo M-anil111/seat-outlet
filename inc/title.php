@@ -61,6 +61,27 @@ function soTitleUpTo($max, ...$candidates) {
     return seoClampTitle(soNormalizeTitle((string) end($candidates)), $max);
 }
 
+/**
+ * Event page title that no other showing shares. $title is the spec title already chosen; it is kept when it names the day (and the time,
+ * when $needClock). Otherwise the name is cut at a word boundary until "Buy <name> Tickets on <day>" fits $max with the brand, so a long
+ * name loses words instead of the date. Showings that share a day ($needClock) add the time of day.
+ */
+function soEventUniqueTitle(string $title, string $label, string $day, string $clock, bool $needClock, int $max = 70): string {
+    if ($day === '' || $label === '') return $title;
+    $when = ($needClock && $clock !== '') ? $day . ', ' . $clock : $day;
+    if (mb_stripos($title, $when) !== false) return $title;
+    if (!$needClock && mb_stripos($title, $day) !== false) return $title;
+    $words = preg_split('/\s+/u', trim($label));
+    while ($words) {
+        $t = soNormalizeTitle('Buy ' . implode(' ', $words) . ' Tickets on ' . $when);
+        if (mb_strlen($t) <= $max) return $t;
+        if (count($words) === 1) break;
+        array_pop($words);
+        while (count($words) > 1 && in_array(mb_strtolower(end($words)), SO_TITLE_DANGLING, true)) array_pop($words);
+    }
+    return $title;
+}
+
 /** Shorten a title to $max characters without an ellipsis: whole words only, never a dangling "at", and "Tickets" is always kept. */
 function seoClampTitle($title, $max = 59) {
     $title = soNormalizeTitle($title);
