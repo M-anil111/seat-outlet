@@ -1,0 +1,31 @@
+<?php
+/** CI: event titles stay unique per showing (SE Ranking audit, "URLs with duplicate page titles"). Run: php tools/test-event-titles.php */
+require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/title.php';
+
+$fail = 0;
+function etCheck(string $name, bool $ok, string $detail = ''): void { global $fail; if (!$ok) { echo "FAIL $name $detail\n"; $fail++; } }
+
+$long = 'Fuck This Week A Comedic Exploration of Your Week';
+$dates = ['Oct 26', 'Nov 2', 'Nov 9', 'Nov 16'];
+$titles = [];
+foreach ($dates as $d) {
+    $t = soEventUniqueTitle('Buy ' . $long . ' Tickets', $long, $d, '', false);   // the spec fell back to an undated title
+    etCheck("long name keeps $d", mb_strpos($t, $d) !== false, $t);
+    etCheck("long name fits 70 ($d)", mb_strlen($t) <= 70, $t);
+    $titles[] = $t;
+}
+etCheck('four dates, four titles', count(array_unique($titles)) === 4, implode(' / ', $titles));
+
+$keep = soEventUniqueTitle('Buy Daley Tickets for Laugh Factory Show in Los Angeles, CA on Oct 27 at Seat Outlet', 'Daley', 'Oct 27', '8:00 PM', false);
+etCheck('a title that already names the day is kept', mb_strpos($keep, 'Laugh Factory') !== false, $keep);
+
+$a = soEventUniqueTitle('Buy Daley Tickets on Oct 27 at Seat Outlet', 'Daley', 'Oct 27', '8:00 PM', true);
+$b = soEventUniqueTitle('Buy Daley Tickets on Oct 27 at Seat Outlet', 'Daley', 'Oct 27', '10:30 PM', true);
+etCheck('same-day showings differ by time', $a !== $b && mb_strpos($a, '8:00 PM') !== false && mb_strpos($b, '10:30 PM') !== false, "$a / $b");
+
+etCheck('no day, nothing changes', soEventUniqueTitle('X Tickets', 'X', '', '', false) === 'X Tickets');
+foreach ([$a, $b, $keep] as $t) etCheck('no forbidden separator', !preg_match('/[|\x{2013}\x{2014}]|\s-\s/u', $t), $t);
+
+if ($fail) { echo "$fail failure(s)\n"; exit(1); }
+echo "ok: event title uniqueness\n";
