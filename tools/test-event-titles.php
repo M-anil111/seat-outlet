@@ -2,6 +2,8 @@
 /** CI: event titles stay unique per showing (SE Ranking audit, "URLs with duplicate page titles"). Run: php tools/test-event-titles.php */
 require_once __DIR__ . '/../inc/cli-guard.php';
 require_once __DIR__ . '/../inc/title.php';
+require_once __DIR__ . '/../inc/page-spec.php';
+if (!function_exists('seoClampDescription')) { function seoClampDescription($d, $max = 155) { return mb_strlen($d) <= $max ? $d : mb_substr($d, 0, $max); } }   // functions.php needs the database
 
 $fail = 0;
 function etCheck(string $name, bool $ok, string $detail = ''): void { global $fail; if (!$ok) { echo "FAIL $name $detail\n"; $fail++; } }
@@ -26,6 +28,17 @@ etCheck('same-day showings differ by time', $a !== $b && mb_strpos($a, '8:00 PM'
 
 etCheck('no day, nothing changes', soEventUniqueTitle('X Tickets', 'X', '', '', false) === 'X Tickets');
 foreach ([$a, $b, $keep] as $t) etCheck('no forbidden separator', !preg_match('/[|\x{2013}\x{2014}]|\s-\s/u', $t), $t);
+
+// Two showings of one event (same name, venue, city) differ in the H1 and in the description, for every kind of event.
+foreach (['concert', 'sports', 'theater', 'festival'] as $kind) {
+    $mk = fn(string $day) => soSpecEventText($kind, ['label' => 'Town Biz Comedy Night', 'perf' => 'Town Biz Comedy Night', 'venue' => 'The Layover', 'city' => 'Oakland', 'state' => 'CA', 'day' => $day, 'cat' => 'Comedy', 'country' => 'the United States', 'hasTickets' => true]);
+    $a = $mk('Nov 1'); $b = $mk('Nov 5');
+    etCheck("$kind: H1 differs by day", $a['h1'] !== $b['h1'], $a['h1']);
+    $da = soSpecPick(155, ...$a['descs']); $db = soSpecPick(155, ...$b['descs']);
+    etCheck("$kind: description differs by day", $da !== $db, $da);
+    etCheck("$kind: description fits 155", mb_strlen($da) <= 155, (string) mb_strlen($da));
+    etCheck("$kind: no day, same text as before", strpos($mk('')['h1'], ' on ') === false);
+}
 
 if ($fail) { echo "$fail failure(s)\n"; exit(1); }
 echo "ok: event title uniqueness\n";

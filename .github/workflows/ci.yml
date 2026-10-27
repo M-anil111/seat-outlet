@@ -50,6 +50,9 @@ jobs:
       - name: Event titles stay unique per showing (long names keep the day, same-day showings add the time)
         run: php tools/test-event-titles.php
 
+      - name: Category links go straight to the genre page (no 301 link on every page)
+        run: php tools/test-category-links.php
+
       - name: Page type stylesheets and critical CSS are in place and under the size limits
         run: php tools/check-css-groups.php
 

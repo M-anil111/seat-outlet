@@ -1249,7 +1249,7 @@ function buildCategoryBreadcrumb($defaultCategory) {
             } elseif ($ancestor['depth'] == 2) {
                 $depth2[] = [
                     'label' => ucwords(strtolower($ancestor['text']['name'])),
-                    'url'   => '/category/' . soSlug('category', (string) $ancestor['text']['name'], (int) ($ancestor['id'] ?? stripCategoryRootPath($ancestor['path'])))
+                    'url'   => soCategoryHref((int) ($ancestor['id'] ?? stripCategoryRootPath($ancestor['path'])), (string) $ancestor['text']['name'])   // a genre or league goes straight to its own page: /category/<genre> would 301
                 ];
             }
         }
@@ -1258,7 +1258,7 @@ function buildCategoryBreadcrumb($defaultCategory) {
     if(count($breadcrumb) < 3) {
         $breadcrumb[] = [
             'label' => ucwords(strtolower($defaultCategory['text']['name'])),
-            'url'   => '/category/' . soSlug('category', (string) $defaultCategory['text']['name'], (int) ($defaultCategory['id'] ?? stripCategoryRootPath($defaultCategory['path'])))
+            'url'   => soCategoryHref((int) ($defaultCategory['id'] ?? stripCategoryRootPath($defaultCategory['path'])), (string) $defaultCategory['text']['name'])
         ];
     }
 
