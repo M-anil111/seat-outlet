@@ -52,7 +52,7 @@ if (function_exists('soSlug')) {
         foreach ($m['groups'] as $g => $grp) {
             foreach ($grp['links'] as $l => $link) {
                 if (preg_match('/^@category:(\d+)$/', $link[1], $mm)) {
-                    $soMenuDef[$i]['groups'][$g]['links'][$l][1] = '/category/' . soSlug('category', $link[0], (int) $mm[1]);
+                    $soMenuDef[$i]['groups'][$g]['links'][$l][1] = function_exists('soCategoryHref') ? soCategoryHref((int) $mm[1], $link[0]) : '/category/' . soSlug('category', $link[0], (int) $mm[1]);
                 } elseif (preg_match('/^@city:(\d+):(.+)$/', $link[1], $mm)) {
                     $soMenuDef[$i]['groups'][$g]['links'][$l][1] = '/city/' . soSlug('city', $mm[2], (int) $mm[1]);
                 }
