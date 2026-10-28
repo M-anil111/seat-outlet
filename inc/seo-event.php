@@ -32,7 +32,8 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $evShortT = trim($evShort . ($evClock !== '' ? ' ' . $evClock : ''));
   $metaTitle = soTitle('Event Not Found');
   if (tnEntityUnavailable($event) && $evName === '') {
-      $metaTitle = soTitle('Event Temporarily Unavailable');
+      // The name the URL gives: the event's own title, not one shared by every event that is down.
+      $metaTitle = soUnavailableTitle('Event', soLabelFromSlug((string) ($_GET['slug'] ?? '')));
   } elseif ($evName !== '') {
       // "<event> Tickets—<City, ST> <Mon D>": the place and date go first when the name is long, never half a word.
       $evShort = $evTs ? date('M j', $evTs) : '';
@@ -49,7 +50,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
           'day' => $evShort, 'cat' => soCategoryDisplayName((string) ($event['defaultCategory']['text']['name'] ?? '')), 'country' => $evCountryName,
           'hasTickets' => !empty($event['_metadata']['hasTickets']),
       ]);
-      $metaTitle = soTitleUpTo(70, ...$evSpec['titles']);
+      $metaTitle = soTitleUpTo(SO_TITLE_EVENT_MAX, ...$evSpec['titles']);
       // Search Console audit: 2,443 event URLs shared a title (a long name loses the day, two showings on one day read the same). A slug that ends in a
       // collision number ("...-2026-11-12-2") is the second showing of that day, so it also carries the time.
       $evTwin = (bool) preg_match('/\d{4}-\d{2}-\d{2}-\d+$/', strtolower((string) ($slug ?? $_GET['slug'] ?? '')));

@@ -18,7 +18,7 @@ if ($id === null) {
 tnRequestMulti([['/catalog/v2/performers/' . $id, []], performerPageEventsSpec($id, $perPage)]);
 $performer = getTnPerformerById($id);
 // The name the URL gives, for the title of an error page (the catalog cannot be asked while it is failing).
-$soPerformerLabel = ucwords(str_replace('-', ' ', $slug));
+$soPerformerLabel = soLabelFromSlug($slug);
 
 // A performer record with no category still has events (some answers for teams and festivals): the page is built on the category of its
 // first event. The same request as getPerformerPageEvents() below, answered from the cache.

@@ -13,6 +13,33 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  */
 const SO_TITLE_BRAND = " at Seat Outlet";
 
+/**
+ * Longest event title. SE Ranking flags titles over 65 characters and a search result shows about 60; the spec picks the first candidate
+ * that fits, so a shorter one is the result when the name is long.
+ */
+const SO_TITLE_EVENT_MAX = 65;
+
+/**
+ * The name a URL slug gives, for a title when the data is not there to ask (an error page): "rnb-soul-concert-tickets" becomes
+ * "Rnb Soul Concert Tickets". An event slug's date ("-2026-10-27", "-2026-10-27-2") is dropped. '' when the slug is empty.
+ */
+function soLabelFromSlug(string $slug): string {
+    $s = strtolower(trim($slug, " /\t"));
+    $s = preg_replace('/-\d{4}-\d{2}-\d{2}(-\d+)?$/', '', $s);
+    $s = trim(preg_replace('/[^a-z0-9]+/', ' ', $s));
+    return $s === '' ? '' : ucwords($s);
+}
+
+/**
+ * Title of a 503 page for one entity. With a name: "<Name> Tickets at Seat Outlet" (the name is never doubled, "NBA Tickets" stays as it is);
+ * without one: the generic "<What> Temporarily Unavailable". Two entities never share a title when they have names.
+ */
+function soUnavailableTitle(string $what, string $label = ''): string {
+    if ($label === '') return soTitle($what . ' Temporarily Unavailable');
+    $name = preg_match('/\bTickets$/u', $label) ? $label : $label . ' Tickets';
+    return soTitleUpTo(SO_TITLE_EVENT_MAX, $name, $what . ' Temporarily Unavailable');
+}
+
 /** Words a trimmed title must not end on ("... Comedy Club at" reads as broken). */
 const SO_TITLE_DANGLING = ['at', 'of', 'the', 'and', 'in', 'for', 'to', 'with', 'a', 'an', 'on', 'by', 'or', '&', 'vs', 'from'];
 
@@ -66,7 +93,7 @@ function soTitleUpTo($max, ...$candidates) {
  * when $needClock). Otherwise the name is cut at a word boundary until "Buy <name> Tickets on <day>" fits $max with the brand, so a long
  * name loses words instead of the date. Showings that share a day ($needClock) add the time of day.
  */
-function soEventUniqueTitle(string $title, string $label, string $day, string $clock, bool $needClock, int $max = 70): string {
+function soEventUniqueTitle(string $title, string $label, string $day, string $clock, bool $needClock, int $max = SO_TITLE_EVENT_MAX): string {
     if ($day === '' || $label === '') return $title;
     $when = ($needClock && $clock !== '') ? $day . ', ' . $clock : $day;
     if (mb_stripos($title, $when) !== false) return $title;
