@@ -42,7 +42,7 @@ $root = dirname(__DIR__);
 $perf = file_get_contents($root . '/performer.php');
 dpCheck('performer.php remembers only a real "not found" or a performer without a category', strpos($perf, 'if (tnEntityDefinitelyMissing($performer) || (!empty($performer[\'id\']) && empty($performer[\'defaultCategory\']))) soDeadPerformerRemember((int) $id);') !== false, true);
 dpCheck('performer.php forgets the id when the page renders', strpos($perf, 'soDeadPerformerForget((int) $id);') !== false, true);
-dpCheck('the remember call comes before the 404 page is sent', strpos($perf, 'soDeadPerformerRemember((int) $id);') < strpos($perf, "renderNotFoundPage('Performer', \$performer);"), true);
+dpCheck('the remember call comes before the 404 page is sent', strpos($perf, 'soDeadPerformerRemember((int) $id);') < strpos($perf, "renderNotFoundPage('Performer', \$performer, \$soPerformerLabel);"), true);
 $fn = file_get_contents($root . '/functions.php');
 dpCheck('functions.php loads the module and filters both performer lists', strpos($fn, "require_once __DIR__ . '/inc/dead-performers.php';") !== false && strpos($fn, "\$data['results'] = soDropDeadPerformers(\$data['results']);") !== false && strpos($fn, 'array_filter(soDropDeadPerformers($data[\'results\'] ?? [])') !== false, true);
 $ep = file_get_contents($root . '/inc/entity-pages.php');

@@ -2755,12 +2755,13 @@ function soFeedDownStateHtml() {
 }
 
 /** Whole "temporarily unavailable" page: HTTP 503 + Retry-After, never cached. */
-function renderUnavailablePage($what) {
+function renderUnavailablePage($what, $label = '') {
     soSnapshotServe();   // the last good copy of this very page beats an error page
     http_response_code(503);
     header('Retry-After: 30');
     // No noindex: 503 + Retry-After is the whole message to crawlers; noindex on a temporary error can drop a live page.
-    $pageMetaTitle = soTitle($what . ' Temporarily Unavailable');
+    // $label is the name the URL gives (the data is not there to ask): without it every page of this kind shares one title (SE Ranking: duplicate titles).
+    $pageMetaTitle = $label !== '' ? soTitleUpTo(70, $label . ' Tickets', $what . ' Temporarily Unavailable') : soTitle($what . ' Temporarily Unavailable');
     $pageMetaDescription = 'This page is temporarily unavailable. Please try again in a moment.';
     include 'header.php';
     echo unavailableBlockHtml($what);
@@ -2774,12 +2775,12 @@ function renderUnavailablePage($what) {
  * than a real "not found", answer 503 (retry) so a throttled or down API can
  * never tell search engines that live pages are gone.
  */
-function renderNotFoundPage($what, $apiResponse = null) {
+function renderNotFoundPage($what, $apiResponse = null, $label = '') {
     // Callers that do not hand over the API response (category, state, country pages): a request that already
     // failed in this process (throttled, down, circuit open) marks the page degraded, and that is a retryable
     // 503, never a 404 that would drop live menu pages from search engines.
     if (($apiResponse !== null && tnEntityUnavailable($apiResponse)) || ($apiResponse === null && !empty($GLOBALS['tn_degraded']))) {
-        renderUnavailablePage($what);
+        renderUnavailablePage($what, $label);
     }
     http_response_code(404);
     $pageRobots = 'noindex, follow';

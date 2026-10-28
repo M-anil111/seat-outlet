@@ -17,12 +17,21 @@ if ($id === null) {
 // Performer and its first page of events are independent: fetch together.
 tnRequestMulti([['/catalog/v2/performers/' . $id, []], performerPageEventsSpec($id, $perPage)]);
 $performer = getTnPerformerById($id);
+// The name the URL gives, for the title of an error page (the catalog cannot be asked while it is failing).
+$soPerformerLabel = ucwords(str_replace('-', ' ', $slug));
+
+// A performer record with no category still has events (some answers for teams and festivals): the page is built on the category of its
+// first event. The same request as getPerformerPageEvents() below, answered from the cache.
+if (!tnEntityMissing($performer) && empty($performer['defaultCategory'])) {
+	[, $perfProbe] = getPerformerPageEvents($id, $perPage);
+	$performer['defaultCategory'] = soPerformerCategoryFromEvents($performer, $perfProbe['results'] ?? []);
+}
 
 if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
 	// A performer the catalog no longer has, or one with no default category, has no page: lists stop linking to it for three days.
 	// Only a real "not found" counts (tnEntityDefinitelyMissing): an empty, throttled or failed lookup never hides a performer.
 	if (tnEntityDefinitelyMissing($performer) || (!empty($performer['id']) && empty($performer['defaultCategory']))) soDeadPerformerRemember((int) $id);
-	renderNotFoundPage('Performer', $performer);
+	renderNotFoundPage('Performer', $performer, $soPerformerLabel);
 }
 soDeadPerformerForget((int) $id);   // the page renders: it is not dead (no-op unless the id was remembered)
 

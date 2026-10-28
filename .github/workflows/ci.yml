@@ -53,6 +53,9 @@ jobs:
       - name: Category links go straight to the genre page (no 301 link on every page)
         run: php tools/test-category-links.php
 
+      - name: Performer pages with events are not a 404, and error pages have their own titles
+        run: php tools/test-performer-category.php
+
       - name: Page type stylesheets and critical CSS are in place and under the size limits
         run: php tools/check-css-groups.php
 
