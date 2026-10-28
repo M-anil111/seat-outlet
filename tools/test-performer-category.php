@@ -28,5 +28,14 @@ pcCheck2('the title fits 70 characters', mb_strlen($a) <= 70, $a);
 $long = soTitleUpTo(70, ucwords(str_replace('-', ' ', 'the-very-long-named-touring-production-of-a-stage-show-with-many-words-in-it')) . ' Tickets', 'Performer Temporarily Unavailable');
 pcCheck2('a long name still fits 70', mb_strlen($long) <= 70, $long);
 
+// The label a slug gives, and the 503 title built from it (one per entity, never "Tickets Tickets").
+pcCheck2('a clean performer slug becomes its name', soLabelFromSlug('rnb-soul-concert-tickets') === 'Rnb Soul Concert Tickets', soLabelFromSlug('rnb-soul-concert-tickets'));
+pcCheck2('an event slug loses its date and collision number', soLabelFromSlug('comedy-cellar-las-vegas-nv-2026-10-27-2') === 'Comedy Cellar Las Vegas Nv', soLabelFromSlug('comedy-cellar-las-vegas-nv-2026-10-27-2'));
+pcCheck2('an empty slug gives an empty label', soLabelFromSlug('') === '');
+pcCheck2('no label: the generic title', soUnavailableTitle('Performer') === 'Performer Temporarily Unavailable at Seat Outlet', soUnavailableTitle('Performer'));
+pcCheck2('a label: its own title', soUnavailableTitle('Performer', 'Persian Halloween') === 'Persian Halloween Tickets at Seat Outlet', soUnavailableTitle('Performer', 'Persian Halloween'));
+pcCheck2('a label that already ends in Tickets is not doubled', soUnavailableTitle('Location', 'NBA Tickets') === 'NBA Tickets at Seat Outlet', soUnavailableTitle('Location', 'NBA Tickets'));
+pcCheck2('a long label still fits 65 characters', mb_strlen(soUnavailableTitle('Event', str_repeat('Very Long Name ', 6))) <= SO_TITLE_EVENT_MAX, soUnavailableTitle('Event', str_repeat('Very Long Name ', 6)));
+
 if ($fail) { echo "$fail failure(s)\n"; exit(1); }
 echo "ok: performer category fallback and error titles\n";

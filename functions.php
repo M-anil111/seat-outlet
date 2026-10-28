@@ -2760,8 +2760,7 @@ function renderUnavailablePage($what, $label = '') {
     http_response_code(503);
     header('Retry-After: 30');
     // No noindex: 503 + Retry-After is the whole message to crawlers; noindex on a temporary error can drop a live page.
-    // $label is the name the URL gives (the data is not there to ask): without it every page of this kind shares one title (SE Ranking: duplicate titles).
-    $pageMetaTitle = $label !== '' ? soTitleUpTo(70, $label . ' Tickets', $what . ' Temporarily Unavailable') : soTitle($what . ' Temporarily Unavailable');
+    $pageMetaTitle = soUnavailableTitle($what, $label !== '' ? $label : soLabelFromSlug((string) ($_GET['slug'] ?? '')));
     $pageMetaDescription = 'This page is temporarily unavailable. Please try again in a moment.';
     include 'header.php';
     echo unavailableBlockHtml($what);

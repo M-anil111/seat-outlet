@@ -14,7 +14,7 @@ $titles = [];
 foreach ($dates as $d) {
     $t = soEventUniqueTitle('Buy ' . $long . ' Tickets', $long, $d, '', false);   // the spec fell back to an undated title
     etCheck("long name keeps $d", mb_strpos($t, $d) !== false, $t);
-    etCheck("long name fits 70 ($d)", mb_strlen($t) <= 70, $t);
+    etCheck("long name fits 65 ($d)", mb_strlen($t) <= SO_TITLE_EVENT_MAX, $t);
     $titles[] = $t;
 }
 etCheck('four dates, four titles', count(array_unique($titles)) === 4, implode(' / ', $titles));
