@@ -13,6 +13,19 @@
 
 const SO_DEAD_PERFORMER_TTL = 259200;   // 3 days
 
+/**
+ * The category a performer page is built on. The catalog's performer record carries it; some answers (teams, festivals) come back
+ * without one while the performer still has events. Then the first event's category is the one its events are listed under.
+ * Returns [] only when neither has a category, and the page stays a 404.
+ */
+function soPerformerCategoryFromEvents(array $performer, array $events): array {
+    if (!empty($performer['defaultCategory'])) return $performer['defaultCategory'];
+    foreach ($events as $ev) {
+        if (is_array($ev) && !empty($ev['defaultCategory']['path'])) return $ev['defaultCategory'];
+    }
+    return [];
+}
+
 function soDeadPerformerFile(?string $dir = null): string {
     return ($dir ?? cache_dir()) . 'dead_performers.json';
 }
