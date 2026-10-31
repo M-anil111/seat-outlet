@@ -37,5 +37,12 @@ pcCheck2('a label: its own title', soUnavailableTitle('Performer', 'Persian Hall
 pcCheck2('a label that already ends in Tickets is not doubled', soUnavailableTitle('Location', 'NBA Tickets') === 'NBA Tickets at Seat Outlet', soUnavailableTitle('Location', 'NBA Tickets'));
 pcCheck2('a long label still fits 65 characters', mb_strlen(soUnavailableTitle('Event', str_repeat('Very Long Name ', 6))) <= SO_TITLE_EVENT_MAX, soUnavailableTitle('Event', str_repeat('Very Long Name ', 6)));
 
+// Wiring: the artist-city, -venue and -state pages (renderArtistLocationPage) apply the same fallback before their 404.
+$fn = (string) file_get_contents(dirname(__DIR__) . '/functions.php');
+$at = strpos($fn, 'function renderArtistLocationPage');
+$body = $at !== false ? substr($fn, $at, 6000) : '';
+pcCheck2('renderArtistLocationPage takes the category from the events before deciding on a 404', strpos($body, 'soPerformerCategoryFromEvents($performer, $allPerformerEvents)') !== false && strpos($body, 'soPerformerCategoryFromEvents') < strpos($body, "renderNotFoundPage('Performer'"));
+pcCheck2('its 404 page names the performer from the URL', strpos($body, "renderNotFoundPage('Performer', \$performer, soLabelFromSlug(\$requestedSlug))") !== false);
+
 if ($fail) { echo "$fail failure(s)\n"; exit(1); }
 echo "ok: performer category fallback and error titles\n";

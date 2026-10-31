@@ -5461,8 +5461,15 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     tnRequestMulti($prefetch);
 
     $performer = getTnPerformerById($performerId);
+    // Unfiltered upcoming events: they feed the "by city / venue / state" links below, and they give a performer record that came back
+    // without a category the category of its first event (SE Ranking audit, 29 Oct 2026: 70 artist-city, -venue and -state pages of one
+    // performer answered 404 while /artist/<slug> rendered). Prefetched above, so this is the cached answer.
+    $allPerformerEvents = tnEntityMissing($performer) ? [] : (getTnPerformerEvents($performerId, ['filter' => 'date/date ge ' . date('Y-m-d') . ' and date/date le ' . soEventHorizon(), 'perPage' => 100, 'sort' => 'date/date'])['results'] ?? []);
+    if (!tnEntityMissing($performer) && empty($performer['defaultCategory'])) {
+        $performer['defaultCategory'] = soPerformerCategoryFromEvents($performer, $allPerformerEvents);
+    }
     if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
-        renderNotFoundPage('Performer', $performer);   // 404 when the API says not found, 503 when it failed
+        renderNotFoundPage('Performer', $performer, soLabelFromSlug($requestedSlug));   // 404 when the API says not found, 503 when it failed
     }
     $location  = getLocationDisplayInfo($dimension, $locationValue, $rawLocation);
     if (empty($location)) {
@@ -5485,9 +5492,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     $total_pages = $total_count > 0 ? (int) ceil($total_count / $perPage) : 0;
     $events      = $eventsResponse['results'] ?? [];
     $count       = $eventsResponse['count'] ?? count($events);
-    // Unfiltered upcoming events feed the "by city / venue / state" links,
-    // so a Taylor-Swift-in-Austin page links to her other cities too.
-    $allPerformerEvents = getTnPerformerEvents($performerId, ['filter' => 'date/date ge ' . date('Y-m-d') . ' and date/date le ' . soEventHorizon(), 'perPage' => 100, 'sort' => 'date/date'])['results'] ?? [];
+    // $allPerformerEvents (unfiltered upcoming events) was read above, before the category check.
     $percent     = $total_count > 0 ? ($perPage / $total_count) * 100 : 0;
     $year        = date('Y');
 
