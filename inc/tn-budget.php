@@ -360,3 +360,18 @@ function tnDeviceScope() {
     // The role is part of the scope, so web and cron keep separate tokens even when they share one configured id.
     return 'device_' . $id . (PHP_SAPI === 'cli' ? 'cli' : 'web');
 }
+
+/**
+ * The scope string asked for in the token request. $extra is one more scope (the bulk catalog: "catalog_bulk_access"); it gets its own
+ * token, so the site's token and the bulk importer's never revoke each other ("a new token revokes the previous token with the same scopes").
+ */
+function tnTokenScope(string $extra = ''): string {
+    $extra = preg_replace('/[^a-z0-9_]/i', '', $extra);
+    return 'default ' . tnDeviceScope() . ($extra !== '' ? ' ' . $extra : '');
+}
+
+/** A token's own key for the shared cache and the file store: '' for the site's token, so its cache key does not change. */
+function tnTokenKeySuffix(string $extra = ''): string {
+    $extra = preg_replace('/[^a-z0-9_]/i', '', $extra);
+    return $extra === '' ? '' : '_' . $extra;
+}
