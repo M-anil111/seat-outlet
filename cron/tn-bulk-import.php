@@ -21,6 +21,8 @@ require_once __DIR__ . '/../functions.php';
 require_once __DIR__ . '/../inc/tn-bulk.php';
 
 const TN_BULK_PATH = '/catalog/v2/events/bulk';
+// TicketNetwork (14 Oct 2026 reply): the bulk endpoint needs the catalog_bulk_access scope on the token. Asked for on its own token.
+const TN_BULK_SCOPE = 'catalog_bulk_access';
 const TN_BULK_MAX_PAGES = 3000;        // guard against a runaway loop (200 a page would still cover 600,000 events)
 const TN_BULK_RESUME_SECONDS = 21600;  // a full run left half done is resumed for up to 6 hours, then started again
 const TN_BULK_MAX_RUN_SECONDS = 3000;  // stop before the next hourly run would find the lock still held
@@ -108,10 +110,10 @@ function tbFetchPage(array $params): array {
         return tnParseResult($ch, curl_exec($ch));
     };
     $GLOBALS['tn_retry_after'] = null;
-    $token = getTnAccessToken();
+    $token = getTnAccessToken('', TN_BULK_SCOPE);
     $r = $call($token);
     if (!empty($r['auth'])) {
-        $token = getTnAccessToken($token);
+        $token = getTnAccessToken($token, TN_BULK_SCOPE);
         if ($token !== '') $r = $call($token);
     }
     $http = (int) ($r['http'] ?? 0);

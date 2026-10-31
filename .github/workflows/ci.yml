@@ -56,6 +56,9 @@ jobs:
       - name: Performer pages with events are not a 404, and error pages have their own titles
         run: php tools/test-performer-category.php
 
+      - name: Bulk importer asks for the catalog_bulk_access scope on its own token
+        run: php tools/test-tn-token-scope.php
+
       - name: Page type stylesheets and critical CSS are in place and under the size limits
         run: php tools/check-css-groups.php
 

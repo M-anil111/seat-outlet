@@ -143,15 +143,15 @@ function downloadImage($url) {
 const TN_ACCESS_TOKEN_CACHE_KEY = 'tn_access_token';
 const TN_ACCESS_TOKEN_EXPIRY_BUFFER = 120; // seconds: the DevPortal guide says to refresh "a couple of minutes" before expiry
 
-function tnTokenCacheFile() {
+function tnTokenCacheFile(string $extraScope = '') {
     $dir = getenv('TN_TOKEN_DIR');
     $dir = ($dir !== false && $dir !== '') ? rtrim($dir, '/') : rtrim(sys_get_temp_dir(), '/');
-    return $dir . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY . '|' . BASE_URL . '|' . tnDeviceScope()) . '.json';
+    return $dir . '/seatoutlet_tn_token_' . md5(CONSUMER_KEY . '|' . BASE_URL . '|' . tnTokenScope($extraScope)) . '.json';
 }
 
 /** Cached token if it is still inside its lifetime, else ''. */
-function tnTokenFromFile() {
-    $file = tnTokenCacheFile();
+function tnTokenFromFile(string $extraScope = '') {
+    $file = tnTokenCacheFile($extraScope);
     if (!is_file($file)) return '';
     $stored = json_decode((string) @file_get_contents($file), true);
     if (!empty($stored['token']) && (int) ($stored['expires_at'] ?? 0) > time()) {
@@ -175,8 +175,10 @@ function tnTokenFromFile() {
  *   - $rejected lets a caller say "this token got a 401": we use a newer one
  *     if another process already refreshed, otherwise fetch a fresh one.
  */
-function getTnAccessToken($rejected = '') {
-    static $accessToken = null;
+function getTnAccessToken($rejected = '', string $extraScope = '') {
+    // One remembered token per scope set: the site's own (the default) and the bulk importer's (catalog_bulk_access).
+    static $memo = [];
+    $accessToken = &$memo[$extraScope];
 
     if ($rejected === '' && $accessToken !== null) {
         return $accessToken;
@@ -186,19 +188,19 @@ function getTnAccessToken($rejected = '') {
     }
 
     if ($rejected === '' && function_exists('apcu_fetch')) {
-        $cached = apcu_fetch(TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope(), $found);
+        $cached = apcu_fetch(TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope() . tnTokenKeySuffix($extraScope), $found);
         if ($found) {
             $accessToken = $cached;
             return $accessToken;
         }
     }
 
-    $fromFile = tnTokenFromFile();
+    $fromFile = tnTokenFromFile($extraScope);
     if ($fromFile !== '' && $fromFile !== $rejected) {
         return $accessToken = $fromFile;
     }
 
-    $lockFile = tnTokenCacheFile() . '.lock';
+    $lockFile = tnTokenCacheFile($extraScope) . '.lock';
     $lock = @fopen($lockFile, 'c');
     $locked = false;
     if ($lock) {
@@ -209,7 +211,7 @@ function getTnAccessToken($rejected = '') {
     }
     try {
         // Someone else may have refreshed while we waited for the lock.
-        $fromFile = tnTokenFromFile();
+        $fromFile = tnTokenFromFile($extraScope);
         if ($fromFile !== '' && $fromFile !== $rejected) {
             return $accessToken = $fromFile;
         }
@@ -222,7 +224,7 @@ function getTnAccessToken($rejected = '') {
                 'Authorization: Basic ' . base64_encode(CONSUMER_KEY . ':' . CONSUMER_SECRET),
                 'Content-Type: application/x-www-form-urlencoded',
             ],
-            CURLOPT_POSTFIELDS     => http_build_query(['grant_type' => 'client_credentials', 'scope' => 'default ' . tnDeviceScope()]),
+            CURLOPT_POSTFIELDS     => http_build_query(['grant_type' => 'client_credentials', 'scope' => tnTokenScope($extraScope)]),
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_TIMEOUT        => 15,
         ]);
@@ -244,9 +246,9 @@ function getTnAccessToken($rejected = '') {
         $ttl = max(60, (int) ($data['expires_in'] ?? 3600) - TN_ACCESS_TOKEN_EXPIRY_BUFFER);
 
         if (function_exists('apcu_store')) {
-            apcu_store(TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope(), $accessToken, $ttl);
+            apcu_store(TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope() . tnTokenKeySuffix($extraScope), $accessToken, $ttl);
         }
-        $file = tnTokenCacheFile();
+        $file = tnTokenCacheFile($extraScope);
         $tmp = $file . '.' . uniqid('tmp_', true);
         if (@file_put_contents($tmp, json_encode(['token' => $accessToken, 'expires_at' => time() + $ttl]), LOCK_EX) !== false) {
             @chmod($tmp, 0600);

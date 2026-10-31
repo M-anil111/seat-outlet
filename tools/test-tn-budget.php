@@ -94,8 +94,8 @@ tbCheck('a follower stops early when the leader finished without storing anythin
 
 // 4. Wiring in the live code
 $fn = file_get_contents(__DIR__ . '/../functions.php');
-tbCheck('the token request asks for the device scope', strpos($fn, "'scope' => 'default ' . tnDeviceScope()") !== false);
-tbCheck('the token file and cache key are per device', strpos($fn, "CONSUMER_KEY . '|' . BASE_URL . '|' . tnDeviceScope()") !== false && strpos($fn, "TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope()") !== false);
+tbCheck('the token request asks for the device scope', strpos($fn, "'scope' => tnTokenScope(\$extraScope)") !== false);
+tbCheck('the token file and cache key are per device', strpos($fn, "CONSUMER_KEY . '|' . BASE_URL . '|' . tnTokenScope(\$extraScope)") !== false && strpos($fn, "TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope() . tnTokenKeySuffix(\$extraScope)") !== false);
 tbCheck('functions.php loads the budget helpers', strpos($fn, "require_once __DIR__ . '/inc/tn-budget.php';") !== false);
 tbCheck('every live call passes the shared budget before it goes out', strpos($fn, 'if (!tnBucketAllow()) {') !== false && strpos($fn, 'return tnBudgetWait(tnCallerClass(), tnCallsPerSecond(), cache_dir());') !== false);
 tbCheck('a batch of prefetched calls waits for tokens like one call would, instead of failing the third on the spot',
