@@ -29,6 +29,8 @@ It never touches `inc/env.local.php` (the server's own secrets) and never overwr
 
 After that, every merge to `main` reaches beta within about two minutes with no further action. Check `~/deploy/deploy.log`.
 
+**The script updates itself.** Since 31 Oct 2026 each run compares `~/deploy/pull-deploy.sh` with `deploy/pull-deploy.sh` in the checkout and replaces the copy when they differ, so a fix merged to the script runs from the next cron run. A copy installed before that date does not have this and must be refreshed once by hand: `cp /home/seatoutlet-beta/deploy/checkout/deploy/pull-deploy.sh /home/seatoutlet-beta/deploy/pull-deploy.sh && chmod 0755 /home/seatoutlet-beta/deploy/pull-deploy.sh`.
+
 ## Rollback
 
 `DEPLOY_BRANCH` points at a branch or tag; to roll back, revert on `main` (the next pull redeploys). The script does not delete files, so a rolled-back release can leave newer files behind; they are unused.

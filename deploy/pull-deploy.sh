@@ -62,6 +62,18 @@ if [ "$OLD" != "none" ] && git cat-file -e "$OLD^{commit}" 2>/dev/null; then
 fi
 git reset --quiet --hard "origin/$BRANCH"
 
+# Cron runs a copy of this script (~/deploy/pull-deploy.sh, see docs/pull-deploy.md), so a fix merged to the script never reached the
+# server by itself. Refresh that copy from the checkout for the NEXT run (a new inode via mv: the running bash keeps reading this one).
+SELF="$(readlink -f "$0" 2>/dev/null || echo "$0")"
+if [ -f "$SELF" ] && [ -f "$WORKDIR/deploy/pull-deploy.sh" ] && [ "$SELF" != "$(readlink -f "$WORKDIR/deploy/pull-deploy.sh")" ] \
+   && ! cmp -s "$WORKDIR/deploy/pull-deploy.sh" "$SELF"; then
+  if cp "$WORKDIR/deploy/pull-deploy.sh" "$SELF.new" && chmod 0755 "$SELF.new" && mv -f "$SELF.new" "$SELF"; then
+    log "deploy script updated from the checkout; the new version runs from the next cron run"
+  else
+    log "WARNING: could not update $SELF from the checkout (permissions?)"; rm -f "$SELF.new"
+  fi
+fi
+
 # Code: everything except .git, the secrets file and the runtime cache.
 tar --exclude=./.git --exclude=./cache --exclude=./inc/env.local.php \
     --exclude=./deploy --exclude=./.github --exclude=./docs --exclude=./CONTRIBUTING.md \

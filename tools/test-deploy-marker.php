@@ -19,6 +19,9 @@ dmCheck('deploy makes the marker readable by the web user', strpos($sh, 'chmod 0
 dmCheck('deploy writes .deploy-error when migrations fail', strpos($sh, '> "$WEBROOT/.deploy-error"') !== false && strpos($sh, 'MIGRATION FAILED') !== false);
 dmCheck('deploy clears .deploy-error on a good deploy', strpos($sh, 'rm -f "$WEBROOT/.deploy-error"') !== false);
 dmCheck('the marker is still written only after migrations succeed', strpos($sh, 'db/migrate.php') < strpos($sh, 'echo "$NEW" > "$STAMP"'));
+dmCheck('the cron copy of the script refreshes itself from the checkout', strpos($sh, 'cmp -s "$WORKDIR/deploy/pull-deploy.sh" "$SELF"') !== false && strpos($sh, 'mv -f "$SELF.new" "$SELF"') !== false);
+dmCheck('the self-update happens after the checkout moved and before the code copy', strpos($sh, 'git reset --quiet --hard') < strpos($sh, 'cmp -s "$WORKDIR/deploy/pull-deploy.sh"') && strpos($sh, 'cmp -s "$WORKDIR/deploy/pull-deploy.sh"') < strpos($sh, 'tar --exclude=./.git'));
+dmCheck('the self-update never replaces the checkout\'s own file', strpos($sh, '"$SELF" != "$(readlink -f "$WORKDIR/deploy/pull-deploy.sh")"') !== false);
 
 // The marker logic itself, run against real files.
 $dir = sys_get_temp_dir() . '/so-marker-' . getmypid(); @mkdir($dir);
