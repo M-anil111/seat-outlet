@@ -62,6 +62,9 @@ jobs:
       - name: No page links to a 301 alias such as /terms-of-use
         run: php tools/test-legacy-hrefs.php
 
+      - name: Health page explains a missing deploy marker; deploy script leaves readable evidence
+        run: bash -n deploy/pull-deploy.sh && php tools/test-deploy-marker.php
+
       - name: Page type stylesheets and critical CSS are in place and under the size limits
         run: php tools/check-css-groups.php
 

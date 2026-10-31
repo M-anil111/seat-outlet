@@ -96,8 +96,12 @@ fi
 
 if [ "$MIGRATE" = "1" ] && [ -f "$WEBROOT/inc/env.local.php" ]; then
   log "applying database migrations"
-  (cd "$WEBROOT" && "$PHP_BIN" db/migrate.php) || { log "MIGRATION FAILED - code is live, deployed marker NOT updated so the next run retries"; exit 1; }
+  # The failure is written where ajax/health.php can read it (deployError): the code is live while the marker is not, which otherwise
+  # shows only as commit = null on the health page.
+  (cd "$WEBROOT" && "$PHP_BIN" db/migrate.php) || { log "MIGRATION FAILED - code is live, deployed marker NOT updated so the next run retries"; echo "$(date -u +%FT%TZ) migration failed deploying ${NEW:0:8}" > "$WEBROOT/.deploy-error"; chmod 0644 "$WEBROOT/.deploy-error" 2>/dev/null || true; exit 1; }
 fi
 
 echo "$NEW" > "$STAMP"
+chmod 0644 "$STAMP" 2>/dev/null || true   # PHP-FPM runs as another user: a marker written 0600 reads as commit = null on the health page
+rm -f "$WEBROOT/.deploy-error"
 log "deployed $NEW"
