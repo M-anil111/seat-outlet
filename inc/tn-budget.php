@@ -243,26 +243,27 @@ function tnCallerClass(): string {
  * a cron's terms (it leaves the visitors the upper half), waiting up to $maxWait for it as a visitor does. A crawler therefore can never
  * use more than its share, always leaves visitors the rest, and a page of several calls can finish. If the shared bucket gives nothing in
  * time, the class token is given back. $dir is the cache directory (the bucket files live there).
+ * $now fixes the clock (tests): every bucket sees the same instant, so no token refills between two calls, and nothing waits.
  */
-function tnBudgetWait(string $class, float $rate, string $dir, float $maxWait = 1.5): bool {
+function tnBudgetWait(string $class, float $rate, string $dir, float $maxWait = 1.5, ?float $now = null): bool {
     $main = $dir . 'tn_bucket.json';
-    if ($class === 'visitor') return tnBucketWait(false, $rate, $main, $maxWait);
-    if ($class === 'background') return tnBucketWait(true, $rate, $main);
+    if ($class === 'visitor') return $now === null ? tnBucketWait(false, $rate, $main, $maxWait) : tnBucketTake(false, $rate, $main, $now);
+    if ($class === 'background') return tnBucketTake(true, $rate, $main, $now);
     if ($rate <= 0) return true;                       // budget off
     $share = tnCrawlerShare($class);
     if ($share <= 0) return false;                     // this class gets stored copies only
     $classRate = $rate * $share;
     $classBurst = max(4.0, $classRate * 2);
     $classFile = $dir . 'tn_bucket_' . $class . '.json';
-    if (!tnBucketTake(false, $classRate, $classFile, null, $classBurst)) return false;
+    if (!tnBucketTake(false, $classRate, $classFile, $now, $classBurst)) return false;
     $deadline = microtime(true) + max(0.0, $maxWait);
     while (true) {
-        if (tnBucketTake(true, $rate, $main)) return true;
-        $left = $deadline - microtime(true);
+        if (tnBucketTake(true, $rate, $main, $now)) return true;
+        $left = $now === null ? $deadline - microtime(true) : 0.0;   // a fixed clock cannot advance: one try
         if ($left <= 0) break;
         usleep((int) (min(0.15, $left) * 1000000));
     }
-    tnBucketGive($classFile, $classRate, $classBurst);   // no call was made, so the class does not pay for it
+    tnBucketGive($classFile, $classRate, $classBurst, $now);   // no call was made, so the class does not pay for it
     return false;
 }
 

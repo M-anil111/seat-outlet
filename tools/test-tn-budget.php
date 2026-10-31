@@ -191,19 +191,27 @@ $cdir = sys_get_temp_dir() . '/so-tn-crawler-test-' . getmypid() . '/';
 @mkdir($cdir, 0777, true);
 $wipe = function () use ($cdir) { foreach (glob($cdir . 'tn_bucket*') ?: [] as $f) @unlink($f); };
 $wipe();
-tbCheck('a crawler may take a token when the bucket is full, and leaves the rest for visitors', tnBudgetWait('search', 1.0, $cdir, 0.0) === true && tnBudgetWait('visitor', 1.0, $cdir, 0.0) === true);
+// Token counts are checked on a fixed clock ($at): on a slow CI runner the file I/O between two tries refilled a token at 10 a second and
+// the counts came out one too high (three PRs in a row). The wait-timing checks further down keep the real clock.
+$at = 1800000000.0;
+tbCheck('a crawler may take a token when the bucket is full, and leaves the rest for visitors', tnBudgetWait('search', 1.0, $cdir, 0.0, $at) === true && tnBudgetWait('visitor', 1.0, $cdir, 0.0, $at) === true);
 $wipe();
-$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('search', 1.0, $cdir, 0.0)) $ok++; }
+$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('search', 1.0, $cdir, 0.0, $at)) $ok++; }
 tbCheck('thirty crawler tries in one instant take one token and never wait (the cron rule on the shared bucket)', $ok === 1);
 $cls = json_decode((string) file_get_contents($cdir . 'tn_bucket_search.json'), true);
 tbCheck('a crawler that was refused by the shared bucket gets its class token back (3 of the burst of 4 are left, not 0)', is_array($cls) && $cls['tokens'] >= 2.9);
-tbCheck('...and a visitor still gets the token the crawlers left', tnBudgetWait('visitor', 1.0, $cdir, 0.0) === true);
+tbCheck('...and a visitor still gets the token the crawlers left', tnBudgetWait('visitor', 1.0, $cdir, 0.0, $at) === true);
 $wipe();
-$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('search', 10.0, $cdir, 0.0)) $ok++; }
+$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('search', 10.0, $cdir, 0.0, $at)) $ok++; }
 tbCheck('at 10 calls a second search crawlers stop at their own bucket (7 = burst of 2 x 3.5 a second), not at the shared one', $ok === 7);
-$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('tool', 10.0, $cdir, 0.0)) $ok++; }
+$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('tool', 10.0, $cdir, 0.0, $at)) $ok++; }
 tbCheck('SEO tools and AI crawlers have their own, smaller bucket (burst 4) that search engines do not use up; here the shared bucket stops them at 3', $ok === 3);
-tbCheck('visitors still have the rest of the shared bucket after the crawlers took theirs', tnBudgetWait('visitor', 10.0, $cdir, 0.0) === true && tnBudgetWait('visitor', 10.0, $cdir, 0.0) === true);
+tbCheck('visitors still have the rest of the shared bucket after the crawlers took theirs', tnBudgetWait('visitor', 10.0, $cdir, 0.0, $at) === true && tnBudgetWait('visitor', 10.0, $cdir, 0.0, $at) === true);
+$wipe();
+// The same counts a second later on the fixed clock: the shared bucket refilled 10 tokens, the tool bucket its 1 a second, so the count is exact, not a race.
+$ok = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('tool', 10.0, $cdir, 0.0, $at)) $ok++; }
+$ok2 = 0; for ($i = 0; $i < 30; $i++) { if (tnBudgetWait('tool', 10.0, $cdir, 0.0, $at + 1.0)) $ok2++; }
+tbCheck('on a fixed clock the counts are exact: 4 tool calls at once (its burst), then 1 more a second later (its 1 a second share)', $ok === 4 && $ok2 === 1);
 $wipe();
 putenv('TN_BOT_SHARE=0'); tbCheck('a share of 0 gives that class no live calls', tnBudgetWait('search', 1.0, $cdir, 0.0) === false); putenv('TN_BOT_SHARE');
 tbCheck('with the budget off (rate 0) crawlers are not held back either', tnBudgetWait('search', 0.0, $cdir, 0.0) === true && tnBudgetWait('tool', 0.0, $cdir, 0.0) === true);
