@@ -18,6 +18,6 @@ $page = (string) file_get_contents($root . '/image-credits.php');
 phCheck('the credits page makes no blanket "open licences" claim', stripos($page, 'open licen') === false);
 phCheck('it says the rows are as recorded and not independently checked', stripos($page, 'recorded when we stored the picture') !== false && stripos($page, 'have not checked them independently') !== false);
 phCheck('every row still shows its own licence and source', strpos($page, "imageLicenseUrl(\$r['license'])") !== false && strpos($page, "\$r['source_url']") !== false);
-phCheck('it gives a way to report a mistake', strpos($page, 'href="/contact-us"') !== false && is_file($root . '/contact-us.php'));
+phCheck('it gives a way to report a mistake', strpos($page, 'href="/ticket-customer-service"') !== false && is_file($root . '/ticket-customer-service.php'));   // the real page, not the /contact-us 301 alias
 phCheck('the page itself is still noindex', strpos($page, "\$pageRobots = 'noindex, follow'") !== false);
 exit($fail ? 1 : 0);
