@@ -12,9 +12,15 @@ header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store');
 
 $out = ['ok' => true, 'time' => gmdate('c')];
-$stamp = @file_get_contents(__DIR__ . '/../.deployed-commit');
+$stampFile = __DIR__ . '/../.deployed-commit';
+$stamp = @file_get_contents($stampFile);
 $out['commit'] = $stamp !== false ? substr(trim($stamp), 0, 8) : null;
-$out['commitAgeSeconds'] = $stamp !== false ? max(0, time() - (int) @filemtime(__DIR__ . '/../.deployed-commit')) : null;   // null commit = the deploy marker is not in this folder: the deploy job writes somewhere else or has never run
+$out['commitAgeSeconds'] = $stamp !== false ? max(0, time() - (int) @filemtime($stampFile)) : null;
+// Why commit is null, so the cause can be told apart without a shell: 'missing' = the deploy job writes elsewhere, has never finished, or its
+// migration step keeps failing (see deployError); 'unreadable' = the file is there but PHP-FPM may not read it (written 0600 by the cron user).
+$out['commitMarker'] = $stamp !== false ? 'ok' : (is_file($stampFile) ? 'unreadable' : 'missing');
+$deployErr = @file_get_contents(__DIR__ . '/../.deploy-error');   // written by deploy/pull-deploy.sh when db/migrate.php fails; removed on the next good deploy
+$out['deployError'] = $deployErr !== false && trim($deployErr) !== '' ? substr(trim($deployErr), 0, 200) : null;
 
 try {
     $files = glob(__DIR__ . '/../db/migrations/*.sql') ?: [];
