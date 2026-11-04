@@ -29,6 +29,8 @@ It never touches `inc/env.local.php` (the server's own secrets) and never overwr
 
 After that, every merge to `main` reaches beta within about two minutes with no further action. Check `~/deploy/deploy.log`.
 
+**Server paths live in `~/deploy/pull-deploy.conf`** (since 4 Nov 2026; example in `deploy/pull-deploy.conf.example`): `DEPLOY_WEBROOT` is the folder nginx serves, `DEPLOY_WORKDIR` the script's own checkout (never the web root or inside it; the script refuses to run otherwise), `DEPLOY_SSH_KEY` the read-only deploy key so cron never waits on an agent or a prompt. A variable set in the environment wins over the file. `git fetch` is retried three times before the run gives up, and `DEPLOY_REF=<commit>` deploys a chosen commit for an emergency rollback. The migration from the older `github.sh` job is written up in `docs/deploy-migration-github-sh.md`.
+
 **The script updates itself.** Since 31 Oct 2026 each run compares `~/deploy/pull-deploy.sh` with `deploy/pull-deploy.sh` in the checkout and replaces the copy when they differ, so a fix merged to the script runs from the next cron run. A copy installed before that date does not have this and must be refreshed once by hand: `cp /home/seatoutlet-beta/deploy/checkout/deploy/pull-deploy.sh /home/seatoutlet-beta/deploy/pull-deploy.sh && chmod 0755 /home/seatoutlet-beta/deploy/pull-deploy.sh`.
 
 ## Rollback

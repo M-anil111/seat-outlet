@@ -1,0 +1,18 @@
+# Copy to /home/seatoutlet-beta/deploy/pull-deploy.conf (next to the cron copy of pull-deploy.sh). Plain KEY=value, no quotes needed,
+# no secrets. The script sources it on every run. Every line is optional; see the header of pull-deploy.sh for the defaults.
+
+# The directory nginx serves for the site (CloudPanel: "root" in /etc/nginx/sites-enabled/<domain>.conf). The deploy marker,
+# inc/env.local.php and cache/ live here. It must NOT be a git checkout that another job pulls into.
+DEPLOY_WEBROOT=/home/seatoutlet-beta/htdocs/beta.seatoutlet.com/seat-outlet
+
+# The script's own clone of the repository: never the web root, never inside it.
+DEPLOY_WORKDIR=/home/seatoutlet-beta/deploy/checkout
+
+# Read-only GitHub deploy key (docs/beta-runbook.md section 6). With this set, cron never depends on an ssh-agent or a prompt.
+DEPLOY_SSH_KEY=/home/seatoutlet-beta/.ssh/seatoutlet_deploy
+
+# Leave as they are unless the site moves.
+DEPLOY_REPO=git@github.com:M-anil111/seat-outlet.git
+DEPLOY_BRANCH=main
+DEPLOY_MIGRATE=1
+DEPLOY_PHP=php

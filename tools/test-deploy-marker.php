@@ -22,6 +22,17 @@ dmCheck('the marker is still written only after migrations succeed', strpos($sh,
 dmCheck('the cron copy of the script refreshes itself from the checkout', strpos($sh, 'cmp -s "$WORKDIR/deploy/pull-deploy.sh" "$SELF"') !== false && strpos($sh, 'mv -f "$SELF.new" "$SELF"') !== false);
 dmCheck('the self-update happens after the checkout moved and before the code copy', strpos($sh, 'git reset --quiet --hard') < strpos($sh, 'cmp -s "$WORKDIR/deploy/pull-deploy.sh"') && strpos($sh, 'cmp -s "$WORKDIR/deploy/pull-deploy.sh"') < strpos($sh, 'tar --exclude=./.git'));
 dmCheck('the self-update never replaces the checkout\'s own file', strpos($sh, '"$SELF" != "$(readlink -f "$WORKDIR/deploy/pull-deploy.sh")"') !== false);
+// Hardening for the github.sh -> pull-deploy.sh migration (4 Nov 2026).
+dmCheck('deploy refuses a checkout that is the web root or inside it', strpos($sh, 'REFUSED: DEPLOY_WORKDIR') !== false && strpos($sh, 'REFUSED: DEPLOY_WEBROOT') !== false);
+dmCheck('the path guard runs before anything is touched', strpos($sh, 'REFUSED: DEPLOY_WORKDIR') < strpos($sh, 'mkdir -p "$STATE_DIR" "$WEBROOT"'));
+dmCheck('git fetch is retried before giving up', strpos($sh, 'for wait in 0 5 15; do') !== false && strpos($sh, 'git fetch failed three times') !== false);
+dmCheck('a failed fetch ends the run before the web root is touched', strpos($sh, 'git fetch failed three times') < strpos($sh, 'git reset --quiet --hard'));
+dmCheck('cron uses a fixed key without an agent or a prompt when DEPLOY_SSH_KEY is set', strpos($sh, 'GIT_SSH_COMMAND="ssh -i $DEPLOY_SSH_KEY -o IdentitiesOnly=yes -o BatchMode=yes') !== false);
+dmCheck('DEPLOY_REF deploys a chosen commit for an emergency rollback', strpos($sh, 'DEPLOY_REF set: deploying') !== false && strpos($sh, 'git reset --quiet --hard "$NEW"') !== false);
+dmCheck('deletions are computed against the last copied commit as well as the marker', strpos($sh, 'PREV="$(git rev-parse HEAD') !== false && strpos($sh, 'for base in "$OLD" "$PREV"; do') !== false);
+dmCheck('the server config file never overrides the environment', strpos($sh, '[ -z "${!k:-}" ] && export "$k=$v"') !== false);
+dmCheck('the log names the web root it deploys into', strpos($sh, 'into $WEBROOT"') !== false);
+dmCheck('a config example ships with the script', is_file($root . '/deploy/pull-deploy.conf.example') && strpos((string) file_get_contents($root . '/deploy/pull-deploy.conf.example'), 'DEPLOY_WEBROOT=') !== false);
 
 // The marker logic itself, run against real files.
 $dir = sys_get_temp_dir() . '/so-marker-' . getmypid(); @mkdir($dir);
