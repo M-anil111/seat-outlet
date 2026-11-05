@@ -71,5 +71,8 @@ foreach (glob($root . '/ajax/*.php') as $endpoint) {
 }
 
 dateStripCheck('a degraded feed never prints "0 results" as a count', strpos((string) file_get_contents($root . '/inc/listing.php'), "Listings loading") !== false && strpos((string) file_get_contents($root . '/inc/listing.php'), "soApiDegraded()") !== false);
+foreach (['performer.php', 'functions.php', 'inc/listing.php', 'inc/entity-listing.php'] as $pf) {
+    dateStripCheck("$pf no longer prints the loaded-of-total progress bar", strpos((string) file_get_contents($root . '/' . $pf), 'load-progress') === false);
+}
 if ($fail) { echo "$fail failure(s)\n"; exit(1); }
 echo "ok: date strip\n";
