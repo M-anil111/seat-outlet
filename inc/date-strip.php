@@ -67,8 +67,8 @@ function soRenderDateStrip(array $o): void {
             . '<span class="so-date__top">' . $d->format('D') . '</span><span class="so-date__num">' . $d->format('d') . '</span><span class="so-date__sub">' . $d->format('M Y') . '</span></a>';
     }
     $allOn = $when === '';
-    $all = '<a class="so-date so-date--all' . ($allOn ? ' so-date--on' : '') . '" href="' . $h($url('')) . '"' . ($allOn ? ' aria-current="true"' : '') . '>'
-        . '<span class="so-date__top">All</span><span class="so-date__num">' . $cal . '</span><span class="so-date__sub">Dates</span></a>';
+    $all = '<a class="so-date so-date--all' . ($allOn ? ' so-date--on' : '') . '" href="' . $h($url('')) . '"' . ($allOn ? ' aria-current="true"' : '') . ' aria-label="All dates">'
+        . '<span class="so-date__top">&nbsp;</span><span class="so-date__num">All</span><span class="so-date__sub">Dates</span></a>';
     // Any later day: the whole cell is a transparent date field, so one tap opens the native picker. It submits on change;
     // without JavaScript the Go button submits it.
     $pick = '<form class="so-date so-date--pick" method="get" action="' . $h($basePath) . '" data-so-dates-pick>'
