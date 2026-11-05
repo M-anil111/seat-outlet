@@ -64,6 +64,11 @@ dateStripCheck('browser-rendered rows carry data-so-day', strpos($js, "data-so-d
 dateStripCheck('the script filters rows by data-so-day and never fetches on its own', strpos($js, "row.classList.toggle('so-day--off', !!selected && d !== selected)") !== false && strpos((string) file_get_contents($root . '/css/style.css'), '.performer-event-item.so-day--off { display: none !important; }') !== false && strpos($js, "data-so-dates-more") !== false && preg_match('/data-so-dates\][\s\S]*fetch\(/', substr($js, strpos($js, 'Date strip (inc/date-strip.php)'))) === 0);
 dateStripCheck('the picked date submits the form', strpos($js, "pick.submit()") !== false);
 dateStripCheck('every reader of ?when validates it the same way', !preg_match('/isset\(LISTING_WHEN\[\$_GET/', $src . file_get_contents($root . '/inc/discovery-pages.php') . file_get_contents($root . '/inc/holidays.php') . file_get_contents($root . '/search.php')));
+dateStripCheck('the nationwide / near-you feed reads a picked day (it used to drop it)', strpos((string) file_get_contents($root . '/ajax/get-home-feed.php'), "\$when = soWhenParam(soQs('when'));") !== false && strpos((string) file_get_contents($root . '/ajax/get-home-feed.php'), 'isset(LISTING_WHEN[$whenIn])') === false);
+foreach (glob($root . '/ajax/*.php') as $endpoint) {
+    $code = (string) file_get_contents($endpoint);
+    dateStripCheck(basename($endpoint) . ' does not validate ?when with the quick-word list alone', !preg_match('/isset\(LISTING_WHEN\[\$\w+\]\)\s*\?\s*\$\w+\s*:\s*\x27\x27/', $code));
+}
 
 if ($fail) { echo "$fail failure(s)\n"; exit(1); }
 echo "ok: date strip\n";

@@ -51,8 +51,9 @@ if ($kind === 'near') {
     $catPath = $catMap[$cat] ?? '';
     // A single category page (for example /category/basketball-1865) passes its own TicketNetwork category id.
     $catId = soQsInt('catid', 0, 0, 2147483647);
-    $whenIn = soQs('when');
-    $when = isset(LISTING_WHEN[$whenIn]) ? $whenIn : '';
+    // A quick word or a picked day from the date strip (soWhenParam). The old word-only check dropped a picked day here, so the
+    // nationwide list showed events from every date under a caption that said "for those dates".
+    $when = soWhenParam(soQs('when'));
     $page = soQsInt('page', 1, 1, 20);
     $sortIn = soQs('sort', 'distance');
     $nearSort = in_array($sortIn, ['soonest', 'popular', 'price'], true) ? $sortIn : 'distance';

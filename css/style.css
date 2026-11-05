@@ -8093,33 +8093,32 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 .creater { max-width: 100%; }
 .creater > div { flex-wrap: wrap; max-width: 100%; }
 
-/* Date strip (inc/date-strip.php): a row of day pills under the page header on every events list. Scroll arrows reuse .so-subcats__arrow. */
-.so-dates-wrap { position: relative; margin: 10px 0 2px; }
+/* Date strip (inc/date-strip.php): a flat row of days in a white band, as ticketing apps set dates out. The chosen day is filled. */
+.so-dates-wrap { position: relative; margin: 6px 0 16px; background: #fff; border-bottom: 1px solid #e3e5ea; }
 .so-dates-wrap[hidden] { display: none; }
-.so-explore .so-dates-wrap { margin: -8px 0 16px; }   /* under the filter chips of the explore bar, above the near-you block and the list */
-.so-dates-wrap .so-subcats__arrow { top: 50%; transform: translateY(-50%); width: 38px; height: 38px; }
-.so-dates { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; margin: 0; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+.so-explore .so-dates-wrap { margin: 0 0 16px; border-radius: 0; }   /* under the filter chips of the explore bar, above the near-you block and the list */
+.so-dates-wrap .so-subcats__arrow { top: 50%; transform: translateY(-50%); width: 36px; height: 36px; box-shadow: 0 2px 10px rgba(16,24,40,.14); }
+.so-dates { display: flex; gap: 0; overflow-x: auto; padding: 0 2px; margin: 0; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
 .so-dates::-webkit-scrollbar { display: none; }
-.so-date { flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 66px; height: 74px; padding: 6px 10px; border-radius: 14px; border: 1.5px solid #d3d6dd; background: #fff; color: #1f2937; text-decoration: none; line-height: 1.05; cursor: pointer; font: inherit; transition: border-color .15s ease, background .15s ease; }
-.so-date:hover { border-color: #6d28d9; color: #5b21b6; }
-.so-date:focus-visible, .so-date--pick:focus-within { outline: 3px solid #0056d6; outline-offset: 2px; }
-.so-date__top { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
-.so-date__num { font-size: 22px; font-weight: 700; display: inline-flex; align-items: center; min-height: 26px; }
-.so-date__sub { font-size: 12px; font-weight: 600; color: #6b7280; }
-.so-date--today .so-date__sub { color: #b3135b; }
-.so-date--on { background: #6d28d9; border-color: #6d28d9; color: #fff; }
-.so-date--on:hover { color: #fff; background: #5b21b6; }
-.so-date--on .so-date__top, .so-date--on .so-date__sub, .so-date--on.so-date--today .so-date__sub { color: rgba(255,255,255,.88); }
-.so-date--count .so-date__sub { color: #5b21b6; }
-.so-date--on.so-date--count .so-date__sub { color: rgba(255,255,255,.88); }
-.so-date--pick { border-style: dashed; min-width: 86px; padding: 6px 8px; }
-.so-date__input { width: 100%; max-width: 128px; border: 0; background: transparent; color: inherit; font: inherit; font-size: 13px; font-weight: 600; padding: 0; text-align: center; }
-.so-date__input::-webkit-calendar-picker-indicator { cursor: pointer; }
-.so-date__go { border: 0; background: #6d28d9; color: #fff; font-size: 12px; font-weight: 700; border-radius: 8px; padding: 2px 10px; cursor: pointer; }
-.so-dates--js .so-date__go { display: none; }
-.so-date--more { border-style: dashed; color: #5b21b6; }
+.so-date { position: relative; appearance: none; -webkit-appearance: none; border: 0; box-sizing: border-box; opacity: 1; flex: 0 0 calc(100% / 6); min-width: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; margin: 6px 2px; padding: 10px 4px 9px; border-radius: 8px; background: transparent; color: #1f2937; text-decoration: none; line-height: 1.1; cursor: pointer; font: inherit; transition: background .15s ease, color .15s ease; -webkit-tap-highlight-color: transparent; }
+.so-date:hover { background: #f3f0fb; }
+.so-date:focus-visible { outline: 3px solid #0056d6; outline-offset: -3px; }
+.so-date__top { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
+.so-date__num { font-size: 22px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; min-height: 26px; color: #111827; }
+.so-date__sub { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
+.so-date--today .so-date__top { color: #b3135b; }
+.so-date--on, .so-date--on:hover, .so-date--on:focus { background: #6d28d9; color: #fff; opacity: 1; }
+.so-date--on .so-date__top, .so-date--on .so-date__sub, .so-date--on .so-date__num, .so-date--on.so-date--today .so-date__top { color: #fff; }
+.so-date--pick { overflow: hidden; }
+.so-date__input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; border: 0; padding: 0; opacity: 0; cursor: pointer; }
+.so-date__input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
+.so-date__go { position: absolute; right: 4px; bottom: 4px; border: 0; background: #6d28d9; color: #fff; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+.so-date--more .so-date__num { font-size: 22px; color: #5b21b6; }
 .performer-event-item.so-day--off { display: none !important; }   /* the row's own .d-flex is !important too, so [hidden] alone would not hide it */
+@media (min-width: 768px) {
+  .so-date { flex-basis: calc(100% / 10); }
+}
 @media (max-width: 575.98px) {
-  .so-date { min-width: 60px; height: 68px; padding: 5px 8px; }
+  .so-date { min-width: 58px; padding: 9px 2px 8px; }
   .so-date__num { font-size: 20px; }
 }
