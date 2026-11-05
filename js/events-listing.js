@@ -803,13 +803,13 @@ document.addEventListener('click', function (e) {
 
   function pill(day, count, on) {
     var b = document.createElement('button');
-    b.type = 'button'; b.className = 'so-date so-date--count' + (on ? ' so-date--on' : ''); b.setAttribute('data-day', day); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.type = 'button'; b.className = 'so-date' + (on ? ' so-date--on' : ''); b.setAttribute('data-day', day); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.title = count + (count === 1 ? ' event' : ' events');
     var p = day.split('-'), dt = new Date(+p[0], +p[1] - 1, +p[2]);
     var now = new Date(); now.setHours(0, 0, 0, 0);
     var today = dt.getTime() === now.getTime();
     if (today) b.classList.add('so-date--today');
     b.setAttribute('aria-label', DAYS[dt.getDay()] + ', ' + MON[dt.getMonth()] + ' ' + dt.getDate() + (dt.getFullYear() !== now.getFullYear() ? ' ' + dt.getFullYear() : '') + ', ' + count + (count === 1 ? ' event' : ' events'));
-    b.innerHTML = '<span class="so-date__top">' + (today ? 'Today' : DAYS[dt.getDay()]) + '</span><span class="so-date__num">' + ('0' + dt.getDate()).slice(-2) + '</span><span class="so-date__sub">' + MON[dt.getMonth()] + (dt.getFullYear() !== now.getFullYear() ? ' ' + String(dt.getFullYear()).slice(-2) : '') + ' · ' + count + '</span>';
+    b.innerHTML = '<span class="so-date__top">' + (today ? 'Today' : DAYS[dt.getDay()]) + '</span><span class="so-date__num">' + ('0' + dt.getDate()).slice(-2) + '</span><span class="so-date__sub">' + MON[dt.getMonth()] + (dt.getFullYear() !== now.getFullYear() ? ' ' + String(dt.getFullYear()).slice(-2) : '') + '</span>';
     return b;
   }
 
@@ -835,7 +835,7 @@ document.addEventListener('click', function (e) {
     all.type = 'button'; all.className = 'so-date so-date--all' + (allOn ? ' so-date--on' : ''); all.setAttribute('data-day', ''); all.setAttribute('aria-pressed', allOn ? 'true' : 'false');
     var total = rows().length;
     all.setAttribute('aria-label', 'All dates, ' + total + ' events');
-    all.innerHTML = '<span class="so-date__top">All</span><span class="so-date__num"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span><span class="so-date__sub">' + total + (total === 1 ? ' event' : ' events') + '</span>';
+    all.innerHTML = '<span class="so-date__top">All</span><span class="so-date__num"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span><span class="so-date__sub">Dates</span>';
     track.appendChild(all);
     order.forEach(function (d) { track.appendChild(pill(d, counts[d], d === selected)); });
     // More rows on the server: a last pill loads them (it presses the page's own "More events" button).
@@ -843,7 +843,7 @@ document.addEventListener('click', function (e) {
     if (more && !more.classList.contains('d-none')) {
       var mb = document.createElement('button');
       mb.type = 'button'; mb.className = 'so-date so-date--more'; mb.setAttribute('data-so-dates-more', '');
-      mb.innerHTML = '<span class="so-date__top">More</span><span class="so-date__num">+</span><span class="so-date__sub">dates</span>';
+      mb.innerHTML = '<span class="so-date__top">More</span><span class="so-date__num">+</span><span class="so-date__sub">Dates</span>';
       mb.addEventListener('click', function () { track_('date_strip_more', { strip_mode: 'events' }); more.click(); });
       track.appendChild(mb);
     }
