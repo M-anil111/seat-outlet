@@ -8096,6 +8096,7 @@ main p a:not([class]), main .small a:not([class]), main li a:not([class]) { text
 /* Date strip (inc/date-strip.php): a row of day pills under the page header on every events list. Scroll arrows reuse .so-subcats__arrow. */
 .so-dates-wrap { position: relative; margin: 10px 0 2px; }
 .so-dates-wrap[hidden] { display: none; }
+.so-explore .so-dates-wrap { margin: -8px 0 16px; }   /* under the filter chips of the explore bar, above the near-you block and the list */
 .so-dates-wrap .so-subcats__arrow { top: 50%; transform: translateY(-50%); width: 38px; height: 38px; }
 .so-dates { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; margin: 0; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
 .so-dates::-webkit-scrollbar { display: none; }

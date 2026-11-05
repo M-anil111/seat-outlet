@@ -450,8 +450,7 @@ function soRenderListingPage(array $o): void {
 		<div class="tab-section section-performer-content" id="default">
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">
-					<?php soRenderDateStrip(['mode' => 'calendar', 'basePath' => $o['basePath'], 'when' => $o['when'], 'sort' => $o['sort'], 'defaultSort' => $o['defaultSort'], 'max' => (int) $o['max'], 'noun' => strtolower($title)]); ?>
-					<?php renderListingFilters($o['basePath'], $o['when'], $o['sort'], $total, $o['defaultSort'], $o['explore'] + ['max' => (int) $o['max']]); ?>
+					<?php renderListingFilters($o['basePath'], $o['when'], $o['sort'], $total, $o['defaultSort'], $o['explore'] + ['max' => (int) $o['max'], 'dateStripNoun' => strtolower($title)]); ?>
 					<div class="list-category-bg <?php echo soListingH($o['bodyPad']); ?>">
 						<?php soRenderListingBody($o['body'] + ['total' => $total]); ?>
 					</div>
