@@ -99,6 +99,10 @@ $probe = '$r = tnBulkFallback("/catalog/v2/events/", locationListingParams("city
 $setState(['last_full_ok' => (string) (time() - 3600), 'last_full_count' => '90000']);
 brCheck('on and fresh: a listing is answered from the copy', $child('TN_BULK_ENABLED=1', $probe), '9200001,9200003,9200002|3|1');
 brCheck('on but TN_BULK_READ=0: not answered', $child('TN_BULK_ENABLED=1 TN_BULK_READ=0', $probe), 'null');
+// Bulk first (tnRequestRaw): with the read switch on and fresh, a listing request is answered from the copy before any ticket call.
+$bulkFirst = '$r = tnRequestRaw("/catalog/v2/events/", locationListingParams("city/id eq 9200001", 20, 1, "", "soonest"), "GET", 0); echo is_array($r) && !empty($r["_bulk"]) ? implode(",", array_column($r["results"], "id")) . "|" . $r["totalCount"] : "other";';
+brCheck('bulk first: on, fresh and switched to read: the listing comes from the copy', $child('TN_BULK_ENABLED=1 TN_BULK_READ=1', $bulkFirst), '9200001,9200003,9200002|3');
+
 brCheck('off: not answered', $child('TN_BULK_ENABLED=0', $probe), 'null');
 $setState(['last_full_ok' => (string) (time() - 50 * 3600), 'last_full_count' => '90000']);
 brCheck('on but the last full refresh is 50 hours old: not answered', $child('TN_BULK_ENABLED=1', $probe), 'null');

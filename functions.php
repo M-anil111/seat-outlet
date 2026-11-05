@@ -647,6 +647,14 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
         }
     }
 
+    // Bulk first: with the local copy switched on and fresh (TN_BULK_READ=1), a listing is answered from that copy, a database query with
+    // no ticket call, so a visitor never waits on the call budget. What the copy cannot answer (a filter it does not parse, one event)
+    // falls through to the live call below, exactly as before. With the switch off this returns null at once.
+    if ($method === 'GET') {
+        $bulk = tnBulkFallback($endpoint, $params);
+        if ($bulk !== null) return $bulk;
+    }
+
     // Remembered "not found": answer from the short negative cache.
     if ($key !== null && $entry === null) {
         $neg = cache_get($key . '_nf', TN_NEGATIVE_TTL);
