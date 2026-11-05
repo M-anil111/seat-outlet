@@ -386,10 +386,6 @@ function soRenderListingBody(array $o): void {
 		<div id="eventsSection" class="section-artist-content event-row-all"><?php echo soRenderListingRows($events, ['group' => $o['group']]); ?></div>
 		<?php if ($pages > 1) { ?>
 			<div class="load-more-wrapper text-center mt-5 mb-3">
-				<div class="load-progress mx-auto mb-3">
-					<div class="small mb-2">Loaded <strong id="loadedCount"><?php echo $count; ?></strong> out of <strong id="totalCount"><?php echo $total; ?></strong> events</div>
-					<div class="progress progress-thin"><div class="progress-bar" id="progressBar" style="width: <?php echo $percent; ?>%;"></div></div>
-				</div>
 				<p class="so-more-error" id="loadMoreError" role="alert" hidden>Could not load more events. <button type="button" class="so-more-retry" id="loadMoreRetry">Try again</button></p>
 				<button class="btn more-events-btn d-inline-flex align-items-center gap-2" id="loadMoreBtn"
 					data-total="<?php echo $total; ?>"<?php echo $o['type'] !== '' ? ' data-type="' . soListingH($o['type']) . '"' : ''; ?>

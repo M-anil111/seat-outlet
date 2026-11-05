@@ -321,14 +321,6 @@ soPageHero([
 							</div>
 							<?php if ($total_pages > 1) { ?>
 								<div class="load-more-wrapper text-center mt-5 mb-3">
-									<div class="load-progress mx-auto mb-3">
-										<div class="small mb-2">
-											Loaded <strong id="loadedCount"><?php echo $perPage; ?></strong> out of <strong id="totalCount"><?php echo $total_count; ?></strong> events
-										</div>
-										<div class="progress progress-thin">
-											<div class="progress-bar" id="progressBar" style="width: <?php echo $percent; ?>%;"></div>
-										</div>
-									</div>
 									<button
 										class="btn more-events-btn d-inline-flex align-items-center gap-2"
 										id="loadMoreBtn"
