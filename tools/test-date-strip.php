@@ -70,5 +70,6 @@ foreach (glob($root . '/ajax/*.php') as $endpoint) {
     dateStripCheck(basename($endpoint) . ' does not validate ?when with the quick-word list alone', !preg_match('/isset\(LISTING_WHEN\[\$\w+\]\)\s*\?\s*\$\w+\s*:\s*\x27\x27/', $code));
 }
 
+dateStripCheck('a degraded feed never prints "0 results" as a count', strpos((string) file_get_contents($root . '/inc/listing.php'), "Listings loading") !== false && strpos((string) file_get_contents($root . '/inc/listing.php'), "soApiDegraded()") !== false);
 if ($fail) { echo "$fail failure(s)\n"; exit(1); }
 echo "ok: date strip\n";

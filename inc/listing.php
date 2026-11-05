@@ -442,7 +442,9 @@ function soRenderListingPage(array $o): void {
         'title'      => $title,
         'tag'        => $tag,
         'lead'       => (string) ($o['lead_text'] ?? ''),
-        'stats'      => ['<span id="results_count">' . number_format($total) . ' ' . ($total === 1 ? 'result' : 'results') . '</span>'],
+        // An empty count while the feed is degraded is not a count: the feed refused the request (budget, throttling or an outage),
+        // so the header says so instead of "0 results" over a list that may hold events.
+        'stats'      => [$total === 0 && soApiDegraded() ? '<span id="results_count">Listings loading</span>' : '<span id="results_count">' . number_format($total) . ' ' . ($total === 1 ? 'result' : 'results') . '</span>'],
     ]);
     ?>
 <section>
