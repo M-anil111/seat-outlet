@@ -195,7 +195,7 @@ function soRenderListingRow(array $event): string {
     $time = (string) ($event['date']['text']['time'] ?? '');
 
     ob_start(); ?>
-<div class="d-flex align-items-center justify-content-between performer-event-item">
+<div class="d-flex align-items-center justify-content-between performer-event-item"<?php echo $ts ? ' data-so-day="' . date('Y-m-d', $ts) . '"' : ''; ?>>
 	<div class="date-box text-center me-3">
 		<div class="month"><?php echo $ts ? strtoupper(date('M', $ts)) : ''; ?></div>
 		<div class="day"><?php echo $ts ? date('d', $ts) : ''; ?></div>
@@ -319,7 +319,7 @@ function soRenderListingEmpty(array $o): string {
             }
         } catch (Throwable $ex) { $next = null; }
     }
-    $whenText = $o['when'] !== '' && isset(LISTING_WHEN[$o['when']]) ? strtolower(LISTING_WHEN[$o['when']]) : '';
+    $whenText = $o['when'] !== '' ? (isset(LISTING_WHEN[$o['when']]) ? strtolower(LISTING_WHEN[$o['when']]) : 'on ' . soWhenLabel($o['when'])) : '';
     if ($o['when'] === 'today') $whenText = 'today';
     $msg = $filtered
         ? 'No ' . $o['noun'] . ' match your filters' . ($whenText !== '' ? ' for ' . $whenText : '') . ($o['max'] > 0 ? ' under $' . (int) $o['max'] : '') . '.'
@@ -450,6 +450,7 @@ function soRenderListingPage(array $o): void {
 		<div class="tab-section section-performer-content" id="default">
 			<div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
 				<div class="col-sm-12 col-md-8 left-bar">
+					<?php soRenderDateStrip(['mode' => 'calendar', 'basePath' => $o['basePath'], 'when' => $o['when'], 'sort' => $o['sort'], 'defaultSort' => $o['defaultSort'], 'max' => (int) $o['max'], 'noun' => strtolower($title)]); ?>
 					<?php renderListingFilters($o['basePath'], $o['when'], $o['sort'], $total, $o['defaultSort'], $o['explore'] + ['max' => (int) $o['max']]); ?>
 					<div class="list-category-bg <?php echo soListingH($o['bodyPad']); ?>">
 						<?php soRenderListingBody($o['body'] + ['total' => $total]); ?>

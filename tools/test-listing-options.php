@@ -10,11 +10,11 @@ require_once __DIR__ . '/../inc/listing-filter.php';
 $root = dirname(__DIR__);
 $src = file_get_contents($root . '/functions.php');
 $code = '';
-foreach (['LISTING_WHEN', 'LISTING_SORT'] as $c) {
+foreach (['LISTING_WHEN', 'LISTING_SORT', 'SO_WHEN_DAY_MAX_DAYS'] as $c) {
     if (!preg_match('/^const ' . $c . ' = .*?;$/m', $src, $m)) { fwrite(STDERR, "FAIL: $c not found\n"); exit(1); }
     $code .= $m[0] . "\n";
 }
-foreach (['soEventHorizon', 'listingDateRange', 'listingSortParams', 'locationListingParams'] as $f) {
+foreach (['soEventHorizon', 'listingDateRange', 'listingSortParams', 'locationListingParams', 'soWhenParam', 'soWhenLabel'] as $f) {
     // a one-line function (soEventHorizon) ends on its own line; a block function ends at the first "}" in column 0
     if (!preg_match('/^function ' . $f . '\(.*\}\s*$/m', $src, $m) && !preg_match('/^function ' . $f . '\(.*?\n}\n/ms', $src, $m)) { fwrite(STDERR, "FAIL: $f not found\n"); exit(1); }
     $code .= $m[0] . "\n";
@@ -37,6 +37,21 @@ foreach (['weekend' => 7, 'week' => 8, 'month' => 31] as $when => $maxDays) {
     loCheck("$when: a forward range of at most $maxDays days", $ok);
 }
 loCheck('the horizon is three years out (date-TBA events are parked decades out)', soEventHorizon() === date('Y-m-d', strtotime('+3 years')));
+
+// 1b. A single day from the date strip (inc/date-strip.php): accepted only as a real, forward YYYY-MM-DD inside the window
+$in10 = date('Y-m-d', strtotime('+10 days'));
+loCheck('a day in the window is a one-day range', listingDateRange($in10) === [$in10, $in10] && soWhenParam($in10) === $in10);
+loCheck('today is accepted as a day', soWhenParam($today) === $today);
+loCheck('every quick filter word still passes', array_keys(LISTING_WHEN) === array_values(array_map('soWhenParam', array_keys(LISTING_WHEN))));
+loCheck('yesterday is refused', soWhenParam(date('Y-m-d', strtotime('-1 day'))) === '');
+loCheck('a day past the window is refused', soWhenParam(date('Y-m-d', strtotime('+' . (SO_WHEN_DAY_MAX_DAYS + 1) . ' days'))) === '');
+loCheck('a day inside the window at its edge is accepted', soWhenParam(date('Y-m-d', strtotime('+' . SO_WHEN_DAY_MAX_DAYS . ' days'))) !== '');
+loCheck('an impossible date is refused', soWhenParam(date('Y') . '-02-30') === '' && soWhenParam('2026-13-01') === '');
+loCheck('a filter injection is refused', soWhenParam("2026-11-08' or 1 eq 1") === '' && soWhenParam('today; drop') === '' && soWhenParam(['x']) === '');
+loCheck('an empty value falls back to the default', soWhenParam('', 'weekend') === 'weekend' && soWhenParam(null) === '');
+loCheck('labels: word, day, none', soWhenLabel('weekend') === 'This weekend' && soWhenLabel($in10) === date('D, M j', strtotime($in10)) && soWhenLabel('') === 'All dates');
+$pd = locationListingParams("city/id eq 1", 20, 1, $in10, 'soonest', 0);
+loCheck('a picked day builds a one-day filter the load-more allowlist accepts', strpos($pd['filter'], "date/date ge $in10 and date/date le $in10") !== false && soLoadMoreFilterOk($pd['filter']));
 
 // 2. Every option combination builds a filter with a date range and the ticket flag, the right sort, the price cap when asked,
 //    and a filter the load-more allowlist accepts

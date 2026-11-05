@@ -233,6 +233,7 @@ soPageHero([
 							<div id="location-no-results" class="text-center no-location"></div>
 						</div>
 						<?php if (!empty($events)) { ?>
+							<?php if (!$weekendGroups) { soRenderDateStrip(['mode' => 'events', 'noun' => $performer['text']['name'] ?? 'this artist']); } ?>
 							<?php if ($weekendGroups) { ?>
 								<div class="so-weekends" data-so-weekends role="group" aria-label="Choose a weekend">
 									<?php foreach ($weekendGroups as $wi => $wg) { ?>
@@ -263,7 +264,7 @@ soPageHero([
 									$citySlug = soSlug('city', $city, $event['city']['id'] ?? 0);
 									$venueSlug = soVenueSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'] ?? 0, $city);
 								?>
-									<div class="d-flex align-items-center justify-content-between performer-event-item"<?php echo isset($weekendOf[(int) ($event['id'] ?? 0)]) ? ' data-wk="' . (int) $weekendOf[(int) $event['id']] . '"' : ''; ?>>
+									<div class="d-flex align-items-center justify-content-between performer-event-item"<?php echo isset($weekendOf[(int) ($event['id'] ?? 0)]) ? ' data-wk="' . (int) $weekendOf[(int) $event['id']] . '"' : ''; ?><?php echo $timestamp ? ' data-so-day="' . date('Y-m-d', $timestamp) . '"' : ''; ?>>
 										<div class="date-box text-center me-3">
 											<div class="month">
 												<?php echo strtoupper(date('M', $timestamp)); ?>

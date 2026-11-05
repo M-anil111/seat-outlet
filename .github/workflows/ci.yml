@@ -99,6 +99,8 @@ jobs:
         run: php tools/test-listing-filter.php
       - name: Every date, price and sort option builds a valid listing request
         run: php tools/test-listing-options.php
+      - name: Date strip renders on every events list and filters without extra feed calls
+        run: php tools/test-date-strip.php
       - name: Dead performer links
         run: php tools/test-dead-performers.php
       - name: Wrong-city venue facts and page numbers in titles

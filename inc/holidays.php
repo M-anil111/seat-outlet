@@ -187,7 +187,7 @@ function renderCityHolidayPage(string $key = ''): void {
     $prefix    = $key . '-in';
     soRedirectToCanonicalSlug($prefix, $slug, $canonSlug);
 
-    $when = isset($_GET['when']) && isset(LISTING_WHEN[$_GET['when']]) ? $_GET['when'] : '';
+    $when = soWhenParam($_GET['when'] ?? '');
     $sort = isset($_GET['sort']) && isset(LISTING_SORT[$_GET['sort']]) ? $_GET['sort'] : 'popular';
     $isFiltered = ($when !== '' || $sort !== 'popular');
     $perPage = 20;

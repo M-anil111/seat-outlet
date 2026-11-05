@@ -185,6 +185,7 @@ function soRenderEntityListing(array $c): void {
                             </div>
                         </div>
                     </div>
+                    <?php soRenderDateStrip(['mode' => 'calendar', 'basePath' => $c['path'], 'when' => $c['when'], 'sort' => $c['sort'], 'defaultSort' => $c['defaultSort'], 'noun' => $kind === 'venue' ? 'events at ' . $name : 'events in ' . $name]); ?>
                     <?php renderListingFilters($c['path'], $c['when'], $c['sort'], $total, $c['defaultSort']); ?>
                     <div class="list-category-bg py-4">
                         <?php if (!empty($events)) { ?>
