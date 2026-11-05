@@ -71,7 +71,7 @@ if (
 |--------------------------------------------------------------------------
 */
 const SEARCH_SORT = ['' => 'Best match', 'soonest' => 'Soonest', 'price' => 'Lowest price'];
-$searchWhen = isset($_GET['when']) && isset(LISTING_WHEN[$_GET['when']]) ? $_GET['when'] : '';
+$searchWhen = soWhenParam($_GET['when'] ?? '');
 $searchSort = isset($_GET['sort']) && isset(SEARCH_SORT[$_GET['sort']]) ? $_GET['sort'] : '';
 $searchMax  = soListingMaxPrice();
 

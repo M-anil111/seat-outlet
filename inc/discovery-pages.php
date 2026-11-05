@@ -37,7 +37,7 @@ function renderCityDiscoveryPage(string $key): void {
     soRedirectToCanonicalSlug($key, $slug, $canonSlug);
 
     // The page's own window and order are its defaults; a visitor's own filter makes it a filtered view (noindex, canonical to the page).
-    $when = isset($_GET['when']) && isset(LISTING_WHEN[$_GET['when']]) ? $_GET['when'] : $cfg['when'];
+    $when = soWhenParam($_GET['when'] ?? '', $cfg['when']);
     $sort = isset($_GET['sort']) && isset(LISTING_SORT[$_GET['sort']]) ? $_GET['sort'] : $cfg['sort'];
     $isFiltered = ($when !== $cfg['when'] || $sort !== $cfg['sort']);
     $maxPrice = soListingMaxPrice();

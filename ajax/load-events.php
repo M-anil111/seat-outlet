@@ -34,7 +34,7 @@ $params = [
 $filters = [];
 $today = date('Y-m-d');
 // A quick "when" chip (today, weekend, 7 days, 30 days) becomes a date range here, so the browser only sends a word.
-if (($startDate === '' || $endDate === '') && isset(LISTING_WHEN[$whenIn]) && ($whenRange = listingDateRange($whenIn))) {
+if (($startDate === '' || $endDate === '') && soWhenParam($whenIn) !== '' && ($whenRange = listingDateRange(soWhenParam($whenIn)))) {
     [$startDate, $endDate] = $whenRange;
 }
 if ($startDate !== '' && $endDate !== '') {

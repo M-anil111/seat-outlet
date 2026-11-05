@@ -228,7 +228,7 @@ function soRenderEventRow(array $event, array $opts = []): void {
     }
     $hasPrice = eventFromPrice($event) !== '';
     ?>
-    <div class="d-flex align-items-center justify-content-between performer-event-item">
+    <div class="d-flex align-items-center justify-content-between performer-event-item"<?php echo $ts ? ' data-so-day="' . date('Y-m-d', $ts) . '"' : ''; ?>>
         <div class="date-box text-center me-3">
             <div class="month"><?php echo $ts ? $h(strtoupper(date('M', $ts))) : ''; ?></div>
             <div class="day"><?php echo $ts ? $h(date('d', $ts)) : ''; ?></div>

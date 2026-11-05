@@ -582,8 +582,9 @@ function renderEvent(event) {
     const priceTag = buildPriceTag(event);
     const inStock = priceTag.indexOf('event-price-tag--none') === -1;
     const evName = escHtml(event.text.name), evVenue = escHtml(event.venue.text.name), evCityName = escHtml(cityName);
+    const soDay = isNaN(evtdate) ? '' : evtdate.getFullYear() + '-' + ('0' + (evtdate.getMonth() + 1)).slice(-2) + '-' + ('0' + evtdate.getDate()).slice(-2);
     return `
-    <div class="d-flex align-items-center justify-content-between performer-event-item">
+    <div class="d-flex align-items-center justify-content-between performer-event-item"${soDay ? ' data-so-day="' + soDay + '"' : ''}>
         <div class="date-box text-center me-3">
             <div class="month">${emonth.toUpperCase()}</div>
             <div class="day">${edate}</div>
@@ -745,4 +746,119 @@ document.addEventListener('click', function (e) {
   });
   document.addEventListener('click', function (e) { all.forEach(function (d) { if (d.open && !d.contains(e.target)) d.open = false; }); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') all.forEach(function (d) { d.open = false; }); });
+})();
+
+
+/* Date strip (inc/date-strip.php). Calendar mode: the date field submits as soon as a day is picked, and the chosen pill scrolls
+   into view. Events mode (artist pages): the pills are built here from the rows' data-so-day, each with its count; a pill hides
+   every row on another day; rows that "More events" adds extend the strip. Without JavaScript the events-mode shell stays hidden. */
+(function () {
+  document.querySelectorAll('[data-so-dates]').forEach(setupStrip);
+  function setupStrip(wrap) {
+  var track = wrap.querySelector('[data-so-subs-track]');
+  if (!track) return;
+  track.classList.add('so-dates--js');
+  function track_(name, data) { if (window.soTrack) window.soTrack(name, data); }
+  function reveal(el) { if (el && el.scrollIntoView) { try { el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' }); } catch (e) { /* older browsers */ } } }
+
+  if (wrap.getAttribute('data-so-dates') === 'calendar') {
+    var pick = wrap.querySelector('[data-so-dates-pick]');
+    if (pick) {
+      var input = pick.querySelector('input[type=date]');
+      if (input) input.addEventListener('change', function () { if (input.value) { track_('date_strip_pick', { strip_mode: 'calendar', strip_day: input.value }); pick.submit(); } });
+    }
+    wrap.querySelectorAll('a.so-date').forEach(function (a) {
+      a.addEventListener('click', function () { track_('date_strip_select', { strip_mode: 'calendar', strip_day: a.classList.contains('so-date--all') ? 'all' : (a.getAttribute('aria-label') || '') }); });
+    });
+    reveal(wrap.querySelector('.so-date--on'));
+    return;
+  }
+
+  var list = document.getElementById('eventsSection');
+  if (!list) return;
+  var MONTHS = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
+  var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var selected = '';
+  var m = /(?:^|[#&])day=(\d{4}-\d{2}-\d{2})/.exec(location.hash || '');
+  if (m) selected = m[1];
+
+  // The day a row is on: the server's data-so-day, or (older markup) the month and day printed in its date box.
+  function dayOf(row) {
+    var d = row.getAttribute('data-so-day');
+    if (d) return d;
+    var box = row.querySelector('.date-box'); if (!box) return '';
+    var months = box.querySelectorAll('.month'), dayEl = box.querySelector('.day');
+    if (!months.length || !dayEl) return '';
+    var mon = MONTHS[months[0].textContent.trim().toUpperCase().slice(0, 3)], day = parseInt(dayEl.textContent, 10);
+    if (mon === undefined || isNaN(day)) return '';
+    var now = new Date(); now.setHours(0, 0, 0, 0);
+    var year = months.length > 1 ? parseInt(months[1].textContent, 10) : now.getFullYear();
+    var dt = new Date(year, mon, day);
+    if (months.length < 2 && dt < now) dt = new Date(year + 1, mon, day);
+    d = dt.getFullYear() + '-' + ('0' + (dt.getMonth() + 1)).slice(-2) + '-' + ('0' + dt.getDate()).slice(-2);
+    row.setAttribute('data-so-day', d);
+    return d;
+  }
+  function rows() { return Array.prototype.slice.call(list.querySelectorAll('.performer-event-item')); }
+
+  function pill(day, count, on) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'so-date so-date--count' + (on ? ' so-date--on' : ''); b.setAttribute('data-day', day); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var p = day.split('-'), dt = new Date(+p[0], +p[1] - 1, +p[2]);
+    var now = new Date(); now.setHours(0, 0, 0, 0);
+    var today = dt.getTime() === now.getTime();
+    if (today) b.classList.add('so-date--today');
+    b.setAttribute('aria-label', DAYS[dt.getDay()] + ', ' + MON[dt.getMonth()] + ' ' + dt.getDate() + (dt.getFullYear() !== now.getFullYear() ? ' ' + dt.getFullYear() : '') + ', ' + count + (count === 1 ? ' event' : ' events'));
+    b.innerHTML = '<span class="so-date__top">' + (today ? 'Today' : DAYS[dt.getDay()]) + '</span><span class="so-date__num">' + ('0' + dt.getDate()).slice(-2) + '</span><span class="so-date__sub">' + MON[dt.getMonth()] + (dt.getFullYear() !== now.getFullYear() ? ' ' + String(dt.getFullYear()).slice(-2) : '') + ' · ' + count + '</span>';
+    return b;
+  }
+
+  function apply() {
+    rows().forEach(function (row) { var d = dayOf(row); row.classList.toggle('so-day--off', !!selected && d !== selected); });
+    track.querySelectorAll('[data-day]').forEach(function (b) {
+      var on = (b.getAttribute('data-day') || '') === selected;
+      b.classList.toggle('so-date--on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var h = selected ? '#day=' + selected : (location.pathname + location.search);
+    try { history.replaceState(null, '', h); } catch (e) { /* file: or sandboxed */ }
+  }
+
+  function build() {
+    var counts = {}, order = [];
+    rows().forEach(function (row) { var d = dayOf(row); if (!d) return; if (!counts[d]) { counts[d] = 0; order.push(d); } counts[d]++; });
+    order.sort();
+    if (selected && !counts[selected]) selected = '';
+    track.innerHTML = '';
+    if (order.length < 2) { wrap.hidden = true; apply(); return; }   // one day only: nothing to pick
+    var allOn = selected === '';
+    var all = document.createElement('button');
+    all.type = 'button'; all.className = 'so-date so-date--all' + (allOn ? ' so-date--on' : ''); all.setAttribute('data-day', ''); all.setAttribute('aria-pressed', allOn ? 'true' : 'false');
+    var total = rows().length;
+    all.setAttribute('aria-label', 'All dates, ' + total + ' events');
+    all.innerHTML = '<span class="so-date__top">All</span><span class="so-date__num"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span><span class="so-date__sub">' + total + (total === 1 ? ' event' : ' events') + '</span>';
+    track.appendChild(all);
+    order.forEach(function (d) { track.appendChild(pill(d, counts[d], d === selected)); });
+    // More rows on the server: a last pill loads them (it presses the page's own "More events" button).
+    var more = document.getElementById('loadMoreBtn');
+    if (more && !more.classList.contains('d-none')) {
+      var mb = document.createElement('button');
+      mb.type = 'button'; mb.className = 'so-date so-date--more'; mb.setAttribute('data-so-dates-more', '');
+      mb.innerHTML = '<span class="so-date__top">More</span><span class="so-date__num">+</span><span class="so-date__sub">dates</span>';
+      mb.addEventListener('click', function () { track_('date_strip_more', { strip_mode: 'events' }); more.click(); });
+      track.appendChild(mb);
+    }
+    wrap.hidden = false;
+    apply();
+    reveal(track.querySelector('.so-date--on'));
+  }
+
+  track.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-day]'); if (!b) return;
+    selected = b.getAttribute('data-day') || '';
+    track_('date_strip_select', { strip_mode: 'events', strip_day: selected || 'all' });
+    apply();
+  });
+  build();
+  if (window.MutationObserver) new MutationObserver(function () { build(); }).observe(list, { childList: true });
+  }
 })();

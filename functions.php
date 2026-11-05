@@ -2032,10 +2032,40 @@ function listingDateRange($when) {
         case 'month':
             return [$today->format('Y-m-d'), $today->modify('+30 days')->format('Y-m-d')];
     }
+    // One day, picked on the date strip (inc/date-strip.php): the value is already validated by soWhenParam().
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $when)) return [$when, $when];
     return null;
 }
 
 const LISTING_WHEN = ['today' => 'Today', 'weekend' => 'This weekend', 'week' => 'Next 7 days', 'month' => 'Next 30 days'];
+/** How far ahead a single day may be picked on the date strip (listings stop at soEventHorizon() anyway). */
+const SO_WHEN_DAY_MAX_DAYS = 400;
+
+/**
+ * The "when" value a request may carry: a quick-filter word (LISTING_WHEN) or one day as YYYY-MM-DD between today and
+ * SO_WHEN_DAY_MAX_DAYS ahead (the date strip). Anything else, including a past or malformed day, is $default.
+ */
+function soWhenParam($in, string $default = ''): string {
+    $in = is_string($in) ? trim($in) : '';
+    if ($in === '') return $default;
+    if (isset(LISTING_WHEN[$in])) return $in;
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $in)) {
+        $d = DateTimeImmutable::createFromFormat('!Y-m-d', $in);
+        if ($d && $d->format('Y-m-d') === $in) {
+            $today = new DateTimeImmutable('today');
+            if ($d >= $today && $d <= $today->modify('+' . SO_WHEN_DAY_MAX_DAYS . ' days')) return $in;
+        }
+    }
+    return $default;
+}
+
+/** The chip text for a "when" value: a quick-filter label, a picked day as "Sat, Nov 8", or "All dates". */
+function soWhenLabel(string $when): string {
+    if ($when === '') return 'All dates';
+    if (isset(LISTING_WHEN[$when])) return LISTING_WHEN[$when];
+    $ts = preg_match('/^\d{4}-\d{2}-\d{2}$/', $when) ? strtotime($when) : false;
+    return $ts ? date('D, M j', $ts) : 'All dates';
+}
 const LISTING_SORT = ['popular' => 'Best sellers', 'soonest' => 'Soonest', 'price' => 'Lowest price'];
 
 /** Sort params for a listing sort key (verified sort keys). */
@@ -2081,7 +2111,7 @@ function getCategoryListingEvents($categoryPath = '', $perPage = 20, $page = 1, 
  * canonical to the base page (see listingRequestState()).
  */
 function listingRequestState($defaultSort = 'popular') {
-    $when = isset($_GET['when']) && isset(LISTING_WHEN[$_GET['when']]) ? $_GET['when'] : '';
+    $when = soWhenParam($_GET['when'] ?? '');
     $sort = isset($_GET['sort']) && isset(LISTING_SORT[$_GET['sort']]) ? $_GET['sort'] : $defaultSort;
     return [$when, $sort, ($when !== '' || $sort !== $defaultSort)];
 }
@@ -2223,7 +2253,7 @@ function renderExploreBar($basePath, array $opts = []) {
             $icDist = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>';
             $icSort = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>';
             $icPrice = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M16 7.5c0-1.7-1.8-3-4-3s-4 1.1-4 3 1.8 2.6 4 3.2 4 1.3 4 3.2-1.8 3-4 3-4-1.3-4-3"/></svg>';
-            $dd('when', $icCal, 'Dates', ['' => 'All dates'] + LISTING_WHEN, $when);
+            $dd('when', $icCal, 'Dates', ['' => 'All dates'] + LISTING_WHEN + ($when !== '' && !isset(LISTING_WHEN[$when]) ? [$when => soWhenLabel($when)] : []), $when);
             $dd('radius', $icDist, 'Distance', ['0' => 'Any distance', '25' => 'Within 25 miles', '50' => 'Within 50 miles', '100' => 'Within 100 miles', '250' => 'Within 250 miles'], (string) $radius);
             $dd('max', $icPrice, 'Price', ['0' => 'Any price'] + array_map('strval', LISTING_PRICE), (string) $max);
             $dd('sort', $icSort, 'Sort', $nearSorts, $sort);
@@ -2248,7 +2278,7 @@ function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'p
         return htmlspecialchars($basePath . ($q ? '?' . http_build_query($q) : ''), ENT_QUOTES, 'UTF-8');
     };
     $explored = renderExploreBar($basePath, $explore + ['when' => $when]);
-    $whenLabel = $when !== '' ? LISTING_WHEN[$when] : 'All dates';
+    $whenLabel = soWhenLabel($when);
     $sortLabel = LISTING_SORT[$sort] ?? 'Best sellers';
     // With the explore bar present its chips are the one set of filters (they also drive this list); the plain links below stay
     // as the no-JavaScript fallback.
@@ -2281,7 +2311,7 @@ function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'p
             </div>
         </details>
         <?php if (!$explored && (int) $total === 0 && $when !== '') { ?>
-            <p class="listing-filter-empty">No events match <strong><?php echo htmlspecialchars(strtolower(LISTING_WHEN[$when]), ENT_QUOTES, 'UTF-8'); ?></strong>. <button type="button" class="btn btn-link p-0 align-baseline" data-go="<?php echo $url('', $sort); ?>">Show all dates</button>.</p>
+            <p class="listing-filter-empty">No events match <strong><?php echo htmlspecialchars(isset(LISTING_WHEN[$when]) ? strtolower(LISTING_WHEN[$when]) : soWhenLabel($when), ENT_QUOTES, 'UTF-8'); ?></strong>. <button type="button" class="btn btn-link p-0 align-baseline" data-go="<?php echo $url('', $sort); ?>">Show all dates</button>.</p>
         <?php } ?>
     </div>
     <?php
@@ -5596,7 +5626,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                     <div class="col-sm-12 col-md-8 left-bar">
                         <div class="list-category-bg py-4">
                             <h2 class="so-heading fw-bold fs-4 mb-3 text-black">Buy <?php echo htmlspecialchars("$soTix $soPrep $locationLabel", ENT_QUOTES, 'UTF-8'); ?></h2>
-                            <?php if (!empty($events)) { ?>
+                            <?php if (!empty($events)) { soRenderDateStrip(['mode' => 'events', 'noun' => $artistName . ' in ' . $locationLabel]); ?>
                                 <div id="eventsSection" class="section-artist-content event-row-all">
                                     <?php foreach ($events as $event) {
                                         $eventDateRaw = $event['date']['date'] ?? '';
@@ -5606,7 +5636,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                         $evtCitySlug  = !empty($event['city']['id']) ? soSlug('city', $evtCityLabel, $event['city']['id']) : null;
                                         $evtVenueSlug = !empty($event['venue']['id']) ? soVenueSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'], $evtCityLabel) : null;
                                     ?>
-                                        <div class="d-flex align-items-center justify-content-between performer-event-item">
+                                        <div class="d-flex align-items-center justify-content-between performer-event-item"<?php echo $timestamp ? ' data-so-day="' . date('Y-m-d', $timestamp) . '"' : ''; ?>>
                                             <div class="date-box text-center me-3">
                                                 <div class="month"><?php echo $timestamp ? htmlspecialchars(strtoupper(date('M', $timestamp)), ENT_QUOTES, 'UTF-8') : ''; ?></div>
                                                 <div class="day"><?php echo $timestamp ? htmlspecialchars(date('d', $timestamp), ENT_QUOTES, 'UTF-8') : ''; ?></div>
@@ -5908,7 +5938,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                 <div class="row mt-3 gap-5 gap-md-2 gap-lg-4 gap-xl-5 gap-xxl-5">
                     <div class="col-sm-12 col-md-8 left-bar">
                         <div class="list-category-bg py-4">
-                            <?php if (!empty($events)) { ?>
+                            <?php if (!empty($events)) { soRenderDateStrip(['mode' => 'events', 'noun' => $categoryLabel . ' in ' . $locationLabel]); ?>
                                 <div id="eventsSection" class="section-artist-content event-row-all">
                                     <?php foreach ($events as $event) {
                                         $eventDateRaw = $event['date']['date'] ?? '';
@@ -5918,7 +5948,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                         $eventCitySlug  = soSlug('city', $eventCityLabel, $event['city']['id'] ?? 0);
                                         $eventVenueSlug = soVenueSlug($event['venue']['text']['name'] ?? '', $event['venue']['id'] ?? 0, $eventCityLabel);
                                     ?>
-                                        <div class="d-flex align-items-center justify-content-between performer-event-item">
+                                        <div class="d-flex align-items-center justify-content-between performer-event-item"<?php echo $timestamp ? ' data-so-day="' . date('Y-m-d', $timestamp) . '"' : ''; ?>>
                                             <div class="date-box text-center me-3">
                                                 <div class="month"><?php echo $timestamp ? htmlspecialchars(strtoupper(date('M', $timestamp)), ENT_QUOTES, 'UTF-8') : ''; ?></div>
                                                 <div class="day"><?php echo $timestamp ? htmlspecialchars(date('d', $timestamp), ENT_QUOTES, 'UTF-8') : ''; ?></div>
@@ -6747,6 +6777,7 @@ require_once __DIR__ . '/inc/entity-facts.php';   // soEntityFacts(): Wikidata, 
 require_once __DIR__ . '/inc/trust-block.php';   // soBuyerGuaranteeSection(): Buyer Guarantee section with the refund terms and live ticket count
 require_once __DIR__ . '/inc/page-hero.php';   // soPageHero(): the one page header card (artist, venue, city, search, category, hubs)
 require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, empty states, price filter
+require_once __DIR__ . '/inc/date-strip.php';  // the row of day pills under the header of every events list
 require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/css-groups.php';        // soCssBundleFiles(): the stylesheet files for this page type
 require_once __DIR__ . '/inc/crawl-guard.php';   // per-address page limit so one crawler cannot use up the ticket API allowance
