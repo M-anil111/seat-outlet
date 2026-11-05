@@ -442,7 +442,8 @@ function soRenderListingPage(array $o): void {
         'title'      => $title,
         'tag'        => $tag,
         'lead'       => (string) ($o['lead_text'] ?? ''),
-        'stats'      => ['<span id="results_count">' . number_format($total) . ' ' . ($total === 1 ? 'result' : 'results') . '</span>'],
+        // A feed that did not answer is not a count: no "0 results" beside a list that came from another request.
+        'stats'      => !empty($GLOBALS['soFeedDown']) ? [] : ['<span id="results_count">' . number_format($total) . ' ' . ($total === 1 ? 'result' : 'results') . '</span>'],
     ]);
     ?>
 <section>

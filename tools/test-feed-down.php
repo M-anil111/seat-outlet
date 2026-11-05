@@ -40,5 +40,6 @@ feedDownCheck('a throttled category lookup falls back to the genre label before 
 $list = file_get_contents($root . '/inc/listing.php');
 feedDownCheck('soRenderListingPage no longer answers 503 after output', strpos($list, "http_response_code(503)") === false);
 feedDownCheck('listing empty state honours the flag', strpos($list, "soFeedDown") !== false);
+feedDownCheck('listing header shows no result count while the feed is down', strpos($list, "'stats'      => !empty(\$GLOBALS['soFeedDown']) ? [] :") !== false);
 echo $fails ? "$fails failed\n" : "feed down: all passed\n";
 exit($fails ? 1 : 0);
