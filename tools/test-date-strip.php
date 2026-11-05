@@ -53,7 +53,8 @@ $f = $src;
 dateStripCheck('artist location pages render the strip (events mode) before the rows', substr_count($f, "soRenderDateStrip(['mode' => 'events'") === 2);
 dateStripCheck('performer page renders the strip unless weekend chips are shown', strpos((string) file_get_contents($root . '/performer.php'), "if (!\$weekendGroups) { soRenderDateStrip(['mode' => 'events'") !== false);
 dateStripCheck('entity pages (city, venue, county, state, country) render the calendar strip', strpos((string) file_get_contents($root . '/inc/entity-listing.php'), "soRenderDateStrip(['mode' => 'calendar', 'basePath' => \$c['path'], 'when' => \$c['when']") !== false);
-dateStripCheck('listing pages (hubs, genres, leagues, discovery) render the calendar strip', strpos((string) file_get_contents($root . '/inc/listing.php'), "soRenderDateStrip(['mode' => 'calendar', 'basePath' => \$o['basePath'], 'when' => \$o['when']") !== false);
+dateStripCheck('listing pages (hubs, genres, leagues, discovery) render the calendar strip with the filters', strpos($f, "\$strip = ['mode' => 'calendar', 'basePath' => \$basePath, 'when' => \$when") !== false && strpos($f, "if (!\$explored) soRenderDateStrip(\$strip);") !== false);
+dateStripCheck('with the explore bar the strip sits under the filter chips, above the list, not above the category tabs', strpos($f, "if (!empty(\$opts['dateStrip']) && is_array(\$opts['dateStrip'])) soRenderDateStrip(\$opts['dateStrip']);") !== false && strpos($f, "\$dd('sort', \$icSort, 'Sort', \$nearSorts, \$sort);") < strpos($f, "soRenderDateStrip(\$opts['dateStrip'])") && strpos($f, "soRenderDateStrip(\$opts['dateStrip'])") < strpos($f, '<section class="so-near" data-so-near'));
 foreach (['inc/entity-pages.php', 'inc/listing.php', 'performer.php'] as $file) {
     dateStripCheck("$file rows carry data-so-day", strpos((string) file_get_contents($root . '/' . $file), "data-so-day=\"' . date('Y-m-d'") !== false);
 }

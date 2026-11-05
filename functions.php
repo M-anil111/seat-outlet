@@ -2259,6 +2259,7 @@ function renderExploreBar($basePath, array $opts = []) {
             $dd('sort', $icSort, 'Sort', $nearSorts, $sort);
             ?>
         </div>
+        <?php if (!empty($opts['dateStrip']) && is_array($opts['dateStrip'])) soRenderDateStrip($opts['dateStrip']); ?>
         <section class="so-near" data-so-near hidden aria-live="polite">
             <h2 class="so-near__title" data-so-near-title>Explore <?php echo htmlspecialchars($noun, ENT_QUOTES, 'UTF-8'); ?> near you</h2>
             <div class="list-category-bg so-near__card"><div class="section-artist-content event-row-all so-near__list" data-so-near-grid></div></div>
@@ -2277,7 +2278,11 @@ function renderListingFilters($basePath, $when, $sort, $total, $defaultSort = 'p
         $q = array_filter(['when' => $w, 'sort' => $s === $defaultSort ? '' : $s, 'max' => $max ?: '']);
         return htmlspecialchars($basePath . ($q ? '?' . http_build_query($q) : ''), ENT_QUOTES, 'UTF-8');
     };
-    $explored = renderExploreBar($basePath, $explore + ['when' => $when]);
+    // The date strip (inc/date-strip.php) belongs with the other filters: under the chips row of the explore bar on hub and
+    // category pages, so it sits above the list and not above the category tabs; above the plain filter row elsewhere.
+    $strip = ['mode' => 'calendar', 'basePath' => $basePath, 'when' => $when, 'sort' => $sort, 'defaultSort' => $defaultSort, 'max' => $max, 'noun' => (string) ($explore['dateStripNoun'] ?? 'events')];
+    $explored = renderExploreBar($basePath, $explore + ['when' => $when, 'dateStrip' => $strip]);
+    if (!$explored) soRenderDateStrip($strip);
     $whenLabel = soWhenLabel($when);
     $sortLabel = LISTING_SORT[$sort] ?? 'Best sellers';
     // With the explore bar present its chips are the one set of filters (they also drive this list); the plain links below stay
