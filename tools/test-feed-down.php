@@ -15,7 +15,7 @@ function feedDownCheck(string $name, bool $ok): void { global $fails; echo ($ok 
 $html = soFeedDownStateHtml();
 feedDownCheck('state card says the feed is slow', strpos($html, 'Live listings are loading slowly') !== false);
 feedDownCheck('state card does not claim there are no events', stripos($html, 'no events') === false && stripos($html, 'on sale right now') === false);
-feedDownCheck('state card offers a reload and browse links', strpos($html, 'Reload this page') !== false && strpos($html, '/buy-tickets-online') !== false);
+feedDownCheck('state card offers a retry and browse links', strpos($html, 'Try again') !== false && strpos($html, '/buy-tickets-online') !== false);
 feedDownCheck('gate marks the feed down', strpos($m3[0], "\$GLOBALS['soFeedDown'] = true") !== false);
 feedDownCheck('gate serves a snapshot first', strpos($m3[0], 'soSnapshotServe()') !== false);
 feedDownCheck('gate answers 503 with Retry-After (never a 200 that a crawler would index as empty)', strpos($m3[0], 'http_response_code(503)') !== false && strpos($m3[0], "header('Retry-After: 30')") !== false);

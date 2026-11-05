@@ -2785,8 +2785,8 @@ function soFeedDownGate($what = '') {
 function soFeedDownStateHtml() {
     return '<div class="so-state" role="status">' . soStateIcon('clock')
         . '<h3 class="so-state__title">Live listings are loading slowly</h3>'
-        . '<p class="so-state__text">Our ticket feed did not answer just now, so the events for this page are not shown. Reload in a few seconds, or browse another page below.</p>'
-        . '<div class="so-state__actions"><a class="so-state__btn" href="">Reload this page</a></div>'
+        . '<p class="so-state__text">The events for this page are taking longer than usual to load. Try again in a minute, or browse the listings below.</p>'
+        . '<div class="so-state__actions"><a class="so-state__btn" href="">Try again</a></div>'
         . '<div class="so-state__chips"><a class="so-linkchip" href="/buy-tickets-online">Browse all events</a><a class="so-linkchip" href="/concert-tickets-for-sale">Concerts</a>'
         . '<a class="so-linkchip" href="/game-day-tickets">Sports</a><a class="so-linkchip" href="/buy-broadway-tickets">Theater</a></div></div>';
 }
