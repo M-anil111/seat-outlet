@@ -24,7 +24,7 @@ $soPerformerLabel = soLabelFromSlug($slug);
 // first event. The same request as getPerformerPageEvents() below, answered from the cache.
 if (!tnEntityMissing($performer) && empty($performer['defaultCategory'])) {
 	[, $perfProbe] = getPerformerPageEvents($id, $perPage);
-	$performer['defaultCategory'] = soPerformerCategoryFromEvents($performer, $perfProbe['results'] ?? []);
+	$performer['defaultCategory'] = soCompleteCategory(soPerformerCategoryFromEvents($performer, $perfProbe['results'] ?? []));   // bulk-copy events carry only the path
 }
 
 if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {

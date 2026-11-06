@@ -1232,6 +1232,17 @@ function stripCategoryRootPath($path) {
     return str_replace('.', '', str_replace($rootPaths, '', $path));
 }
 
+/**
+ * A category taken from a bulk-copy event row has only its path (soCategoryIsBare()); fill in its name, depth and ancestors from the
+ * catalog's category list (getTnCatById(), cached like every tnRequest). A full category, or a failed lookup, comes back unchanged.
+ */
+function soCompleteCategory(array $cat): array {
+    if (!soCategoryIsBare($cat)) return $cat;
+    $id = soCategoryLeafId((string) $cat['path']);
+    if ($id <= 0) return $cat;
+    return soCategoryFromLookup($cat, getTnCatById($id)['results'] ?? []);
+}
+
 function buildCategoryBreadcrumb($defaultCategory) {
 
     $breadcrumb = [
@@ -1241,34 +1252,41 @@ function buildCategoryBreadcrumb($defaultCategory) {
         ]
     ];
 
-    if($defaultCategory['depth'] == 1) {
+    // A category without a name (a bare one from a bulk-copy event that the catalog could not complete) adds no step of its own:
+    // an unnamed step would be an empty link, and reading the missing name was a PHP warning on every such page (Sentry).
+    $defaultCategory = is_array($defaultCategory) ? $defaultCategory : [];
+    $leafName = trim((string) ($defaultCategory['text']['name'] ?? ''));
+
+    if ((int) ($defaultCategory['depth'] ?? 0) === 1 && $leafName !== '') {
         $breadcrumb[] = [
-            'label' => ucwords(strtolower($defaultCategory['text']['name'])),
-            'url'   => '/' . sanitize_title($defaultCategory['text']['name'])
+            'label' => ucwords(strtolower($leafName)),
+            'url'   => '/' . sanitize_title($leafName)
         ];
     }
-    if (!empty($defaultCategory['ancestors'])) {
+    if (!empty($defaultCategory['ancestors']) && is_array($defaultCategory['ancestors'])) {
         $depth1 = [];
         $depth2 = [];
         foreach ($defaultCategory['ancestors'] as $ancestor) {
-            if ($ancestor['depth'] == 1) {
+            if (!is_array($ancestor) || trim((string) ($ancestor['text']['name'] ?? '')) === '') continue;
+            $ancestorDepth = (int) ($ancestor['depth'] ?? 0);
+            if ($ancestorDepth === 1) {
                 $depth1[] = [
                     'label' => ucwords(strtolower($ancestor['text']['name'])),
                     'url'   => '/' . sanitize_title($ancestor['text']['name'])
                 ];
-            } elseif ($ancestor['depth'] == 2) {
+            } elseif ($ancestorDepth === 2) {
                 $depth2[] = [
                     'label' => ucwords(strtolower($ancestor['text']['name'])),
-                    'url'   => soCategoryHref((int) ($ancestor['id'] ?? stripCategoryRootPath($ancestor['path'])), (string) $ancestor['text']['name'])   // a genre or league goes straight to its own page: /category/<genre> would 301
+                    'url'   => soCategoryHref((int) ($ancestor['id'] ?? stripCategoryRootPath((string) ($ancestor['path'] ?? ''))), (string) $ancestor['text']['name'])   // a genre or league goes straight to its own page: /category/<genre> would 301
                 ];
             }
         }
         $breadcrumb = array_merge($breadcrumb, $depth1, $depth2);
     }
-    if(count($breadcrumb) < 3) {
+    if (count($breadcrumb) < 3 && $leafName !== '') {
         $breadcrumb[] = [
-            'label' => ucwords(strtolower($defaultCategory['text']['name'])),
-            'url'   => soCategoryHref((int) ($defaultCategory['id'] ?? stripCategoryRootPath($defaultCategory['path'])), (string) $defaultCategory['text']['name'])
+            'label' => ucwords(strtolower($leafName)),
+            'url'   => soCategoryHref((int) ($defaultCategory['id'] ?? stripCategoryRootPath((string) ($defaultCategory['path'] ?? ''))), $leafName)
         ];
     }
 
@@ -5509,7 +5527,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     // performer answered 404 while /artist/<slug> rendered). Prefetched above, so this is the cached answer.
     $allPerformerEvents = tnEntityMissing($performer) ? [] : (getTnPerformerEvents($performerId, ['filter' => 'date/date ge ' . date('Y-m-d') . ' and date/date le ' . soEventHorizon(), 'perPage' => 100, 'sort' => 'date/date'])['results'] ?? []);
     if (!tnEntityMissing($performer) && empty($performer['defaultCategory'])) {
-        $performer['defaultCategory'] = soPerformerCategoryFromEvents($performer, $allPerformerEvents);
+        $performer['defaultCategory'] = soCompleteCategory(soPerformerCategoryFromEvents($performer, $allPerformerEvents));   // bulk-copy events carry only the path
     }
     if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
         renderNotFoundPage('Performer', $performer, soLabelFromSlug($requestedSlug));   // 404 when the API says not found, 503 when it failed
