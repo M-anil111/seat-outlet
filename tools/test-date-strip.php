@@ -74,5 +74,7 @@ dateStripCheck('a degraded feed never prints "0 results" as a count', strpos((st
 foreach (['performer.php', 'functions.php', 'inc/listing.php', 'inc/entity-listing.php'] as $pf) {
     dateStripCheck("$pf no longer prints the loaded-of-total progress bar", strpos((string) file_get_contents($root . '/' . $pf), 'load-progress') === false);
 }
+dateStripCheck('city, venue and other entity lists print an ad card between rows (after the 4th and 9th), never after the last row', strpos((string) file_get_contents($root . '/inc/entity-listing.php'), "soAdSlot('list', 'rectangle')") !== false && strpos((string) file_get_contents($root . '/inc/entity-listing.php'), 'count($events) > $evi + 2') !== false);
+dateStripCheck('the list ad has its own placement name, so it shares the banner unit and never prints empty', strpos((string) file_get_contents($root . '/inc/adsense.php'), "'side2', 'listing', 'list']") !== false);
 if ($fail) { echo "$fail failure(s)\n"; exit(1); }
 echo "ok: date strip\n";

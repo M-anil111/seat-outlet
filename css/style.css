@@ -7701,6 +7701,10 @@ a.so-vc:hover .so-vc__go { transform: translateX(3px); }
 /* Inside a column or container the page already provides the gutter: the card lines up with the content around it */
 .container .so-ad, .left-bar .so-ad, [class*="col-"] .so-ad { max-width: none; padding: 0; }
 .so-ad--foot { margin-top: 36px; margin-bottom: 36px; }
+/* An ad card between event rows (inc/entity-listing.php): quiet, centred, the label above it, room around it so it is never mistaken for a row. */
+.so-ad--list { max-width: none; margin: 22px 0 26px; padding: 0; }
+.so-ad--list .so-ad__label { margin: 0 0 8px 2px; }
+.so-ad--list .adsbygoogle, .so-ad--list .so-ad__ph { min-height: 250px; border-radius: 18px; background: #fbfbfd; }
 /* An ad the network did not fill leaves no blank card behind, and on a phone the banner under the hero stays out of sight until it has an ad,
    so the content follows the hero straight away (QA UI-05). */
 .so-ad:has(ins.adsbygoogle[data-ad-status="unfilled"]) { display: none; }
