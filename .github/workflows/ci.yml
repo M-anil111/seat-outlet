@@ -101,6 +101,8 @@ jobs:
         run: php tools/test-listing-options.php
       - name: Date strip renders on every events list and filters without extra feed calls
         run: php tools/test-date-strip.php
+      - name: Content pages carry at least three ad slots between paragraphs (unit and output-step integration)
+        run: php tools/test-ad-content-slots.php
       - name: Dead performer links
         run: php tools/test-dead-performers.php
       - name: Wrong-city venue facts and page numbers in titles

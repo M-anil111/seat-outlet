@@ -38,9 +38,9 @@ function soAdsenseMetaTag(): string {
 function soAdSlot(string $placement, string $format = 'horizontal'): string {
     $client = soAdsenseClient();
     $slot = (string) getenv('ADSENSE_SLOT_' . strtoupper(preg_replace('/[^a-z0-9]/i', '_', $placement)));
-    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing', 'list'], true)) $slot = (string) getenv('ADSENSE_SLOT_BANNER');   // one banner ad unit can serve every banner position
-    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing', 'list'], true)) $slot = (string) getenv('ADSENSE_SLOT_HOME');     // the home banner setting from before banners were on every page
-    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing', 'list'], true)) $slot = SO_ADSENSE_DEFAULT_SLOT;
+    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing', 'list', 'content'], true)) $slot = (string) getenv('ADSENSE_SLOT_BANNER');   // one banner ad unit can serve every banner position
+    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing', 'list', 'content'], true)) $slot = (string) getenv('ADSENSE_SLOT_HOME');     // the home banner setting from before banners were on every page
+    if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing', 'list', 'content'], true)) $slot = SO_ADSENSE_DEFAULT_SLOT;
     $GLOBALS['soAdSeq'] = ($GLOBALS['soAdSeq'] ?? 0) + 1;   // each ad landmark gets its own name
     $adName = 'Advertisement ' . $GLOBALS['soAdSeq'];
     if ($client === '' || !preg_match('/^\d{6,20}$/', $slot)) {
@@ -114,6 +114,64 @@ function soAdInjectBanner(string $html): string {
     if (strpos($html, 'so-ad--foot') === false && ($foot = soAdSlot('foot')) !== '') {
         $mark = strrpos($html, '</main><!--so-main-end-->');
         $html = $mark !== false ? substr($html, 0, $mark) . $foot . substr($html, $mark) : $html . $foot;   // the end of the page content, above the footer
+    }
+    // 4. Content pages get at least three slots between their paragraphs (blog posts, event pages, about pages). Pages that already have
+    //    three, and thin or too-short pages, are left as they are.
+    return soAdEnsureSlots($html);
+}
+
+/** How many ad slots a page already prints (every slot carries the so-ad class). */
+function soAdCountSlots(string $html): int {
+    return preg_match_all('#<aside class="so-ad so-ad--#', $html);
+}
+
+/**
+ * Makes sure a content page carries at least $min ad slots, placed between two of its paragraphs inside <main>. Pages that already
+ * have enough return unchanged; thin pages (soNoAds) and pages with fewer than four usable paragraphs get nothing, so no page is
+ * padded with ads. A paragraph inside a link, button, form, table, navigation, header, footer or script is never used, and the first
+ * and last paragraph are never used, so a slot never touches a buy button or the edge of the copy. Slots are spread evenly.
+ */
+function soAdEnsureSlots(string $html, int $min = 3): string {
+    if (!empty($GLOBALS['soNoAds'])) return $html;
+    $need = $min - soAdCountSlots($html);
+    if ($need <= 0) return $html;
+    $main = strpos($html, '<main');
+    $mainEnd = strpos($html, '</main>', (int) $main);
+    if ($main === false || $mainEnd === false) return $html;
+    $start = $main;
+    $forbidden = ['a', 'button', 'form', 'table', 'nav', 'header', 'footer', 'script', 'style', 'select', 'label', 'aside'];
+    // Walk the tags inside <main>, tracking forbidden ancestors, and note the end of each paragraph that is allowed.
+    $ends = [];
+    $stack = [];
+    preg_match_all('#<(/?)([a-zA-Z][a-zA-Z0-9]*)\b[^>]*?(/?)>#', $html, $tags, PREG_SET_ORDER | PREG_OFFSET_CAPTURE, $start);
+    $openP = null;
+    foreach ($tags as $t) {
+        $pos = $t[0][1];
+        if ($pos >= $mainEnd) break;
+        $name = strtolower($t[2][0]);
+        $closing = $t[1][0] === '/';
+        if (!$closing && $t[3][0] !== '/' && in_array($name, ['br', 'img', 'hr', 'input', 'meta', 'link'], true) === false) {
+            if ($name === 'p') $openP = count(array_intersect($stack, $forbidden)) === 0 ? $pos : null;
+            $stack[] = $name;
+        } elseif ($closing) {
+            if ($name === 'p' && $openP !== null) { $ends[] = $pos + strlen($t[0][0]); $openP = null; }
+            $i = array_search($name, $stack, true);
+            if ($i !== false) array_splice($stack, $i);
+        }
+    }
+    // The first and last usable paragraphs are not used. Fewer than two interior candidates is too thin to place anything quietly.
+    $inner = array_slice($ends, 1, max(0, count($ends) - 2));
+    if (count($ends) < 4 || count($inner) === 0) return $html;
+    $take = min($need, count($inner));
+    $picked = [];
+    for ($k = 1; $k <= $take; $k++) {
+        $picked[] = $inner[(int) round($k * (count($inner) + 1) / ($take + 1)) - 1];
+    }
+    $picked = array_values(array_unique($picked));
+    rsort($picked);   // insert from the end, so earlier offsets stay valid
+    foreach ($picked as $at) {
+        $slot = soAdSlot('content', 'rectangle');
+        if ($slot !== '') $html = substr($html, 0, $at) . $slot . substr($html, $at);
     }
     return $html;
 }
