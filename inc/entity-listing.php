@@ -191,7 +191,11 @@ function soRenderEntityListing(array $c): void {
                         <?php if (!empty($events)) { ?>
                             <?php $soCap = 10; $soCapped = count($events) > $soCap + 2; ?>
                             <div id="eventsSection" class="section-artist-content event-row-all<?php echo $soCapped ? ' so-rows--capped' : ''; ?>"<?php echo $soCapped ? ' data-so-cap="' . $soCap . '"' : ''; ?>>
-                                <?php foreach ($events as $event) { soRenderEventRow($event, ['cheapestId' => $cheapestId, 'showVenue' => true, 'showPlace' => true]); } ?>
+                                <?php foreach ($events as $evi => $event) {
+                                    soRenderEventRow($event, ['cheapestId' => $cheapestId, 'showVenue' => true, 'showPlace' => true]);
+                                    // One ad card after the 4th and the 9th event, only on a list long enough to hold it (never after the last row).
+                                    if (in_array($evi, [3, 8], true) && count($events) > $evi + 2 && function_exists('soAdSlot') && empty($GLOBALS['soNoAds'])) { echo soAdSlot('list', 'rectangle'); }
+                                } ?>
                             </div>
                             <?php if ($soCapped) { ?>
                             <div class="text-center mt-3 so-rows__more" data-so-rows-more hidden>
