@@ -23,6 +23,11 @@ const TN_BULK_FIELDS = [
 ];
 
 /** Columns of tn_bulk_events in insert order (seen_at is set by the database). */
+/** A full refresh left half done is resumed for up to 6 hours, then started again. */
+const TN_BULK_RESUME_SECONDS = 21600;
+/** A copy this old is refreshed at any hour (the freshness limit is 36 hours, so this leaves 6 hours of margin). */
+const TN_BULK_OVERDUE_SECONDS = 108000;
+
 const TN_BULK_COLUMNS = [
     'event_id', 'name', 'starts_local', 'starts_offset', 'takedown_at', 'is_test', 'schedule_status', 'venue_id', 'venue_name',
     'city_id', 'city_name', 'state_id', 'state_abbr', 'country_code', 'category_path', 'latitude', 'longitude', 'ticket_count',
@@ -152,10 +157,15 @@ function tnBulkUpsertSql(): string {
  * Which run an "auto" call starts: a full refresh when there has never been one, or when the last good one is over a day old and it is
  * the quiet window (07:00 to 10:59 UTC, 3 to 6 am US Eastern); otherwise the hourly changes pull.
  */
-function tnBulkChooseMode(?int $lastFullOk, int $now): string {
+function tnBulkChooseMode(?int $lastFullOk, int $now, ?int $runStart = null): string {
     if ($lastFullOk === null || $lastFullOk <= 0) return 'full';
+    // A run left half done keeps going at any hour, so a window that closes mid-run never leaves it stranded.
+    if ($runStart !== null && $runStart > 0 && $now - $runStart < TN_BULK_RESUME_SECONDS) return 'full';
+    $age = $now - $lastFullOk;
+    // A copy this old starts a run at any hour: the daily window alone let a run that finished late in it slip a whole day.
+    if ($age >= TN_BULK_OVERDUE_SECONDS) return 'full';
     $hour = (int) gmdate('G', $now);
-    return ($now - $lastFullOk >= 86400 && $hour >= 7 && $hour <= 10) ? 'full' : 'incremental';
+    return ($age >= 86400 && $hour >= 7 && $hour <= 10) ? 'full' : 'incremental';
 }
 
 /**

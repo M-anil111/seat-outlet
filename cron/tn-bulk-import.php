@@ -24,7 +24,6 @@ const TN_BULK_PATH = '/catalog/v2/events/bulk';
 // TicketNetwork (14 Oct 2026 reply): the bulk endpoint needs the catalog_bulk_access scope on the token. Asked for on its own token.
 const TN_BULK_SCOPE = 'catalog_bulk_access';
 const TN_BULK_MAX_PAGES = 3000;        // guard against a runaway loop (200 a page would still cover 600,000 events)
-const TN_BULK_RESUME_SECONDS = 21600;  // a full run left half done is resumed for up to 6 hours, then started again
 const TN_BULK_MAX_RUN_SECONDS = 3000;  // stop before the next hourly run would find the lock still held
 
 $mode = 'auto'; $file = null; $dry = false; $maxPages = TN_BULK_MAX_PAGES;
@@ -149,7 +148,8 @@ if (!$lockFh || !flock($lockFh, LOCK_EX | LOCK_NB)) { tbLog('Another import is r
 
 $now = time();
 $lastFull = tbStateGet('last_full_ok');
-if ($mode === 'auto') $mode = tnBulkChooseMode($lastFull !== null ? (int) $lastFull : null, $now);
+$runStartState = tbStateGet('full_run_start');
+if ($mode === 'auto') $mode = tnBulkChooseMode($lastFull !== null ? (int) $lastFull : null, $now, $runStartState !== null ? (int) $runStartState : null);
 $perPage = tnBulkPerPage();
 
 if ($mode === 'incremental') {
