@@ -26,6 +26,32 @@ function soPerformerCategoryFromEvents(array $performer, array $events): array {
     return [];
 }
 
+/**
+ * True for a category that has a path but no name. Event rows read from the bulk copy (inc/tn-bulk-read.php) carry only the path,
+ * so a category taken from them cannot label a breadcrumb or a heading until it is completed from the catalog (soCompleteCategory()).
+ */
+function soCategoryIsBare(array $cat): bool {
+    return trim((string) ($cat['path'] ?? '')) !== '' && trim((string) ($cat['text']['name'] ?? '')) === '';
+}
+
+/** The last id in a category path: ".1859.1988.2016.2112." gives 2112; no id gives 0. */
+function soCategoryLeafId(string $path): int {
+    $ids = array_values(array_filter(explode('.', $path), 'strlen'));
+    return $ids ? (int) end($ids) : 0;
+}
+
+/**
+ * Completes a bare category from a catalog categories answer: the entry with the same path and a name wins. No match (a failed or
+ * empty lookup) returns the bare category unchanged, and buildCategoryBreadcrumb() then leaves out the step it cannot name.
+ */
+function soCategoryFromLookup(array $bare, array $results): array {
+    $path = (string) ($bare['path'] ?? '');
+    foreach ($results as $c) {
+        if (is_array($c) && (string) ($c['path'] ?? '') === $path && trim((string) ($c['text']['name'] ?? '')) !== '') return $c;
+    }
+    return $bare;
+}
+
 function soDeadPerformerFile(?string $dir = null): string {
     return ($dir ?? cache_dir()) . 'dead_performers.json';
 }
