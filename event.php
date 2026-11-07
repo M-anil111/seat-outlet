@@ -17,7 +17,7 @@ if ($id <= 0) {
   }
 }
 
-$event = getTnEventById($id);
+$event = getTnEventById($id, true);
 // A saved copy (TicketNetwork did not answer) has no live prices: they are not shown, and the visitor is told when it was saved.
 $evAsOf = $GLOBALS['so_event_as_of'] ?? null;
 if ($evAsOf !== null) { unset($event['pricingInfo']); }

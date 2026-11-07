@@ -114,6 +114,33 @@ function tnBulkRowToEvent(array $r): array {
     return $e;
 }
 
+/**
+ * The event page's fallback when TicketNetwork cannot answer one event (budget, throttle, outage) and no saved copy exists: the event as
+ * the bulk copy saw it, in the listing shape the event page already accepts. Null unless the switch is on, the full refresh is fresh, and
+ * the event is a real, complete, not taken-down event. Checkout never asks for this: its prices must come live.
+ * @param array $state the importer's state rows (tnBulkState()), passed in so the check is explicit
+ * @return array{event: array, seenAt: int}|null
+ */
+function tnBulkEventDetail(mysqli $db, int $eventId, array $state, int $now): ?array {
+    if ($eventId < 1 || !tnBulkReadEnabled() || !tnBulkFresh($state, $now)) return null;
+    try {
+        $s = $db->prepare('SELECT * FROM tn_bulk_events WHERE event_id = ? AND is_test = 0 AND (takedown_at IS NULL OR takedown_at > ?) LIMIT 1');
+        if (!$s) return null;
+        $nowUtc = gmdate('Y-m-d H:i:s', $now);
+        $s->bind_param('is', $eventId, $nowUtc);
+        $s->execute();
+        $row = $s->get_result()->fetch_assoc();
+        $s->close();
+    } catch (\Throwable $e) {
+        return null;
+    }
+    if (!is_array($row)) return null;
+    $event = tnBulkRowToEvent($row);
+    if (!tnListingCopyComplete($event)) return null;
+    $seen = strtotime((string) ($row['seen_at'] ?? '') . ' UTC');
+    return ['event' => $event, 'seenAt' => $seen ?: $now];
+}
+
 /** Runs a parsed listing against the table: ['results' => events, 'totalCount' => n]. Null when the table cannot be read. */
 function tnBulkRunListing(mysqli $db, array $q, ?string $nowUtc = null): ?array {
     $where = $q['where'];

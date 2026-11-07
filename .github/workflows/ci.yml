@@ -234,6 +234,8 @@ jobs:
         run: |
           php tools/test-tn-bulk-read.php
           php tools/test-zero-pages.php
+      - name: Bulk event detail fallback (tools/test-tn-bulk-event.php)
+        run: php tools/test-tn-bulk-event.php
       - name: Removed-event redirects (performer, category, bulk fallback, unknown stays 404)
         run: php tools/test-event-redirects-db.php
 
