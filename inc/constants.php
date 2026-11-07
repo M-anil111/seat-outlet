@@ -68,8 +68,11 @@ define('TN_CHECKOUT_URL', rtrim(getenv('TN_CHECKOUT_URL') ?: 'https://checkout.s
 // Seat Outlet's Tag Manager container. GTM_ID in the server's env file overrides it; GTM_ID=off turns tags off (set that on beta so
 // test visits never reach live analytics).
 $soGtmEnv = getenv('GTM_ID');
-define('GTM_ID', ($soGtmEnv === false || $soGtmEnv === '') ? 'GTM-W2XCB423' : (in_array(strtolower($soGtmEnv), ['off', 'none', '0', 'false'], true) ? '' : $soGtmEnv));
-unset($soGtmEnv);
+// The default container is used only on the live site (the live TicketNetwork API and the live host). Beta, local and any other install get no
+// tags unless GTM_ID names a container, so test visits never reach live analytics.
+$soGtmLiveSite = SO_TN_LIVE_API && preg_match('#^https://(www\.)?seatoutlet\.com(/|$)#i', HOME_URL) === 1;
+define('GTM_ID', ($soGtmEnv === false || $soGtmEnv === '') ? ($soGtmLiveSite ? 'GTM-W2XCB423' : '') : (in_array(strtolower($soGtmEnv), ['off', 'none', '0', 'false'], true) ? '' : $soGtmEnv));
+unset($soGtmEnv, $soGtmLiveSite);
 
 define('SENTRY_DSN', getenv('SENTRY_DSN') ?: '');
 define('SENTRY_ENVIRONMENT', getenv('SENTRY_ENVIRONMENT') ?: (BASE_URL === 'https://www.tn-apis.com' ? 'production' : 'sandbox'));

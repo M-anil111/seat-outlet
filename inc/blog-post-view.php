@@ -97,7 +97,7 @@ $published = !empty($post['published_at']) ? strtotime($post['published_at']) : 
             <?php echo soBlogNewsletterBox($nlArgs + ['id' => 'subscribe', 'source' => 'blog-end']); ?>
         </section>
 
-        <aside class="so-art__author">
+        <div class="so-art__author">
             <span class="so-np__av so-art__avbig" aria-hidden="true"><?php echo soBlogH($initials); ?></span>
             <div>
                 <p class="so-art__written">Written by</p>
@@ -106,7 +106,7 @@ $published = !empty($post['published_at']) ? strtotime($post['published_at']) : 
                 <p class="so-art__bio">Jay Mehta is the Founder and CEO of Mindshare Consulting Inc and writes the Seat Outlet guides to help fans buy tickets with confidence.</p>
                 <?php } ?>
             </div>
-        </aside>
+        </div>
 
         <?php if ($related) { ?>
             <aside class="so-art__more" aria-label="More guides">

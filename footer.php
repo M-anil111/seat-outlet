@@ -96,13 +96,13 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
     <li><a href="/all-artists-and-teams">Artists &amp; Teams</a></li>
     <li><a href="/city-events">Cities</a></li>
     <li><a href="/holiday-events">Holiday Events</a></li>
-    <li><a href="/tickets-promo-code">Deals & Promotions</a></li>
+    <li><a href="/tickets-promo-code">Deals &amp; Promotions</a></li>
     <li><a href="/our-network">Our Network</a></li>
   </ul>
 </div>
 
   </div>
-  <div class="policies" aria-label="Browse artists, teams and shows by name">
+  <nav class="policies" aria-label="Browse artists, teams and shows by name">
   <ul>
     <li><a href="/concert-artists">Artists on Tour</a></li>
     <li><a href="/comedians-on-tour">Comedians on Tour</a></li>
@@ -115,7 +115,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
     <li><a href="/nhl-teams">NHL Teams</a></li>
     <li><a href="/mls-teams">MLS Teams</a></li>
   </ul>
-  </div>
+  </nav>
   <div class="policies">
   <ul>
     <li><a href="/privacy-policy">Privacy Policy</a></li>

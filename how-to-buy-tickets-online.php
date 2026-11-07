@@ -203,7 +203,7 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
   <div class="container">
     <h2 class="so-htb-h2">Four steps from search to seats</h2>
     <p class="so-htb-sub">You can browse without signing up for anything, and there is no newsletter sign-up before checkout.</p>
-    <ol class="so-htb-steps">
+    <ol class="so-htb-steps" tabindex="0" aria-label="How to buy tickets online, step by step">
       <?php foreach ($soSteps as $i => [$ic, $t, $d]) { ?>
       <li class="so-htb-card">
         <div class="so-htb-card__top"><span class="so-htb-num"><?php echo sprintf('%02d', $i + 1); ?></span><span class="so-htb-ic"><i class="bi <?php echo $e($ic); ?>" aria-hidden="true"></i></span></div>
@@ -223,10 +223,10 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
       <?php foreach ($soCats as [$ic, $t, $d, $href, $img]) { ?>
       <li><a class="so-htb-cat" href="<?php echo $e($href); ?>">
         <img src="<?php echo $e($img[0]); ?>" alt="<?php echo $e($img[1]); ?>" width="<?php echo (int) $img[2]; ?>" height="<?php echo (int) $img[3]; ?>" loading="lazy" decoding="async">
-        <span class="so-htb-cat__body">
+        <div class="so-htb-cat__body">
           <span class="so-htb-cat__title"><span><i class="bi <?php echo $e($ic); ?>" aria-hidden="true"></i> <?php echo $e($t); ?></span><i class="bi bi-chevron-right" aria-hidden="true"></i></span>
           <p><?php echo $e($d); ?></p>
-        </span>
+        </div>
       </a></li>
       <?php } ?>
     </ul>

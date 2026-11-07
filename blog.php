@@ -180,7 +180,7 @@ $featured = ($page === 1 && !empty($posts)) ? array_shift($posts) : null;
         <?php if ($featured) { ?>
         <a class="so-np__feature" href="/blog/<?php echo htmlspecialchars($featured['slug'], ENT_QUOTES, 'UTF-8'); ?>">
             <span class="so-np__media"><?php echo $soCardImg($featured, 1200, 630, true); ?></span>
-            <span class="so-np__fbody"><?php echo $soCardText($featured); ?></span>
+            <div class="so-np__fbody"><?php echo $soCardText($featured); ?></div>
         </a>
         <?php } ?>
 

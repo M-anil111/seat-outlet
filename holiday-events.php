@@ -20,7 +20,7 @@ include 'header.php';
         <div class="so-sitemap__grid">
             <?php foreach (soHolidayHubRows($cc) as $key => [$label, $dates]) { ?>
             <nav class="so-sitemap__col" aria-labelledby="hol-<?php echo $h($cc . '-' . $key); ?>">
-                <h4 id="hol-<?php echo $h($cc . '-' . $key); ?>" class="fs-6 fw-bold"><?php echo $h($label); ?></h4>
+                <h4 id="hol-<?php echo $h($cc . '-' . $key); ?>" class="fs-6 fw-bold"><?php echo $h($label); ?><span class="visually-hidden"> (<?php echo $h($ccName); ?>)</span></h4>
                 <p class="so-sitemap__group"><?php echo $h($dates); ?></p>
                 <ul>
                     <?php foreach ($list as $c) { ?><li><a href="/<?php echo $h($key); ?>-in-<?php echo $h(soSlug('city', $c['label'], $c['id'])); ?>"><?php echo $h($label); ?> in <?php echo $h($c['name']); ?></a></li><?php } ?>

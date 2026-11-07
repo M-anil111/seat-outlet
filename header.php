@@ -165,6 +165,7 @@ include_once 'functions.php';
     $soCrit = $soCssFiles ? soCriticalCss() : '';
     if ($soCrit !== '') { ?>
     <style id="so-critical"><?php echo $soCrit; ?></style>
+
     <script>/* the full stylesheets start loading once the page has painted, so nothing but the critical rules competes with the first paint */
     (function(){var u=<?php echo json_encode(array_map('html_entity_decode', $soSheets)); ?>,go=function(){u.forEach(function(h){var l=document.createElement('link');l.rel='stylesheet';l.href=h;document.head.appendChild(l);});};
     if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(go,0);});}else{setTimeout(go,0);}})();</script>
@@ -179,6 +180,9 @@ include_once 'functions.php';
     <?php if ($soNeedsSlick) { ?>
     <link rel="preload" href="/lib/slick-carousel/1.8.1/slick.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="preload" href="/lib/slick-carousel/1.8.1/slick-theme.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <?php /* Layout guards on every page: the off-canvas panels (cart, menu, event information) are 400 px wide by default, which runs past a 320 px screen, and the footer's bottom row may wrap on narrow screens. A closed panel
+             is slid off-screen with a transform, which still counts toward the page width, so it leaves the layout until it opens. Inline so every page type gets it. */ ?>
+    <style id="so-layout-guards">.offcanvas{--bs-offcanvas-width:min(400px,100vw);max-width:100vw}.offcanvas:not(.show):not(.showing){display:none}.tm-footer-bottom{flex-wrap:wrap;row-gap:12px}.creater .space-between{flex-wrap:wrap}.so-picks-all{white-space:normal;max-width:100%}.location-selector-wrapper{flex-wrap:wrap}.so-right-searchbar,#locationPanel{max-width:calc(100vw - 32px);box-sizing:border-box}.so-bbb-card{max-width:100%;box-sizing:border-box}.performers-empty-state,.performers-error-state{color:#4b5563}.retry-load-events,.retry-load-venues{color:#0b5ed7;border-color:#0b5ed7}.location-input-clear{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}.slick-prev,.slick-next{min-width:44px;min-height:44px}.so-subcats__arrow{min-width:44px;min-height:44px}.footer-bottom-logo{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}@media (max-width:375px){.slick-prev{left:0}}.so-htb-steps:focus-visible{outline:3px solid #0b5ed7;outline-offset:4px;border-radius:12px}</style>
     <?php } ?>
 
     <!-- Inter is self-hosted (css/fonts.css, folded into style.min.css). Deliberately NOT preloaded: on a slow connection the 47 KB preload

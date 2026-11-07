@@ -509,7 +509,7 @@ include 'header.php';
             </main>
 
             <!-- Sidebar - Right Column -->
-            <aside class="col-md-4">
+            <aside class="col-md-4" aria-label="About these reviews">
                 <div class="sidebar-sticky">
                     <!-- Crowd/Event Image -->
                     <div class="sidebar-image mb-4">
