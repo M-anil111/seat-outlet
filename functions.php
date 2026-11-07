@@ -1121,7 +1121,7 @@ function soEventIsOver(array $event): bool {
     return $ts + 6 * 3600 < time();
 }
 
-function getTnEventById($eventId) {
+function getTnEventById($eventId, bool $allowBulk = false) {
     $eventId = (int) $eventId;
     $GLOBALS['so_event_as_of'] = null;   // set below when the answer comes from a saved copy: the time it was seen (unix)
     $event = tnRequest("/catalog/v2/events/" . $eventId);
@@ -1145,6 +1145,16 @@ function getTnEventById($eventId) {
         tnCount('event_snapshot');
         $GLOBALS['so_event_as_of'] = (int) ($GLOBALS['so_snapshot_seen'] ?? time());
         return soCleanTnNames($snap);
+    }
+    // Last resort for the event page only: the bulk catalog copy, while its full refresh is fresh. Checkout does not ask (its prices must be live).
+    if ($allowBulk && tnSnapshotDb()) {
+        $bulk = tnBulkEventDetail(MYSQLI, $eventId, tnBulkState(), time());
+        if ($bulk !== null) {
+            tnCount('bulk_served');
+            $GLOBALS['so_bulk_served'] = true;
+            $GLOBALS['so_event_as_of'] = $bulk['seenAt'];
+            return soCleanTnNames($bulk['event']);
+        }
     }
     return $event;
 }
