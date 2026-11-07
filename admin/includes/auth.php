@@ -164,6 +164,9 @@ function admin_require_guest(): void {
 // second admin from here on is a manual DB insert (or a future
 // admin-invite feature) until one is built.
 function admin_registration_is_open(mysqli $mysqli = MYSQLI): bool {
+    // The first admin is created only while ADMIN_REGISTRATION_OPEN=1 is set in the server's env file, then the switch is removed.
+    // Without it, an empty admin table must not let anyone on the internet register as the first admin.
+    if (getenv('ADMIN_REGISTRATION_OPEN') !== '1') return false;
     $result = $mysqli->query('SELECT COUNT(*) AS c FROM admin_users');
     $row = $result ? $result->fetch_assoc() : null;
     return (int) ($row['c'] ?? 1) === 0;

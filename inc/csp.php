@@ -17,7 +17,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 /** Every directive's sources as they are sent. Keep each list short and name hosts, not wildcards, unless SO_CSP_EXCEPTIONS says why. */
 const SO_CSP_POLICY = [
     'default-src' => ["'self'"],
-    'script-src'  => ["'self'", "'unsafe-inline'", 'https://tickettransaction.com', 'https://*.seatics.com', 'https://d1s8091zjpj5vh.cloudfront.net', 'https://www.googletagmanager.com', 'https://www.google-analytics.com', 'https://pagead2.googlesyndication.com', 'https://*.googlesyndication.com', 'https://*.doubleclick.net', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://static.cloudflareinsights.com', 'https://www.google.com/recaptcha/', 'https://www.gstatic.com/recaptcha/', 'https://fundingchoicesmessages.google.com', 'https://*.adtrafficquality.google'],
+    'script-src'  => ["'self'", 'https://tickettransaction.com', 'https://*.seatics.com', 'https://d1s8091zjpj5vh.cloudfront.net', 'https://www.googletagmanager.com', 'https://www.google-analytics.com', 'https://pagead2.googlesyndication.com', 'https://*.googlesyndication.com', 'https://*.doubleclick.net', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://static.cloudflareinsights.com', 'https://www.google.com/recaptcha/', 'https://www.gstatic.com/recaptcha/', 'https://fundingchoicesmessages.google.com', 'https://*.adtrafficquality.google'],
     'style-src'   => ["'self'", "'unsafe-inline'", 'https://tickettransaction.com', 'https://*.seatics.com', 'https://d1s8091zjpj5vh.cloudfront.net', 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'],
     'img-src'     => ["'self'", 'data:', 'blob:', 'https:'],
     'font-src'    => ["'self'", 'data:', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com', 'https://d1s8091zjpj5vh.cloudfront.net'],
@@ -32,7 +32,6 @@ const SO_CSP_POLICY = [
  * The check fails on one missing from this list and on one listed here that the policy no longer contains.
  */
 const SO_CSP_EXCEPTIONS = [
-    "script-src 'unsafe-inline'" => 'Pages carry inline scripts (structured data is not one, but the page frame, the Google tag bootstrap, per-page widgets and the consent banner are). Replacing them with nonces is a separate change; until then this stays.',
     "style-src 'unsafe-inline'" => 'Inline style attributes and per-page style blocks are used throughout the templates.',
     'script-src https://*.seatics.com' => 'The seat map widget loads from several Seatics hosts (mapwidget3, and others it picks at run time).',
     'script-src https://*.googlesyndication.com' => 'AdSense serves its scripts from changing subdomains.',
@@ -52,10 +51,28 @@ const SO_CSP_EXCEPTIONS = [
     'frame-src https://*.doubleclick.net' => 'Google ad frames, served from changing subdomains.',
 ];
 
-/** The policy header value. $enforce adds frame-ancestors (it is ignored in a report-only policy). */
-function soCspPolicy(bool $enforce = false): string {
+/**
+ * One random nonce per response (base64url, 128 bits). Every inline script carries it (nonce="..."), and the script policy names it, so
+ * an injected script without it is blocked. A shared cache stores the body and its header together, so the pair stays consistent.
+ */
+function soCspNonce(): string {
+    static $nonce = null;
+    if ($nonce === null) $nonce = rtrim(strtr(base64_encode(random_bytes(16)), '+/', '-_'), '=');
+    return $nonce;
+}
+
+/** The nonce attribute for an inline script tag, e.g. ' nonce="abc"'. */
+function soCspNonceAttr(): string {
+    return ' nonce="' . soCspNonce() . '"';
+}
+
+/** The policy header value. $enforce adds frame-ancestors (it is ignored in a report-only policy). $nonce, when given, is added to script-src. */
+function soCspPolicy(bool $enforce = false, ?string $nonce = null): string {
     $parts = [];
-    foreach (SO_CSP_POLICY as $dir => $sources) $parts[] = $dir . ' ' . implode(' ', $sources);
+    foreach (SO_CSP_POLICY as $dir => $sources) {
+        if ($dir === 'script-src' && $nonce !== null && $nonce !== '') array_splice($sources, 1, 0, ["'nonce-" . $nonce . "'"]);
+        $parts[] = $dir . ' ' . implode(' ', $sources);
+    }
     if ($enforce) $parts[] = "frame-ancestors 'self'";
     $parts[] = 'report-uri /ajax/csp-report.php';
     return implode('; ', $parts);

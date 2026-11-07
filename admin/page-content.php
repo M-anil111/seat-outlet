@@ -67,7 +67,7 @@ include __DIR__ . '/includes/app-header.php';
                                     <?php if (!empty($block['ID'])): ?>
                                         <a href="page-content-form?id=<?php echo (int) $block['ID']; ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
                                         <form method="post" action="page-content-delete" class="d-inline"
-                                            onsubmit="return confirm('Delete this override? The page will fall back to its own default text.');">
+                                            data-confirm="Delete this override? The page will fall back to its own default text.">
                                             <input type="hidden" name="csrf_token" value="<?php echo admin_csrf_token(); ?>">
                                             <input type="hidden" name="id" value="<?php echo (int) $block['ID']; ?>">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>

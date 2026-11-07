@@ -534,7 +534,7 @@ include 'header.php';
 
 <?php soSeoCopy('seat-outlet-reviews'); ?>
 <?php include 'footer.php'; ?>
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
 // jQuery is a deferred script: wait for it before running this block.
 document.addEventListener('DOMContentLoaded', function () {
 (function($) {

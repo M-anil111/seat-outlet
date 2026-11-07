@@ -61,7 +61,7 @@ function soAdSlot(string $placement, string $format = 'horizontal'): string {
 function soAdsenseFooterScript(): string {
     $client = soAdsenseClient();
     if ($client === '') return '';
-    return '<script>(function(){var c=window.soConsent||{};if(c.gpc||c.choice==="decline"||!document.querySelector("ins.adsbygoogle"))return;function pushAds(){document.querySelectorAll("ins.adsbygoogle:not([data-so-pushed])").forEach(function(el){if(el.closest("[hidden]"))return;el.setAttribute("data-so-pushed","1");(window.adsbygoogle=window.adsbygoogle||[]).push({});});}window.soAdsPush=pushAds;function go(){var s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";'
+    return '<script' . soCspNonceAttr() . '>(function(){var c=window.soConsent||{};if(c.gpc||c.choice==="decline"||!document.querySelector("ins.adsbygoogle"))return;function pushAds(){document.querySelectorAll("ins.adsbygoogle:not([data-so-pushed])").forEach(function(el){if(el.closest("[hidden]"))return;el.setAttribute("data-so-pushed","1");(window.adsbygoogle=window.adsbygoogle||[]).push({});});}window.soAdsPush=pushAds;function go(){var s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";'
         . 's.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' . htmlspecialchars($client, ENT_QUOTES, 'UTF-8') . '";document.head.appendChild(s);'
         . 'pushAds();}'
         . 'var done=false,evs=["pointerdown","keydown","touchstart","scroll","wheel"];function start(){if(done)return;done=true;evs.forEach(function(t){window.removeEventListener(t,start);});setTimeout(go,200);}'

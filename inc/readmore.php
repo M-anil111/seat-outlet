@@ -16,7 +16,7 @@ function soReadMoreBlock(string $innerHtml, string $id, int $lines = 4, string $
         . '</div>';
     if (empty($GLOBALS['soClampScript'])) {
         $GLOBALS['soClampScript'] = true;
-        $out .= '<script>(function(){function init(){document.querySelectorAll("[data-so-clamp]").forEach(function(b){var body=b.querySelector(".so-clamp__body"),btn=b.querySelector(".so-clamp__btn");if(!body||!btn||b.classList.contains("so-clamp--js"))return;b.classList.add("so-clamp--js");'
+        $out .= '<script' . soCspNonceAttr() . '>(function(){function init(){document.querySelectorAll("[data-so-clamp]").forEach(function(b){var body=b.querySelector(".so-clamp__body"),btn=b.querySelector(".so-clamp__btn");if(!body||!btn||b.classList.contains("so-clamp--js"))return;b.classList.add("so-clamp--js");'
             . 'if(body.scrollHeight<=body.clientHeight+6){b.classList.remove("so-clamp--js");return;}btn.hidden=false;'
             . 'btn.addEventListener("click",function(){var open=!b.classList.contains("is-open");b.classList.toggle("is-open",open);btn.setAttribute("aria-expanded",open?"true":"false");btn.textContent=open?btn.dataset.less:btn.dataset.more;});});}'
             . 'if(document.readyState==="complete"){init();}else{window.addEventListener("load",init);}})();</script>';   // after the stylesheets (some load late), so the height check is true

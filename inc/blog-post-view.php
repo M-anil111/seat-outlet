@@ -125,7 +125,7 @@ $published = !empty($post['published_at']) ? strtotime($post['published_at']) : 
                 <?php } ?>
             </aside>
         <?php } ?>
-        <script>(function(){
+        <script<?php echo soCspNonceAttr(); ?>>(function(){
             // Phones: the contents list starts closed and only three more-guide cards show until "Show more guides" (all stay in the page).
             if (!window.matchMedia || !window.matchMedia("(max-width: 767px)").matches) return;
             var toc = document.querySelector(".so-art__toc"); if (toc) toc.removeAttribute("open");
@@ -134,7 +134,7 @@ $published = !empty($post['published_at']) ? strtotime($post['published_at']) : 
             g.classList.add("so-cap3"); b.hidden = false;
             b.addEventListener("click", function () { var open = g.classList.toggle("so-cap3") === false; b.setAttribute("aria-expanded", open ? "true" : "false"); b.textContent = open ? "Show fewer guides" : "Show more guides"; });
         })();</script>
-        <p class="so-art__top"><a href="#top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">Back to top <span aria-hidden="true">&uarr;</span></a></p>
+        <p class="so-art__top"><a href="#top" data-scroll-top>Back to top <span aria-hidden="true">&uarr;</span></a></p>
     </div>
 </article>
 

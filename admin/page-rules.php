@@ -72,7 +72,7 @@ include __DIR__ . '/includes/app-header.php';
                                 <td class="text-end">
                                     <a href="page-rule-form?id=<?php echo (int) $rule['ID']; ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
                                     <form method="post" action="page-rule-delete" class="d-inline"
-                                        onsubmit="return confirm('Delete this page rule?');">
+                                        data-confirm="Delete this page rule?">
                                         <input type="hidden" name="csrf_token" value="<?php echo admin_csrf_token(); ?>">
                                         <input type="hidden" name="id" value="<?php echo (int) $rule['ID']; ?>">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>

@@ -2901,6 +2901,7 @@ function sendSecurityHeaders() {
 /** Security headers for public pages. The CSP is report-only on purpose (CSP_ENFORCE=1 enforces it): AdSense, GTM and the ticket widgets load scripts and frames from many hosts, so a policy needs a report-only trial first. HSTS stays a Cloudflare setting (docs/lighthouse-and-cloudflare.md). */
 function soSendSecurityHeaders() {
     if (headers_sent()) return;
+    header_remove('X-Powered-By');   // expose_php announces the PHP version; nothing needs it
     header('X-Content-Type-Options: nosniff');
     // HSTS on the public host only (no includeSubDomains: beta and the checkout host are managed separately). Sent over HTTPS only.
     $soHttps = (($_SERVER['HTTPS'] ?? '') !== '' && $_SERVER['HTTPS'] !== 'off') || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https' || stripos((string) ($_SERVER['HTTP_CF_VISITOR'] ?? ''), 'https') !== false;
@@ -2912,7 +2913,7 @@ function soSendSecurityHeaders() {
     // the report log shows real problems. It also evaluates strings ('unsafe-eval'); that is left out on purpose, so enforcing this policy would need that decision first.
     // Report-only: nothing is blocked. Violations go to ajax/csp-report.php (PHP error log). Read the log for a week, add the missing hosts, then switch the header name to Content-Security-Policy.
     // CSP_ENFORCE=1 in inc/env.local.php turns the same policy from report-only into enforced (no code change, no redeploy needed beyond the settings file).
-    header((getenv('CSP_ENFORCE') === '1' ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only') . ': ' . soCspPolicy(getenv('CSP_ENFORCE') === '1'));   // the policy itself: inc/csp.php, checked by tools/check-csp.php
+    header((getenv('CSP_ENFORCE') === '1' ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only') . ': ' . soCspPolicy(getenv('CSP_ENFORCE') === '1', soCspNonce()));   // the policy itself: inc/csp.php, checked by tools/check-csp.php
 }
 
 function sendPageCacheHeaders() {
@@ -4388,7 +4389,7 @@ function deleteBlogPost($id, $mysqli = MYSQLI) {
 | Reusable schema.org JSON-LD builders
 |--------------------------------------------------------------------------
 | These exist because inc/seo.php, inc/seo-event.php and inc/seo-tickets.php
-| were each hand-writing a JSON-LD <script> tag, with the same fabricated
+| were each hand-writing a JSON-LD <script<?php echo soCspNonceAttr(); ?>> tag, with the same fabricated
 | Organization reviews/AggregateRating copy-pasted into all three, a
 | trailing comma in two of them that made the whole block invalid JSON
 | (verified: json_decode() on that exact fragment returns NULL with a
@@ -4399,7 +4400,7 @@ function deleteBlogPost($id, $mysqli = MYSQLI) {
 | Google's structured data parser can't resolve to any schema.org type).
 |
 | outputJsonLdGraph() builds the whole @graph as one real PHP array and
-| lets json_encode() produce the <script> tag's contents in a single call,
+| lets json_encode() produce the <script<?php echo soCspNonceAttr(); ?>> tag's contents in a single call,
 | so there is no hand-written JSON left to typo a comma into.
 */
 
@@ -4876,7 +4877,7 @@ function soInjectFaqSchema($html) {
 }
 
 /**
- * Renders one JSON-LD <script> tag from a flat array of schema.org nodes.
+ * Renders one JSON-LD script tag from a flat array of schema.org nodes.
  * Filters out any null entries (e.g. buildFaqPageSchema() returning null
  * when there are no FAQs) so callers don't need to guard every call site.
  */
@@ -5297,7 +5298,7 @@ function renderPerformerWhere(string $artistName, int $performerId, array $event
             </div>
         <?php } ?>
     </div>
-    <script>
+    <script<?php echo soCspNonceAttr(); ?>>
     (function () {
         var box = document.getElementById('where');
         if (!box) return;
@@ -5355,7 +5356,7 @@ function renderBioBlock($bio): void {
         <p class="so-bio__text"><?php echo $bio; ?></p>
         <?php if ($long) { ?>
             <button type="button" class="so-bio__toggle" hidden aria-expanded="false">Read more</button>
-            <script>
+            <script<?php echo soCspNonceAttr(); ?>>
             (function () {
                 var box = document.currentScript.parentNode, btn = box.querySelector('.so-bio__toggle');
                 if (!btn) return;
@@ -5419,7 +5420,7 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
         <?php } ?>
     </div>
     <p class="so-related__credits"><a href="/image-credits">Photo credits</a></p>
-    <script>
+    <script<?php echo soCspNonceAttr(); ?>>
     (function () {
         var grid = document.querySelector('[data-so-related]');
         if (!grid || !('IntersectionObserver' in window)) return;
@@ -5633,16 +5634,16 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
         <div class="artist-tabs tabs-wrapper">
             <ul class="nav nav-tabs artist-tabs-nav" id="artistTabs">
                 <li class="nav-item">
-                    <button class="nav-link active" type="button" data-target="default" onclick="scrollToElement('default')">
+                    <button class="nav-link active" type="button" data-target="default" data-scroll-target="default">
                         <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?>
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" type="button" data-target="about" onclick="scrollToElement('about')">About</button>
+                    <button class="nav-link" type="button" data-target="about" data-scroll-target="about">About</button>
                 </li>
                 <?php if (!empty($faqs)) { ?>
                 <li class="nav-item">
-                    <button class="nav-link" type="button" data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
+                    <button class="nav-link" type="button" data-target="faqs" data-scroll-target="faqs">FAQs</button>
                 </li>
                 <?php } ?>
             </ul>

@@ -939,7 +939,7 @@
 
 
 
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
     // Initialize interactions once DOM is ready (jQuery and slick are deferred scripts: wait for them)
 document.addEventListener('DOMContentLoaded', function () {
   // Dynamic year in footer

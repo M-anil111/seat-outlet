@@ -79,7 +79,7 @@ include 'header.php';
         </div>
     </section>
 </main>
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
 // "Near you": the visitor's saved place (cookie so_label, for example "Bee Cave, TX") picks the state to show first.
 (function () {
     var m = /(?:^|; )so_label=([^;]*)/.exec(document.cookie);
