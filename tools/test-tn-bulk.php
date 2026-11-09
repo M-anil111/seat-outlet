@@ -85,5 +85,22 @@ tkCheck('nothing is deleted when under half of the previous count came back', tn
 tkCheck('a believable full run may delete', tnBulkMayDelete(true, 90000, 100000) === true && tnBulkMayDelete(true, 50000, 100000) === true);
 tkCheck('the first full run may delete (nothing to compare with)', tnBulkMayDelete(true, 120, null) === true);
 
+// 6. A full refresh is never left to slip: an overdue copy starts a run at any hour, and a half-finished run keeps going
+$day = 86400; $h = 3600;
+tkCheck('an overdue copy (31 h old) at noon starts a full run', tnBulkChooseMode($noon - 31 * $h, $noon) === 'full');
+tkCheck('a copy 29 h old at noon waits for the next window', tnBulkChooseMode($noon - 29 * $h, $noon) === 'incremental');
+tkCheck('an overdue copy at 00:30 UTC starts a full run', tnBulkChooseMode($noon - 31 * $h, gmmktime(0, 30, 0, 10, 16, 2026)) === 'full');
+tkCheck('a run left half done 2 h ago is resumed outside the window', tnBulkChooseMode($noon - $day - 2 * $h, $noon, $noon - 2 * $h) === 'full');
+tkCheck('a run started 7 h ago is not resumed (it starts again later)', tnBulkChooseMode($noon - 25 * $h, $noon, $noon - 7 * $h) === 'incremental');
+tkCheck('no run in progress: the resume argument changes nothing', tnBulkChooseMode($noon - 25 * $h, $noon, null) === 'incremental');
+
+// Scenario: a full run that ends at 10:40 UTC on day 0 misses the 07-10 window on day 1 (23 h 37 min old at 10:17), so it must
+// start at the first hour the copy is 30 h old (16:40 UTC on day 1), not wait until day 2 (44 h old, past the 36 h limit).
+$done = gmmktime(10, 40, 0, 10, 15, 2026);
+tkCheck('the late-window run is not repeated at 10:17 the next day', tnBulkChooseMode($done, gmmktime(10, 17, 0, 10, 16, 2026)) === 'incremental');
+tkCheck('the copy is re-run at 16:40 the next day, before it goes stale', tnBulkChooseMode($done, gmmktime(16, 40, 0, 10, 16, 2026)) === 'full');
+tkCheck('the overdue threshold leaves 6 h of margin inside the 36 h limit', TN_BULK_OVERDUE_SECONDS <= 129600 - 6 * $h);
+tkCheck('the resume window is the same constant the importer uses', TN_BULK_RESUME_SECONDS === 21600);
+
 echo $fails ? "\ntn bulk: $fails failed\n" : "\ntn bulk: all passed\n";
 exit($fails ? 1 : 0);
