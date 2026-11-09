@@ -65,6 +65,9 @@ function tbStateClear(string ...$names): void {
 
 /** Upserts the mapped rows of one page in one transaction; returns how many rows were written. */
 function tbWriteRows(array $events, string $seenAt): int {
+    // The run waits on the API between pages (the call budget can hold it for minutes), and the server closes an idle connection:
+    // check the handle first and reconnect it if needed (Sentry SEAT-OUTLET-1S).
+    if (!soDbEnsure(MYSQLI)) throw new RuntimeException('database unavailable');
     $stmt = MYSQLI->prepare(tnBulkUpsertSql());
     if (!$stmt) throw new RuntimeException('prepare failed: ' . MYSQLI->error);
     $types = str_repeat('s', count(TN_BULK_COLUMNS) + 1);
