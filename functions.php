@@ -1541,28 +1541,52 @@ function get_bio($performerId, $mysqli = MYSQLI) {
  * real_connect() on the same object is what makes it work (MYSQLI is a constant, the handle cannot be replaced); the connection falls
  * back to latin1 afterwards, so the charset is set again.
  */
+/**
+ * Reconnects a handle the server has closed (the connection sat idle, or the server restarted). Three tries over about half a second ride
+ * out a server that is briefly refusing handshakes (Sentry SEAT-OUTLET-13/18); a server that is really down fails fast. Returns true
+ * once the handle is connected again.
+ */
+function soDbReconnect($mysqli): bool {
+    if (!($mysqli instanceof mysqli)) return false;
+    foreach ([0, 150000, 350000] as $pauseMicros) {
+        if ($pauseMicros > 0) usleep($pauseMicros);
+        try {
+            if ($mysqli->real_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int) DB_PORT)) {
+                $mysqli->set_charset('utf8mb4');
+                return true;
+            }
+        } catch (Throwable $reconnectFailed) {
+            // try again, then give up
+        }
+    }
+    return false;
+}
+
+/**
+ * Checks that a connection is still open before a query. The server closes a connection that has been idle for a while (a long API
+ * wait, for example) and the next query fails with "MySQL server has gone away" (Sentry SEAT-OUTLET-1S, SEAT-OUTLET-R). Reconnects when
+ * it is gone. Returns true when the handle is usable.
+ */
+function soDbEnsure($mysqli): bool {
+    if (!($mysqli instanceof mysqli)) return false;
+    try {
+        $mysqli->query('SELECT 1');
+        return true;
+    } catch (mysqli_sql_exception $e) {
+        return soDbReconnect($mysqli);
+    }
+}
+
 function soDbRetry(callable $fn, $mysqli = MYSQLI) {
+    // A connection idle through an API wait is closed by the server: check it before the query (a no-op when it is alive, a reconnect
+    // when it is not). When even the reconnect fails the server is down: run the work once so the caller gets the real error, without a
+    // second round of reconnect attempts.
+    if (!soDbEnsure($mysqli)) return $fn($mysqli);
     try {
         return $fn($mysqli);
     } catch (mysqli_sql_exception $e) {
         if (!in_array($e->getCode(), [2006, 2013], true)) throw $e;
-        // Sentry SEAT-OUTLET-13/18: several requests lost their connection in the same second and the reconnect failed with "Error while
-        // reading greeting packet" (the server was restarting or briefly refusing handshakes). Three tries over about half a second
-        // ride that out; a server that is really down still fails fast.
-        $connected = false;
-        foreach ([0, 150000, 350000] as $pauseMicros) {
-            if ($pauseMicros > 0) usleep($pauseMicros);
-            try {
-                if ($mysqli->real_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int) DB_PORT)) {
-                    $mysqli->set_charset('utf8mb4');
-                    $connected = true;
-                    break;
-                }
-            } catch (Throwable $reconnectFailed) {
-                // try again, then give up with the original error (the useful one)
-            }
-        }
-        if (!$connected) throw $e;
+        if (!soDbReconnect($mysqli)) throw $e;   // a server that is really down: the original error is the useful one
         return $fn($mysqli);
     }
 }

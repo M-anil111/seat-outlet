@@ -7,8 +7,13 @@ require_once __DIR__ . '/../inc/cli-guard.php';
  */
 require_once __DIR__ . '/../db/config.php';
 $src = file_get_contents(__DIR__ . '/../functions.php');
-if (!preg_match('/^function soDbRetry\(.*?\n}\n/ms', $src, $m)) { fwrite(STDERR, "FAIL: soDbRetry not found in functions.php\n"); exit(1); }
-eval($m[0]);
+// soDbRetry uses soDbEnsure, which uses soDbReconnect: all three are evaluated together, in their file order.
+$helpers = '';
+foreach (['soDbReconnect', 'soDbEnsure', 'soDbRetry'] as $fn) {
+    if (!preg_match('/^function ' . $fn . '\(.*?\n}\n/ms', $src, $m)) { fwrite(STDERR, "FAIL: $fn not found in functions.php\n"); exit(1); }
+    $helpers .= $m[0];
+}
+eval($helpers);
 
 $fail = 0;
 function drCheck(string $what, $got, $want): void {
@@ -23,7 +28,7 @@ drCheck('a healthy connection runs the work once', soDbRetry(fn($db) => $db->que
 $kill();
 $calls = 0;
 $val = soDbRetry(function ($db) use (&$calls) { $calls++; return $db->query('SELECT 8')->fetch_row()[0]; });
-drCheck('a dropped connection is reconnected and the work repeated', [$val, $calls], ['8', 2]);
+drCheck('a dropped connection is reconnected before the work runs (the work runs once)', [$val, $calls], ['8', 1]);
 drCheck('the charset is utf8mb4 again after the reconnect', MYSQLI->character_set_name(), 'utf8mb4');
 drCheck('the handle keeps working for later queries', MYSQLI->query('SELECT 9')->fetch_row()[0], '9');
 
