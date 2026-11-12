@@ -109,6 +109,22 @@ function soEventUniqueTitle(string $title, string $label, string $day, string $c
     return $title;
 }
 
+/**
+ * Start time of an event as "7:30 PM", or '' when the feed gives none. The feed's date.date is a plain day, so the time comes from
+ * date.datetime (the venue's wall-clock time, read as written, never converted to the server's time zone) or date.datetimeOffset.
+ * Midnight means "no time was set", the same rule the page used before.
+ */
+function soEventShowingClock(array $event): string {
+    foreach ([$event['date']['datetime'] ?? null, $event['date']['datetimeOffset'] ?? null] as $cand) {
+        if (!is_string($cand) || !preg_match('/^\d{4}-\d{2}-\d{2}[T ](\d{2}):(\d{2})/', $cand, $m)) continue;
+        $h = (int) $m[1];
+        $min = (int) $m[2];
+        if ($h === 0 && $min === 0) return '';
+        return ($h % 12 ?: 12) . ':' . sprintf('%02d', $min) . ' ' . ($h < 12 ? 'AM' : 'PM');
+    }
+    return '';
+}
+
 /** Shorten a title to $max characters without an ellipsis: whole words only, never a dangling "at", and "Tickets" is always kept. */
 function seoClampTitle($title, $max = 59) {
     $title = soNormalizeTitle($title);
