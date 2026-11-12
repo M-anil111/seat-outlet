@@ -11,7 +11,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  */
 
 /**
- * Inline <script> for the <head>: records the visitor's choice in window.soConsent, tells Google Tag Manager the consent state
+ * Inline script for the head: records the visitor's choice in window.soConsent, tells Google Tag Manager the consent state
  * (Consent Mode defaults) and loads GTM only when tags are allowed. Returns '' when no GTM_ID is configured (then there are no
  * analytics or advertising tags to gate, and the privacy bar and footer link are not shown).
  */
@@ -32,7 +32,7 @@ function soConsentHeadScript() {
         . 'j.src="https://www.googletagmanager.com/gtm.js?id="+encodeURIComponent(gtm);f.parentNode.insertBefore(j,f);};'
         . 'if(ok)w.soLoadGtm();'
         . '})();';
-    return '<script>' . $js . '</script>';
+    return '<script' . soCspNonceAttr() . '>' . $js . '</script>';
 }
 
 /**

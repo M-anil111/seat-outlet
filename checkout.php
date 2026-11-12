@@ -154,7 +154,7 @@ include 'header.php';
   </div>
 </section>
 
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
 (function () {
   window.dataLayer = window.dataLayer || [];
   var item = {

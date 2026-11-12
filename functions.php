@@ -1121,7 +1121,7 @@ function soEventIsOver(array $event): bool {
     return $ts + 6 * 3600 < time();
 }
 
-function getTnEventById($eventId) {
+function getTnEventById($eventId, bool $allowBulk = false) {
     $eventId = (int) $eventId;
     $GLOBALS['so_event_as_of'] = null;   // set below when the answer comes from a saved copy: the time it was seen (unix)
     $event = tnRequest("/catalog/v2/events/" . $eventId);
@@ -1145,6 +1145,16 @@ function getTnEventById($eventId) {
         tnCount('event_snapshot');
         $GLOBALS['so_event_as_of'] = (int) ($GLOBALS['so_snapshot_seen'] ?? time());
         return soCleanTnNames($snap);
+    }
+    // Last resort for the event page only: the bulk catalog copy, while its full refresh is fresh. Checkout does not ask (its prices must be live).
+    if ($allowBulk && tnSnapshotDb()) {
+        $bulk = tnBulkEventDetail(MYSQLI, $eventId, tnBulkState(), time());
+        if ($bulk !== null) {
+            tnCount('bulk_served');
+            $GLOBALS['so_bulk_served'] = true;
+            $GLOBALS['so_event_as_of'] = $bulk['seenAt'];
+            return soCleanTnNames($bulk['event']);
+        }
     }
     return $event;
 }
@@ -1232,6 +1242,17 @@ function stripCategoryRootPath($path) {
     return str_replace('.', '', str_replace($rootPaths, '', $path));
 }
 
+/**
+ * A category taken from a bulk-copy event row has only its path (soCategoryIsBare()); fill in its name, depth and ancestors from the
+ * catalog's category list (getTnCatById(), cached like every tnRequest). A full category, or a failed lookup, comes back unchanged.
+ */
+function soCompleteCategory(array $cat): array {
+    if (!soCategoryIsBare($cat)) return $cat;
+    $id = soCategoryLeafId((string) $cat['path']);
+    if ($id <= 0) return $cat;
+    return soCategoryFromLookup($cat, getTnCatById($id)['results'] ?? []);
+}
+
 function buildCategoryBreadcrumb($defaultCategory) {
 
     $breadcrumb = [
@@ -1241,34 +1262,41 @@ function buildCategoryBreadcrumb($defaultCategory) {
         ]
     ];
 
-    if($defaultCategory['depth'] == 1) {
+    // A category without a name (a bare one from a bulk-copy event that the catalog could not complete) adds no step of its own:
+    // an unnamed step would be an empty link, and reading the missing name was a PHP warning on every such page (Sentry).
+    $defaultCategory = is_array($defaultCategory) ? $defaultCategory : [];
+    $leafName = trim((string) ($defaultCategory['text']['name'] ?? ''));
+
+    if ((int) ($defaultCategory['depth'] ?? 0) === 1 && $leafName !== '') {
         $breadcrumb[] = [
-            'label' => ucwords(strtolower($defaultCategory['text']['name'])),
-            'url'   => '/' . sanitize_title($defaultCategory['text']['name'])
+            'label' => ucwords(strtolower($leafName)),
+            'url'   => '/' . sanitize_title($leafName)
         ];
     }
-    if (!empty($defaultCategory['ancestors'])) {
+    if (!empty($defaultCategory['ancestors']) && is_array($defaultCategory['ancestors'])) {
         $depth1 = [];
         $depth2 = [];
         foreach ($defaultCategory['ancestors'] as $ancestor) {
-            if ($ancestor['depth'] == 1) {
+            if (!is_array($ancestor) || trim((string) ($ancestor['text']['name'] ?? '')) === '') continue;
+            $ancestorDepth = (int) ($ancestor['depth'] ?? 0);
+            if ($ancestorDepth === 1) {
                 $depth1[] = [
                     'label' => ucwords(strtolower($ancestor['text']['name'])),
                     'url'   => '/' . sanitize_title($ancestor['text']['name'])
                 ];
-            } elseif ($ancestor['depth'] == 2) {
+            } elseif ($ancestorDepth === 2) {
                 $depth2[] = [
                     'label' => ucwords(strtolower($ancestor['text']['name'])),
-                    'url'   => soCategoryHref((int) ($ancestor['id'] ?? stripCategoryRootPath($ancestor['path'])), (string) $ancestor['text']['name'])   // a genre or league goes straight to its own page: /category/<genre> would 301
+                    'url'   => soCategoryHref((int) ($ancestor['id'] ?? stripCategoryRootPath((string) ($ancestor['path'] ?? ''))), (string) $ancestor['text']['name'])   // a genre or league goes straight to its own page: /category/<genre> would 301
                 ];
             }
         }
         $breadcrumb = array_merge($breadcrumb, $depth1, $depth2);
     }
-    if(count($breadcrumb) < 3) {
+    if (count($breadcrumb) < 3 && $leafName !== '') {
         $breadcrumb[] = [
-            'label' => ucwords(strtolower($defaultCategory['text']['name'])),
-            'url'   => soCategoryHref((int) ($defaultCategory['id'] ?? stripCategoryRootPath($defaultCategory['path'])), (string) $defaultCategory['text']['name'])
+            'label' => ucwords(strtolower($leafName)),
+            'url'   => soCategoryHref((int) ($defaultCategory['id'] ?? stripCategoryRootPath((string) ($defaultCategory['path'] ?? ''))), $leafName)
         ];
     }
 
@@ -1523,28 +1551,52 @@ function get_bio($performerId, $mysqli = MYSQLI) {
  * real_connect() on the same object is what makes it work (MYSQLI is a constant, the handle cannot be replaced); the connection falls
  * back to latin1 afterwards, so the charset is set again.
  */
+/**
+ * Reconnects a handle the server has closed (the connection sat idle, or the server restarted). Three tries over about half a second ride
+ * out a server that is briefly refusing handshakes (Sentry SEAT-OUTLET-13/18); a server that is really down fails fast. Returns true
+ * once the handle is connected again.
+ */
+function soDbReconnect($mysqli): bool {
+    if (!($mysqli instanceof mysqli)) return false;
+    foreach ([0, 150000, 350000] as $pauseMicros) {
+        if ($pauseMicros > 0) usleep($pauseMicros);
+        try {
+            if ($mysqli->real_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int) DB_PORT)) {
+                $mysqli->set_charset('utf8mb4');
+                return true;
+            }
+        } catch (Throwable $reconnectFailed) {
+            // try again, then give up
+        }
+    }
+    return false;
+}
+
+/**
+ * Checks that a connection is still open before a query. The server closes a connection that has been idle for a while (a long API
+ * wait, for example) and the next query fails with "MySQL server has gone away" (Sentry SEAT-OUTLET-1S, SEAT-OUTLET-R). Reconnects when
+ * it is gone. Returns true when the handle is usable.
+ */
+function soDbEnsure($mysqli): bool {
+    if (!($mysqli instanceof mysqli)) return false;
+    try {
+        $mysqli->query('SELECT 1');
+        return true;
+    } catch (mysqli_sql_exception $e) {
+        return soDbReconnect($mysqli);
+    }
+}
+
 function soDbRetry(callable $fn, $mysqli = MYSQLI) {
+    // A connection idle through an API wait is closed by the server: check it before the query (a no-op when it is alive, a reconnect
+    // when it is not). When even the reconnect fails the server is down: run the work once so the caller gets the real error, without a
+    // second round of reconnect attempts.
+    if (!soDbEnsure($mysqli)) return $fn($mysqli);
     try {
         return $fn($mysqli);
     } catch (mysqli_sql_exception $e) {
         if (!in_array($e->getCode(), [2006, 2013], true)) throw $e;
-        // Sentry SEAT-OUTLET-13/18: several requests lost their connection in the same second and the reconnect failed with "Error while
-        // reading greeting packet" (the server was restarting or briefly refusing handshakes). Three tries over about half a second
-        // ride that out; a server that is really down still fails fast.
-        $connected = false;
-        foreach ([0, 150000, 350000] as $pauseMicros) {
-            if ($pauseMicros > 0) usleep($pauseMicros);
-            try {
-                if ($mysqli->real_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int) DB_PORT)) {
-                    $mysqli->set_charset('utf8mb4');
-                    $connected = true;
-                    break;
-                }
-            } catch (Throwable $reconnectFailed) {
-                // try again, then give up with the original error (the useful one)
-            }
-        }
-        if (!$connected) throw $e;
+        if (!soDbReconnect($mysqli)) throw $e;   // a server that is really down: the original error is the useful one
         return $fn($mysqli);
     }
 }
@@ -2883,6 +2935,7 @@ function sendSecurityHeaders() {
 /** Security headers for public pages. The CSP is report-only on purpose (CSP_ENFORCE=1 enforces it): AdSense, GTM and the ticket widgets load scripts and frames from many hosts, so a policy needs a report-only trial first. HSTS stays a Cloudflare setting (docs/lighthouse-and-cloudflare.md). */
 function soSendSecurityHeaders() {
     if (headers_sent()) return;
+    header_remove('X-Powered-By');   // expose_php announces the PHP version; nothing needs it
     header('X-Content-Type-Options: nosniff');
     // HSTS on the public host only (no includeSubDomains: beta and the checkout host are managed separately). Sent over HTTPS only.
     $soHttps = (($_SERVER['HTTPS'] ?? '') !== '' && $_SERVER['HTTPS'] !== 'off') || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https' || stripos((string) ($_SERVER['HTTP_CF_VISITOR'] ?? ''), 'https') !== false;
@@ -2894,7 +2947,7 @@ function soSendSecurityHeaders() {
     // the report log shows real problems. It also evaluates strings ('unsafe-eval'); that is left out on purpose, so enforcing this policy would need that decision first.
     // Report-only: nothing is blocked. Violations go to ajax/csp-report.php (PHP error log). Read the log for a week, add the missing hosts, then switch the header name to Content-Security-Policy.
     // CSP_ENFORCE=1 in inc/env.local.php turns the same policy from report-only into enforced (no code change, no redeploy needed beyond the settings file).
-    header((getenv('CSP_ENFORCE') === '1' ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only') . ': ' . soCspPolicy(getenv('CSP_ENFORCE') === '1'));   // the policy itself: inc/csp.php, checked by tools/check-csp.php
+    header((getenv('CSP_ENFORCE') === '1' ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only') . ': ' . soCspPolicy(getenv('CSP_ENFORCE') === '1', soCspNonce()));   // the policy itself: inc/csp.php, checked by tools/check-csp.php
 }
 
 function sendPageCacheHeaders() {
@@ -4370,7 +4423,7 @@ function deleteBlogPost($id, $mysqli = MYSQLI) {
 | Reusable schema.org JSON-LD builders
 |--------------------------------------------------------------------------
 | These exist because inc/seo.php, inc/seo-event.php and inc/seo-tickets.php
-| were each hand-writing a JSON-LD <script> tag, with the same fabricated
+| were each hand-writing a JSON-LD <script<?php echo soCspNonceAttr(); ?>> tag, with the same fabricated
 | Organization reviews/AggregateRating copy-pasted into all three, a
 | trailing comma in two of them that made the whole block invalid JSON
 | (verified: json_decode() on that exact fragment returns NULL with a
@@ -4381,7 +4434,7 @@ function deleteBlogPost($id, $mysqli = MYSQLI) {
 | Google's structured data parser can't resolve to any schema.org type).
 |
 | outputJsonLdGraph() builds the whole @graph as one real PHP array and
-| lets json_encode() produce the <script> tag's contents in a single call,
+| lets json_encode() produce the <script<?php echo soCspNonceAttr(); ?>> tag's contents in a single call,
 | so there is no hand-written JSON left to typo a comma into.
 */
 
@@ -4858,7 +4911,7 @@ function soInjectFaqSchema($html) {
 }
 
 /**
- * Renders one JSON-LD <script> tag from a flat array of schema.org nodes.
+ * Renders one JSON-LD script tag from a flat array of schema.org nodes.
  * Filters out any null entries (e.g. buildFaqPageSchema() returning null
  * when there are no FAQs) so callers don't need to guard every call site.
  */
@@ -5279,7 +5332,7 @@ function renderPerformerWhere(string $artistName, int $performerId, array $event
             </div>
         <?php } ?>
     </div>
-    <script>
+    <script<?php echo soCspNonceAttr(); ?>>
     (function () {
         var box = document.getElementById('where');
         if (!box) return;
@@ -5337,7 +5390,7 @@ function renderBioBlock($bio): void {
         <p class="so-bio__text"><?php echo $bio; ?></p>
         <?php if ($long) { ?>
             <button type="button" class="so-bio__toggle" hidden aria-expanded="false">Read more</button>
-            <script>
+            <script<?php echo soCspNonceAttr(); ?>>
             (function () {
                 var box = document.currentScript.parentNode, btn = box.querySelector('.so-bio__toggle');
                 if (!btn) return;
@@ -5401,7 +5454,7 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
         <?php } ?>
     </div>
     <p class="so-related__credits"><a href="/image-credits">Photo credits</a></p>
-    <script>
+    <script<?php echo soCspNonceAttr(); ?>>
     (function () {
         var grid = document.querySelector('[data-so-related]');
         if (!grid || !('IntersectionObserver' in window)) return;
@@ -5509,7 +5562,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     // performer answered 404 while /artist/<slug> rendered). Prefetched above, so this is the cached answer.
     $allPerformerEvents = tnEntityMissing($performer) ? [] : (getTnPerformerEvents($performerId, ['filter' => 'date/date ge ' . date('Y-m-d') . ' and date/date le ' . soEventHorizon(), 'perPage' => 100, 'sort' => 'date/date'])['results'] ?? []);
     if (!tnEntityMissing($performer) && empty($performer['defaultCategory'])) {
-        $performer['defaultCategory'] = soPerformerCategoryFromEvents($performer, $allPerformerEvents);
+        $performer['defaultCategory'] = soCompleteCategory(soPerformerCategoryFromEvents($performer, $allPerformerEvents));   // bulk-copy events carry only the path
     }
     if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
         renderNotFoundPage('Performer', $performer, soLabelFromSlug($requestedSlug));   // 404 when the API says not found, 503 when it failed
@@ -5615,16 +5668,16 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
         <div class="artist-tabs tabs-wrapper">
             <ul class="nav nav-tabs artist-tabs-nav" id="artistTabs">
                 <li class="nav-item">
-                    <button class="nav-link active" type="button" data-target="default" onclick="scrollToElement('default')">
+                    <button class="nav-link active" type="button" data-target="default" data-scroll-target="default">
                         <?php echo htmlspecialchars($categoryLabel, ENT_QUOTES, 'UTF-8'); ?>
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" type="button" data-target="about" onclick="scrollToElement('about')">About</button>
+                    <button class="nav-link" type="button" data-target="about" data-scroll-target="about">About</button>
                 </li>
                 <?php if (!empty($faqs)) { ?>
                 <li class="nav-item">
-                    <button class="nav-link" type="button" data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
+                    <button class="nav-link" type="button" data-target="faqs" data-scroll-target="faqs">FAQs</button>
                 </li>
                 <?php } ?>
             </ul>

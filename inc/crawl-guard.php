@@ -43,11 +43,10 @@ function soBotBlocked(string $userAgent, bool $indexable, string $allow = ''): b
 
 /** The visitor's address as the Cloudflare Worker or Cloudflare passes it on, '' when it cannot be told. */
 function soRlClientIp(): string {
-    foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_TRUE_CLIENT_IP', 'HTTP_X_REAL_IP', 'REMOTE_ADDR'] as $k) {
-        $v = trim((string) ($_SERVER[$k] ?? ''));
-        if ($v !== '' && filter_var($v, FILTER_VALIDATE_IP)) return $v;
-    }
-    return '';
+    // A forwarded header counts only when the connection comes from a trusted proxy (soClientIp), so a visitor cannot pick a new address per request.
+    if (function_exists('soClientIp')) return (string) soClientIp();
+    $v = trim((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+    return $v !== '' && filter_var($v, FILTER_VALIDATE_IP) ? $v : '';
 }
 
 /**
@@ -57,7 +56,10 @@ function soRlClientIp(): string {
 function soRlCount(string $ip, ?string $dir = null, ?int $now = null): int {
     if ($ip === '' || in_array($ip, ['127.0.0.1', '::1'], true)) return 0;
     $now = $now ?? time();
-    $dir = $dir ?? ((defined('HOME_PATH') ? HOME_PATH : dirname(__DIR__)) . '/cache/ratelimit');
+    // The counter lives under the configured home path when that directory exists, and under the app directory otherwise (a missing
+    // home path used to make the guard silently do nothing).
+    $home = defined('HOME_PATH') && is_dir(HOME_PATH) ? rtrim(HOME_PATH, '/') : dirname(__DIR__);
+    $dir = $dir ?? ($home . '/cache/ratelimit');
     if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) return 0;
     $minute = intdiv($now, 60);
     $file = $dir . '/' . md5($ip) . '.rl';

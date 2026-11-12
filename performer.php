@@ -24,7 +24,7 @@ $soPerformerLabel = soLabelFromSlug($slug);
 // first event. The same request as getPerformerPageEvents() below, answered from the cache.
 if (!tnEntityMissing($performer) && empty($performer['defaultCategory'])) {
 	[, $perfProbe] = getPerformerPageEvents($id, $perPage);
-	$performer['defaultCategory'] = soPerformerCategoryFromEvents($performer, $perfProbe['results'] ?? []);
+	$performer['defaultCategory'] = soCompleteCategory(soPerformerCategoryFromEvents($performer, $perfProbe['results'] ?? []));   // bulk-copy events carry only the path
 }
 
 if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
@@ -149,23 +149,23 @@ soPageHero([
 	<div class="artist-tabs tabs-wrapper">
 		<ul class="nav nav-tabs artist-tabs-nav" id="artistTabs">
 			<li class="nav-item">
-				<button class="nav-link active" type="button" data-target="default" onclick="scrollToElement('default')">
+				<button class="nav-link active" type="button" data-target="default" data-scroll-target="default">
 					<?php echo htmlspecialchars((string) ($breadcrumbs[1]['label'] ?? 'Events'), ENT_QUOTES, 'UTF-8'); ?>
 				</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-link" type="button" data-target="promocode" onclick="scrollToElement('promocode')">Promocode</button>
+				<button class="nav-link" type="button" data-target="promocode" data-scroll-target="promocode">Promocode</button>
 			</li>
 			<?php if (trim(strip_tags((string) $performer_bio)) !== '') { ?>
 			<li class="nav-item">
-				<button class="nav-link" type="button" data-target="about" onclick="scrollToElement('about')">About</button>
+				<button class="nav-link" type="button" data-target="about" data-scroll-target="about">About</button>
 			</li>
 			<?php } ?>
 			<li class="nav-item">
-				<button class="nav-link" type="button"  data-target="faqs" onclick="scrollToElement('faqs')">FAQs</button>
+				<button class="nav-link" type="button"  data-target="faqs" data-scroll-target="faqs">FAQs</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-link" type="button"  data-target="fans" onclick="scrollToElement('fans')">
+				<button class="nav-link" type="button"  data-target="fans" data-scroll-target="fans">
 				Fans Also Love
 				</button>
 			</li>
@@ -520,7 +520,7 @@ soPageHero([
 							<i class="bi bi-chevron-down"></i>
 						</button>
 					</div>
-					<script>
+					<script<?php echo soCspNonceAttr(); ?>>
 					(function () {
 						var btn = document.getElementById('faqToggleBtn');
 						var section = document.getElementById('faqs');
@@ -554,7 +554,7 @@ soPageHero([
 </section>
 
 	
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
 document.addEventListener('DOMContentLoaded', function () {
   if (window.soLocal) {
     window.soLocal.addPerformer({

@@ -16,7 +16,7 @@ function soEventNoticeHtml(): string {
     if (!isset($msgs[$key])) return '';
     return '<div class="so-notice" role="status"><div class="container so-notice__in"><span>' . htmlspecialchars($msgs[$key], ENT_QUOTES, 'UTF-8')
         . '</span><button type="button" class="so-notice__x" aria-label="Dismiss this message">&times;</button></div></div>'
-        . '<script>(function(){var n=document.currentScript.previousElementSibling,b=n&&n.querySelector(".so-notice__x");'
+        . '<script' . soCspNonceAttr() . '>(function(){var n=document.currentScript.previousElementSibling,b=n&&n.querySelector(".so-notice__x");'
         . 'if(b)b.addEventListener("click",function(){n.remove();});'
         . 'try{var u=new URL(location.href);u.searchParams.delete("so_notice");history.replaceState(null,"",u.pathname+u.search+u.hash);}catch(e){}})();</script>';
 }

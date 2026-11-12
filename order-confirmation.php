@@ -211,7 +211,7 @@ include 'header.php';
 <?php } ?>
 
 <?php if ($firePurchase || $fireReturn) { ?>
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
 (function () {
   // GA4: `purchase` only for an order verified on the server and claimed once (value = the verified total). Anything else is an
   // `order_return` / `purchase_pending` event with no value, once per order in this browser. The URL's total is never read.

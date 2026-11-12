@@ -24,7 +24,6 @@ const TN_BULK_PATH = '/catalog/v2/events/bulk';
 // TicketNetwork (14 Oct 2026 reply): the bulk endpoint needs the catalog_bulk_access scope on the token. Asked for on its own token.
 const TN_BULK_SCOPE = 'catalog_bulk_access';
 const TN_BULK_MAX_PAGES = 3000;        // guard against a runaway loop (200 a page would still cover 600,000 events)
-const TN_BULK_RESUME_SECONDS = 21600;  // a full run left half done is resumed for up to 6 hours, then started again
 const TN_BULK_MAX_RUN_SECONDS = 3000;  // stop before the next hourly run would find the lock still held
 
 $mode = 'auto'; $file = null; $dry = false; $maxPages = TN_BULK_MAX_PAGES;
@@ -66,6 +65,9 @@ function tbStateClear(string ...$names): void {
 
 /** Upserts the mapped rows of one page in one transaction; returns how many rows were written. */
 function tbWriteRows(array $events, string $seenAt): int {
+    // The run waits on the API between pages (the call budget can hold it for minutes), and the server closes an idle connection:
+    // check the handle first and reconnect it if needed (Sentry SEAT-OUTLET-1S).
+    if (!soDbEnsure(MYSQLI)) throw new RuntimeException('database unavailable');
     $stmt = MYSQLI->prepare(tnBulkUpsertSql());
     if (!$stmt) throw new RuntimeException('prepare failed: ' . MYSQLI->error);
     $types = str_repeat('s', count(TN_BULK_COLUMNS) + 1);
@@ -149,7 +151,8 @@ if (!$lockFh || !flock($lockFh, LOCK_EX | LOCK_NB)) { tbLog('Another import is r
 
 $now = time();
 $lastFull = tbStateGet('last_full_ok');
-if ($mode === 'auto') $mode = tnBulkChooseMode($lastFull !== null ? (int) $lastFull : null, $now);
+$runStartState = tbStateGet('full_run_start');
+if ($mode === 'auto') $mode = tnBulkChooseMode($lastFull !== null ? (int) $lastFull : null, $now, $runStartState !== null ? (int) $runStartState : null);
 $perPage = tnBulkPerPage();
 
 if ($mode === 'incremental') {

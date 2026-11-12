@@ -149,7 +149,7 @@ $featured = ($page === 1 && !empty($posts)) ? array_shift($posts) : null;
             <form class="so-np__pick" method="get" action="/blog">
                 <span class="so-bh__grid" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" focusable="false"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg></span>
                 <label class="visually-hidden" for="soBlogCat">Explore by category</label>
-                <select id="soBlogCat" name="category" onchange="this.form.submit()">
+                <select id="soBlogCat" name="category" data-auto-submit>
                     <option value="">Explore by category</option>
                     <?php foreach ($categories as $c) { ?>
                     <option value="<?php echo htmlspecialchars($c['slug'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo $activeCat && $activeCat['slug'] === $c['slug'] ? ' selected' : ''; ?>><?php echo htmlspecialchars($c['name'], ENT_QUOTES, 'UTF-8'); ?> (<?php echo (int) $c['count']; ?>)</option>
@@ -180,7 +180,7 @@ $featured = ($page === 1 && !empty($posts)) ? array_shift($posts) : null;
         <?php if ($featured) { ?>
         <a class="so-np__feature" href="/blog/<?php echo htmlspecialchars($featured['slug'], ENT_QUOTES, 'UTF-8'); ?>">
             <span class="so-np__media"><?php echo $soCardImg($featured, 1200, 630, true); ?></span>
-            <span class="so-np__fbody"><?php echo $soCardText($featured); ?></span>
+            <div class="so-np__fbody"><?php echo $soCardText($featured); ?></div>
         </a>
         <?php } ?>
 

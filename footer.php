@@ -96,13 +96,13 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
     <li><a href="/all-artists-and-teams">Artists &amp; Teams</a></li>
     <li><a href="/city-events">Cities</a></li>
     <li><a href="/holiday-events">Holiday Events</a></li>
-    <li><a href="/tickets-promo-code">Deals & Promotions</a></li>
+    <li><a href="/tickets-promo-code">Deals &amp; Promotions</a></li>
     <li><a href="/our-network">Our Network</a></li>
   </ul>
 </div>
 
   </div>
-  <div class="policies" aria-label="Browse artists, teams and shows by name">
+  <nav class="policies" aria-label="Browse artists, teams and shows by name">
   <ul>
     <li><a href="/concert-artists">Artists on Tour</a></li>
     <li><a href="/comedians-on-tour">Comedians on Tour</a></li>
@@ -115,7 +115,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
     <li><a href="/nhl-teams">NHL Teams</a></li>
     <li><a href="/mls-teams">MLS Teams</a></li>
   </ul>
-  </div>
+  </nav>
   <div class="policies">
   <ul>
     <li><a href="/privacy-policy">Privacy Policy</a></li>
@@ -192,12 +192,12 @@ if ($soNeedsJquery) { ?>
 <script src="/lib/jquery/3.7.1/jquery.min.js" defer></script>
 <?php } ?>
 <script src="/lib/bootstrap/5.3.8/bootstrap.bundle.min.js" defer></script>
-<script>window.SO_ASSETS = { flatpickrJs: "/lib/flatpickr/4.6.13/flatpickr.min.js", flatpickrCss: "/lib/flatpickr/4.6.13/flatpickr.min.css" };</script>
+<script<?php echo soCspNonceAttr(); ?>>window.SO_ASSETS = { flatpickrJs: "/lib/flatpickr/4.6.13/flatpickr.min.js", flatpickrCss: "/lib/flatpickr/4.6.13/flatpickr.min.css" };</script>
 <?php if ($soIsHome || $soIsSearch || $soPath === '/about-seat-outlet') { ?>
   <script src="/lib/slick-carousel/1.8.1/slick.min.js" defer></script>
 <?php } ?>
 <script src="<?php echo htmlspecialchars(soAsset('js/main.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
 // Real-user speed measurement (js/vitals.js) is loaded after the page has finished loading and the browser is idle, so it can never
 // delay first paint or add blocking time (a deferred script in the <head> measurably did). The browser buffers the early entries
 // (paint, LCP, layout shifts), so nothing is lost. Visitors who leave before the load event are not measured.
@@ -215,7 +215,7 @@ window.addEventListener('load', function () {
     <script src="<?php echo htmlspecialchars(soAsset('js/event-widget.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
     <script src="<?php echo htmlspecialchars(soAsset('js/event-qty.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
 // Offline fallback page (sw.js). Registered after the page has loaded so it never competes with first paint; not on admin pages.
 if ('serviceWorker' in navigator && location.pathname.indexOf('/admin') !== 0) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
@@ -247,12 +247,13 @@ if ('serviceWorker' in navigator && location.pathname.indexOf('/admin') !== 0) {
 <?php if (strpos($soPath, '/artist/') === 0) { ?>
     <script src="<?php echo htmlspecialchars(soAsset('js/performer.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <?php } ?>
+    <script src="<?php echo htmlspecialchars(soAsset('js/page-actions.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
 <?php 
   include 'inc/modals.php'; 
 ?>
 
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
 	const RECAPTCHA_SITE_KEY = "<?php echo RECAPTCHA_SITE_KEY; ?>";
 	let mapsPromise = null;
 	function loadGoogleMapsApi() {
