@@ -197,7 +197,18 @@ function soBlogModernLinks($html, ?callable $resolve = null) {
     }, $html);
 }
 
+/**
+ * An HTML id may not start with a digit, and a "#1-..." fragment cannot reach one. Article headings stored with ids like "1-the-box-office"
+ * get a letter in front ("s1-the-box-office"), and the fragment links that point at them change the same way. Only id= attributes match
+ * (data-id is left alone), so no script that reads a numeric data attribute changes.
+ */
+function soBlogSafeIds(string $html): string {
+    $html = (string) preg_replace('/(?<![\w-])id=(["\'])(\d)/', 'id=$1s$2', $html);
+    return (string) preg_replace('/href=(["\'])#(\d)/', 'href=$1#s$2', $html);
+}
+
 function soBlogProcess($html, $addMidNewsletter = true, array $nlArgs = []) {
+    $html = soBlogSafeIds($html);
     $html = soBlogModernLinks($html);
     $doc = new DOMDocument();
     libxml_use_internal_errors(true);

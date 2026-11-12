@@ -87,7 +87,7 @@ $qs = function (array $over) use ($search, $status, $type, $page) {
                         <button class="btn btn-primary" type="submit" <?php echo ($stats['pending'] + $stats['fallback']) === 0 ? 'disabled' : ''; ?> title="Looks up 25 queued pictures right now (takes up to a minute)">Resolve 25 now</button>
                     </form>
                     <?php if ($stats['legacy_ok'] > 0): ?>
-                    <form method="post" action="images-action" onsubmit="return confirm('Queue <?php echo (int) $stats['legacy_ok']; ?> older pictures for re-verification? They show the initials tile until each is resolved again.');">
+                    <form method="post" action="images-action" data-confirm="Queue <?php echo (int) $stats['legacy_ok']; ?> older pictures for re-verification? They show the initials tile until each is resolved again.">
                         <input type="hidden" name="csrf_token" value="<?php echo admin_csrf_token(); ?>">
                         <input type="hidden" name="do" value="requeue_legacy">
                         <button class="btn btn-outline-secondary" type="submit">Re-verify older pictures</button>

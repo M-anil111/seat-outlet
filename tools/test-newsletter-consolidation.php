@@ -19,11 +19,8 @@ nlCheck('price alerts: repeat and new read the same', $priceNew['message'] === $
 foreach (['invalid', 'recaptcha', 'rate', 'error'] as $st) nlCheck("$st passes through unchanged", soLeadPublic(['status' => $st, 'message' => 'x'])['status'] === $st);
 nlCheck('the server-side result still says duplicate (handling is preserved)', $dup['status'] === 'duplicate' && strpos((string) file_get_contents($root . '/inc/leads-core.php'), "'status' => 'duplicate'") !== false);
 
-// The retired endpoints
-$ce = (string) file_get_contents($root . '/ajax/check-email.php');
-nlCheck('check-email.php reads no table', stripos($ce, 'MYSQLI') === false && stripos($ce, 'FROM leads') === false && stripos($ce, 'db/config') === false);
-nlCheck('check-email.php calls no outside service', stripos($ce, 'recaptcha') === false && stripos($ce, 'curl') === false);
-nlCheck("check-email.php can only answer success or invalid", preg_match_all("/'status' => /", $ce) === 2 && strpos($ce, "'duplicate'") === false);
+// The retired endpoints (check-email.php is removed: the local pen test found it still answering)
+nlCheck('check-email.php is removed', !file_exists($root . '/ajax/check-email.php'));
 $ne = (string) file_get_contents($root . '/newsletter-email.php');
 nlCheck('newsletter-email.php sends a GET to the home page', strpos($ne, "'Location: ' . rtrim(HOME_URL, '/') . '/', true, 301") !== false);
 nlCheck('newsletter-email.php logs its remaining posts', strpos($ne, 'legacy newsletter-email.php POST') !== false);

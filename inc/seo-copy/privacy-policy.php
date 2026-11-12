@@ -27,7 +27,7 @@
 <li>Service messages, such as booking confirmations and security alerts, may still be sent.</li>
 <li>Manage cookies in your browser, device settings or any cookie tool on the platform.</li>
 </ul>
-<div class="so-callout"><p>The policy also notes that no method of transmission or storage is completely secure, .</p></div>
+<div class="so-callout"><p>The policy also notes that no method of transmission or storage is completely secure.</p></div>
 
 <div class="so-seo-figs">
 <figure><img src="/images/event-concert.jpg" alt="Crowd at a live concert" width="800" height="512" loading="lazy"><figcaption>Your data helps us deliver tickets and event updates.</figcaption></figure>

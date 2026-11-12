@@ -100,7 +100,7 @@ include 'header.php';
             <?php foreach ($partners as $partner) { ?>
                 <div class="col-md-6 col-lg-4">
                     <a href="<?php echo htmlspecialchars($partner['url'], ENT_QUOTES, 'UTF-8'); ?>" class="card h-100 text-decoration-none text-reset p-3">
-                        <h3 class="h5 mb-1"><?php echo htmlspecialchars($partner['name'], ENT_QUOTES, 'UTF-8'); ?></h3>
+                        <h2 class="h5 mb-1"><?php echo htmlspecialchars($partner['name'], ENT_QUOTES, 'UTF-8'); ?></h2>
                         <p class="text-muted mb-0"><?php echo htmlspecialchars($partner['tagline'], ENT_QUOTES, 'UTF-8'); ?></p>
                     </a>
                 </div>

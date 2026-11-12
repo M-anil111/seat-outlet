@@ -31,7 +31,7 @@ INSERT INTO `page_rules`
 VALUES
     (
         '/',
-        'Seat Outlet – Verified Ticket Marketplace Network for Concerts & Sports Tickets',
+        'Seat Outlet – Verified Ticket Marketplace for Concert & Sports Tickets',
         'Seat Outlet is a verified ticket marketplace network to buy concert, sports, and event tickets online. Compare prices, find deals, and book securely.',
         'https://beta.seatoutlet.com/',
         NULL,

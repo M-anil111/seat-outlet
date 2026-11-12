@@ -180,7 +180,7 @@ include __DIR__ . '/includes/app-header.php';
             <a href="blog-posts" class="btn btn-link">Cancel</a>
         </form>
 
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
 (function () {
   [['f-meta_title', 60], ['f-meta_description', 160], ['f-excerpt', 160]].forEach(function (c) {
     var el = document.getElementById(c[0]); if (!el) return;

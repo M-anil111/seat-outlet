@@ -270,7 +270,7 @@ $soPcTerms = [
             <button type="button" class="so-pc-more" aria-controls="soPcWaysList" aria-expanded="false" data-less="Show fewer">Show all ways to pay less</button>
         </div>
     </section>
-    <script>(function(){var b=document.querySelector('.so-pc-more'),l=document.getElementById('soPcWaysList');if(!b||!l)return;var more=b.textContent;b.addEventListener('click',function(){var open=l.classList.toggle('is-clamped')===false;b.setAttribute('aria-expanded',open?'true':'false');b.textContent=open?b.dataset.less:more;});})();</script>
+    <script<?php echo soCspNonceAttr(); ?>>(function(){var b=document.querySelector('.so-pc-more'),l=document.getElementById('soPcWaysList');if(!b||!l)return;var more=b.textContent;b.addEventListener('click',function(){var open=l.classList.toggle('is-clamped')===false;b.setAttribute('aria-expanded',open?'true':'false');b.textContent=open?b.dataset.less:more;});})();</script>
 
     <section class="so-pc-sec so-pc-alerts" aria-label="Ticket alerts">
         <div class="container">

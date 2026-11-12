@@ -509,7 +509,7 @@ include 'header.php';
             </main>
 
             <!-- Sidebar - Right Column -->
-            <aside class="col-md-4">
+            <aside class="col-md-4" aria-label="About these reviews">
                 <div class="sidebar-sticky">
                     <!-- Crowd/Event Image -->
                     <div class="sidebar-image mb-4">
@@ -534,7 +534,7 @@ include 'header.php';
 
 <?php soSeoCopy('seat-outlet-reviews'); ?>
 <?php include 'footer.php'; ?>
-<script>
+<script<?php echo soCspNonceAttr(); ?>>
 // jQuery is a deferred script: wait for it before running this block.
 document.addEventListener('DOMContentLoaded', function () {
 (function($) {

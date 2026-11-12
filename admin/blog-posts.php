@@ -65,7 +65,7 @@ include __DIR__ . '/includes/app-header.php';
                                 <td class="text-end">
                                     <a href="blog-post-form?id=<?php echo (int) $post['ID']; ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
                                     <form method="post" action="blog-post-delete" class="d-inline"
-                                        onsubmit="return confirm('Delete this blog post?');">
+                                        data-confirm="Delete this blog post?">
                                         <input type="hidden" name="csrf_token" value="<?php echo admin_csrf_token(); ?>">
                                         <input type="hidden" name="id" value="<?php echo (int) $post['ID']; ?>">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>

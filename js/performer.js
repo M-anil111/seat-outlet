@@ -21,7 +21,7 @@
       document.querySelectorAll('#artistTabs .nav-link')
           .forEach(btn => btn.classList.remove('active'));
     
-      const activeBtn = document.querySelector(`#artistTabs button[onclick*="${id}"]`);
+      const activeBtn = document.querySelector(`#artistTabs button[data-scroll-target="${id}"]`);
       if (activeBtn) activeBtn.classList.add('active');
     }
     
@@ -60,3 +60,8 @@
   /* =====================================================
      ARTIST SUBMENU CHANGE ON SCROLL End
   ===================================================== */
+// Buttons with data-scroll-target (replaces inline onclick handlers, so the CSP needs no 'unsafe-inline' for scripts).
+document.addEventListener('click', function (event) {
+  var btn = event.target && event.target.closest ? event.target.closest('[data-scroll-target]') : null;
+  if (btn) scrollToElement(btn.getAttribute('data-scroll-target'));
+});
