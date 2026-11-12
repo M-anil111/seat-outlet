@@ -28,7 +28,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   // Title: what the visitor searches for ("<event> tickets"), the place and the brand, trimmed to fit a result.
   // The date is the first thing to go when the title is too long, so a result never ends in a half word: name + place + date, else name + place, else name.
   $evShort = $evTs ? date('M j', $evTs) : '';
-  $evClock = ($evTs && date('H:i', $evTs) !== '00:00') ? date('g:i A', $evTs) : '';
+  $evClock = soEventShowingClock($event);
   $evShortT = trim($evShort . ($evClock !== '' ? ' ' . $evClock : ''));
   $metaTitle = soTitle('Event Not Found');
   if (tnEntityUnavailable($event) && $evName === '') {
@@ -38,7 +38,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
       // "<event> Tickets—<City, ST> <Mon D>": the place and date go first when the name is long, never half a word.
       $evShort = $evTs ? date('M j', $evTs) : '';
       // Showings of one event in one city share a name, so the time of day is part of the first choice: no two pages get the same title.
-      $evClock = ($evTs && date('H:i', $evTs) !== '00:00') ? date('g:i A', $evTs) : '';
+      $evClock = soEventShowingClock($event);
       $evShortT = trim($evShort . ($evClock !== '' ? ' ' . $evClock : ''));
       // Spec (inc/page-spec.php, soSpecEventText): "Buy <Performer> Tickets for <Venue> Show in <City>, <ST>" and the equivalents for games,
       // shows and festivals. The brand is added once ("at Seat Outlet"), never a pipe. Up to 70 characters; the day goes first to go.
