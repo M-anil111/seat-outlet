@@ -45,15 +45,16 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
       $evKind  = soSpecKind((string) ($event['defaultCategory']['path'] ?? ''));
       $evLabel = soSpecLabel($evName, $evKind);
       $evCountryName = ['US' => 'the United States', 'CA' => 'Canada'][(string) ($event['country']['alphaCode'] ?? '')] ?? (trim((string) ($event['country']['text']['name'] ?? '')) ?: 'the United States');
+      // Search Console audit: 2,443 event URLs shared a title (a long name loses the day, two showings on one day read the same). A slug that ends in a
+      // collision number ("...-2026-11-12-2") is the second showing of that day, so it also carries the time
+      // in the title, the H1 and the description.
+      $evTwin = (bool) preg_match('/\d{4}-\d{2}-\d{2}-\d+$/', strtolower((string) ($slug ?? $_GET['slug'] ?? '')));
       $evSpec = soSpecEventText($evKind, [
           'label' => $evLabel, 'perf' => (string) ($event['performers'][0]['name'] ?? $evLabel), 'venue' => $evVenue, 'city' => $evCity, 'state' => $evState,
           'day' => $evShort, 'cat' => soCategoryDisplayName((string) ($event['defaultCategory']['text']['name'] ?? '')), 'country' => $evCountryName,
-          'hasTickets' => !empty($event['_metadata']['hasTickets']),
+          'hasTickets' => !empty($event['_metadata']['hasTickets']), 'clock' => $evTwin ? $evClock : '',
       ]);
       $metaTitle = soTitleUpTo(SO_TITLE_EVENT_MAX, ...$evSpec['titles']);
-      // Search Console audit: 2,443 event URLs shared a title (a long name loses the day, two showings on one day read the same). A slug that ends in a
-      // collision number ("...-2026-11-12-2") is the second showing of that day, so it also carries the time.
-      $evTwin = (bool) preg_match('/\d{4}-\d{2}-\d{2}-\d+$/', strtolower((string) ($slug ?? $_GET['slug'] ?? '')));
       $metaTitle = soEventUniqueTitle($metaTitle, $evLabel, $evShort, $evClock, $evTwin);
   }
   $evKind  = $evKind ?? soSpecKind((string) ($event['defaultCategory']['path'] ?? ''));

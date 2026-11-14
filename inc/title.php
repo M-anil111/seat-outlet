@@ -17,7 +17,12 @@ const SO_TITLE_BRAND = " at Seat Outlet";
  * Longest event title. SE Ranking flags titles over 65 characters and a search result shows about 60; the spec picks the first candidate
  * that fits, so a shorter one is the result when the name is long.
  */
-const SO_TITLE_EVENT_MAX = 65;
+/**
+ * Longest title on any page (SE Ranking audit, 12 Nov 2026: venue and artist-city titles of 66 to 68 characters). header.php clamps every
+ * title to it, even on a page that sets a longer $pageTitleMax; the brand is the first thing to go.
+ */
+const SO_TITLE_MAX = 65;
+const SO_TITLE_EVENT_MAX = SO_TITLE_MAX;
 
 /**
  * The name a URL slug gives, for a title when the data is not there to ask (an error page): "rnb-soul-concert-tickets" becomes

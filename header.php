@@ -116,7 +116,7 @@ include_once 'functions.php';
     // and ~3,000 duplicate descriptions and H1s from this alone. Each later page names its number (page one is left exactly as it is).
     $soPageNo = isset($_GET['page']) && !is_array($_GET['page']) && ctype_digit((string) $_GET['page']) ? min(500, (int) $_GET['page']) : 1;
     $soPageTag = $soPageNo >= 2 ? ' (Page ' . $soPageNo . ')' : '';
-    if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle, (!empty($pageTitleMax) ? (int) $pageTitleMax : 59) - mb_strlen($soPageTag)) . $soPageTag; }   // a page may allow a longer title ($pageTitleMax), e.g. a performer in a city
+    if (!empty($pageMetaTitle))       { $pageMetaTitle       = seoClampTitle($pageMetaTitle, min(SO_TITLE_MAX, (!empty($pageTitleMax) ? (int) $pageTitleMax : 59)) - mb_strlen($soPageTag)) . $soPageTag; }   // a page may allow a longer title ($pageTitleMax), e.g. a performer in a city
     if (!empty($pageMetaDescription)) { $pageMetaDescription = seoClampDescription(rtrim($pageMetaDescription), 155 - mb_strlen($soPageTag)) . $soPageTag; }
     if ($soPageNo >= 2) { $GLOBALS['soPageTag'] = $soPageTag; ob_start('soPageTagH1'); }
 ?>
@@ -197,7 +197,7 @@ include_once 'functions.php';
         <?php } ?>
     </noscript>
     <?php if ($pageRule && !empty($pageRule['meta_title'])) { ?>
-        <title><?php echo htmlspecialchars($pageRule['meta_title'], ENT_QUOTES, 'UTF-8'); ?></title>
+        <title><?php echo htmlspecialchars(seoClampTitle((string) $pageRule['meta_title'], SO_TITLE_MAX), ENT_QUOTES, 'UTF-8'); ?></title>
         <?php if (!empty($pageRule['meta_description'])) { ?>
         <meta name="description" content="<?php echo htmlspecialchars($pageRule['meta_description'], ENT_QUOTES, 'UTF-8'); ?>">
         <?php } ?>
@@ -360,7 +360,7 @@ include_once 'functions.php';
                                                 <span class="so-mega__icon"><?php echo $soIc($m['icon']); ?></span>
                                                 <strong><?php echo htmlspecialchars($m['label'], ENT_QUOTES, 'UTF-8'); ?></strong>
                                                 <span><?php echo htmlspecialchars($m['tag'], ENT_QUOTES, 'UTF-8'); ?></span>
-                                                <span class="so-mega__img"><img src="/images/home-cat-<?php echo $m['key']; ?>.webp" alt="" width="480" height="270" loading="lazy" decoding="async"></span>
+                                                <span class="so-mega__img"><img src="/images/home-cat-<?php echo $m['key']; ?>.webp" alt="<?php echo htmlspecialchars((string) ($m['alt'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" width="480" height="270" loading="lazy" decoding="async"></span>
                                                 <em><?php echo htmlspecialchars($m['all'], ENT_QUOTES, 'UTF-8'); ?> &rsaquo;</em>
                                             </a>
                                             <?php foreach ($m['groups'] as $g) { ?>

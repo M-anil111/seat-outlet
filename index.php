@@ -344,7 +344,7 @@ foreach ($fallbackCategories as $key => $list) {
 
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
-    <a href="https://mindshare.consulting/" target="_blank" rel="noopener">
+    <a href="https://www.mindshare.consulting/" target="_blank" rel="noopener">
       <img src="/images/mindshare-logo-230.webp" class="img-fluid partner-network-img" alt="mindshare.consulting" width="115" height="115" loading="lazy">
     </a>
   </div>
@@ -368,7 +368,7 @@ foreach ($fallbackCategories as $key => $list) {
 
 <div class="col-6 col-md-3">
   <div class="partner-card text-center">
-    <a href="https://grabticketsnow.com/" target="_blank" rel="noopener">
+    <a href="https://www.grabticketsnow.com/" target="_blank" rel="noopener">
       <img src="/images/gtn.webp" class="img-fluid" alt="Grab Tickets Now" width="115" height="115" loading="lazy">
     </a>
   </div>
