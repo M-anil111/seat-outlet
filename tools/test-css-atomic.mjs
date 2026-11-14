@@ -25,8 +25,9 @@ for (const path of ['/', '/policies']) {
   });
   await page.goto(base + path, { waitUntil: 'load', timeout: 90000 });
   await page.waitForTimeout(4000);
-  const r = await page.evaluate(() => ({ cls: window.__cls, bar: window.__bar, sheets: [...document.querySelectorAll('link[rel=stylesheet]')].filter(l => /\/css\/style\./.test(l.href)).map(l => l.media || 'all') }));
+  const r = await page.evaluate(() => ({ cls: window.__cls, bar: window.__bar, sheets: [...document.querySelectorAll('link[rel=stylesheet]')].filter(l => /\/css\/style\./.test(l.href)).map(l => l.media || 'all'), hold: !!document.getElementById('so-critical-hold') }));
   check(`${path}: every stylesheet part is applied in the end`, r.sheets.length >= 1 && r.sheets.every(m => m === 'all'), r.sheets.join(','));
+  check(`${path}: the temporary copy of the critical rules is gone once every part has loaded`, r.hold === false);
   check(`${path}: the top bar keeps one height while the stylesheets arrive`, r.bar.length <= 1, r.bar.join('px -> ') + 'px');
   check(`${path}: layout shift stays under 0.1`, r.cls < 0.1, r.cls.toFixed(3));
   await page.close();

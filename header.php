@@ -167,10 +167,14 @@ include_once 'functions.php';
     <style id="so-critical"><?php echo $soCrit; ?></style>
 
     <script<?php echo soCspNonceAttr(); ?>>/* the full stylesheets start loading once the page has painted, so nothing but the critical rules competes with the first paint.
-       They load as media="print" (not applied) and are switched on together once every one has arrived: applied one by one, a page with
-       three parts went through partial states and its top bar grew and shrank (live home page, 14 Nov 2026: CLS 1.29, tools/test-css-atomic.mjs). */
-    (function(){var u=<?php echo json_encode(array_map('html_entity_decode', $soSheets)); ?>,go=function(){var ls=[],left=u.length,done=false,on=function(){if(done)return;done=true;ls.forEach(function(l){l.media='all';});};
-    u.forEach(function(h){var l=document.createElement('link');l.rel='stylesheet';l.href=h;l.media='print';l.onload=l.onerror=function(){if(--left<=0)on();};ls.push(l);document.head.appendChild(l);});setTimeout(on,8000);};
+       Each part applies as it arrives, so while they arrive a copy of the critical rules sits after them and keeps what is on screen at its
+       final values; it is removed once every part has loaded. Without it, a page with three parts went through partial states and its top
+       bar grew and shrank (live home page, 14 Nov 2026: CLS 1.29, tools/test-css-atomic.mjs). Switching media="print" sheets on together
+       does not work: Chromium fetches each sheet again when its media changes, and the parts then apply one by one anyway. */
+    (function(){var u=<?php echo json_encode(array_map('html_entity_decode', $soSheets)); ?>,go=function(){var left=u.length,c=document.getElementById('so-critical'),hold=c?c.cloneNode(true):null,done=false,
+    off=function(){if(done)return;done=true;if(hold&&hold.parentNode)requestAnimationFrame(function(){hold.parentNode.removeChild(hold);});};
+    u.forEach(function(h){var l=document.createElement('link');l.rel='stylesheet';l.href=h;l.onload=l.onerror=function(){if(--left<=0)off();};document.head.appendChild(l);});
+    if(hold){hold.id='so-critical-hold';document.head.appendChild(hold);}setTimeout(off,8000);};
     if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(go,0);});}else{setTimeout(go,0);}})();</script>
     <noscript><?php foreach ($soSheets as $soSheet) { ?><link rel="stylesheet" href="<?php echo $soSheet; ?>"><?php } ?></noscript>
     <?php } else { foreach ($soSheets as $soSheet) { ?>
