@@ -33,7 +33,7 @@ const state = await page.evaluate(() => {
 check('the last-minute row is on the page', state !== null && before > 0, JSON.stringify({ before }));
 if (state) {
   check('an empty feed does not hide the row', state.hidden === false);
-  check('the row keeps its height', state.height >= before - 2, `${before}px -> ${state.height}px`);
+  check('the row keeps its height (neither collapses nor grows)', Math.abs(state.height - before) <= 2, `${before}px -> ${state.height}px`);
   check('the row says it has nothing to show', state.empty && /no events/i.test(state.text), state.text);
   check('the row links to all events', state.href === '/buy-tickets-online', state.href);
   check('layout shift stays under 0.1', state.cls < 0.1, state.cls.toFixed(3));

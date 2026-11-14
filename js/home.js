@@ -614,22 +614,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const height = track.offsetHeight;
     const all = box.querySelector('.so-feed__all');
     const wrap = document.createElement('div');
-    wrap.className = 'so-state so-feed__empty';
+    wrap.className = 'so-feed__empty';
     wrap.setAttribute('role', 'status');
-    const text = document.createElement('p');
-    text.className = 'so-state__text';
+    const text = document.createElement('span');
     text.textContent = 'No events to show in this row right now.';
-    const actions = document.createElement('div');
-    actions.className = 'so-state__actions';
     const link = document.createElement('a');
-    link.className = 'so-state__btn';
+    link.className = 'so-feed__all';
     link.href = (all && all.getAttribute('href')) || '/buy-tickets-online';
     link.textContent = 'See all events';
-    actions.appendChild(link);
     wrap.appendChild(text);
-    wrap.appendChild(actions);
-    Object.assign(wrap.style, { flex: '1 0 100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0' });
-    if (height) track.style.minHeight = height + 'px';
+    wrap.appendChild(link);
+    // Compact, and exactly as tall as the skeleton row it replaces: the row neither collapses nor grows.
+    Object.assign(wrap.style, { flex: '1 0 100%', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '4px 16px', padding: '0 16px', textAlign: 'center', overflow: 'hidden' });
+    if (height) { track.style.height = height + 'px'; track.style.minHeight = height + 'px'; }
     track.replaceChildren(wrap);
     const next = box.querySelector('[data-so-feed-next]');
     if (next) next.hidden = true;
@@ -641,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const sub = box.querySelector('[data-so-feed-sub]');
     const events = (data && data.events) || [];
     if (!events.length) { emptyRow(box); return; }
-    if (track) track.style.minHeight = '';   // a row that was empty before (another location) sizes to its cards again
+    if (track) { track.style.minHeight = ''; track.style.height = ''; }   // a row that was empty before (another location) sizes to its cards again
     if (kind === 'popweekend') {
       box.hidden = false;
       track.innerHTML = events.map(popCard).join('');
