@@ -56,6 +56,11 @@ function tnBulkReady(): bool {
  * @return array|null ['where' => [sql...], 'types' => 'is..', 'values' => [...], 'order' => sql, 'perPage' => n, 'page' => n]
  */
 function tnBulkParseListing(array $params): ?array {
+    // Only parameters the copy applies, or that do not change which events match. Anything else (geoFilter for "near you", q, categoryFilter,
+    // eventFilter ...) means no answer: dropping it silently would list the whole country under a "near you" heading.
+    foreach (array_keys($params) as $k) {
+        if (!in_array($k, ['filter', 'performerFilter', 'sort', 'salesRankOptions', 'perPage', 'page', 'includeTotalCount'], true)) return null;
+    }
     $filter = trim((string) ($params['filter'] ?? ''));
     if ($filter === '') return null;
     $where = []; $types = ''; $values = [];
@@ -69,6 +74,17 @@ function tnBulkParseListing(array $params): ?array {
         elseif (preg_match('#^venue/id eq (\d{1,10})$#', $c, $m)) $add('venue_id = ?', 'i', (int) $m[1]);
         elseif (preg_match("#^country/alphaCode eq '([A-Za-z]{2,3})'$#", $c, $m)) $add('country_code = ?', 's', strtoupper($m[1]));
         elseif (preg_match("#^startswith\\(defaultCategory/path, '(\\.[0-9.]*)'\\)$#", $c, $m)) $add('category_path LIKE ?', 's', $m[1] . '%');
+        // A category anywhere in the path (category, genre, hub, holiday and home-feed listings): '.1906.' or '.1859.1986.', digits and dots
+        // only, so the value can never carry a LIKE wildcard.
+        elseif (preg_match("#^contains\\(defaultCategory/path, ?'(\\.(?:[0-9]{1,10}\\.)+)'\\)$#", $c, $m)) $add('category_path LIKE ?', 's', '%' . $m[1] . '%');
+        // A county page: its cities as one group, "(city/id eq 1 or city/id eq 2 ...)". Any other field or operator in the group is not parsed.
+        elseif (preg_match('#^\(city/id eq \d{1,10}(?: or city/id eq \d{1,10}){0,99}\)$#', $c)) {
+            preg_match_all('#\d{1,10}#', $c, $ids);
+            $ids = array_values(array_unique(array_map('intval', $ids[0])));
+            $where[] = 'city_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')';
+            $types .= str_repeat('i', count($ids));
+            foreach ($ids as $cid) $values[] = $cid;
+        }
         elseif (preg_match('#^date/date ge (\d{4}-\d{2}-\d{2})$#', $c, $m)) $add('starts_local >= ?', 's', $m[1] . ' 00:00:00');
         elseif (preg_match('#^date/date le (\d{4}-\d{2}-\d{2})$#', $c, $m)) $add('starts_local <= ?', 's', $m[1] . ' 23:59:59');
         elseif ($c === '_metadata/hasTickets eq true') $add('has_tickets = 1', '', null);
