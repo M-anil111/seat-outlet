@@ -17,7 +17,12 @@ const SO_TITLE_BRAND = " at Seat Outlet";
  * Longest event title. SE Ranking flags titles over 65 characters and a search result shows about 60; the spec picks the first candidate
  * that fits, so a shorter one is the result when the name is long.
  */
-const SO_TITLE_EVENT_MAX = 65;
+/**
+ * Longest title on any page (SE Ranking audit, 12 Nov 2026: venue and artist-city titles of 66 to 68 characters). header.php clamps every
+ * title to it, even on a page that sets a longer $pageTitleMax; the brand is the first thing to go.
+ */
+const SO_TITLE_MAX = 65;
+const SO_TITLE_EVENT_MAX = SO_TITLE_MAX;
 
 /**
  * The name a URL slug gives, for a title when the data is not there to ask (an error page): "rnb-soul-concert-tickets" becomes
@@ -107,6 +112,22 @@ function soEventUniqueTitle(string $title, string $label, string $day, string $c
         while (count($words) > 1 && in_array(mb_strtolower(end($words)), SO_TITLE_DANGLING, true)) array_pop($words);
     }
     return $title;
+}
+
+/**
+ * Start time of an event as "7:30 PM", or '' when the feed gives none. The feed's date.date is a plain day, so the time comes from
+ * date.datetime (the venue's wall-clock time, read as written, never converted to the server's time zone) or date.datetimeOffset.
+ * Midnight means "no time was set", the same rule the page used before.
+ */
+function soEventShowingClock(array $event): string {
+    foreach ([$event['date']['datetime'] ?? null, $event['date']['datetimeOffset'] ?? null] as $cand) {
+        if (!is_string($cand) || !preg_match('/^\d{4}-\d{2}-\d{2}[T ](\d{2}):(\d{2})/', $cand, $m)) continue;
+        $h = (int) $m[1];
+        $min = (int) $m[2];
+        if ($h === 0 && $min === 0) return '';
+        return ($h % 12 ?: 12) . ':' . sprintf('%02d', $min) . ' ' . ($h < 12 ? 'AM' : 'PM');
+    }
+    return '';
 }
 
 /** Shorten a title to $max characters without an ellipsis: whole words only, never a dangling "at", and "Tickets" is always kept. */

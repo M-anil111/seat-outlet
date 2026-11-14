@@ -44,6 +44,12 @@ check('event date tbd', soSlug('event', 'Zq Show', 9000032, ['place' => 'Zqville
 check('old form', soSlugResolve('performer', 'blink-9000044'), [9000044, true]);
 check('unknown', soSlugResolve('performer', 'nobody-here'), [null, false]);
 
+// The name stored with a slug is readable by id, so a page whose live lookup is refused (the call budget) can still name itself.
+soSlug('category', 'Zq Bluegrass', 9000071);
+check('stored name of a category', soSlugStoredName('category', 9000071), 'Zq Bluegrass');
+check('stored name of an unknown id', soSlugStoredName('category', 9000072), '');
+check('stored name of an unknown type', soSlugStoredName('nonsense', 9000071), '');
+
 // No stored slug may end in an id-like number unless it is a collision counter or part of a date.
 $bad = MYSQLI->query("SELECT slug FROM url_slugs WHERE ext_id LIKE '9000%' AND type <> 'event' AND slug REGEXP '-[0-9]{4,}$'")->fetch_all();
 check('no id in slugs', count($bad), 0);

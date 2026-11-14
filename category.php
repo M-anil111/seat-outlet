@@ -31,6 +31,12 @@ $catName = (strlen($catRaw) > 4 && ($catRaw === strtoupper($catRaw) || $catRaw =
 if ($catName === '' && !empty($GLOBALS['tn_degraded'])) {
 	$soGenreKnown = isset($soGenreSlug) ? soGenreBySlug($soGenreSlug) : soGenreById($id);
 	if ($soGenreKnown && trim((string) ($soGenreKnown['label'] ?? '')) !== '') { $catName = trim((string) $soGenreKnown['label']); }
+	// Any other /category/<name> page: the name stored with its slug when the site first linked it (a database read, no ticket call).
+	// SE Ranking audit, 12 Nov 2026: /category/bluegrass, /category/olympics and others answered 503 when this lookup was refused.
+	if ($catName === '') {
+		$soStoredName = soSlugStoredName('category', $id);
+		if ($soStoredName !== '') { $catName = (strlen($soStoredName) > 4 && ($soStoredName === strtoupper($soStoredName) || $soStoredName === strtolower($soStoredName))) ? ucwords(strtolower($soStoredName)) : $soStoredName; }
+	}
 }
 if ($catName === '') {
 	renderNotFoundPage('Category');

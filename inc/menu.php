@@ -7,37 +7,37 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  * All links are pages that exist; category ids come from the site's own category pages.
  */
 $soMenuDef = [
-    ['key' => 'concerts', 'label' => 'Concerts', 'href' => '/concert-tickets-for-sale', 'tag' => 'Tours, shows and live music',
+    ['key' => 'concerts', 'alt' => 'A guitarist on stage under red and blue concert lights', 'label' => 'Concerts', 'href' => '/concert-tickets-for-sale', 'tag' => 'Tours, shows and live music',
      'icon' => '<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
      'groups' => [
         ['title' => 'Popular genres', 'links' => [['Pop / Rock', '/pop-rock-concert-tickets'], ['Country / Folk', '/country-music-tickets'], ['Rap / Hip Hop', '/hip-hop-tickets'], ['R&B / Soul', '/rnb-soul-concert-tickets'], ['Latin', '/latin-music-tickets'], ['Alternative', '/alternative-concert-tickets']]],
         ['title' => 'More to explore', 'links' => [['Hard Rock / Metal', '/metal-concert-tickets'], ['Jazz / Blues', '/jazz-and-blues-tickets'], ['Techno / Electronic', '/electronic-music-tickets'], ['Comedy', '/comedy-show-tickets'], ['Classical', '/classical-music-tickets'], ['Children / Family', '@category:1869']]],
      ], 'all' => 'All concerts'],
-    ['key' => 'sports', 'label' => 'Sports', 'href' => '/game-day-tickets', 'tag' => 'Game day, every league',
+    ['key' => 'sports', 'alt' => 'A packed stadium under the lights', 'label' => 'Sports', 'href' => '/game-day-tickets', 'tag' => 'Game day, every league',
      'icon' => '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
      'groups' => [
         ['title' => 'Leagues', 'links' => [['NFL', '/nfl-tickets'], ['NBA', '/nba-tickets'], ['MLB', '/mlb-tickets'], ['NHL', '/nhl-tickets'], ['MLS', '/mls-tickets'], ['Tennis', '/tennis-tickets']]],
         ['title' => 'More sports', 'links' => [['Basketball', '@category:1865'], ['Baseball', '@category:1864'], ['Hockey', '@category:1883'], ['Soccer', '/soccer-tickets'], ['Boxing', '/boxing-tickets'], ['Racing', '/racing-tickets']]],
      ], 'all' => 'All sports'],
-    ['key' => 'theater', 'label' => 'Theater', 'href' => '/buy-broadway-tickets', 'tag' => 'Broadway, musicals and more',
+    ['key' => 'theater', 'alt' => 'A theater stage with a red curtain', 'label' => 'Theater', 'href' => '/buy-broadway-tickets', 'tag' => 'Broadway, musicals and more',
      'icon' => '<path d="M4 5h16v6a8 8 0 0 1-16 0Z"/><path d="M9 10h.01M15 10h.01M9 14.5c1.6 1.4 4.4 1.4 6 0"/>',
      'groups' => [
         ['title' => 'On stage', 'links' => [['Broadway', '@category:1868'], ['Musical / Play', '@category:1894'], ['Off-Broadway', '@category:1896'], ['Las Vegas', '@category:1887']]],
         ['title' => 'More shows', 'links' => [['Cirque du Soleil', '@category:2031'], ['Ballet', '@category:1863'], ['Opera', '@category:1898'], ['Dance', '@category:1875'], ['Children / Family', '@category:1869']]],
      ], 'all' => 'All theater'],
-    ['key' => 'festivals', 'label' => 'Festivals', 'href' => '/upcoming-music-festivals', 'tag' => 'Passes and lineups',
+    ['key' => 'festivals', 'alt' => 'A festival crowd under stage lights', 'label' => 'Festivals', 'href' => '/upcoming-music-festivals', 'tag' => 'Passes and lineups',
      'icon' => '<path d="m12 3 2.2 5.3 5.8.5-4.4 3.8 1.4 5.6L12 15l-5 3.2 1.4-5.6L4 8.8l5.8-.5Z"/>',
      'groups' => [
         ['title' => 'Festivals', 'links' => [['Upcoming music festivals', '/upcoming-music-festivals'], ['Festival tours', '@category:1877'], ['Christmas shows near me', '/christmas-shows-near-me']]],
      ], 'all' => 'All festivals'],
-    ['key' => 'artists', 'label' => 'Artists & Teams', 'href' => '/all-artists-and-teams', 'tag' => 'Find your favorite performers and teams',
+    ['key' => 'artists', 'alt' => 'A packed arena lit in purple before a show', 'label' => 'Artists & Teams', 'href' => '/all-artists-and-teams', 'tag' => 'Find your favorite performers and teams',
      'icon' => '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>',
      'groups' => [
         ['title' => 'Music and shows', 'links' => [['Artists on tour', '/concert-artists'], ['Comedians on tour', '/comedians-on-tour'], ['Broadway shows list', '/broadway-shows'], ['Music festivals list', '/music-festivals-list']]],
         ['title' => 'Sports teams', 'links' => [['All sports teams', '/sports-teams'], ['NFL teams', '/nfl-teams'], ['NBA teams', '/nba-teams'], ['MLB teams', '/mlb-teams'], ['NHL teams', '/nhl-teams'], ['MLS teams', '/mls-teams']]],
         ['title' => 'Browse', 'links' => [['All artists, teams and shows', '/all-artists-and-teams']]],
      ], 'all' => 'Browse all'],
-    ['key' => 'cities', 'label' => 'Cities', 'href' => '/city-events', 'tag' => 'Events near you',
+    ['key' => 'cities', 'alt' => 'An outdoor festival stage in front of a city skyline at dusk', 'label' => 'Cities', 'href' => '/city-events', 'tag' => 'Events near you',
      'icon' => '<path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>',
      'groups' => [
         ['title' => 'Top cities', 'links' => [['New York', '@city:3027:New York, NY'], ['Los Angeles', '@city:2551:Los Angeles, CA'], ['Las Vegas', '@city:2355:Las Vegas, NV'], ['Chicago', '@city:915:Chicago, IL'], ['Nashville', '@city:2970:Nashville, TN'], ['Austin', '@city:247:Austin, TX']]],

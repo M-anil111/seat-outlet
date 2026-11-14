@@ -12,7 +12,7 @@ ptCheck('an H1 holding markup is left alone', soPageTagH1('<h1>A <em>b</em></h1>
 $GLOBALS['soPageTag'] = '';
 ptCheck('page one is untouched', soPageTagH1('<h1>Broadway Shows</h1>') === '<h1>Broadway Shows</h1>');
 $hdr = file_get_contents(__DIR__ . '/../header.php');
-ptCheck('header tags title and description for page two and up', strpos($hdr, "\$soPageTag = \$soPageNo >= 2") !== false && strpos($hdr, 'seoClampTitle($pageMetaTitle, (!empty($pageTitleMax)') !== false);
+ptCheck('header tags title and description for page two and up', strpos($hdr, "\$soPageTag = \$soPageNo >= 2") !== false && strpos($hdr, 'seoClampTitle($pageMetaTitle, min(SO_TITLE_MAX, (!empty($pageTitleMax)') !== false);
 $t = seoClampTitle('Broadway Shows Tickets at Seat Outlet', 59 - 9) . ' (Page 2)';
 ptCheck('title with the tag stays within 59', mb_strlen($t) <= 59 && substr($t, -9) === ' (Page 2)');
 exit($fail ? 1 : 0);

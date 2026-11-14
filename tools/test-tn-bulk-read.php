@@ -37,6 +37,28 @@ brCheck('no filter means no answer', tnBulkParseListing(['sort' => 'date/date'])
 brCheck('a malformed performer filter means no answer', tnBulkParseListing(['filter' => 'city/id eq 5', 'performerFilter' => "id eq 5 or id eq 6"]), null);
 brCheck('SQL in a value cannot get through', tnBulkParseListing(['filter' => "city/id eq 5; DROP TABLE x"]), null);
 brCheck('perPage is capped at 200', tnBulkParseListing(['filter' => 'city/id eq 5', 'perPage' => 9999])['perPage'], 200);
+// Category, genre, hub, holiday and home-feed listings filter with contains(defaultCategory/path, '.<id>.') (SE Ranking audit, Nov 12 2026:
+// 57 category and genre pages answered 503 because every one of these went to the live API and was refused by the call budget).
+$qc = tnBulkParseListing(locationListingParams("contains(defaultCategory/path, '.1906.') and country/alphaCode eq 'US'", 20, 1, '', 'soonest'));
+brCheck('category page listing parses (contains)', $qc !== null && in_array('category_path LIKE ?', $qc['where'], true) && in_array('%.1906.%', $qc['values'], true), true);
+brCheck('hub listing parses (contains, no space after the comma)', tnBulkParseListing(['filter' => 'date/date ge 2026-11-14 and date/date le 2027-11-14 and _metadata/hasTickets eq true and contains(defaultCategory/path,\'.1859.1986.\')', 'sort' => '-salesRank']) !== null, true);
+brCheck('a contains value that is not a dotted id path means no answer', tnBulkParseListing(['filter' => "contains(defaultCategory/path, 'rock')"]), null);
+brCheck('a contains value with a LIKE wildcard means no answer', tnBulkParseListing(['filter' => "contains(defaultCategory/path, '.19%.')"]), null);
+$qy = tnBulkParseListing(locationListingParams(soCountyFilter([11, 12, 13]), 20, 1, '', 'soonest'));
+brCheck('county listing parses (a group of city ids)', $qy !== null && in_array('city_id IN (?,?,?)', $qy['where'], true) && count(array_intersect([11, 12, 13], $qy['values'])) === 3, true);
+brCheck('a group that mixes fields means no answer', tnBulkParseListing(['filter' => '(city/id eq 1 or venue/id eq 2)']), null);
+brCheck('a group with "and" inside means no answer', tnBulkParseListing(['filter' => '(city/id eq 1 and city/id eq 2)']), null);
+// A parameter the copy cannot apply must never be dropped silently: a "near you" listing (geoFilter) answered from the copy would list the
+// whole country under a "near you" heading.
+$near = locationListingParams("country/alphaCode eq 'US' and contains(defaultCategory/path, '.1906.')", 12, 1, '', 'popular');
+$near['geoFilter'] = 'nearby(30.270000,-97.740000,50mi)';
+brCheck('a near-you listing (geoFilter) means no answer', tnBulkParseListing($near), null);
+$nearPath = categoryListingParams('.1859.1986.', 12, 1, '', 'soonest'); $nearPath['geoFilter'] = 'nearby(30.270000,-97.740000,50mi)';
+brCheck('a near-you listing by path means no answer', tnBulkParseListing($nearPath), null);
+foreach (['q' => 'taylor', 'categoryFilter' => "path eq '.1.'", 'eventFilter' => 'id eq 5', 'latitude' => '30.2', 'longitude' => '-97.7', 'radius' => '50'] as $k => $v) {
+    brCheck("an unknown parameter ($k) means no answer", tnBulkParseListing(['filter' => 'city/id eq 5', $k => $v]), null);
+}
+brCheck('the parameters that do not change which events match are accepted', tnBulkParseListing(['filter' => 'city/id eq 5', 'sort' => '-salesRank', 'salesRankOptions' => '{"interval":"day","metric":"orderVolume"}', 'includeTotalCount' => 'true', 'perPage' => 12, 'page' => 1]) !== null, true);
 
 // ---- the table
 MYSQLI->query("DELETE FROM tn_bulk_events WHERE event_id BETWEEN 9200001 AND 9200099");
@@ -76,6 +98,13 @@ $r = $run(categoryListingParams('.1859.1988.', 20, 1, '', 'soonest') );
 brCheck('a category page only has its own category', array_column(array_filter($r['results'], fn($e) => in_array($e['id'], [9200001, 9200002, 9200003, 9200008], true)), 'id'), [9200003]);
 $r = $run(performerPageEventsSpec(9200002, 20)[1]);
 brCheck('performer page: that performer only', array_column($r['results'], 'id'), [9200008]);
+$fixtures = [9200001, 9200002, 9200003, 9200008];
+$r = $run(locationListingParams("contains(defaultCategory/path, '.1986.') and country/alphaCode eq 'US'", 20, 1, '', 'soonest'));
+brCheck('contains: a category in the middle of the path matches its events only', array_values(array_intersect(array_column($r['results'], 'id'), $fixtures)), [9200001, 9200008, 9200002]);
+$r = $run(locationListingParams("contains(defaultCategory/path, '.1988.') and country/alphaCode eq 'US'", 20, 1, '', 'soonest'));
+brCheck('contains: another category, its own event only', array_values(array_intersect(array_column($r['results'], 'id'), $fixtures)), [9200003]);
+$r = $run(locationListingParams(soCountyFilter([9200001, 9200002]), 20, 1, '', 'soonest'));
+brCheck('county: events in any of its cities, soonest first', array_values(array_intersect(array_column($r['results'], 'id'), $fixtures)), [9200001, 9200003, 9200008, 9200002]);
 $ev = $run(locationListingParams('city/id eq 9200001', 1, 1, '', 'soonest'))['results'][0];
 brCheck('the event is API-shaped', [$ev['id'], $ev['text']['name'], $ev['venue']['text']['name'], $ev['city']['text']['name'], $ev['stateProvince']['text']['abbr'], $ev['defaultCategory']['path'], $ev['performers'][0]['id'], $ev['pricingInfo']['lowPrice']['value'], $ev['pricingInfo']['lowPrice']['text']['formatted'], $ev['_bulk']],
     [9200001, 'Zq Show 9200001', 'Zq Hall', 'Zqville', 'ZQ', '.1859.1986.1987.', 9200001, 90.0, '$90', true]);

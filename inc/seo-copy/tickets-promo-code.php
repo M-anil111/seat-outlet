@@ -22,9 +22,9 @@
 <h2 class="so-pc-h2">Concert, sports and Broadway promo codes</h2>
 <p>Offers can differ by event type. A concert ticket promo code, a sports ticket promo code and a Broadway promo code are each tied to the offer shown at checkout, and some do not apply to every event or seat. Read the terms next to the code. For cheap concert tickets and cheap tickets near me, compare sections and dates, since a different seat can save more than a code. See <a href="/ticket-deals">ticket deals</a> and our guide to <a href="/how-to-buy-tickets-online">how to buy tickets online</a>.</p>
 <ul class="so-pc-cats">
-  <li><a href="/concert-tickets-for-sale"><img src="/images/home-cat-concerts.webp" alt="" width="480" height="270" loading="lazy" decoding="async"><span><strong>Concert Tickets</strong><small>See concert events</small></span></a></li>
-  <li><a href="/game-day-tickets"><img src="/images/home-cat-sports.webp" alt="" width="480" height="270" loading="lazy" decoding="async"><span><strong>Sports Tickets</strong><small>See sports events</small></span></a></li>
-  <li><a href="/buy-broadway-tickets"><img src="/images/home-cat-theater.webp" alt="" width="480" height="270" loading="lazy" decoding="async"><span><strong>Broadway and Theater Tickets</strong><small>See theater events</small></span></a></li>
+  <li><a href="/concert-tickets-for-sale"><img src="/images/home-cat-concerts.webp" alt="A guitarist on stage under red and blue concert lights" width="480" height="270" loading="lazy" decoding="async"><span><strong>Concert Tickets</strong><small>See concert events</small></span></a></li>
+  <li><a href="/game-day-tickets"><img src="/images/home-cat-sports.webp" alt="A packed stadium under the lights" width="480" height="270" loading="lazy" decoding="async"><span><strong>Sports Tickets</strong><small>See sports events</small></span></a></li>
+  <li><a href="/buy-broadway-tickets"><img src="/images/home-cat-theater.webp" alt="A theater stage with a red curtain" width="480" height="270" loading="lazy" decoding="async"><span><strong>Broadway and Theater Tickets</strong><small>See theater events</small></span></a></li>
 </ul>
 
 <h2 class="so-pc-h2">Other ways to save</h2>

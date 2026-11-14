@@ -16,7 +16,7 @@ const SO_SOCIAL = [
     ['name' => 'LinkedIn',  'url' => 'https://www.linkedin.com/company/seat-outlet',      'icon' => ''],
     ['name' => 'Reddit',    'url' => 'https://www.reddit.com/user/SeatOutlet/',           'icon' => ''],
     ['name' => 'Medium',    'url' => 'https://medium.com/@seatoutlet',                    'icon' => ''],
-    ['name' => 'Tumblr',    'url' => 'https://www.tumblr.com/blog/seatoutlet',            'icon' => ''],
+    ['name' => 'Tumblr',    'url' => 'https://www.tumblr.com/seatoutlet',            'icon' => ''],
 ];
 
 /** Profile addresses for schema.org sameAs (plus the Linktree page). */

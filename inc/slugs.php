@@ -235,6 +235,28 @@ function soEventSlugBundle(array $event): array {
     return $b;
 }
 
+/**
+ * The name stored with an entity's slug (the name it had when the site first linked to it), or '' when none is stored. A database read
+ * with no ticket call: a page whose live lookup is refused by the call budget can still name itself.
+ */
+function soSlugStoredName(string $type, $id): string {
+    if (!in_array($type, SO_SLUG_TYPES, true) || $id === '' || $id === 0 || $id === null || $id === '0') return '';
+    $db = soSlugDb();
+    if (!$db) return '';
+    try {
+        $k = soSlugKeyId($id);
+        $st = $db->prepare('SELECT name FROM url_slugs WHERE type = ? AND ext_id = ?');
+        if (!$st) return '';
+        $st->bind_param('ss', $type, $k);
+        $st->execute();
+        $row = $st->get_result()->fetch_row();
+        $st->close();
+        return $row ? trim((string) $row[0]) : '';
+    } catch (Throwable $e) {
+        return '';
+    }
+}
+
 /** Venue slug from an event or venue array; the city tells apart venues that share a name. */
 function soVenueSlug($name, $id, $place = ''): string {
     return soSlug('venue', $name, $id, ['place' => $place]);

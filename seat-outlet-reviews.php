@@ -519,9 +519,9 @@ include 'header.php';
                     <div class="mascot-panel">
                         <p class="mascot-text mb-2 fw-semibold">Follow Seat Outlet</p>
                         <div class="social-icons">
-                            <a href="https://www.facebook.com/seatoutlet.usa" target="_blank" rel="noopener" aria-label="Seat Outlet on Facebook"><i class="bi bi-facebook fs-4"></i></a>
-                                                        <a href="https://www.youtube.com/@SeatOutlet" target="_blank" rel="noopener" aria-label="Seat Outlet on YouTube"><i class="bi bi-youtube fs-4"></i></a>
-                            <a href="https://www.instagram.com/seatoutlet/" target="_blank" rel="noopener" aria-label="Seat Outlet on Instagram"><i class="bi bi-instagram fs-4"></i></a>
+                            <a href="https://www.facebook.com/seatoutlet.usa" target="_blank" rel="noopener" aria-label="Seat Outlet on Facebook"><i class="bi bi-facebook fs-4" aria-hidden="true"></i><span class="visually-hidden">Seat Outlet on Facebook</span></a>
+                                                        <a href="https://www.youtube.com/@SeatOutlet" target="_blank" rel="noopener" aria-label="Seat Outlet on YouTube"><i class="bi bi-youtube fs-4" aria-hidden="true"></i><span class="visually-hidden">Seat Outlet on YouTube</span></a>
+                            <a href="https://www.instagram.com/seatoutlet/" target="_blank" rel="noopener" aria-label="Seat Outlet on Instagram"><i class="bi bi-instagram fs-4" aria-hidden="true"></i><span class="visually-hidden">Seat Outlet on Instagram</span></a>
                             <?php echo soSocialIconsHtml(); ?>
                         </div>
                     </div>
