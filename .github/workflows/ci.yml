@@ -50,6 +50,15 @@ jobs:
       - name: Event titles stay unique per showing (long names keep the day, same-day showings add the time)
         run: php tools/test-event-titles.php
 
+      - name: Same-day showings take their time from the feed's datetime (title)
+        run: php tools/test-event-showing-time.php
+
+      - name: SE Ranking audit of 12 Nov 2026 stays fixed (titles, H1, alt text, anchor text, link targets, category name fallback)
+        run: php tools/test-seranking-nov12.php
+
+      - name: The deploy never deletes a file the repository ships (retired stylesheet parts)
+        run: php tools/test-retired-files.php
+
       - name: Category links go straight to the genre page (no 301 link on every page)
         run: php tools/test-category-links.php
 
@@ -248,7 +257,8 @@ jobs:
     # The policy is report-only, so nothing breaks when it is wrong. This opens the site's own pages in Chromium, reads the browser's
     # securitypolicyviolation events and fails on any that tools/csp-known-violations.json does not list (docs/csp.md).
     name: CSP in a real browser
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, where Playwright 1.56.1 cannot install Chromium ("does not support chromium on ubuntu26.04-x64").
+    runs-on: ubuntu-24.04
     services:
       mysql:
         image: mariadb:10.11
@@ -319,6 +329,9 @@ jobs:
 
       - name: Open the pages and read the violations
         run: node tools/test-csp-browser.mjs http://127.0.0.1:8161
+
+      - name: An empty home page feed row keeps its place (no layout shift)
+        run: node tools/test-home-feed-cls.mjs http://127.0.0.1:8161
 
       - name: Event page seat-map wiring (precheckout modes, begin_checkout once, no broken state)
         run: node tools/test-event-widget.mjs

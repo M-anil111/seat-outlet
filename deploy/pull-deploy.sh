@@ -136,6 +136,8 @@ fi
 if [ -f deploy/retired-files.txt ]; then
   while IFS= read -r f; do
     case "$f" in ''|'#'*|/*|*..*|*\**|cache/*|inc/env.local.php) continue ;; esac
+    # Never delete a file the deployed commit ships (a stylesheet part retired once and built again: tools/test-retired-files.php).
+    if git cat-file -e "$NEW:$f" 2>/dev/null; then log "WARNING: $f is listed as retired but is in the repository; kept"; continue; fi
     [ -f "$WEBROOT/$f" ] && { rm -f -- "$WEBROOT/$f"; log "removed retired file $f"; }
   done < deploy/retired-files.txt
 fi

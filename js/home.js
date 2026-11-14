@@ -605,12 +605,43 @@ document.addEventListener('DOMContentLoaded', function () {
   // The row's arrow: window.soRowArrow (js/main.js), shared with "Pick up where you left off".
   function bindNext(box, track) { if (window.soRowArrow) window.soRowArrow(box, track); }
 
+  // A row already on screen (its skeleton cards) that comes back empty keeps its place: hiding it moved everything below it under the
+  // visitor's eyes (SE Ranking, 12 Nov 2026: CLS 0.307 on the home page). It says so and links to the row's own "See all" page.
+  // A row that starts hidden (the weekend row) stays hidden.
+  function emptyRow(box) {
+    const track = box.querySelector('[data-so-feed-track]');
+    if (box.hidden || !track) { box.hidden = true; return; }
+    const height = track.offsetHeight;
+    const all = box.querySelector('.so-feed__all');
+    const wrap = document.createElement('div');
+    wrap.className = 'so-state so-feed__empty';
+    wrap.setAttribute('role', 'status');
+    const text = document.createElement('p');
+    text.className = 'so-state__text';
+    text.textContent = 'No events to show in this row right now.';
+    const actions = document.createElement('div');
+    actions.className = 'so-state__actions';
+    const link = document.createElement('a');
+    link.className = 'so-state__btn';
+    link.href = (all && all.getAttribute('href')) || '/buy-tickets-online';
+    link.textContent = 'See all events';
+    actions.appendChild(link);
+    wrap.appendChild(text);
+    wrap.appendChild(actions);
+    Object.assign(wrap.style, { flex: '1 0 100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0' });
+    if (height) track.style.minHeight = height + 'px';
+    track.replaceChildren(wrap);
+    const next = box.querySelector('[data-so-feed-next]');
+    if (next) next.hidden = true;
+  }
+
   function render(box, kind, data, label) {
     const track = box.querySelector('[data-so-feed-track]');
     const title = box.querySelector('.so-feed__title');
     const sub = box.querySelector('[data-so-feed-sub]');
     const events = (data && data.events) || [];
-    if (!events.length) { box.hidden = true; return; }
+    if (!events.length) { emptyRow(box); return; }
+    if (track) track.style.minHeight = '';   // a row that was empty before (another location) sizes to its cards again
     if (kind === 'popweekend') {
       box.hidden = false;
       track.innerHTML = events.map(popCard).join('');
@@ -658,7 +689,7 @@ document.addEventListener('DOMContentLoaded', function () {
       fetch('/ajax/get-home-feed.php?' + qs)
         .then(r => r.json())
         .then(data => { if (my === token || loaded[kind] === key) render(box, kind, data, label); })
-        .catch(() => { if (loaded[kind] === key) { loaded[kind] = ''; box.hidden = true; } });
+        .catch(() => { if (loaded[kind] === key) { loaded[kind] = ''; emptyRow(box); } });
     });
   }
 
