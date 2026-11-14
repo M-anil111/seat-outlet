@@ -112,6 +112,33 @@ brCheck('date fields the pages read', [substr($ev['date']['date'], 10), $ev['dat
 
 // ---- the read-through (switch + freshness)
 putenv('TN_BULK_ENABLED');
+// ---- entity stand-ins (SE Ranking audit, 14 Nov 2026: venue, city and artist pages answered 503 when their first lookup was refused)
+$put(9200010, ['venue' => 9200050, 'city' => 9200050, 'perf' => 9200050, 'date' => date('Y-m-d', strtotime('-3 days'))]);   // only a past event
+brCheck('entity request: a venue', tnBulkEntityRequest('/catalog/v2/venues/9200001'), ['venue', 9200001]);
+brCheck('entity request: a city, trailing slash', tnBulkEntityRequest('/catalog/v2/cities/9200001/'), ['city', 9200001]);
+brCheck('entity request: a performer', tnBulkEntityRequest('/catalog/v2/performers/9200002'), ['performer', 9200002]);
+brCheck('entity request: an event list is not an entity', tnBulkEntityRequest('/catalog/v2/events/'), null);
+brCheck('entity request: a sub-resource is not an entity', tnBulkEntityRequest('/catalog/v2/venues/9200001/configurations'), null);
+$v = tnBulkEntity(MYSQLI, 'venue', 9200001);
+brCheck('venue stand-in: the fields the venue page reads', [$v['id'], $v['text']['name'], $v['city']['id'], $v['city']['text']['name'], $v['stateProvince']['id'], $v['stateProvince']['text']['abbr'], $v['_bulk']],
+    [9200001, 'Zq Hall', 9200001, 'Zqville', 9200001, 'ZQ', true]);
+brCheck('venue stand-in is not "missing"', tnEntityMissing($v), false);
+$c = tnBulkEntity(MYSQLI, 'city', 9200001);
+brCheck('city stand-in: the fields the city page reads', [$c['id'], $c['text']['name'], $c['stateProvince']['id'], $c['stateProvince']['text']['abbr'], $c['country']['alphaCode'], $c['_bulk']], [9200001, 'Zqville', 9200001, 'ZQ', 'US', true]);
+$p = tnBulkEntity(MYSQLI, 'performer', 9200002);
+brCheck('performer stand-in: id and name only, no made-up category', $p, ['id' => 9200002, 'text' => ['name' => 'Zq Act'], '_bulk' => true]);
+brCheck('performer id is matched whole (9200002 is not 92000021)', tnBulkEntity(MYSQLI, 'performer', 920000), null);
+brCheck('no stand-in for an entity with only past events', [tnBulkEntity(MYSQLI, 'venue', 9200050), tnBulkEntity(MYSQLI, 'city', 9200050), tnBulkEntity(MYSQLI, 'performer', 9200050)], [null, null, null]);
+brCheck('no stand-in for an unknown id or kind', [tnBulkEntity(MYSQLI, 'venue', 9200099), tnBulkEntity(MYSQLI, 'state', 9200001)], [null, null]);
+$put(9200011, ['city' => 9200060, 'venue' => 9200060, 'perf' => 9200060]);
+MYSQLI->query("UPDATE tn_bulk_events SET state_abbr = 'TX', venue_name = 'Zq Texas Hall' WHERE event_id = 9200011");
+brCheck('a known state code gets its full name', tnBulkEntity(MYSQLI, 'venue', 9200060)['stateProvince']['text']['name'] ?? null, 'Texas');
+$src = (string) file_get_contents(__DIR__ . '/../functions.php');
+brCheck('the bulk-first read (before any live call) never answers an entity: the real record wins', (bool) preg_match('/\$bulk = tnBulkFallback\(\$endpoint, \$params\);\s*if \(\$bulk !== null\) return \$bulk;/', $src), true);
+brCheck('every failure path may answer an entity from the copy', substr_count($src, 'tnBulkFallback($endpoint, $params, true)'), 4);
+brCheck('a stand-in performer is never kept as the record', strpos($src, "isset(\$result['id']) && empty(\$result['_bulk'])") !== false, true);
+brCheck('a stand-in performer is never remembered as dead', strpos((string) file_get_contents(__DIR__ . '/../performer.php'), "empty(\$performer['_bulk'])") !== false, true);
+
 brCheck('fallback is silent while the feature is off', tnBulkFallback('/catalog/v2/events/', locationListingParams('city/id eq 9200001', 20, 1, '', 'soonest')), null);
 brCheck('fallback ignores a single-event request', tnBulkFallback('/catalog/v2/events/9200001', []), null);
 
@@ -139,6 +166,8 @@ $setState([]);
 brCheck('on but never imported: not answered', $child('TN_BULK_ENABLED=1', $probe), 'null');
 $setState(['last_full_ok' => (string) (time() - 3600), 'last_full_count' => '90000']);
 $unparsed = '$r = tnBulkFallback("/catalog/v2/events/", ["filter" => "city/id eq 9200001 and contains(text/name, \\"x\\")", "sort" => "date/date"]); echo $r === null ? "null" : "answered";';
+$ent = '$a = tnBulkFallback("/catalog/v2/venues/9200001", [], true); $b = tnBulkFallback("/catalog/v2/venues/9200001", []); echo ($a["text"]["name"] ?? "null") . "|" . ($b === null ? "null" : "answered");';
+brCheck('ready: a failed venue lookup is answered from the copy, the bulk-first read is not', $child('TN_BULK_ENABLED=1', $ent), 'Zq Hall|null');
 brCheck('a request the parser does not understand is not answered even when ready', $child('TN_BULK_ENABLED=1', $unparsed), 'null');
 $setState($saved);
 

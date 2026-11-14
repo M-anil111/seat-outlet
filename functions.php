@@ -667,7 +667,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
     // Circuit open for this family: do not queue more 20s timeouts behind a dead API.
     if (tnBreakerOpen(tnBreakerFamily($endpoint))) {
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
-        $bulk = tnBulkFallback($endpoint, $params); if ($bulk !== null) return $bulk;   // the local catalog copy, when it is switched on and fresh
+        $bulk = tnBulkFallback($endpoint, $params, true); if ($bulk !== null) return $bulk;   // the local catalog copy, when it is switched on and fresh
         tnMarkDegraded('breaker');
         return [];
     }
@@ -683,7 +683,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
         });
         if ($shared !== false) { tnProfile($endpoint, true, 0); return $shared; }
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnMarkDegraded('coalesced'); return $entry['data']; }
-        $bulk = tnBulkFallback($endpoint, $params); if ($bulk !== null) return $bulk;
+        $bulk = tnBulkFallback($endpoint, $params, true); if ($bulk !== null) return $bulk;
         tnMarkDegraded('coalesced');
         return [];
     }
@@ -707,7 +707,7 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     if (!tnBucketAllow()) {
         tnCount('over_budget');   // our own limit, not the API's: tells a local bottleneck apart from a throttle on the health page
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
-        $bulk = tnBulkFallback($endpoint, $params); if ($bulk !== null) return $bulk;
+        $bulk = tnBulkFallback($endpoint, $params, true); if ($bulk !== null) return $bulk;
         tnMarkDegraded('budget');
         return [];
     }
@@ -726,7 +726,7 @@ function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
         soTnAlert('TicketNetwork API error (' . $endpoint . '): ' . $r['error']);
         // Stale data beats a blank page during an outage.
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
-        $bulk = tnBulkFallback($endpoint, $params); if ($bulk !== null) return $bulk;
+        $bulk = tnBulkFallback($endpoint, $params, true); if ($bulk !== null) return $bulk;
         tnMarkDegraded(!empty($r['throttled']) ? 'throttled' : 'api_error');
         return [];
     }
@@ -1005,7 +1005,7 @@ function getTnPerformerById($performerId) {
 
     // Only a real record goes into APCu. A failed call answers [] (throttled, over budget, circuit open), and keeping that for an hour
     // made every later visit to the artist page answer 503 from APCu, without reading the file copy or trying the API again.
-    if (function_exists('apcu_store') && isset($result['id'])) {
+    if (function_exists('apcu_store') && isset($result['id']) && empty($result['_bulk'])) {   // never keep a bulk-copy stand-in as the record
         apcu_store($cacheKey, $result, 3600);
     }
 

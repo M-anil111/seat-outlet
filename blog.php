@@ -170,7 +170,7 @@ $featured = ($page === 1 && !empty($posts)) ? array_shift($posts) : null;
             </ul>
         </div>
         <?php } ?>
-        <div class="so-bh__art"><img src="/images/blog-hero.webp" alt="" width="860" height="660" decoding="async"></div>
+        <div class="so-bh__art"><img src="/images/blog-hero.webp" alt="Illustration of an event ticket, an open guide, a map pin and a security shield" width="860" height="660" decoding="async"></div>
     </div>
 </header>
 

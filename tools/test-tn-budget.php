@@ -138,7 +138,7 @@ tbCheck('a call our own budget holds back is counted (over_budget), a 429 is cou
     substr_count($fnStats, "tnCount('over_budget');") === 2 && substr_count($fnStats, "if (!empty(\$r['throttled'])) tnCount('throttled');") === 2);
 tbCheck('a throttle names the gateway code and message, so Sentry says which limit was hit', strpos($fnStats, "'throttled (HTTP ' . \$code . (\$why !== '' ? ', ' . substr(\$why, 0, 120) : '') . ')'") !== false);
 tbCheck('a failed performer lookup is never kept in APCu (one throttled call used to 503 the artist page for an hour)',
-    preg_match("/if \(function_exists\('apcu_store'\) && isset\(\\\$result\['id'\]\)\) \{\s*apcu_store\(\\\$cacheKey, \\\$result, 3600\);/", $fnStats) === 1);
+    preg_match("/if \(function_exists\('apcu_store'\) && isset\(\\\$result\['id'\]\) && empty\(\\\$result\['_bulk'\]\)\) \{[^\n]*\s*apcu_store\(\\\$cacheKey, \\\$result, 3600\);/", $fnStats) === 1);
 tbCheck('an APCu entry without a record (kept before the guard, outliving the deploy) is dropped, not returned',
     strpos($fnStats, "if (\$found && is_array(\$cached) && isset(\$cached['id'])) {") !== false && strpos($fnStats, "if (\$found && function_exists('apcu_delete')) apcu_delete(\$cacheKey);") !== false);
 $fnStats = file_get_contents(__DIR__ . '/../functions.php');
