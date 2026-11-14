@@ -333,6 +333,9 @@ jobs:
       - name: An empty home page feed row keeps its place (no layout shift)
         run: node tools/test-home-feed-cls.mjs http://127.0.0.1:8161
 
+      - name: Stylesheet parts apply together (no partial states while they arrive)
+        run: node tools/test-css-atomic.mjs http://127.0.0.1:8161
+
       - name: Event page seat-map wiring (precheckout modes, begin_checkout once, no broken state)
         run: node tools/test-event-widget.mjs
 
