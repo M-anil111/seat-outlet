@@ -7315,6 +7315,9 @@ a.so-link-busy::after { content: ""; display: inline-block; width: 14px; height:
 .so-evc__go { width: 40px; height: 40px; border-radius: 50%; background: #2556e0; color: #fff; display: inline-flex; align-items: center; justify-content: center; transition: transform .2s ease, background .2s ease; }
 .so-evc:hover .so-evc__go { transform: translateX(3px); background: #1c47c7; }
 .so-evc--skeleton { min-height: 190px; pointer-events: none; }
+/* Home feed rows: a skeleton as tall as the event card that replaces it (259px on desktop), so the row does not grow when its events
+   arrive (live home page, 14 Nov 2026: rows grew from 338px to 405px). */
+.so-feed__track .so-evc--skeleton { min-height: 258px; }
 .so-evc__sk { display: block; border-radius: 8px; background: linear-gradient(90deg, #eef1f6 25%, #f7f8fb 50%, #eef1f6 75%); background-size: 200% 100%; animation: so-feed-shimmer 1.4s infinite linear; }
 .so-evc__sk--badge { width: 96px; height: 26px; border-radius: 980px; }
 .so-evc__sk--title { height: 20px; width: 80%; }

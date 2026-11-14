@@ -38,6 +38,23 @@ if (state) {
   check('the row links to all events', state.href === '/buy-tickets-online', state.href);
   check('layout shift stays under 0.1', state.cls < 0.1, state.cls.toFixed(3));
 }
+// A row whose events arrive keeps its height: the skeleton cards are as tall as the event cards that replace them (live home page,
+// 14 Nov 2026: rows grew from 338px to 405px when their events arrived). The feed answers after the stylesheets are in.
+{
+  const fixture = require('node:fs').readFileSync(new URL('./fixtures/home-feed.json', import.meta.url));
+  const page2 = await browser.newPage({ viewport: { width: 1350, height: 940 } });
+  await page2.route('**/ajax/get-home-feed.php*', async route => { await new Promise(r => setTimeout(r, 3000)); await route.fulfill({ status: 200, contentType: 'application/json', body: fixture }).catch(() => {}); });
+  await page2.goto(base + '/', { waitUntil: 'load', timeout: 90000 });
+  await page2.waitForTimeout(1500);
+  const rows = () => page2.evaluate(() => Object.fromEntries(['soFeedLastMinute', 'soFeedTrending'].map(id => { const b = document.getElementById(id); return [id, b && !b.hidden ? Math.round(b.getBoundingClientRect().height) : -1]; })));
+  const before2 = await rows();
+  await page2.waitForTimeout(4500);
+  const after2 = await rows();
+  const filled = await page2.evaluate(() => document.querySelectorAll('#soFeedLastMinute .so-evc:not(.so-evc--skeleton)').length);
+  check('events replaced the skeleton cards', filled > 0, String(filled));
+  for (const id of Object.keys(before2)) check(`${id} keeps its height when its events arrive`, before2[id] > 0 && Math.abs(after2[id] - before2[id]) <= 8, `${before2[id]}px -> ${after2[id]}px`);
+  await page2.close();
+}
 await browser.close();
 if (fail) { console.log(`${fail} check(s) failed`); process.exit(1); }
 console.log('ok: home feed rows keep their place');

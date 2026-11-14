@@ -70,7 +70,7 @@ foreach ($fallbackCategories as $key => $list) {
       <a class="so-feed__all so-feed__all--arrow" href="/buy-tickets-online?when=weekend">See all events <span aria-hidden="true">&rarr;</span></a>
     </div>
     <div class="so-feed__wrap">
-      <div class="so-feed__track" data-so-feed-track><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div></div>
+      <div class="so-feed__track" data-so-feed-track><article class="so-evc so-evc--skeleton" aria-hidden="true"><div class="so-evc__top"><span class="so-evc__sk so-evc__sk--badge"></span></div><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></article><article class="so-evc so-evc--skeleton" aria-hidden="true"><div class="so-evc__top"><span class="so-evc__sk so-evc__sk--badge"></span></div><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></article><article class="so-evc so-evc--skeleton" aria-hidden="true"><div class="so-evc__top"><span class="so-evc__sk so-evc__sk--badge"></span></div><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></article><article class="so-evc so-evc--skeleton" aria-hidden="true"><div class="so-evc__top"><span class="so-evc__sk so-evc__sk--badge"></span></div><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></article></div>
       <button type="button" class="so-feed__next" data-so-feed-next aria-label="Show more events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
     </div>
   </div>
@@ -86,7 +86,7 @@ foreach ($fallbackCategories as $key => $list) {
       <a class="so-feed__all" href="/buy-tickets-online">See all</a>
     </div>
     <div class="so-feed__wrap">
-      <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><?php } ?></div>
+      <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><article class="so-evc so-evc--skeleton" aria-hidden="true"><div class="so-evc__top"><span class="so-evc__sk so-evc__sk--badge"></span></div><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></article><?php } ?></div>
       <button type="button" class="so-feed__next" data-so-feed-next aria-label="Show more events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
     </div>
   </div>
@@ -198,7 +198,7 @@ foreach ($fallbackCategories as $key => $list) {
       <a class="so-feed__all" href="/concert-tickets-for-sale">See all</a>
     </div>
     <div class="so-feed__wrap">
-      <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><div class="so-feed-card so-feed-card--skeleton" aria-hidden="true"><div class="so-feed-card__img"></div><div class="so-feed-card__line"></div><div class="so-feed-card__line so-feed-card__line--short"></div></div><?php } ?></div>
+      <div class="so-feed__track" data-so-feed-track><?php for ($i = 0; $i < 4; $i++) { ?><article class="so-evc so-evc--skeleton" aria-hidden="true"><div class="so-evc__top"><span class="so-evc__sk so-evc__sk--badge"></span></div><span class="so-evc__sk so-evc__sk--title"></span><span class="so-evc__sk so-evc__sk--line"></span><span class="so-evc__sk so-evc__sk--line so-evc__sk--short"></span></article><?php } ?></div>
       <button type="button" class="so-feed__next" data-so-feed-next aria-label="Show more events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
     </div>
   </div>
