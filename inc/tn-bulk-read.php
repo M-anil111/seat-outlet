@@ -188,13 +188,78 @@ function tnBulkRunListing(mysqli $db, array $q, ?string $nowUtc = null): ?array 
     return ['results' => $rows, 'totalCount' => $total, '_bulk' => true];
 }
 
+/** Pure: which entity record a request asks for, ['venue'|'city'|'performer', id], or null for anything else. */
+function tnBulkEntityRequest(string $endpoint): ?array {
+    if (!preg_match('#^/catalog/v2/(venues|cities|performers)/(\d{1,10})/?$#', $endpoint, $m) || (int) $m[2] < 1) return null;
+    return [['venues' => 'venue', 'cities' => 'city', 'performers' => 'performer'][$m[1]], (int) $m[2]];
+}
+
+/**
+ * A stand-in for one venue, city or performer record, built from that entity's upcoming events in the bulk copy, for the moment the live
+ * lookup cannot be made (the call budget, a throttle, an open circuit) and no saved copy exists. Without it a venue, city or artist page
+ * that was never looked up before answered 503 while its events were sitting in the copy (SE Ranking audit, 14 Nov 2026: 51 pages).
+ * Only what the copy really holds: the name, the city and state (with the state's full name from its code), the map point; a performer
+ * gets its id and name only (the page takes its category from the events, as it already does for a record without one). Marked _bulk so
+ * nothing stores it as the real record. Null when the entity has no upcoming event in the copy: no stand-in is ever made up.
+ */
+function tnBulkEntity(mysqli $db, string $kind, int $id, ?string $nowUtc = null): ?array {
+    if ($id < 1) return null;
+    $cols = ['venue' => 'venue_id', 'city' => 'city_id', 'performer' => null];   // a performer is matched inside the performers list
+    if (!array_key_exists($kind, $cols)) return null;
+    $col = $cols[$kind];
+    $nowUtc = $nowUtc ?? gmdate('Y-m-d H:i:s');
+    $where = $col !== null ? "$col = ?" : 'performers LIKE ?';
+    $key = $col !== null ? $id : '%{"id":' . $id . ',%';
+    try {
+        $s = $db->prepare('SELECT * FROM tn_bulk_events WHERE ' . $where . ' AND is_test = 0 AND starts_local >= ? AND (takedown_at IS NULL OR takedown_at > ?) ORDER BY starts_local DESC, event_id DESC LIMIT 1');
+        if (!$s) return null;
+        $today = substr($nowUtc, 0, 10) . ' 00:00:00';
+        $s->bind_param(($col !== null ? 'i' : 's') . 'ss', $key, $today, $nowUtc);
+        $s->execute();
+        $r = $s->get_result()->fetch_assoc();
+        $s->close();
+    } catch (\Throwable $e) {
+        return null;
+    }
+    if (!is_array($r)) return null;
+    if ($kind === 'performer') {
+        foreach ((array) json_decode((string) ($r['performers'] ?? ''), true) as $p) {
+            $name = trim((string) ($p['name'] ?? ''));
+            if ((int) ($p['id'] ?? 0) === $id && $name !== '') return ['id' => $id, 'text' => ['name' => $name], '_bulk' => true];
+        }
+        return null;
+    }
+    $abbr = strtoupper(trim((string) ($r['state_abbr'] ?? '')));
+    $names = defined('IMAGE_STATE_NAMES') ? IMAGE_STATE_NAMES : [];
+    $state = ['id' => (int) ($r['state_id'] ?? 0), 'text' => ['abbr' => $abbr, 'name' => (string) ($names[$abbr] ?? '')]];
+    $country = ['alphaCode' => (string) ($r['country_code'] ?? '')];
+    $geo = (!empty($r['latitude']) || !empty($r['longitude'])) ? ['latitude' => (float) $r['latitude'], 'longitude' => (float) $r['longitude']] : null;
+    $city = ['id' => (int) ($r['city_id'] ?? 0), 'text' => ['name' => trim((string) ($r['city_name'] ?? ''))]];
+    if ($kind === 'city') {
+        if ($city['id'] !== $id || $city['text']['name'] === '') return null;
+        return $city + ['stateProvince' => $state, 'country' => $country, '_bulk' => true];
+    }
+    $name = trim((string) ($r['venue_name'] ?? ''));
+    if ($name === '') return null;
+    $v = ['id' => $id, 'text' => ['name' => $name], 'city' => $city, 'stateProvince' => $state, 'country' => $country, '_bulk' => true];
+    if ($geo) $v['geoLocation'] = $geo;
+    return $v;
+}
+
 /**
  * The read-through used by the live request layer when a call cannot be made. Only /catalog/v2/events LIST requests (not one event) and
  * only when the bulk copy is ready and the whole request is understood. Returns an API-shaped answer, or null (the caller then reports
  * the failure as before). A page served from here is counted ('bulk_served') so the health page shows how often it happens.
  */
-function tnBulkFallback($endpoint, array $params): ?array {
+function tnBulkFallback($endpoint, array $params, bool $failed = false): ?array {
     if (!tnBulkReady() || !defined('MYSQLI') || !(MYSQLI instanceof mysqli)) return null;
+    if ($failed && $params === [] && ($ent = tnBulkEntityRequest((string) $endpoint)) !== null) {
+        $r = tnBulkEntity(MYSQLI, $ent[0], $ent[1]);
+        if ($r === null) return null;
+        if (function_exists('tnCount')) tnCount('bulk_entity_served');
+        $GLOBALS['so_bulk_served'] = true;
+        return $r;
+    }
     if (rtrim((string) $endpoint, '/') !== '/catalog/v2/events') return null;
     $q = tnBulkParseListing($params);
     if ($q === null) return null;

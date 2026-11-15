@@ -1,0 +1,173 @@
+{
+ "scope": "national",
+ "events": [
+  {
+   "id": 9400001,
+   "name": "Zq Arena Rock Night",
+   "slug": "zq-event-1",
+   "iso": "2026-11-15",
+   "time": "",
+   "date": "Sun, Nov 15",
+   "venue": "Zq Arena",
+   "loc": "Austin, TX",
+   "dist": null,
+   "price": "$89",
+   "performer": "Zq Arena Rock Night",
+   "tab": "concerts",
+   "defaultCategory": {
+    "path": ".1859.1986.",
+    "depth": 0,
+    "text": [],
+    "ancestors": []
+   },
+   "placeholder": "/images/home-cat-concerts.webp"
+  },
+  {
+   "id": 9400002,
+   "name": "Zq Wildcats vs. Zq Gators",
+   "slug": "zq-event-2",
+   "iso": "2026-11-16",
+   "time": "",
+   "date": "Mon, Nov 16",
+   "venue": "Zq Stadium",
+   "loc": "Lexington, KY",
+   "dist": null,
+   "price": "$195",
+   "performer": "Zq Wildcats",
+   "tab": "sports",
+   "defaultCategory": {
+    "path": ".1859.1986.",
+    "depth": 0,
+    "text": [],
+    "ancestors": []
+   },
+   "placeholder": "/images/home-cat-concerts.webp"
+  },
+  {
+   "id": 9400003,
+   "name": "Zq The Musical: Holiday Tour",
+   "slug": "zq-event-3",
+   "iso": "2026-11-17",
+   "time": "",
+   "date": "Tue, Nov 17",
+   "venue": "Zq Theatre",
+   "loc": "Chicago, IL",
+   "dist": null,
+   "price": "$64",
+   "performer": "Zq The Musical: Holiday Tour",
+   "tab": "theatre",
+   "defaultCategory": {
+    "path": ".1859.1986.",
+    "depth": 0,
+    "text": [],
+    "ancestors": []
+   },
+   "placeholder": "/images/home-cat-concerts.webp"
+  },
+  {
+   "id": 9400004,
+   "name": "Zq Comedy Live",
+   "slug": "zq-event-4",
+   "iso": "2026-11-18",
+   "time": "",
+   "date": "Wed, Nov 18",
+   "venue": "Zq Comedy Club",
+   "loc": "Denver, CO",
+   "dist": null,
+   "price": "$35",
+   "performer": "Zq Comedy Live",
+   "tab": "concerts",
+   "defaultCategory": {
+    "path": ".1859.1986.",
+    "depth": 0,
+    "text": [],
+    "ancestors": []
+   },
+   "placeholder": "/images/home-cat-concerts.webp"
+  },
+  {
+   "id": 9400005,
+   "name": "Zq Symphony Winter Concert",
+   "slug": "zq-event-5",
+   "iso": "2026-11-19",
+   "time": "",
+   "date": "Thu, Nov 19",
+   "venue": "Zq Concert Hall",
+   "loc": "Boston, MA",
+   "dist": null,
+   "price": "$52",
+   "performer": "Zq Symphony Winter Concert",
+   "tab": "concerts",
+   "defaultCategory": {
+    "path": ".1859.1986.",
+    "depth": 0,
+    "text": [],
+    "ancestors": []
+   },
+   "placeholder": "/images/home-cat-concerts.webp"
+  },
+  {
+   "id": 9400006,
+   "name": "Zq Hockey Club vs. Zq Kings",
+   "slug": "zq-event-6",
+   "iso": "2026-11-20",
+   "time": "",
+   "date": "Fri, Nov 20",
+   "venue": "Zq Ice Center",
+   "loc": "Dallas, TX",
+   "dist": null,
+   "price": "$78",
+   "performer": "Zq Hockey Club",
+   "tab": "sports",
+   "defaultCategory": {
+    "path": ".1859.1986.",
+    "depth": 0,
+    "text": [],
+    "ancestors": []
+   },
+   "placeholder": "/images/home-cat-concerts.webp"
+  },
+  {
+   "id": 9400007,
+   "name": "Zq Country Christmas",
+   "slug": "zq-event-7",
+   "iso": "2026-11-15",
+   "time": "",
+   "date": "Sun, Nov 15",
+   "venue": "Zq Amphitheater",
+   "loc": "Nashville, TN",
+   "dist": null,
+   "price": "$110",
+   "performer": "Zq Country Christmas",
+   "tab": "concerts",
+   "defaultCategory": {
+    "path": ".1859.1986.",
+    "depth": 0,
+    "text": [],
+    "ancestors": []
+   },
+   "placeholder": "/images/home-cat-concerts.webp"
+  },
+  {
+   "id": 9400008,
+   "name": "Zq Ballet: The Nutcracker",
+   "slug": "zq-event-8",
+   "iso": "2026-11-16",
+   "time": "",
+   "date": "Mon, Nov 16",
+   "venue": "Zq Opera House",
+   "loc": "Seattle, WA",
+   "dist": null,
+   "price": "$70",
+   "performer": "Zq Ballet: The Nutcracker",
+   "tab": "theatre",
+   "defaultCategory": {
+    "path": ".1859.1986.",
+    "depth": 0,
+    "text": [],
+    "ancestors": []
+   },
+   "placeholder": "/images/home-cat-concerts.webp"
+  }
+ ]
+}

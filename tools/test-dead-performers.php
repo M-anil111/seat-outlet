@@ -40,7 +40,7 @@ dpCheck('forgetting on a healthy site writes nothing (no file, no directory)', [
 // wiring
 $root = dirname(__DIR__);
 $perf = file_get_contents($root . '/performer.php');
-dpCheck('performer.php remembers only a real "not found" or a performer without a category', strpos($perf, 'if (tnEntityDefinitelyMissing($performer) || (!empty($performer[\'id\']) && empty($performer[\'defaultCategory\']))) soDeadPerformerRemember((int) $id);') !== false, true);
+dpCheck('performer.php remembers only a real "not found" or a real record without a category (never a bulk-copy stand-in)', strpos($perf, 'if (tnEntityDefinitelyMissing($performer) || (!empty($performer[\'id\']) && empty($performer[\'_bulk\']) && empty($performer[\'defaultCategory\']))) soDeadPerformerRemember((int) $id);') !== false, true);
 dpCheck('performer.php forgets the id when the page renders', strpos($perf, 'soDeadPerformerForget((int) $id);') !== false, true);
 dpCheck('the remember call comes before the 404 page is sent', strpos($perf, 'soDeadPerformerRemember((int) $id);') < strpos($perf, "renderNotFoundPage('Performer', \$performer, \$soPerformerLabel);"), true);
 $fn = file_get_contents($root . '/functions.php');

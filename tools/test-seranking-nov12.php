@@ -60,6 +60,8 @@ srCheck('menu tiles print their alt text', strpos($header, 'alt="<?php echo html
 srCheck('no menu tile with an empty alt', !preg_match('#home-cat-<\?php echo \$m\[.key.\]; \?>\.webp" alt=""#', $header));
 srCheck('promo code page tiles have alt text', !preg_match('#home-cat-[a-z]+\.webp" alt=""#', srSrc('inc/seo-copy/tickets-promo-code.php')));
 
+srCheck('blog hero image has alt text (audit 603557644)', strpos(srSrc('blog.php'), 'blog-hero.webp" alt=""') === false && (bool) preg_match('#blog-hero\.webp" alt="[^"]{10,}"#', srSrc('blog.php')));
+
 // ---- extlinks_no_anchor: icon links carry text a crawler reads (aria-label alone is not anchor text)
 $event = srSrc('event.php');
 srCheck('event map link has text inside the link', (bool) preg_match('#class="so-evp-venue__map"[^>]*>(?:(?!</a>).)*<span class="visually-hidden">#s', $event));
@@ -79,6 +81,10 @@ srCheck('home page links the www Grab Tickets Now address', strpos($index, 'href
 // ---- http5xx on /category/<name>: a refused category lookup falls back to the name stored with the slug, not a 503
 $cat = srSrc('category.php');
 srCheck('category page names itself from the stored slug name when the lookup is refused', strpos($cat, "soSlugStoredName('category', \$id)") !== false);
+
+// ---- http5xx on /venue, /city and /artist pages (audit 603557644, 14 Nov 2026): a refused first lookup of the record is answered from the
+// bulk copy (tools/test-tn-bulk-read.php covers the stand-in itself)
+srCheck('the bulk copy stands in for a venue, city or performer record when the live lookup fails', strpos(srSrc('inc/tn-bulk-read.php'), 'function tnBulkEntity(') !== false);
 
 if ($fail) { echo "$fail check(s) failed\n"; exit(1); }
 echo "ok: SE Ranking audit 12 Nov 2026\n";

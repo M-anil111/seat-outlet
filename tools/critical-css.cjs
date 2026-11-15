@@ -9,7 +9,10 @@
  * The kept rules stay in their original order and inside their original @media blocks, so the cascade is the same as the full files'.
  * Writes css/critical/<page type>.css.
  *
- *   node tools/critical-css.cjs --base=http://127.0.0.1:8140 [--groups=home,browse] [--urls=tools/critical-urls.json] [--out=css/critical]
+ *   node tools/critical-css.cjs --base=http://127.0.0.1:8140 [--groups=home,browse] [--urls=tools/critical-urls.json] [--out=css/critical] [--fresh]
+ *
+ * Rules the current critical file has are kept (union), so a run against a site without live event data never drops what the live page
+ * needs; --fresh starts from nothing. CHROME_PATH sets the browser.
  *
  * Needs: the site running with its pages able to render (a mock or real ticket API), the global `playwright` package
  * (NODE_PATH=$(npm root -g)), and `postcss` and `clean-css` (npm i in a scratch folder, NODE_PATH to its node_modules).
@@ -126,8 +129,13 @@ async function fetchText(url) { const res = await fetch(url); if (!res.ok) throw
         const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
         const page = await ctx.newPage();
         await page.route(/(googletagmanager|google-analytics|doubleclick|googleapis|gstatic|cdn-beta\.seatoutlet\.com)/, r => r.fulfill({ status: 200, body: '' }));
+        // The first paint is the page before its own requests answer (feed rows show skeleton cards). Hold them, read the rules for that
+        // state, then let them through and read again: both states are kept. Reading only after the network went quiet missed the
+        // skeleton rules, so the home feed rows painted 148px tall and grew to 454px when the full stylesheet arrived.
+        const held = []; let holding = true;
+        await page.route(u => new URL(u).origin === new URL(base).origin && /^\/ajax\//.test(new URL(u).pathname), r => { if (holding) held.push(r); else r.continue(); });
         let resp;
-        try { resp = await page.goto(base + p, { waitUntil: 'networkidle', timeout: 60000 }); } catch (e) { console.log('  ' + p + ' ' + w + ': ' + e.message.split('\n')[0]); await ctx.close(); continue; }
+        try { resp = await page.goto(base + p, { waitUntil: 'load', timeout: 60000 }); } catch (e) { console.log('  ' + p + ' ' + w + ': ' + e.message.split('\n')[0]); await ctx.close(); continue; }
         if (!resp || resp.status() !== 200) { console.log('  skip ' + p + ' (HTTP ' + (resp && resp.status()) + ')'); await ctx.close(); break; }
         await page.waitForTimeout(1500);
         if (!sheets) {
@@ -136,12 +144,26 @@ async function fetchText(url) { const res = await fetch(url); if (!res.ok) throw
           for (const href of hrefs) { const css = await fetchText(href); const s = listRules(css, off); off = s.next; sheets.push({ href, ...s }); }
         }
         const all = sheets.flatMap(s => s.rules);
-        const hit = await page.evaluate(matchOnScreen, all);
-        hit.forEach(i => keep.add(i));
+        (await page.evaluate(matchOnScreen, all)).forEach(i => keep.add(i));   // first paint: own requests not answered yet
+        holding = false; held.splice(0).forEach(r => r.continue().catch(() => {}));
+        await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+        await page.waitForTimeout(1500);
+        (await page.evaluate(matchOnScreen, all)).forEach(i => keep.add(i));   // after the page's own requests answered
         await ctx.close();
       }
     }
     if (!sheets) { console.log(group + ': no page rendered'); continue; }
+    // Rules the current critical file already has stay (unless --fresh): a run against a local site without live event data does not see
+    // every state the live page shows (event cards, the consent banner), and dropping their rules would make those parts jump on load.
+    const outFile = path.join(outDir, group + '.css');
+    if (!args.fresh && fs.existsSync(outFile)) {
+      const norm = r => { const c = []; for (let p = r.parent; p && p.type !== 'root'; p = p.parent) if (p.type === 'atrule') c.unshift(String(p.params).replace(/\s+/g, ''));
+        return c.join('|') + '::' + r.selector.split(',').map(x => x.trim().replace(/\s*([>+~])\s*/g, '$1').replace(/\s+/g, ' ')).sort().join(','); };
+      const had = new Set(); postcss.parse(fs.readFileSync(outFile, 'utf8')).walkRules(r => had.add(norm(r)));
+      let kept = 0;
+      for (const sh of sheets) sh.root.walkRules(rule => { if (!keep.has(rule.raws.soId) && had.has(norm(rule))) { keep.add(rule.raws.soId); kept++; } });
+      console.log(group + ': ' + kept + ' rules kept from the current critical file');
+    }
     // rebuild: the kept rules, in order, inside their @media / @supports blocks
     let out = '';
     for (const s of sheets) {
@@ -159,8 +181,8 @@ async function fetchText(url) { const res = await fetch(url); if (!res.ok) throw
     // which makes a phone zoom the page out and then jump back. Clipping sideways overflow at the root prevents that; "clip" (unlike
     // "hidden") does not turn the body into a scroll container, so sticky headers keep working.
     out = 'html,body{overflow-x:clip}\n' + out;
-    const min = new CleanCSS({ level: 1, specialComments: 0 }).minify(out.replace(/@charset "[^"]*";/g, '')).styles;
-    fs.writeFileSync(path.join(outDir, group + '.css'), min);
+    const min = new CleanCSS({ level: { 1: { specialComments: 0, selectorsSortingMethod: 'none' } } }).minify(out.replace(/@charset "[^"]*";/g, '')).styles;
+    fs.writeFileSync(outFile, min);
     console.log(group + ': ' + paths.length + ' pages, ' + keep.size + ' rules kept, ' + min.length + ' bytes');
   }
   await browser.close();

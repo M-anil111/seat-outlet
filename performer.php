@@ -30,7 +30,7 @@ if (!tnEntityMissing($performer) && empty($performer['defaultCategory'])) {
 if (tnEntityMissing($performer) || empty($performer['defaultCategory'])) {
 	// A performer the catalog no longer has, or one with no default category, has no page: lists stop linking to it for three days.
 	// Only a real "not found" counts (tnEntityDefinitelyMissing): an empty, throttled or failed lookup never hides a performer.
-	if (tnEntityDefinitelyMissing($performer) || (!empty($performer['id']) && empty($performer['defaultCategory']))) soDeadPerformerRemember((int) $id);
+	if (tnEntityDefinitelyMissing($performer) || (!empty($performer['id']) && empty($performer['_bulk']) && empty($performer['defaultCategory']))) soDeadPerformerRemember((int) $id);
 	renderNotFoundPage('Performer', $performer, $soPerformerLabel);
 }
 soDeadPerformerForget((int) $id);   // the page renders: it is not dead (no-op unless the id was remembered)
