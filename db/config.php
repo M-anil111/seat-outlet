@@ -60,6 +60,10 @@ if ($dbPass === false || $dbPass === '') {
 }
 define('DB_PASS', $dbPass);
 
+// A failed query throws mysqli_sql_exception (PHP 8.1+ does this by default; stated here so no php.ini or older PHP can turn it back into a
+// silent false). Every write that is not wrapped in its own try/catch therefore fails loudly and reaches Sentry, never half-succeeds.
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 try {
     $mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
 } catch (Throwable $e) {   // PHP 8.1+ throws on a failed connection instead of setting connect_error
