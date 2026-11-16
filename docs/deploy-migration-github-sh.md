@@ -90,7 +90,7 @@ DEPLOY_WORKDIR=/home/seatoutlet-beta/htdocs/beta.seatoutlet.com/seat-outlet ~/de
 # the live comparison: what the switch would change. Expect only files that differ between the served folder and main.
 diff -rq --exclude=.git --exclude=cache --exclude=env.local.php --exclude=.deployed-commit ~/deploy/checkout /home/seatoutlet-beta/htdocs/beta.seatoutlet.com/seat-outlet | grep -v '^Only in /home/seatoutlet-beta/deploy/checkout: \(deploy\|docs\|\.github\|CONTRIBUTING.md\|composer\)' | head -40
 # the migration check without applying anything: pending files are listed on the health page
-curl -s https://beta.seatoutlet.com/ajax/health.php | php -r '$j=json_decode(stream_get_contents(STDIN),true); echo "pending migrations: ", json_encode($j["migrations"]["pendingNames"] ?? null), "\n";'
+curl -s -H "X-Health-Token: $HEALTH_TOKEN" https://beta.seatoutlet.com/ajax/health.php | php -r '$j=json_decode(stream_get_contents(STDIN),true); echo "pending migrations: ", json_encode($j["migrations"]["pendingNames"] ?? null), "\n";'
 rm -rf ~/deploy/validate-webroot
 ```
 
