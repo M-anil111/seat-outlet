@@ -18,6 +18,21 @@ function soAutoMigrateEnabled(): bool {
     return !SITE_INDEXABLE;
 }
 
+/**
+ * Is there a database dump (cron/backup-db.php) from the last $maxAge seconds? A schema change cannot be undone from git, so on an
+ * indexable (live) host the request-time runner refuses to migrate without one. Read-only: it only looks at the file times.
+ */
+function soAutoMigrateRecentBackup(?string $dir = null, ?int $now = null, int $maxAge = 129600): bool {
+    $dir = $dir ?? (getenv('SO_BACKUP_DIR') ?: dirname(__DIR__, 2) . '/seatoutlet-backups');
+    $now = $now ?? time();
+    if (!is_dir($dir)) return false;
+    foreach (glob(rtrim($dir, '/') . '/seatoutlet-*.sql.gz') ?: [] as $f) {
+        $t = (int) @filemtime($f);
+        if ($t > 0 && $now - $t <= $maxAge && $now >= $t - 300) return true;
+    }
+    return false;
+}
+
 function soAutoMigrateMaybeRun(): void {
     if (PHP_SAPI === 'cli' || !soAutoMigrateEnabled() || !function_exists('fastcgi_finish_request')) return;
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
@@ -41,6 +56,15 @@ function soAutoMigrateMaybeRun(): void {
         sort($files);
         $pending = array_values(array_filter($files, function ($f) use ($applied) { return !isset($applied[basename($f)]); }));
         if (!$pending) return;
+
+        // Live host: only with a dump from the last 36 hours behind it (the deploy script makes one before it migrates; this covers a
+        // schema change that reaches the live site any other way). Recorded where /ajax/health.php (with the token) and Sentry show it.
+        if (SITE_INDEXABLE && !soAutoMigrateRecentBackup()) {
+            $msg = 'no database dump from the last 36 hours: ' . count($pending) . ' pending migration(s) NOT applied (run php cron/backup-db.php, then php db/migrate.php)';
+            file_put_contents($dir . '/migrate_last.json', json_encode(['at' => time(), 'applied' => [], 'error' => $msg]));
+            if (class_exists('\\Sentry\\SentrySdk')) \Sentry\captureMessage('Auto-migration refused: ' . $msg);
+            return;
+        }
 
         ignore_user_abort(true);
         @set_time_limit(120);
