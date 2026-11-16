@@ -84,6 +84,21 @@ $cache = __DIR__ . '/../cache';
 $add(is_dir($cache) && is_writable($cache) ? 'OK' : 'FAIL', 'cache/ folder', is_dir($cache) && is_writable($cache) ? 'writable' : 'missing or not writable by this user');
 $add($env('CRON_TOKEN') !== '' ? 'WARN' : 'OK', 'CRON_TOKEN', $env('CRON_TOKEN') !== '' ? 'set: cron scripts can be started by URL with that token; prefer running them with php and leave this unset' : 'not set (cron scripts only run from the command line)');
 
+// Safeguards the audit of 16 Nov 2026 could not see from outside the server: report each one so they can be checked in one command.
+$add($env('HEALTH_TOKEN') !== '' ? 'OK' : 'INFO', 'HEALTH_TOKEN', $env('HEALTH_TOKEN') !== '' ? 'set (the detailed /ajax/health.php needs it as the X-Health-Token header)' : 'not set: /ajax/health.php shows only ok, time and commit over the web');
+$autoMig = $env('SO_AUTO_MIGRATE');
+if ($effIdx && $autoMig === '1') $add($production ? 'FAIL' : 'WARN', 'SO_AUTO_MIGRATE', 'is 1 on an indexable site: every deploy that adds a migration changes the live schema on the first page view. Remove it so migrations are run by hand (php db/migrate.php) after a backup');
+else $add('OK', 'SO_AUTO_MIGRATE', $effIdx ? 'off on the live site: migrations are run by hand' : 'on for this non-indexable host (beta)');
+$add($env('CSP_ENFORCE') === '1' ? 'OK' : 'WARN', 'CSP_ENFORCE', $env('CSP_ENFORCE') === '1' ? 'the Content-Security-Policy is enforced' : 'not set: the policy is report-only and blocks nothing (checklist in docs/csp.md)');
+$bk = $env('SO_BACKUP_DIR') ?: dirname($root) . '/seatoutlet-backups';
+$dumps = is_dir($bk) ? (glob(rtrim($bk, '/') . '/*.sql.gz') ?: []) : [];
+$newest = $dumps ? max(array_map('filemtime', $dumps)) : 0;
+if (!is_dir($bk)) $add($production ? 'FAIL' : 'WARN', 'database backups', 'folder ' . $bk . ' not found: run php cron/backup-db.php and schedule it nightly');
+elseif (!$dumps || time() - $newest > 36 * 3600) $add($production ? 'FAIL' : 'WARN', 'database backups', $dumps ? 'newest dump is ' . round((time() - $newest) / 3600) . ' hours old: the nightly cron is not running' : 'folder is empty: run php cron/backup-db.php and schedule it nightly');
+else $add('OK', 'database backups', count($dumps) . ' dumps, newest ' . round((time() - $newest) / 3600, 1) . ' hours old' . ($env('SO_BACKUP_S3') !== '' ? ', copied to S3' : ', no off-server copy (SO_BACKUP_S3 not set)'));
+$de = strtolower((string) ini_get('display_errors'));
+$add(in_array($de, ['', '0', 'off', 'false', 'stderr'], true) ? 'OK' : 'WARN', 'display_errors (command-line PHP)', 'is "' . $de . '". The web server PHP has its own php.ini: confirm it with a page that raises a notice, or phpinfo() run by an admin, and keep it off in production');
+
 $w = 0;
 foreach ($rows as $r) { $w = max($w, strlen($r[1])); }
 $counts = [];
