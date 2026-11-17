@@ -12,6 +12,9 @@
  * Then run the site with the bulk copy on and the live API unreachable, so the pages answer from the fixtures:
  *   TN_BULK_ENABLED=1 TN_CALLS_PER_SECOND=0.00001 php -S 127.0.0.1:8161 ...
  *   node tools/critical-css.cjs --base=http://127.0.0.1:8161 --groups=entity,browse --urls=<json with the URLs printed here>
+ * Each fixture artist, venue and city also gets a stored photo with a licence credit (a local image file, rows in the images table), so the
+ * hero shows what a real page shows: the photo and the credit line (their rules were missing from the critical CSS while the fixtures had only
+ * the initials tile: live artist pages shifted 0.16 on a phone).
  * LOCAL AND BETA DATABASES ONLY: it refuses to run on an indexable (live) host. Rows use ids 9300001 to 9300009 and the slugs
  * zq-arena, zqtown-tx, zq-band and zq-rock; the category slug points at category id 1986.
  */
@@ -24,6 +27,8 @@ $stateFile = __DIR__ . '/../cache/.critical-fixtures-state.json';
 $clean = in_array('--clean', $argv ?? [], true);
 
 MYSQLI->query('DELETE FROM tn_bulk_events WHERE event_id BETWEEN 9300001 AND 9300009');
+$fixtureImages = [['artist', 'Zq Band'], ['team', 'Zq Band'], ['venue', 'Zq Arena'], ['city', 'Zqtown, TX'], ['city', 'Zqtown']];
+foreach ($fixtureImages as [$t, $n]) { $k = imageEntityKey($t, $n); $st = MYSQLI->prepare('DELETE FROM images WHERE imgkey = ?'); $st->bind_param('s', $k); $st->execute(); $st->close(); }
 MYSQLI->query("DELETE FROM url_slugs WHERE (type = 'venue' AND ext_id = '9300001') OR (type = 'city' AND ext_id = '9300001') OR (type = 'performer' AND ext_id = '9300001') OR (type = 'category' AND ext_id = '1986' AND slug = 'zq-rock')");
 if ($clean) {
     $prev = is_file($stateFile) ? json_decode((string) file_get_contents($stateFile), true) : null;
@@ -47,4 +52,8 @@ if (!is_file($stateFile)) file_put_contents($stateFile, json_encode(tnBulkState(
 MYSQLI->query('DELETE FROM tn_bulk_state');
 foreach (['last_full_ok' => (string) (time() - 3600), 'last_full_count' => '90000'] as $k => $v) { $st = MYSQLI->prepare('INSERT INTO tn_bulk_state (name, value, updated_at) VALUES (?, ?, NOW())'); $st->bind_param('ss', $k, $v); $st->execute(); $st->close(); }
 $slugs = [soSlug('category', 'Zq Rock', 1986), soSlug('venue', 'Zq Arena', 9300001, ['place' => 'Zqtown, TX']), soSlug('city', 'Zqtown, TX', 9300001), soSlug('performer', 'Zq Band', 9300001)];
+foreach ($fixtureImages as [$t, $n]) {
+    imageRecordUpsert(['imgkey' => imageEntityKey($t, $n), 'entity_type' => $t, 'entity_name' => $n, 'url' => '/images/blog-hero.webp', 'status' => 'ok', 'source' => 'wikimedia',
+        'source_url' => 'https://commons.wikimedia.org/wiki/File:Zq_fixture.jpg', 'license' => 'CC BY-SA 3.0', 'attribution' => 'Zq Photographer / Wikimedia Commons, CC BY-SA 3.0', 'resolved_at' => gmdate('Y-m-d H:i:s')]);
+}
 echo "fixtures ready: /category/{$slugs[0]}  /venue/{$slugs[1]}  /city/{$slugs[2]}  /artist/{$slugs[3]}\n";
