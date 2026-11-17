@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('resolve-images');   // a failure reaches the error log and Sentry
 /**
  * Resolve entity images off the request path.
  *

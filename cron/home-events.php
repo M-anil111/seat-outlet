@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('home-events');   // a failure reaches the error log and Sentry
 require_once __DIR__ . '/../functions.php';
 
 $tabs = ['concerts', 'sports', 'theatre', 'festival'];

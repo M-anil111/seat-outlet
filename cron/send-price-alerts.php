@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('send-price-alerts');   // a failure reaches the error log and Sentry
 /**
  * Price-drop emails for people who asked "alert me if the price drops" on an event page (lead_interests.alert_kind = 'price').
  *

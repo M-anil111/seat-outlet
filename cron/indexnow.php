@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('indexnow');   // a failure reaches the error log and Sentry
 /**
  * Tell search engines about newly listed events the minute we see them (IndexNow: Bing, Yandex, Seznam, Naver and others).
  *

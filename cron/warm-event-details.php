@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('warm-event-details');   // a failure reaches the error log and Sentry
 /**
  * Refresh the event details behind the listed events in small batches, so a visitor rarely waits on a live TicketNetwork call
  * and an event page does not show "temporarily unavailable" for an event the site already lists.

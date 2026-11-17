@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('build-search-vocab');   // a failure reaches the error log and Sentry
 /**
  * Build cache/search_vocab.json: the names inc/smart.php matches typos against.
  * Top performers (by sales rank, with inventory), top venues and top cities.
