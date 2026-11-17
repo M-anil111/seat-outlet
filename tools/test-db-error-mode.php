@@ -6,17 +6,17 @@
  */
 require_once __DIR__ . '/../inc/cli-guard.php';
 $fail = 0;
-function dmCheck(string $name, bool $ok, string $detail = ''): void { global $fail; if (!$ok) { echo "FAIL $name" . ($detail !== '' ? ": $detail" : '') . "\n"; $fail++; } }
+function emCheck(string $name, bool $ok, string $detail = ''): void { global $fail; if (!$ok) { echo "FAIL $name" . ($detail !== '' ? ": $detail" : '') . "\n"; $fail++; } }
 
 $src = (string) file_get_contents(__DIR__ . '/../db/config.php');
-dmCheck('db/config.php sets the mysqli error mode explicitly', strpos($src, 'mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);') !== false);
-dmCheck('the error mode is set before the connection is opened', strpos($src, 'mysqli_report(') < strpos($src, 'new mysqli('));
+emCheck('db/config.php sets the mysqli error mode explicitly', strpos($src, 'mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);') !== false);
+emCheck('the error mode is set before the connection is opened', strpos($src, 'mysqli_report(') < strpos($src, 'new mysqli('));
 
 $code = 'foreach (["CONSUMER_KEY","CONSUMER_SECRET","GAPI_KEY","AWS_ACCESS_KEY","AWS_SECRET_KEY","RECAPTCHA_SECRET_KEY"] as $k) { if ((string) getenv($k) === "") putenv($k . "=x"); }'
       . ' require ' . var_export(realpath(__DIR__ . '/../db/config.php'), true) . ';'
       . ' try { MYSQLI->query("SELECT * FROM so_table_that_does_not_exist_zq"); echo "silent"; } catch (mysqli_sql_exception $e) { echo "threw"; }';
 $out = trim((string) shell_exec('php -d mysqli.reconnect=0 -r ' . escapeshellarg($code) . ' 2>/dev/null'));
-dmCheck('a failed query throws instead of returning false', $out === 'threw', $out);
+emCheck('a failed query throws instead of returning false', $out === 'threw', $out);
 
 if ($fail) { echo "$fail check(s) failed\n"; exit(1); }
 echo "ok: database errors are never silent\n";
