@@ -89,6 +89,7 @@ jobs:
           php tools/test-auto-migrate-guard.php
           php tools/test-cron-report.php
           php tools/test-vendor-lock.php
+          php tools/test-css-group-blog.php
       - name: Page type stylesheets and critical CSS are in place and under the size limits
         run: php tools/check-css-groups.php
 
