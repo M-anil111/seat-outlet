@@ -20,12 +20,15 @@
 #   DEPLOY_PHP       php binary      default php
 #   DEPLOY_SSH_KEY   private key for GitHub (a read-only deploy key); cron then never depends on an agent or a prompt
 #   DEPLOY_REF       deploy this commit or tag instead of the branch tip (emergency rollback; the next run without it redeploys the tip)
+#   DEPLOY_BACKUP    1 = dump the database (cron/backup-db.php) before applying pending migrations (default 1). A failed dump is logged as a
+#                    WARNING and the deploy goes on; with DEPLOY_REQUIRE_BACKUP=1 it stops instead: the code is live, the migration is NOT
+#                    applied and the next run retries.
 #
 # Never touched by a deploy: inc/env.local.php (the server's own secrets file)
 # and existing files under cache/ (runtime feed and image cache). Files that
 # were removed from git since the last deploy are removed from the web root too
 # (so a deleted vulnerable file cannot stay live); nothing else is deleted.
-# Repo-only files (.github, docs, CONTRIBUTING.md, composer.json/lock, .env.example) are not copied to the web root.
+# Repo-only files (.github, docs, CONTRIBUTING.md, README.md, CLAUDE.md, composer.json/lock, .env.example) are not copied to the web root.
 set -euo pipefail
 
 # Server configuration file (plain KEY=value lines, no secrets) in the same directory as the copy cron runs. A variable already set in
@@ -93,6 +96,7 @@ if [ "$NEW" = "$OLD" ]; then
 fi
 
 log "deploying ${OLD:0:8} -> ${NEW:0:8} into $WEBROOT"
+[ "$OLD" != "none" ] && log "rollback if this release misbehaves: DEPLOY_REF=$OLD $0   (the next run without DEPLOY_REF redeploys the branch tip)"
 # Files deleted in git since the last deploy, computed before the checkout moves: against the last SUCCESSFUL deploy (the marker) and
 # against the last COPIED commit (the checkout's HEAD; a deploy whose migration failed copied its files but left the marker alone).
 REMOVED=""
@@ -120,7 +124,7 @@ fi
 
 # Code: everything except .git, the secrets file and the runtime cache.
 tar --exclude=./.git --exclude=./cache --exclude=./inc/env.local.php \
-    --exclude=./deploy --exclude=./.github --exclude=./docs --exclude=./CONTRIBUTING.md \
+    --exclude=./deploy --exclude=./.github --exclude=./docs --exclude=./CONTRIBUTING.md --exclude=./README.md --exclude=./CLAUDE.md \
     --exclude=./composer.json --exclude=./composer.lock --exclude=./.env.example -cf - . | tar -C "$WEBROOT" -xf -
 
 # Remove what was deleted in git (never the secrets file or anything under cache/, and never outside the web root).
@@ -153,6 +157,19 @@ if [ ! -f "$WEBROOT/inc/env.local.php" ]; then
 fi
 
 if [ "$MIGRATE" = "1" ] && [ -f "$WEBROOT/inc/env.local.php" ]; then
+  # A dump first, but only when a migration is waiting: a schema change cannot be undone from git. Written by cron/backup-db.php outside the
+  # web root (SO_BACKUP_DIR), verified after writing.
+  if [ "${DEPLOY_BACKUP:-1}" = "1" ] && (cd "$WEBROOT" && "$PHP_BIN" db/migrate.php --status 2>/dev/null | grep -qv '^\[applied\]'); then
+    log "migrations are pending: dumping the database first"
+    if ! (cd "$WEBROOT" && "$PHP_BIN" cron/backup-db.php) >> "$STATE_DIR/.backup-last.log" 2>&1; then
+      log "WARNING: the pre-migration database dump FAILED (see $STATE_DIR/.backup-last.log)"
+      if [ "${DEPLOY_REQUIRE_BACKUP:-0}" = "1" ]; then
+        log "DEPLOY_REQUIRE_BACKUP=1: migration NOT applied, deployed marker NOT updated so the next run retries"
+        echo "$(date -u +%FT%TZ) database backup failed before migrating ${NEW:0:8}" > "$WEBROOT/.deploy-error"; chmod 0644 "$WEBROOT/.deploy-error" 2>/dev/null || true
+        exit 1
+      fi
+    fi
+  fi
   log "applying database migrations"
   # The failure is written where ajax/health.php can read it (deployError): the code is live while the marker is not, which otherwise
   # shows only as commit = null on the health page.

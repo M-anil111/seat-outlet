@@ -113,7 +113,10 @@ $currentPage = $currentPage ?? '';
                             </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                            <a href="logout" class="dropdown-item"><i class="ti ti-logout me-2"></i>Sign out</a>
+                            <form method="post" action="logout" class="m-0">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(admin_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                                <button type="submit" class="dropdown-item"><i class="ti ti-logout me-2"></i>Sign out</button>
+                            </form>
                         </div>
                     </div>
                 </div>

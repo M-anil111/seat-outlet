@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('geoip-update');   // a failure reaches the error log and Sentry
 /**
  * Download / refresh the MaxMind GeoLite2-City database used by inc/geoip.php.
  *

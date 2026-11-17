@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('build-sitemaps');   // a failure reaches the error log and Sentry
 /**
  * Build (or refresh) the XML sitemap files from the live catalog. The site also does this by itself in the background after public page
  * requests (inc/sitemap-build.php); this script is for a server cron or for running it by hand.

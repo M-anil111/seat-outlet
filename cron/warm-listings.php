@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('warm-listings');   // a failure reaches the error log and Sentry
 /**
  * Keep the high-traffic listing feeds warm so no visitor pays TicketNetwork's
  * latency: tnRequest() caches these for 10 minutes, this runs every 5.

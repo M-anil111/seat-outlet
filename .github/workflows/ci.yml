@@ -74,6 +74,21 @@ jobs:
       - name: Health page explains a missing deploy marker; deploy script leaves readable evidence
         run: bash -n deploy/pull-deploy.sh && php tools/test-deploy-marker.php
 
+      - name: Security and QA hardening checks that ran only locally (CSP nonce, listing fixes, pen-test and QA retests, thin pages)
+        run: |
+          php tools/test-csp-nonce.php
+          php tools/test-listing-about.php
+          php tools/test-listing-fixes.php
+          php tools/test-pen-retest.php
+          php tools/test-qa-retest.php
+          php tools/test-thin-pages.php
+          php tools/test-admin-logout.php
+      - name: Deploy takes a database dump before pending migrations; live auto-migrate needs a recent dump
+        run: |
+          php tools/test-deploy-backup.php
+          php tools/test-auto-migrate-guard.php
+          php tools/test-cron-report.php
+          php tools/test-vendor-lock.php
       - name: Page type stylesheets and critical CSS are in place and under the size limits
         run: php tools/check-css-groups.php
 
@@ -247,6 +262,12 @@ jobs:
         run: php tools/test-tn-bulk-event.php
       - name: Removed-event redirects (performer, category, bulk fallback, unknown stays 404)
         run: php tools/test-event-redirects-db.php
+      - name: Database errors are never silent (explicit mysqli error mode) and idle connections reconnect
+        run: |
+          php tools/test-db-error-mode.php
+          php tools/test-db-keepalive.php
+      - name: Public health page shows only ok, time and commit (detail needs the token)
+        run: php tools/test-health-public.php
 
       - name: Apply the sample seed (must also be safe to run twice)
         run: |

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('warm-snapshots');   // a failure reaches the error log and Sentry
 /**
  * Keep a good snapshot of every page that matters, so a TicketNetwork outage or throttling window never shows an error page.
  *

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('prune-vitals');   // a failure reaches the error log and Sentry
 /**
  * Deletes real-user speed measurements older than 90 days (db/migrations/0009_web_vitals.sql). Weekly is plenty:
  *   php cron/prune-vitals.php

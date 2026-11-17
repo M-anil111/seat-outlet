@@ -40,7 +40,7 @@ jobs:
           node-version: '20'
 
       - name: Install Lighthouse CLI
-        run: npm install -g lighthouse@12
+        run: npm install -g lighthouse@12.8.2
 
       - name: Fetch the live sitemap and run Lighthouse per URL
         env:

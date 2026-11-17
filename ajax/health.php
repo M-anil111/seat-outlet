@@ -117,4 +117,14 @@ try {
 } catch (Throwable $e) {
     $out['images'] = ['error' => 'could not read'];
 }
+// The public answer is only what an uptime monitor and a deploy check need: up or not, and which release. The rest (migration state, the
+// TicketNetwork call budget and traffic mix, image queue, deploy error text) is for the people running the site: it needs the
+// HEALTH_TOKEN from inc/env.local.php, sent as the X-Health-Token header (`curl -H "X-Health-Token: $TOKEN" .../ajax/health.php`).
+// With no HEALTH_TOKEN set, nobody gets the detail over the web. The command line always does.
+$token = (string) getenv('HEALTH_TOKEN');
+$sent = (string) ($_SERVER['HTTP_X_HEALTH_TOKEN'] ?? '');
+$detail = PHP_SAPI === 'cli' || ($token !== '' && $sent !== '' && hash_equals($token, $sent));
+if (!$detail) {
+    $out = array_intersect_key($out, array_flip(['ok', 'time', 'commit', 'commitAgeSeconds']));
+}
 echo json_encode($out, JSON_UNESCAPED_SLASHES);

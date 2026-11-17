@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/cli-guard.php';
+require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('send-alerts');   // a failure reaches the error log and Sentry
 /**
  * Performer alert emails for people who asked for them (leads with a performer interest, see inc/leads.php).
  *
