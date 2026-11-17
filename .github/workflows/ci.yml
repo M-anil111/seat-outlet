@@ -82,6 +82,7 @@ jobs:
           php tools/test-pen-retest.php
           php tools/test-qa-retest.php
           php tools/test-thin-pages.php
+          php tools/test-admin-logout.php
       - name: Deploy takes a database dump before pending migrations; live auto-migrate needs a recent dump
         run: |
           php tools/test-deploy-backup.php

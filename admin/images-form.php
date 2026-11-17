@@ -67,7 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     uploadImageToS3($webp, $key, 'image/webp');
                 } catch (Throwable $e) {
-                    $errors[] = 'Upload to storage failed: ' . $e->getMessage();
+                    error_log('admin image upload to storage failed: ' . get_class($e) . ': ' . $e->getMessage());   // the detail stays in the server log
+                    $errors[] = 'Upload to storage failed. Try again, and check the server log if it keeps failing.';
                 }
                 if (!$errors) {
                     imageRecordUpsert([
