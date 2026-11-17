@@ -28,7 +28,7 @@
 # and existing files under cache/ (runtime feed and image cache). Files that
 # were removed from git since the last deploy are removed from the web root too
 # (so a deleted vulnerable file cannot stay live); nothing else is deleted.
-# Repo-only files (.github, docs, CONTRIBUTING.md, composer.json/lock, .env.example) are not copied to the web root.
+# Repo-only files (.github, docs, CONTRIBUTING.md, README.md, CLAUDE.md, composer.json/lock, .env.example) are not copied to the web root.
 set -euo pipefail
 
 # Server configuration file (plain KEY=value lines, no secrets) in the same directory as the copy cron runs. A variable already set in
@@ -124,7 +124,7 @@ fi
 
 # Code: everything except .git, the secrets file and the runtime cache.
 tar --exclude=./.git --exclude=./cache --exclude=./inc/env.local.php \
-    --exclude=./deploy --exclude=./.github --exclude=./docs --exclude=./CONTRIBUTING.md \
+    --exclude=./deploy --exclude=./.github --exclude=./docs --exclude=./CONTRIBUTING.md --exclude=./README.md --exclude=./CLAUDE.md \
     --exclude=./composer.json --exclude=./composer.lock --exclude=./.env.example -cf - . | tar -C "$WEBROOT" -xf -
 
 # Remove what was deleted in git (never the secrets file or anything under cache/, and never outside the web root).

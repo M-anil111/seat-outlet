@@ -12,6 +12,7 @@ function dbCheck(string $name, bool $ok, string $detail = ''): void { global $fa
 $root = dirname(__DIR__);
 $sh = (string) file_get_contents($root . '/deploy/pull-deploy.sh');
 dbCheck('the dump runs before the migrations', strpos($sh, 'cron/backup-db.php') < strpos($sh, 'echo "applying database migrations"') || strpos($sh, 'cron/backup-db.php') < strpos($sh, 'log "applying database migrations"'));
+dbCheck('repo-only documents are not copied to the web root', strpos($sh, '--exclude=./README.md --exclude=./CLAUDE.md') !== false && strpos($sh, '--exclude=./CONTRIBUTING.md') !== false && strpos($sh, '--exclude=./docs') !== false);
 dbCheck('the deploy logs the one-line rollback command', strpos($sh, 'DEPLOY_REF=$OLD $0') !== false);
 
 $tmp = sys_get_temp_dir() . '/so-deploy-bk-' . getmypid();
