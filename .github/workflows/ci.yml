@@ -270,6 +270,8 @@ jobs:
           php tools/test-db-keepalive.php
       - name: Public health page shows only ok, time and commit (detail needs the token)
         run: php tools/test-health-public.php
+      - name: A category with no events answers 200 from the catalog copy, and still 503 when the feed is really down
+        run: php tools/test-listing-bulk-zero.php
 
       - name: Apply the sample seed (must also be safe to run twice)
         run: |

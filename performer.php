@@ -77,7 +77,7 @@ $hasRealImage    = soImageIsReal($performerImg);
 $pageOgImage     = $hasRealImage ? $performer_image : null;
 
 // An outage is not an empty page (503 via the shared guard); a real zero-event artist is noindex,follow and left out of the sitemap.
-if ($total_count === 0 && !$events && soApiDegraded()) { soFeedDownGate('Performer'); }
+if ($total_count === 0 && !$events && soListingUnanswered($results)) { soFeedDownGate('Performer'); }
 if ($total_count === 0) { $pageRobots = 'noindex, follow'; }
 soZeroPageNote('/artist/' . soSlug('performer', $artistName, $id), $total_count === 0);
 

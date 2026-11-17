@@ -422,7 +422,8 @@ function soRenderListingPage(array $o): void {
     $total = (int) $o['total'];
     // The feed failed (throttled, down): never present that as "0 results". Serve the last good copy of this page; without one,
     // answer 503 (retry) so neither visitors nor search engines keep an empty page.
-    if ($total === 0 && empty($o['body']['events']) && soApiDegraded()) {
+    $soFeedFailed = array_key_exists('listingResponse', $o) ? soListingUnanswered($o['listingResponse']) : soApiDegraded();   // a page may pass the response its list came from (soListingUnanswered)
+    if ($total === 0 && empty($o['body']['events']) && $soFeedFailed) {
         soFeedDownGate();   // the page renders with the feed marked down (no empty 503 page); the empty state says so
     }
     $tag = $o['tag'] === 'h2' ? 'h2' : 'h1';
@@ -440,7 +441,7 @@ function soRenderListingPage(array $o): void {
         'lead'       => (string) ($o['lead_text'] ?? ''),
         // An empty count while the feed is degraded is not a count: the feed refused the request (budget, throttling or an outage),
         // so the header says so instead of "0 results" over a list that may hold events.
-        'stats'      => [$total === 0 && soApiDegraded() ? '<span id="results_count">Listings loading</span>' : '<span id="results_count">' . number_format($total) . ' ' . ($total === 1 ? 'result' : 'results') . '</span>'],
+        'stats'      => [$total === 0 && $soFeedFailed ? '<span id="results_count">Listings loading</span>' : '<span id="results_count">' . number_format($total) . ' ' . ($total === 1 ? 'result' : 'results') . '</span>'],
     ]);
     ?>
 <section>

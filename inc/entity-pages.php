@@ -71,6 +71,16 @@ function soApiDegraded(): bool {
     return !empty($GLOBALS['tn_degraded']);
 }
 
+/**
+ * Did the ticket feed fail for THIS listing? soApiDegraded() is true when any call in the request failed (the call budget refused a
+ * label lookup, say), but a listing the local catalog copy answered (_bulk) is a real answer even when it says "no events". Without this a
+ * category with no upcoming events answered 503 whenever some other lookup on the page was refused (SE Ranking audit 17 Nov 2026:
+ * /category/west-end and /category/cricket, 5XX in the sitemap).
+ */
+function soListingUnanswered($response): bool {
+    return soApiDegraded() && empty(is_array($response) ? ($response['_bulk'] ?? null) : null);
+}
+
 /* ------------------------------------------------------- zero-event pages */
 
 const SO_ZERO_PAGES_KEY = 'so_zero_pages';

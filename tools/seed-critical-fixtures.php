@@ -16,7 +16,7 @@
  * hero shows what a real page shows: the photo and the credit line (their rules were missing from the critical CSS while the fixtures had only
  * the initials tile: live artist pages shifted 0.16 on a phone).
  * LOCAL AND BETA DATABASES ONLY: it refuses to run on an indexable (live) host. Rows use ids 9300001 to 9300009 and the slugs
- * zq-arena, zqtown-tx, zq-band and zq-rock; the category slug points at category id 1986.
+ * zq-arena, zqtown-tx, zq-band and zq-rock; the category slug points at category id 1986; zq-empty is a category (id 9300099) with no events.
  */
 require_once __DIR__ . '/../inc/cli-guard.php';
 foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) { if ((string) getenv($k) === '') putenv($k . '=fixture-placeholder'); }
@@ -29,6 +29,7 @@ $clean = in_array('--clean', $argv ?? [], true);
 MYSQLI->query('DELETE FROM tn_bulk_events WHERE event_id BETWEEN 9300001 AND 9300009');
 $fixtureImages = [['artist', 'Zq Band'], ['team', 'Zq Band'], ['venue', 'Zq Arena'], ['city', 'Zqtown, TX'], ['city', 'Zqtown']];
 foreach ($fixtureImages as [$t, $n]) { $k = imageEntityKey($t, $n); $st = MYSQLI->prepare('DELETE FROM images WHERE imgkey = ?'); $st->bind_param('s', $k); $st->execute(); $st->close(); }
+MYSQLI->query("DELETE FROM url_slugs WHERE (type = 'category' AND ext_id = '9300099')");   // zq-empty: a category with no events at all
 MYSQLI->query("DELETE FROM url_slugs WHERE (type = 'venue' AND ext_id = '9300001') OR (type = 'city' AND ext_id = '9300001') OR (type = 'performer' AND ext_id = '9300001') OR (type = 'category' AND ext_id = '1986' AND slug = 'zq-rock')");
 if ($clean) {
     $prev = is_file($stateFile) ? json_decode((string) file_get_contents($stateFile), true) : null;
@@ -51,6 +52,7 @@ foreach ([9300001 => 3, 9300002 => 12, 9300003 => 9, 9300004 => 21, 9300005 => 3
 if (!is_file($stateFile)) file_put_contents($stateFile, json_encode(tnBulkState()));
 MYSQLI->query('DELETE FROM tn_bulk_state');
 foreach (['last_full_ok' => (string) (time() - 3600), 'last_full_count' => '90000'] as $k => $v) { $st = MYSQLI->prepare('INSERT INTO tn_bulk_state (name, value, updated_at) VALUES (?, ?, NOW())'); $st->bind_param('ss', $k, $v); $st->execute(); $st->close(); }
+soSlug('category', 'Zq Empty', 9300099);
 $slugs = [soSlug('category', 'Zq Rock', 1986), soSlug('venue', 'Zq Arena', 9300001, ['place' => 'Zqtown, TX']), soSlug('city', 'Zqtown, TX', 9300001), soSlug('performer', 'Zq Band', 9300001)];
 foreach ($fixtureImages as [$t, $n]) {
     imageRecordUpsert(['imgkey' => imageEntityKey($t, $n), 'entity_type' => $t, 'entity_name' => $n, 'url' => '/images/blog-hero.webp', 'status' => 'ok', 'source' => 'wikimedia',
