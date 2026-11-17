@@ -17,6 +17,9 @@ hpCheck('the public answer is cut down to four fields', strpos($src, "array_flip
 $root = dirname(__DIR__);
 $port = 8190 + random_int(0, 50);
 $env = 'HEALTH_TOKEN=zq-test-token ';
+foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) {   // the CI job sets only the database
+    if ((string) getenv($k) === '') $env .= $k . '=test-placeholder ';
+}
 $proc = proc_open($env . 'php -S 127.0.0.1:' . $port . ' -t ' . escapeshellarg($root), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
 usleep(800000);
 $get = function (array $headers) use ($port) {
