@@ -14,6 +14,10 @@
  * Rules the current critical file has are kept (union), so a run against a site without live event data never drops what the live page
  * needs; --fresh starts from nothing. CHROME_PATH sets the browser.
  *
+ * Entity and browse pages only show their hero, date strip and event list when there is ticket data. Seed local fixtures with
+ * tools/seed-critical-fixtures.php (bulk copy, no ticket API), run the site against them and pass their URLs with --urls; remove them
+ * with --clean afterwards. Without them the generator sees the "no data" fallback and the file lacks those rules.
+ *
  * Needs: the site running with its pages able to render (a mock or real ticket API), the global `playwright` package
  * (NODE_PATH=$(npm root -g)), and `postcss` and `clean-css` (npm i in a scratch folder, NODE_PATH to its node_modules).
  * Run it again after a change that adds or restyles something near the top of a page type. It is not part of CI: the build cannot
