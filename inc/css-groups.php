@@ -80,9 +80,20 @@ function soCssGroupFor(string $script): ?string {
     return null;
 }
 
+/**
+ * The script this request runs, for choosing the page type. Normally the basename of SCRIPT_NAME. blog.php answers every /blog/<slug>
+ * article, and on the live server SCRIPT_NAME follows the article's slug (/blog/ticket-price-tracker.php), so a post took the page type
+ * its slug happened to match (ticket-*.php is "content", *-tickets.php is "browse") and painted with the wrong critical CSS: its hero
+ * jumped by CLS 0.49 when the right rules arrived (Lighthouse, 16 Nov 2026). blog.php defines SO_BLOG_ENTRY, which settles it.
+ */
+function soCssRequestScript(): string {
+    if (defined('SO_BLOG_ENTRY')) return 'blog.php';
+    return basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+}
+
 /** The page type name of a script, "full" when it has none (the name of its critical CSS and stylesheet files). */
 function soCssGroupName(?string $script = null): string {
-    return soCssGroupFor($script ?? (string) ($_SERVER['SCRIPT_NAME'] ?? '')) ?? 'full';
+    return soCssGroupFor($script ?? soCssRequestScript()) ?? 'full';
 }
 
 /**
@@ -106,7 +117,7 @@ function soCriticalCss(?string $script = null): string {
  */
 function soCssBundleFiles(?string $script = null): array {
     static $memo = [];
-    $script = basename($script ?? (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $script = basename($script ?? soCssRequestScript());
     if (isset($memo[$script])) return $memo[$script];
     if (getenv('SO_CSS_SPLIT') === '0') return $memo[$script] = [];   // testing switch: the whole stylesheet, as before the split
     $group = soCssGroupFor($script) ?? 'full';
