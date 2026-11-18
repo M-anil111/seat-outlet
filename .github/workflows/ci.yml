@@ -275,6 +275,8 @@ jobs:
 
       - name: Known-over event pages redirect instead of answering 503
         run: php tools/test-event-over-redirect.php
+      - name: An artist with no upcoming events answers 200 (noindex) from the catalog copy
+        run: php tools/test-performer-redirect-standin.php
 
       - name: Apply the sample seed (must also be safe to run twice)
         run: |
