@@ -679,6 +679,23 @@ document.addEventListener('click', function (e) {
 (function () {
   var MONTHS = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
 
+  /* when-label:start (tools/test-date-pill.mjs runs this part on its own)
+     The pill for an event day (dt) seen on a day (now), both at local midnight. "This weekend" is the same Friday to Sunday the
+     server's "This weekend" chip lists (listingDateRange('weekend') in functions.php): from today on a Friday, Saturday or Sunday,
+     else from the coming Friday, to that Sunday. It used to be any Saturday or Sunday 2 to 6 days out, so on a Sunday the next
+     Saturday read "This weekend" while the chip listed only that Sunday, and a Friday never did. */
+  function whenLabel(dt, now) {
+    var days = Math.round((dt - now) / 86400000);
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Tomorrow';
+    if (days < 2) return '';
+    var dow = now.getDay();   // 0 = Sunday .. 6 = Saturday
+    var toFriday = (dow === 5 || dow === 6 || dow === 0) ? 0 : 5 - dow;
+    var toSunday = toFriday + ((7 - ((dow + toFriday) % 7)) % 7);
+    return days >= toFriday && days <= toSunday ? 'This weekend' : '';
+  }
+  /* when-label:end */
+
   function enhance(row) {
     if (row.getAttribute('data-so-date')) return;
     var box = row.querySelector('.date-box');
@@ -696,10 +713,7 @@ document.addEventListener('click', function (e) {
     if (!shownYear && dt < now) dt = new Date(year + 1, mon, day);
     row.setAttribute('data-so-date', '1');
     box.insertAdjacentHTML('beforeend', '<div class="wd">' + dt.toLocaleDateString('en-US', { weekday: 'short' }) + '</div>');
-    var days = Math.round((dt - now) / 86400000), label = '';
-    if (days === 0) label = 'Today';
-    else if (days === 1) label = 'Tomorrow';
-    else if (days > 1 && days <= 6 && (dt.getDay() === 6 || dt.getDay() === 0)) label = 'This weekend';
+    var label = whenLabel(dt, now);
     if (label) {
       var host = row.querySelector('.flex-grow-1');
       if (host) host.insertAdjacentHTML('beforeend', '<div class="so-when"><span class="so-when__pill">' + label + '</span></div>');
