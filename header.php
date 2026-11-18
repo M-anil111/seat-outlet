@@ -73,7 +73,7 @@ include_once 'functions.php';
             header('Location: ' . soEventRedirectDestination($soEvOver['performer_id'], $soEvOver['performer_name'], $soEvOver['category_path']) . '?so_notice=event-past', true, 302);
             exit;
         }
-        $soEvCheck = $soEvId > 0 ? getTnEventById($soEvId) : null;
+        $soEvCheck = $soEvId > 0 ? getTnEventById($soEvId, true) : null;   // true: the catalog copy may answer when the live lookup cannot (event.php asks the same way); without it a copy-served page was sent as a 503
         if ($soEvCheck !== null && tnEntityUnavailable($soEvCheck) && $soEvOver !== null) {
             // TicketNetwork did not answer, and the event is known to be over: the performer page, not a 503.
             header('Location: ' . soEventRedirectDestination($soEvOver['performer_id'], $soEvOver['performer_name'], $soEvOver['category_path']) . '?so_notice=event-past', true, 302);

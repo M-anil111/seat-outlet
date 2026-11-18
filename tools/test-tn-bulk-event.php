@@ -62,9 +62,14 @@ $fn = (string) file_get_contents(__DIR__ . '/../functions.php');
 beCheck('getTnEventById takes an allowBulk flag that defaults to off', strpos($fn, 'function getTnEventById($eventId, bool $allowBulk = false)') !== false, true);
 beCheck('the copy is consulted only when allowBulk is set', strpos($fn, 'if ($allowBulk) {') !== false || strpos($fn, 'if ($allowBulk && ') !== false, true);
 beCheck('the event page asks for the copy', strpos((string) file_get_contents(__DIR__ . '/../event.php'), 'getTnEventById($id, true)') !== false, true);
-foreach (['checkout.php', 'order-confirmation.php', 'inc/seo-event.php', 'cron/send-price-alerts.php', 'cron/warm-event-details.php', 'header.php'] as $f) {
+foreach (['checkout.php', 'order-confirmation.php', 'cron/send-price-alerts.php', 'cron/warm-event-details.php'] as $f) {
     beCheck("$f does not ask for the copy", preg_match('/getTnEventById\([^)]*,\s*true\s*\)/', (string) file_get_contents(__DIR__ . '/../' . $f)) === 0, true);
 }
+// The event gate in header.php and the head in inc/seo-event.php answer for the same page as event.php, so they ask the same way: a page
+// the copy can serve is a 200 with a named head, not a 503 whose body came from the copy. Neither shows a price from the copy.
+beCheck('header.php (the event gate) asks for the copy', strpos((string) file_get_contents(__DIR__ . '/../header.php'), 'getTnEventById($soEvId, true)') !== false, true);
+beCheck('inc/seo-event.php (the head) asks for the copy', strpos((string) file_get_contents(__DIR__ . '/../inc/seo-event.php'), 'getTnEventById($id, true)') !== false, true);
+beCheck('inc/seo-event.php drops live prices when the copy answers', strpos((string) file_get_contents(__DIR__ . '/../inc/seo-event.php'), "unset(\$event['pricingInfo'])") !== false, true);
 beCheck('the event page drops live prices when the copy answers', strpos((string) file_get_contents(__DIR__ . '/../event.php'), "unset(\$event['pricingInfo'])") !== false, true);
 
 $db->query("DELETE FROM tn_bulk_events WHERE event_id BETWEEN 9300001 AND 9300099");

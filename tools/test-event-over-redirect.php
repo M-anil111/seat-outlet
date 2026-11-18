@@ -48,7 +48,7 @@ eoCheck('a row without a date is not known over', soEventKnownOver(9100205), nul
 
 // The gate in header.php uses it, before and after the lookup.
 $h = (string) file_get_contents($root . '/header.php');
-eoCheck('header.php checks the remembered date before the lookup', strpos($h, 'soEventKnownOver($soEvId)') !== false && strpos($h, 'soEventKnownOver($soEvId)') < strpos($h, 'getTnEventById($soEvId)'), true);
+eoCheck('header.php checks the remembered date before the lookup', strpos($h, 'soEventKnownOver($soEvId)') !== false && strpos($h, 'soEventKnownOver($soEvId)') < strpos($h, 'getTnEventById($soEvId, true)'), true);
 
 // End to end: the call budget is used up, so every live lookup is refused.
 $cache = $root . '/cache/';
