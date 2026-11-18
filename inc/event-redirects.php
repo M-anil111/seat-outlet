@@ -103,3 +103,47 @@ function soEventRedirectDestination(int $perfId, string $perfName, string $path)
     if (strpos($path, '.1986.') !== false) return '/concert-tickets-for-sale';
     return '/buy-tickets-online';
 }
+
+/**
+ * True when local data alone says the event is over, so its page can redirect without a TicketNetwork call. event_redirects keeps the
+ * event's date (set by a visit, a performer page or the bulk import and refreshed by each of them). The date has no time of day, so
+ * "over" here means 30 hours past midnight of that date: never early, whatever the venue's time zone.
+ * Returns the remembered performer id, performer name and category path, plus 'age' (seconds past that cut-off), or null when the
+ * event is not known to be over (no row, no date, or still upcoming). Never throws: a missing table reads as "not known".
+ */
+function soEventKnownOver(int $eventId, ?int $now = null): ?array {
+    if ($eventId <= 0) return null;
+    $now = $now ?? time();
+    try {
+        $row = soDbRetry(function ($db) use ($eventId) {
+            $stmt = $db->prepare('SELECT performer_id, performer_name, category_path, event_date FROM event_redirects WHERE event_id = ?');
+            if (!$stmt) return null;
+            $stmt->bind_param('i', $eventId);
+            $stmt->execute();
+            $r = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $r ?: null;
+        });
+    } catch (\Throwable $e) {
+        return null;
+    }
+    if (!$row || (string) ($row['event_date'] ?? '') === '') return null;
+    $ts = strtotime((string) $row['event_date']);
+    if (!$ts) return null;
+    $age = $now - ($ts + 30 * 3600);
+    if ($age <= 0) return null;
+    return ['performer_id' => (int) $row['performer_id'], 'performer_name' => (string) $row['performer_name'], 'category_path' => (string) $row['category_path'], 'age' => $age];
+}
+
+/** Days after which an event remembered as over redirects without asking TicketNetwork first (a younger one is still checked, in case it was rescheduled). */
+const SO_EVENT_OVER_SKIP_DAYS = 7;
+
+/**
+ * True only when the catalog record says the event has no ticket listed right now (_metadata.hasTickets is present and false). An event
+ * page with no tickets has only the seat map frame and a "notify me" form: no content for a search result, so it is noindex,follow
+ * (the same rule as an empty listing) and returns to the index by itself on the next crawl after tickets appear. A record without the
+ * field (a saved copy, a stand-in) is never treated as empty: no field, no noindex.
+ */
+function soEventHasNoInventory($event): bool {
+    return is_array($event) && is_array($event['_metadata'] ?? null) && array_key_exists('hasTickets', $event['_metadata']) && empty($event['_metadata']['hasTickets']);
+}

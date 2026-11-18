@@ -221,7 +221,7 @@ function tnBulkEntity(mysqli $db, string $kind, int $id, ?string $nowUtc = null)
     } catch (\Throwable $e) {
         return null;
     }
-    if (!is_array($r)) return null;
+    if (!is_array($r)) return $kind === 'performer' ? tnBulkPerformerFromRedirects($db, $id) : null;
     if ($kind === 'performer') {
         foreach ((array) json_decode((string) ($r['performers'] ?? ''), true) as $p) {
             $name = trim((string) ($p['name'] ?? ''));
@@ -244,6 +244,29 @@ function tnBulkEntity(mysqli $db, string $kind, int $id, ?string $nowUtc = null)
     $v = ['id' => $id, 'text' => ['name' => $name], 'city' => $city, 'stateProvince' => $state, 'country' => $country, '_bulk' => true];
     if ($geo) $v['geoLocation'] = $geo;
     return $v;
+}
+
+/**
+ * A performer with no upcoming event in the copy: the name and category event_redirects remembered from its past events (a visit, a
+ * performer page or the import stored them from TicketNetwork). Lets the artist page render as the "no upcoming events" page (noindex,
+ * left out of the sitemap) when the live lookup is refused, instead of answering 503 (Search Console, 18 Nov 2026: ~18% of the pages
+ * listed as "Server error (5xx)" were artists). Null when nothing is remembered, or when no category is: no stand-in is made up.
+ */
+function tnBulkPerformerFromRedirects(mysqli $db, int $id): ?array {
+    try {
+        $s = $db->prepare("SELECT performer_name, category_path FROM event_redirects WHERE performer_id = ? AND performer_name <> '' AND category_path <> '' ORDER BY event_date DESC, event_id DESC LIMIT 1");
+        if (!$s) return null;
+        $s->bind_param('i', $id);
+        $s->execute();
+        $r = $s->get_result()->fetch_assoc();
+        $s->close();
+    } catch (\Throwable $e) {
+        return null;
+    }
+    $name = trim((string) ($r['performer_name'] ?? ''));
+    $path = trim((string) ($r['category_path'] ?? ''));
+    if ($name === '' || $path === '') return null;
+    return ['id' => $id, 'text' => ['name' => $name], 'defaultCategory' => ['path' => $path], '_bulk' => true];
 }
 
 /**

@@ -66,7 +66,19 @@ include_once 'functions.php';
     if (strpos($soReqPath, '/event/') === 0) {
         $soEvId = (int) ($_GET['id'] ?? 0);
         if ($soEvId <= 0) { [$soEvResolved] = soSlugResolve('event', (string) ($_GET['slug'] ?? '')); $soEvId = (int) $soEvResolved; }
-        $soEvCheck = $soEvId > 0 ? getTnEventById($soEvId) : null;
+        // An event we already know is over (its remembered date is past) goes to the performer page without a TicketNetwork call:
+        // those pages used to wait for the call, and answered 503 when the call budget refused it (Search Console: thousands of "Server error (5xx)").
+        $soEvOver = $soEvId > 0 ? soEventKnownOver($soEvId) : null;
+        if ($soEvOver !== null && $soEvOver['age'] > SO_EVENT_OVER_SKIP_DAYS * 86400) {
+            header('Location: ' . soEventRedirectDestination($soEvOver['performer_id'], $soEvOver['performer_name'], $soEvOver['category_path']) . '?so_notice=event-past', true, 302);
+            exit;
+        }
+        $soEvCheck = $soEvId > 0 ? getTnEventById($soEvId, true) : null;   // true: the catalog copy may answer when the live lookup cannot (event.php asks the same way); without it a copy-served page was sent as a 503
+        if ($soEvCheck !== null && tnEntityUnavailable($soEvCheck) && $soEvOver !== null) {
+            // TicketNetwork did not answer, and the event is known to be over: the performer page, not a 503.
+            header('Location: ' . soEventRedirectDestination($soEvOver['performer_id'], $soEvOver['performer_name'], $soEvOver['category_path']) . '?so_notice=event-past', true, 302);
+            exit;
+        }
         if ($soEvCheck !== null && tnEntityUnavailable($soEvCheck)) {
             // The API failed (throttled, timeout, circuit open): a retryable 503, never a 404 that deindexes a live event.
             soSnapshotServe();   // the last good copy of this event page, if there is one
@@ -101,6 +113,7 @@ include_once 'functions.php';
                 exit;
             }
             soEventRemember($soEvCheck);
+            if (soEventHasNoInventory($soEvCheck)) { $pageRobots = 'noindex, follow'; }   // nothing to show but the seat map frame: kept out of search until tickets are listed
         }
     }
     // A page whose feed failed and that has nothing to show answers 503 + Retry-After, never 200: a crawler would index an empty page.

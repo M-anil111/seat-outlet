@@ -12,7 +12,8 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
       exit;
     }
   }
-  $event = getTnEventById($id);
+  $event = getTnEventById($id, true);   // the catalog copy may answer when the live lookup cannot, as in header.php and event.php: the head then names the event too
+  if (($GLOBALS['so_event_as_of'] ?? null) !== null) { unset($event['pricingInfo']); }   // a saved copy has no live prices (event.php drops them the same way)
   $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
   $evName   = (string) ($event['text']['name'] ?? '');
   $evVenue  = (string) ($event['venue']['text']['name'] ?? '');

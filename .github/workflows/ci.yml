@@ -273,6 +273,17 @@ jobs:
       - name: A category with no events answers 200 from the catalog copy, and still 503 when the feed is really down
         run: php tools/test-listing-bulk-zero.php
 
+      - name: Known-over event pages redirect instead of answering 503
+        run: php tools/test-event-over-redirect.php
+      - name: An event the catalog copy holds answers 200 when the live lookup is refused
+        run: php tools/test-event-bulk-gate.php
+      - name: An artist with no upcoming events answers 200 (noindex) from the catalog copy
+        run: php tools/test-performer-redirect-standin.php
+      - name: No ads on error, noindex or empty pages
+        run: php tools/test-ad-suppress.php
+      - name: An event with no tickets listed is noindex,follow
+        run: php tools/test-event-no-inventory.php
+
       - name: Apply the sample seed (must also be safe to run twice)
         run: |
           php db/migrate.php --seed=page_rules_sample
