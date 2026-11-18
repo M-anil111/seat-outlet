@@ -185,8 +185,9 @@ function soRenderEntityListing(array $c): void {
                             </div>
                         </div>
                     </div>
-                    <?php soRenderDateStrip(['mode' => 'calendar', 'basePath' => $c['path'], 'when' => $c['when'], 'sort' => $c['sort'], 'defaultSort' => $c['defaultSort'], 'noun' => $kind === 'venue' ? 'events at ' . $name : 'events in ' . $name]); ?>
-                    <?php renderListingFilters($c['path'], $c['when'], $c['sort'], $total, $c['defaultSort']); ?>
+                    <?php /* renderListingFilters() prints the calendar date strip with the filters (one strip: this page also printed its own, so
+                             venue, city, county, state and country pages showed the strip twice, 18 Nov 2026) */
+                          renderListingFilters($c['path'], $c['when'], $c['sort'], $total, $c['defaultSort'], ['dateStripNoun' => $kind === 'venue' ? 'events at ' . $name : 'events in ' . $name]); ?>
                     <div class="list-category-bg py-4">
                         <?php if (!empty($events)) { ?>
                             <?php $soCap = 10; $soCapped = count($events) > $soCap + 2; ?>
