@@ -157,6 +157,43 @@ function tnBulkEventDetail(mysqli $db, int $eventId, array $state, int $now): ?a
     return ['event' => $event, 'seenAt' => $seen ?: $now];
 }
 
+/**
+ * Ids this close to the newest id in the copy are never called gone: an event TicketNetwork created after the last pull is not in the copy
+ * yet, and its id sits at the top of the range (ids are handed out in order). 25,000 ids is far more than the catalog adds between pulls.
+ */
+const TN_BULK_ABSENT_ID_MARGIN = 25000;
+
+/**
+ * Pure: does an event's absence from a fresh copy mean it is gone (over, removed or never real)? Only when the copy has no live row for
+ * it AND its id is well below the newest id the copy holds. Search Console, 18 Nov 2026: old event URLs answered 503 for as long as
+ * TicketNetwork could not be asked, and 404 when it could (the same URL, minutes apart); a crawler kept counting them as server errors.
+ */
+function tnBulkAbsentMeansGone(bool $rowLive, int $eventId, int $maxId, int $margin = TN_BULK_ABSENT_ID_MARGIN): bool {
+    return !$rowLive && $eventId > 0 && $maxId > $margin && $eventId < $maxId - $margin;
+}
+
+/**
+ * True when the copy (switch on, full refresh fresh) shows this event is no longer on sale: no live row and an id well below the newest.
+ * False whenever that cannot be shown (copy off, stale, unreadable, or the id is recent): the caller then keeps its retryable 503.
+ */
+function tnBulkEventGone(mysqli $db, int $eventId, array $state, int $now): bool {
+    if ($eventId < 1 || !tnBulkReadEnabled() || !tnBulkFresh($state, $now)) return false;
+    try {
+        $s = $db->prepare('SELECT COUNT(*) FROM tn_bulk_events WHERE event_id = ? AND is_test = 0 AND (takedown_at IS NULL OR takedown_at > ?)');
+        if (!$s) return false;
+        $nowUtc = gmdate('Y-m-d H:i:s', $now);
+        $s->bind_param('is', $eventId, $nowUtc);
+        $s->execute();
+        $live = (int) $s->get_result()->fetch_row()[0];
+        $s->close();
+        $res = $db->query('SELECT MAX(event_id) FROM tn_bulk_events');
+        $max = $res ? (int) ($res->fetch_row()[0] ?? 0) : 0;
+    } catch (\Throwable $e) {
+        return false;
+    }
+    return tnBulkAbsentMeansGone($live > 0, $eventId, $max);
+}
+
 /** Runs a parsed listing against the table: ['results' => events, 'totalCount' => n]. Null when the table cannot be read. */
 function tnBulkRunListing(mysqli $db, array $q, ?string $nowUtc = null): ?array {
     $where = $q['where'];

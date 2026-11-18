@@ -79,16 +79,20 @@ include_once 'functions.php';
             header('Location: ' . soEventRedirectDestination($soEvOver['performer_id'], $soEvOver['performer_name'], $soEvOver['category_path']) . '?so_notice=event-past', true, 302);
             exit;
         }
-        if ($soEvCheck !== null && tnEntityUnavailable($soEvCheck)) {
+        // TicketNetwork did not answer, but the fresh catalog copy shows the event is no longer on sale: the same answer TicketNetwork gives
+        // when it does answer (a redirect to what we remember, else 404), not a 503 that a crawler counts as a server error for weeks.
+        $soEvGone = $soEvCheck !== null && tnEntityUnavailable($soEvCheck) && tnSnapshotDb() && tnBulkEventGone(MYSQLI, $soEvId, tnBulkState(), time());
+        if ($soEvGone) { $GLOBALS['so_event_gone'] = true; }
+        if ($soEvCheck !== null && tnEntityUnavailable($soEvCheck) && !$soEvGone) {
             // The API failed (throttled, timeout, circuit open): a retryable 503, never a 404 that deindexes a live event.
             soSnapshotServe();   // the last good copy of this event page, if there is one
             http_response_code(503);
             header('Retry-After: 30');
             // No noindex here: a 503 already tells crawlers "come back later", and a noindex on a temporary error can drop a live page.
-        } elseif ($soEvCheck === null || tnEntityMissing($soEvCheck) || empty($soEvCheck['text']['name'])) {
+        } elseif ($soEvGone || $soEvCheck === null || tnEntityMissing($soEvCheck) || empty($soEvCheck['text']['name'])) {
             // The event is gone from the catalog: send the visitor (and search engines) to the performer's page we
             // remembered for it, or the matching category, instead of a 404.
-            if ($soEvId > 0 && tnEntityDefinitelyMissing($soEvCheck)) {
+            if ($soEvId > 0 && ($soEvGone || tnEntityDefinitelyMissing($soEvCheck))) {
                 $soTo = soEventRedirectTarget(null, $soEvId);
                 if ($soTo !== '/buy-tickets-online') {
                     // A removed event with a known performer or category: say so on the page we send the visitor to.
