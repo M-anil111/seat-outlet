@@ -279,6 +279,8 @@ jobs:
         run: php tools/test-performer-redirect-standin.php
       - name: No ads on error, noindex or empty pages
         run: php tools/test-ad-suppress.php
+      - name: An event with no tickets listed is noindex,follow
+        run: php tools/test-event-no-inventory.php
 
       - name: Apply the sample seed (must also be safe to run twice)
         run: |

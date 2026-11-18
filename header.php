@@ -113,6 +113,7 @@ include_once 'functions.php';
                 exit;
             }
             soEventRemember($soEvCheck);
+            if (soEventHasNoInventory($soEvCheck)) { $pageRobots = 'noindex, follow'; }   // nothing to show but the seat map frame: kept out of search until tickets are listed
         }
     }
     // A page whose feed failed and that has nothing to show answers 503 + Retry-After, never 200: a crawler would index an empty page.
