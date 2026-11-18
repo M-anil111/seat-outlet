@@ -9,7 +9,7 @@ require_once __DIR__ . '/../inc/cli-guard.php';
 $fail = 0;
 function ccCheck(string $name, bool $ok): void { global $fail; if (!$ok) { echo "FAIL $name\n"; $fail++; } }
 $need = [
-    'entity' => ['.so-phero', '.so-evhero__card', '.so-evhero__main', '.so-evhero__venue', '.so-dates-wrap', '.so-filterbar', '.so-ad'],
+    'entity' => ['.so-phero', '.so-evhero__card', '.so-evhero__main', '.so-evhero__venue', '.so-dates-wrap', '.so-filterbar', '.so-ad', '.img-credit', '.so-evhero__media img'],   // the last two: a real photo and its credit (artist pages shifted 0.16 on a phone without them)
     'browse' => ['.so-dates-wrap', '.so-filterbar', '.so-ad', '.so-allhead', '.so-chip'],
     'home'   => ['.so-feed', '.so-evc', '.tm-topbar'],
     'blog'   => ['.so-art__hero', '.so-art__wrap', '.so-art__img'],

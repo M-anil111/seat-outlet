@@ -105,7 +105,9 @@ include_once 'functions.php';
     }
     // A page whose feed failed and that has nothing to show answers 503 + Retry-After, never 200: a crawler would index an empty page.
     // Listing pages do this through soFeedDownGate(); this catches any page (search, for one) that reached here without it.
-    if (empty($GLOBALS['soFeedDown']) && function_exists('soApiDegraded') && soApiDegraded() && isset($total_count) && (int) $total_count === 0 && empty($events) && http_response_code() === 200) {
+    // A listing the local catalog copy answered is a real answer, even a "no events" one (soListingUnanswered).
+    $soListingResp = isset($eventsResponse) ? $eventsResponse : (isset($results) ? $results : null);
+    if (empty($GLOBALS['soFeedDown']) && function_exists('soApiDegraded') && soApiDegraded() && ($soListingResp === null || soListingUnanswered($soListingResp)) && isset($total_count) && (int) $total_count === 0 && empty($events) && http_response_code() === 200) {
         soFeedDownGate();
     }
     sendPageCacheHeaders();   // after the 404 check above: the status decides the policy

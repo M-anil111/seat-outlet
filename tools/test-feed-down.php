@@ -22,7 +22,7 @@ feedDownCheck('gate answers 503 with Retry-After (never a 200 that a crawler wou
 feedDownCheck('gate does not set noindex (a 503 already says come back later)', strpos($m3[0], "pageRobots'] = 'noindex") === false);
 $hdr = file_get_contents($root . '/header.php');
 $gatePos = strpos($hdr, 'soFeedDownGate();');
-feedDownCheck('header: a degraded page with nothing to show goes through the gate before any output', strpos($hdr, "soApiDegraded() && isset(\$total_count) && (int) \$total_count === 0 && empty(\$events) && http_response_code() === 200") !== false && $gatePos !== false && $gatePos < strpos($hdr, '<!DOCTYPE html>'));
+feedDownCheck('header: a degraded page with nothing to show goes through the gate before any output', strpos($hdr, "soApiDegraded() && (\$soListingResp === null || soListingUnanswered(\$soListingResp)) && isset(\$total_count) && (int) \$total_count === 0 && empty(\$events) && http_response_code() === 200") !== false && $gatePos !== false && $gatePos < strpos($hdr, '<!DOCTYPE html>'));
 feedDownCheck('header: the robots tag never carries a noindex for a feed failure', strpos($hdr, "soFeedDown']) ||") === false);
 feedDownCheck('header: a feed failure overrides a page\'s own "0 results" noindex', strpos($hdr, "!empty(\$GLOBALS['soFeedDown']) ? (SITE_INDEXABLE ? 'index, follow' : 'noindex, nofollow') : (\$pageRobots ??") !== false);
 $srch = file_get_contents($root . '/search.php');

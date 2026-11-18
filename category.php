@@ -98,13 +98,14 @@ $eventsResponse = tnRequest('/catalog/v2/events/', $params);
 $total_count = (int) ($eventsResponse['totalCount'] ?? 0);
 $events = $eventsResponse['results'] ?? [];
 // A failed feed is a 503 (retry), never a "0 results" page that looks real; a category that truly has no events stays out of the index.
-if ($total_count === 0 && !$events && soApiDegraded()) { soFeedDownGate($catLabel . ' tickets'); }
+if ($total_count === 0 && !$events && soListingUnanswered($eventsResponse)) { soFeedDownGate($catLabel . ' tickets'); }
 // Upcoming events as an ItemList of Event nodes (the same rows the page lists below).
 $pageJsonLdNodes = array_merge($pageJsonLdNodes ?? [], [soEventItemList($events, $pageCanonicalUrl ?? '')]);
 include 'header.php';
 $catInline = soListingInline($catLabel);   // "hip hop", but NBA / MLB / R&B keep their capitals
 
 soRenderListingPage([
+	'listingResponse' => $eventsResponse,   // a list the local catalog copy answered is a real answer, even "no events"
 	'h1'          => $soFocusMeta['h1'] ?? ($catLabel . ' Tickets'),
 	'crumbs'      => [['label' => 'Home', 'url' => '/'], soFamilyCrumb($soFamily), ['label' => $catLabel . ' Tickets']],
 	'eyebrow'     => soFamilyCrumb($soFamily)['label'],
