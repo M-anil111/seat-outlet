@@ -143,10 +143,29 @@ function soSpecPromoMarkup(string $heading, string $subject, bool $wide, string 
 /** Events of one kind in one city for the sections below (soonest first). [] when the feed has nothing or is down. */
 function soSpecCityEvents(string $kind, $cityId, int $limit = 24): array {
     if ((int) $cityId <= 0) return [];
+    $params = ['perPage' => $limit, 'page' => 1, 'sort' => 'date/date', 'includeTotalCount' => 'true'];
+    // The local catalog copy answers first when it is fresh: on an event page this list is the third TicketNetwork round trip in a row
+    // (docs/adsense-readiness.md, "slow event pages": 6.5 to 9.1 s cold), and it only names other events in the city, which the copy holds.
+    // No live call is made then, so the page is faster and the call budget is spent on the event itself. A copy that is off, stale or
+    // cannot answer the filter falls through to the live call, as before.
+    $bulk = soSpecCityEventsFromCopy(soSpecCategoryKey($kind), (int) $cityId, $params);
+    if ($bulk !== null) return $bulk;
     try {
-        $r = getCategoryEventsByLocation(soSpecCategoryKey($kind), 'city', (int) $cityId, ['perPage' => $limit, 'page' => 1, 'sort' => 'date/date', 'includeTotalCount' => 'true']);
+        $r = getCategoryEventsByLocation(soSpecCategoryKey($kind), 'city', (int) $cityId, $params);
     } catch (Throwable $t) { return []; }
     return ['events' => is_array($r['results'] ?? null) ? $r['results'] : [], 'total' => (int) ($r['totalCount'] ?? 0)];
+}
+
+/** The city's events from the catalog copy (same filter, sort and page as the live call), or null when the copy cannot answer. */
+function soSpecCityEventsFromCopy(string $categoryKey, int $cityId, array $params): ?array {
+    if (!function_exists('tnBulkReady') || !function_exists('categoryEventsByLocationSpec') || !defined('MYSQLI') || !(MYSQLI instanceof mysqli)) return null;
+    if (!tnBulkReady()) return null;
+    $spec = categoryEventsByLocationSpec($categoryKey, 'city', $cityId, $params);
+    $q = $spec !== null ? tnBulkParseListing($spec[1]) : null;
+    $r = $q !== null ? tnBulkRunListing(MYSQLI, $q) : null;
+    if ($r === null) return null;
+    if (function_exists('tnCount')) tnCount('bulk_city_first');
+    return ['events' => $r['results'], 'total' => (int) $r['totalCount']];
 }
 
 /** A plain list of events: date, name, venue, linked. $skipIds are left out; at most $max rows. */
