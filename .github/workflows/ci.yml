@@ -277,6 +277,8 @@ jobs:
         run: php tools/test-event-over-redirect.php
       - name: An artist with no upcoming events answers 200 (noindex) from the catalog copy
         run: php tools/test-performer-redirect-standin.php
+      - name: No ads on error, noindex or empty pages
+        run: php tools/test-ad-suppress.php
 
       - name: Apply the sample seed (must also be safe to run twice)
         run: |

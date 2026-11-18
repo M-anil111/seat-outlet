@@ -34,8 +34,25 @@ function soAdsenseMetaTag(): string {
     return '<meta name="google-adsense-account" content="' . htmlspecialchars(soAdsenseClient(), ENT_QUOTES, 'UTF-8') . '">';
 }
 
+/**
+ * True when this response must carry no ad: a page that is not a normal, indexable content page. An error page (404, 503), a page whose
+ * ticket feed is down, a noindex page (an empty listing, an artist with no upcoming events, a thin page left out of the sitemap) and
+ * the pages that turn ads off ($soNoAds: checkout, confirmation, events) show nothing between the visitor and the content. Google's
+ * AdSense policy does not allow ads on screens without publisher content, and "low value content" is judged on what the site serves
+ * to a reviewer. Read when a slot is printed and again when the page is filtered, so a state set late (a feed failure found while the
+ * page renders) still removes the ad. No state set (a command line run, a test) counts as a normal page.
+ */
+function soAdsSuppressed(): bool {
+    if (!empty($GLOBALS['soNoAds']) || !empty($GLOBALS['soFeedDown'])) return true;
+    $status = function_exists('http_response_code') ? http_response_code() : false;
+    if (is_int($status) && $status !== 200) return true;
+    $robots = (string) ($GLOBALS['pageRule']['robots'] ?? ($GLOBALS['pageRobots'] ?? ''));
+    return stripos($robots, 'noindex') !== false;
+}
+
 /** The ad unit markup for a placement ('home' reads ADSENSE_SLOT_HOME), or '' when AdSense is not set up for it. */
 function soAdSlot(string $placement, string $format = 'horizontal'): string {
+    if (soAdsSuppressed()) return '';
     $client = soAdsenseClient();
     $slot = (string) getenv('ADSENSE_SLOT_' . strtoupper(preg_replace('/[^a-z0-9]/i', '_', $placement)));
     if ($slot === '' && in_array($placement, ['banner', 'mid', 'foot', 'pre', 'inpanel', 'side2', 'listing', 'list', 'content'], true)) $slot = (string) getenv('ADSENSE_SLOT_BANNER');   // one banner ad unit can serve every banner position
@@ -78,7 +95,7 @@ function soAdsenseFooterScript(): string {
 const SO_AD_HERO_CLASSES = ['hero-section', 'hero-so-why', 'vp-hero', 'tickets-hero-section', 'search-hero-section', 'performers-hero-section', 'mc-hero', 'is-hero', 'asm-hero', 'so-g-hero', 'so-evhero', 'so-evbar', 'so-ent-hero', 'so-art__hero', 'so-np__head', 'section-featured-header', 'so-hero2', 'results-header'];
 
 function soAdInjectBanner(string $html): string {
-    if (!empty($GLOBALS['soNoAds'])) return $html;
+    if (soAdsSuppressed()) return soAdStripSlots($html);   // a slot printed while the page rendered, before its status or robots were known, goes too
     // 1. Under the hero. Listing pages turn this off (soNoBannerAd): an ad above the list was the "related search" pills problem
     //    and pushed the ticket list down. The mid-page and footer ads still show there.
     if (empty($GLOBALS['soNoBannerAd']) && strpos($html, 'so-ad--banner') === false && ($banner = soAdSlot('banner')) !== '') {
@@ -120,6 +137,12 @@ function soAdInjectBanner(string $html): string {
     return soAdEnsureSlots($html);
 }
 
+/** Removes every ad slot already printed into the page (each is one <aside class="so-ad ..."> holding the unit). */
+function soAdStripSlots(string $html): string {
+    if (strpos($html, 'so-ad so-ad--') === false) return $html;
+    return (string) preg_replace('#<aside class="so-ad so-ad--[^"]*"[^>]*>.*?</aside>#s', '', $html);
+}
+
 /** How many ad slots a page already prints (every slot carries the so-ad class). */
 function soAdCountSlots(string $html): int {
     return preg_match_all('#<aside class="so-ad so-ad--#', $html);
@@ -132,7 +155,7 @@ function soAdCountSlots(string $html): int {
  * and last paragraph are never used, so a slot never touches a buy button or the edge of the copy. Slots are spread evenly.
  */
 function soAdEnsureSlots(string $html, int $min = 3): string {
-    if (!empty($GLOBALS['soNoAds'])) return $html;
+    if (soAdsSuppressed()) return $html;
     $need = $min - soAdCountSlots($html);
     if ($need <= 0) return $html;
     $main = strpos($html, '<main');
