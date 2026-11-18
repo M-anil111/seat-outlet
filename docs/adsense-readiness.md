@@ -25,6 +25,8 @@ Reading: the site is about six weeks old in Google, traffic peaked in the week o
 3. Ads: none on a 404, a 503, a feed-down page, a noindex page or an ads-off page, and a slot printed before the status was known is removed by the output filter. Test `tools/test-ad-suppress.php`.
 4. Event pages whose record says no ticket is listed are noindex,follow. Test `tools/test-event-no-inventory.php`.
 
+5. Event pages: the catalog copy now answers both the gate in `header.php` and the head in `inc/seo-event.php`, so an event the copy holds is a 200 with a named head and not a 503 whose body came from the copy. Test `tools/test-event-bulk-gate.php` (answered 503 before).
+
 The sitemap already leaves out past events, dead performers, zero-result pages and (at crawl time) events without tickets, so no sitemap change was needed.
 
 ## Open: needs editorial work, not code
@@ -41,6 +43,23 @@ Pages and queries that already get impressions (Search Console, impressions in b
 - Pages: `/upcoming-music-festivals` (107), `/artist/horse-racing` (106), `/venue/wembley-stadium` (92), `/artist/six-nations-tournament` (39) and its `/artist-city/` pages, `/artist/sevilla-fc` (55), `/artist/katseye` (126).
 
 Rules for these guides: every venue, date, rule or price statement needs a primary source named in the post (the venue, the league or the promoter), no invented statistics or quotes, and nothing copied from another site. Resale pricing and refund statements must match `/worry-free-guarantee` and the terms page.
+
+## Open: slow event pages (measured, not changed)
+
+Live, 18 Nov 2026: a cold event page answers in 6.5 to 9.1 seconds (time to first byte, same on the second request for the three upcoming events tried), `Cache-Control: no-store`; one in three answered 503 after about 5.7 seconds. SE Ranking lists 164 pages as slow, mostly hubs (2.9 s on `/country-music-tickets`) and event pages dated today (4.8 s on one).
+
+Where the time goes, from running a cold event page against a mock TicketNetwork API with `TN_PROFILE` (the mock cannot give real latency, only the call chain):
+
+1. The event lookup in `header.php` (one call).
+2. `inc/seo-event.php`: one parallel batch (the performer's other dates, the venue record, the venue's other events).
+3. `soSpecCityEvents()`: one more call, only when the venue has nothing else on sale.
+4. The menu's category tree (`inc/category-tree.php`, three calls in a row): cached six hours, so cold only after a cache expiry.
+
+So a cold page waits for two to three TicketNetwork round trips in a row. Real latency per call, not the number of calls, sets the total. Options, each needing the owner's decision because they touch the call budget or caching of pages with live data: put the city fallback in the step 2 batch (one more call on some pages), cache event HTML for a short time at the edge (the seat map and prices load in the browser), or warm event pages the sitemap lists. The first stays within `docs/reliability.md` only if the call budget has room; none was started.
+
+## Open: external links
+
+All 343 "external links to 4XX" are the Reddit link in the footer (`https://www.reddit.com/user/SeatOutlet/`): Reddit answers 403 to crawlers, so SE Ranking cannot verify it. It is not a broken link for a visitor. Keep it (the audit warning stays) or remove it from the footer (the warning goes); that is a brand decision.
 
 ## Before requesting the review
 
