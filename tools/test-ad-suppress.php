@@ -51,6 +51,14 @@ asCheck('removing slots keeps the rest of the page', strpos(soAdStripSlots($html
 $src = (string) file_get_contents(__DIR__ . '/../inc/adsense.php');
 asCheck('soAdSlot checks the rule first', preg_match('/function soAdSlot\([^)]*\): string \{\s*if \(soAdsSuppressed\(\)\) return \'\';/', $src) === 1);
 asCheck('the output filter checks the rule', strpos($src, "function soAdInjectBanner(string \$html): string {\n    if (soAdsSuppressed())") !== false);
+// Wiring: an empty category page (a real answer with no events) is noindex, so it carries no ad. /category/west-end, 18 Nov 2026:
+// 0 results, indexable, 4 ad units. The rule sits after the feed-down gate, so a failed feed stays a 503 and is not noindexed.
+$catSrc = (string) file_get_contents(__DIR__ . '/../category.php');
+$gate = strpos($catSrc, 'soFeedDownGate($catLabel');
+$zero = strpos($catSrc, "if (\$total_count === 0 && !\$events && empty(\$pageRobots)) { \$pageRobots = 'noindex, follow'; }");
+asCheck('an empty category page is noindex,follow (so no ads)', $zero !== false);
+asCheck('after the feed-down gate (a failed feed stays a 503)', $gate !== false && $zero !== false && $gate < $zero);
+asCheck('before header.php prints the robots tag', $zero !== false && $zero < strpos($catSrc, "include 'header.php'"));
 ob_end_flush();
 if ($fails) { echo "$fails check(s) failed\n"; exit(1); }
 echo "ok: no ads on error, noindex or empty pages\n";

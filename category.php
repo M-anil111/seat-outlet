@@ -12,7 +12,9 @@ $perPage = 20;
 // The category behind the slug: the stub files of the clean genre pages pass "genre-<id>" (internal, never shown in a URL);
 // every other category is /category/<name>, read back from the url_slugs table (or the old name-and-id form).
 $slug  = $_GET['slug'] ?? '';
-if (preg_match('/^genre-(\d{1,10})$/', (string) $slug, $soGm)) { $id = (int) $soGm[1]; } else { [$id] = soSlugResolve('category', (string) $slug); $id = (int) $id; }
+$soSlugLegacy = false;
+$soGenreIdForm = preg_match('/^genre-(\d{1,10})$/', (string) $slug, $soGm) === 1;   // "genre-<id>": a genre page's own include, or an address that redirects to it
+if ($soGenreIdForm) { $id = (int) $soGm[1]; } else { [$id, $soSlugLegacy] = soSlugResolve('category', (string) $slug); $id = (int) $id; }
 
 if ($id <= 0) {
 	renderNotFoundPage('Category');
@@ -21,6 +23,14 @@ if ($id <= 0) {
 // The ticket API lists a few categories twice under different parents; the small copy sends visitors to the main one (one URL per category).
 if (isset(SO_CATEGORY_DUPLICATES[$id])) { soRedirect301(soCategoryHref(SO_CATEGORY_DUPLICATES[$id], 'Children / Family')); }
 
+// A cold page asked TicketNetwork three times in a row (the category's name, its popular events, its listed events): 3 round trips before
+// the first byte. They do not depend on each other, so they go out together, as the event page's lookups do (inc/seo-event.php): one
+// round trip, the same calls (each is cached, and a cached one is not re-sent). Skipped for an address that only redirects (an old
+// name-and-id slug, a genre id without its clean page): those never use the lists, and sending them would spend calls for nothing.
+[$soPreWhen, $soPreSort] = listingRequestState('soonest');
+if (!$soSlugLegacy && !(soGenreById($id) && !isset($soGenreSlug)) && !($soGenreIdForm && !isset($soGenreSlug))) {
+	tnRequestMulti([tnCatByIdSpec($id), soCategoryDataSpec($id), soCategoryListSpec($id, $perPage, $soPreWhen, $soPreSort, soListingMaxPrice())]);
+}
 $cat = getTnCatById($id);
 $catRaw  = trim($cat['results'][0]['text']['name'] ?? '');
 // Title Case a name that arrives all upper or all lower case, but leave mixed-case and short acronyms (NBA, UFC) as they are.
@@ -89,9 +99,9 @@ if ($isFiltered) { $pageRobots = 'noindex, follow'; }   // canonical page stays 
 
 
 // US events only, the same set the near-you grid, the page copy and the "in the USA" heading describe.
-$catFragment = "contains(defaultCategory/path, '.$id.') and country/alphaCode eq 'US'";
-$params = locationListingParams($catFragment, $perPage, 1, $when, $sort, $maxPrice);
-$eventsResponse = tnRequest('/catalog/v2/events/', $params);
+$catFragment = soCategoryEventsFilter($id);
+[$catEndpoint, $params] = soCategoryListSpec($id, $perPage, $when, $sort, $maxPrice);   // the same request the batch above sent
+$eventsResponse = tnRequest($catEndpoint, $params);
 
 // totalCount rides on the list response (includeTotalCount) - this used to
 // be a second, separate API call per page view.
@@ -99,6 +109,10 @@ $total_count = (int) ($eventsResponse['totalCount'] ?? 0);
 $events = $eventsResponse['results'] ?? [];
 // A failed feed is a 503 (retry), never a "0 results" page that looks real; a category that truly has no events stays out of the index.
 if ($total_count === 0 && !$events && soListingUnanswered($eventsResponse)) { soFeedDownGate($catLabel . ' tickets'); }
+// A real answer with no events (the feed is up): noindex,follow like every other empty listing (venue, city, discovery, holiday, artist
+// location pages). Without it /category/west-end (0 US events: its shows are in London) was indexable and carried 4 ad units (18 Nov 2026);
+// soAdsSuppressed() reads this, so the ads go too.
+if ($total_count === 0 && !$events && empty($pageRobots)) { $pageRobots = 'noindex, follow'; }
 // Upcoming events as an ItemList of Event nodes (the same rows the page lists below).
 $pageJsonLdNodes = array_merge($pageJsonLdNodes ?? [], [soEventItemList($events, $pageCanonicalUrl ?? '')]);
 include 'header.php';
