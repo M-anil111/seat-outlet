@@ -59,7 +59,7 @@ file_put_contents($router, "<?php\n\$p = parse_url(\$_SERVER['REQUEST_URI'], PHP
 $env = 'TN_CALLS_PER_SECOND=0.00001 ';
 foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) { if ((string) getenv($k) === '') $env .= $k . '=test-placeholder '; }
 $port = 8400 + random_int(0, 80);
-$proc = proc_open($env . 'php -S 127.0.0.1:' . $port . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+$proc = proc_open('exec env ' . $env . 'php -S 127.0.0.1:' . $port . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
 usleep(900000);
 $get = function (string $path) use ($port) {
     $ctx = stream_context_create(['http' => ['timeout' => 40, 'ignore_errors' => true, 'follow_location' => 0, 'max_redirects' => 0]]);
@@ -80,7 +80,7 @@ eoCheck('over two days ago, lookup refused: 302 to the performer page, not 503',
 eoCheck('an upcoming event whose lookup is refused still answers 503 (retry later)', $c3, 503);
 [$c4] = $get('/event/zq-never-seen-9100298');
 eoCheck('an event nothing is known about, lookup refused: 503', $c4, 503);
-proc_terminate($proc);
+proc_terminate($proc); proc_close($proc);   // exec: the server is the child itself, so this stops it (no orphan left)
 @unlink($router);
 $clean();
 if ($fail) { echo "$fail check(s) failed\n"; exit(1); }

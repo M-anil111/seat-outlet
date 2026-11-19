@@ -38,7 +38,7 @@ $serve = function (string $bulk) use ($router) {
     $port = 8600 + random_int(0, 80);
     $env = 'TN_BULK_ENABLED=' . $bulk . ' TN_CALLS_PER_SECOND=0.00001 ';
     foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) { if ((string) getenv($k) === '') $env .= $k . '=test-placeholder '; }
-    $proc = proc_open($env . 'php -S 127.0.0.1:' . $port . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+    $proc = proc_open('exec env ' . $env . 'php -S 127.0.0.1:' . $port . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
     usleep(900000);
     $get = function (string $path) use ($port) {
         $ctx = stream_context_create(['http' => ['timeout' => 40, 'ignore_errors' => true, 'follow_location' => 0, 'max_redirects' => 0]]);
@@ -59,7 +59,7 @@ if ($c1 === 301 && $l1 !== '') { [$c1, $b1, $l1] = $get(parse_url($l1, PHP_URL_P
 [$c3, $b3] = $get('/event/zq-old-show-9000001');
 // An id near the top of the copy's range may be an event created after the last pull: still the retryable 503.
 [$c4] = $get('/event/zq-new-show-9300009');
-proc_terminate($proc);
+proc_terminate($proc); proc_close($proc);   // exec: the server is the child itself, so this stops it (no orphan left)
 ebCheck('catalog copy on, lookup refused: the event page answers 200 (not 503)', $c1, 200);
 ebCheck('an old id the copy does not hold answers 404 (not 503)', $c3, 404);
 ebCheck('its page says the event was not found and is noindex', strpos($b3, 'Event Not Found') !== false && preg_match('#<meta name="robots" content="noindex#', $b3) === 1, true);
@@ -68,7 +68,7 @@ ebCheck('the head names the event (a title and a canonical)', preg_match('#<titl
 ebCheck('it shows the event from the copy', strpos($b1, 'Zq Band Live 9300002') !== false, true);
 [$proc, $get] = $serve('0');
 [$c2] = $get('/event/zq-band-live-9300002');
-proc_terminate($proc);
+proc_terminate($proc); proc_close($proc);   // exec: the server is the child itself, so this stops it (no orphan left)
 ebCheck('no catalog copy (feed really down): still 503', $c2, 503);
 
 exec('php ' . escapeshellarg($root . '/tools/seed-critical-fixtures.php') . ' --clean 2>&1');
