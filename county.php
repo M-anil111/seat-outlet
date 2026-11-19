@@ -27,6 +27,7 @@ $trail = [];
 
 soRenderEntityListing([
 	'kind' => 'county', 'id' => (int) $id, 'name' => $countyLabel, 'label' => $countyLabel, 'path' => '/county/' . $canonSlug,
+	'listingResponse' => $eventsResponse,
 	'events' => $events, 'total' => (int) ($eventsResponse['totalCount'] ?? 0), 'count' => (int) ($eventsResponse['count'] ?? count($events)),
 	'perPage' => $perPage, 'params' => $params, 'when' => $when, 'sort' => $sort, 'defaultSort' => 'soonest', 'isFiltered' => $isFiltered,
 	'trail' => $trail, 'entity' => [], 'cityId' => 0, 'cityLabel' => '',

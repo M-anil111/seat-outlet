@@ -196,7 +196,7 @@ function renderCityHolidayPage(string $key = ''): void {
     $resp = tnRequest('/catalog/v2/events/', $params);
     $total = (int) ($resp['totalCount'] ?? 0);
     $events = $resp['results'] ?? [];
-    if ($total === 0 && !$events && soApiDegraded()) { soFeedDownGate($cfg['label'] . ' in ' . $label); }
+    if ($total === 0 && !$events && soListingUnanswered($resp)) { soFeedDownGate($cfg['label'] . ' in ' . $label); }
     $path = '/' . $key . '-in-' . $canonSlug;
     $isZero = $total < SO_HOLIDAY_MIN;
     if ($isZero || $isFiltered) { $pageRobots = 'noindex, follow'; }

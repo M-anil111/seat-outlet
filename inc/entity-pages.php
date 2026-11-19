@@ -78,7 +78,20 @@ function soApiDegraded(): bool {
  * /category/west-end and /category/cricket, 5XX in the sitemap).
  */
 function soListingUnanswered($response): bool {
-    return soApiDegraded() && empty(is_array($response) ? ($response['_bulk'] ?? null) : null);
+    return soApiDegraded() && !soListingAnswered($response);
+}
+
+/**
+ * True when a list response is a real answer for this listing: live, cached, a stored copy, or the local catalog copy, even one with no
+ * events. Every TicketNetwork list answer carries a "results" array (docs/ticketnetwork-api.md, "List answers"); every failure path of
+ * tnRequest() without a stored copy returns []. So a request where an unrelated lookup failed (the category's name, the menu tree: the
+ * "reference" breaker family) but the list itself answered "no events" is a real empty page: 200 and noindex, not 503 (live, 19 Nov 2026:
+ * /category/west-end answered 503, then 200 with 0 results a moment later). A failed or malformed list answer stays unanswered: 503.
+ */
+function soListingAnswered($response): bool {
+    if (!is_array($response)) return false;
+    if (!empty($response['_bulk'])) return true;
+    return array_key_exists('results', $response) && is_array($response['results']);
 }
 
 /* ------------------------------------------------------- zero-event pages */

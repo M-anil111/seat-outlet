@@ -36,6 +36,7 @@ if ($cityUrl !== '') { $trail[] = ['label' => $cityLabel, 'url' => HOME_URL . $c
 
 soRenderEntityListing([
 	'kind' => 'venue', 'id' => $id, 'name' => $venueName, 'label' => $venueName, 'path' => '/venue/' . $canonSlug,
+	'listingResponse' => $eventsResponse,
 	'events' => $events, 'total' => (int) ($eventsResponse['totalCount'] ?? 0), 'count' => (int) ($eventsResponse['count'] ?? count($events)),
 	'perPage' => $perPage, 'params' => $params, 'when' => $when, 'sort' => $sort, 'defaultSort' => 'soonest', 'isFiltered' => $isFiltered,
 	'trail' => $trail, 'entity' => $venue, 'cityId' => $cityId, 'cityLabel' => $cityLabel, 'cityUrl' => $cityUrl,

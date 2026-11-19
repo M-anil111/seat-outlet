@@ -5608,7 +5608,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
     $hasRealImage    = soImageIsReal($performerImg);
 
     // A failed feed is a 503 (retry), never a thin 200. A page with no events is noindex,follow and kept out of the sitemap.
-    if ($total_count === 0 && !$events && soApiDegraded()) { soFeedDownGate('Tickets'); }
+    if ($total_count === 0 && !$events && soListingUnanswered($eventsResponse)) { soFeedDownGate('Tickets'); }   // this list failed, not another lookup
     $isZero = ($total_count === 0);
     if ($isZero) { $pageRobots = 'noindex, follow'; }
     soZeroPageNote('/' . $urlPrefix . '/' . $canonArtistSlug . '/' . $canonLocSlug, $isZero);
@@ -5938,7 +5938,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
     $year        = date('Y');
 
     // A failed feed is a 503 (retry), never a thin 200. A page with no events is noindex,follow and kept out of the sitemap.
-    if ($total_count === 0 && !$events && soApiDegraded()) { soFeedDownGate($categoryLabel . ' tickets'); }
+    if ($total_count === 0 && !$events && soListingUnanswered($eventsResponse)) { soFeedDownGate($categoryLabel . ' tickets'); }   // this list failed, not another lookup
     $canonSlug = soSlug($dimension, $locationLabel, $locationValue);
     $isZero = ($total_count === 0);
     if ($isZero) { $pageRobots = 'noindex, follow'; }
