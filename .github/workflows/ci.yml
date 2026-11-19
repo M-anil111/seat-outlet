@@ -266,6 +266,8 @@ jobs:
         run: php tools/test-tn-bulk-event.php
       - name: Event page city list comes from the catalog copy when it is fresh (one live round trip fewer)
         run: php tools/test-spec-city-bulk.php
+      - name: Cold category page sends its three lookups in one batch, with no extra call (mock API)
+        run: php tools/test-category-batch.php
       - name: Removed-event redirects (performer, category, bulk fallback, unknown stays 404)
         run: php tools/test-event-redirects-db.php
       - name: Database errors are never silent (explicit mysqli error mode) and idle connections reconnect

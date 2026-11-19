@@ -3508,10 +3508,14 @@ function getTnCatEventsCount($catId = 0, $params = []) {
     return tnCountEvents($params);
 }
 
+/** getTnCatById()'s first request, [endpoint, params]: category.php sends it in its parallel batch, so the cache key must be this one. */
+function tnCatByIdSpec($catId): array {
+    return ['/catalog/v2/categories/', ['filter' => "contains(path, '." . (int) $catId . ".') and depth eq 2", 'perPage' => 1]];
+}
+
 function getTnCatById($catId) {
-    $params['filter'] = "contains(path, '." . (int) $catId . ".') and depth eq 2";
-    $params['perPage'] = 1;
-    $r = tnRequest("/catalog/v2/categories/", $params);
+    [$catEndpoint, $params] = tnCatByIdSpec($catId);
+    $r = tnRequest($catEndpoint, $params);
     if (!empty($r['results'])) return $r;
     // Deeper categories (the MLB, NBA, NHL and MLS ones sit under their sport, named "Professional (MLB)"): look at any depth
     // and take the entry whose path ends with this id, so a descendant is never mistaken for it.

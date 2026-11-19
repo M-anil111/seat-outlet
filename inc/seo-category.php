@@ -7,13 +7,28 @@
  * differently. The only hand-written genre facts live in soCategoryProfile() and were checked against the cited sources.
  */
 
+/** The events a category page lists: its own and its sub-categories' US events. */
+function soCategoryEventsFilter(int $id): string {
+    return "contains(defaultCategory/path, '." . $id . ".') and country/alphaCode eq 'US'";
+}
+
+/** soCategoryData()'s request, [endpoint, params, ttl]: category.php sends it in its parallel batch, so the cache key must be this one. */
+function soCategoryDataSpec(int $id): array {
+    return ['/catalog/v2/events/', locationListingParams(soCategoryEventsFilter($id), 100, 1, '', 'popular'), 1800];
+}
+
+/** The category page's own list (page 1, the visitor's date, sort and price filters), [endpoint, params]. */
+function soCategoryListSpec(int $id, int $perPage, string $when, string $sort, int $maxPrice): array {
+    return ['/catalog/v2/events/', locationListingParams(soCategoryEventsFilter($id), $perPage, 1, $when, $sort, $maxPrice)];
+}
+
 /** One cached catalog read per category: popular events (for who/where) plus the soonest event (for the next date). */
 function soCategoryData($id) {
     $id = (int) $id;
     $out = ['total' => 0, 'artists' => [], 'venues' => [], 'cities' => [], 'min' => null, 'next' => null, 'path' => ''];
     try {
-        $filter = "contains(defaultCategory/path, '." . $id . ".') and country/alphaCode eq 'US'";
-        $r = tnRequest('/catalog/v2/events/', locationListingParams($filter, 100, 1, '', 'popular'), 'GET', 1800);
+        [$dataEndpoint, $dataParams, $dataTtl] = soCategoryDataSpec($id);
+        $r = tnRequest($dataEndpoint, $dataParams, 'GET', $dataTtl);
         $out['total'] = (int) ($r['totalCount'] ?? count($r['results'] ?? []));
         $artists = []; $venues = []; $cities = [];
         $out['path'] = (string) ($r['results'][0]['defaultCategory']['path'] ?? '');
