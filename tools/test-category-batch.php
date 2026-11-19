@@ -2,7 +2,7 @@
 /**
  * CI (needs the migrated database): a cold category page sends its three TicketNetwork lookups (the category's name, its popular events,
  * its listed events) in one parallel batch, not one after another, and sends no more calls than before. Runs the real category page
- * against a small mock of the catalog API that waits 400 ms per answer and logs every request. The page used to wait for three answers
+ * against a small mock of the catalog API (Node) that answers after 400 ms and logs when every request arrives. The page used to wait for three answers
  * in a row (docs/adsense-readiness.md, slow pages: /category/west-end took about 18 s cold on the live site).
  * Also checks an old name-and-id address, which only redirects, sends nothing.
  * Run: php tools/test-category-batch.php
@@ -22,17 +22,33 @@ $tmp = sys_get_temp_dir() . '/so-cb-' . getmypid();
 @mkdir($tmp, 0700, true);
 $log = $tmp . '/calls.log';
 $catId = 9300098;
-// The mock API: every answer after 400 ms; the category is "Zq Batch" (slug zq-batch), with one US event.
-file_put_contents($tmp . '/mock.php', '<?php
-usleep(400000);
-file_put_contents(' . var_export($log, true) . ', microtime(true) . " " . $_SERVER["REQUEST_URI"] . "\n", FILE_APPEND | LOCK_EX);
-header("Content-Type: application/json");
-$p = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
-$d = date("Y-m-d", strtotime("+12 days"));
-if (strpos($p, "/catalog/v2/categories") === 0) { echo json_encode(["results" => [["id" => ' . $catId . ', "path" => ".1859.1989.' . $catId . '.", "depth" => 2, "text" => ["name" => "Zq Batch"]]], "totalCount" => 1]); return true; }
-if (strpos($p, "/catalog/v2/events") === 0) { echo json_encode(["results" => [["id" => 9300097, "text" => ["name" => "Zq Batch Show"], "date" => ["date" => $d . "T19:30:00", "datetime" => $d . "T19:30:00", "datetimeOffset" => $d . "T19:30:00-05:00"], "venue" => ["id" => 9300097, "text" => ["name" => "Zq Batch Hall"]], "city" => ["id" => 9300097, "text" => ["name" => "Zqtown"]], "stateProvince" => ["id" => 9300097, "text" => ["abbr" => "TX"]], "country" => ["alphaCode" => "US"], "defaultCategory" => ["path" => ".1859.1989.' . $catId . '."], "performers" => [["id" => 9300097, "name" => "Zq Batch Act"]], "_metadata" => ["hasTickets" => true, "ticketCount" => 4]]], "totalCount" => 1]); return true; }
-http_response_code(404); echo json_encode(["Message" => "The requested resource was not found."]); return true;
-');
+// The mock API, in Node: it handles every request at once (PHP's built-in server hands requests to its workers without balancing, so two
+// calls could queue on one worker and look sequential). It logs the time each request ARRIVES, then answers after 400 ms. Calls sent
+// together arrive within milliseconds; calls sent one after another arrive at least 400 ms apart (each waits for the previous answer).
+// The category is "Zq Batch" (slug zq-batch), with one US event.
+file_put_contents($tmp . '/mock.js', <<<'JS'
+const http = require('http'), fs = require('fs');
+const [port, log, cat] = process.argv.slice(2);
+const d = new Date(Date.now() + 12 * 86400000).toISOString().slice(0, 10);
+http.createServer((req, res) => {
+  const arrived = (Date.now() / 1000).toFixed(4);
+  setTimeout(() => {
+    fs.appendFileSync(log, arrived + ' ' + req.url + '\n');
+    res.setHeader('Content-Type', 'application/json');
+    const p = req.url.split('?')[0];
+    if (p.startsWith('/catalog/v2/categories')) return res.end(JSON.stringify({ results: [{ id: +cat, path: '.1859.1989.' + cat + '.', depth: 2, text: { name: 'Zq Batch' } }], totalCount: 1 }));
+    if (p.startsWith('/catalog/v2/events')) return res.end(JSON.stringify({ results: [{ id: 9300097, text: { name: 'Zq Batch Show' },
+      date: { date: d + 'T19:30:00', datetime: d + 'T19:30:00', datetimeOffset: d + 'T19:30:00-05:00' },
+      venue: { id: 9300097, text: { name: 'Zq Batch Hall' } }, city: { id: 9300097, text: { name: 'Zqtown' } },
+      stateProvince: { id: 9300097, text: { abbr: 'TX' } }, country: { alphaCode: 'US' }, defaultCategory: { path: '.1859.1989.' + cat + '.' },
+      performers: [{ id: 9300097, name: 'Zq Batch Act' }], _metadata: { hasTickets: true, ticketCount: 4 } }], totalCount: 1 }));
+    res.statusCode = 404;
+    res.end(JSON.stringify({ Message: 'The requested resource was not found.' }));
+  }, 400);
+}).listen(+port, '127.0.0.1');
+JS);
+exec('command -v node', $nodeOut, $nodeRc);
+cbCheck('node is available for the mock API', $nodeRc, 0);
 // Free ports from the system (a fixed or random port can already be taken by another test's server).
 $freePort = function (): int { $s = stream_socket_server('tcp://127.0.0.1:0'); $n = (int) substr(strrchr((string) stream_socket_get_name($s, false), ':'), 1); fclose($s); return $n; };
 $mockPort = $freePort();
@@ -63,7 +79,7 @@ cbCheck('the category has the slug the page expects', $slug, 'zq-batch');
 
 $router = $tmp . '/router.php';
 file_put_contents($router, "<?php\n\$p = parse_url(\$_SERVER['REQUEST_URI'], PHP_URL_PATH);\nchdir(" . var_export($root, true) . ");\nif (preg_match('#^/category/([a-z0-9-]+)\$#', \$p, \$m)) { \$_GET['slug'] = \$m[1]; \$_SERVER['SCRIPT_NAME'] = '/category.php'; require " . var_export($root . '/category.php', true) . "; return true; }\nreturn false;\n");
-$mock = proc_open('exec env PHP_CLI_SERVER_WORKERS=8 ' . escapeshellarg(PHP_BINARY) . ' -S 127.0.0.1:' . $mockPort . ' ' . escapeshellarg($tmp . '/mock.php'), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $p1);
+$mock = proc_open('exec node ' . escapeshellarg($tmp . '/mock.js') . ' ' . $mockPort . ' ' . escapeshellarg($log) . ' ' . $catId, [1 => ['file', '/dev/null', 'w'], 2 => ['file', $tmp . '/mock.err', 'w']], $p1);
 $site = proc_open('exec env ' . $envStr . escapeshellarg(PHP_BINARY) . ' -S 127.0.0.1:' . $sitePort . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', $tmp . '/site.err', 'w']], $p2);
 foreach ([$mockPort, $sitePort] as $port) {   // wait until both servers accept connections (at most 10 s)
     for ($i = 0; $i < 100; $i++) { $c = @fsockopen('127.0.0.1', $port, $en, $es, 0.2); if ($c) { fclose($c); break; } usleep(100000); }
@@ -87,10 +103,9 @@ if ($code !== 200) echo substr(strip_tags($body), 0, 300), "\n", preg_replace('/
 cbCheck('it shows the event', strpos($body, 'Zq Batch Show') !== false, true);
 cbCheck('three lookups, no more than before', count($calls), 3);
 if (count($calls) !== 3) echo implode("\n", array_map(fn($l) => substr(urldecode($l), 0, 160), $calls)), "\n";
-// Each answer takes 400 ms. In a row the last is logged 1.1 s or more after the first (measured); together, within 0.4 s (the mock's
-// workers are not load balanced, so two calls can still share one worker and wait for each other).
-$spread = $times ? max($times) - min($times) : 99.0; if (getenv('CB_DEBUG')) foreach ($calls as $c) echo substr(urldecode($c), 0, 60), "\n";
-cbCheck('the three lookups were answered together, not one after another (spread ' . round($spread, 3) . ' s)', $spread < 0.75, true);
+// Arrival times: together within a few ms; one after another, each at least 400 ms after the previous.
+$spread = $times ? max($times) - min($times) : 99.0;
+cbCheck('the three lookups were sent together, not one after another (arrival spread ' . round($spread, 3) . ' s)', $spread < 0.2, true);
 
 // An old name-and-id address redirects before using any list: nothing is sent for it.
 @unlink($log);
