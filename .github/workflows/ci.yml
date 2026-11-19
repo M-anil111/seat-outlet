@@ -62,6 +62,9 @@ jobs:
       - name: The read-only post-deploy check passes a fixed site and reports each problem on an unfixed one
         run: php tools/test-verify-production.php
 
+      - name: Photo credit text meets WCAG AA contrast (source, built and critical CSS)
+        run: php tools/test-credit-contrast.php
+
       - name: Category links go straight to the genre page (no 301 link on every page)
         run: php tools/test-category-links.php
 
