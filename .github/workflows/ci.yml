@@ -59,6 +59,9 @@ jobs:
       - name: Every workflow action is pinned to a commit SHA, and the retired SFTP deploy stays gone
         run: php tools/test-actions-pinned.php
 
+      - name: The read-only post-deploy check passes a fixed site and reports each problem on an unfixed one
+        run: php tools/test-verify-production.php
+
       - name: Category links go straight to the genre page (no 301 link on every page)
         run: php tools/test-category-links.php
 

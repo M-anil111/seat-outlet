@@ -73,7 +73,7 @@ All 343 "external links to 4XX" are the Reddit link in the footer (`https://www.
 
 ## Before requesting the review
 
-1. The pull request is merged and deployed (`/ajax/health.php` shows the new commit).
+1. The pull request is merged and deployed (`/ajax/health.php` shows the new commit). `bash deploy/verify-production.sh <commit>` checks steps 1, 3 and 4 and the #289 fixes in one run (read-only; add `HEALTH_TOKEN=...` for auto-migrate, pending migrations and the catalog copy).
 2. In Search Console, validate the "Server error (5xx)" issue and wait for Google to recrawl. Do not request the review while the count is still in the thousands.
 3. `curl -sI` three event URLs dated before today: expect 302, not 503. Spot-check `/artist/` pages for a performer with no upcoming events: expect 200 with `noindex`.
 4. View source on a 404 and on an empty listing: no `adsbygoogle` slot.
