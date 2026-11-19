@@ -63,8 +63,8 @@ cbCheck('the category has the slug the page expects', $slug, 'zq-batch');
 
 $router = $tmp . '/router.php';
 file_put_contents($router, "<?php\n\$p = parse_url(\$_SERVER['REQUEST_URI'], PHP_URL_PATH);\nchdir(" . var_export($root, true) . ");\nif (preg_match('#^/category/([a-z0-9-]+)\$#', \$p, \$m)) { \$_GET['slug'] = \$m[1]; \$_SERVER['SCRIPT_NAME'] = '/category.php'; require " . var_export($root . '/category.php', true) . "; return true; }\nreturn false;\n");
-$mock = proc_open('PHP_CLI_SERVER_WORKERS=8 ' . escapeshellarg(PHP_BINARY) . ' -S 127.0.0.1:' . $mockPort . ' ' . escapeshellarg($tmp . '/mock.php'), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $p1);
-$site = proc_open($envStr . escapeshellarg(PHP_BINARY) . ' -S 127.0.0.1:' . $sitePort . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', $tmp . '/site.err', 'w']], $p2);
+$mock = proc_open('exec env PHP_CLI_SERVER_WORKERS=8 ' . escapeshellarg(PHP_BINARY) . ' -S 127.0.0.1:' . $mockPort . ' ' . escapeshellarg($tmp . '/mock.php'), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $p1);
+$site = proc_open('exec env ' . $envStr . escapeshellarg(PHP_BINARY) . ' -S 127.0.0.1:' . $sitePort . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', $tmp . '/site.err', 'w']], $p2);
 foreach ([$mockPort, $sitePort] as $port) {   // wait until both servers accept connections (at most 10 s)
     for ($i = 0; $i < 100; $i++) { $c = @fsockopen('127.0.0.1', $port, $en, $es, 0.2); if ($c) { fclose($c); break; } usleep(100000); }
 }
@@ -78,7 +78,9 @@ $get = function (string $path) use ($sitePort) {
 };
 @unlink($log);
 [$code, $body] = $get('/category/zq-batch');
-$calls = array_values(array_filter(explode("\n", (string) @file_get_contents($log))));
+// Only this category's own lookups (its id is in each): on a cold cache the page also builds site-wide parts (the menu's category tree,
+// the site's lowest price), which are cached for hours on a running site and are not what this test is about.
+$calls = array_values(array_filter(explode("\n", (string) @file_get_contents($log)), fn($l) => strpos(urldecode($l), "." . $catId . ".") !== false));
 $times = array_map(fn($l) => (float) strtok($l, ' '), $calls);
 cbCheck('the cold category page answers 200', $code, 200);
 if ($code !== 200) echo substr(strip_tags($body), 0, 300), "\n", preg_replace('/^.*(Accepted|Closing|Development Server|Listening).*$\n?/m', '', (string) @file_get_contents($tmp . '/site.err')), "\n";
@@ -94,9 +96,15 @@ cbCheck('the three lookups were answered together, not one after another (spread
 @unlink($log);
 [$code2] = $get('/category/zq-batch-' . $catId);
 cbCheck('the old address redirects', $code2, 301);
-cbCheck('the old address sends no list lookup', count(array_filter(explode("\n", (string) @file_get_contents($log)), fn($l) => strpos($l, '/catalog/v2/events') !== false)), 0);
+cbCheck('the old address sends no list lookup', count(array_filter(explode("\n", (string) @file_get_contents($log)), fn($l) => strpos($l, '/catalog/v2/events') !== false && strpos(urldecode($l), '.' . $catId . '.') !== false)), 0);
 
-proc_terminate($site); proc_terminate($mock);
+// "exec" made each server the process itself (not a shell around it); its workers are its children and are stopped first.
+foreach ([$site, $mock] as $proc) {
+    $pid = (int) (proc_get_status($proc)['pid'] ?? 0);
+    if ($pid > 0) exec('pkill -TERM -P ' . $pid . ' 2>/dev/null');
+    proc_terminate($proc);
+    proc_close($proc);
+}
 exec($envStr . escapeshellarg(PHP_BINARY) . ' -r ' . escapeshellarg('require ' . var_export($root . '/functions.php', true) . '; @unlink(tnTokenCacheFile()); MYSQLI->query("DELETE FROM url_slugs WHERE type = \'category\' AND ext_id = \'' . $catId . '\'");'));
 array_map('unlink', glob($tmp . '/*') ?: []); @rmdir($tmp);
 if ($fail) { echo "$fail check(s) failed\n"; exit(1); }
