@@ -1,11 +1,8 @@
 name: CI
 
 # Runs on every pull request and every push to a non-main branch, so
-# problems are caught before merge - not after, at deploy time. (Deploy
-# itself still lints and validates composer.lock as a final gate right
-# before going to beta - see .github/workflows/deploy.yml - a little
-# overlap between the two is fine; this one is the one that actually
-# blocks a PR.)
+# problems are caught before merge - not after, at deploy time. The server
+# deploys main by itself (deploy/pull-deploy.sh), so this is the only gate.
 
 permissions:
   contents: read
@@ -21,10 +18,10 @@ jobs:
     name: Lint + static analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.3'
           extensions: mysqli, curl, mbstring, json
@@ -58,6 +55,15 @@ jobs:
 
       - name: The deploy never deletes a file the repository ships (retired stylesheet parts)
         run: php tools/test-retired-files.php
+
+      - name: Every workflow action is pinned to a commit SHA, and the retired SFTP deploy stays gone
+        run: php tools/test-actions-pinned.php
+
+      - name: The read-only post-deploy check passes a fixed site and reports each problem on an unfixed one
+        run: php tools/test-verify-production.php
+
+      - name: Photo credit text meets WCAG AA contrast (source, built and critical CSS)
+        run: php tools/test-credit-contrast.php
 
       - name: Category links go straight to the genre page (no 301 link on every page)
         run: php tools/test-category-links.php
@@ -162,6 +168,8 @@ jobs:
         run: php tools/test-slug-legacy.php
       - name: Worker helpers (blocked paths, clean paths, rewrites)
         run: node tools/test-worker.mjs
+      - name: Listing date pill agrees with the server's "This weekend" window
+        run: node tools/test-date-pill.mjs
 
       - name: The sitemap's automatic page list finds every page and only pages
         run: php tools/check-sitemap-pages.php
@@ -231,10 +239,10 @@ jobs:
       DB_USER: root
       DB_PASS: ci_root_password
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.3'
           extensions: mysqli
@@ -262,6 +270,10 @@ jobs:
           php tools/test-zero-pages.php
       - name: Bulk event detail fallback (tools/test-tn-bulk-event.php)
         run: php tools/test-tn-bulk-event.php
+      - name: Event page city list comes from the catalog copy when it is fresh (one live round trip fewer)
+        run: php tools/test-spec-city-bulk.php
+      - name: Cold category page sends its three lookups in one batch, with no extra call (mock API)
+        run: php tools/test-category-batch.php
       - name: Removed-event redirects (performer, category, bulk fallback, unknown stays 404)
         run: php tools/test-event-redirects-db.php
       - name: Database errors are never silent (explicit mysqli error mode) and idle connections reconnect
@@ -324,16 +336,16 @@ jobs:
       AWS_SECRET_KEY: ci-placeholder
       RECAPTCHA_SECRET_KEY: ci-placeholder
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.3'
           extensions: mysqli, curl, mbstring, json, gd
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
 

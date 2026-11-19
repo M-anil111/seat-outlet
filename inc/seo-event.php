@@ -32,7 +32,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
   $evClock = soEventShowingClock($event);
   $evShortT = trim($evShort . ($evClock !== '' ? ' ' . $evClock : ''));
   $metaTitle = soTitle('Event Not Found');
-  if (tnEntityUnavailable($event) && $evName === '') {
+  if (tnEntityUnavailable($event) && $evName === '' && empty($GLOBALS['so_event_gone'])) {   // gone (a 404): the not-found title
       // The name the URL gives: the event's own title, not one shared by every event that is down.
       $metaTitle = soUnavailableTitle('Event', soLabelFromSlug((string) ($_GET['slug'] ?? '')));
   } elseif ($evName !== '') {

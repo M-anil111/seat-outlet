@@ -27,6 +27,16 @@ Reading: the site is about six weeks old in Google, traffic peaked in the week o
 
 5. Event pages: the catalog copy now answers both the gate in `header.php` and the head in `inc/seo-event.php`, so an event the copy holds is a 200 with a named head and not a 503 whose body came from the copy. Test `tools/test-event-bulk-gate.php` (answered 503 before).
 
+Follow-up (branch `claude/festive-mendel-ptp6xg`, after the live check of 18 Nov 2026):
+
+6. Event pages: an old event id that TicketNetwork cannot be asked about, and that the fresh catalog copy does not hold, answers like a removed event (a redirect to what is remembered, else 404) instead of 503. Seen live: `/event/lenny-pearce-8048654` answered 503, then 404 a minute later. An id within 25,000 of the newest id in the copy may be an event created since the last pull, so it keeps the 503. Test `tools/test-event-bulk-gate.php`.
+7. Event pages: the "other events in this city" list is read from the catalog copy when it is fresh, with no TicketNetwork call: one live round trip fewer on the cold pages that needed it. Test `tools/test-spec-city-bulk.php`.
+8. Venue, city, county, state and country pages printed the date strip twice (seen live on `/city/boston-ma`); now once. Test `tools/test-date-strip.php`.
+9. Listing rows: the "This weekend" pill now uses the same Friday to Sunday window as the "This weekend" filter (on a Sunday it labelled the next Saturday "This weekend"). Test `tools/test-date-pill.mjs`.
+10. The Reddit profile stays in the Organization schema (`sameAs`) but is no longer a visible footer link (see "External links" below). Test `tools/test-seranking-nov12.php`.
+11. Workflows: every action pinned to a commit SHA (`tools/test-actions-pinned.php`, Dependabot proposes updates), and the SFTP upload workflow `deploy.yml` retired (the firewall blocks GitHub runners; the server pulls `main`).
+12. `deploy/list-stray-files.sh`: a read-only report of files in the web root that the repository does not ship, for the owner to review. It deletes nothing.
+
 The sitemap already leaves out past events, dead performers, zero-result pages and (at crawl time) events without tickets, so no sitemap change was needed.
 
 ## Open: needs editorial work, not code
@@ -55,15 +65,15 @@ Where the time goes, from running a cold event page against a mock TicketNetwork
 3. `soSpecCityEvents()`: one more call, only when the venue has nothing else on sale.
 4. The menu's category tree (`inc/category-tree.php`, three calls in a row): cached six hours, so cold only after a cache expiry.
 
-So a cold page waits for two to three TicketNetwork round trips in a row. Real latency per call, not the number of calls, sets the total. Options, each needing the owner's decision because they touch the call budget or caching of pages with live data: put the city fallback in the step 2 batch (one more call on some pages), cache event HTML for a short time at the edge (the seat map and prices load in the browser), or warm event pages the sitemap lists. The first stays within `docs/reliability.md` only if the call budget has room; none was started.
+So a cold page waited for two to three TicketNetwork round trips in a row. Step 3 now reads the catalog copy when it is fresh (item 7 above), so it costs no call and no round trip; steps 1 and 2 stay live (the event itself and its prices must be live). Real latency per call, not the number of calls, sets the total. Options, each needing the owner's decision because they touch the call budget or caching of pages with live data: put the city fallback in the step 2 batch (one more call on some pages), cache event HTML for a short time at the edge (the seat map and prices load in the browser), or warm event pages the sitemap lists. The first stays within `docs/reliability.md` only if the call budget has room; none was started.
 
 ## Open: external links
 
-All 343 "external links to 4XX" are the Reddit link in the footer (`https://www.reddit.com/user/SeatOutlet/`): Reddit answers 403 to crawlers, so SE Ranking cannot verify it. It is not a broken link for a visitor. Keep it (the audit warning stays) or remove it from the footer (the warning goes); that is a brand decision.
+All 343 "external links to 4XX" are the Reddit link in the footer (`https://www.reddit.com/user/SeatOutlet/`): Reddit answers 403 to crawlers, so SE Ranking cannot verify it. It is not a broken link for a visitor. Done: the profile stays in the Organization schema (`sameAs`, which no crawler follows as a link) and is no longer a visible link, so the warning goes. To show it again, remove `'link' => false` from its row in `inc/social.php`.
 
 ## Before requesting the review
 
-1. The pull request is merged and deployed (`/ajax/health.php` shows the new commit).
+1. The pull request is merged and deployed (`/ajax/health.php` shows the new commit). `bash deploy/verify-production.sh <commit>` checks steps 1, 3 and 4 and the #289 fixes in one run (read-only; add `HEALTH_TOKEN=...` for auto-migrate, pending migrations and the catalog copy).
 2. In Search Console, validate the "Server error (5xx)" issue and wait for Google to recrawl. Do not request the review while the count is still in the thousands.
 3. `curl -sI` three event URLs dated before today: expect 302, not 503. Spot-check `/artist/` pages for a performer with no upcoming events: expect 200 with `noindex`.
 4. View source on a 404 and on an empty listing: no `adsbygoogle` slot.

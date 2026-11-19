@@ -20,7 +20,7 @@ $env = 'HEALTH_TOKEN=zq-test-token ';
 foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) {   // the CI job sets only the database
     if ((string) getenv($k) === '') $env .= $k . '=test-placeholder ';
 }
-$proc = proc_open($env . 'php -S 127.0.0.1:' . $port . ' -t ' . escapeshellarg($root), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+$proc = proc_open('exec env ' . $env . 'php -S 127.0.0.1:' . $port . ' -t ' . escapeshellarg($root), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
 usleep(800000);
 $get = function (array $headers) use ($port) {
     $ctx = stream_context_create(['http' => ['header' => implode("\r\n", $headers), 'timeout' => 20, 'ignore_errors' => true]]);
@@ -29,7 +29,7 @@ $get = function (array $headers) use ($port) {
 $anon = $get([]);
 $bad = $get(['X-Health-Token: wrong']);
 $good = $get(['X-Health-Token: zq-test-token']);
-proc_terminate($proc);
+proc_terminate($proc); proc_close($proc);   // exec: the server is the child itself, so this stops it (no orphan left)
 hpCheck('anonymous: only the four public fields', is_array($anon) && array_keys($anon) === array_values(array_intersect(array_keys($anon), ['ok', 'time', 'commit', 'commitAgeSeconds'])) && isset($anon['ok']), json_encode($anon));
 hpCheck('anonymous: no migration, ticket or image detail', is_array($anon) && !isset($anon['migrations']) && !isset($anon['ticketnetwork']) && !isset($anon['images']) && !isset($anon['deployError']));
 hpCheck('a wrong token gets the public answer', is_array($bad) && !isset($bad['ticketnetwork']) && !isset($bad['migrations']));

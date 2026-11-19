@@ -86,5 +86,12 @@ srCheck('category page names itself from the stored slug name when the lookup is
 // bulk copy (tools/test-tn-bulk-read.php covers the stand-in itself)
 srCheck('the bulk copy stands in for a venue, city or performer record when the live lookup fails', strpos(srSrc('inc/tn-bulk-read.php'), 'function tnBulkEntity(') !== false);
 
+// ---- external link to 4XX (audit of 18 Nov 2026): Reddit answers 403 to crawlers, so it stays in the schema but is not a visible link
+require_once __DIR__ . '/../inc/social.php';
+$visible = soSocialIconsHtml() . soSocialPillsHtml();
+srCheck('no visible Reddit link (403 to crawlers)', stripos($visible, 'reddit.com') === false);
+srCheck('Reddit stays in the schema sameAs list', in_array('https://www.reddit.com/user/SeatOutlet/', soSocialSameAs(), true));
+srCheck('the other profiles are still linked', strpos($visible, 'x.com/SeatOutlet') !== false && strpos($visible, 'medium.com/@seatoutlet') !== false);
+
 if ($fail) { echo "$fail check(s) failed\n"; exit(1); }
 echo "ok: SE Ranking audit 12 Nov 2026\n";

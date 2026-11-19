@@ -48,7 +48,7 @@ $serve = function (string $bulk) use ($router) {
     $port = 8500 + random_int(0, 80);
     $env = 'TN_BULK_ENABLED=' . $bulk . ' TN_CALLS_PER_SECOND=0.00001 ';
     foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) { if ((string) getenv($k) === '') $env .= $k . '=test-placeholder '; }
-    $proc = proc_open($env . 'php -S 127.0.0.1:' . $port . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+    $proc = proc_open('exec env ' . $env . 'php -S 127.0.0.1:' . $port . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
     usleep(900000);
     $get = function (string $path) use ($port) {
         $ctx = stream_context_create(['http' => ['timeout' => 40, 'ignore_errors' => true]]);
@@ -60,14 +60,14 @@ $serve = function (string $bulk) use ($router) {
 };
 [$proc, $get] = $serve('1');
 [$c1, $b1] = $get('/artist/zq-past-act-9100301');
-proc_terminate($proc);
+proc_terminate($proc); proc_close($proc);   // exec: the server is the child itself, so this stops it (no orphan left)
 psCheck('catalog copy on: the artist page answers 200 (not 503)', $c1, 200);
 psCheck('it is the no-upcoming-events page: noindex', preg_match('/<meta name="robots" content="noindex/', $b1) === 1, true);
 psCheck('it names the performer', strpos($b1, 'Zq Past Act') !== false, true);
 psCheck('it carries no ad slot (a noindex page with nothing to list)', strpos($b1, 'so-ad so-ad--') === false, true);
 [$proc, $get] = $serve('0');
 [$c2] = $get('/artist/zq-past-act-9100301');
-proc_terminate($proc);
+proc_terminate($proc); proc_close($proc);   // exec: the server is the child itself, so this stops it (no orphan left)
 psCheck('no catalog copy (feed really down): still 503', $c2, 503);
 
 exec('php ' . escapeshellarg($root . '/tools/seed-critical-fixtures.php') . ' --clean 2>&1');

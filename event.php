@@ -23,7 +23,7 @@ $evAsOf = $GLOBALS['so_event_as_of'] ?? null;
 if ($evAsOf !== null) { unset($event['pricingInfo']); }
 
 if (tnEntityMissing($event) || empty($event['text']['name'])) {
-  echo tnEntityUnavailable($event) ? unavailableBlockHtml('Event') : notFoundBlockHtml('Event');
+  echo tnEntityUnavailable($event) && empty($GLOBALS['so_event_gone']) ? unavailableBlockHtml('Event') : notFoundBlockHtml('Event');   // so_event_gone: header.php found it gone in the catalog copy (a 404)
   include 'footer.php';
   exit;
 }

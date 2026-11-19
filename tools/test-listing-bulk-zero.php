@@ -38,7 +38,7 @@ $serve = function (string $bulk) use ($router, $root) {
     $port = 8300 + random_int(0, 80);
     $env = 'TN_BULK_ENABLED=' . $bulk . ' TN_CALLS_PER_SECOND=0.00001 ';
     foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) { if ((string) getenv($k) === '') $env .= $k . '=test-placeholder '; }
-    $proc = proc_open($env . 'php -S 127.0.0.1:' . $port . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+    $proc = proc_open('exec env ' . $env . 'php -S 127.0.0.1:' . $port . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
     usleep(900000);
     $get = function (string $path) use ($port) {
         $ctx = stream_context_create(['http' => ['timeout' => 40, 'ignore_errors' => true]]);
@@ -50,12 +50,12 @@ $serve = function (string $bulk) use ($router, $root) {
 };
 [$proc, $get] = $serve('1');
 [$cEmpty] = $get('/category/zq-empty'); [$cFull, $bFull] = $get('/category/zq-rock');
-proc_terminate($proc);
+proc_terminate($proc); proc_close($proc);   // exec: the server is the child itself, so this stops it (no orphan left)
 lzCheck('catalog copy on: the empty category answers 200 (not 503)', $cEmpty === 200, (string) $cEmpty);
 lzCheck('catalog copy on: a category with events answers 200 and lists them', $cFull === 200 && strpos($bFull, 'Zq Band Live') !== false, (string) $cFull);
 [$proc, $get] = $serve('0');
 [$dEmpty] = $get('/category/zq-empty'); [$dFull] = $get('/category/zq-rock');
-proc_terminate($proc);
+proc_terminate($proc); proc_close($proc);   // exec: the server is the child itself, so this stops it (no orphan left)
 lzCheck('no catalog copy (feed really down): the empty category still answers 503', $dEmpty === 503, (string) $dEmpty);
 lzCheck('no catalog copy (feed really down): a category with events answers 503 too', $dFull === 503, (string) $dFull);
 

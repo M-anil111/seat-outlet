@@ -65,7 +65,7 @@ MYSQLI->query("DELETE FROM tn_bulk_events WHERE event_id BETWEEN 9200001 AND 920
 $put = function (int $id, array $o = []) {
     $e = ['id' => $id, 'text' => ['name' => $o['name'] ?? "Zq Show $id"], 'date' => ['datetime' => ($o['date'] ?? date('Y-m-d', strtotime('+10 days'))) . 'T19:30:00', 'datetimeOffset' => ($o['date'] ?? date('Y-m-d', strtotime('+10 days'))) . 'T19:30:00-05:00'],
           'venue' => ['id' => $o['venue'] ?? 9200001, 'text' => ['name' => 'Zq Hall']], 'city' => ['id' => $o['city'] ?? 9200001, 'text' => ['name' => 'Zqville']],
-          'stateProvince' => ['id' => 9200001, 'text' => ['abbr' => 'ZQ']], 'country' => ['alphaCode' => 'US'], 'defaultCategory' => ['path' => $o['path'] ?? '.1859.1986.1987.'],
+          'stateProvince' => ['id' => 9200001, 'text' => ['abbr' => 'ZQ']], 'country' => ['alphaCode' => $o['country'] ?? 'US'], 'defaultCategory' => ['path' => $o['path'] ?? '.1859.1986.1987.'],
           'performers' => [['id' => $o['perf'] ?? 9200001, 'name' => 'Zq Act', 'isPerformance' => true]], 'pricingInfo' => ['lowPrice' => ['value' => $o['low'] ?? 50, 'currencyCode' => 'USD']],
           '_metadata' => ['ticketCount' => $o['tickets'] ?? 10, 'hasTickets' => $o['has'] ?? true], 'uriComponent' => 'zq', 'isTest' => $o['test'] ?? false];
     if (isset($o['takedown'])) $e['takedownAt'] = $o['takedown'];
@@ -172,7 +172,11 @@ brCheck('a request the parser does not understand is not answered even when read
 $setState($saved);
 
 // ---- category counts for the sitemap
+// A category whose events are all outside the US (West End: London) lists nothing on its page, which asks for country/alphaCode eq 'US':
+// it must not count, or the sitemap lists an empty, noindex page (18 Nov 2026).
+$put(9200020, ['path' => '.1859.1989.9200077.', 'country' => 'GB']);
 $counts = tnBulkCategoryCounts(MYSQLI);
+brCheck('counts: a category with only non-US events is absent (its page lists US events only)', isset($counts[9200077]), false);
 brCheck('counts: an event counts toward every category in its path', [$counts[1859] >= 3, $counts[1986] >= 2, $counts[1988] >= 1], [true, true, true]);
 brCheck('counts: a category nothing is listed in is absent', isset($counts[9999999]), false);
 MYSQLI->query("DELETE FROM tn_bulk_events WHERE event_id BETWEEN 9200001 AND 9200099");

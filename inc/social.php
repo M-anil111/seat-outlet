@@ -5,6 +5,8 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  * Seat Outlet's public social profiles: one list for the footer, the reviews page and the Organization schema (sameAs).
  * Public profile addresses only. Never put logins or passwords here.
  * 'icon' is a Bootstrap Icons class where the site's icon font has the glyph; the rest are shown as text pills.
+ * 'link' => false keeps a profile in the schema (sameAs) but out of the visible links: Reddit answers 403 to crawlers, so its footer link
+ * was 343 "external link to 4XX" warnings in the SE Ranking audit of 18 Nov 2026 (one per page) while working for visitors.
  */
 const SO_SOCIAL = [
     ['name' => 'Facebook',  'url' => 'https://www.facebook.com/seatoutlet.usa',          'icon' => 'bi-facebook'],
@@ -14,7 +16,7 @@ const SO_SOCIAL = [
     ['name' => 'Threads',   'url' => 'https://www.threads.com/@seatoutlet',               'icon' => ''],
     ['name' => 'Pinterest', 'url' => 'https://www.pinterest.com/seatoutlet/',             'icon' => ''],
     ['name' => 'LinkedIn',  'url' => 'https://www.linkedin.com/company/seat-outlet',      'icon' => ''],
-    ['name' => 'Reddit',    'url' => 'https://www.reddit.com/user/SeatOutlet/',           'icon' => ''],
+    ['name' => 'Reddit',    'url' => 'https://www.reddit.com/user/SeatOutlet/',           'icon' => '', 'link' => false],
     ['name' => 'Medium',    'url' => 'https://medium.com/@seatoutlet',                    'icon' => ''],
     ['name' => 'Tumblr',    'url' => 'https://www.tumblr.com/seatoutlet',            'icon' => ''],
 ];
@@ -24,6 +26,11 @@ function soSocialSameAs(): array {
     $urls = array_column(SO_SOCIAL, 'url');
     $urls[] = 'https://linktr.ee/seatoutlet';
     return $urls;
+}
+
+/** True when a profile is shown as a visible link (every profile, unless it says 'link' => false). */
+function soSocialLinked(array $profile): bool {
+    return ($profile['link'] ?? true) !== false;
 }
 
 /** Brand marks (Simple Icons paths, 24px viewBox) for the profiles the icon font has no glyph for. */
@@ -41,7 +48,7 @@ const SO_SOCIAL_SVG = [
 function soSocialIconsHtml(): string {
     $out = '';
     foreach (SO_SOCIAL as $s) {
-        if ($s['icon'] !== '' || empty(SO_SOCIAL_SVG[$s['name']])) continue;
+        if ($s['icon'] !== '' || empty(SO_SOCIAL_SVG[$s['name']]) || !soSocialLinked($s)) continue;
         $n = htmlspecialchars($s['name'], ENT_QUOTES, 'UTF-8');
         $out .= '<a href="' . htmlspecialchars($s['url'], ENT_QUOTES, 'UTF-8') . '" aria-label="' . $n . '" class="so-social-brand" target="_blank" rel="noopener me">'
             . '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true" focusable="false"><path d="' . SO_SOCIAL_SVG[$s['name']] . '"/></svg>'
@@ -54,7 +61,7 @@ function soSocialIconsHtml(): string {
 function soSocialPillsHtml(): string {
     $out = '';
     foreach (SO_SOCIAL as $s) {
-        if ($s['icon'] !== '') continue;
+        if ($s['icon'] !== '' || !soSocialLinked($s)) continue;
         $out .= '<a class="so-social-pill" href="' . htmlspecialchars($s['url'], ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener me" aria-label="Seat Outlet on ' . htmlspecialchars($s['name'], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($s['name'], ENT_QUOTES, 'UTF-8') . '</a>';
     }
     return $out;

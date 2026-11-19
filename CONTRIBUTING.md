@@ -82,14 +82,15 @@ reach beta.
   checks above, validates `composer.lock`, runs `composer audit`, and
   applies every migration (twice, to prove idempotency) plus the sample
   seed against a throwaway MySQL service container.
-- **`.github/workflows/deploy.yml`** is started by hand only
-  (`workflow_dispatch`): it lints, builds and uploads over SFTP, and is kept as a
-  manual fallback. A merge to `main` is NOT deployed by it. Beta is deployed by
-  `deploy/pull-deploy.sh`, which runs from cron on the server every 2 minutes,
-  pulls `main` and applies migrations (see `docs/pull-deploy.md`); it also
-  removes files that were deleted in git. There is no CI gate in front of it, so
-  keep `main` protected (required status checks and a pull request review).
-  Both workflows declare `permissions: contents: read`.
+- **Deploys** are done by `deploy/pull-deploy.sh` only, which runs from cron on
+  the server every 2 minutes, pulls `main` and applies migrations (see
+  `docs/pull-deploy.md`); it also removes files that were deleted in git. There is
+  no CI gate in front of it, so keep `main` protected (required status checks and
+  a pull request review). The old SFTP upload workflow (`deploy.yml`) was retired
+  on 18 Nov 2026: the server firewall blocks GitHub-hosted runners, so it could
+  never finish, and it was the only reader of most of the secrets below.
+  Every workflow declares the least `permissions` it needs and pins each
+  action to a full commit SHA (checked by `tools/test-actions-pinned.php`).
 - **`.github/workflows/lighthouse.yml`** runs weekly (or on demand from the
   Actions tab): fetches the live sitemap and runs real Google Lighthouse
   (Performance/Accessibility/Best Practices/SEO) against every URL in it
@@ -104,9 +105,13 @@ reach beta.
 
 ### GitHub Actions secrets (Settings → Secrets and variables → Actions)
 
-Required for deploy: `DB_PASS`, `CONSUMER_KEY`, `CONSUMER_SECRET`,
-`GAPI_KEY`, `GKGSAPI_KEY`, `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`,
-`RECAPTCHA_SECRET_KEY`, `FTP_HOST`, `FTP_USERNAME`, `FTP_PASSWORD`.
+Still read by a workflow: `CONSUMER_KEY`, `CONSUMER_SECRET` (`tn-check.yml`).
+No workflow deploys any more, so the rest (`DB_PASS`, `GAPI_KEY`, `GKGSAPI_KEY`,
+`AWS_ACCESS_KEY`, `AWS_SECRET_KEY`, `RECAPTCHA_SECRET_KEY`, `FTP_HOST`,
+`FTP_USERNAME`, `FTP_PASSWORD` and the optional ones below) are no longer read by
+GitHub Actions. The owner can delete them from the repository settings; the
+server keeps its own values in `inc/env.local.php`. The notes below record what
+each one was for.
 
 Optional: `SENTRY_DSN`, `SENTRY_ENVIRONMENT` - error monitoring is simply
 not initialized if these are left unset.
