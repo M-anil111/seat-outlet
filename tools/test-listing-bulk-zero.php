@@ -18,7 +18,10 @@ $GLOBALS['tn_degraded'] = false;
 lzCheck('not degraded: the listing did not fail', soListingUnanswered(['results' => []]) === false);
 $GLOBALS['tn_degraded'] = true;
 lzCheck('degraded, listing answered by the catalog copy: not a failure', soListingUnanswered(['results' => [], 'totalCount' => 0, '_bulk' => true]) === false);
-lzCheck('degraded, listing from the live feed: a failure', soListingUnanswered(['results' => []]) === true);
+// A list TicketNetwork itself answered (a "results" array, even empty) is a real answer although another lookup on the page failed: the
+// request-wide flag says nothing about this list (live, 19 Nov 2026: /category/west-end 503, then 200 with 0 results; see soListingAnswered()).
+lzCheck('degraded, the listing itself answered by the live feed (no events): not a failure', soListingUnanswered(['results' => []]) === false);
+lzCheck('degraded, an error body instead of a list: a failure', soListingUnanswered(['Message' => 'An error has occurred.']) === true);
 lzCheck('degraded, no listing at all: a failure', soListingUnanswered([]) === true && soListingUnanswered(null) === true);
 $GLOBALS['tn_degraded'] = false;
 foreach (['category.php' => "soListingUnanswered(\$eventsResponse)", 'performer.php' => "soListingUnanswered(\$results)", 'inc/listing.php' => "soListingUnanswered(\$o['listingResponse'])", 'header.php' => 'soListingUnanswered($soListingResp)'] as $f => $needle) {

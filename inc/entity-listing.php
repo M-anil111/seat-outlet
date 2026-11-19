@@ -53,7 +53,7 @@ function soNearbyVenuesWithEvents(array $venue, int $limit = 6): array {
 
 /**
  * @param array $c kind (venue|city|state|country), id, name, label, path ('/city/slug'), slug, prefix ('city'),
- *                 events, total, count, perPage, params, when, sort, defaultSort, isFiltered,
+ *                 events, total, count, perPage, params, when, sort, defaultSort, isFiltered, listingResponse (the list answer the events came from),
  *                 trail [['label','url']...] (between Home and this page), entity (raw API record, venue/city),
  *                 image (getEntityImage result or null), parent/stateParent ['url','text'], cityId, cityLabel
  */
@@ -69,7 +69,8 @@ function soRenderEntityListing(array $c): void {
     $kindNoun = ['venue' => 'Venue', 'city' => 'City', 'county' => 'County', 'state' => 'State', 'country' => 'Country'][$kind];
 
     // A feed that failed is not an empty page: 503 (the API counted as down), never a thin 200 that gets indexed or noindexed.
-    if ($total === 0 && $events === [] && soApiDegraded()) { soFeedDownGate($kindNoun); }
+    // The list itself failed (the caller passes the response it came from), not some other lookup on the page: see soListingAnswered().
+    if ($total === 0 && $events === [] && (array_key_exists('listingResponse', $c) ? soListingUnanswered($c['listingResponse']) : soApiDegraded())) { soFeedDownGate($kindNoun); }
 
     $pageRobots = null;
     if ($isZero || !empty($c['isFiltered'])) { $pageRobots = 'noindex, follow'; }

@@ -30,6 +30,7 @@ $trail = $stateId > 0 && $stateName !== '' ? [['label' => $stateName, 'url' => H
 
 soRenderEntityListing([
 	'kind' => 'city', 'id' => $id, 'name' => $cityLabel, 'label' => $cityLabel, 'path' => '/city/' . $canonSlug,
+	'listingResponse' => $eventsResponse,
 	'events' => $events, 'total' => (int) ($eventsResponse['totalCount'] ?? 0), 'count' => (int) ($eventsResponse['count'] ?? count($events)),
 	'perPage' => $perPage, 'params' => $params, 'when' => $when, 'sort' => $sort, 'defaultSort' => 'soonest', 'isFiltered' => $isFiltered,
 	'trail' => $trail, 'entity' => $city, 'cityId' => $id, 'cityLabel' => $cityLabel,

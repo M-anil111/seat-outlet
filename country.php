@@ -25,6 +25,7 @@ $events = $eventsResponse['results'] ?? [];
 
 soRenderEntityListing([
 	'kind' => 'country', 'id' => $code, 'name' => $countryLabel, 'label' => $countryLabel, 'path' => '/country/' . $canonSlug,
+	'listingResponse' => $eventsResponse,
 	'events' => $events, 'total' => (int) ($eventsResponse['totalCount'] ?? 0), 'count' => (int) ($eventsResponse['count'] ?? count($events)),
 	'perPage' => $perPage, 'params' => $params, 'when' => $when, 'sort' => $sort, 'defaultSort' => 'soonest', 'isFiltered' => $isFiltered,
 	'trail' => [], 'entity' => $raw, 'cityId' => 0, 'cityLabel' => '', 'image' => null, 'parent' => null, 'stateParent' => null,
