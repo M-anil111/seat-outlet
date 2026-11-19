@@ -330,12 +330,16 @@ function tnBulkFallback($endpoint, array $params, bool $failed = false): ?array 
     return $r;
 }
 
-/** Events per category id from the bulk copy (an event counts toward every category in its path): [id => count], or null when not ready. */
+/**
+ * Events per category id from the bulk copy (an event counts toward every category in its path): [id => count], or null when not ready.
+ * US events only, the same as the category page itself (country/alphaCode eq 'US' in category.php): a category whose events are all abroad
+ * (West End) has an empty, noindex page and stays out of the sitemap.
+ */
 function tnBulkCategoryCounts(?mysqli $db = null, ?string $nowUtc = null): ?array {
     $db = $db ?? (defined('MYSQLI') && MYSQLI instanceof mysqli ? MYSQLI : null);
     if (!$db) return null;
     try {
-        $st = $db->prepare("SELECT category_path, COUNT(*) FROM tn_bulk_events WHERE is_test = 0 AND has_tickets = 1 AND starts_local >= ? AND (takedown_at IS NULL OR takedown_at > ?) GROUP BY category_path");
+        $st = $db->prepare("SELECT category_path, COUNT(*) FROM tn_bulk_events WHERE is_test = 0 AND has_tickets = 1 AND country_code = 'US' AND starts_local >= ? AND (takedown_at IS NULL OR takedown_at > ?) GROUP BY category_path");
         if (!$st) return null;
         $today = ($nowUtc ? substr($nowUtc, 0, 10) : date('Y-m-d')) . ' 00:00:00';
         $nu = $nowUtc ?? gmdate('Y-m-d H:i:s');
