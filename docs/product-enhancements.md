@@ -6,9 +6,10 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 - **Size:** S is under a day, M is a few days, L is weeks.
 - **[OWNER]** means it touches the TicketNetwork call budget, a production setting, pricing, a legal statement or the brand. It needs the owner's approval first (see `CLAUDE.md`).
-- **[VERIFY]** means a platform rule, a legal point or a TicketNetwork behavior must be confirmed against the primary source before it ships. Nothing in this list quotes a statistic or a price; every "why" names the metric to watch, and the target is set after a baseline is measured.
+- **[VERIFY]** means a platform rule, a legal point or a TicketNetwork behavior must be confirmed against the primary source before it ships. Quoted figures and prices are existing baselines or examples, not invented targets; every "why" names the metric to watch, and the target is set after a baseline is measured.
 - **Metric** is the number that proves the change worked. Where tracking does not exist yet, item E164 to E173 builds it first.
 - Where an item says a piece "already exists", it extends that piece and does not rebuild it (E004 to E009, E143, E158, E159, E164 were rewritten after checking the JavaScript on 20 Nov). Existing pieces named here: `inc/leads-core.php` (sign-ups), `cron/send-price-alerts.php`, `cron/warm-event-details.php`, `cron/indexnow.php`, `inc/event-redirects.php`, `inc/tn-bulk-read.php` (catalog copy), `inc/sitemap-build.php`, `inc/seo-*.php`, `inc/page-spec.php`, `inc/adsense.php`, the admin CMS (`admin/`), and the order webhook in `ajax/`.
+- **The order webhook is thin today.** `ajax/tn-order-webhook.php` accepts only `order_id`, `event_id`, `total` and `currency`, stored in `verified_orders`. It has no buyer email, no order status and no click id. Items that need any of those (E008, E017, E018, E092, E098, E099, E111) first need that data to reach Seat Outlet, by extending the signed payload with TicketNetwork or by another verified route; plan that contract before the item.
 - Rules that apply to every item: no new TicketNetwork call on a hot path without reading `docs/reliability.md`; no full import and no change to the hourly bulk cron without approval; no production migration without a database dump first; one small pull request per item with a test listed in `ci.yml`.
 
 ---
@@ -23,13 +24,13 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E004. Pick up where you left off: widen it** [S]. Metric: return-visit conversion. How: the home page already shows recently viewed events and performers (`index.php`, `js/main.js`, `js/event-actions.js`); extend it to venues and cities viewed, and add a "price dropped" tag only when E096 stores a price history.
 
-**E005. Email option inside the "Still deciding?" card** [M]. Metric: alert sign-ups, then purchases from alert emails. How: `js/idle-nudge.js` already shows one polite card on event and artist pages; add a one-field "email me if the price drops" form (`soLeadForm`, `interest_type=event`) that feeds `cron/send-price-alerts.php`.
+**E005. Email option inside the "Still deciding?" card** [M]. Metric: alert sign-ups, then purchases from alert emails. How: `js/idle-nudge.js` already shows one polite card on event and artist pages; add a one-field "email me if the price drops" form (`soLeadForm` with `interest_type=event`, `alert_kind=price` and the current `baseline_price`, as `inc/leads-core.php` expects) that feeds `cron/send-price-alerts.php`.
 
-**E006. Seat-map failure rate in the health view** [S]. Metric: seat-map load success rate. How: `js/event-widget.js` already has a watchdog and sends `widget_load_failed` and `no_inventory`; post the same events to `ajax/vitals.php` so the failure rate per day is counted server-side and shown in the token-protected health view.
+**E006. Seat-map failure rate in the health view** [S]. Metric: seat-map load success rate. How: `js/event-widget.js` already has a watchdog and sends `widget_load_failed` and `no_inventory` to the data layer. `ajax/vitals.php` accepts only Web Vitals metrics today, so either extend it with an allow-listed event schema and a migration for storage, or add a separate small telemetry endpoint; then show the daily failure rate in the token-protected health view.
 
 **E007. Quantity from the URL** [S] [VERIFY]. Metric: conversion from ads and email. How: the quantity sheet (1 to 6+) exists in `js/event-qty.js`; add `?qty=` to pre-select it so an ad or email can carry the quantity; check that the widget accepts it.
 
-**E008. Match begin_checkout to the order** [M]. Metric: revenue per channel. How: `js/event-widget.js` already pushes `view_item`, `select_item` and `begin_checkout`; store a first-party click id on the Buy click and match it to the order webhook in `ajax/` so each purchase is attributed to its source, medium and campaign.
+**E008. Match begin_checkout to the order** [M]. Metric: revenue per channel. How: `js/event-widget.js` already pushes `view_item`, `select_item` and `begin_checkout`. The order webhook has no field for a click id, so first confirm that a signed TicketNetwork return or webhook can echo a first-party correlation ID; then store that ID on the Buy click and match it in `ajax/` so each purchase is attributed to its source, medium and campaign.
 
 **E009. Email capture on the saved-event heart** [M]. Metric: sign-ups per 1,000 event views. How: `js/saved-events.js` keeps saved events in the browser only; after the first save offer "email me if this event changes" with `soLeadForm`; one confirmation email through Brevo.
 
@@ -47,13 +48,13 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E016. Order confirmation with calendar, directions and parking** [M]. Metric: repeat purchase, partner clicks. How: `checkout.php` and `order-confirmation.php` already exist; add the calendar file (the event page builds one), a map link from the venue's `geoLocation`, and links to parking partners (E019).
 
-**E017. Post-purchase email series** [M]. Metric: support contacts per order, repeat purchase. How: use the order webhook payload: confirmation, "your tickets arrive on", day-before logistics, post-event "see the next date". Brevo templates; unsubscribe link in each.
+**E017. Post-purchase email series** [M]. Metric: support contacts per order, repeat purchase. How: use the order webhook payload: confirmation, "your tickets arrive on", day-before logistics, post-event "see the next date". Brevo templates; unsubscribe link in each. Needs the buyer's email to reach Seat Outlet first (see the note on the order webhook above).
 
-**E018. Order status lookup page** [M]. Metric: support tickets avoided. How: `inc/order-verify.php` exists; a form (email plus order number) that returns the order status from the data the webhook stored, rate limited with `inc/request-guard.php`.
+**E018. Order status lookup page** [M]. Metric: support tickets avoided. How: `verified_orders` stores no email and no status, so first extend the signed webhook and schema to store the status and a lookup credential; then build a rate-limited email-plus-order-number form using `inc/request-guard.php`.
 
 **E019. Parking, hotel and ride partner links** [L] [OWNER] [VERIFY]. Metric: partner revenue per order. How: apply to the partner programs you choose, read their terms on linking and disclosure, add disclosed links on the confirmation page and venue pages.
 
-**E020. "Alert me when this performer announces dates"** [M]. Metric: sign-ups from artist pages with no upcoming events (which now render as the no-events page). How: `soLeadForm` with `interest_type=performer`; a cron that compares new catalog events to subscribers; send through `cron/send-alerts.php`.
+**E020. "Alert me when this performer announces dates"** [M]. Metric: sign-ups from artist pages with no upcoming events (which now render as the no-events page). How: `cron/send-alerts.php` already mails performer interests for upcoming events that have tickets; add the form (`soLeadForm`, `interest_type=performer`) to the no-events page so those visitors can subscribe, and check that the cron's 7-day rule suits it.
 
 ---
 
@@ -73,7 +74,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E027. Defer the seat-map script** [M] [OWNER]. Metric: Total Blocking Time and interaction delay on event pages. How: load the Seatics script on first scroll or tap or when the map container enters view; trial on the beta host first; keep a visible "Loading seat map" state so no layout shift.
 
-**E028. Preload the hero image on entity pages** [S]. Metric: Largest Contentful Paint on artist, venue and city pages. How: `<link rel="preload" as="image" fetchpriority="high">` for the hero in `inc/page-hero.php`; confirm the critical-CSS test still passes.
+**E028. Preload the hero image on entity pages** [S]. Metric: Largest Contentful Paint on artist, venue and city pages. How: set `$pagePreloadImage` to the selected hero URL before including `header.php`, as `performer.php` already does, so the existing header emits `<link rel="preload" as="image" fetchpriority="high">`; do the same in `venue.php` and `city.php`; confirm the critical-CSS test still passes.
 
 **E029. Visual regression for critical CSS** [M]. Metric: layout shift regressions caught before release. How: extend `tools/test-critical-coverage.php` with screenshots at two widths of the fixture pages and a pixel diff threshold in CI.
 
@@ -217,7 +218,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 ## F. Email, SMS, CRM and lifecycle (E092 to E109)
 
-**E092. One customer record across sign-ups, alerts and orders** [L]. Metric: repeat purchase rate. How: `inc/leads-core.php` stores sign-ups; join them to orders by email hash from the order webhook; one table or a Brevo contact with attributes (interests, last order, city).
+**E092. One customer record across sign-ups, alerts and orders** [L]. Metric: repeat purchase rate. How: `inc/leads-core.php` stores sign-ups; join them to orders by email hash from the order webhook; one table or a Brevo contact with attributes (interests, last order, city). Needs the buyer's email to reach Seat Outlet first (see the note on the order webhook above).
 
 **E093. Welcome series for new subscribers** [M]. Metric: second-visit rate, first purchase. How: three Brevo emails over ten days (what Seat Outlet is and the guarantee, how to pick seats, top events in the subscriber's city); consent text must match `privacy-policy.php`.
 
@@ -227,11 +228,11 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E096. Price-alert upgrade with a visible price history** [M] [VERIFY]. Metric: alert-to-purchase rate. How: `cron/send-price-alerts.php` exists; store a daily low price per event in a small table and show "was $X, now $Y" only from stored data; migration needs a database dump first.
 
-**E097. Back-in-stock alert for events with no tickets** [S]. Metric: conversions from "Notify me". How: the empty-event form already collects the email; the alert cron sends when `hasTickets` turns true.
+**E097. Back-in-stock alert for events with no tickets** [S]. Metric: conversions from "Notify me". How: the empty-event form stores an event interest with no alert kind, and no cron reads it; add a stock-alert kind to `lead_interests` (migration after a dump), then add or extend a cron that sends when the event's `hasTickets` turns true.
 
-**E098. Cart and browse recovery** [M]. Metric: recovered revenue. How: hand-off click events (E008) plus an email only for people who gave consent; one email after a few hours, one after a day, then stop.
+**E098. Cart and browse recovery** [M]. Metric: recovered revenue. How: hand-off click events (E008) plus an email only for people who gave consent; one email after a few hours, one after a day, then stop. Needs the buyer's email to reach Seat Outlet first (see the note on the order webhook above).
 
-**E099. Post-event email: "see them again"** [M]. Metric: repeat purchases. How: the day after an event, email buyers the performer's next dates from the catalog; skip if none.
+**E099. Post-event email: "see them again"** [M]. Metric: repeat purchases. How: the day after an event, email buyers the performer's next dates from the catalog; skip if none. Needs the buyer's email to reach Seat Outlet first (see the note on the order webhook above).
 
 **E100. SMS alerts opt-in** [L] [OWNER] [VERIFY]. Metric: alert-to-purchase rate. How: choose a provider, read the carrier and TCPA rules for consent and quiet hours, add a separate SMS consent checkbox and a stop keyword; the privacy and cookie pages already mention SMS, confirm they match what is built.
 
@@ -261,7 +262,7 @@ Do not turn on spend until E008, E164 and E166 are done and the 5xx and ad-slot 
 
 **E110. Conversion tracking audit** [S]. Metric: matched conversions between ad platforms, analytics and orders. How: check the Google tag setup (the scripts are loaded under consent in `inc/consent.php`; confirm whether a Tag Manager container is in use), list each tag and trigger, and compare counts with the order webhook for a week.
 
-**E111. Server-side purchase events** [M]. Metric: conversion match rate. How: from the order webhook send purchase events to Google Ads and Meta through their server-side interfaces with consent and hashed email only; read each platform's current documentation first.
+**E111. Server-side purchase events** [M]. Metric: conversion match rate. How: from the order webhook send purchase events to Google Ads and Meta through their server-side interfaces with consent and hashed email only; read each platform's current documentation first. Needs the buyer's email to reach Seat Outlet first (see the note on the order webhook above).
 
 **E112. UTM and click-id capture** [S]. Metric: revenue by campaign. How: store `utm_*`, `gclid` and `fbclid` in a first-party cookie (consent permitting) and attach them to the hand-off click and the webhook match.
 
