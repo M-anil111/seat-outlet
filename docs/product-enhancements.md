@@ -9,7 +9,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 - **[VERIFY]** means a platform rule, a legal point or a TicketNetwork behavior must be confirmed against the primary source before it ships. Any quoted figure or price is an existing baseline or an example with its source and date (the Search Console exports and SE Ranking audits of 14 to 18 Nov 2026, code comments, or the live site on 20 Nov), not an invented target; every "why" names the metric to watch, and the target is set after a baseline is measured.
 - **Metric** is the number that proves the change worked. Where tracking does not exist yet, item E164 to E173 builds it first.
 - Where an item says a piece "already exists", it extends that piece and does not rebuild it (E004 to E009, E143, E158, E159, E164 were rewritten after checking the JavaScript on 20 Nov). Existing pieces named here: `inc/leads-core.php` (sign-ups), `cron/send-price-alerts.php`, `cron/warm-event-details.php`, `cron/indexnow.php`, `inc/event-redirects.php`, `inc/tn-bulk-read.php` (catalog copy), `inc/sitemap-build.php`, `inc/seo-*.php`, `inc/page-spec.php`, `inc/adsense.php`, the admin CMS (`admin/`), and the order webhook in `ajax/`.
-- **The order webhook is thin today.** `ajax/tn-order-webhook.php` accepts only `order_id`, `event_id`, `total` and `currency`, stored in `verified_orders`. It has no buyer email, no order status and no click id. Items that need any of those (E008, E017, E018, E092, E098, E099, E111) first need that data to reach Seat Outlet, by extending the signed payload with TicketNetwork or by another verified route; plan that contract before the item.
+- **The order webhook is thin today.** `ajax/tn-order-webhook.php` accepts only `order_id`, `event_id`, `total` and `currency`, stored in `verified_orders`. It has no buyer email, no order status and no click id. Items that need any of those (E008, E017, E018, E092, E099, E111) first need that data to reach Seat Outlet, by extending the signed payload with TicketNetwork or by another verified route; plan that contract before the item.
 - Rules that apply to every item: no new TicketNetwork call on a hot path without reading `docs/reliability.md`; no full import and no change to the hourly bulk cron without approval; no production migration without a database dump first; one small pull request per item with a test listed in `ci.yml`.
 
 ---
@@ -54,7 +54,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E019. Parking, hotel and ride partner links** [L] [OWNER] [VERIFY]. Metric: partner revenue per order. How: apply to the partner programs you choose, read their terms on linking and disclosure, add disclosed links on the confirmation page and venue pages.
 
-**E020. "Alert me when this performer announces dates"** [M]. Metric: sign-ups from artist pages with no upcoming events (which now render as the no-events page). How: `cron/send-alerts.php` already mails performer interests for upcoming events that have tickets; add the form (`soLeadForm`, `interest_type=performer`) to the no-events page so those visitors can subscribe, and check that the cron's 7-day rule suits it.
+**E020. Measure and tune the performer alert forms** [S]. Metric: sign-ups per 1,000 artist page views, split by the `artist-empty` (no upcoming events) and `artist-follow` sources. How: `performer.php` already renders `soLeadForm` with `interest_type=performer` in both places, and `cron/send-alerts.php` already mails performer interests for upcoming events that have tickets; count sign-ups per source from `leads`, test the wording and placement, and check that the cron's 7-day rule suits a performer who announces several dates in a week.
 
 ---
 
@@ -230,7 +230,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E097. Back-in-stock alert for events with no tickets** [S]. Metric: conversions from "Notify me". How: the empty-event form stores an event interest with no alert kind, and no cron reads it; add a stock-alert kind to `lead_interests` (migration after a dump), then add or extend a cron that sends when the event's `hasTickets` turns true.
 
-**E098. Cart and browse recovery** [M]. Metric: recovered revenue. How: hand-off click events (E008) plus an email only for people who gave consent; one email after a few hours, one after a day, then stop. Needs the buyer's email to reach Seat Outlet first (see the note on the order webhook above).
+**E098. Cart and browse recovery** [M]. Metric: recovered revenue. How: needs an identified visitor who gave consent (an existing opted-in lead, matched by a first-party id) and a hand-off click event with a correlation id (E008); then one email after a few hours, one after a day, then stop. Buyers are not required, so the order webhook's missing email does not block it.
 
 **E099. Post-event email: "see them again"** [M]. Metric: repeat purchases. How: the day after an event, email buyers the performer's next dates from the catalog; skip if none. Needs the buyer's email to reach Seat Outlet first (see the note on the order webhook above).
 
