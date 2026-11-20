@@ -6,7 +6,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 - **Size:** S is under a day, M is a few days, L is weeks.
 - **[OWNER]** means it touches the TicketNetwork call budget, a production setting, pricing, a legal statement or the brand. It needs the owner's approval first (see `CLAUDE.md`).
-- **[VERIFY]** means a platform rule, a legal point or a TicketNetwork behavior must be confirmed against the primary source before it ships. Quoted figures and prices are existing baselines or examples, not invented targets; every "why" names the metric to watch, and the target is set after a baseline is measured.
+- **[VERIFY]** means a platform rule, a legal point or a TicketNetwork behavior must be confirmed against the primary source before it ships. Any quoted figure or price is an existing baseline or an example with its source and date (the Search Console exports and SE Ranking audits of 14 to 18 Nov 2026, code comments, or the live site on 20 Nov), not an invented target; every "why" names the metric to watch, and the target is set after a baseline is measured.
 - **Metric** is the number that proves the change worked. Where tracking does not exist yet, item E164 to E173 builds it first.
 - Where an item says a piece "already exists", it extends that piece and does not rebuild it (E004 to E009, E143, E158, E159, E164 were rewritten after checking the JavaScript on 20 Nov). Existing pieces named here: `inc/leads-core.php` (sign-ups), `cron/send-price-alerts.php`, `cron/warm-event-details.php`, `cron/indexnow.php`, `inc/event-redirects.php`, `inc/tn-bulk-read.php` (catalog copy), `inc/sitemap-build.php`, `inc/seo-*.php`, `inc/page-spec.php`, `inc/adsense.php`, the admin CMS (`admin/`), and the order webhook in `ajax/`.
 - **The order webhook is thin today.** `ajax/tn-order-webhook.php` accepts only `order_id`, `event_id`, `total` and `currency`, stored in `verified_orders`. It has no buyer email, no order status and no click id. Items that need any of those (E008, E017, E018, E092, E098, E099, E111) first need that data to reach Seat Outlet, by extending the signed payload with TicketNetwork or by another verified route; plan that contract before the item.
@@ -48,9 +48,9 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E016. Order confirmation with calendar, directions and parking** [M]. Metric: repeat purchase, partner clicks. How: `checkout.php` and `order-confirmation.php` already exist; add the calendar file (the event page builds one), a map link from the venue's `geoLocation`, and links to parking partners (E019).
 
-**E017. Post-purchase email series** [M]. Metric: support contacts per order, repeat purchase. How: use the order webhook payload: confirmation, "your tickets arrive on", day-before logistics, post-event "see the next date". Brevo templates; unsubscribe link in each. Needs the buyer's email to reach Seat Outlet first (see the note on the order webhook above).
+**E017. Post-purchase email series** [M] [VERIFY]. Metric: support contacts per order, repeat purchase. How: confirm TicketNetwork can provide verified delivery and fulfillment dates and statuses and the buyer's email in a webhook or supported feed (today's webhook has only order id, event id, total and currency); only then use those fields for Brevo templates with an unsubscribe link in each.
 
-**E018. Order status lookup page** [M]. Metric: support tickets avoided. How: `verified_orders` stores no email and no status, so first extend the signed webhook and schema to store the status and a lookup credential; then build a rate-limited email-plus-order-number form using `inc/request-guard.php`.
+**E018. Order status lookup page** [M] [VERIFY]. Metric: support tickets avoided. How: `verified_orders` stores no email and no status, so first confirm a TicketNetwork-supported status endpoint or webhook payload and a privacy-safe email or order verification field; then build a rate-limited email-plus-order-number form using `inc/order-verify.php` and `inc/request-guard.php`.
 
 **E019. Parking, hotel and ride partner links** [L] [OWNER] [VERIFY]. Metric: partner revenue per order. How: apply to the partner programs you choose, read their terms on linking and disclosure, add disclosed links on the confirmation page and venue pages.
 
@@ -110,7 +110,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E043. Structured data validation in CI** [M]. Metric: rich-result eligibility. How: run the Event, FAQPage, BreadcrumbList and Organization JSON-LD from fixture pages through a schema validator in `tools/`; fail on missing required fields.
 
-**E044. Event rich-result completeness** [S] [VERIFY]. Metric: Event enhancement errors in Search Console. How: `soEventNode()` drops markup without an offer (correct); add `eventStatus`, `eventAttendanceMode` and `previousStartDate` when E014 detects a reschedule; check Google's Event structured data documentation for required fields.
+**E044. Event rich-result completeness** [S] [VERIFY]. Metric: Event enhancement errors in Search Console. How: `soEventNode()` already emits `eventStatus` and `eventAttendanceMode` and drops markup without an offer (correct); add `previousStartDate` only when E014 detects a reschedule, then check Google's Event structured data documentation for required fields.
 
 **E045. Organization and WebSite schema on the home page** [S]. Metric: knowledge panel signals, sitelinks search box eligibility. How: confirm `WebSite` with `SearchAction` is on the home page; add `Organization` with logo, `sameAs` (the real social profiles) and contact point.
 
@@ -218,7 +218,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 ## F. Email, SMS, CRM and lifecycle (E092 to E109)
 
-**E092. One customer record across sign-ups, alerts and orders** [L]. Metric: repeat purchase rate. How: `inc/leads-core.php` stores sign-ups; join them to orders by email hash from the order webhook; one table or a Brevo contact with attributes (interests, last order, city). Needs the buyer's email to reach Seat Outlet first (see the note on the order webhook above).
+**E092. One customer record across sign-ups, alerts and orders** [L] [VERIFY]. Metric: repeat purchase rate. How: the webhook and `verified_orders` hold no email or hash, so first obtain an owner- and TicketNetwork-approved customer identifier in a supported order feed; then join it to `inc/leads-core.php` in a table or a Brevo contact with attributes (interests, last order, city).
 
 **E093. Welcome series for new subscribers** [M]. Metric: second-visit rate, first purchase. How: three Brevo emails over ten days (what Seat Outlet is and the guarantee, how to pick seats, top events in the subscriber's city); consent text must match `privacy-policy.php`.
 
@@ -234,7 +234,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E099. Post-event email: "see them again"** [M]. Metric: repeat purchases. How: the day after an event, email buyers the performer's next dates from the catalog; skip if none. Needs the buyer's email to reach Seat Outlet first (see the note on the order webhook above).
 
-**E100. SMS alerts opt-in** [L] [OWNER] [VERIFY]. Metric: alert-to-purchase rate. How: choose a provider, read the carrier and TCPA rules for consent and quiet hours, add a separate SMS consent checkbox and a stop keyword; the privacy and cookie pages already mention SMS, confirm they match what is built.
+**E100. SMS alerts opt-in** [L] [OWNER] [VERIFY]. Metric: alert-to-purchase rate. How: choose a provider, read the carrier and TCPA rules for consent and quiet hours, add a separate SMS consent checkbox and a stop keyword, then add SMS-specific disclosures to the privacy and cookie pages after counsel review (neither page has SMS wording today).
 
 **E101. Preference center** [M]. Metric: unsubscribe rate. How: one page (token link) to change interests, frequency and city; Brevo attributes updated by the API.
 
@@ -294,7 +294,7 @@ Do not turn on spend until E008, E164 and E166 are done and the 5xx and ad-slot 
 
 **E124. Verified review collection** [M]. Metric: review count and rating. How: after delivery, email buyers a link to a third-party review platform; `/seat-outlet-reviews` and `customer-testimonials.php` exist, so display only real reviews with their source.
 
-**E125. Review markup rules** [S] [VERIFY]. Metric: rich-result eligibility without penalties. How: `AggregateRating` exists in `functions.php`; check Google's review snippet policy (self-serving reviews on your own site are restricted) before keeping it on any page type.
+**E125. Review markup rules** [S] [VERIFY]. Metric: rich-result eligibility without penalties. How: no `AggregateRating` is emitted today (`buildOrganizationSchema()` omits it on purpose, after a former invented rating was removed); collect and verify real reviews first (E124), then check Google's review snippet policy before adding markup to any page type.
 
 **E126. Guarantee page with the terms in plain words** [S] [OWNER]. Metric: conversion and complaints. How: `/worry-free-guarantee` exists; have the owner confirm every promise matches what TicketNetwork's guarantee covers.
 
