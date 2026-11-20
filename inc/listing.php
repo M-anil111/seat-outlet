@@ -373,6 +373,15 @@ function soListingAltCategories(int $categoryId, int $max = 5): array {
  * The results block under the list heading: rows plus the load-more footer, or the empty state. Shared by every listing
  * page so they all look and behave the same. $o: events, total, count, perPage, params, type ('' | 'search'), empty (array for soRenderListingEmpty), group.
  */
+/**
+ * The message js/events-listing.js shows when "More Events" cannot load the next page (throttled or failed ticket feed: the endpoint answers
+ * with no events while more are promised). Every page with that button prints it next to the button: without it a failed load was silent and
+ * the button looked broken (artist pages, 20 Nov 2026: /artist/lizzy-mcalpine). Hidden until a load fails; "Try again" repeats the request.
+ */
+function soLoadMoreErrorHtml(): string {
+    return '<p class="so-more-error" id="loadMoreError" role="alert" hidden>Could not load more events. <button type="button" class="so-more-retry" id="loadMoreRetry">Try again</button></p>';
+}
+
 function soRenderListingBody(array $o): void {
     $GLOBALS['soNoBannerAd'] = true;   // every ticket list (listing pages and search results) gets no ad directly above it
     $o += ['events' => [], 'total' => 0, 'perPage' => 20, 'params' => [], 'type' => '', 'empty' => null, 'group' => true, 'ranked' => null];
@@ -386,7 +395,7 @@ function soRenderListingBody(array $o): void {
 		<div id="eventsSection" class="section-artist-content event-row-all"><?php echo soRenderListingRows($events, ['group' => $o['group']]); ?></div>
 		<?php if ($pages > 1) { ?>
 			<div class="load-more-wrapper text-center mt-5 mb-3">
-				<p class="so-more-error" id="loadMoreError" role="alert" hidden>Could not load more events. <button type="button" class="so-more-retry" id="loadMoreRetry">Try again</button></p>
+				<?php echo soLoadMoreErrorHtml(); ?>
 				<button class="btn more-events-btn d-inline-flex align-items-center gap-2" id="loadMoreBtn"
 					data-total="<?php echo $total; ?>"<?php echo $o['type'] !== '' ? ' data-type="' . soListingH($o['type']) . '"' : ''; ?>
 					data-page="2"

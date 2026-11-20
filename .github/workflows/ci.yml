@@ -390,6 +390,8 @@ jobs:
 
       - name: Event page seat-map wiring (precheckout modes, begin_checkout once, no broken state)
         run: node tools/test-event-widget.mjs
+      - name: A failed "More Events" load says so and can be retried, on every page with the button
+        run: node tools/test-load-more-error.mjs
 
       - name: Site log (on failure)
         if: failure()
