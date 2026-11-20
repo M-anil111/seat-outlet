@@ -492,17 +492,28 @@ function soLoadMore(btn) {
     }
 
     btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
     soLoadMoreError(false);
     const spinner = soSpinner();
+    const label = btn.querySelector('.btn-text');
+    const labelWas = label ? label.textContent : '';
+    if (label) label.textContent = 'Loading...';
     if (spinner) spinner.classList.remove('d-none');
+    const done = () => {
+        if (spinner) spinner.classList.add('d-none');
+        if (label) label.textContent = labelWas;
+        btn.removeAttribute('aria-busy');
+    };
     const fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&params=${encodeURIComponent(JSON.stringify(params))}&type=${type || 'all'}`;
-    fetch(fetchUrl)
+    // One quiet second try after a failed or empty answer: the ticket feed is sometimes slow or throttled for a moment, and a visitor
+    // should not have to click twice. After that the page says so, with a "Try again" button (soLoadMoreErrorHtml in inc/listing.php).
+    const attemptLoad = (attempt) => fetch(fetchUrl)
     .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
     .then(data => {
-        if (spinner) spinner.classList.add('d-none');
         const got = (data.events || []).length;
         // An empty page while more events are still promised is a failed load (throttled or degraded API), not the end of the list.
         if (got === 0 && soLoadedEvents(list) < total) throw new Error('empty page');
+        done();
         soAppendRows(list, data);
         const back = soById('backToTopJs');
         if (data.hasMore) {
@@ -515,11 +526,13 @@ function soLoadMore(btn) {
         soSetProgress(list, total);
     })
     .catch(err => {
-        if (spinner) spinner.classList.add('d-none');
+        if (attempt < 1) { return new Promise(resolve => setTimeout(resolve, 1500)).then(() => attemptLoad(attempt + 1)); }
+        done();
         btn.disabled = false;
         soLoadMoreError(true);
         console.warn('More events failed', err);
     });
+    attemptLoad(0);
 }
 
 document.addEventListener('click', function (e) {

@@ -207,6 +207,7 @@ function soRenderEntityListing(array $c): void {
                             <?php } ?>
                             <?php if ($totalPages > 1) { ?>
                                 <div class="load-more-wrapper text-center mt-5 mb-3">
+                                	<?php echo soLoadMoreErrorHtml(); ?>
                                     <button class="btn more-events-btn d-inline-flex align-items-center gap-2" id="loadMoreBtn" data-total="<?php echo $total; ?>" data-page="2" data-params="<?php echo $h(json_encode($c['params'])); ?>" data-perpage="<?php echo $perPage; ?>">
                                         <span class="btn-text">More Events</span>
                                         <span class="spinner-border spinner-border-sm d-none" id="btnSpinner"></span>

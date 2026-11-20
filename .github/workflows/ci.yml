@@ -293,6 +293,8 @@ jobs:
         run: php tools/test-event-bulk-gate.php
       - name: The event title strip shows the lowest listed price from a live record
         run: php tools/test-event-price-anchor.php
+      - name: Every More Events button has its error block
+        run: php tools/test-load-more-markup.php
       - name: An artist with no upcoming events answers 200 (noindex) from the catalog copy
         run: php tools/test-performer-redirect-standin.php
       - name: No ads on error, noindex or empty pages
@@ -390,6 +392,9 @@ jobs:
 
       - name: Event page seat-map wiring (precheckout modes, begin_checkout once, no broken state)
         run: node tools/test-event-widget.mjs
+
+      - name: More Events retries once, then says so, and recovers
+        run: node tools/test-load-more-click.mjs
 
       - name: Site log (on failure)
         if: failure()
