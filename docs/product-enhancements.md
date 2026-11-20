@@ -8,7 +8,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 - **[OWNER]** means it touches the TicketNetwork call budget, a production setting, pricing, a legal statement or the brand. It needs the owner's approval first (see `CLAUDE.md`).
 - **[VERIFY]** means a platform rule, a legal point or a TicketNetwork behavior must be confirmed against the primary source before it ships. Nothing in this list quotes a statistic or a price; every "why" names the metric to watch, and the target is set after a baseline is measured.
 - **Metric** is the number that proves the change worked. Where tracking does not exist yet, item E164 to E173 builds it first.
-- Existing pieces are named so nothing is rebuilt: `inc/leads-core.php` (sign-ups), `cron/send-price-alerts.php`, `cron/warm-event-details.php`, `cron/indexnow.php`, `inc/event-redirects.php`, `inc/tn-bulk-read.php` (catalog copy), `inc/sitemap-build.php`, `inc/seo-*.php`, `inc/page-spec.php`, `inc/adsense.php`, the admin CMS (`admin/`), and the order webhook in `ajax/`.
+- Where an item says a piece "already exists", it extends that piece and does not rebuild it (E004 to E009, E143, E158, E159, E164 were rewritten after checking the JavaScript on 20 Nov). Existing pieces named here: `inc/leads-core.php` (sign-ups), `cron/send-price-alerts.php`, `cron/warm-event-details.php`, `cron/indexnow.php`, `inc/event-redirects.php`, `inc/tn-bulk-read.php` (catalog copy), `inc/sitemap-build.php`, `inc/seo-*.php`, `inc/page-spec.php`, `inc/adsense.php`, the admin CMS (`admin/`), and the order webhook in `ajax/`.
 - Rules that apply to every item: no new TicketNetwork call on a hot path without reading `docs/reliability.md`; no full import and no change to the hourly bulk cron without approval; no production migration without a database dump first; one small pull request per item with a test listed in `ci.yml`.
 
 ---
@@ -17,21 +17,21 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E001. Lowest price in the event title strip** [S]. Metric: click-through from event page to the seat map or checkout. How: when the live record carries `pricingInfo.lowPrice`, print "From $X" in `.so-evbar__facts` in `event.php`; hide it for saved copies (the page already drops prices then).
 
-**E002. Sticky mobile "See tickets" bar on event pages** [S]. Metric: seat-map interaction rate on mobile. How: a fixed bar in `event.php` with an anchor to `#tn-maps`, shown only after the title strip scrolls out (IntersectionObserver in `js/event-actions.js`), `padding-bottom` on the body so it never covers the footer.
+**E002. Sticky mobile "See tickets" bar on event pages** [S] [VERIFY]. Metric: seat-map interaction rate on mobile. How: first check whether the seat-map widget already shows its own mobile buy bar; if not, a fixed bar in `event.php` with an anchor to `#tn-maps`, shown only after the title strip scrolls out (IntersectionObserver in `js/event-actions.js`), `padding-bottom` on the body so it never covers the footer.
 
 **E003. Fee and price disclosure line near the seat map** [S] [VERIFY]. Metric: checkout abandonment, support tickets about "extra fees". How: confirm what TicketNetwork's checkout shows (fees included or added) from its documentation, then put one accurate sentence in `.so-evbar__note` and the guarantee page.
 
-**E004. "Recently viewed" strip on the home page** [S]. Metric: return-visit conversion. How: `js/event-actions.js` already records recently viewed events; render them as cards in `index.php` from `localStorage` (no server call, no personal data leaves the browser).
+**E004. Pick up where you left off: widen it** [S]. Metric: return-visit conversion. How: the home page already shows recently viewed events and performers (`index.php`, `js/main.js`, `js/event-actions.js`); extend it to venues and cities viewed, and add a "price dropped" tag only when E096 stores a price history.
 
-**E005. "Email me price drops" prompt on event pages** [M]. Metric: alert sign-ups, then purchases from alert emails. How: `cron/send-price-alerts.php` exists; add a compact form next to the seat map using `soLeadForm` with `interest_type=event`, shown after 20 seconds of seat-map interaction.
+**E005. Email option inside the "Still deciding?" card** [M]. Metric: alert sign-ups, then purchases from alert emails. How: `js/idle-nudge.js` already shows one polite card on event and artist pages; add a one-field "email me if the price drops" form (`soLeadForm`, `interest_type=event`) that feeds `cron/send-price-alerts.php`.
 
-**E006. Seat-map failure fallback and telemetry** [S]. Metric: seat-map load success rate. How: `event.php` already has a "Reload the seat map" button; add a timer that reveals it after N seconds without a Seatics ready event and posts a beacon to `ajax/vitals.php` so failures are counted.
+**E006. Seat-map failure rate in the health view** [S]. Metric: seat-map load success rate. How: `js/event-widget.js` already has a watchdog and sends `widget_load_failed` and `no_inventory`; post the same events to `ajax/vitals.php` so the failure rate per day is counted server-side and shown in the token-protected health view.
 
-**E007. Quantity pre-fill from the URL** [S] [VERIFY]. Metric: conversion from ads and email. How: check the Seatics map widget documentation for a quantity parameter; if it exists, pass `?qty=` from `event.php` into `$mapScriptUrl`.
+**E007. Quantity from the URL** [S] [VERIFY]. Metric: conversion from ads and email. How: the quantity sheet (1 to 6+) exists in `js/event-qty.js`; add `?qty=` to pre-select it so an ad or email can carry the quantity; check that the widget accepts it.
 
-**E008. Begin-checkout and purchase events with value** [M]. Metric: revenue per channel. How: push `begin_checkout` (event id, performer, category, price band) from the hand-off click; match the order webhook in `ajax/` to the stored click id so purchases are attributed to source, medium and campaign.
+**E008. Match begin_checkout to the order** [M]. Metric: revenue per channel. How: `js/event-widget.js` already pushes `view_item`, `select_item` and `begin_checkout`; store a first-party click id on the Buy click and match it to the order webhook in `ajax/` so each purchase is attributed to its source, medium and campaign.
 
-**E009. "Save this event" for everyone, not only empty events** [M]. Metric: sign-up rate per 1,000 event views. How: reuse the "Notify me" form from `event.php` as a side card on events with tickets; `interest_type=event`; one confirmation email through Brevo.
+**E009. Email capture on the saved-event heart** [M]. Metric: sign-ups per 1,000 event views. How: `js/saved-events.js` keeps saved events in the browser only; after the first save offer "email me if this event changes" with `soLeadForm`; one confirmation email through Brevo.
 
 **E010. Promo placement test** [S]. Metric: promo-code redemption, revenue per visit. How: `soPromoCodes()` and `soSpecPromoMarkup()` exist; test the block above and below the fold with the experiment flag from E168. Keep the "no promise of a discount" copy.
 
@@ -333,7 +333,7 @@ Do not turn on spend until E008, E164 and E166 are done and the 5xx and ad-slot 
 
 **E142. Map view for city and venue pages** [L]. Metric: engagement, clicks to events. How: events have a venue `geoLocation`; use a lightweight map library loaded on demand; cluster markers; keep a text list for accessibility and SEO.
 
-**E143. "Near me" with consent** [M]. Metric: use rate, conversion. How: ask for browser location only when the visitor taps the button; fall back to GeoIP city; never store coordinates.
+**E143. Use the location the site already has** [S]. Metric: use rate, conversion. How: `js/near-you.js` and `js/menu-near.js` already offer "near you" from cookies and a button-only permission prompt; add the same block to the home page and artist pages, never storing coordinates.
 
 **E144. Personalized home picks** [M]. Metric: home to event click-through. How: `home-personalized-picks.php` exists; base it on recently viewed categories and the GeoIP city, computed in the browser or from cached lists so no extra calls are made.
 
@@ -367,9 +367,9 @@ Do not turn on spend until E008, E164 and E166 are done and the 5xx and ad-slot 
 
 **E157. Skeleton states for lazy sections** [S]. Metric: CLS. How: reserve height for sections loaded after paint (home feeds, related events).
 
-**E158. Progressive web app basics** [M]. Metric: repeat visits from mobile. How: the footer references a service worker or manifest; confirm what is registered, cache only static assets, show an offline page, and test updates so a stale worker never serves old HTML.
+**E158. Install prompt follow-up** [S]. Metric: repeat visits from mobile. How: `js/install-prompt.js` exists (phones, after two pages, 30-day snooze); confirm the service worker caches only static assets and add an offline page; measure installs with a dataLayer event.
 
-**E159. Share sheet on event pages** [S]. Metric: shares, referral visits. How: Web Share API where available, copy-link fallback; the event page already has share and calendar buttons.
+**E159. Web Share API on event pages** [S]. Metric: shares, referral visits. How: `js/event-actions.js` has share and calendar buttons; use the native share sheet where the browser supports it and keep the copy-link fallback.
 
 **E160. Cookie and privacy bar tidy** [S]. Metric: consent rate, layout shift. How: `inc/consent.php` exists; make the bar fixed-height, the same wording on every page, keep "Decline" as easy as "Accept".
 
@@ -383,7 +383,7 @@ Do not turn on spend until E008, E164 and E166 are done and the 5xx and ad-slot 
 
 ## K. Analytics, experiments and reporting (E164 to E173)
 
-**E164. Event schema for measurement** [S]. Metric: complete funnel counts. How: one document naming each event (view_event, click_seatmap, begin_checkout, purchase, sign_up, search) with parameters; used by the tag setup and the order webhook.
+**E164. Document and complete the event names** [S]. Metric: complete funnel counts. How: events already exist (`search_submit`, `suggestion_click`, `menu_click`, `feed_card_click` in `js/analytics-events.js`; `view_item`, `select_item`, `begin_checkout`, `no_inventory`, `widget_load_failed` in `js/event-widget.js`); write one document listing every event and parameter, then add the missing ones (`sign_up`, `purchase` from the webhook).
 
 **E165. Key events configured in Google Analytics 4** [S]. Metric: conversions visible per channel. How: mark `purchase`, `begin_checkout` and `sign_up` as key events; check the debug view; confirm consent mode is respected.
 
