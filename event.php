@@ -103,6 +103,7 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
         'date' => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
         'time' => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
         'pin'  => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+        'tag'  => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9Z"/><circle cx="8" cy="8" r="1.5"/></svg>',
       ];
       $evLink = fn($part) => $part[0] ? '<a href="' . $h($part[0]) . '">' . $h($part[1]) . '</a>' : $h($part[1]);
       $evPlaceParts = $eventVenueName !== '' ? array_slice($eventVenueParts, 1) : $eventVenueParts;
@@ -110,6 +111,7 @@ if (!empty($primaryPerformer['id']) && !empty($primaryPerformer['name']) && !emp
     <ul class="so-evbar__facts">
       <?php if ($eventTimestamp) { ?><li><?php echo $evIco['date']; ?><span><?php echo $h(date('l, F j, Y', $eventTimestamp)); ?></span></li><?php } ?>
       <?php if ($eventTimestamp && $eventTimeText !== '') { ?><li><?php echo $evIco['time']; ?><span><?php echo $h($eventTimeText); ?></span></li><?php } ?>
+      <?php if ($eventLowPrice !== '' && $evAsOf === null) { /* the lowest listed price, from the live record only: a saved copy has none (its prices were dropped above) */ ?><li class="so-evbar__price"><?php echo $evIco['tag']; ?><span>From <?php echo $h($eventLowPrice); ?> per ticket</span></li><?php } ?>
       <?php if ($eventVenueName !== '' && $eventVenueParts) { ?><li><?php echo $evIco['pin']; ?><span><?php echo $evLink($eventVenueParts[0]); ?></span></li><?php } ?>
       <?php if ($evPlaceParts) { ?><li><?php echo $evIco['pin']; ?><span><?php echo implode("\u{2060}, ", array_map($evLink, $evPlaceParts)); /* word joiner: the comma never starts a new line after a link */ ?></span></li><?php } ?>
       <?php if ($eventInfoLink) { ?><li class="so-evbar__more-li"><a class="so-evbar__more" href="<?php echo $h($eventInfoLink[0]); ?>">More dates</a></li><?php } ?>
