@@ -325,10 +325,12 @@ function tnCacheKey($endpoint, array $params, $method = 'GET') {
 
 /** @return array{data:array,age:int}|null */
 function tnCacheEntry($key) {
+    $t0 = microtime(true);
     $file = cache_file_path($key);
     if (!is_file($file)) return null;
     $json = @file_get_contents($file);
     $data = $json !== false && $json !== '' ? json_decode($json, true) : null;
+    $GLOBALS['so_timers']['cache'] = ($GLOBALS['so_timers']['cache'] ?? 0.0) + (microtime(true) - $t0) * 1000;
     if (!is_array($data)) return null;
     return ['data' => $data, 'age' => max(0, time() - (int) @filemtime($file))];
 }
@@ -2000,15 +2002,15 @@ function cache_file_path($key) {
 }
 
 function cache_get($key, $ttl = 86400) {
+    $t0 = microtime(true);
     $file = cache_file_path($key);
 
-    if (!is_file($file)) return false;
-    if ($ttl > 0 && (time() - filemtime($file)) > $ttl) return false;
+    if (!is_file($file)) { $GLOBALS['so_timers']['cache'] = ($GLOBALS['so_timers']['cache'] ?? 0.0) + (microtime(true) - $t0) * 1000; return false; }
+    if ($ttl > 0 && (time() - filemtime($file)) > $ttl) { $GLOBALS['so_timers']['cache'] = ($GLOBALS['so_timers']['cache'] ?? 0.0) + (microtime(true) - $t0) * 1000; return false; }
 
     $json = file_get_contents($file);
-    if ($json === false || $json === '') return false;
-
-    $data = json_decode($json, true);
+    $data = $json !== false && $json !== '' ? json_decode($json, true) : null;
+    $GLOBALS['so_timers']['cache'] = ($GLOBALS['so_timers']['cache'] ?? 0.0) + (microtime(true) - $t0) * 1000;   // file reads of the data cache (Server-Timing "cache")
     return is_array($data) ? $data : false;
 }
 
@@ -2994,6 +2996,7 @@ function sendPageCacheHeaders() {
     $status = http_response_code() ?: 200;
     if (!empty($GLOBALS['tn_degraded'])) {
         header('Cache-Control: no-store');   // built without API data: never let a CDN keep it
+        ob_start('soTimingOnlyGuard');
     } elseif ($status === 404 || $status === 200) {
         header($status === 404
             ? 'Cache-Control: public, max-age=0, s-maxage=60'
@@ -3003,7 +3006,14 @@ function sendPageCacheHeaders() {
         ob_start('soDegradedGuard');
     } else {
         header('Cache-Control: no-store');
+        ob_start('soTimingOnlyGuard');
     }
+}
+
+/** Output callback for pages that are not stored or snapshotted (degraded, errors): only adds the Server-Timing header. */
+function soTimingOnlyGuard($buffer) {
+    if (!headers_sent()) { header('Server-Timing: ' . soServerTimingHeader()); }
+    return $buffer;
 }
 
 /**
