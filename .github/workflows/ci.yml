@@ -291,6 +291,8 @@ jobs:
         run: php tools/test-event-over-redirect.php
       - name: An event the catalog copy holds answers 200 when the live lookup is refused
         run: php tools/test-event-bulk-gate.php
+      - name: The event title strip shows the lowest listed price from a live record
+        run: php tools/test-event-price-anchor.php
       - name: An artist with no upcoming events answers 200 (noindex) from the catalog copy
         run: php tools/test-performer-redirect-standin.php
       - name: No ads on error, noindex or empty pages
