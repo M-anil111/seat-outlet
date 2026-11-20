@@ -48,6 +48,18 @@ $soMenuDef = [
 // A link written "@category:<id>" or "@city:<id>:<label>" is turned into the clean registry slug (see inc/slugs.php), so no id is ever
 // written into a URL: the id only looks the entity up.
 if (function_exists('soSlug')) {
+    if (function_exists('soSlugWarm')) {   // one query per type for every "@category:" and "@city:" link, not one query per link
+        $warm = [];
+        foreach ($soMenuDef as $m) {
+            foreach ($m['groups'] as $grp) {
+                foreach ($grp['links'] as $link) {
+                    if (preg_match('/^@category:(\d+)$/', $link[1], $mm)) { $warm[] = ['category', (int) $mm[1]]; }
+                    elseif (preg_match('/^@city:(\d+):/', $link[1], $mm)) { $warm[] = ['city', (int) $mm[1]]; }
+                }
+            }
+        }
+        soSlugWarm($warm);
+    }
     foreach ($soMenuDef as $i => $m) {
         foreach ($m['groups'] as $g => $grp) {
             foreach ($grp['links'] as $l => $link) {
