@@ -31,12 +31,13 @@ const browser = await chromium.launch();
 async function run(mode) {
   const page_ = await (await browser.newContext()).newPage();
   let calls = 0;
+  const times = [];   // when each endpoint request arrived
   await page_.route('http://zq.test/**', (r) => {
     const u = new URL(r.request().url());
     if (u.pathname === '/artist') return r.fulfill({ status: 200, contentType: 'text/html', body: page });
     if (u.pathname === '/js/events-listing.min.js') return r.fulfill({ status: 200, contentType: 'application/javascript', body: js });
     if (u.pathname === '/ajax/load-more-events.php') {
-      calls++;
+      calls++; times.push(Date.now());
       const good = { events: [{ id: 3 }, { id: 4 }], html: row(3) + row(4), totalCount: 4, currentPage: 2, nextPage: null, hasMore: false };
       const fail503 = () => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
       if (mode === 'ok') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(good) });
@@ -60,6 +61,7 @@ async function run(mode) {
   await page_.waitForFunction(() => !document.getElementById('loadMoreBtn').hasAttribute('aria-busy'));   // the load has finished either way
   const state = async () => ({
     calls,
+    gap: times.length > 1 ? times[1] - times[0] : null,
     rows: await page_.locator('.performer-event-item').count(),
     message: await page_.locator('#loadMoreError').isVisible(),
     buttonVisible: await btn.isVisible(),
@@ -83,6 +85,7 @@ check('ok: one request, rows added, no message', [s.calls, s.rows, s.message], [
 check('ok: the list is complete so the button is hidden', s.buttonVisible, false);
 s = await run('flaky');
 check('flaky: one quiet retry, rows added, no message', [s.calls, s.rows, s.message], [2, 4, false]);
+check('flaky: the retry waits about 1.5 s, not immediately', s.gap !== null && s.gap >= 1400, true);
 s = await run('down');
 check('down: two requests, no rows added', [s.calls, s.rows], [2, 2]);
 check('down: the message is shown', s.message, true);
