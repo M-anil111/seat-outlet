@@ -476,7 +476,7 @@ function soLoadMoreError(show) {
     if (err) err.hidden = !show;
 }
 
-function soLoadMore(btn) {
+function soLoadMore(btn, fresh) {
     if (btn.disabled) return;
     const list = soById('eventsSection');
     if (!list) return;
@@ -507,7 +507,7 @@ function soLoadMore(btn) {
     const fetchUrl = `/ajax/load-more-events.php?page=${page}&perPage=${perPage}&params=${encodeURIComponent(JSON.stringify(params))}&type=${type || 'all'}`;
     // One quiet second try after a failed or empty answer: the ticket feed is sometimes slow or throttled for a moment, and a visitor
     // should not have to click twice. After that the page says so, with a "Try again" button (soLoadMoreErrorHtml in inc/listing.php).
-    const attemptLoad = (attempt) => fetch(fetchUrl)
+    const attemptLoad = (attempt) => fetch(fetchUrl, { cache: (attempt > 0 || fresh) ? 'reload' : 'default' })   // a retry must reach the server, not a stored failure
     .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
     .then(data => {
         const got = (data.events || []).length;
@@ -544,7 +544,7 @@ document.addEventListener('click', function (e) {
     if (more) { soLoadMore(more); return; }
     if (e.target.closest('#loadMoreRetry')) {
         const b = soById('loadMoreBtn');
-        if (b) soLoadMore(b);
+        if (b) soLoadMore(b, true);
     }
 });
 

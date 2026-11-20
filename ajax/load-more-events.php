@@ -89,6 +89,7 @@ try {
         'hasMore'     => $hasMore
     ]);
 } catch (Throwable $e) {
+    header('Cache-Control: no-store');   // the 5 minute header above is for answers; a failure must never be replayed by a browser or the CDN
     http_response_code(500);
     echo json_encode([
         'events'      => [],

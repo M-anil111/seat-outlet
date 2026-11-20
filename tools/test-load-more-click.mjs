@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
-const js = readFileSync(root + 'js/events-listing.js', 'utf8');
+const js = readFileSync(root + 'js/events-listing.min.js', 'utf8');   // the file the site serves (soAsset)
 const listing = readFileSync(root + 'inc/listing.php', 'utf8');
 const errorBlock = (listing.match(/function soLoadMoreErrorHtml\(\): string \{\s*return '(.*?)';\s*\}/s) || [])[1] || '';
 if (!errorBlock) { console.log('FAIL the error block helper was not found in inc/listing.php'); process.exit(1); }
@@ -22,7 +22,7 @@ const page = `<!doctype html><html><head><style>.d-none{display:none!important}[
 <div class="load-more-wrapper">${errorBlock}
 <button class="btn more-events-btn" id="loadMoreBtn" data-total="4" data-page="2" data-params='{"performerFilter":"id eq 1"}' data-perpage="2"><span class="btn-text">More Events</span><span class="btnSpinner spinner-border d-none"></span></button>
 <button class="btn d-none" id="backToTopJs">Back to Top</button></div>
-<script src="/js/events-listing.js"></script></body></html>`;
+<script src="/js/events-listing.min.js"></script></body></html>`;
 
 let fail = 0;
 const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) { console.log(`FAIL ${name}: got ${JSON.stringify(got)}, wanted ${JSON.stringify(want)}`); fail++; } };
@@ -34,7 +34,7 @@ async function run(mode) {
   await page_.route('http://zq.test/**', (r) => {
     const u = new URL(r.request().url());
     if (u.pathname === '/artist') return r.fulfill({ status: 200, contentType: 'text/html', body: page });
-    if (u.pathname === '/js/events-listing.js') return r.fulfill({ status: 200, contentType: 'application/javascript', body: js });
+    if (u.pathname === '/js/events-listing.min.js') return r.fulfill({ status: 200, contentType: 'application/javascript', body: js });
     if (u.pathname === '/ajax/load-more-events.php') {
       calls++;
       const good = { events: [{ id: 3 }, { id: 4 }], html: row(3) + row(4), totalCount: 4, currentPage: 2, nextPage: null, hasMore: false };
@@ -50,7 +50,14 @@ async function run(mode) {
   await page_.goto('http://zq.test/artist');
   const btn = page_.locator('#loadMoreBtn');
   await btn.click();
-  await page_.waitForTimeout(mode === 'ok' ? 600 : 3300);   // the quiet retry waits 1.5 s
+  // Wait for the end state the mode should reach, not a fixed time (the quiet retry waits 1.5 s).
+  const done = { ok: () => page_.waitForFunction(() => document.querySelectorAll('.performer-event-item').length >= 4),
+                 flaky: () => page_.waitForFunction(() => document.querySelectorAll('.performer-event-item').length >= 4),
+                 down: () => page_.locator('#loadMoreError').waitFor({ state: 'visible', timeout: 10000 }),
+                 empty: () => page_.locator('#loadMoreError').waitFor({ state: 'visible', timeout: 10000 }),
+                 'down-then-up': () => page_.locator('#loadMoreError').waitFor({ state: 'visible', timeout: 10000 }) }[mode];
+  await done();
+  await page_.waitForFunction(() => !document.getElementById('loadMoreBtn').hasAttribute('aria-busy'));   // the load has finished either way
   const state = async () => ({
     calls,
     rows: await page_.locator('.performer-event-item').count(),
@@ -64,7 +71,8 @@ async function run(mode) {
   if (mode === 'down-then-up') {
     check('down-then-up: after two failures the message shows', [s.calls, s.message, s.buttonEnabled], [2, true, true]);
     await page_.locator('#loadMoreRetry').click();
-    await page_.waitForTimeout(600);
+    await page_.waitForFunction(() => document.querySelectorAll('.performer-event-item').length >= 4);
+    await page_.waitForFunction(() => document.getElementById('loadMoreError').hidden);
     return { ...(await state()), afterRetry: true };
   }
   return s;

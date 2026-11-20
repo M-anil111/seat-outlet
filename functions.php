@@ -5736,7 +5736,7 @@ function renderArtistLocationPage(string $dimension, string $urlPrefix): void {
                                 </div>
                                 <?php if ($total_pages > 1) { ?>
                                     <div class="load-more-wrapper text-center mt-5 mb-3">
-                                    	<?php echo soLoadMoreErrorHtml(); ?>
+                                        <?php echo soLoadMoreErrorHtml(); ?>
                                         <button
                                             class="btn more-events-btn d-inline-flex align-items-center gap-2"
                                             id="loadMoreBtn"
@@ -6043,7 +6043,7 @@ function renderCategoryLocationPage(string $categoryKey, string $categoryLabel, 
                                 </div>
                                 <?php if ($total_pages > 1) { ?>
                                     <div class="load-more-wrapper text-center mt-5 mb-3">
-                                    	<?php echo soLoadMoreErrorHtml(); ?>
+                                        <?php echo soLoadMoreErrorHtml(); ?>
                                         <button
                                             class="btn more-events-btn d-inline-flex align-items-center gap-2"
                                             id="loadMoreBtn"
