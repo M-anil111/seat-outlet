@@ -52,6 +52,26 @@ function soCategoryHref(int $id, string $name): string {
     return '/category/' . soSlug('category', $name, $id);
 }
 
+/** The ticket API request for one page of a hub's categories: the one place that builds it, so the batch below and the reader share a cache key. */
+function soHubCategoryRequest(string $hubHref, int $page = 1): array {
+    $root = SO_HUB_ROOTS[$hubHref]['path'];
+    return ['/catalog/v2/categories', ['filter' => "startswith(path, '" . tnEscapeFilterValue($root) . "') and path ne '" . tnEscapeFilterValue($root) . "'", 'perPage' => 200, 'page' => $page]];
+}
+
+/**
+ * Fetches the first page of every hub's categories in one parallel batch. On a cold cache the menu used to ask for the three hubs one
+ * after another (three round trips in a row, about 2 to 4 s on a page that has nothing else to wait for); now it waits for one. Entries
+ * already cached are not fetched again, so with a warm cache this makes no call.
+ */
+function soHubPrefetch(): void {
+    static $done = false;
+    if ($done || !function_exists('tnRequestMulti')) return;
+    $done = true;
+    $batch = [];
+    foreach (array_keys(SO_HUB_ROOTS) as $hubHref) { $batch[] = soHubCategoryRequest($hubHref, 1); }
+    try { tnRequestMulti($batch); } catch (Throwable $e) { /* the readers below ask one at a time, as before */ }
+}
+
 /**
  * Sub-categories of a hub (see SO_HUB_ROOTS), busiest first.
  * The API keeps ticket counts on the lowest level only for some branches (Basketball itself says 0 while Professional (NBA) beneath it
@@ -66,7 +86,8 @@ function soHubSubcategories(string $hubHref): array {
     $depth = count(array_filter(explode('.', $root)));
     $all = [];
     for ($page = 1; $page <= 6; $page++) {
-        $data = tnRequest('/catalog/v2/categories', ['filter' => "startswith(path, '" . tnEscapeFilterValue($root) . "') and path ne '" . tnEscapeFilterValue($root) . "'", 'perPage' => 200, 'page' => $page]);
+        [$endpoint, $params] = soHubCategoryRequest($hubHref, $page);
+        $data = tnRequest($endpoint, $params);
         $chunk = $data['results'] ?? [];
         foreach ($chunk as $c) { $all[] = $c; }
         if (count($chunk) < 200) break;

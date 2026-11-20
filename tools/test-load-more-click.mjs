@@ -13,7 +13,7 @@ import { chromium } from 'playwright';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const js = readFileSync(root + 'js/events-listing.min.js', 'utf8');   // the file the site serves (soAsset)
 const listing = readFileSync(root + 'inc/listing.php', 'utf8');
-const errorBlock = (listing.match(/function soLoadMoreErrorHtml\(\): string \{\s*return '(.*?)';\s*\}/s) || [])[1] || '';
+const errorBlock = (listing.match(/function soLoadMoreErrorHtml\(\): string \{.*?return '(.*?)';\s*\}/s) || [])[1] || '';
 if (!errorBlock) { console.log('FAIL the error block helper was not found in inc/listing.php'); process.exit(1); }
 
 const row = (n) => `<div class="performer-event-item" data-so-count="1"><a href="/event/zq-${n}">Zq Event ${n}</a></div>`;

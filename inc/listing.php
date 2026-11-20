@@ -17,6 +17,10 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  * Print it once, inside the .load-more-wrapper, before the button, on every page that prints #loadMoreBtn.
  */
 function soLoadMoreErrorHtml(): string {
+    // A page that prints a More Events button needs js/events-listing.js whatever its URL is. The footer cannot tell from the path alone: the live
+    // Cloudflare Worker rewrites /county/x, /state/x, /concerts-city/x and the other location pages to /county?slug=x, so the origin sees a path
+    // with no trailing segment. Every button prints this block (tools/test-load-more-markup.php), so printing it is the signal.
+    $GLOBALS['soLoadMoreRendered'] = true;
     return '<p class="so-more-error" id="loadMoreError" role="alert" hidden>Could not load more events. <button type="button" class="so-more-retry" id="loadMoreRetry">Try again</button></p>';
 }
 
