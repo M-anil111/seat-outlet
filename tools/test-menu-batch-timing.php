@@ -41,6 +41,14 @@ $h = soServerTimingHeader();
 mbCheck('Server-Timing shape', preg_match('/^app;dur=\d+, tn;dur=2400, tnlive;desc="3", tncached;desc="7"$/', $h) === 1, true);
 preg_match('/app;dur=(\d+)/', $h, $m);
 mbCheck('app time is about 1.23 s and a multiple of 10', [(int) $m[1] >= 1220 && (int) $m[1] <= 1290, (int) $m[1] % 10], [true, 0]);
+// Phase marks: the time since the previous mark goes to the named phase, and the header lists the phases.
+unset($GLOBALS['so_timers']);
+soTimerMark('aa'); usleep(30000); soTimerMark('bb'); usleep(30000); soTimerMark('aa');
+mbCheck('phase marks add up per name', [$GLOBALS['so_timers']['bb'] >= 25, $GLOBALS['so_timers']['bb'] < 200], [true, true]);
+mbCheck('both phases are in the header', preg_match('/, aa;dur=\d+, bb;dur=\d+$/', soServerTimingHeader()) === 1, true);
+foreach (['header.php' => "soTimerMark('head')", 'footer.php' => "soTimerMark('main')"] as $f => $needle) {
+    mbCheck("$f marks its phase", strpos((string) file_get_contents($root . '/' . $f), $needle) !== false, true);
+}
 // tnProfile counts without TN_PROFILE set.
 putenv('TN_PROFILE'); unset($GLOBALS['so_tn_stat']);
 tnProfile('/x', true, 0); tnProfile('/x', false, 400); tnProfile('/y', false, 600);

@@ -1471,42 +1471,65 @@ function getS3PublicUrl($key) {
     return AWS_CDN_URL . $key;
 }
 
+/**
+ * The stored biography for a performer, or '' when there is none yet. Never calls another site during the page view: until 20 Nov 2026
+ * a performer with no stored bio made the visitor wait for a Wikipedia request (10 s timeout, nothing stored when it failed, so every
+ * view paid again: /artist/lizzy-mcalpine answered in 13 s with no ticket call at all). The lookup now runs after the page has been
+ * sent (soBioQueueFetch) and is asked for at most once every 6 hours per performer whatever the answer.
+ */
 function getArtistBio($artistName, $performerId) {
-
+    $t0 = microtime(true);
     $bio = get_bio($performerId);
-
-    if(!empty($bio)) {
+    $GLOBALS['so_timers']['bio'] = ($GLOBALS['so_timers']['bio'] ?? 0.0) + (microtime(true) - $t0) * 1000;
+    if (!empty($bio)) {
         return $bio['bio'];
     }
+    soBioQueueFetch((string) $artistName, (int) $performerId);
+    return '';
+}
 
+const SO_BIO_RETRY_SECONDS = 21600;   // a performer's bio is asked for at most this often, found or not
+
+/** Queues the Wikipedia lookup for after the response (the same pattern as the stale-while-revalidate refresh). One try per performer per 6 hours. */
+function soBioQueueFetch(string $artistName, int $performerId): void {
+    static $queued = [];
+    if ($performerId <= 0 || isset($queued[$performerId])) return;
+    if (cache_get('bio_try_' . $performerId, SO_BIO_RETRY_SECONDS) !== false) return;
+    $queued[$performerId] = true;
+    cache_set('bio_try_' . $performerId, ['at' => time()]);
+    if (PHP_SAPI === 'cli' && getenv('SO_BIO_FETCH_CLI') !== '1') return;   // tests and cron never reach out from here
+    register_shutdown_function(function () use ($artistName, $performerId) {
+        if (PHP_SAPI !== 'cli') {
+            if (!function_exists('fastcgi_finish_request')) return;   // no way to answer first: never make the visitor wait for it
+            @fastcgi_finish_request();
+        }
+        soBioFetchAndStore($artistName, $performerId);
+    });
+}
+
+/** The Wikipedia lookup itself: 2 s to connect, 4 s in all. A definite answer (an extract, or no article) is stored; a failure is not. */
+function soBioFetchAndStore(string $artistName, int $performerId): void {
     $artistName = trim(preg_replace('/\s*\(.*?\)|\s*feat\.?.*/i', '', $artistName));
-
-    $url = 'https://en.wikipedia.org/w/api.php'
-         . '?action=query'
-         . '&prop=extracts'
-         . '&exintro=1'
-         . '&explaintext=1'
-         . '&redirects=1'
-         . '&titles=' . urlencode($artistName)
-         . '&format=json';
-
-    $response = curlGet($url);
-    if (!$response) return '';
-
+    if ($artistName === '') return;
+    $url = 'https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&redirects=1&titles=' . urlencode($artistName) . '&format=json';
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 2, CURLOPT_TIMEOUT => 4, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 3,
+        CURLOPT_USERAGENT => 'SeatOutlet/1.0 (' . HOME_URL . ')',
+    ]);
+    $response = curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    if (!$response || $code !== 200) return;
     $data = json_decode($response, true);
-    if (empty($data['query']['pages'])) return '';
-
+    if (empty($data['query']['pages'])) return;
     $page = reset($data['query']['pages']);
-    // A title with no Wikipedia article comes back without an 'extract' key.
-    // Store an empty string (not NULL) so the miss is cached even if the
-    // column is NOT NULL, and never let a cache write take the page down.
+    // A title with no Wikipedia article comes back without an 'extract' key: stored as an empty string so the miss is kept too.
     $extract = trim((string) ($page['extract'] ?? ''));
     try {
         set_bio($performerId, $extract);
     } catch (\Throwable $e) {
         error_log('Bio cache write failed (' . $performerId . '): ' . $e->getMessage());
     }
-    return $extract;
 }
 
 function set_bio($performerId, $bio, $mysqli = MYSQLI) {
@@ -3275,12 +3298,25 @@ function soAliasRedirect($to = null) {
  * cache. Added 20 Nov 2026 to explain pages that took 2 to 10 s with a warm cache (measured from outside, no way to see inside). It
  * carries no names, ids or data.
  */
+/** Attributes the time since the previous mark (or since the request began) to a named phase; Server-Timing reports each one. */
+function soTimerMark(string $name): void {
+    static $last = null;
+    $now = microtime(true);
+    $last ??= (float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? $now);
+    $GLOBALS['so_timers'][$name] = ($GLOBALS['so_timers'][$name] ?? 0.0) + ($now - $last) * 1000;
+    $last = $now;
+}
+
 function soServerTimingHeader(): string {
     $st = $GLOBALS['so_tn_stat'] ?? ['live' => 0, 'cached' => 0, 'ms' => 0.0];
     $start = (float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true));
     $r = fn(float $ms): int => (int) (round($ms / 10) * 10);
-    return 'app;dur=' . $r((microtime(true) - $start) * 1000) . ', tn;dur=' . $r((float) $st['ms'])
+    $out = 'app;dur=' . $r((microtime(true) - $start) * 1000) . ', tn;dur=' . $r((float) $st['ms'])
         . ', tnlive;desc="' . (int) $st['live'] . '", tncached;desc="' . (int) $st['cached'] . '"';
+    foreach (($GLOBALS['so_timers'] ?? []) as $name => $ms) {   // named phases a page records itself
+        if (preg_match('/^[a-z0-9_]{1,16}$/', (string) $name)) $out .= ', ' . $name . ';dur=' . $r((float) $ms);
+    }
+    return $out;
 }
 
 function soDegradedGuard($buffer, $phase = null) {
