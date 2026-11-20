@@ -245,7 +245,7 @@ function tnCallerClass(): string {
  * time, the class token is given back. $dir is the cache directory (the bucket files live there).
  * $now fixes the clock (tests): every bucket sees the same instant, so no token refills between two calls, and nothing waits.
  */
-function tnBudgetWait(string $class, float $rate, string $dir, float $maxWait = 1.5, ?float $now = null): bool {
+function tnBudgetWaitRaw(string $class, float $rate, string $dir, float $maxWait = 1.5, ?float $now = null): bool {
     $main = $dir . 'tn_bucket.json';
     if ($class === 'visitor') return $now === null ? tnBucketWait(false, $rate, $main, $maxWait) : tnBucketTake(false, $rate, $main, $now);
     if ($class === 'background') return tnBucketTake(true, $rate, $main, $now);
@@ -375,4 +375,12 @@ function tnTokenScope(string $extra = ''): string {
 function tnTokenKeySuffix(string $extra = ''): string {
     $extra = preg_replace('/[^a-z0-9_]/i', '', $extra);
     return $extra === '' ? '' : '_' . $extra;
+}
+
+/** tnBudgetWaitRaw() with the time it took added to the page's Server-Timing ("budget": a visitor waits here, up to 1.5 s a call, for a token). */
+function tnBudgetWait(string $class, float $rate, string $dir, float $maxWait = 1.5, ?float $now = null): bool {
+    $t0 = microtime(true);
+    $ok = tnBudgetWaitRaw($class, $rate, $dir, $maxWait, $now);
+    $GLOBALS['so_timers']['budget'] = ($GLOBALS['so_timers']['budget'] ?? 0.0) + (microtime(true) - $t0) * 1000;
+    return $ok;
 }
