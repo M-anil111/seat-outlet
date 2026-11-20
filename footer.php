@@ -182,7 +182,7 @@ if (empty($soCatTilesSkip) && function_exists('soRenderCategoryTiles') && $soCtP
 $soPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $soIsHome = ($soPath === '/' || $soPath === '/index.php');
 $soIsSearch = ($soPath === '/search');
-$soHasEventList = (bool) preg_match('#^/(search|buy-tickets-online|concert-tickets-for-sale|game-day-tickets|buy-broadway-tickets|upcoming-music-festivals)$|^/(artist|category|venue|city|state|country)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath) || isset($soGenreSlug);   // clean genre URLs (/hip-hop-tickets) are category pages too
+$soHasEventList = (bool) preg_match('#^/(search|buy-tickets-online|concert-tickets-for-sale|game-day-tickets|buy-broadway-tickets|upcoming-music-festivals)$|^/(artist|category|venue|city|state|country|county)/|^/[a-z]+-(city|state|country|venue)/|^/artist-(city|state|country|venue)/#', $soPath) || isset($soGenreSlug);   // clean genre URLs (/hip-hop-tickets) are category pages too
 ?>
 <?php
 // jQuery (37 KB, a long task on a phone) only where something still needs it: the carousels (slick) on the home, search and about pages,

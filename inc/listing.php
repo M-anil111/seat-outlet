@@ -11,6 +11,16 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
 | rows are identical (same data attributes, same button text).
 */
 
+/**
+ * The message "More Events" shows when a page of events could not be loaded, with a retry button. js/events-listing.js looks for
+ * #loadMoreError and #loadMoreRetry; a page that has the "More Events" button but not this block fails silently (the click looks dead).
+ * Print it once, inside the .load-more-wrapper, before the button, on every page that prints #loadMoreBtn.
+ */
+function soLoadMoreErrorHtml(): string {
+    return '<p class="so-more-error" id="loadMoreError" role="alert" hidden>Could not load more events. <button type="button" class="so-more-retry" id="loadMoreRetry">Try again</button></p>';
+}
+
+
 /** "Under $X" choices for the listing price filter. TicketNetwork filters on pricingInfo/lowPrice/value (verified in the sandbox). */
 const LISTING_PRICE = [25 => 'Under $25', 50 => 'Under $50', 100 => 'Under $100', 200 => 'Under $200'];
 
@@ -386,7 +396,7 @@ function soRenderListingBody(array $o): void {
 		<div id="eventsSection" class="section-artist-content event-row-all"><?php echo soRenderListingRows($events, ['group' => $o['group']]); ?></div>
 		<?php if ($pages > 1) { ?>
 			<div class="load-more-wrapper text-center mt-5 mb-3">
-				<p class="so-more-error" id="loadMoreError" role="alert" hidden>Could not load more events. <button type="button" class="so-more-retry" id="loadMoreRetry">Try again</button></p>
+				<?php echo soLoadMoreErrorHtml(); ?>
 				<button class="btn more-events-btn d-inline-flex align-items-center gap-2" id="loadMoreBtn"
 					data-total="<?php echo $total; ?>"<?php echo $o['type'] !== '' ? ' data-type="' . soListingH($o['type']) . '"' : ''; ?>
 					data-page="2"
