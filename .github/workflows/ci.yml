@@ -299,6 +299,8 @@ jobs:
         run: php tools/test-menu-batch-timing.php
       - name: An artist page never waits for another site (biography lookup runs after the response)
         run: php tools/test-bio-not-in-request.php
+      - name: The menu builds with a handful of database queries, not one per link
+        run: php tools/test-menu-query-count.php
       - name: An artist with no upcoming events answers 200 (noindex) from the catalog copy
         run: php tools/test-performer-redirect-standin.php
       - name: No ads on error, noindex or empty pages

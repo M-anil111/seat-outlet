@@ -108,6 +108,13 @@ function soHubSubcategories(string $hubHref): array {
             $below[$childPath][1] = ($below[$childPath][1] ?? 0) + $events;
         }
     }
+    // Every row below links to its category page: load all the stored slugs in one query (soSlug asks one query per link otherwise,
+    // and the hub lists have dozens of rows on every page).
+    if (function_exists('soSlugWarm')) {
+        $warm = [];
+        foreach ($subs as $r) { if ($r['id'] > 0) $warm[] = ['category', $r['id']]; }
+        soSlugWarm($warm);
+    }
     $rows = [];
     foreach ($subs as $path => $r) {
         if ($r['name'] === '' || strtoupper($r['name']) === 'OTHER' || $r['id'] <= 0) continue;
