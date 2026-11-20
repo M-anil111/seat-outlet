@@ -292,6 +292,10 @@ function tnDefaultTtl($endpoint, array $params) {
 }
 
 function tnProfile($endpoint, $hit, $ms) {
+    // Always counted (cheap): the Server-Timing header (soServerTimingHeader) reports them, so a slow page can be explained from outside.
+    $st = $GLOBALS['so_tn_stat'] ?? ['live' => 0, 'cached' => 0, 'ms' => 0.0];
+    if ($hit) { $st['cached']++; } else { $st['live']++; $st['ms'] += (float) $ms; }
+    $GLOBALS['so_tn_stat'] = $st;
     $file = getenv('TN_PROFILE');
     if ($file === false || $file === '') return;
     if (!isset($GLOBALS['tn_profile'])) {
@@ -3265,7 +3269,22 @@ function soAliasRedirect($to = null) {
  * Output-buffer callback: a page that rendered without API data is never CDN-cached; a page that rendered fully (200, with data) is
  * kept as a snapshot, so a later TicketNetwork outage or throttling window can serve it instead of an error page.
  */
+/**
+ * Server-Timing: where a page's time went, rounded to 10 ms. app = the whole PHP run so far, tn = time spent in live ticket API calls
+ * (calls made in parallel are summed, so tn can exceed app), tnlive and tncached = how many API answers came from the API and from the
+ * cache. Added 20 Nov 2026 to explain pages that took 2 to 10 s with a warm cache (measured from outside, no way to see inside). It
+ * carries no names, ids or data.
+ */
+function soServerTimingHeader(): string {
+    $st = $GLOBALS['so_tn_stat'] ?? ['live' => 0, 'cached' => 0, 'ms' => 0.0];
+    $start = (float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true));
+    $r = fn(float $ms): int => (int) (round($ms / 10) * 10);
+    return 'app;dur=' . $r((microtime(true) - $start) * 1000) . ', tn;dur=' . $r((float) $st['ms'])
+        . ', tnlive;desc="' . (int) $st['live'] . '", tncached;desc="' . (int) $st['cached'] . '"';
+}
+
 function soDegradedGuard($buffer, $phase = null) {
+    if (!headers_sent()) { header('Server-Timing: ' . soServerTimingHeader()); }
     if (!empty($GLOBALS['tn_degraded']) && !headers_sent()) {
         header('Cache-Control: no-store');
     }

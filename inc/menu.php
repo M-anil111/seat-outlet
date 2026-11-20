@@ -64,6 +64,7 @@ if (function_exists('soSlug')) {
 // The second group of Concerts, Sports and Theater lists every other sub-category the ticket API has (Boxing, Rodeo, Ballet ...),
 // busiest first; the first group stays a hand-picked headline set. If the API is unreachable the hand-written lists above stay.
 if (function_exists('soHubSubcategories')) {
+    soHubPrefetch();   // one parallel batch for all three hubs, not three calls in a row on a cold cache
     foreach ($soMenuDef as $i => $m) {
         if (!isset(SO_HUB_ROOTS[$m['href']]) || count($m['groups']) < 2) continue;
         try { $subs = soHubSubcategories($m['href']); } catch (Throwable $e) { $subs = []; }

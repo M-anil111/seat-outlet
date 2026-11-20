@@ -295,6 +295,8 @@ jobs:
         run: php tools/test-event-price-anchor.php
       - name: Every More Events button has its error block
         run: php tools/test-load-more-markup.php
+      - name: The menu batches its category calls and pages report Server-Timing
+        run: php tools/test-menu-batch-timing.php
       - name: An artist with no upcoming events answers 200 (noindex) from the catalog copy
         run: php tools/test-performer-redirect-standin.php
       - name: No ads on error, noindex or empty pages
