@@ -3298,6 +3298,15 @@ function soAliasRedirect($to = null) {
  * cache. Added 20 Nov 2026 to explain pages that took 2 to 10 s with a warm cache (measured from outside, no way to see inside). It
  * carries no names, ids or data.
  */
+/** Attributes the time since the previous mark (or since the request began) to a named phase; Server-Timing reports each one. */
+function soTimerMark(string $name): void {
+    static $last = null;
+    $now = microtime(true);
+    $last ??= (float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? $now);
+    $GLOBALS['so_timers'][$name] = ($GLOBALS['so_timers'][$name] ?? 0.0) + ($now - $last) * 1000;
+    $last = $now;
+}
+
 function soServerTimingHeader(): string {
     $st = $GLOBALS['so_tn_stat'] ?? ['live' => 0, 'cached' => 0, 'ms' => 0.0];
     $start = (float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true));

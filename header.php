@@ -1,6 +1,7 @@
 <?php
 // Include-only file: answer 404 if it is requested directly over the web (it would render a fragment or an error).
 if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) { http_response_code(404); exit; }
+if (function_exists('soTimerMark')) soTimerMark('boot');   // everything before this: the bootstrap and the page's own lookups (Server-Timing)
 // Was a plain include (not include_once). Harmless as long as every page
 // included header.php as its very first statement (the original,
 // universal pattern), but a real fatal "Cannot redeclare function" bug for
@@ -375,7 +376,7 @@ include_once 'functions.php';
                     <!-- RIGHT -->
                     <div class="d-flex align-items-center gap-3">
                         <nav class="tm-nav-wrapper d-none d-lg-block" aria-label="Main">
-                            <?php $soMenu = require __DIR__ . '/inc/menu.php'; $soIc = function ($path) { return '<svg class="so-ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>'; }; ?>
+                            <?php if (function_exists('soTimerMark')) soTimerMark('head'); $soMenu = require __DIR__ . '/inc/menu.php'; if (function_exists('soTimerMark')) soTimerMark('menu'); $soIc = function ($path) { return '<svg class="so-ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>'; }; ?>
                             <ul class="tm-nav so-mega-nav" id="mainMenu">
                                 <?php foreach ($soMenu as $mi => $m) { ?>
                                 <li class="menu-item so-mega-item">
