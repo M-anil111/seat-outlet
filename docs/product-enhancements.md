@@ -54,7 +54,7 @@ About 200 enhancements, grouped by what they move, each with how to build it in 
 
 **E019. Parking, hotel and ride partner links** [L] [OWNER] [VERIFY]. Metric: partner revenue per order. How: apply to the partner programs you choose, read their terms on linking and disclosure, add disclosed links on the confirmation page and venue pages.
 
-**E020. Measure and tune the performer alert forms** [S]. Metric: sign-ups per 1,000 artist page views, split by the `artist-empty` (no upcoming events) and `artist-follow` sources. How: `performer.php` already renders `soLeadForm` with `interest_type=performer` in both places, and `cron/send-alerts.php` already mails performer interests for upcoming events that have tickets; count sign-ups per source from `leads`, test the wording and placement, and check that the cron's 7-day rule suits a performer who announces several dates in a week.
+**E020. Measure and tune the performer alert forms** [S]. Metric: sign-ups per 1,000 artist page views, split by the `artist-empty` (no upcoming events) and `artist-follow` sources. How: `performer.php` already renders `soLeadForm` with `interest_type=performer` in both places, and `cron/send-alerts.php` already mails performer interests for upcoming events that have tickets; count new leads by `leads.source` (one row per email, original source only) and performer subscriptions by `lead_interests.source`, instrument repeat submissions if they should count, test the wording and placement, and check that the cron's 7-day rule suits a performer who announces several dates in a week.
 
 ---
 
