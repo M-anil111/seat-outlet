@@ -66,7 +66,7 @@ server {
   location ~ ^/(docs|deploy|tools|db|cron|cache|vendor|phpmailer|inc|tests?|node_modules)(/|$) { return 404; }
   location ~ ^/admin/includes(/|$) { return 404; }
   location ~* ^/(composer\.(json|lock)|package(-lock)?\.json|CONTRIBUTING\.md|README[^/]*)$ { return 404; }
-  location ~* \.(md|lock|example|sql|bak|old|orig|swp|log|sh|ini|dist|ya?ml|gz)$ { return 404; }
+  location ~* \.(md|lock|example|sql|bak|old|orig|swp|log|sh|ini|dist|ya?ml|gz|zip|tar|tgz|7z|rar|bz2|xz)$ { return 404; }   # 24 Nov 2026: a source zip in the web root was downloadable
 
   # ---- Special files ----
   location ~ ^/admin/?$ { return 302 /admin/dashboard.php; }

@@ -46,7 +46,7 @@ The owner's standing instruction (14 Oct 2026): pull requests are merged without
 
 - Both required checks pass on the latest commit (Lint + static analysis, Database migrations apply cleanly) and the review bots' findings (cubic, Codex) are fixed or answered. A P1/P0 finding is never left open.
 - Still ask first for anything that cannot be undone or reaches people outside the team: a migration that drops or rewrites data, changes to legal text, emails or posts sent on the owner's behalf.
-- After the merge, check the change on beta.seatoutlet.com (the deploy runs on its own within a few minutes). seatoutlet.com is a separate install served directly by CloudPanel (no Cloudflare Worker since 24 Nov 2026, docs/production-safeguards.md): live changes only after the Promote to production workflow moves the `production` branch and the live deploy cron picks it up.
+- After the merge, check the change on beta.seatoutlet.com (the deploy runs on its own within a few minutes). seatoutlet.com is a separate install served directly by CloudPanel (no Cloudflare Worker since 24 Nov 2026, docs/production-safeguards.md): it deploys the same `main` branch with its own cron (`deploy/pull-deploy.sh`), so a merge reaches beta and live within minutes. Check both.
 
 ## Database migrations
 

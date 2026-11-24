@@ -18,6 +18,7 @@
 #   DEPLOY_WORKDIR   checkout dir    default /home/seatoutlet-beta/deploy/checkout  (never inside the web root, never the web root)
 #   DEPLOY_MIGRATE   1 = run php db/migrate.php after copying (default 1)
 #   DEPLOY_PHP       php binary      default php
+#   DEPLOY_EXPECT_HOME_URL  live only: refuse to deploy unless the web root's inc/env.local.php sets this HOME_URL (e.g. https://seatoutlet.com)
 #   DEPLOY_SSH_KEY   private key for GitHub (a read-only deploy key); cron then never depends on an agent or a prompt
 #   DEPLOY_REF       deploy this commit or tag instead of the branch tip (emergency rollback; the next run without it redeploys the tip)
 #   DEPLOY_BACKUP    1 = dump the database (cron/backup-db.php) before applying pending migrations (default 1). A failed dump is logged as a
@@ -94,6 +95,20 @@ OLD="$(cat "$STAMP" 2>/dev/null || echo none)"
 if [ "$NEW" = "$OLD" ]; then
   exit 0
 fi
+
+# >>> home-url guard
+# Live only (DEPLOY_EXPECT_HOME_URL=https://seatoutlet.com in pull-deploy.conf): refuse to copy code into a web root whose settings file
+# does not set that HOME_URL. 24 Nov 2026: the first deploy to live replaced hand-edited files whose defaults were the live address; the
+# live inc/env.local.php had no HOME_URL, so the site fell back to the beta defaults (noindex on every page, robots.txt "Disallow: /",
+# beta image addresses) until the setting was added. Nothing is copied and the marker stays, so the next run tries again.
+if [ -n "${DEPLOY_EXPECT_HOME_URL:-}" ]; then
+  GOT_HOME="$("$PHP_BIN" -r '$f = $argv[1]; if (is_file($f)) { ob_start(); require $f; ob_end_clean(); } echo (string) getenv("HOME_URL");' "$WEBROOT/inc/env.local.php" 2>/dev/null || true)"
+  if [ "${GOT_HOME%/}" != "${DEPLOY_EXPECT_HOME_URL%/}" ]; then
+    log "REFUSED: HOME_URL in $WEBROOT/inc/env.local.php is '${GOT_HOME:-not set}', expected $DEPLOY_EXPECT_HOME_URL. Nothing deployed: the site would run on beta defaults (noindex, robots.txt Disallow: /). Add putenv('HOME_URL=$DEPLOY_EXPECT_HOME_URL'); to that file."
+    exit 1
+  fi
+fi
+# <<< home-url guard
 
 log "deploying ${OLD:0:8} -> ${NEW:0:8} into $WEBROOT"
 [ "$OLD" != "none" ] && log "rollback if this release misbehaves: DEPLOY_REF=$OLD $0   (the next run without DEPLOY_REF redeploys the branch tip)"

@@ -34,6 +34,36 @@ dmCheck('the server config file never overrides the environment', strpos($sh, '[
 dmCheck('the log names the web root it deploys into', strpos($sh, 'into $WEBROOT"') !== false);
 dmCheck('a config example ships with the script', is_file($root . '/deploy/pull-deploy.conf.example') && strpos((string) file_get_contents($root . '/deploy/pull-deploy.conf.example'), 'DEPLOY_WEBROOT=') !== false);
 
+// 24 Nov 2026: live's first deploy ran on beta defaults (no HOME_URL in its settings file): noindex everywhere, robots.txt "Disallow: /".
+// The guard block, run for real with bash and PHP against made-up web roots.
+$gStart = strpos($sh, '# >>> home-url guard'); $gEnd = strpos($sh, '# <<< home-url guard');
+dmCheck('deploy has the HOME_URL guard', $gStart !== false && $gEnd !== false);
+dmCheck('the guard runs before the checkout moves or anything is copied', $gEnd < strpos($sh, 'git reset --quiet --hard "$NEW"') && $gEnd < strpos($sh, 'tar --exclude=./.git'));
+if ($gStart !== false && $gEnd !== false) {
+    $block = substr($sh, $gStart, $gEnd - $gStart);
+    $gdir = sys_get_temp_dir() . '/so-guard-' . getmypid();
+    @mkdir($gdir . '/inc', 0700, true);
+    $runGuard = function (?string $envBody, string $expect) use ($gdir, $block): array {
+        $envFile = $gdir . '/inc/env.local.php';
+        if ($envBody === null) @unlink($envFile); else file_put_contents($envFile, $envBody);
+        $script = 'log() { echo "$*"; }' . "\nPHP_BIN=" . escapeshellarg(PHP_BINARY) . "\nWEBROOT=" . escapeshellarg($gdir) . "\nDEPLOY_EXPECT_HOME_URL=" . escapeshellarg($expect) . "\n" . $block . "\necho PASSED\n";
+        $out = []; $code = 0;
+        exec('bash -c ' . escapeshellarg($script) . ' 2>&1', $out, $code);
+        return [$code, implode("\n", $out)];
+    };
+    [$c, $o] = $runGuard(null, 'https://seatoutlet.com');
+    dmCheck('no settings file: refused, nothing deployed', $c === 1 && strpos($o, 'REFUSED: HOME_URL') !== false && strpos($o, 'PASSED') === false);
+    [$c, $o] = $runGuard("<?php\nputenv('DB_PASS=x');\n", 'https://seatoutlet.com');
+    dmCheck('settings without HOME_URL: refused', $c === 1 && strpos($o, "'not set'") !== false);
+    [$c, $o] = $runGuard("<?php\nputenv('HOME_URL=https://beta.seatoutlet.com');\n", 'https://seatoutlet.com');
+    dmCheck('the beta address on live: refused', $c === 1 && strpos($o, 'beta.seatoutlet.com') !== false);
+    [$c, $o] = $runGuard("<?php\nputenv('HOME_URL=https://beta.seatoutlet.com');\nputenv('HOME_URL=https://seatoutlet.com/');\n", 'https://seatoutlet.com');
+    dmCheck('the live address (last line wins, trailing slash ignored): deploys', $c === 0 && strpos($o, 'PASSED') !== false);
+    [$c, $o] = $runGuard(null, '');
+    dmCheck('unset (beta): the guard does nothing', $c === 0 && strpos($o, 'PASSED') !== false);
+    @unlink($gdir . '/inc/env.local.php'); @rmdir($gdir . '/inc'); @rmdir($gdir);
+}
+
 // The marker logic itself, run against real files.
 $dir = sys_get_temp_dir() . '/so-marker-' . getmypid(); @mkdir($dir);
 $f = $dir . '/.deployed-commit';
