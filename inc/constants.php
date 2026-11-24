@@ -129,29 +129,6 @@ if (!empty($missingSecrets)) {
 if (SO_TN_LIVE_API && preg_match('#//(beta\.|staging\.|dev\.|127\.0\.0\.1|localhost)#i', HOME_URL) && getenv('SO_ALLOW_MIXED_ENV') !== '1') {
     soConfigUnavailable('BASE_URL is the live TicketNetwork API but HOME_URL is still a beta/local address');
 }
-// The public host must only ever reach this code through the Cloudflare Worker. The origin serves the real application under its own (beta)
-// hostname and runs on beta-style settings (HOME_URL on the beta address, noindex): the live Worker fetches it under that name, adds
-// X-SO-Public-Host, rewrites the beta address to the live host in every page and strips the noindex tag. On 24 Nov 2026 the DNS records of
-// seatoutlet.com and www.seatoutlet.com pointed straight at the origin (proxy off), so visitors got the raw pages (noindex,nofollow, beta
-// addresses) from a server setup that is not the live application under that name ("Invalid event." for real events, artists without
-// events, no deploy marker) and nothing noticed. A request whose Host is the public host and that did NOT come through the Worker is
-// misrouted: it answers 503 (never cached, retried by visitors and search engines, which keeps the pages indexed) instead of a broken page
-// with noindex, and the reason goes to the server log. Beta, direct beta and Worker requests are unchanged. /ajax/health.php skips the guard
-// (SO_CONFIG_GUARD_SKIP) so a monitor can read the state. SO_ALLOW_DIRECT_PUBLIC_HOST=1 turns it off on purpose.
-if (!function_exists('soMisroutedPublicHost')) {
-/** True when the request's own Host is the public host (or www.) and it did not come through the live Worker. $server is $_SERVER. */
-function soMisroutedPublicHost(array $server, string $publicOrigin): bool {
-    $pub = strtolower((string) (parse_url($publicOrigin, PHP_URL_HOST) ?: ''));
-    if ($pub === '') return false;
-    $host = strtolower(trim((string) ($server['HTTP_HOST'] ?? '')));
-    $host = preg_replace('/:\d+$/', '', $host);
-    if ($host !== $pub && $host !== 'www.' . $pub) return false;
-    return trim((string) ($server['HTTP_X_SO_PUBLIC_HOST'] ?? '')) === '';
-}
-}
-if (PHP_SAPI !== 'cli' && !defined('SO_CONFIG_GUARD_SKIP') && getenv('SO_ALLOW_DIRECT_PUBLIC_HOST') !== '1' && soMisroutedPublicHost($_SERVER, SO_PUBLIC_ORIGIN)) {
-    soConfigUnavailable('a request for the public host reached the origin without the Cloudflare Worker (the DNS proxy for the public host is off)');
-}
 define('SO_CONSTANTS_LOADED', true);
 
 

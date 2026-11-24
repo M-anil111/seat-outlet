@@ -1,48 +1,36 @@
-# Production safeguards: the live site must always be served through Cloudflare and the Worker
+# Watching the live site: what happened on 24 Nov 2026 and what now checks it
 
-## How production is built (read this first)
+## What was reported and what was observed
 
-The origin server runs one PHP install and serves the real application under its **own beta hostname**. It runs on beta-style settings on purpose (`HOME_URL` on the beta address, pages marked `noindex`). The public site, `seatoutlet.com` and `www.seatoutlet.com`, is the **Cloudflare Worker** (`deploy/cloudflare-worker/seatoutlet-blog-proxy.js`) in front of it: it fetches the origin under the beta hostname, adds `X-SO-Public-Host`, replaces the beta address with the live host in every page, strips the `noindex, nofollow` tag, rewrites the clean URLs that the origin's web server has no rule for (`/county/x`, `/state/x`, the `*-city` pages, ...), and answers the branded 404. The DNS records of the public hostnames must therefore be **proxied** (orange cloud) so that traffic reaches the Worker. Without the Worker the origin's raw pages are what visitors and search engines get.
+The owner's team reported that event pages answered "Invalid event." and that artist pages did not work. Checks from outside on the morning of 24 Nov (UTC):
 
-## What happened (24 Nov 2026)
-
-The owner's team reported that event pages answered "Invalid event." and that artist pages did not work. Checks from outside that morning established:
-
-| Observation | Meaning |
+| Time | Observation |
 |---|---|
-| Public DNS (Google DoH): `seatoutlet.com` and `www.seatoutlet.com` returned the **origin server's own address** (A record, TTL 300). The nameservers are still Cloudflare's. | The records are not proxied (DNS only, or repointed). Cloudflare, and so the Worker, is not in the path. A proxied record returns a Cloudflare address. |
-| Responses said `server: nginx` with no `cf-ray` header (earlier ones said `server: cloudflare`). | Same: traffic goes straight to the origin. |
-| Every page, home included, was `noindex, nofollow`; scripts loaded from the beta address (30 references on the home page). | The origin's raw pages, which the Worker normally rewrites. |
-| The origin answered correctly **under its beta hostname**: `/ajax/health.php` `ok:true`, commit `ffdc5634`, the event page opened with its real title, the artist page listed events. | The application, database and ticket data are intact. |
-| The origin answered **under the public hostname** from a different server setup: "Invalid event." for real events, artists with no events, an empty home page, health `ok:false` with no commit. | Under that hostname the server's web setup is not the live application (a missing or different vhost, environment or data folder). The live application was only ever reached through the Worker. |
+| about 07:00 to 08:20 | `seatoutlet.com` answered from a server setup that had no live data: real events answered 404 "Invalid event.", artist pages listed no events, the home page had no events, every page was `noindex, nofollow` with the beta address in its links, `/ajax/health.php` had no deploy commit. Responses came straight from the origin (`server: nginx`, no `cf-ray`); public DNS returned the origin server's own address (A record, TTL 300) while the nameservers were still Cloudflare's. |
+| about 08:25 | The same hostname answered normally: `index, follow`, real artist pages with events, the event from the report opened (200). DNS and the `server: nginx` header were unchanged. Health still had no deploy commit. |
+| 08:30 onward | The watchdog below passes against the live site (home 200, health ok, an artist page with 20 events, 3 of 3 events open). |
 
-Nothing in the repository changed (`main` stayed at `ffdc5634`, 20 Nov). **Who changed the DNS records, when, and why are not visible from outside**; the Cloudflare account's audit log (Manage Account, Audit Log) shows it. Whether the Worker itself is still deployed is also not visible from outside.
+The origin serves the real application under its beta hostname (`beta.seatoutlet.com`) and also under the public hostname, but the two did not behave the same that morning. `docs/production-cutover.md` describes a planned change that matches this: live and beta become two separate installs on the same server (live on its own database and code branch, the Cloudflare Worker retired). **Whether that change was what happened is not confirmed**: the repository has no `production` branch and the promote workflow has never run, so how the live install gets its code is not visible from here. Nothing in the repository changed between 20 and 24 Nov until the pull requests of 24 Nov.
 
-An earlier version of this document (and the first version of PR 300) blamed lost server settings and added a guard that would have answered 503 to every request that came through the Worker, which would have taken a healthy site down. That was wrong: the beta-style settings are the origin's normal state.
+## Corrections to earlier work on 24 Nov
 
-## What to do when this happens (restore)
+The first versions of PR 300, and an unsent email draft, treated the morning as an outage caused by Cloudflare's proxy being switched off and lost server settings. That was a misreading: it was most likely a cutover in progress. PR 300 had added a guard that answered 503 to any request for the public hostname that did not come through the Worker. With the Worker retired that would have taken the live site down if that code had reached it. It was merged for a short time (`a2edfe8d`) and removed in the next change, before the live install received it (the live install had not deployed it when checked). The email was never sent and was deleted.
 
-You need the Cloudflare login (the account that owns the `seatoutlet.com` zone).
+## What stays: the outside watchdog
 
-1. Cloudflare dashboard, `seatoutlet.com`, DNS, Records: the `A` (or `CNAME`) records for `@` and `www` must have **Proxy status: Proxied** (orange cloud). If they are grey ("DNS only") switch them on; if they were deleted, recreate them pointing at the origin with the proxy on.
-2. Workers & Pages, the Worker from `deploy/cloudflare-worker/seatoutlet-blog-proxy.js`: it must be deployed and its route must cover `seatoutlet.com/*` and `www.seatoutlet.com/*`.
-3. Check: `curl -sI https://seatoutlet.com/` shows `server: cloudflare` and a `cf-ray` header; `https://seatoutlet.com/ajax/health.php` shows `ok:true` and a commit; run the watchdog from the GitHub Actions tab (Production watchdog, Run workflow). DNS answers are cached for up to 5 minutes (TTL 300).
+`.github/workflows/watchdog.yml` runs `tools/live-watchdog.mjs` every 15 minutes against `https://seatoutlet.com`. Read-only (a handful of GET requests, no credentials). It fails when:
 
-## Safeguards added
+- the home page does not answer 200 within 12 s, or its robots meta says `noindex` or `nofollow`, or it still carries the origin's beta address, or its canonical is not the live host;
+- `/ajax/health.php` is not JSON or says `ok:false` (a missing deploy commit is only noted);
+- `robots.txt` says `Disallow: /`, or the sitemap lists no pages;
+- the first artist page in the sitemap does not answer 200, lists no events and has no "no upcoming events" message, or has events but is `noindex`;
+- none of up to three events linked from that artist page opens (an error or "Invalid event.");
+- search answers something other than 200 twice in a row (one 503 from a throttled ticket feed is ignored).
 
-| Safeguard | Where | What it does |
-|---|---|---|
-| **Misrouted traffic answers 503** | `inc/constants.php` (`soMisroutedPublicHost`) | A request whose Host is `seatoutlet.com` or `www.seatoutlet.com` and that did **not** come through the Worker (no `X-SO-Public-Host`) answers a plain 503 (never cached, `Retry-After: 60`, reason in the server log, nothing named on the page) instead of a broken page with noindex and "Invalid event.". A 503 tells search engines to come back, so pages stay indexed; `noindex, nofollow` on every page does the opposite after a few days. Requests through the Worker, direct requests on the beta hostname and local requests are unchanged (tested). |
-| **Health says so** | `ajax/health.php` | Skips the guard so a monitor can read it; `ok` is false when asked under the public hostname without the Worker. The public answer keeps its four fields. |
-| **Outside watchdog** | `.github/workflows/watchdog.yml`, `tools/live-watchdog.mjs` | Every 15 minutes it reads the live site like a visitor: the page came through Cloudflare (`cf-ray`), home 200 and under 12 s, robots meta not noindex/nofollow, no beta address left in the page, canonical on the live host, events linked from the home page, up to three opening without "Invalid event.", health `ok` with a deploy commit, `robots.txt` not `Disallow: /`, a sitemap with pages, an artist page and search answering. A failed run emails the person who last edited the schedule (GitHub's rule) and shows red in the Actions tab; run it by hand with Run workflow or `node tools/live-watchdog.mjs`. Against the site of 24 Nov it fails with seven problems. |
-| **Tests in CI** | `tools/test-live-config-guard.php`, `tools/test-live-watchdog.mjs` | The guard against the real bootstrap (the public host without the Worker: 503; **a Worker request on the origin's beta-style settings: works**; direct beta: works; the off switch; health still answers) and the watchdog against fixture sites (healthy passes, each breakage fails). |
+It deliberately does not require the home page to link events or artists (the home feed is filled by the browser) and does not require Cloudflare (the live design may not use it). A failed run emails the person who last edited the schedule (GitHub's rule) and shows red in the Actions tab; run it by hand from Actions, Production watchdog, Run workflow, or with `node tools/live-watchdog.mjs`. `tools/test-live-watchdog.mjs` tests it against fixture sites in CI. Against the broken state of that morning it would have failed within 15 minutes.
 
-Switch: `SO_ALLOW_DIRECT_PUBLIC_HOST=1` in `inc/env.local.php` turns the 503 off on purpose (for example while moving the site off the Worker). Remove it afterwards.
+## Not covered (needs the owner, the host or whoever did the cutover)
 
-## Not covered by this change (needs the owner, the host or the Cloudflare account)
-
-- Re-enabling the Cloudflare proxy for the two DNS records: this is the fix for the outage itself and only the Cloudflare account can do it.
-- Why the origin does not serve the live application under the public hostname (nginx vhost for `seatoutlet.com`). Adding it, and the rewrite rules in `docs/server-rewrites.md`, would let the site survive a DNS or Worker problem; it is a server configuration change.
-- Who changed the DNS records: the Cloudflare audit log.
-- A Cloudflare notification for DNS changes (Notifications, "DNS record changes" / account audit log alerts) and restricting who can edit DNS.
-- An external uptime monitor from a second vendor (the watchdog runs on GitHub's schedule, which can be delayed a few minutes under load).
+- What happened that morning and when it ended: the Cloudflare audit log, the server's deploy output and the people involved.
+- A deploy marker for the live install: `/ajax/health.php` still reports no commit for it, so a release cannot be told from outside.
+- An external uptime monitor from a second vendor (the watchdog runs on GitHub's schedule, which can be delayed a few minutes).
