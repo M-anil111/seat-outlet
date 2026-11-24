@@ -143,6 +143,12 @@ function downloadImage($url) {
 const TN_ACCESS_TOKEN_CACHE_KEY = 'tn_access_token';
 const TN_ACCESS_TOKEN_EXPIRY_BUFFER = 120; // seconds: the DevPortal guide says to refresh "a couple of minutes" before expiry
 
+/** True when TN_TOKEN_DIR names a folder (shared by the beta and live installs); false for the system temp folder. */
+function tnTokenDirShared(): bool {
+    $dir = getenv('TN_TOKEN_DIR');
+    return $dir !== false && trim($dir) !== '';
+}
+
 function tnTokenCacheFile(string $extraScope = '') {
     $dir = getenv('TN_TOKEN_DIR');
     $dir = ($dir !== false && $dir !== '') ? rtrim($dir, '/') : rtrim(sys_get_temp_dir(), '/');
@@ -201,7 +207,9 @@ function getTnAccessToken($rejected = '', string $extraScope = '') {
     }
 
     $lockFile = tnTokenCacheFile($extraScope) . '.lock';
+    $lockIsNew = !is_file($lockFile);
     $lock = @fopen($lockFile, 'c');
+    if ($lock && $lockIsNew && tnTokenDirShared()) tnShareFile($lockFile);
     $locked = false;
     if ($lock) {
         for ($i = 0; $i < 100; $i++) {          // wait up to ~10s for another process
@@ -251,7 +259,9 @@ function getTnAccessToken($rejected = '', string $extraScope = '') {
         $file = tnTokenCacheFile($extraScope);
         $tmp = $file . '.' . uniqid('tmp_', true);
         if (@file_put_contents($tmp, json_encode(['token' => $accessToken, 'expires_at' => time() + $ttl]), LOCK_EX) !== false) {
-            @chmod($tmp, 0600);
+            // Private (0600) in the system temp folder; group read/write (0660) in a TN_TOKEN_DIR shared by beta and live, otherwise the other
+            // install cannot read it, fetches its own token, and TicketNetwork then cancels this one a few seconds later (401s on both sites).
+            @chmod($tmp, tnTokenDirShared() ? 0660 : 0600);
             @rename($tmp, $file);
         }
         if ($rejected !== '') {
@@ -553,7 +563,7 @@ function tnScheduleRefresh($endpoint, array $params, $method, $key) {
             // bucket only, never waiting), so it can neither push the real rate past what TicketNetwork allows (a 429 opens the breaker
             // and every page of that family gets no data for a minute) nor starve cold pages. With no token the stored copy keeps
             // answering inside its grace window and the next request asks again.
-            if (!tnBudgetWait('background', tnCallsPerSecond(), cache_dir())) {
+            if (!tnBudgetWait('background', tnCallsPerSecond(), tnBudgetDir())) {
                 tnCount('refresh_skipped');
                 flock($lock, LOCK_UN);
                 fclose($lock);
@@ -705,7 +715,7 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
  * Over budget, the request answers from the stored copy like an outage, and no call is made.
  */
 function tnBucketAllow(): bool {
-    return tnBudgetWait(tnCallerClass(), tnCallsPerSecond(), cache_dir());
+    return tnBudgetWait(tnCallerClass(), tnCallsPerSecond(), tnBudgetDir());
 }
 
 /** The live part of a cold request: budget, one call (one retry for a fast drop), the breaker, and storing the answer. */
@@ -804,7 +814,7 @@ function tnRequestMulti(array $requests) {
         // Every outbound call takes a token from the shared budget. A call over budget is not sent: the page answers from its stored copy.
         // The bucket holds a burst of two at the default rate, so a cold page's third prefetched call must be allowed to wait a moment
         // rather than fail on the spot (that failure was most of the "no data" pages).
-        if (!tnBudgetWait($callerClass, tnCallsPerSecond(), cache_dir(), max(0.0, $deadline - microtime(true)))) {
+        if (!tnBudgetWait($callerClass, tnCallsPerSecond(), tnBudgetDir(), max(0.0, $deadline - microtime(true)))) {
             tnCount('over_budget');
             tnUnanswered(!empty($out[$i]), 'budget');
             continue;
@@ -3157,24 +3167,40 @@ function soSingleH1($html) {
  */
 /**
  * One public host. www.seatoutlet.com used to answer with the whole site (and canonical tags pointing at www), so search
- * engines saw two copies. Requests for a www host get a 301 to the same path on the bare domain. The live Cloudflare Worker
- * forwards the visitor's host in X-Forwarded-Host (it fetches from the beta origin), so that header is checked first.
+ * engines saw two copies. Requests for a www host get a 301 to the same path on the bare domain. The site is served directly by the web
+ * server (no proxy in front since 24 Nov 2026), so only the Host the request arrived with counts: X-Forwarded-Host is whatever the client
+ * sent, and trusting it let anyone build a link that redirected to a host of their choice. The target is always one of the site's own
+ * hosts (SO_PUBLIC_ORIGIN or HOME_URL), never one taken from the request.
  */
+function soRequestHost(?array $server = null): string {
+    $server = $server ?? $_SERVER;
+    $host = strtolower(trim((string) ($server['HTTP_HOST'] ?? '')));
+    return (string) preg_replace('/:\d+$/', '', $host);
+}
+
+/** The https origin a www request should go to: the site's own bare host for www.<that host>, else '' (no redirect). */
+function soWwwRedirectOrigin(string $host): string {
+    if (strpos($host, 'www.') !== 0) return '';
+    foreach ([defined('SO_PUBLIC_ORIGIN') ? SO_PUBLIC_ORIGIN : '', defined('HOME_URL') ? HOME_URL : ''] as $origin) {
+        $own = strtolower((string) parse_url((string) $origin, PHP_URL_HOST));
+        if ($own !== '' && $host === 'www.' . $own) return 'https://' . $own;
+    }
+    return '';
+}
+
 function soRedirectWwwHost() {
     if (PHP_SAPI === 'cli' || headers_sent()) return;
     if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) return;
-    $host = strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? ''))[0]));
-    $host = preg_replace('/:\d+$/', '', $host);
-    if (strpos($host, 'www.') !== 0 || !preg_match('/^www\.[a-z0-9.-]+$/', $host)) return;
-    header('Location: https://' . substr($host, 4) . ((string) ($_SERVER['REQUEST_URI'] ?? '/')), true, 301);
+    $to = soWwwRedirectOrigin(soRequestHost());
+    if ($to === '') return;
+    header('Location: ' . $to . ((string) ($_SERVER['REQUEST_URI'] ?? '/')), true, 301);
     header('Cache-Control: public, max-age=86400');
     exit;
 }
 
 /**
- * Paths that are not pages for search results: data endpoints, checkout, newsletter forms, admin. robots.txt is supposed to
- * keep crawlers out of them, but the live Worker serves its own robots.txt without those rules, so the responses themselves
- * say noindex (a header, which works for JSON too and survives the Worker).
+ * Paths that are not pages for search results: data endpoints, checkout, newsletter forms, admin. robots.txt keeps crawlers out of
+ * them; the responses also say noindex themselves (a header, which works for JSON too), so a link from elsewhere cannot get them indexed.
  */
 function soNoindexPrivatePaths() {
     if (PHP_SAPI === 'cli' || headers_sent()) return;
@@ -3217,8 +3243,7 @@ function soRedirectCanonicalForm() {
     $uri  = (string) ($_SERVER['REQUEST_URI'] ?? '/');
     $path = (string) parse_url($uri, PHP_URL_PATH);
     $qs   = (string) parse_url($uri, PHP_URL_QUERY);
-    $host = strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? ''))[0]));
-    $host = (string) preg_replace('/:\d+$/', '', $host);
+    $host = soRequestHost();   // the Host the request arrived with; X-Forwarded-Host is client-supplied now that nothing sits in front
     $pub  = (string) parse_url(SO_PUBLIC_ORIGIN, PHP_URL_HOST);
     $wrongHost = $pub !== '' && $host === 'www.' . $pub;
     $clean = $path;

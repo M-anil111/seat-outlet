@@ -98,7 +98,7 @@ function tbWriteRows(array $events, string $seenAt): int {
 function tbWaitForBudget(): bool {
     $deadline = microtime(true) + 120;
     do {
-        if (tnBucketTake(false, tnCallsPerSecond(), cache_dir() . 'tn_bucket.json')) return true;
+        if (tnBucketTake(false, tnCallsPerSecond(), tnBudgetDir() . 'tn_bucket.json')) return true;
         usleep(250000);
     } while (microtime(true) < $deadline);
     return false;

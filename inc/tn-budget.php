@@ -87,18 +87,17 @@ function tnStatsSummary(array $stats): array {
 }
 
 /**
- * True when the request came through the live Cloudflare Worker, which fetches every page from the beta origin and sets
- * X-Forwarded-Host to the public host; false for a direct hit on the beta address. seatoutlet.com is not a separate server: both names
- * reach one PHP install, so this header is the only way to tell them apart. $server and $publicHost are for tests.
+ * True when the request is for the public site (seatoutlet.com or www.), false for the beta address or a local call. Live and beta are
+ * separate installs served directly by nginx since 24 Nov 2026 (the Cloudflare Worker that fetched live pages from beta is gone), so the
+ * Host the request arrived with decides. Proxy headers (X-Forwarded-Host, the Worker's X-SO-Public-Host) are not read: nothing sits in
+ * front of the web server, so they are whatever the client sent. Used only to split the health counters. $server and $publicHost are for tests.
  */
 function soViaLiveProxy(?array $server = null, ?string $publicHost = null): bool {
     $server = $server ?? $_SERVER;
-    $publicHost = $publicHost ?? (defined('SO_PUBLIC_ORIGIN') ? (string) (parse_url(SO_PUBLIC_ORIGIN, PHP_URL_HOST) ?: rtrim((string) SO_PUBLIC_ORIGIN, '/')) : 'seatoutlet.com');
-    // X-SO-Public-Host is the Worker's own header; X-Forwarded-Host is kept as a fallback, but a proxy layer in front of PHP can rewrite it
-    // to the beta host (13 Oct 2026: /ajax/health.php reported viaProxy false through seatoutlet.com), which is why the Worker sends both.
-    $host = strtolower(trim(explode(',', (string) ($server['HTTP_X_SO_PUBLIC_HOST'] ?? '') ?: (string) ($server['HTTP_X_FORWARDED_HOST'] ?? ''))[0]));
-    $host = preg_replace('/:\d+$/', '', $host);
-    return $host !== '' && $publicHost !== '' && ($host === strtolower($publicHost) || $host === 'www.' . strtolower($publicHost));
+    $publicHost = strtolower($publicHost ?? (defined('SO_PUBLIC_ORIGIN') ? (string) (parse_url(SO_PUBLIC_ORIGIN, PHP_URL_HOST) ?: rtrim((string) SO_PUBLIC_ORIGIN, '/')) : 'seatoutlet.com'));
+    $host = strtolower(trim((string) ($server['HTTP_HOST'] ?? '')));
+    $host = (string) preg_replace('/:\d+$/', '', $host);
+    return $host !== '' && $publicHost !== '' && ($host === $publicHost || $host === 'www.' . $publicHost);
 }
 
 /**
@@ -198,6 +197,29 @@ function tnBackgroundCaller(): bool {
 }
 
 /**
+ * Where the call-budget files live. TicketNetwork's limit (about 50 calls a minute) is per app key, and beta and live are separate installs
+ * (separate users and cache folders) that use the same key, so each spending TN_CALLS_PER_SECOND on its own would together go over it.
+ * TN_BUDGET_DIR names one folder both installs can write (the same shared folder as TN_TOKEN_DIR, group-writable): then one budget covers
+ * both. Unset: this install's cache folder, as before.
+ */
+function tnBudgetDir(): string {
+    $dir = getenv('TN_BUDGET_DIR');
+    if ($dir !== false && trim($dir) !== '') return rtrim(trim($dir), '/') . '/';
+    return cache_dir();
+}
+
+/**
+ * A file another install's user must also write (shared budget or token folder): readable and writable by the group, not by others.
+ * Only the owner can change the mode, so this is done by whoever created the file, once (a no-op when it is already right).
+ */
+function tnShareFile(string $path): void {
+    clearstatcache(true, $path);   // the caller checked is_file() before creating it; PHP would answer from that cached result
+    $me = function_exists('posix_geteuid') ? posix_geteuid() : getmyuid();   // getmyuid() is the script file's owner, not the process
+    if (!is_file($path) || @fileowner($path) !== $me) return;
+    if ((@fileperms($path) & 0777) !== 0660) @chmod($path, 0660);
+}
+
+/**
  * Takes one token if the bucket allows it. Background callers need 1 + half the burst, so they leave the rest for visitors.
  * Fails open when the bucket file cannot be locked: a counter fault must never block a visitor.
  */
@@ -205,8 +227,10 @@ function tnBucketTake(bool $background, float $rate, string $file, ?float $now =
     if ($rate <= 0) return true;
     $now = $now ?? microtime(true);
     $burst = $burst ?? max(2.0, $rate * 2);
+    $isNew = !is_file($file . '.lock');
     $fh = @fopen($file . '.lock', 'c');
     if (!$fh) return true;
+    if ($isNew) tnShareFile($file . '.lock');
     if (!flock($fh, LOCK_EX)) {   // no lock: do not block and do not count (fail open, as above)
         fclose($fh);
         return true;
@@ -218,7 +242,9 @@ function tnBucketTake(bool $background, float $rate, string $file, ?float $now =
     $need = $background ? 1 + $burst / 2 : 1.0;
     $ok = $tokens >= $need;
     if ($ok) $tokens -= 1;
+    $isNewState = !is_file($file);
     @file_put_contents($file, json_encode(['tokens' => $tokens, 't' => $now]), LOCK_EX);
+    if ($isNewState) tnShareFile($file);
     flock($fh, LOCK_UN);
     fclose($fh);
     return $ok;

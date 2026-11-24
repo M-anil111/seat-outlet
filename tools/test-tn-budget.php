@@ -97,9 +97,9 @@ $fn = file_get_contents(__DIR__ . '/../functions.php');
 tbCheck('the token request asks for the device scope', strpos($fn, "'scope' => tnTokenScope(\$extraScope)") !== false);
 tbCheck('the token file and cache key are per device', strpos($fn, "CONSUMER_KEY . '|' . BASE_URL . '|' . tnTokenScope(\$extraScope)") !== false && strpos($fn, "TN_ACCESS_TOKEN_CACHE_KEY . '_' . tnDeviceScope() . tnTokenKeySuffix(\$extraScope)") !== false);
 tbCheck('functions.php loads the budget helpers', strpos($fn, "require_once __DIR__ . '/inc/tn-budget.php';") !== false);
-tbCheck('every live call passes the shared budget before it goes out', strpos($fn, 'if (!tnBucketAllow()) {') !== false && strpos($fn, 'return tnBudgetWait(tnCallerClass(), tnCallsPerSecond(), cache_dir());') !== false);
+tbCheck('every live call passes the shared budget before it goes out', strpos($fn, 'if (!tnBucketAllow()) {') !== false && strpos($fn, 'return tnBudgetWait(tnCallerClass(), tnCallsPerSecond(), tnBudgetDir());') !== false);
 tbCheck('a batch of prefetched calls waits for tokens like one call would, instead of failing the third on the spot',
-    strpos($fn, '$deadline = microtime(true) + 1.5;') !== false && strpos($fn, 'if (!tnBudgetWait($callerClass, tnCallsPerSecond(), cache_dir(), max(0.0, $deadline - microtime(true)))) {') !== false && strpos($fn, 'tnBucketTake(PHP_SAPI') === false);
+    strpos($fn, '$deadline = microtime(true) + 1.5;') !== false && strpos($fn, 'if (!tnBudgetWait($callerClass, tnCallsPerSecond(), tnBudgetDir(), max(0.0, $deadline - microtime(true)))) {') !== false && strpos($fn, 'tnBucketTake(PHP_SAPI') === false);
 unset($_SERVER['HTTP_X_SO_WARM']);
 tbCheck('a cron is a background caller', tnBackgroundCaller() === true);   // this test runs on the CLI
 tbCheck('the snapshot warmer tells the site its visits are background, and nothing counts them as visitor outcomes',
@@ -145,13 +145,13 @@ $fnStats = file_get_contents(__DIR__ . '/../functions.php');
 tbCheck('tnCount counts the page once (pages) and a kept stored list once per page (pages_suspect)', strpos($fnStats, "\$GLOBALS['tn_page_counted'] = true;\n        \$firstOfPage = true;") !== false && strpos($fnStats, "\$GLOBALS['tn_page_suspect'] = true;\n        \$firstSuspect = true;") !== false && tnCountKeys('empty_suspect', true, true, false, false) === ['empty_suspect', 'pages', 'pages_suspect']);
 tbCheck('the health page and the cron read the counts under a shared lock', strpos($fnStats, 'function tnStatsToday(): array') !== false && strpos($fnStats, 'flock($fh, LOCK_SH)') !== false && strpos(file_get_contents(__DIR__ . '/../ajax/health.php'), 'tnStatsToday()') !== false && strpos(file_get_contents(__DIR__ . '/../cron/check-tn-health.php'), 'tnStatsToday()') !== false);
 
-// 7. Who asked: the live Worker versus the beta address, crawlers versus visitors, and the counters that follow
-$fwd = fn($h) => ['HTTP_X_FORWARDED_HOST' => $h];
-tbCheck('a request through the live Worker (X-Forwarded-Host seatoutlet.com) is live', soViaLiveProxy($fwd('seatoutlet.com'), 'seatoutlet.com') === true);
-tbCheck('the Worker\'s own header counts even when X-Forwarded-Host was rewritten to beta', soViaLiveProxy(['HTTP_X_SO_PUBLIC_HOST' => 'seatoutlet.com', 'HTTP_X_FORWARDED_HOST' => 'beta.seatoutlet.com'], 'seatoutlet.com') === true);
-tbCheck('www, a port and a list of hosts still count (the first host decides)', soViaLiveProxy($fwd('www.seatoutlet.com'), 'seatoutlet.com') && soViaLiveProxy($fwd('seatoutlet.com:443'), 'seatoutlet.com') && soViaLiveProxy($fwd('SeatOutlet.com, other.test'), 'seatoutlet.com'));
-tbCheck('a direct hit on the beta address (no header, or the beta host) is not live', !soViaLiveProxy([], 'seatoutlet.com') && !soViaLiveProxy($fwd(''), 'seatoutlet.com') && !soViaLiveProxy($fwd('beta.seatoutlet.com'), 'seatoutlet.com'));
-tbCheck('look-alike hosts are not live', !soViaLiveProxy($fwd('seatoutlet.com.evil.test'), 'seatoutlet.com') && !soViaLiveProxy($fwd('evil.test'), 'seatoutlet.com') && !soViaLiveProxy($fwd('xseatoutlet.com'), 'seatoutlet.com'));
+// 7. Who asked: the public host versus the beta address (separate installs served directly since 24 Nov 2026), crawlers versus visitors
+$h = fn($host) => ['HTTP_HOST' => $host];
+tbCheck('a request for the public host is live', soViaLiveProxy($h('seatoutlet.com'), 'seatoutlet.com') === true);
+tbCheck('www and a port still count', soViaLiveProxy($h('www.seatoutlet.com'), 'seatoutlet.com') && soViaLiveProxy($h('SeatOutlet.com:443'), 'seatoutlet.com'));
+tbCheck('the beta address, a local call and no Host are not live', !soViaLiveProxy($h('beta.seatoutlet.com'), 'seatoutlet.com') && !soViaLiveProxy($h('127.0.0.1:8000'), 'seatoutlet.com') && !soViaLiveProxy([], 'seatoutlet.com'));
+tbCheck('client-sent proxy headers are ignored (nothing sits in front of the web server)', !soViaLiveProxy(['HTTP_HOST' => 'beta.seatoutlet.com', 'HTTP_X_FORWARDED_HOST' => 'seatoutlet.com', 'HTTP_X_SO_PUBLIC_HOST' => 'seatoutlet.com'], 'seatoutlet.com'));
+tbCheck('look-alike hosts are not live', !soViaLiveProxy($h('seatoutlet.com.evil.test'), 'seatoutlet.com') && !soViaLiveProxy($h('evil.test'), 'seatoutlet.com') && !soViaLiveProxy($h('xseatoutlet.com'), 'seatoutlet.com'));
 tbCheck('crawlers and scripts are told apart from visitors', soClientIsCrawler('Mozilla/5.0 (compatible; SemrushBot/7~bl)') && soClientIsCrawler('Mozilla/5.0 (compatible; Googlebot/2.1)') && soClientIsCrawler('ShapBot 0.1.0') && soClientIsCrawler('curl/8.5.0') && !soClientIsCrawler('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1') && !soClientIsCrawler('') && !soClientIsCrawler('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120 Safari/537.36'));
 tbCheck('a visitor on live: the outcome, and the page once', tnCountKeys('live_call', true, false, false, false) === ['live_call', 'pages'] && tnCountKeys('live_call', false, false, false, false) === ['live_call']);
 tbCheck('a crawler: the same outcome and page again under _bot', tnCountKeys('live_call', true, false, true, false) === ['live_call', 'pages', 'live_call_bot', 'pages_bot'] && tnCountKeys('no_data', false, false, true, false) === ['no_data', 'no_data_bot']);
@@ -235,7 +235,7 @@ tbCheck('health splits visitors into likely-human and no-browser pages', $likely
 $refBody = (preg_match('/function tnScheduleRefresh\(.*?\n}\n/s', $fnStats, $rm) ? $rm[0] : '');
 tbCheck('a background refresh takes a budget token before the live call, and is skipped (lock released) without one',
     $refBody !== ''
-    && preg_match('/tnBudgetWait\(\'background\', tnCallsPerSecond\(\), cache_dir\(\)\)\) \{\s*tnCount\(\'refresh_skipped\'\);\s*flock\(\$lock, LOCK_UN\);\s*fclose\(\$lock\);\s*continue;/s', $refBody) === 1
+    && preg_match('/tnBudgetWait\(\'background\', tnCallsPerSecond\(\), tnBudgetDir\(\)\)\) \{\s*tnCount\(\'refresh_skipped\'\);\s*flock\(\$lock, LOCK_UN\);\s*fclose\(\$lock\);\s*continue;/s', $refBody) === 1
     && strpos($refBody, "tnBudgetWait('background'") < strpos($refBody, 'tnFetchLive(')
     && strpos($refBody, "tnCount('refresh_call')") > strpos($refBody, 'tnFetchLive('));
 $refSum = tnStatsSummary(['pages' => 10, 'refresh_call' => 7, 'refresh_skipped' => 3]);

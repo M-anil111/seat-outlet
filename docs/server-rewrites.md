@@ -1,5 +1,7 @@
 # Server rewrite rules (nginx / CloudPanel)
 
+> **Live (since 24 Nov 2026):** the complete, tested Vhost for seatoutlet.com is `deploy/nginx/seatoutlet.com.vhost`; paste it whole. The Cloudflare Worker mentioned below no longer exists. The notes below explain the individual rules and still apply to beta.
+
 Pretty URLs are rewritten by the web server, not by the app (no `.htaccess` ships in this repo). Checked on beta on 2026-09-30 after the web root moved to the new `seat-outlet` directory:
 
 | Works (200) | Returns 404 "File not found." |

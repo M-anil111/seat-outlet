@@ -5,6 +5,9 @@ $root = dirname(__DIR__);
 $src = file_get_contents($root . '/functions.php');
 preg_match("/function soRedirectCanonicalForm\(.*?\n}\n/s", $src, $m);
 if (!$m) { fwrite(STDERR, "FAIL: soRedirectCanonicalForm not found\n"); exit(1); }
+preg_match("/function soRequestHost\(.*?\n}\n/s", $src, $hm);   // the redirect reads the request's own Host through this helper
+if (!$hm) { fwrite(STDERR, "FAIL: soRequestHost not found\n"); exit(1); }
+eval($hm[0]);
 define('SO_PUBLIC_ORIGIN', 'https://seatoutlet.com');
 require_once $root . '/inc/tn-listing-copy.php';   // soSafeParseQuery(), used by the redirect
 $f = str_replace('__DIR__', var_export($root, true), $m[0]);

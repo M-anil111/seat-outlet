@@ -166,8 +166,6 @@ jobs:
         run: php tools/test-ratelimit.php
       - name: Old address forms still resolve
         run: php tools/test-slug-legacy.php
-      - name: Worker helpers (blocked paths, clean paths, rewrites)
-        run: node tools/test-worker.mjs
       - name: Listing date pill agrees with the server's "This weekend" window
         run: node tools/test-date-pill.mjs
 
@@ -301,8 +299,8 @@ jobs:
         run: php tools/test-bio-not-in-request.php
       - name: The menu builds with a handful of database queries, not one per link
         run: php tools/test-menu-query-count.php
-      - name: The public host never reaches the origin without the Worker (503), the Worker path is untouched
-        run: php tools/test-live-config-guard.php
+      - name: Production served directly (no Worker): public host served, www redirect safe from forged headers, shared TN budget and token
+        run: php tools/test-direct-production.php
       - name: Background work yields to visitors and its web duplicates stand down
         run: php tools/test-server-load.php
       - name: An artist with no upcoming events answers 200 (noindex) from the catalog copy
