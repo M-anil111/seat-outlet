@@ -1,0 +1,25 @@
+name: Production watchdog
+
+# Reads the public site like a visitor every 15 minutes and fails when it is broken in a way a visitor or a search engine would notice: noindex
+# or the beta address on the live site, no events, "Invalid event.", a blocked robots.txt, health not ok, a missing deploy marker.
+# Read-only: a handful of GET requests, no credentials, nothing is changed. A failed run emails the person who last edited this schedule
+# (GitHub's own rule) and shows red in the Actions tab; add a repository watch for "Actions" failures or a Slack/email integration to tell more people.
+# Run it by hand from the Actions tab (Run workflow) to check the site right now. See docs/production-safeguards.md.
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  watchdog:
+    name: Live site checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Check the live site
+        run: node tools/live-watchdog.mjs https://seatoutlet.com

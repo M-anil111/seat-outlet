@@ -3323,6 +3323,15 @@ function soServerTimingHeader(): string {
     $r = fn(float $ms): int => (int) (round($ms / 10) * 10);
     $out = 'app;dur=' . $r((microtime(true) - $start) * 1000) . ', tn;dur=' . $r((float) $st['ms'])
         . ', tnlive;desc="' . (int) $st['live'] . '", tncached;desc="' . (int) $st['cached'] . '"';
+    // Database queries this request has made (the connection's own counter, minus the one that reads it): a page that makes hundreds of
+    // single lookups pays a round trip for each, which is slow only when the database is slow or busy.
+    if (defined('MYSQLI') && MYSQLI instanceof mysqli && PHP_SAPI !== 'cli') {
+        try {
+            $q = MYSQLI->query("SHOW SESSION STATUS LIKE 'Questions'");
+            $row = $q ? $q->fetch_row() : null;
+            if ($row) $out .= ', dbq;desc="' . max(0, (int) $row[1] - 1) . '"';
+        } catch (\Throwable $e) { /* diagnostics only */ }
+    }
     foreach (($GLOBALS['so_timers'] ?? []) as $name => $ms) {   // named phases a page records itself
         if (preg_match('/^[a-z0-9_]{1,16}$/', (string) $name)) $out .= ', ' . $name . ';dur=' . $r((float) $ms);
     }
@@ -6901,6 +6910,7 @@ require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, 
 require_once __DIR__ . '/inc/date-strip.php';  // the row of day pills under the header of every events list
 require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/css-groups.php';        // soCssBundleFiles(): the stylesheet files for this page type
+require_once __DIR__ . '/inc/server-load.php';   // soServerBusy(): background work yields to visitors
 require_once __DIR__ . '/inc/crawl-guard.php';   // per-address page limit so one crawler cannot use up the ticket API allowance
 require_once __DIR__ . '/inc/counties.php';   // county pages (US): city to county from the Census geocoder
 require_once __DIR__ . '/inc/readmore.php';   // clamped "Read more" blocks and the data-driven place text

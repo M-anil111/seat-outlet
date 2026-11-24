@@ -10,6 +10,7 @@ require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('warm-event-detail
  * It does nothing while the TicketNetwork circuit breaker is open, so it never adds load to a throttled API.
  */
 require_once __DIR__ . '/../functions.php';
+soCronYieldIfBusy('warm-event-details');   // background work yields to visitors (inc/server-load.php)
 
 if (tnBreakerOpen()) {
     echo "TicketNetwork circuit breaker is open; skipped.\n";

@@ -5,6 +5,7 @@
  *
  *   GET /ajax/health.php
  */
+define('SO_CONFIG_GUARD_SKIP', true);   // a monitor must be able to read the state even when the live settings are wrong (see inc/constants.php)
 require_once __DIR__ . '/../functions.php';
 require_once __DIR__ . '/../inc/tn-bulk.php';
 
@@ -12,6 +13,10 @@ header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store');
 
 $out = ['ok' => true, 'time' => gmdate('c')];
+// A request for the public host that did not come through the Cloudflare Worker (the DNS proxy is off): ok is false, the reason is in the detail view.
+$liveProblems = soMisroutedPublicHost($_SERVER, SO_PUBLIC_ORIGIN) ? ['the public host reached the origin without the Cloudflare Worker (DNS proxy off)'] : [];
+$out['configProblems'] = $liveProblems;
+if ($liveProblems) $out['ok'] = false;
 $stampFile = __DIR__ . '/../.deployed-commit';
 $stamp = @file_get_contents($stampFile);
 $out['commit'] = $stamp !== false ? substr(trim($stamp), 0, 8) : null;

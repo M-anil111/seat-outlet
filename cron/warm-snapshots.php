@@ -54,6 +54,7 @@ usort($due, fn($a, $b) => $b[0] <=> $a[0]);   // never-built first, then the old
 echo 'sitemap URLs: ' . count($urls) . ', fresh snapshots: ' . $fresh . ', due: ' . count($due) . "\n";
 if (isset($opts['status'])) exit(0);
 
+soCronYieldIfBusy('warm-snapshots');   // background work yields to visitors (inc/server-load.php); after --status, which only reads
 $lock = fopen(sys_get_temp_dir() . '/seatoutlet_warm_snapshots.lock', 'c');
 if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) { echo "another run is in progress\n"; exit(0); }
 
@@ -77,6 +78,7 @@ foreach (array_slice($due, 0, $limit) as [$age, $path]) {
         }
     }
     usleep((int) ($delay * 1000000));
+    if (($done + $fail) % 25 === 0 && soServerBusy()) { echo "stopping: the server is busy, the next run continues\n"; break; }
     if (microtime(true) - $t0 > 1500) { echo "time box reached\n"; break; }   // leave room for the next run
 }
 echo "warmed: $done, failed: $fail, seconds: " . round(microtime(true) - $t0) . "\n";

@@ -961,6 +961,7 @@ function imageWorkerMaybeRun($forTest = false) {
     }
     $dir = __DIR__ . '/../cache';
     if (!is_dir($dir) || !is_writable($dir)) return;
+    if (!$forTest && (soCronRecentlyRan('image_worker', 1800) || soServerBusy())) return;   // the cron runs the queue (it touched its heartbeat in the last 30 min), or the server is busy
     $stamp = $dir . '/image_worker.stamp';
     if (is_file($stamp) && time() - (int) @filemtime($stamp) < IMAGE_WORKER_INTERVAL) return;
     $lock = @fopen($dir . '/image_worker.lock', 'c');

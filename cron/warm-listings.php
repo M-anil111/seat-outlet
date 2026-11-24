@@ -8,6 +8,7 @@ require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('warm-listings'); 
  *   php cron/warm-listings.php
  */
 require_once __DIR__ . '/../functions.php';
+soCronYieldIfBusy('warm-listings');   // background work yields to visitors (inc/server-load.php)
 
 $t0 = microtime(true);
 $warmed = 0;
