@@ -20,6 +20,8 @@ require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('resolve-images');
  *   php cron/resolve-images.php 60         larger batch
  */
 require_once __DIR__ . '/../functions.php';
+soCronYieldIfBusy('resolve-images');   // background work yields to visitors (inc/server-load.php)
+soCronHeartbeat('image_worker');   // the web-triggered image worker stands down while this cron runs (imageWorkerMaybeRun)
 
 $batch = isset($argv[1]) ? max(1, min(200, (int) $argv[1])) : (isset($_GET['batch']) ? max(1, min(100, (int) $_GET['batch'])) : 60);
 $pauseMicros = 1500000; // 1.5s between entities (each may cost 2-3 requests)

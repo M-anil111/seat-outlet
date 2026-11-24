@@ -6910,6 +6910,7 @@ require_once __DIR__ . '/inc/listing.php';  // listing rows, festival grouping, 
 require_once __DIR__ . '/inc/date-strip.php';  // the row of day pills under the header of every events list
 require_once __DIR__ . '/inc/entity-pages.php';     // strict ids, canonical redirects, zero-event bookkeeping
 require_once __DIR__ . '/inc/css-groups.php';        // soCssBundleFiles(): the stylesheet files for this page type
+require_once __DIR__ . '/inc/server-load.php';   // soServerBusy(): background work yields to visitors
 require_once __DIR__ . '/inc/crawl-guard.php';   // per-address page limit so one crawler cannot use up the ticket API allowance
 require_once __DIR__ . '/inc/counties.php';   // county pages (US): city to county from the Census geocoder
 require_once __DIR__ . '/inc/readmore.php';   // clamped "Read more" blocks and the data-driven place text

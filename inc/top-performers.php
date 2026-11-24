@@ -54,6 +54,7 @@ function soTopPerformersMaybeRun(): void {
     if (PHP_SAPI === 'cli' || !function_exists('fastcgi_finish_request') || ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
     $dir = dirname(__DIR__) . '/cache';
     if (!is_dir($dir) || !is_writable($dir)) return;
+    if (soServerBusy()) return;   // refreshed at the next quiet request; the current copy stays valid for hours
     $cur = cache_get('top_performers', 30 * 86400);
     if (is_array($cur) && isset($cur['from']) && time() - (int) ($cur['builtAt'] ?? 0) < 6 * 3600) return;
     $stamp = $dir . '/top_performers.stamp';

@@ -405,6 +405,7 @@ function soSitemapMaybeRun(): void {
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
     $dir = soSitemapCacheDir();
     if (!is_dir($dir) || !is_writable($dir)) return;
+    if (soCronRecentlyRan('sitemap_worker', 7 * 3600) || soServerBusy()) return;   // the cron builds the sitemap (every 6 hours), or the server is busy
     $stamp = $dir . '/sitemap.stamp';
     if (is_file($stamp) && time() - (int) @filemtime($stamp) < 60) return;
     @touch($stamp);

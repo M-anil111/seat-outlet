@@ -10,6 +10,7 @@ require_once __DIR__ . '/../inc/cron-report.php'; soCronWatch('build-sitemaps');
  *   php cron/build-sitemaps.php --status   show where the crawl is
  */
 require_once __DIR__ . '/../functions.php';
+soCronHeartbeat('sitemap_worker');   // the web-triggered sitemap worker stands down while this cron runs (soSitemapMaybeRun)
 
 $opts = getopt('', ['force', 'status', 'help']);
 if (isset($opts['help'])) { echo "Usage: php cron/build-sitemaps.php [--force] [--status]\n"; exit(0); }
