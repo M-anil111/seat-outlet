@@ -1,13 +1,14 @@
 <?php
 /**
- * CI (needs the migrated database): a request that came through the live Cloudflare Worker never runs on beta or sandbox settings.
- * 24 Nov 2026: the live site answered with HOME_URL on the beta address (noindex,nofollow everywhere), the ticket API on the sandbox ("Invalid
- * event." for real events, artists without events) and no deploy marker, and nothing noticed. Each setting falls back to a beta/sandbox value
- * when it is left out, and all of them left out looks like a legitimate beta server. Runs the real bootstrap (inc/constants.php) through PHP's
- * built-in server with different settings and a Worker header. Run: php tools/test-live-config-guard.php
+ * CI (needs the migrated database): the public host must only reach this code through the Cloudflare Worker.
+ * The origin runs the real application under its own (beta) hostname with beta-style settings; the live Worker fetches it under that name, adds
+ * X-SO-Public-Host and rewrites the pages. 24 Nov 2026: the DNS records of seatoutlet.com and www pointed straight at the origin (proxy off), so
+ * visitors got raw pages (noindex,nofollow, beta addresses) from a server setup that was not the live application under that name, and nothing
+ * noticed. A request for the public host that did not come through the Worker now answers 503. The case that must NEVER break: a Worker request
+ * on the origin's normal beta-style settings. Runs the real bootstrap (inc/constants.php) through PHP's built-in server.
+ * Run: php tools/test-live-config-guard.php
  */
 require_once __DIR__ . '/../inc/cli-guard.php';
-define('SO_CONSTANTS_LOADED_BY_TEST', true);
 $fail = 0;
 function lgCheck(string $name, $got, $want): void {
     global $fail;
@@ -15,22 +16,20 @@ function lgCheck(string $name, $got, $want): void {
 }
 $root = dirname(__DIR__);
 
-// 1. The rule itself (a copy of the function from inc/constants.php: load it without running the bootstrap).
+// 1. The rule itself (the function from inc/constants.php, loaded without running the bootstrap).
 $src = (string) file_get_contents($root . '/inc/constants.php');
-preg_match('/if \(!function_exists\(\'soLiveConfigProblems\'\)\) \{\n(?:\/\*\*[^\n]*\*\/\n)?(function soLiveConfigProblems.*?\n\})\n\}/s', $src, $m);
+preg_match('/if \(!function_exists\(\'soMisroutedPublicHost\'\)\) \{\n(?:\/\*\*[^\n]*\*\/\n)?(function soMisroutedPublicHost.*?\n\})\n\}/s', $src, $m);
 lgCheck('the rule was found in inc/constants.php', isset($m[1]), true);
 eval($m[1]);
-$worker = ['HTTP_X_SO_PUBLIC_HOST' => 'seatoutlet.com'];
-$all = fn(array $s, bool $api, string $home, bool $idx) => soLiveConfigProblems($s, $api, $home, $idx, 'https://seatoutlet.com');
-lgCheck('beta defaults through the Worker: three problems', count($all($worker, false, 'https://beta.seatoutlet.com', false)), 3);
-lgCheck('the www host counts as live', count($all(['HTTP_X_SO_PUBLIC_HOST' => 'www.seatoutlet.com'], false, 'https://beta.seatoutlet.com', false)), 3);
-lgCheck('X-Forwarded-Host is the fallback', count($all(['HTTP_X_FORWARDED_HOST' => 'seatoutlet.com'], false, 'https://beta.seatoutlet.com', false)), 3);
-lgCheck('a direct beta request is not judged', $all([], false, 'https://beta.seatoutlet.com', false), []);
-lgCheck('another public host is not judged', $all(['HTTP_X_SO_PUBLIC_HOST' => 'beta.seatoutlet.com'], false, 'https://beta.seatoutlet.com', false), []);
-lgCheck('good live settings: no problem', $all($worker, true, 'https://seatoutlet.com', true), []);
-lgCheck('sandbox API alone is a problem', count($all($worker, false, 'https://seatoutlet.com', true)), 1);
-lgCheck('noindex alone is a problem', count($all($worker, true, 'https://seatoutlet.com', false)), 1);
-lgCheck('a beta HOME_URL alone is a problem', count($all($worker, true, 'https://beta.seatoutlet.com', true)), 1);
+$pub = 'https://seatoutlet.com';
+lgCheck('public host, no Worker header: misrouted', soMisroutedPublicHost(['HTTP_HOST' => 'seatoutlet.com'], $pub), true);
+lgCheck('www host, no Worker header: misrouted', soMisroutedPublicHost(['HTTP_HOST' => 'www.seatoutlet.com'], $pub), true);
+lgCheck('with a port: misrouted', soMisroutedPublicHost(['HTTP_HOST' => 'seatoutlet.com:443'], $pub), true);
+lgCheck('public host through the Worker: fine', soMisroutedPublicHost(['HTTP_HOST' => 'seatoutlet.com', 'HTTP_X_SO_PUBLIC_HOST' => 'seatoutlet.com'], $pub), false);
+lgCheck('the Worker\'s normal request (the beta host plus its header): fine', soMisroutedPublicHost(['HTTP_HOST' => 'beta.seatoutlet.com', 'HTTP_X_SO_PUBLIC_HOST' => 'seatoutlet.com'], $pub), false);
+lgCheck('a direct request on the beta host: fine', soMisroutedPublicHost(['HTTP_HOST' => 'beta.seatoutlet.com'], $pub), false);
+lgCheck('localhost: fine', soMisroutedPublicHost(['HTTP_HOST' => '127.0.0.1:8000'], $pub), false);
+lgCheck('no host at all: fine', soMisroutedPublicHost([], $pub), false);
 
 // 2. The real bootstrap through PHP's server.
 $router = sys_get_temp_dir() . '/so-lg-router-' . getmypid() . '.php';
@@ -46,34 +45,38 @@ $run = function (array $extraEnv, string $path, array $headers) use ($router, $b
     usleep(900000);
     $ctx = stream_context_create(['http' => ['timeout' => 30, 'ignore_errors' => true, 'header' => implode("\r\n", $headers)]]);
     $body = (string) @file_get_contents('http://127.0.0.1:' . $port . $path, false, $ctx);
-    $code = 0;
-    foreach ($http_response_header ?? [] as $h) { if (preg_match('#^HTTP/\S+ (\d{3})#', $h, $mm)) $code = (int) $mm[1]; }
+    $code = 0; $retry = '';
+    foreach ($http_response_header ?? [] as $h) {
+        if (preg_match('#^HTTP/\S+ (\d{3})#', $h, $mm)) $code = (int) $mm[1];
+        if (stripos($h, 'Retry-After:') === 0) $retry = trim(substr($h, 12));
+    }
     proc_terminate($proc); proc_close($proc);
-    return [$code, $body];
+    return [$code, $body, $retry];
 };
-$W = ['X-SO-Public-Host: seatoutlet.com'];
-$LIVE = ['BASE_URL' => 'https://www.tn-apis.com', 'HOME_URL' => 'https://seatoutlet.com', 'SITE_INDEXABLE' => '1'];
+$BETA_STYLE = [];   // what the origin really runs on: every setting at its beta default
+$LIVE_HOST = ['Host: seatoutlet.com'];
+$WORKER = ['Host: beta.seatoutlet.com', 'X-SO-Public-Host: seatoutlet.com', 'X-Forwarded-Host: seatoutlet.com'];
 
-[$c, $b] = $run([], '/', $W);
-lgCheck('beta defaults through the Worker: 503', $c, 503);
-lgCheck('and the page does not name a setting or host', strpos($b, 'BASE_URL') === false && strpos($b, 'beta.') === false, true);
-[$c] = $run([], '/', []);
-lgCheck('beta defaults on a direct beta request: the page works', $c, 200);
-[$c, $b] = $run($LIVE, '/', $W);
-lgCheck('live settings through the Worker: the page works', [$c, $b], [200, 'page ok']);
-[$c] = $run(['BASE_URL' => 'https://www.tn-apis.com'], '/', $W);
-lgCheck('live API but HOME_URL missing: 503', $c, 503);
-[$c] = $run(['HOME_URL' => 'https://seatoutlet.com'], '/', $W);
-lgCheck('real HOME_URL but the sandbox API: 503', $c, 503);
-[$c] = $run(['SO_ALLOW_NONLIVE_ON_LIVE' => '1'], '/', $W);
+[$c, $b, $r] = $run($BETA_STYLE, '/', $LIVE_HOST);
+lgCheck('the public host straight at the origin: 503 with Retry-After', [$c, $r], [503, '60']);
+lgCheck('and the page names no setting, host or address', strpos($b, 'beta.') === false && strpos($b, 'HOME_URL') === false && strpos($b, 'Cloudflare') === false, true);
+[$c, $b] = $run($BETA_STYLE, '/', ['Host: www.seatoutlet.com']);
+lgCheck('www straight at the origin: 503', $c, 503);
+[$c, $b] = $run($BETA_STYLE, '/', $WORKER);
+lgCheck('THE NORMAL PRODUCTION PATH: a Worker request on beta-style settings works', [$c, $b], [200, 'page ok']);
+[$c] = $run($BETA_STYLE, '/', ['Host: beta.seatoutlet.com']);
+lgCheck('a direct request on the beta host works', $c, 200);
+[$c] = $run($BETA_STYLE, '/', ['Host: 127.0.0.1']);
+lgCheck('a request with no public host works', $c, 200);
+[$c] = $run(['SO_ALLOW_DIRECT_PUBLIC_HOST' => '1'], '/', $LIVE_HOST);
 lgCheck('the switch turns the guard off on purpose', $c, 200);
-[$c, $b] = $run([], '/ajax/health.php', $W);
+[$c, $b] = $run($BETA_STYLE, '/ajax/health.php', $LIVE_HOST);
 $j = json_decode($b, true);
-lgCheck('health still answers when the settings are wrong, and says not ok', [$c, $j['ok'] ?? null], [200, false]);
-lgCheck('the public health answer carries no detail', array_keys($j ?? []) === ['ok', 'time', 'commit', 'commitAgeSeconds'] || isset($j['ok']) && !isset($j['configProblems']), true);
-[$c, $b] = $run($LIVE, '/ajax/health.php', $W);
-lgCheck('health with live settings does not report a configuration problem', [$c, (json_decode($b, true) ?? [])['ok'] ?? null] === [200, true] || $c === 200, true);
+lgCheck('health still answers for the public host straight at the origin, and says not ok', [$c, $j['ok'] ?? null], [200, false]);
+lgCheck('the public health answer keeps its four fields', array_keys($j ?? []), ['ok', 'time', 'commit', 'commitAgeSeconds']);
+[$c, $b] = $run($BETA_STYLE, '/ajax/health.php', $WORKER);
+lgCheck('health through the Worker answers', $c, 200);
 
 @unlink($router);
 if ($fail) { echo "$fail check(s) failed\n"; exit(1); }
-echo "ok: live traffic never runs on beta or sandbox settings\n";
+echo "ok: the public host never reaches the origin without the Worker, and the Worker path is untouched\n";

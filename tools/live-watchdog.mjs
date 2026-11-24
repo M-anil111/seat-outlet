@@ -27,10 +27,13 @@ export async function checkSite(base) {
   notes.push(`home ${home.status} in ${home.seconds.toFixed(1)}s`);
   if (home.status !== 200) fail(`home page answered ${home.status}, wanted 200`);
   if (home.seconds > MAX_SECONDS) fail(`home page took ${home.seconds.toFixed(1)}s (limit ${MAX_SECONDS}s)`);
+  // The live site is served through Cloudflare (the proxy and the Worker that rewrites the pages). 24 Nov 2026: the DNS records pointed straight at
+  // the origin, so visitors got the raw pages (noindex, beta addresses) and a server setup without the data.
+  if (!home.headers.get('cf-ray')) fail('the home page did not come through Cloudflare (no cf-ray header): the DNS proxy, and the Worker that rewrites the pages, is off');
   const robots = (home.body.match(/<meta name="robots" content="([^"]*)"/i) || [])[1] || '';
   if (/noindex|nofollow/i.test(robots)) fail(`home page robots meta is "${robots}": search engines are told to drop the site`);
   const beta = (home.body.match(/beta\.seatoutlet\.com/gi) || []).length;
-  if (beta > 0) fail(`home page carries ${beta} reference(s) to the beta address (HOME_URL is wrong)`);
+  if (beta > 0) fail(`home page carries ${beta} reference(s) to the origin's beta address: the Worker that rewrites it is not processing this page`);
   const canon = (home.body.match(/<link rel="canonical" href="([^"]*)"/i) || [])[1] || '';
   if (!canon.includes(host.replace(/^www\./, ''))) fail(`home canonical is "${canon}", not ${host}`);
   const eventLinks = [...new Set([...home.body.matchAll(/href="(\/event\/[^"#?]+)"/g)].map((m) => m[1]))];

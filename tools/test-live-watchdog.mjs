@@ -14,7 +14,7 @@ async function run(overrides) {
     health: { ok: true, time: 'x', commit: 'abcd1234' }, robotsTxt: 'User-agent: *\nDisallow: /admin/\n', eventBody: '<h1>Zq One</h1>', ...overrides };
   const srv = createServer((req, res) => {
     const u = req.url.split('?')[0];
-    const send = (code, type, body) => { res.writeHead(code, { 'content-type': type }); res.end(body); };
+    const send = (code, type, body) => { res.writeHead(code, { 'content-type': type, ...(o.noCloudflare ? {} : { 'cf-ray': 'test-ray' }) }); res.end(body); };
     if (u === '/') return send(200, 'text/html', page({ ...o, port: srv.address().port }));
     if (u === '/ajax/health.php') return send(200, 'application/json', JSON.stringify(o.health));
     if (u === '/robots.txt') return send(200, 'text/plain', o.robotsTxt);
@@ -45,6 +45,8 @@ r = await run({ health: { ok: false, time: 'x', commit: 'abcd1234' } });
 check('health ok:false fails', has(r, 'ok:false'));
 r = await run({ health: { ok: true, time: 'x', commit: null } });
 check('a missing deploy marker fails', has(r, 'no deployed commit'));
+r = await run({ noCloudflare: true });
+check('a site that does not come through Cloudflare fails', has(r, 'did not come through Cloudflare'));
 r = await run({ eventBody: '<h1>Ok</h1>', eventStatus: 200, events: '<a href="/event/zq-one-1">e1</a>' });
 check('one working event is enough to pass', r.problems.length === 0, r.problems.join(' | '));
 

@@ -13,8 +13,8 @@ header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store');
 
 $out = ['ok' => true, 'time' => gmdate('c')];
-// Settings that make a live (through the Worker) request run on beta or sandbox values: ok is false, the names are in the detail view.
-$liveProblems = soLiveConfigProblems($_SERVER, SO_TN_LIVE_API, HOME_URL, SITE_INDEXABLE, SO_PUBLIC_ORIGIN);
+// A request for the public host that did not come through the Cloudflare Worker (the DNS proxy is off): ok is false, the reason is in the detail view.
+$liveProblems = soMisroutedPublicHost($_SERVER, SO_PUBLIC_ORIGIN) ? ['the public host reached the origin without the Cloudflare Worker (DNS proxy off)'] : [];
 $out['configProblems'] = $liveProblems;
 if ($liveProblems) $out['ok'] = false;
 $stampFile = __DIR__ . '/../.deployed-commit';
