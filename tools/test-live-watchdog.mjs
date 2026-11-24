@@ -19,9 +19,9 @@ async function run(overrides) {
     if (u === '/ajax/health.php') return send(200, 'application/json', JSON.stringify(o.health));
     if (u === '/robots.txt') return send(200, 'text/plain', o.robotsTxt);
     if (u === '/sitemap.xml') return send(301, 'text/html', '', { location: '/sitemaps/sitemap.xml' });   // the live site redirects the index like this
-    if (u === '/sitemaps/sitemap.xml') return send(200, 'application/xml', `<sitemapindex><sitemap><loc>http://127.0.0.1:${port}/sitemaps/performers-1.xml</loc></sitemap></sitemapindex>`);
+    if (u === '/sitemaps/sitemap.xml') return send(200, 'application/xml', o.noPerformers ? `<sitemapindex><sitemap><loc>http://127.0.0.1:${port}/sitemaps/pages-1.xml</loc></sitemap></sitemapindex>` : `<sitemapindex><sitemap><loc>http://127.0.0.1:${port}/sitemaps/performers-1.xml</loc></sitemap></sitemapindex>`);
     if (u === '/sitemaps/performers-1.xml') return send(200, 'application/xml', `<urlset><url><loc>http://127.0.0.1:${port}/artist/zq-band</loc></url></urlset>`);
-    if (u.startsWith('/event/')) return send(o.eventStatus || 200, 'text/html', o.eventBody);
+    if (u.startsWith('/event/')) { const b = o.eventBodies && o.eventBodies[u]; return send(b ? b[0] : (o.eventStatus || 200), 'text/html', b ? b[1] : o.eventBody); }
     if (u.startsWith('/artist/')) return send(200, 'text/html', `<html><head><meta name="robots" content="${o.artistRobots || 'index,follow'}"></head><body>${o.artistEvents}${o.artistNoEventsMessage || ''}</body></html>`);
     if (u === '/search') return send(o.searchStatuses[Math.min(searchCalls++, o.searchStatuses.length - 1)], 'text/html', 'x');
     send(404, 'text/html', 'no');
@@ -38,7 +38,9 @@ check('a missing deploy marker is only a note', r.problems.length === 0, r.probl
 r = await run({ searchStatuses: [503, 200] });
 check('one 503 from search (a throttled feed) does not fail it', r.problems.length === 0, r.problems.join(' | '));
 r = await run({ searchStatuses: [503, 503] });
-check('two 503s from search fail it', has(r, 'search answered 503 twice'));
+check('two 503s from search fail it', has(r, 'search answered 503'));
+r = await run({ searchStatuses: [500, 200] });
+check('a 500 from search is not retried: it fails', has(r, 'search answered 500'));
 r = await run({ robots: 'noindex, nofollow' });
 check('noindex on the home page fails', has(r, 'robots meta'));
 r = await run({ assets: '<script src="https://beta.seatoutlet.com/js/main.min.js"></script>' });
@@ -49,6 +51,12 @@ r = await run({ artistEvents: '', artistNoEventsMessage: '<p>No upcoming events<
 check('an artist with a real "no upcoming events" message passes', r.problems.length === 0, r.problems.join(' | '));
 r = await run({ eventBody: '<p>Invalid event.</p>', eventStatus: 404 });
 check('"Invalid event." on every linked event fails', has(r, 'none of the events'));
+r = await run({ eventBodies: { '/event/zq-one-1': [200, '<p>Invalid event.</p>'], '/event/zq-two-2': [200, '<p>Invalid event.</p>'] } });
+check('"Invalid event." with a 200 status is caught by the text, not only the status', has(r, 'none of the events'));
+r = await run({ eventBodies: { '/event/zq-one-1': [404, '<p>Invalid event.</p>'], '/event/zq-two-2': [200, '<h1>Zq Two</h1>'] } });
+check('one working event among broken ones is enough to pass', r.problems.length === 0, r.problems.join(' | '));
+r = await run({ noPerformers: true });
+check('a sitemap with no performers (no artist to check) fails instead of passing', has(r, 'no artist page found'));
 r = await run({ artistRobots: 'noindex, nofollow' });
 check('an artist page with events but noindex fails', has(r, 'robots meta'));
 r = await run({ robotsTxt: 'User-agent: *\nDisallow: /\n' });

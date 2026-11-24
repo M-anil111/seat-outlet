@@ -14,7 +14,7 @@ The origin serves the real application under its beta hostname (`beta.seatoutlet
 
 ## Corrections to earlier work on 24 Nov
 
-The first versions of PR 300, and an unsent email draft, treated the morning as an outage caused by Cloudflare's proxy being switched off and lost server settings. That was a misreading: it was most likely a cutover in progress. PR 300 had added a guard that answered 503 to any request for the public hostname that did not come through the Worker. With the Worker retired that would have taken the live site down if that code had reached it. It was merged for a short time (`a2edfe8d`) and removed in the next change, before the live install received it (the live install had not deployed it when checked). The email was never sent and was deleted.
+The first versions of PR 300 treated the morning as an outage caused by Cloudflare's proxy being switched off and lost server settings. That was a misreading: it was most likely a cutover in progress. PR 300 had added a guard that answered 503 to any request for the public hostname that did not come through the Worker. With the Worker retired that would have taken the live site down if that code had reached it. It was merged for a short time (`a2edfe8d`) and removed in the next change; whether the live install ever received it is not confirmed.
 
 ## What stays: the outside watchdog
 

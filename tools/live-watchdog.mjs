@@ -56,9 +56,8 @@ export async function checkSite(base) {
     if (sm.status !== 200 || !/<loc>/.test(sm.body)) fail(`sitemap.xml answered ${sm.status} and ${/<loc>/.test(sm.body) ? 'lists pages' : 'lists no pages'}`);
   } catch (e) { fail('sitemap.xml did not answer: ' + String(e).slice(0, 100)); }
 
-  // 4 and 5. An artist page linked from the home page shows the artist, and its events open (no "Invalid event.", the event title in the page).
-  // Events are taken from that page, not from the home page: the home feed is filled by the browser, so the home HTML carries no event links.
-  // The artist page comes from the sitemap (always static), not from the home page, whose artist cards are filled by the browser.
+  // 4 and 5. Find an artist in the sitemap, check its page for events (or a no-upcoming-events message), and open up to three linked events.
+  // Neither comes from the home page: its feed and artist cards are filled by the browser, so the home HTML carries no event or artist links.
   let artistLink = '';
   try {
     const idx = await get(base, '/sitemap.xml');
@@ -69,7 +68,7 @@ export async function checkSite(base) {
       if (loc) artistLink = new URL(loc).pathname;
     }
   } catch (e) { /* reported by the sitemap check above */ }
-  if (!artistLink) notes.push('no artist page found in the sitemap to check');
+  if (!artistLink) fail('no artist page found in the sitemap to check (no performers sitemap, or it lists no artist)');
   else {
     let eventLinks = [];
     try {
@@ -96,8 +95,8 @@ export async function checkSite(base) {
   // 6. Search answers.
   try {
     let s = await get(base, '/search?q=concert');
-    if (s.status !== 200) { await new Promise((r) => setTimeout(r, 5000)); s = await get(base, '/search?q=concert'); }   // a throttled ticket feed answers 503 for a moment
-    if (s.status !== 200) fail(`search answered ${s.status} twice`);
+    if (s.status === 503) { await new Promise((r) => setTimeout(r, 5000)); s = await get(base, '/search?q=concert'); }   // a throttled ticket feed answers 503 for a moment: only that is retried
+    if (s.status !== 200) fail(`search answered ${s.status}`);
   } catch (e) { fail('search did not answer: ' + String(e).slice(0, 100)); }
 
   return { problems, notes };
