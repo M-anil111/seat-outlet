@@ -2914,7 +2914,8 @@ function renderNotFoundPage($what, $apiResponse = null, $label = '') {
     // Callers that do not hand over the API response (category, state, country pages): a request that already
     // failed in this process (throttled, down, circuit open) marks the page degraded, and that is a retryable
     // 503, never a 404 that would drop live menu pages from search engines.
-    if (($apiResponse !== null && tnEntityUnavailable($apiResponse)) || ($apiResponse === null && !empty($GLOBALS['tn_degraded']))) {
+    if (($apiResponse !== null && tnEntityUnavailable($apiResponse)) || ($apiResponse === null && !empty($GLOBALS['tn_degraded']))
+        || (function_exists('soSlugRegistryMissing') && soSlugRegistryMissing(['Performer' => 'performer', 'Venue' => 'venue', 'Event' => 'event'][$what] ?? ''))) {   // no address registry on this install: every address looks unknown, never a 404
         renderUnavailablePage($what, $label);
     }
     http_response_code(404);
