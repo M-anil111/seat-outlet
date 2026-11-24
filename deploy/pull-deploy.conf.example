@@ -11,6 +11,10 @@ DEPLOY_WORKDIR=/home/seatoutlet-beta/deploy/checkout
 # Read-only GitHub deploy key (docs/beta-runbook.md section 6). With this set, cron never depends on an ssh-agent or a prompt.
 DEPLOY_SSH_KEY=/home/seatoutlet-beta/.ssh/seatoutlet_deploy
 
+# Live only (/home/seatoutlet/deploy/pull-deploy.conf): refuse to deploy when the web root's inc/env.local.php does not set this HOME_URL,
+# so a settings file without it can never put live on beta defaults (noindex everywhere). Leave unset on beta.
+# DEPLOY_EXPECT_HOME_URL=https://seatoutlet.com
+
 # Leave as they are unless the site moves.
 DEPLOY_REPO=git@github.com:M-anil111/seat-outlet.git
 DEPLOY_BRANCH=main

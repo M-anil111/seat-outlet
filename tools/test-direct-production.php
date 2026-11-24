@@ -41,6 +41,8 @@ directProdCheck('vhost: www and http go to https://seatoutlet.com, robots.txt is
     && strpos($vh, 'location = /robots.txt { rewrite ^ /robots.php last; }') !== false && strpos($vh, 'error_page 404 /404.php;') !== false, true);
 directProdCheck('vhost: PHP runs in the HTTPS block itself (no Varnish or port 8080 hop, so PHP sees the visitor\'s own address)',
     strpos($vh, 'varnish') === false && strpos($vh, 'listen 8080') === false && strpos($vh, 'fastcgi_pass 127.0.0.1:{{php_fpm_port}};') !== false && strpos($vh, 'fastcgi_intercept_errors off;') !== false, true);
+directProdCheck('vhost: archives and backups in the web root answer 404 (a source zip was downloadable on 24 Nov 2026)',
+    strpos($vh, '|gz|zip|tar|tgz|7z|rar|bz2|xz)$ { return 404; }') !== false, true);
 foreach (['concert-tickets-for-sale.php', 'performer.php', 'event.php', 'holiday-city.php', 'artist-city.php', 'blog.php', 'robots.php', '404.php', 'county.php'] as $page) {
     if (!is_file($root . '/' . $page)) directProdCheck('vhost target exists: ' . $page, false, true);
 }
