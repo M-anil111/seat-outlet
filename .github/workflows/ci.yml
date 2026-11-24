@@ -299,7 +299,7 @@ jobs:
         run: php tools/test-bio-not-in-request.php
       - name: The menu builds with a handful of database queries, not one per link
         run: php tools/test-menu-query-count.php
-      - name: Production served directly (no Worker): public host served, www redirect safe from forged headers, shared TN budget and token
+      - name: "Production served directly (no Worker): public host served, www redirect safe from forged headers, shared TN budget and token"
         run: php tools/test-direct-production.php
       - name: Background work yields to visitors and its web duplicates stand down
         run: php tools/test-server-load.php
