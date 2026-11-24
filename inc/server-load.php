@@ -9,7 +9,9 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVE
  * nothing is lost by skipping a turn: every one of them runs again at its next turn, and the data they refresh stays valid for hours.
  *
  * soServerBusy() is true when the one-minute load average is above the limit. The limit is SO_BG_MAX_LOAD (an absolute load average)
- * or, when that is not set, one per CPU core. With no load figure (a host that hides it) it is never busy, so nothing changes there.
+ * or, when that is not set, one per CPU core; a negative value (-1) means always busy, which pauses the jobs that ask (the page warmers, the
+ * image and sitemap workers and the top performers refresh). With no load figure (a host that hides it) it is never busy unless a negative
+ * limit is set, so nothing changes there.
  */
 function soCpuCores(): int {
     static $n = null;
@@ -21,12 +23,13 @@ function soCpuCores(): int {
 
 /** @param float|null $load the one-minute load average (tests); @param int|null $cores CPU cores (tests); @param float|null $limit absolute limit (tests) */
 function soServerBusy(?float $load = null, ?int $cores = null, ?float $limit = null): bool {
+    if ($limit === null) { $env = getenv('SO_BG_MAX_LOAD'); $limit = $env !== false && is_numeric($env) ? (float) $env : 0.0; }
+    if ($limit < 0) return true;   // SO_BG_MAX_LOAD=-1 pauses the jobs that ask (and makes the tests independent of the real load)
     if ($load === null) {
         $l = function_exists('sys_getloadavg') ? @sys_getloadavg() : false;
         if (!is_array($l) || !isset($l[0])) return false;
         $load = (float) $l[0];
     }
-    if ($limit === null) { $env = getenv('SO_BG_MAX_LOAD'); $limit = $env !== false && is_numeric($env) ? (float) $env : 0.0; }
     $max = $limit > 0 ? $limit : (float) ($cores ?? soCpuCores());
     return $load > $max;
 }

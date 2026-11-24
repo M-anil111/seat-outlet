@@ -31,6 +31,10 @@ slCheck('the environment limit is read (never busy at 100000)', soServerBusy(50.
 putenv('SO_BG_MAX_LOAD=not-a-number');
 slCheck('a bad environment value is ignored (falls back to cores)', soServerBusy(0.1, 4), false);
 putenv('SO_BG_MAX_LOAD');
+slCheck('a negative limit always means busy, whatever the load', soServerBusy(0.0, 64, -1.0), true);
+putenv('SO_BG_MAX_LOAD=-1');
+slCheck('SO_BG_MAX_LOAD=-1 pauses background work', soServerBusy(), true);
+putenv('SO_BG_MAX_LOAD');
 slCheck('there is at least one core', soCpuCores() >= 1, true);
 $l = function_exists('sys_getloadavg') ? sys_getloadavg() : false;
 slCheck('with no argument it reads the real load without failing', is_bool(soServerBusy()), true);
@@ -48,7 +52,7 @@ slCheck('an old heartbeat does not count', soCronRecentlyRan('zq_test', 60), fal
 // web-triggered workers check both, and the heartbeats are written by the crons whose workers they silence.
 foreach (['warm-listings', 'warm-event-details', 'resolve-images', 'warm-snapshots'] as $job) {
     $out = []; $rc = 0;
-    exec('SO_BG_MAX_LOAD=0.0000001 php ' . escapeshellarg($root . '/cron/' . $job . '.php') . ' 2>&1', $out, $rc);
+    exec('SO_BG_MAX_LOAD=-1 php ' . escapeshellarg($root . '/cron/' . $job . '.php') . ' 2>&1', $out, $rc);
     $text = implode("\n", $out);
     slCheck("$job: exits 0 and says it skipped because the server is busy", [$rc, strpos($text, 'the server is busy') !== false], [0, true]);
 }

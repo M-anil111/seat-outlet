@@ -6,7 +6,7 @@ Written 24 Nov 2026 after the hosting provider reported high resource use. This 
 
 The pages are identical for every visitor and the app already sends `Cache-Control: public, s-maxage=120, stale-while-revalidate` (`sendPageCacheHeaders`), but Cloudflare reports the HTML as `DYNAMIC` (not cached): the Worker (`deploy/cloudflare-worker/seatoutlet-blog-proxy.js`) returns a new response and caches only one fallback page. So every visit, and every bot visit, builds the page in PHP with its database queries. Caching anonymous GET pages at the edge for one to two minutes is the largest possible cut and needs the Cloudflare account (a Cache Rule that respects the origin's headers, or the Worker's Cache API). It must honour the origin's `no-store` on degraded, checkout and admin pages (the app already sends it). Not done here: it changes how live prices are served and needs testing on the Cloudflare side.
 
-While the DNS proxy is off (see `docs/production-safeguards.md`) the origin also serves every static file and all bot traffic that Cloudflare normally absorbs.
+Public DNS for `seatoutlet.com` returned the origin server's own address (not a Cloudflare address) in the 24 Nov incident window (see `docs/production-safeguards.md`), so the origin also serves every static file and all bot traffic that a Cloudflare proxy would absorb. `docs/production-cutover.md` already plans Cloudflare Cache Rules for the live site; they are the place to cache pages and static files.
 
 ## 2. Scheduled jobs (documented schedules; cost from the code)
 
@@ -44,5 +44,5 @@ While the DNS proxy is off (see `docs/production-safeguards.md`) the origin also
 
 1. Edge caching of anonymous page views (section 1): the largest cut.
 2. Crontab: `warm-snapshots` every 60 minutes instead of 30 (or `--limit=200`) halves the heaviest scheduled job; remove the `home-top-performers` cron (the web hook does the same); check that `warm-event-details` is not run with a large argument.
-3. Set `SO_BG_MAX_LOAD` in `inc/env.local.php` if the host's limit is lower than one load per core.
+3. Set `SO_BG_MAX_LOAD` in `inc/env.local.php` if the host's limit is lower than one load per core (`-1` pauses the page warmers, the image and sitemap workers and the top performers refresh).
 4. Ask the host for the busiest-scripts report, and `ticketnetwork.demand` from the health detail view (bot share): if crawlers are most of the load, serve known crawlers from stored snapshots (the existing design note in `docs/reliability.md`).
