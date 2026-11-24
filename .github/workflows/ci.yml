@@ -301,6 +301,8 @@ jobs:
         run: php tools/test-bio-not-in-request.php
       - name: The menu builds with a handful of database queries, not one per link
         run: php tools/test-menu-query-count.php
+      - name: Live traffic never runs on beta or sandbox settings (fail closed)
+        run: php tools/test-live-config-guard.php
       - name: An artist with no upcoming events answers 200 (noindex) from the catalog copy
         run: php tools/test-performer-redirect-standin.php
       - name: No ads on error, noindex or empty pages
@@ -401,6 +403,9 @@ jobs:
 
       - name: More Events retries once, then says so, and recovers
         run: node tools/test-load-more-click.mjs
+
+      - name: Production watchdog passes a healthy site and fails each breakage
+        run: node tools/test-live-watchdog.mjs
 
       - name: Site log (on failure)
         if: failure()

@@ -129,6 +129,31 @@ if (!empty($missingSecrets)) {
 if (SO_TN_LIVE_API && preg_match('#//(beta\.|staging\.|dev\.|127\.0\.0\.1|localhost)#i', HOME_URL) && getenv('SO_ALLOW_MIXED_ENV') !== '1') {
     soConfigUnavailable('BASE_URL is the live TicketNetwork API but HOME_URL is still a beta/local address');
 }
+// Production traffic must never run on beta or sandbox defaults. Every setting above falls back to a BETA/SANDBOX value when it is left out,
+// and "all of them left out" looks exactly like a legitimate beta server, so nothing stopped it: on 24 Nov 2026 the live site answered with
+// HOME_URL on the beta address (every page noindex,nofollow, assets from beta.), the ticket API on the sandbox (real events "Invalid event.",
+// artists without events) and no deploy marker. A request that came through the live Cloudflare Worker (it sends X-SO-Public-Host with the
+// public host) is production traffic; for those, any non-production setting answers 503 (never cached, retried by visitors and search
+// engines, which keeps the pages indexed) and the reason goes to the server log. A direct hit on the beta address is unchanged.
+// /ajax/health.php skips this guard (SO_CONFIG_GUARD_SKIP) so a monitor can read the state. SO_ALLOW_NONLIVE_ON_LIVE=1 turns it off on purpose.
+if (!function_exists('soLiveConfigProblems')) {
+/** @return string[] what is wrong with the settings for a request that came through the live Worker (empty for a beta request or good settings) */
+function soLiveConfigProblems(array $server, bool $liveApi, string $homeUrl, bool $indexable, string $publicOrigin): array {
+    $host = strtolower(trim(explode(',', (string) ($server['HTTP_X_SO_PUBLIC_HOST'] ?? '') ?: (string) ($server['HTTP_X_FORWARDED_HOST'] ?? ''))[0]));
+    $host = preg_replace('/:\d+$/', '', $host);
+    $pub = strtolower((string) (parse_url($publicOrigin, PHP_URL_HOST) ?: ''));
+    if ($host === '' || $pub === '' || ($host !== $pub && $host !== 'www.' . $pub)) return [];
+    $problems = [];
+    if (!$liveApi) $problems[] = 'BASE_URL is not the live TicketNetwork API (sandbox data)';
+    if (preg_match('#//(beta\.|staging\.|dev\.|127\.0\.0\.1|localhost)#i', $homeUrl)) $problems[] = 'HOME_URL is a beta/local address';
+    if (!$indexable) $problems[] = 'SITE_INDEXABLE is off (every page would be noindex)';
+    return $problems;
+}
+}
+if (PHP_SAPI !== 'cli' && !defined('SO_CONFIG_GUARD_SKIP') && getenv('SO_ALLOW_NONLIVE_ON_LIVE') !== '1') {
+    $soLiveProblems = soLiveConfigProblems($_SERVER, SO_TN_LIVE_API, HOME_URL, SITE_INDEXABLE, SO_PUBLIC_ORIGIN);
+    if ($soLiveProblems) soConfigUnavailable('live traffic is running on non-production settings: ' . implode('; ', $soLiveProblems));
+}
 define('SO_CONSTANTS_LOADED', true);
 
 
