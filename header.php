@@ -102,8 +102,13 @@ include_once 'functions.php';
                 }
                 // Nothing remembered about it: a real 404 (the page below offers search and browse links), not a silent redirect.
             }
-            http_response_code(404);
-            $pageRobots = 'noindex, follow';
+            if (function_exists('soSlugRegistryMissing') && soSlugRegistryMissing('event')) {
+                http_response_code(503);   // no address registry on this install: a retryable 503, never a 404 that drops live events from search
+                header('Retry-After: 30');
+            } else {
+                http_response_code(404);
+                $pageRobots = 'noindex, follow';
+            }
         } elseif (soEventIsOver($soEvCheck)) {
             // Over: the performer's page lists what is still on sale. Temporary (302): the next date of a tour may reuse the performer page, the event page itself is gone.
             $soTo = soEventRedirectTarget($soEvCheck, $soEvId);

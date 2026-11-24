@@ -53,6 +53,38 @@ function soSlugDb(): ?mysqli {
     return defined('MYSQLI') && MYSQLI instanceof mysqli ? MYSQLI : null;
 }
 
+/**
+ * True when this install has too few stored addresses of a type to tell a real address from a made-up one. Every clean address
+ * (/event/name-city-date, /artist/name, /venue/name) is resolved through the url_slugs table, so on an install whose table was not filled (a new
+ * database after a cutover, migrations not applied) every real address would look unknown and answer 404 "Invalid event.", which search
+ * engines act on by dropping pages. Callers answer a retryable 503 instead. The table fills itself as pages render (menu links, listings), so
+ * "empty" is not the test: fewer than SO_SLUG_MIN_ROWS (default 200) rows of that type is. A live site holds thousands of each type.
+ * A database that cannot be reached is not this case (it has its own error path), so it returns false. One cheap query per type, remembered per request.
+ * $probe: a connection to check instead of the site's own (tests).
+ */
+function soSlugRegistryMissing(string $type = 'event', ?mysqli $probe = null): bool {
+    static $memo = [];
+    if ($probe === null && isset($memo[$type])) return $memo[$type];
+    $db = $probe ?? soSlugDb();
+    if (!$db || !in_array($type, SO_SLUG_TYPES, true)) return false;
+    $min = (int) (getenv('SO_SLUG_MIN_ROWS') ?: 200);
+    $missing = false;
+    try {
+        $st = $db->prepare('SELECT COUNT(*) FROM (SELECT 1 FROM url_slugs WHERE type = ? LIMIT ' . max(1, $min) . ') t');
+        if ($st) {
+            $st->bind_param('s', $type);
+            $st->execute();
+            $row = $st->get_result()->fetch_row();
+            $st->close();
+            $missing = $row ? (int) $row[0] < $min : false;
+        }
+    } catch (Throwable $e) {
+        $missing = stripos($e->getMessage(), "doesn't exist") !== false;   // table missing: migrations not applied; any other error is an outage, not this case
+    }
+    if ($probe === null) $memo[$type] = $missing;
+    return $missing;
+}
+
 /** Per request memory: ['type|id' => slug, 'type|slug' => id]. */
 function &soSlugMemory(): array {
     static $mem = [];
