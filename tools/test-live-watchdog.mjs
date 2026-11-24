@@ -18,8 +18,9 @@ async function run(overrides) {
     if (u === '/') return send(200, 'text/html', `<!doctype html><html><head><meta name="robots" content="${o.robots}"><link rel="canonical" href="http://127.0.0.1:${port}/"><title>Seat Outlet</title></head><body>${o.assets}<h1>Home</h1></body></html>`);
     if (u === '/ajax/health.php') return send(200, 'application/json', JSON.stringify(o.health));
     if (u === '/robots.txt') return send(200, 'text/plain', o.robotsTxt);
+    if (u === '/ajax/get_ip_details.php') return send(200, 'application/json', '{"city":"","source":"unknown"}');
     if (u === '/sitemap.xml') return send(301, 'text/html', '', { location: '/sitemaps/sitemap.xml' });   // the live site redirects the index like this
-    if (u === '/sitemaps/sitemap.xml') return send(200, 'application/xml', o.noPerformers ? `<sitemapindex><sitemap><loc>http://127.0.0.1:${port}/sitemaps/pages-1.xml</loc></sitemap></sitemapindex>` : `<sitemapindex><sitemap><loc>http://127.0.0.1:${port}/sitemaps/performers-1.xml</loc></sitemap></sitemapindex>`);
+    if (u === '/sitemaps/sitemap.xml') return send(200, 'application/xml', o.sitemap ? o.sitemap : o.noPerformers ? `<sitemapindex><sitemap><loc>http://127.0.0.1:${port}/sitemaps/pages-1.xml</loc></sitemap></sitemapindex>` : `<sitemapindex><sitemap><loc>http://127.0.0.1:${port}/sitemaps/performers-1.xml</loc></sitemap></sitemapindex>`);
     if (u === '/sitemaps/performers-1.xml') return send(200, 'application/xml', `<urlset><url><loc>http://127.0.0.1:${port}/artist/zq-band</loc></url></urlset>`);
     if (u.startsWith('/event/')) { const b = o.eventBodies && o.eventBodies[u]; return send(b ? b[0] : (o.eventStatus || 200), 'text/html', b ? b[1] : o.eventBody); }
     if (u.startsWith('/artist/')) return send(200, 'text/html', `<html><head><meta name="robots" content="${o.artistRobots || 'index,follow'}"></head><body>${o.artistEvents}${o.artistNoEventsMessage || ''}</body></html>`);
@@ -32,9 +33,7 @@ async function run(overrides) {
 const has = (r, text) => r.problems.some((p) => p.includes(text));
 
 let r = await run({});
-check('a healthy site passes (home with no event links, artist with events)', r.problems.length === 0, r.problems.join(' | '));
-r = await run({ health: { ok: true, time: 'x', commit: null } });
-check('a missing deploy marker is only a note', r.problems.length === 0, r.problems.join(' | '));
+check('a healthy site served directly (no Cloudflare headers; home with no event links, artist with events) passes', r.problems.length === 0, r.problems.join(' | '));
 r = await run({ searchStatuses: [503, 200] });
 check('one 503 from search (a throttled feed) does not fail it', r.problems.length === 0, r.problems.join(' | '));
 r = await run({ searchStatuses: [503, 503] });
@@ -63,6 +62,10 @@ r = await run({ robotsTxt: 'User-agent: *\nDisallow: /\n' });
 check('Disallow: / in robots.txt fails', has(r, 'Disallow: /'));
 r = await run({ health: { ok: false, time: 'x', commit: 'abcd1234' } });
 check('health ok:false fails', has(r, 'ok:false'));
+r = await run({ health: { ok: true, time: 'x', commit: null } });
+check('a missing deploy marker fails', has(r, 'no deployed commit'));
+r = await run({ sitemap: '<sitemapindex><sitemap><loc>https://beta.seatoutlet.com/sitemaps/performers-1.xml</loc></sitemap></sitemapindex>' });
+check('a sitemap that lists beta addresses fails', has(r, 'beta address(es)'));
 
 if (fail) { console.log(`${fail} check(s) failed`); process.exit(1); }
 console.log('ok: the production watchdog passes a healthy site and fails each breakage');

@@ -1,36 +1,57 @@
-# Watching the live site: what happened on 24 Nov 2026 and what now checks it
+# Production: served directly by CloudPanel, nginx and PHP (no Cloudflare Worker)
 
-## What was reported and what was observed
+## How production is built (since 24 Nov 2026)
 
-The owner's team reported that event pages answered "Invalid event." and that artist pages did not work. Checks from outside on the morning of 24 Nov (UTC):
+| | Live | Beta |
+|---|---|---|
+| Address | `https://seatoutlet.com` (`www` and `http` answer 301 to it) | `https://beta.seatoutlet.com` |
+| CloudPanel site and user | `www.seatoutlet.com`, user `seatoutlet` | `beta.seatoutlet.com`, user `seatoutlet-beta` |
+| Web root | `/home/seatoutlet/htdocs/www.seatoutlet.com/seat-outlet` | `/home/seatoutlet-beta/htdocs/beta.seatoutlet.com` |
+| Settings | its own `inc/env.local.php`: `HOME_URL=https://seatoutlet.com`, `HOME_PATH=<live web root>/`, `SITE_INDEXABLE=1` | beta's own file, noindex |
+| DNS | `seatoutlet.com`: A record to the server, DNS only. `www`: proxied through Cloudflare at the last check (no Worker), redirected to the bare domain | A record to the server |
+| Vhost | `deploy/nginx/seatoutlet.com.vhost` (in this repository; paste it whole) | beta's own |
 
-| Time | Observation |
+The Cloudflare Worker (`seatoutlet-blog-proxy`) and its routes were deleted by the owner on 24 Nov 2026 and must not be restored. Its source was removed from
+this repository in the same change. Everything it did is now done by the live install itself:
+
+| The Worker did | Now done by |
 |---|---|
-| about 07:00 to 08:20 | `seatoutlet.com` answered from a server setup that had no live data: real events answered 404 "Invalid event.", artist pages listed no events, the home page had no events, every page was `noindex, nofollow` with the beta address in its links, `/ajax/health.php` had no deploy commit. Responses came straight from the origin (`server: nginx`, no `cf-ray`); public DNS returned the origin server's own address (A record, TTL 300) while the nameservers were still Cloudflare's. |
-| about 08:25 | The same hostname answered normally: `index, follow`, real artist pages with events, the event from the report opened (200). DNS and the `server: nginx` header were unchanged. Health still had no deploy commit. |
-| 08:30 onward | The watchdog below passes against the live site (home 200, health ok, an artist page with 20 events, 3 of 3 events open). |
+| Fetched every page from the beta install and replaced the beta address with the live one, stripped `noindex` | The live install's own settings (`HOME_URL`, `SITE_INDEXABLE=1`): pages are built with the live address and are indexable |
+| Clean addresses (`/artist/x`, `/concerts-city/x`, `/artist-city/a/b`, holiday pages, `/county/x`, `/blog/x`, pages without `.php`) | The Vhost's rewrites |
+| Blocked repository paths (`/docs`, `/db`, `/vendor`, dot files, `*.md` ...) | The Vhost (404) |
+| `robots.txt`, sitemap redirects, `sitemap.xsl` as `text/xsl` | The Vhost (`robots.php`, 301s, types) |
+| Branded 404, `/favicon.ico`, `/.well-known/security.txt` | The Vhost (`error_page 404 /404.php`); both files exist in the web root |
+| www to the bare domain, lower case, no trailing slash | The Vhost (http and www) and `soRedirectCanonicalForm()` |
+| Visitor location headers (`CF-IPCity` ...) | MaxMind GeoLite2 on the server (`cron/geoip-update.php`); the Cloudflare headers are used only if a request ever comes through the Cloudflare proxy again |
+| A home-page script that filled empty feeds | Not needed: `js/home.js` and `js/near-you.js` load the feeds themselves (the Worker's script ran only when they had not) |
 
-The origin serves the real application under its beta hostname (`beta.seatoutlet.com`) and also under the public hostname, but the two did not behave the same that morning. `docs/production-cutover.md` describes a planned change that matches this: live and beta become two separate installs on the same server (live on its own database and code branch, the Cloudflare Worker retired). **Whether that change was what happened is not confirmed**: the repository has no `production` branch and the promote workflow has never run, so how the live install gets its code is not visible from here. Nothing in the repository changed between 20 and 24 Nov until the pull requests of 24 Nov.
+## Code changes for this setup (this PR)
 
-## Corrections to earlier work on 24 Nov
+- **No 503 for the public host.** PR 300 added a guard that answered 503 to any request for `seatoutlet.com` that did not carry the Worker's `X-SO-Public-Host` header. With the Worker gone that is every request, so the live site would have gone down at its first deploy. The guard and its health flag are removed.
+- **No trusted proxy headers.** Nothing sits in front of nginx, so `X-Forwarded-Host` is whatever the client sends. The www redirect used it as the redirect target (`X-Forwarded-Host: www.evil.example` sent visitors to `https://evil.example`); it now reads only the request's own Host and only ever redirects to the site's own host. The contact form's same-origin check and the health counters no longer read it either.
+- **One TicketNetwork budget and token for both installs.** TicketNetwork allows about 50 calls a minute per app key and cancels an app's previous token a few seconds after a new one is issued. Beta and live are now separate installs (separate users and cache folders) with the same key, so each must not keep its own budget or token. `TN_BUDGET_DIR` (new) and `TN_TOKEN_DIR` point both at one group-writable folder; the files are created `0660` there so the other install's user can use them.
+- **Health counters** count a request as live by its own Host (`soViaLiveProxy()`), not by the Worker's header; before, every live page counted as a "direct beta" hit.
+- **Watchdog** (`tools/live-watchdog.mjs`, every 15 minutes): no longer requires Cloudflare's `cf-ray` header (it failed on every run); now also fails when the sitemap lists beta addresses, and notes what the location lookup answers.
 
-The first versions of PR 300 treated the morning as an outage caused by Cloudflare's proxy being switched off and lost server settings. That was a misreading: it was most likely a cutover in progress. PR 300 had added a guard that answered 503 to any request for the public hostname that did not come through the Worker. With the Worker retired that would have taken the live site down if that code had reached it. It was merged for a short time (`a2edfe8d`) and removed in the next change; whether the live install ever received it is not confirmed.
+## Server checklist (CloudPanel, as root; each needs the owner's go-ahead)
 
-## What stays: the outside watchdog
+1. **Vhost.** CloudPanel > Sites > seatoutlet.com > Vhost: replace everything with `deploy/nginx/seatoutlet.com.vhost`, Save. If Varnish is still on for the site, turn it off (it is no longer used).
+2. **Shared TicketNetwork folder.** One folder both users can write, then the same two lines in both `inc/env.local.php` files:
+   ```bash
+   groupadd -f so-shared && usermod -aG so-shared seatoutlet && usermod -aG so-shared seatoutlet-beta
+   mkdir -p /home/so-shared/tn && chown root:so-shared /home/so-shared /home/so-shared/tn && chmod 2770 /home/so-shared /home/so-shared/tn
+   # in BOTH env.local.php files:
+   #   putenv('TN_TOKEN_DIR=/home/so-shared/tn');
+   #   putenv('TN_BUDGET_DIR=/home/so-shared/tn');
+   systemctl restart php8.3-fpm   # the pool users pick up the new group
+   ```
+3. **Visitor location.** Copy `MAXMIND_ACCOUNT_ID` and `MAXMIND_LICENSE_KEY` into the live `inc/env.local.php` (same values as beta), then as the live user: `php cron/geoip-update.php`, and add it weekly to the live user's crontab. The file lands at `/home/seatoutlet/htdocs/www.seatoutlet.com/geoip/GeoLite2-City.mmdb` (outside the web root). Check: `curl -s https://seatoutlet.com/ajax/get_ip_details.php` from a home connection shows a city.
+4. **Sitemaps.** The live `sitemaps/` folder holds a copy of beta's files (they list `beta.seatoutlet.com` addresses). As the live user: `php cron/build-sitemaps.php`, then schedule the app crons for the live user (`docs/resource-use.md` lists them and their schedules). Do not schedule the alert or e-mail crons on both installs while they share a database, or every alert goes out twice.
+5. **Deploys.** Live has no deploy marker (`/ajax/health.php` shows `commit: null`), so nothing updates it. Set up `deploy/pull-deploy.sh` for the live user with `DEPLOY_WEBROOT=/home/seatoutlet/htdocs/www.seatoutlet.com/seat-outlet`, `DEPLOY_WORKDIR=/home/seatoutlet/deploy/checkout`, `DEPLOY_BRANCH=production` in `/home/seatoutlet/deploy/pull-deploy.conf`, a read-only deploy key, and a cron line; then move `production` with the "Promote to production" workflow. The `production` branch does not exist yet; the first promotion creates it.
+6. **Crawler refusal on beta.** Beta and live are now told apart, so `putenv('SO_REFUSE_CRAWLERS=1');` in beta's file (only) keeps search engines and SEO crawlers off beta and its share of the TicketNetwork budget. Never on live.
+7. **Check:** `node tools/live-watchdog.mjs https://seatoutlet.com` (or the "Production watchdog" workflow, Run workflow) and `php tools/check-env.php --production` as the live user.
 
-`.github/workflows/watchdog.yml` runs `tools/live-watchdog.mjs` every 15 minutes against `https://seatoutlet.com`. Read-only (a handful of GET requests, no credentials). It fails when:
+## Not covered (outside the repository)
 
-- the home page does not answer 200 within 12 s, or its robots meta says `noindex` or `nofollow`, or it still carries the origin's beta address, or its canonical is not the live host;
-- `/ajax/health.php` is not JSON or says `ok:false` (a missing deploy commit is only noted);
-- `robots.txt` says `Disallow: /`, or the sitemap lists no pages;
-- the first artist page in the sitemap does not answer 200, lists no events and has no "no upcoming events" message, or has events but is `noindex`;
-- none of up to three events linked from that artist page opens (an error or "Invalid event.");
-- search answers something other than 200 twice in a row (one 503 from a throttled ticket feed is ignored).
-
-It deliberately does not require the home page to link events or artists (the home feed is filled by the browser) and does not require Cloudflare (the live design may not use it). A failed run emails the person who last edited the schedule (GitHub's rule) and shows red in the Actions tab; run it by hand from Actions, Production watchdog, Run workflow, or with `node tools/live-watchdog.mjs`. `tools/test-live-watchdog.mjs` tests it against fixture sites in CI. Against the broken state of that morning it would have failed within 15 minutes.
-
-## Not covered (needs the owner, the host or whoever did the cutover)
-
-- What happened that morning and when it ended: the Cloudflare audit log, the server's deploy output and the people involved.
-- A deploy marker for the live install: `/ajax/health.php` still reports no commit for it, so a release cannot be told from outside.
-- An external uptime monitor from a second vendor (the watchdog runs on GitHub's schedule, which can be delayed a few minutes).
+- Edge caching. With `seatoutlet.com` on DNS only, Cloudflare no longer caches pages or static files; every request reaches the server. The app's own page snapshots and the Vhost's static-file cache headers remain. Putting the apex record back on the Cloudflare proxy (without any Worker) would bring edge caching and the visitor location headers back; that is the owner's decision.
+- Images are served from `cdn-beta.seatoutlet.com` (`AWS_CDN_URL`). They work; a `cdn.seatoutlet.com` name would need a new bucket or DNS record.

@@ -61,6 +61,11 @@ $idx = $env('SITE_INDEXABLE');
 $effIdx = $idx !== '' ? in_array(strtolower($idx), ['1', 'true', 'yes'], true) : !$betaHost;
 $add($effIdx ? 'OK' : ($production ? 'FAIL' : 'WARN'), 'SITE_INDEXABLE', $effIdx ? 'pages are indexable' : 'pages are noindex and /robots.txt blocks crawling (right for beta, wrong for launch)');
 
+// Beta and live are separate installs with the same TicketNetwork key (since 24 Nov 2026): one token store and one call budget, shared.
+$tokDir = $env('TN_TOKEN_DIR'); $budDir = $env('TN_BUDGET_DIR');
+$add($tokDir !== '' ? (is_dir($tokDir) && is_writable($tokDir) ? 'OK' : 'FAIL') : 'WARN', 'TN_TOKEN_DIR', $tokDir === '' ? 'not set: this install keeps its own TicketNetwork token, and the other install (beta or live) with the same key cancels it within seconds (401s). Set both to one shared folder (docs/production-safeguards.md)' : (is_dir($tokDir) && is_writable($tokDir) ? 'shared folder, writable' : 'folder missing or not writable by this user'));
+$add($budDir !== '' ? (is_dir($budDir) && is_writable($budDir) ? 'OK' : 'FAIL') : 'WARN', 'TN_BUDGET_DIR', $budDir === '' ? 'not set: this install spends the whole TicketNetwork call rate on its own, so beta and live together can go over the per-key limit (429s). Set both to the shared folder' : (is_dir($budDir) && is_writable($budDir) ? 'shared folder, writable' : 'folder missing or not writable by this user'));
+
 // Site features
 $add($env('GTM_ID') !== '' ? 'OK' : 'WARN', 'GTM_ID', $env('GTM_ID') !== '' ? 'set' : 'not set: no Google Tag Manager (no analytics or ad conversion tags)');
 require_once __DIR__ . '/../inc/php-security.php';

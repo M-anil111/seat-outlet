@@ -1,4 +1,4 @@
-// Production watchdog: reads the public site like a visitor and fails (exit 1) when it is broken in a way a visitor or a search engine would notice.
+// Production watchdog (seatoutlet.com is served directly by CloudPanel/nginx/PHP since 24 Nov 2026, no Cloudflare Worker): reads the public site like a visitor and fails (exit 1) when it is broken in a way a visitor or a search engine would notice.
 // Read-only, a handful of GET requests, no credentials. Run by .github/workflows/watchdog.yml every 15 minutes, or by hand:
 //   node tools/live-watchdog.mjs [https://seatoutlet.com]
 // Added 24 Nov 2026 after the live site ran for days on beta/sandbox settings (noindex,nofollow everywhere, "Invalid event." on real events)
@@ -30,7 +30,7 @@ export async function checkSite(base) {
   const robots = (home.body.match(/<meta name="robots" content="([^"]*)"/i) || [])[1] || '';
   if (/noindex|nofollow/i.test(robots)) fail(`home page robots meta is "${robots}": search engines are told to drop the site`);
   const beta = (home.body.match(/beta\.seatoutlet\.com/gi) || []).length;
-  if (beta > 0) fail(`home page carries ${beta} reference(s) to the origin's beta address: the Worker that rewrites it is not processing this page`);
+  if (beta > 0) fail(`home page carries ${beta} reference(s) to the beta address: the live install's HOME_URL (inc/env.local.php) is not https://seatoutlet.com, or a cached page predates it`);
   const canon = (home.body.match(/<link rel="canonical" href="([^"]*)"/i) || [])[1] || '';
   if (!canon.includes(host.replace(/^www\./, ''))) fail(`home canonical is "${canon}", not ${host}`);
 
@@ -41,7 +41,8 @@ export async function checkSite(base) {
     if (!j) fail(`health answered ${h.status} and not JSON`);
     else {
       if (j.ok !== true) fail('health reports ok:false');
-      notes.push(`health ok=${j.ok} commit=${j.commit || 'none (no deploy marker)'}`);
+      if (!j.commit) fail('health reports no deployed commit (the deploy marker is missing or unreadable)');
+      notes.push(`health ok=${j.ok} commit=${j.commit}`);
     }
   } catch (e) { fail('health did not answer: ' + String(e).slice(0, 100)); }
 
@@ -54,6 +55,9 @@ export async function checkSite(base) {
   try {
     const sm = await get(base, '/sitemap.xml');
     if (sm.status !== 200 || !/<loc>/.test(sm.body)) fail(`sitemap.xml answered ${sm.status} and ${/<loc>/.test(sm.body) ? 'lists pages' : 'lists no pages'}`);
+    // 24 Nov 2026: the live sitemap index listed beta.seatoutlet.com files (copied from beta, never rebuilt by the live install's own cron).
+    const smBeta = (sm.body.match(/beta\.seatoutlet\.com/gi) || []).length;
+    if (smBeta > 0) fail(`the sitemap lists ${smBeta} beta address(es): rebuild it on the live install (php cron/build-sitemaps.php) and check its cron`);
   } catch (e) { fail('sitemap.xml did not answer: ' + String(e).slice(0, 100)); }
 
   // 4 and 5. Find an artist in the sitemap, check its page for events (or a no-upcoming-events message), and open up to three linked events.
@@ -92,7 +96,15 @@ export async function checkSite(base) {
     notes.push(`events opened: ${opened}/${Math.min(3, eventLinks.length)}`);
   }
 
-  // 6. Search answers.
+  // 6. Visitor location (a note, not a failure: a datacenter address may have no city). "unknown" for every visitor means the GeoLite2
+  // database is missing on the live install (php cron/geoip-update.php) or PHP sees a local proxy address instead of the visitor's.
+  try {
+    const g = await get(base, '/ajax/get_ip_details.php');
+    let j = null; try { j = JSON.parse(g.body); } catch { /* noted below */ }
+    notes.push(`location lookup: ${j ? (j.source || '?') + (j.city ? ' (' + j.city + ')' : '') : 'not JSON (' + g.status + ')'}`);
+  } catch (e) { notes.push('location lookup did not answer'); }
+
+  // 7. Search answers.
   try {
     let s = await get(base, '/search?q=concert');
     if (s.status === 503) { await new Promise((r) => setTimeout(r, 5000)); s = await get(base, '/search?q=concert'); }   // a throttled ticket feed answers 503 for a moment: only that is retried
