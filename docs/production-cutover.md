@@ -1,5 +1,7 @@
 # Production cutover: separate live and beta, with no paid tools
 
+> **24 Nov 2026:** the owner moved seatoutlet.com to its own CloudPanel site, served directly (apex DNS only), and deleted the Worker and its routes. The steps below that use the Cloudflare proxy, the Worker or an Origin CA certificate no longer describe production; `docs/production-safeguards.md` does, with the server checklist.
+
 Goal: seatoutlet.com (live) and beta.seatoutlet.com (beta) are two separate sites on the same server. They run the same code today
 and can differ from now on, so you can build and test on beta and only then put it live.
 

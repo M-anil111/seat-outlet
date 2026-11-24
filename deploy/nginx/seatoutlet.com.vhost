@@ -1,0 +1,117 @@
+# CloudPanel Vhost for https://seatoutlet.com (site user seatoutlet). Paste the whole file into CloudPanel > Sites > seatoutlet.com > Vhost.
+# The {{...}} placeholders are CloudPanel's own; leave them as they are. Served directly by nginx and PHP-FPM: no Varnish, no Cloudflare Worker.
+# Tested with nginx + PHP-FPM 8.3 against the repository's file layout (every address below reaches the right page; see docs/production-safeguards.md).
+# Keep this file and the live Vhost the same: change it here first (pull request), then paste it.
+server {
+  listen 80;
+  listen [::]:80;
+  server_name seatoutlet.com www.seatoutlet.com;
+  {{root}}
+
+  location ^~ /.well-known/acme-challenge/ {
+    auth_basic off;
+    allow all;
+    default_type text/plain;
+    try_files $uri =404;
+  }
+
+  location / {
+    return 301 https://seatoutlet.com$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl http2;
+  listen [::]:443 ssl http2;
+  {{ssl_certificate_key}}
+  {{ssl_certificate}}
+  server_name seatoutlet.com www.seatoutlet.com;
+  {{root}}
+
+  {{nginx_access_log}}
+  {{nginx_error_log}}
+
+  index index.php index.html;
+  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+  # One public host: www goes to the bare domain.
+  if ($host = www.seatoutlet.com) {
+    return 301 https://seatoutlet.com$request_uri;
+  }
+
+  location ^~ /.well-known/acme-challenge/ {
+    auth_basic off;
+    allow all;
+    default_type text/plain;
+    try_files $uri =404;
+  }
+
+  {{settings}}
+
+  # Branded 404 page for addresses nginx cannot find (pages send their own 404s).
+  error_page 404 /404.php;
+
+  # ---- Clean page addresses -> the PHP page that renders them ----
+  rewrite ^/artist/([^/]+)/?$    /performer.php?slug=$1 last;
+  rewrite ^/performer/([^/]+)/?$ /performer.php?slug=$1 last;
+  rewrite ^/(event|venue|city|category|county)/([^/]+)/?$ /$1.php?slug=$2 last;
+  rewrite ^/(event-city|concerts-city|concerts-state|concert-country|concert-venue|events-state|festivals-city|festivals-country|festivals-state|festivals-venue|sports-city|sports-state|theater-city|theater-country|theater-state|theater-venue|theatre-city|theatre-country|theatre-state|theatre-venue|state|country)/([^/]+)/?$ /$1.php?slug=$2 last;
+  rewrite ^/(artist-city|artist-state|artist-country|artist-venue)/([^/]+)/([^/]+)/?$ /$1.php?slug=$2&loc=$3 last;
+  rewrite ^/(last-minute-tickets|weekend-events|cheap-tickets|best-events)/([^/]+)/?$ /$1.php?slug=$2 last;
+  rewrite ^/(christmas-shows-near-me|new-years-eve-events|valentines-day-events|st-patricks-day-events|easter-weekend-events|mothers-day-weekend-events|memorial-day-weekend-events|victoria-day-weekend-events|fathers-day-weekend-events|canada-day-events|july-4th-events|labor-day-weekend-events|labour-day-weekend-events|halloween-events|thanksgiving-weekend-events|canadian-thanksgiving-weekend-events|boxing-day-events)-in-([^/]+)/?$ /holiday-city.php?holiday=$1&slug=$2 last;
+  rewrite ^/blog/([a-z0-9-]+)/?$ /blog.php?slug=$1 last;
+
+  # ---- Never served: repository, code and data folders, dot-files, docs and backups ----
+  location ~ /\.(?!well-known/) { return 404; }
+  location ~ ^/(docs|deploy|tools|db|cron|cache|vendor|phpmailer|inc|tests?|node_modules)(/|$) { return 404; }
+  location ~ ^/admin/includes(/|$) { return 404; }
+  location ~* ^/(composer\.(json|lock)|package(-lock)?\.json|CONTRIBUTING\.md|README[^/]*)$ { return 404; }
+  location ~* \.(md|lock|example|sql|bak|old|orig|swp|log|sh|ini|dist|ya?ml|gz)$ { return 404; }
+
+  # ---- Special files ----
+  location ~ ^/admin/?$ { return 302 /admin/dashboard.php; }
+  location = /robots.txt { rewrite ^ /robots.php last; }
+  location = /sitemap.xml { return 301 /sitemaps/sitemap.xml; }
+  location = /sitemaps/sitemap-index.xml { return 301 /sitemaps/sitemap.xml; }
+  location = /sitemaps/sitemap.php { return 301 /sitemaps/sitemap.xml; }
+  location = /sitemap-page { return 301 /sitemap; }
+  location = /sitemap.xsl { types { } default_type text/xsl; expires 1d; }
+  location = /manifest.webmanifest { types { } default_type application/manifest+json; expires 1d; }
+  location = /sw.js { add_header Cache-Control "no-cache"; try_files $uri =404; }
+  location = /offline.html { add_header Cache-Control "no-cache"; try_files $uri =404; }
+
+  # ---- PHP ----
+  location ~ \.php$ {
+    try_files $uri =404;
+    include fastcgi_params;
+    fastcgi_index index.php;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    fastcgi_param HTTPS "on";
+    fastcgi_param SERVER_PORT 443;
+    fastcgi_intercept_errors off;
+    fastcgi_read_timeout 300;
+    fastcgi_send_timeout 300;
+    fastcgi_pass 127.0.0.1:{{php_fpm_port}};
+    fastcgi_param PHP_VALUE "{{php_settings}}";
+  }
+
+  # ---- Static files ----
+  location ~* ^/(fonts|lib)/.+\.(css|js|map|woff2?|ttf|otf|eot|svg|png|jpe?g|gif|webp)$|\.min\.(css|js)$ {
+    add_header Cache-Control "public, max-age=31536000, immutable";
+    access_log off;
+    try_files $uri =404;
+  }
+  location ~* \.(css|js|map|jpe?g|gif|png|ico|svg|svgz|webp|avif|woff2?|ttf|otf|eot|mp4|webm|ogg|ogv)$ {
+    add_header Cache-Control "public, max-age=2592000";
+    access_log off;
+    try_files $uri =404;
+  }
+
+  # ---- Everything else: a real file, a folder index, or <path>.php ----
+  location / {
+    try_files $uri $uri/ @ext;
+  }
+  location @ext {
+    rewrite ^/(.+?)/?$ /$1.php last;
+  }
+}

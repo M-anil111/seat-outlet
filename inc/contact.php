@@ -47,12 +47,11 @@ function soContactTokenOk($token): bool {
 
 /** The Origin (or Referer) header, when the browser sends one, must be this site. */
 function soContactSameOrigin(): bool {
-    // The site's own hosts: the configured public address (seatoutlet.com), HOME_URL (the beta host on the shared install), the host the request
-    // reached PHP with and the one a proxy forwarded (Cloudflare can present the origin's name as Host, which made every live submission fail).
-    $fwd = trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_HOST'] ?? ''))[0]);
+    // The site's own hosts: the configured public address (seatoutlet.com), HOME_URL (this install's own address) and the Host the request
+    // reached PHP with. X-Forwarded-Host is not one of them: nothing sits in front of the web server, so that header is whatever the client sent.
     $own = [];
     foreach ([defined('SO_PUBLIC_ORIGIN') ? SO_PUBLIC_ORIGIN : '', defined('HOME_URL') ? HOME_URL : ''] as $u) { $own[] = strtolower((string) parse_url((string) $u, PHP_URL_HOST)); }
-    foreach ([(string) ($_SERVER['HTTP_HOST'] ?? ''), $fwd] as $hostHeader) { $own[] = strtolower((string) preg_replace('/:\d+$/', '', $hostHeader)); }
+    $own[] = strtolower((string) preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
     $own = array_values(array_filter(array_unique($own)));
     foreach ($own as $o) { $own[] = strpos($o, 'www.') === 0 ? substr($o, 4) : 'www.' . $o; }
     foreach (['HTTP_ORIGIN', 'HTTP_REFERER'] as $h) {

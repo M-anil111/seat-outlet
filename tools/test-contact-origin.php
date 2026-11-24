@@ -21,7 +21,7 @@ originCheck('live Origin, proxied Host', $proxied + ['HTTP_ORIGIN' => 'https://s
 originCheck('live Referer, proxied Host', $proxied + ['HTTP_REFERER' => 'https://seatoutlet.com/ticket-customer-service'], true);
 originCheck('www Origin', $proxied + ['HTTP_ORIGIN' => 'https://www.seatoutlet.com'], true);
 originCheck('beta Origin', $proxied + ['HTTP_ORIGIN' => 'https://beta.seatoutlet.com'], true);
-originCheck('forwarded host', ['HTTP_HOST' => 'x.internal', 'HTTP_X_FORWARDED_HOST' => 'shop.example.org, other', 'HTTP_ORIGIN' => 'https://shop.example.org'], true);
+originCheck('a client-sent X-Forwarded-Host does not make another site same-origin (nothing sits in front of nginx)', ['HTTP_HOST' => 'seatoutlet.com', 'HTTP_X_FORWARDED_HOST' => 'shop.example.org', 'HTTP_ORIGIN' => 'https://shop.example.org'], false);
 originCheck('another site', $proxied + ['HTTP_ORIGIN' => 'https://evil.example'], false);
 originCheck('look-alike host', $proxied + ['HTTP_ORIGIN' => 'https://seatoutlet.com.evil.example'], false);
 originCheck('look-alike prefix', $proxied + ['HTTP_ORIGIN' => 'https://evilseatoutlet.com'], false);
