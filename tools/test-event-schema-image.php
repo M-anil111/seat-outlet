@@ -21,7 +21,13 @@ $row = function (string $who, string $status, string $url): void {
     imageRecordUpsert(['imgkey' => imageEntityKey('artist', $who), 'entity_type' => 'artist', 'entity_name' => $who, 'url' => $url, 'status' => $status, 'source' => 'test',
         'expires_at' => date('Y-m-d H:i:s', time() + 86400)]);
 };
-$clean = function () use ($tag) { MYSQLI->query("DELETE FROM images WHERE entity_type = 'artist' AND entity_name LIKE 'Zq Schemaimg " . MYSQLI->real_escape_string($tag) . " %'"); };
+$clean = function () use ($tag) {
+    $like = 'Zq Schemaimg ' . $tag . ' %';
+    $st = MYSQLI->prepare("DELETE FROM images WHERE entity_type = 'artist' AND entity_name LIKE ?");
+    $st->bind_param('s', $like);
+    $st->execute();
+    $st->close();
+};
 $clean();
 try {
     $home = rtrim(HOME_URL, '/');
