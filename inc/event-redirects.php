@@ -34,6 +34,7 @@ function soEventRedirectRow(array $event, bool $withSlug = true): ?array {
 function soEventRememberMany(array $events, string $source = 'visit'): int {
     if (!defined('MYSQLI') || !(MYSQLI instanceof mysqli)) return 0;
     $source = in_array($source, ['visit', 'catalog', 'bulk'], true) ? $source : 'visit';
+    if ($source !== 'bulk' && $events && function_exists('soSlugWarmEvents')) soSlugWarmEvents($events);   // the row of each event carries its slug: one query for all, not one per event
     $rows = [];
     foreach ($events as $e) {
         $r = is_array($e) ? soEventRedirectRow($e, $source !== 'bulk') : null;   // bulk: no slug, soEventSlug() registers one per event and the catalog holds ~100k

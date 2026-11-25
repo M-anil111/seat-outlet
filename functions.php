@@ -951,7 +951,7 @@ function getPerformerPageEvents($performerId, $perPage = 20) {
     $resp = tnRequest($endpoint, $params, 'GET', 600);
     // Remember these events (performer, category, slug, date) so their pages redirect sensibly once TicketNetwork drops them; once an hour per performer.
     if (is_array($resp) && !empty($resp['results']) && is_array($resp['results']) && (int) $performerId > 0 && cache_get('evredir_p' . (int) $performerId, 3600) === false) {
-        cache_set('evredir_p' . (int) $performerId, 1);
+        cache_set('evredir_p' . (int) $performerId, ['at' => time()]);   // an array: cache_get() answers false for anything else, so the number 1 made this guard never hold (every view wrote the rows)
         soEventRememberMany($resp['results'], 'catalog');
     }
     return [$params, $resp];
