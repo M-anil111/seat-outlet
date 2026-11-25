@@ -274,6 +274,8 @@ jobs:
         run: php tools/test-cloudflare-proxy.php
       - name: Empty URL registry answers 503, never 404
         run: php tools/test-empty-registry.php
+      - name: "Admin password reset links open while valid (expiry on the database clock, not PHP's timezone)"
+        run: php tools/test-admin-reset-expiry.php
       - name: Database reconnect (soDbRetry)
         run: php tools/test-db-retry.php
       - name: Verified orders (record once, claim the purchase once)

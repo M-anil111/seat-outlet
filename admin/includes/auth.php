@@ -13,13 +13,17 @@ if (session_status() === PHP_SESSION_NONE) {
     if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')) {
         ini_set('session.cookie_secure', '1');
     }
-    $so_sess_dir = rtrim(sys_get_temp_dir(), '/') . '/so_admin_sessions';
+    // One folder per system user: beta and live are separate installs (separate users) on one server since 24 Nov 2026, and the
+    // temp folder can be shared between them. With one name, whichever install created it first owned it (0700) and the other could
+    // not use it: its sessions fell back to PHP's default folder, where they could be lost and a sign-in did not stick.
+    $so_sess_uid = function_exists('posix_geteuid') ? (string) posix_geteuid() : (string) getmyuid();
+    $so_sess_dir = rtrim(sys_get_temp_dir(), '/') . '/so_admin_sessions_' . $so_sess_uid;
     if (!is_dir($so_sess_dir)) { @mkdir($so_sess_dir, 0700, true); }
     if (is_dir($so_sess_dir) && is_writable($so_sess_dir)) { session_save_path($so_sess_dir); }
     ini_set('session.gc_maxlifetime', (string) SO_ADMIN_REMEMBER_SECONDS);
     session_name('admin_session');
     session_start();
-    unset($so_sess_dir);
+    unset($so_sess_dir, $so_sess_uid);
 }
 // Admin pages are per-user: never let a browser, proxy or CDN store them. They are also never framed, sniffed or indexed.
 if (!headers_sent()) {
