@@ -970,9 +970,15 @@ function imageQueueStats($mysqli = MYSQLI) {
     $out = ['ok' => 0, 'manual' => 0, 'fallback' => 0, 'pending' => 0, 'total' => 0, 'oldest_pending_age' => null, 'legacy_ok' => 0, 'resolved_pct' => 0];
     $res = $mysqli->query("SELECT status, COUNT(*) AS c FROM images WHERE entity_type IS NOT NULL GROUP BY status");
     while ($res && ($r = $res->fetch_assoc())) { $out[$r['status']] = (int) $r['c']; $out['total'] += (int) $r['c']; }
-    $res = $mysqli->query("SELECT TIMESTAMPDIFF(SECOND, MIN(created_at), NOW()) AS age FROM images WHERE entity_type IS NOT NULL AND status = 'pending'");
-    $row = $res ? $res->fetch_assoc() : null;
-    if ($row && $row['age'] !== null) $out['oldest_pending_age'] = (int) $row['age'];
+    // The age of the oldest queued picture is a nice-to-have: an older database without images.created_at (fixed by migration 0054)
+    // made this query throw and the whole admin dashboard answer 500 (25 Nov 2026). Logged, and the age is left out instead.
+    try {
+        $res = $mysqli->query("SELECT TIMESTAMPDIFF(SECOND, MIN(created_at), NOW()) AS age FROM images WHERE entity_type IS NOT NULL AND status = 'pending'");
+        $row = $res ? $res->fetch_assoc() : null;
+        if ($row && $row['age'] !== null) $out['oldest_pending_age'] = (int) $row['age'];
+    } catch (\Throwable $e) {
+        error_log('imageQueueStats: oldest queued age unavailable (run php db/migrate.php?): ' . $e->getMessage());
+    }
     $res = $mysqli->query("SELECT COUNT(*) AS c FROM images WHERE entity_type IS NOT NULL AND status = 'ok' AND store_key IS NULL AND (source IS NULL OR source <> 'admin')");
     $row = $res ? $res->fetch_assoc() : null;
     $out['legacy_ok'] = (int) ($row['c'] ?? 0);
