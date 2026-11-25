@@ -184,10 +184,20 @@ function soSitemapStep(float $budgetSeconds = 25.0, bool $force = false): string
         $clean = function ($v) { return str_replace(["\t", "\r", "\n"], ' ', (string) $v); };
         while (microtime(true) < $deadline && $s['page'] <= ($s['pages'] ?? SO_SITEMAP_MAX_PAGES)) {
             if (function_exists('tnBreakerOpen') && tnBreakerOpen()) { $s['note'] = 'api paused (rate limited)'; break; }
+            // From cron: wait for a budget token (up to 20 s) instead of failing when visitors or crawlers hold the budget.
+            if (PHP_SAPI === 'cli' && function_exists('tnBudgetPrepay') && !tnBudgetPrepay(min(20.0, max(0.0, $deadline - microtime(true))))) {
+                $s['note'] = 'waiting for the call budget'; break;
+            }
             $params = ['filter' => "date/date ge $today and _metadata/hasTickets eq true and (country/alphaCode eq 'US' or country/alphaCode eq 'CA')",
                 'sort' => 'date/date', 'perPage' => SO_SITEMAP_PER_PAGE, 'page' => $s['page']];
             if ($s['page'] === 1) $params['includeTotalCount'] = 'true';
+            $GLOBALS['tn_last_refusal'] = '';
             $r = tnRequest('/catalog/v2/events/', $params, 'GET', 0);   // ttl 0: a crawl page is read once, never cached
+            $GLOBALS['tn_budget_prepaid'] = false;   // never carry an unused prepaid token over to another call
+            if ((!is_array($r) || !isset($r['results'])) && ($GLOBALS['tn_last_refusal'] ?? '') === 'budget') {
+                // Our own budget refused the call, no request was made: not an API failure, so it never counts toward a restart.
+                $s['note'] = 'waiting for the call budget'; break;
+            }
             if (!is_array($r) || !isset($r['results']) || !is_array($r['results'])) {
                 if (++$s['fails'] >= 12) { $s['phase'] = 'crawl'; $s['page'] = 1; $s['fails'] = 0; $s['note'] = 'restarted after repeated API failures'; foreach (['events', 'performers', 'venues', 'cities', 'citypages'] as $k) { @unlink($tmp . '/' . $k . '.tsv'); } }
                 break;

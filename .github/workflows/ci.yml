@@ -171,6 +171,8 @@ jobs:
 
       - name: The sitemap's automatic page list finds every page and only pages
         run: php tools/check-sitemap-pages.php
+      - name: "Sitemap crawl waits for the call budget from cron; a budget refusal never restarts it"
+        run: php tools/test-sitemap-budget.php
 
       - name: No ticket API id in any URL (slugs come from soSlug only)
         run: php tools/check-url-slugs.php

@@ -197,6 +197,27 @@ function tnBackgroundCaller(): bool {
 }
 
 /**
+ * A background job whose calls cannot be skipped (the sitemap crawl) waits for its budget token instead of failing on the spot: it polls
+ * the shared bucket on a background caller's terms (it still leaves visitors the upper half) for up to $maxWait seconds. On success the
+ * token is marked as already paid, and the next tnBucketAllow() uses it instead of taking another. 24 Nov 2026: on the live site the
+ * crawl's calls were refused by the budget again and again (over_budget 51,712 against 3,615 live calls in a day), each refusal counted
+ * as an API failure, and after 12 in a row the crawl restarted from page 1, so the sitemap was never rebuilt.
+ */
+function tnBudgetPrepay(float $maxWait): bool {
+    $rate = tnCallsPerSecond();
+    if ($rate <= 0) return true;   // budget off
+    $file = tnBudgetDir() . 'tn_bucket.json';
+    $deadline = microtime(true) + max(0.0, $maxWait);
+    do {
+        if (tnBucketTake(true, $rate, $file)) { $GLOBALS['tn_budget_prepaid'] = true; return true; }
+        $left = $deadline - microtime(true);
+        if ($left <= 0) break;
+        usleep((int) (min(0.25, $left) * 1000000));
+    } while (microtime(true) < $deadline);
+    return false;
+}
+
+/**
  * Where the call-budget files live. TicketNetwork's limit (about 50 calls a minute) is per app key, and beta and live are separate installs
  * (separate users and cache folders) that use the same key, so each spending TN_CALLS_PER_SECOND on its own would together go over it.
  * TN_BUDGET_DIR names one folder both installs can write (the same shared folder as TN_TOKEN_DIR, group-writable): then one budget covers

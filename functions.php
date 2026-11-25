@@ -717,12 +717,14 @@ function tnRequestRaw($endpoint, $params = [], $method = 'GET', $ttl = null) {
  * Over budget, the request answers from the stored copy like an outage, and no call is made.
  */
 function tnBucketAllow(): bool {
+    if (!empty($GLOBALS['tn_budget_prepaid'])) { $GLOBALS['tn_budget_prepaid'] = false; return true; }   // tnBudgetPrepay() already took it
     return tnBudgetWait(tnCallerClass(), tnCallsPerSecond(), tnBudgetDir());
 }
 
 /** The live part of a cold request: budget, one call (one retry for a fast drop), the breaker, and storing the answer. */
 function tnFetchStore($endpoint, $params, $method, $key, $ttl, $entry) {
     if (!tnBucketAllow()) {
+        $GLOBALS['tn_last_refusal'] = 'budget';   // our own budget said no (no call was made): the sitemap crawl waits instead of failing
         tnCount('over_budget');   // our own limit, not the API's: tells a local bottleneck apart from a throttle on the health page
         if ($entry !== null && $entry['age'] <= tnStaleLimit($endpoint)) { tnCount('stale_on_error'); return $entry['data']; }
         $bulk = tnBulkFallback($endpoint, $params, true); if ($bulk !== null) return $bulk;
