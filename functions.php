@@ -4644,7 +4644,7 @@ function soEventSchemaImage(array $event): string {
             $memo[$who] = '';
             try {
                 $im = getEntityImage('artist', $who, ['resolve' => false]);
-                if (in_array($im['status'] ?? '', ['ok', 'manual'], true) && !empty($im['url'])) $memo[$who] = (string) $im['url'];   // getEntityImage() has no 'real' key: a stored picture is status ok or manual
+                if (!empty($im['real']) && !empty($im['url'])) $memo[$who] = (string) $im['url'];
             } catch (Throwable $e) { /* fall back to the category photo */ }
         }
         if ($memo[$who] !== '') return strpos($memo[$who], 'http') === 0 ? $memo[$who] : rtrim(HOME_URL, '/') . '/' . ltrim($memo[$who], '/');

@@ -263,7 +263,7 @@ function imageQueue($type, $name, $fallbackUrl = '', $mysqli = MYSQLI) {
 function getEntityImage($type, $name, array $opts = []) {
     $name = trim((string) $name);
     $fallback = imageFallbackUrl($type, $opts['category'] ?? [], $opts['tab'] ?? '');
-    $out = ['url' => $fallback, 'credit' => '', 'license' => '', 'source' => '', 'status' => 'fallback'];
+    $out = ['url' => $fallback, 'credit' => '', 'license' => '', 'source' => '', 'status' => 'fallback', 'real' => false];
     if ($name === '') return $out;
 
     $row = imageRecordGet(imageEntityKey($type, $name));
@@ -358,6 +358,11 @@ function imageNormalizeUrl(string $url): string {
     return $url;
 }
 
+/** Is this stored row (or getEntityImage() result) the entity's own picture, not the category stock photo? The one place that rule lives. */
+function imageIsReal(array $r): bool {
+    return in_array((string) ($r['status'] ?? ''), ['ok', 'manual'], true) && (string) ($r['url'] ?? '') !== '';
+}
+
 function imageRowToResult(array $row) {
     return [
         'url'     => imageNormalizeUrl((string) $row['url']),
@@ -366,6 +371,7 @@ function imageRowToResult(array $row) {
         'source'  => (string) ($row['source'] ?? ''),
         'status'  => (string) ($row['status'] ?? ''),
         'source_url' => (string) ($row['source_url'] ?? ''),
+        'real'    => imageIsReal($row),
     ];
 }
 
