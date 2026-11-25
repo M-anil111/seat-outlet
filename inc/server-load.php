@@ -67,6 +67,11 @@ function soSlowRequestLine(float $elapsedMs, string $uri, int $status, string $t
         . ($load !== null ? ' load ' . round($load, 2) : '') . ' [' . substr((string) preg_replace('/[^\x20-\x7e]/', '?', $timing), 0, 400) . ']';
 }
 
+/** The slow request limit in ms from SO_SLOW_LOG_MS: a number is used as given (0 or less turns the log off), anything else (unset, empty, text) is the default 5000. */
+function soSlowRequestLimitMs($env): int {
+    return is_string($env) && is_numeric($env) ? (int) $env : 5000;
+}
+
 /**
  * Shutdown hook (registered first, so it runs before the background jobs): a page that took SO_SLOW_LOG_MS or more (default 5000, 0 turns it off)
  * leaves one line in the PHP error log with the same breakdown as the Server-Timing header, so a slow period can be explained afterwards from
@@ -76,8 +81,7 @@ function soSlowRequestLine(float $elapsedMs, string $uri, int $status, string $t
  */
 function soSlowRequestLog(): void {
     if (PHP_SAPI === 'cli') return;
-    $env = getenv('SO_SLOW_LOG_MS');
-    $limit = $env !== false && is_numeric($env) ? (int) $env : 5000;
+    $limit = soSlowRequestLimitMs(getenv('SO_SLOW_LOG_MS'));
     $start = (float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? 0);
     if ($limit <= 0 || $start <= 0) return;
     $elapsed = (microtime(true) - $start) * 1000;

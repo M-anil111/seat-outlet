@@ -15,6 +15,12 @@ function slowLogCheck(string $what, $got, $want): void {
 }
 $timing = 'app;dur=8850, tn;dur=400, dbq;desc="23", dbconn;dur=3200, boot;dur=8850';
 
+slowLogCheck('the limit is 5000 ms when SO_SLOW_LOG_MS is not set', soSlowRequestLimitMs(false), 5000);
+slowLogCheck('the limit is 5000 ms when SO_SLOW_LOG_MS is empty', soSlowRequestLimitMs(''), 5000);
+slowLogCheck('the limit is 5000 ms when SO_SLOW_LOG_MS is not a number', soSlowRequestLimitMs('soon'), 5000);
+slowLogCheck('the limit is the number given', soSlowRequestLimitMs('1500'), 1500);
+slowLogCheck('0 turns the log off', soSlowRequestLimitMs('0'), 0);
+slowLogCheck('a negative number turns the log off', soSlowRequestLimitMs('-1') <= 0, true);
 slowLogCheck('a fast page is not logged', soSlowRequestLine(120.0, '/artist/x', 200, $timing, 0.4, 5000), null);
 slowLogCheck('a page just under the limit is not logged', soSlowRequestLine(4999.0, '/artist/x', 200, $timing, 0.4, 5000), null);
 slowLogCheck('the log is off at 0', soSlowRequestLine(60000.0, '/artist/x', 200, $timing, 0.4, 0), null);
@@ -60,8 +66,8 @@ slowLogCheck('the line names the path and the status', strpos($lines1[0] ?? '', 
 slowLogCheck('the line carries the timing breakdown with the connection time', preg_match('/\[app;dur=\d+.*dbconn;dur=\d+.*\]$/', $lines1[0] ?? '') === 1, true);
 slowLogCheck('the line does not cost a database query (no query count in it)', strpos($lines1[0] ?? '', 'dbq;') === false, true);
 slowLogCheck('the query string never reaches the log', strpos($lines1[0] ?? '', 'secretvalue') === false, true);
-[$c2, $lines2] = $serve('', '/worry-free-guarantee');
-slowLogCheck('a fast page at the default limit writes no line', [$c2, count($lines2)], [200, 0]);
+[$c2, $lines2] = $serve('SO_SLOW_LOG_MS=600000', '/worry-free-guarantee');   // far above any real page time, so a slow CI runner cannot make this flaky
+slowLogCheck('a page under the limit writes no line', [$c2, count($lines2)], [200, 0]);
 [$c3, $lines3] = $serve('SO_SLOW_LOG_MS=1 DB_PASS=wrong-password-for-the-test', '/worry-free-guarantee');
 slowLogCheck('a failed database connection answers 503', $c3, 503);
 slowLogCheck('a failed database connection is logged as a slow request too', strpos($lines3[0] ?? '', 'slow request: /worry-free-guarantee status 503 took ') !== false, true);
