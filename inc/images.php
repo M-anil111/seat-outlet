@@ -263,7 +263,7 @@ function imageQueue($type, $name, $fallbackUrl = '', $mysqli = MYSQLI) {
 function getEntityImage($type, $name, array $opts = []) {
     $name = trim((string) $name);
     $fallback = imageFallbackUrl($type, $opts['category'] ?? [], $opts['tab'] ?? '');
-    $out = ['url' => $fallback, 'credit' => '', 'license' => '', 'source' => '', 'status' => 'fallback'];
+    $out = ['url' => $fallback, 'credit' => '', 'license' => '', 'source' => '', 'status' => 'fallback', 'real' => false];
     if ($name === '') return $out;
 
     $row = imageRecordGet(imageEntityKey($type, $name));
@@ -366,6 +366,7 @@ function imageRowToResult(array $row) {
         'source'  => (string) ($row['source'] ?? ''),
         'status'  => (string) ($row['status'] ?? ''),
         'source_url' => (string) ($row['source_url'] ?? ''),
+        'real'    => in_array((string) ($row['status'] ?? ''), ['ok', 'manual'], true) && (string) ($row['url'] ?? '') !== '',   // the entity's own stored picture, not the category stock photo
     ];
 }
 

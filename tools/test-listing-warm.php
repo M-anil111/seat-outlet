@@ -62,7 +62,6 @@ $run = function (string $m) use ($argv, $tag): array {
 };
 $clean();
 try {
-    // Note: getEntityImage() does not return a 'real' key today, so these three pages always use the category photo; the stored row is still read (and prefetched).
     // Make the slugs and one stored picture exist, as on a live site (each entity got its slug the first time it was listed).
     foreach ($events as $e) { soEventSlug($e); soSlug('performer', $e['performers'][0]['name'], $e['performers'][0]['id']); }
     foreach ($venues as $v) soVenueSlug($v['name'], $v['id'], $v['city']);
@@ -75,12 +74,16 @@ try {
     $ref0 = soEventItemList($events, 'https://example.test/category/zq-warm');
     $refCat = soCategorySeo($cfg, $data)['html'];
 
+    lwCheck('the reference build shows the stored picture in the category text', strpos($refCat, 'zq-warm-1.webp') !== false, true);
+    lwCheck('the reference build shows the stored picture in the structured data', strpos(json_encode($ref0), 'zq-warm-1.webp') !== false, true);
     $item = $run('item');
     lwCheck('the event list structured data matches the reference', $item['out'], $ref0);
+    lwCheck('the event list structured data keeps the stored picture', strpos(json_encode($item['out']), 'zq-warm-1.webp') !== false, true);
     lwCheck('the event list structured data reads the list with a handful of SELECTs, not 60', $item['selects'] <= 8, true);
 
     $cat = $run('cat');
     lwCheck('the category text matches the reference', $cat['out'], $refCat);
+    lwCheck('the category text keeps the stored picture', strpos((string) $cat['out'], 'zq-warm-1.webp') !== false, true);
     lwCheck('the category text is not empty', is_string($cat['out']) && $cat['out'] !== '', true);
     lwCheck('the category text reads its artists, venues and cities with a handful of SELECTs, not 42', $cat['selects'] <= 8, true);
 } finally {
