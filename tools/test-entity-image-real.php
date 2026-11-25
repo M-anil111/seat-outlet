@@ -29,6 +29,12 @@ $clean = function () use ($tag) {
     $st->bind_param('s', $like);
     $st->execute();
     $st->close();
+    // soCategorySeo() gives each listed artist a slug (performer ids 9840001 to 9840099 are this test's)
+    $lo = 9840001; $hi = 9840099;
+    $st = MYSQLI->prepare("DELETE FROM url_slugs WHERE type = 'performer' AND CAST(ext_id AS UNSIGNED) BETWEEN ? AND ?");
+    $st->bind_param('ii', $lo, $hi);
+    $st->execute();
+    $st->close();
 };
 // The Cirque du Soleil hero reads the picture of a fixed name, so that row cannot be given a per-run name: it is saved first and put back at the end.
 $heroName = SO_HERO_ENTITY[2031]; $heroKey = imageEntityKey('artist', $heroName); $heroSaved = null;
