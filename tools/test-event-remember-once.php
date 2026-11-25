@@ -18,7 +18,7 @@ function orCheck(string $what, $got, $want): void {
 $status = function (string $name): int { return (int) MYSQLI->query("SHOW SESSION STATUS LIKE '$name'")->fetch_row()[1]; };
 $clean = function () {
     MYSQLI->query("DELETE FROM event_redirects WHERE event_id BETWEEN 9500001 AND 9500099");
-    MYSQLI->query("DELETE FROM url_slugs WHERE ext_id BETWEEN '9500001' AND '9500099'");
+    MYSQLI->query("DELETE FROM url_slugs WHERE type = 'event' AND ext_id BETWEEN '9500001' AND '9500099'");
     @unlink(cache_file_path('evredir_p9500001'));
 };
 $clean();
@@ -46,7 +46,7 @@ getPerformerPageEvents(9500001, 20);
 $firstQuestions = $status('Questions') - $q0 - 1;
 orCheck('first view writes the event rows', MYSQLI->query('SELECT COUNT(*) FROM event_redirects WHERE event_id BETWEEN 9500001 AND 9500099')->fetch_row()[0] >= 12, true);
 orCheck('first view does not look the 12 slugs up one by one', $firstQuestions < 12, true);
-orCheck('the hourly guard is stored as something cache_get() can read', is_array(cache_get('evredir_p9500001', 3600)), true);
+orCheck('the hourly guard is stored as something cache_get() can read, marked done', (cache_get('evredir_p9500001', 3600)['ok'] ?? null), true);
 
 // Second view: nothing is remembered again (no event_redirects write, no insert at all, no query of its own).
 $i1 = $status('Com_insert'); $u1 = $status('Com_update'); $q1 = $status('Questions');
@@ -55,6 +55,18 @@ $q2 = $status('Questions');   // read first: the SHOW statements below would cou
 orCheck('second view inserts nothing', $status('Com_insert') - $i1, 0);
 orCheck('second view updates nothing', $status('Com_update') - $u1, 0);
 orCheck('second view asks the database nothing', $q2 - $q1 - 1, 0);
+
+// Marker states: "in progress or failed" holds for 5 minutes, then the write is tried again; "done" holds for an hour.
+$rows = function (): int { return (int) MYSQLI->query('SELECT COUNT(*) FROM event_redirects WHERE event_id BETWEEN 9500001 AND 9500099')->fetch_row()[0]; };
+$key = 'evredir_p9500001';
+MYSQLI->query("DELETE FROM event_redirects WHERE event_id BETWEEN 9500001 AND 9500099");
+cache_set($key, ['at' => time(), 'ok' => false]);
+getPerformerPageEvents(9500001, 20);
+orCheck('a write in progress or failed less than 5 minutes ago is not repeated', $rows(), 0);
+cache_set($key, ['at' => time() - 600, 'ok' => false]);
+getPerformerPageEvents(9500001, 20);
+orCheck('a failed write is tried again after 5 minutes', $rows() >= 12, true);
+orCheck('and the marker then says done', cache_get($key, 3600)['ok'] ?? null, true);
 
 $clean();
 echo $fail ? "$fail failure(s)\n" : "event remember once: all passed\n"; exit($fail ? 1 : 0);

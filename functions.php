@@ -950,9 +950,18 @@ function getPerformerPageEvents($performerId, $perPage = 20) {
     [$endpoint, $params] = performerPageEventsSpec($performerId, $perPage);
     $resp = tnRequest($endpoint, $params, 'GET', 600);
     // Remember these events (performer, category, slug, date) so their pages redirect sensibly once TicketNetwork drops them; once an hour per performer.
-    if (is_array($resp) && !empty($resp['results']) && is_array($resp['results']) && (int) $performerId > 0 && cache_get('evredir_p' . (int) $performerId, 3600) === false) {
-        cache_set('evredir_p' . (int) $performerId, ['at' => time()]);   // an array: cache_get() answers false for anything else, so the number 1 made this guard never hold (every view wrote the rows)
-        soEventRememberMany($resp['results'], 'catalog');
+    // The marker is an array (cache_get() answers false for anything else, so the number 1 made this guard never hold: every view wrote the rows).
+    // It is written first as "in progress" (held for 5 minutes, so concurrent views do not repeat the write) and rewritten as done once the rows were
+    // stored. A failed write (soEventRememberMany() swallows database errors and returns 0) is tried again after 5 minutes, not after an hour.
+    if (is_array($resp) && !empty($resp['results']) && is_array($resp['results']) && (int) $performerId > 0) {
+        $evKey  = 'evredir_p' . (int) $performerId;
+        $evMark = cache_get($evKey, 3600);
+        $evHeld = is_array($evMark) && (!empty($evMark['ok']) || (time() - (int) ($evMark['at'] ?? 0)) < 300);
+        if (!$evHeld) {
+            cache_set($evKey, ['at' => time(), 'ok' => false]);
+            $evOk = soEventRememberMany($resp['results'], 'catalog') > 0;
+            if ($evOk) cache_set($evKey, ['at' => time(), 'ok' => true]);
+        }
     }
     return [$params, $resp];
 }

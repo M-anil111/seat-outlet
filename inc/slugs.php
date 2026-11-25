@@ -115,14 +115,14 @@ function soSlugWarm(array $pairs): void {
     $db = soSlugDb();
     if (!$db) return;
     $mem = &soSlugMemory();
+    $miss = &soSlugMissMemory();
     $byType = [];
     foreach ($pairs as [$type, $id]) {
         if (!in_array($type, SO_SLUG_TYPES, true) || $id === '' || $id === 0 || $id === null) continue;
         $k = soSlugKeyId($id);
-        if (isset($mem[$type . '|' . $k])) continue;
+        if (isset($mem[$type . '|' . $k]) || !empty($miss[$type . '|' . $k])) continue;   // known, or already found not stored in this request
         $byType[$type][$k] = true;
     }
-    $miss = &soSlugMissMemory();
     foreach ($byType as $type => $ids) {
         foreach (array_chunk(array_keys($ids), 400) as $chunk) {
             $in = implode(',', array_fill(0, count($chunk), '?'));
