@@ -14,7 +14,7 @@ $body  = json_decode((string) file_get_contents('php://input'), true);
 $items = is_array($body['items'] ?? null) ? array_slice($body['items'], 0, 8) : [];
 
 $tmp  = rtrim(sys_get_temp_dir(), '/');
-$ip   = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+$ip   = function_exists('soClientIp') ? (string) soClientIp() : (string) ($_SERVER['REMOTE_ADDR'] ?? '');   // the visitor, also behind the Cloudflare proxy
 $gate = $tmp . '/so_resolve_images_gate_' . md5($ip);
 $last = is_file($gate) ? (int) @file_get_contents($gate) : 0;
 $canResolve = (time() - $last) >= 3;

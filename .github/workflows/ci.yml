@@ -256,6 +256,8 @@ jobs:
 
       - name: URL slug registry (clean slugs, collisions, old form still resolves)
         run: php tools/test-slugs.php
+      - name: Cloudflare proxy readiness (visitor address, Vhost list, runbook)
+        run: php tools/test-cloudflare-proxy.php
       - name: Empty URL registry answers 503, never 404
         run: php tools/test-empty-registry.php
       - name: Database reconnect (soDbRetry)

@@ -53,7 +53,7 @@ this repository in the same change. Everything it did is now done by the live in
 
 ## Not covered (outside the repository)
 
-- Edge caching. With `seatoutlet.com` on DNS only, Cloudflare no longer caches pages or static files; every request reaches the server. The app's own page snapshots and the Vhost's static-file cache headers remain. Putting the apex record back on the Cloudflare proxy (without any Worker) would bring edge caching and the visitor location headers back; that is the owner's decision.
+- Edge caching. With `seatoutlet.com` on DNS only, Cloudflare no longer caches pages or static files; every request reaches the server. The app's own page snapshots and the Vhost's static-file cache headers remain. Putting the apex record back on the Cloudflare proxy (without any Worker) would bring edge caching and the visitor location headers back; that is the owner's decision. The steps, the cache rules and the rollback are in `docs/cloudflare-proxy.md`.
 - Images are served from `cdn-beta.seatoutlet.com` (`AWS_CDN_URL`). They work; a `cdn.seatoutlet.com` name would need a new bucket or DNS record.
 
 ## Safeguards against a repeat of the 24 Nov empty-site window
