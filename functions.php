@@ -29,6 +29,8 @@ foreach ($_GET as $so_key => $so_val) {
 }
 unset($so_key, $so_val);
 
+require_once __DIR__ . '/inc/server-load.php';   // soSlowRequestLog() and soServerBusy(): no dependencies on later code
+register_shutdown_function('soSlowRequestLog');   // one error-log line for a page that took 5 s or more, with its timing breakdown; registered first so a slow failed database connection (the 503 page) is logged too
 include_once __DIR__ . '/db/config.php';
 include 'inc/constants.php';
 require 'vendor/autoload.php';
@@ -3352,7 +3354,7 @@ function soTimerMark(string $name): void {
     $last = $now;
 }
 
-function soServerTimingHeader(): string {
+function soServerTimingHeader(bool $countQueries = true): string {
     $st = $GLOBALS['so_tn_stat'] ?? ['live' => 0, 'cached' => 0, 'ms' => 0.0];
     $start = (float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true));
     $r = fn(float $ms): int => (int) (round($ms / 10) * 10);
@@ -3360,7 +3362,7 @@ function soServerTimingHeader(): string {
         . ', tnlive;desc="' . (int) $st['live'] . '", tncached;desc="' . (int) $st['cached'] . '"';
     // Database queries this request has made (the connection's own counter, minus the one that reads it): a page that makes hundreds of
     // single lookups pays a round trip for each, which is slow only when the database is slow or busy.
-    if (defined('MYSQLI') && MYSQLI instanceof mysqli && PHP_SAPI !== 'cli') {
+    if ($countQueries && defined('MYSQLI') && MYSQLI instanceof mysqli && PHP_SAPI !== 'cli') {
         try {
             $q = MYSQLI->query("SHOW SESSION STATUS LIKE 'Questions'");
             $row = $q ? $q->fetch_row() : null;

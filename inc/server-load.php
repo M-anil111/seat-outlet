@@ -53,3 +53,43 @@ function soCronRecentlyRan(string $name, int $seconds): bool {
     clearstatcache(true, $f);   // a worker that lives for a while must not read a remembered time
     return is_file($f) && time() - (int) @filemtime($f) < $seconds;
 }
+
+/**
+ * One log line for a slow request, or null. $elapsedMs is the PHP run so far, $thresholdMs the limit (0 or less turns the log off), $timing the
+ * Server-Timing text (soServerTimingHeader()), $load the one-minute load average or null. Only the path is kept: no query string, no address,
+ * no cookie, no user agent. Control characters are removed so a crafted address cannot add lines to the log.
+ */
+function soSlowRequestLine(float $elapsedMs, string $uri, int $status, string $timing, ?float $load, int $thresholdMs): ?string {
+    if ($thresholdMs <= 0 || $elapsedMs < $thresholdMs) return null;
+    $path = (string) parse_url($uri, PHP_URL_PATH);
+    $path = substr((string) preg_replace('/[^\x20-\x7e]/', '?', $path), 0, 120);
+    return 'slow request: ' . ($path !== '' ? $path : '/') . ' status ' . $status . ' took ' . (int) round($elapsedMs) . ' ms'
+        . ($load !== null ? ' load ' . round($load, 2) : '') . ' [' . substr((string) preg_replace('/[^\x20-\x7e]/', '?', $timing), 0, 400) . ']';
+}
+
+/** The slow request limit in ms from SO_SLOW_LOG_MS: a number is used as given (0 or less turns the log off), anything else (unset, empty, text) is the default 5000. */
+function soSlowRequestLimitMs($env): int {
+    return is_string($env) && is_numeric($env) ? (int) $env : 5000;
+}
+
+/**
+ * Shutdown hook (registered first, so it runs before the background jobs): a page that took SO_SLOW_LOG_MS or more (default 5000, 0 turns it off)
+ * leaves one line in the PHP error log with the same breakdown as the Server-Timing header, so a slow period can be explained afterwards from
+ * the log alone (docs/resource-use.md). The breakdown is built without the query count (soServerTimingHeader(false)): that is one more query,
+ * to a database that may be the slow part, and PHP runs this hook before it flushes the page, so the page's own header text does not exist yet.
+ * Pages only: command line runs and the background jobs are not logged.
+ */
+function soSlowRequestLog(): void {
+    if (PHP_SAPI === 'cli') return;
+    $limit = soSlowRequestLimitMs(getenv('SO_SLOW_LOG_MS'));
+    $start = (float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? 0);
+    if ($limit <= 0 || $start <= 0) return;
+    $elapsed = (microtime(true) - $start) * 1000;
+    if ($elapsed < $limit) return;   // the common case: nothing else is computed
+    try {
+        $l = function_exists('sys_getloadavg') ? @sys_getloadavg() : false;
+        $line = soSlowRequestLine($elapsed, (string) ($_SERVER['REQUEST_URI'] ?? '/'), (int) (http_response_code() ?: 200),
+            function_exists('soServerTimingHeader') ? soServerTimingHeader(false) : '', is_array($l) && isset($l[0]) ? (float) $l[0] : null, $limit);
+        if ($line !== null) error_log($line);
+    } catch (\Throwable $e) { /* diagnostics only: never turn a slow page into a failed one */ }
+}

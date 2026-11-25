@@ -64,11 +64,15 @@ define('DB_PASS', $dbPass);
 // silent false). Every write that is not wrapped in its own try/catch therefore fails loudly and reaches Sentry, never half-succeeds.
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
+$soConnectStart = microtime(true);
 try {
     $mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
 } catch (Throwable $e) {   // PHP 8.1+ throws on a failed connection instead of setting connect_error
+    $GLOBALS['so_timers']['dbconn'] = ($GLOBALS['so_timers']['dbconn'] ?? 0.0) + (microtime(true) - $soConnectStart) * 1000;   // a slow failed connection is the case the slow request log is for
     soDbUnavailable($e->getMessage());
 }
+$GLOBALS['so_timers']['dbconn'] = ($GLOBALS['so_timers']['dbconn'] ?? 0.0) + (microtime(true) - $soConnectStart) * 1000;   // Server-Timing "dbconn": a busy database makes the connection itself slow
+unset($soConnectStart);
 
 if ($mysqli->connect_error) {
     soDbUnavailable($mysqli->connect_error);
