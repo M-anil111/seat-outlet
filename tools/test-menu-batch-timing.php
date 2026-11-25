@@ -34,11 +34,11 @@ $menu = (string) file_get_contents($root . '/inc/menu.php');
 $pre = strpos($menu, 'soHubPrefetch();'); $loop = strpos($menu, 'soHubSubcategories($m[\'href\'])');
 mbCheck('the menu prefetches before it reads each hub', $pre !== false && $loop !== false && $pre < $loop, true);
 
-// Server-Timing: rounded to 10 ms, no names or ids.
+// Server-Timing: rounded to 10 ms, no names or ids (dbconn, the time to open the database connection, is there once db/config.php has run).
 $GLOBALS['so_tn_stat'] = ['live' => 3, 'cached' => 7, 'ms' => 2403.0];
 $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true) - 1.234;
 $h = soServerTimingHeader();
-mbCheck('Server-Timing shape', preg_match('/^app;dur=\d+, tn;dur=2400, tnlive;desc="3", tncached;desc="7"$/', $h) === 1, true);
+mbCheck('Server-Timing shape', preg_match('/^app;dur=\d+, tn;dur=2400, tnlive;desc="3", tncached;desc="7"(, dbconn;dur=\d+)?$/', $h) === 1, true);
 preg_match('/app;dur=(\d+)/', $h, $m);
 mbCheck('app time is about 1.23 s and a multiple of 10', [(int) $m[1] >= 1220 && (int) $m[1] <= 1290, (int) $m[1] % 10], [true, 0]);
 // Phase marks: the time since the previous mark goes to the named phase, and the header lists the phases.
