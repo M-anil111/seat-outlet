@@ -260,6 +260,8 @@ jobs:
         run: php tools/test-slug-miss-memory.php
       - name: A listing page loads the links and pictures of its whole list with a few queries
         run: php tools/test-listing-warm.php
+      - name: The event structured data uses the artist's stored picture
+        run: php tools/test-event-schema-image.php
       - name: A grid of cards reads its pictures with one query
         run: php tools/test-image-prefetch.php
       - name: Events on a performer page are remembered once an hour, not on every view
