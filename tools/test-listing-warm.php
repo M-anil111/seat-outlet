@@ -4,26 +4,16 @@ require_once __DIR__ . '/../inc/cli-guard.php';
  * Database test: a listing page asks the database for the links and pictures of its whole list with a few queries, not one of each per row. The
  * structured data of an event list (soEventItemList) and the category page's text (soCategorySeo) looked up each event, performer, venue and city
  * slug and each artist picture one at a time: 109 queries on a category page, all before the header. Output is the same either way.
- * Ids 9800001 and up; removed at the end. Run: php tools/test-listing-warm.php
+ * Each measured build runs in its own PHP process (empty function-static memos), against a database the parent seeded with slugs and  one stored picture.
+ * The output is compared with the output of the parent, which looked each slug and picture up one at a time. Ids 9800001 and up; removed at the end (also on an error).
+ * Run: php tools/test-listing-warm.php
  */
 foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) { if ((string) getenv($k) === '') putenv($k . '=test-placeholder'); }
 require_once __DIR__ . '/../functions.php';
 require_once __DIR__ . '/../inc/seo-category.php';
 
-$fail = 0;
-function lwCheck(string $what, $got, $want): void {
-    global $fail;
-    if ($got !== $want) { echo "FAIL $what: got " . var_export($got, true) . ", wanted " . var_export($want, true) . "\n"; $fail++; }
-}
+$mode = $argv[1] ?? 'parent';
 $selects = function (): int { return (int) MYSQLI->query("SHOW SESSION STATUS LIKE 'Com_select'")->fetch_row()[1]; };
-$clean = function () {
-    foreach (['event' => [9800001, 9800099], 'performer' => [9810001, 9810099], 'venue' => [9820001, 9820099], 'city' => [9830001, 9830099]] as $type => [$lo, $hi]) {
-        MYSQLI->query("DELETE FROM url_slugs WHERE type = '$type' AND CAST(ext_id AS UNSIGNED) BETWEEN $lo AND $hi");
-    }
-    MYSQLI->query("DELETE FROM images WHERE entity_type = 'artist' AND entity_name LIKE 'Zq Warm %'");
-};
-$forget = function () { $m = &soSlugMemory(); $m = []; $x = &soSlugMissMemory(); $x = []; $i = &imageRowMemo(); $i = []; };
-$clean();
 
 $events = []; $artists = []; $venues = []; $cities = [];
 for ($i = 1; $i <= 20; $i++) {
@@ -40,28 +30,54 @@ for ($i = 1; $i <= 10; $i++) $cities[] = ['id' => 9830000 + $i, 'label' => 'Zqwa
 $cfg = ['id' => 9700001, 'label' => 'Zq Warm', 'long' => 'zq warm', 'kind' => 'sports', 'profile' => null, 'slug' => 'zq-warm'];
 $data = ['total' => 100, 'artists' => $artists, 'venues' => $venues, 'cities' => $cities, 'min' => 31.0, 'next' => null, 'path' => '.1859.1988.9700001.'];
 
-// Make the slugs and pictures exist, as on a live site (each entity got its slug the first time it was listed), then start a new request.
-foreach ($events as $e) { soEventSlug($e); soSlug('performer', $e['performers'][0]['name'], $e['performers'][0]['id']); }
-foreach ($venues as $v) soVenueSlug($v['name'], $v['id'], $v['city']);
-foreach ($cities as $c) soSlug('city', $c['label'], $c['id']);
-$a0 = soEventItemList($events, 'https://example.test/category/zq-warm');
-$s0 = soCategorySeo($cfg, $data);
-$forget();
 
-// The structured data of the event list: a few queries for the whole list, and the same result as the first (unwarmed) build.
-$q0 = $selects();
-$a1 = soEventItemList($events, 'https://example.test/category/zq-warm');
-$cost = $selects() - $q0;
-lwCheck('the event list structured data is the same', $a1, $a0);
-lwCheck('the event list structured data reads the list with a handful of SELECTs, not 60', $cost <= 8, true);
+if ($mode === 'item' || $mode === 'cat') {
+    // A fresh process: nothing is remembered, so every lookup the build needs is counted.
+    $q0 = $selects();
+    $out = $mode === 'item' ? soEventItemList($events, 'https://example.test/category/zq-warm') : soCategorySeo($cfg, $data)['html'];
+    echo json_encode(['out' => $out, 'selects' => $selects() - $q0]);
+    exit(0);
+}
 
-// The category text: the same HTML, a handful of queries.
-$forget();
-$q0 = $selects();
-$s1 = soCategorySeo($cfg, $data);
-$cost = $selects() - $q0;
-lwCheck('the category text is the same', $s1['html'] ?? null, $s0['html'] ?? null);
-lwCheck('the category text reads its artists, venues and cities with a handful of SELECTs, not 42', $cost <= 8, true);
-
+$fail = 0;
+function lwCheck(string $what, $got, $want): void {
+    global $fail;
+    if ($got !== $want) { echo "FAIL $what: got " . var_export($got, true) . ", wanted " . var_export($want, true) . "\n"; $fail++; }
+}
+$clean = function () {
+    foreach (['event' => [9800001, 9800099], 'performer' => [9810001, 9810099], 'venue' => [9820001, 9820099], 'city' => [9830001, 9830099]] as $type => [$lo, $hi]) {
+        MYSQLI->query("DELETE FROM url_slugs WHERE type = '$type' AND CAST(ext_id AS UNSIGNED) BETWEEN $lo AND $hi");
+    }
+    MYSQLI->query("DELETE FROM images WHERE entity_type IN ('artist', 'team') AND entity_name LIKE 'Zq Warm %'");
+};
+$run = function (string $m) use ($argv): array {
+    $r = json_decode((string) shell_exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($argv[0]) . ' ' . $m . ' 2>/dev/null'), true);
+    return is_array($r) ? $r : ['out' => null, 'selects' => 999];
+};
 $clean();
+try {
+    // Note: getEntityImage() does not return a 'real' key today, so these three pages always use the category photo; the stored row is still read (and prefetched).
+    // Make the slugs and one stored picture exist, as on a live site (each entity got its slug the first time it was listed).
+    foreach ($events as $e) { soEventSlug($e); soSlug('performer', $e['performers'][0]['name'], $e['performers'][0]['id']); }
+    foreach ($venues as $v) soVenueSlug($v['name'], $v['id'], $v['city']);
+    foreach ($cities as $c) soSlug('city', $c['label'], $c['id']);
+    foreach (['artist', 'team'] as $type) {
+        imageRecordUpsert(['imgkey' => imageEntityKey($type, 'Zq Warm Act 1'), 'entity_type' => $type, 'entity_name' => 'Zq Warm Act 1', 'url' => '/images/zq-warm-1.webp', 'status' => 'ok', 'source' => 'test']);
+    }
+
+    // This process looks every slug up one at a time (the way each page worked before). Its output is the reference.
+    $ref0 = soEventItemList($events, 'https://example.test/category/zq-warm');
+    $refCat = soCategorySeo($cfg, $data)['html'];
+
+    $item = $run('item');
+    lwCheck('the event list structured data matches the reference', $item['out'], $ref0);
+    lwCheck('the event list structured data reads the list with a handful of SELECTs, not 60', $item['selects'] <= 8, true);
+
+    $cat = $run('cat');
+    lwCheck('the category text matches the reference', $cat['out'], $refCat);
+    lwCheck('the category text is not empty', is_string($cat['out']) && $cat['out'] !== '', true);
+    lwCheck('the category text reads its artists, venues and cities with a handful of SELECTs, not 42', $cat['selects'] <= 8, true);
+} finally {
+    $clean();
+}
 echo $fail ? "$fail failure(s)\n" : "listing warm: all passed\n"; exit($fail ? 1 : 0);
