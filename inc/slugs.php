@@ -91,6 +91,16 @@ function &soSlugMemory(): array {
     return $mem;
 }
 
+/**
+ * Per request memory of lookups that found nothing: ['type|id' => true]. soSlugWarm() fills it for every id the table did not return, and soSlug()
+ * for the one it asked about. Without it a link whose slug is not stored (an event with no place or date yet, a new entity) repeated its own
+ * SELECT every time the page built that link, and the answer never changed within the request (artist page, 20 events: 21 single lookups).
+ */
+function &soSlugMissMemory(): array {
+    static $miss = [];
+    return $miss;
+}
+
 /** Normalize an id for the table: digits as int text, country codes upper case. */
 function soSlugKeyId($id): string {
     if (is_int($id) || (is_string($id) && ctype_digit($id))) return (string) (int) $id;
@@ -105,11 +115,12 @@ function soSlugWarm(array $pairs): void {
     $db = soSlugDb();
     if (!$db) return;
     $mem = &soSlugMemory();
+    $miss = &soSlugMissMemory();
     $byType = [];
     foreach ($pairs as [$type, $id]) {
         if (!in_array($type, SO_SLUG_TYPES, true) || $id === '' || $id === 0 || $id === null) continue;
         $k = soSlugKeyId($id);
-        if (isset($mem[$type . '|' . $k])) continue;
+        if (isset($mem[$type . '|' . $k]) || !empty($miss[$type . '|' . $k])) continue;   // known, or already found not stored in this request
         $byType[$type][$k] = true;
     }
     foreach ($byType as $type => $ids) {
@@ -126,6 +137,9 @@ function soSlugWarm(array $pairs): void {
                     $mem[$type . '#' . $row[1]] = $row[0];
                 }
                 $st->close();
+                foreach ($chunk as $asked) {   // the table answered for this chunk: whatever it did not return is not stored
+                    if (!isset($mem[$type . '|' . $asked])) $miss[$type . '|' . $asked] = true;
+                }
             } catch (Throwable $e) { return; }
         }
     }
@@ -158,20 +172,24 @@ function soSlug(string $type, $name, $id, array $ctx = []): string {
     $db = soSlugDb();
     if (!$db) return soLegacySlug($name, $id);
 
-    try {
-        $st = $db->prepare('SELECT slug FROM url_slugs WHERE type = ? AND ext_id = ?');
-        if ($st) {
-            $st->bind_param('ss', $type, $k);
-            $st->execute();
-            $row = $st->get_result()->fetch_row();
-            $st->close();
-            if ($row) {
-                $mem[$type . '|' . $k] = $row[0];
-                $mem[$type . '#' . $row[0]] = $k;
-                return $row[0];
+    $miss = &soSlugMissMemory();
+    if (empty($miss[$type . '|' . $k])) {   // a lookup already found nothing in this request: do not ask again
+        try {
+            $st = $db->prepare('SELECT slug FROM url_slugs WHERE type = ? AND ext_id = ?');
+            if ($st) {
+                $st->bind_param('ss', $type, $k);
+                $st->execute();
+                $row = $st->get_result()->fetch_row();
+                $st->close();
+                if ($row) {
+                    $mem[$type . '|' . $k] = $row[0];
+                    $mem[$type . '#' . $row[0]] = $k;
+                    return $row[0];
+                }
+                $miss[$type . '|' . $k] = true;
             }
-        }
-    } catch (Throwable $e) { return soLegacySlug($name, $id); }
+        } catch (Throwable $e) { return soLegacySlug($name, $id); }
+    }
 
     // Not stored yet: needs a real name (and for an event, a place and a date) to make a good slug. Without them keep the
     // old form for this one link; the entity's own page registers the clean slug and the old form 301s to it.

@@ -950,9 +950,18 @@ function getPerformerPageEvents($performerId, $perPage = 20) {
     [$endpoint, $params] = performerPageEventsSpec($performerId, $perPage);
     $resp = tnRequest($endpoint, $params, 'GET', 600);
     // Remember these events (performer, category, slug, date) so their pages redirect sensibly once TicketNetwork drops them; once an hour per performer.
-    if (is_array($resp) && !empty($resp['results']) && is_array($resp['results']) && (int) $performerId > 0 && cache_get('evredir_p' . (int) $performerId, 3600) === false) {
-        cache_set('evredir_p' . (int) $performerId, 1);
-        soEventRememberMany($resp['results'], 'catalog');
+    // The marker is an array (cache_get() answers false for anything else, so the number 1 made this guard never hold: every view wrote the rows).
+    // It is written first as "in progress" (held for 5 minutes, so concurrent views do not repeat the write) and rewritten as done once the rows were
+    // stored. A failed write (soEventRememberMany() swallows database errors and returns 0) is tried again after 5 minutes, not after an hour.
+    if (is_array($resp) && !empty($resp['results']) && is_array($resp['results']) && (int) $performerId > 0) {
+        $evKey  = 'evredir_p' . (int) $performerId . '_n' . (int) $perPage;   // per page size: event pages ask for 8 rows, the artist page for 20, so one must not stand in for the other
+        $evMark = cache_get($evKey, 3600);
+        $evHeld = is_array($evMark) && (!empty($evMark['ok']) || (time() - (int) ($evMark['at'] ?? 0)) < 300);
+        if (!$evHeld) {
+            cache_set($evKey, ['at' => time(), 'ok' => false]);
+            $evOk = soEventRememberMany($resp['results'], 'catalog') > 0;
+            if ($evOk) cache_set($evKey, ['at' => time(), 'ok' => true]);
+        }
     }
     return [$params, $resp];
 }
@@ -5529,6 +5538,9 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
     $n = 0;
     // Performers with a real picture first, so the first row of cards is not a row of initials tiles.
     $related = soImageFirst(array_values($related), function ($r) { return [imageEntityTypeForPerformer($r['defaultCategory'] ?? []), trim((string) ($r['text']['name'] ?? '')), $r['defaultCategory'] ?? []]; });
+    $soRelPairs = [];
+    foreach (array_slice($related, 0, $limit * 2) as $rel) { if (!empty($rel['id'])) $soRelPairs[] = ['performer', (int) $rel['id']]; }
+    soSlugWarm($soRelPairs);   // one query for the card links below (each card built its own lookup)
     ?>
     <div class="so-related" data-so-related>
         <?php foreach ($related as $rel) {
