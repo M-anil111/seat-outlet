@@ -4592,7 +4592,7 @@ function soEventItemList(array $events, $pageUrl) {
     $items = [];
     $slice = array_slice($events, 0, 20);
     if ($slice) {   // one query for the slugs and one for the pictures of the whole list, not one of each per event
-        soSlugWarmEvents($slice);
+        if (function_exists('soSlugWarmEvents')) soSlugWarmEvents($slice);
         if (function_exists('soImagePrefetchEvents')) soImagePrefetchEvents($slice);
     }
     foreach ($slice as $ev) {
