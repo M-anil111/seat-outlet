@@ -36,16 +36,6 @@ $clean = function () use ($tag) {
     $st->execute();
     $st->close();
 };
-// The Cirque du Soleil hero reads the picture of a fixed name, so that row cannot be given a per-run name: it is saved first and put back at the end.
-$heroName = SO_HERO_ENTITY[2031]; $heroKey = imageEntityKey('artist', $heroName); $heroSaved = null;
-$st = MYSQLI->prepare('SELECT imgkey, entity_type, entity_name, url, status, source, source_url, license, attribution, store_key, attempts, resolved_at, expires_at FROM images WHERE imgkey = ?');
-$st->bind_param('s', $heroKey); $st->execute();
-$heroSaved = $st->get_result()->fetch_assoc() ?: null; $st->close();
-$heroRestore = function () use ($heroKey, $heroSaved) {
-    $st = MYSQLI->prepare('DELETE FROM images WHERE imgkey = ?');
-    $st->bind_param('s', $heroKey); $st->execute(); $st->close();
-    if ($heroSaved) imageRecordUpsert($heroSaved);
-};
 $clean();
 try {
     $row('artist', $name('ok'), 'ok', '/images/zq-real-ok.webp');
@@ -74,13 +64,15 @@ try {
     eimgRealCheck('a picture stored for another entity type is not used', strpos($html, 'zq-real-team.webp'), false);
     eimgRealCheck('an artist with no picture stays in the text list', strpos($html, $name('Act 2')) !== false && substr_count($html, '<img') === 1, true);
 
-    // The Cirque du Soleil category hero: its own stored picture when there is one, the theatre photo when there is not.
-    imageRecordUpsert(['imgkey' => $heroKey, 'entity_type' => 'artist', 'entity_name' => $heroName, 'url' => '/images/zq-real-hero.webp', 'status' => 'ok', 'source' => 'test']);
-    eimgRealCheck('the Cirque du Soleil hero is its stored picture', soCategoryHero(2031, '.1859.1989.2031.'), '/images/zq-real-hero.webp');
-    imageRecordUpsert(['imgkey' => $heroKey, 'entity_type' => 'artist', 'entity_name' => $heroName, 'url' => '', 'status' => 'fallback', 'source' => 'test', 'expires_at' => date('Y-m-d H:i:s', time() + 86400)]);
-    eimgRealCheck('the Cirque du Soleil hero is the theatre photo without a stored picture', soCategoryHero(2031, '.1859.1989.2031.'), '/images/loews-theatre.webp');
+    // A category hero that is an entity's own picture (Cirque du Soleil in production): its stored picture when there is one, the theatre photo when there is not.
+    // The category map is passed in, so the test uses a per-run entity and never touches the production row.
+    $hero = $name('Hero'); $map = [2031 => $hero];
+    $row('artist', $hero, 'ok', '/images/zq-real-hero.webp');
+    eimgRealCheck('the hero is the entity\'s stored picture', soCategoryHero(2031, '.1859.1989.2031.', $map), '/images/zq-real-hero.webp');
+    $row('artist', $hero, 'fallback', '');
+    eimgRealCheck('the hero is the theatre photo without a stored picture', soCategoryHero(2031, '.1859.1989.2031.', $map), '/images/loews-theatre.webp');
+    eimgRealCheck('a category that is not in the map keeps its own hero', soCategoryHero(1865, '', $map), '/images/event-basketball.jpg');
 } finally {
     $clean();
-    $heroRestore();
 }
 echo $fail ? "$fail failure(s)\n" : "entity image real: all passed\n"; exit($fail ? 1 : 0);
