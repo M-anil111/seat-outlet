@@ -358,6 +358,11 @@ function imageNormalizeUrl(string $url): string {
     return $url;
 }
 
+/** Is this stored row (or getEntityImage() result) the entity's own picture, not the category stock photo? The one place that rule lives. */
+function imageIsReal(array $r): bool {
+    return in_array((string) ($r['status'] ?? ''), ['ok', 'manual'], true) && (string) ($r['url'] ?? '') !== '';
+}
+
 function imageRowToResult(array $row) {
     return [
         'url'     => imageNormalizeUrl((string) $row['url']),
@@ -366,7 +371,7 @@ function imageRowToResult(array $row) {
         'source'  => (string) ($row['source'] ?? ''),
         'status'  => (string) ($row['status'] ?? ''),
         'source_url' => (string) ($row['source_url'] ?? ''),
-        'real'    => in_array((string) ($row['status'] ?? ''), ['ok', 'manual'], true) && (string) ($row['url'] ?? '') !== '',   // the entity's own stored picture, not the category stock photo
+        'real'    => imageIsReal($row),
     ];
 }
 

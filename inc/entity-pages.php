@@ -226,7 +226,7 @@ function soTileHtml($name, string $class = 'so-tile'): string {
 
 /** Is this getEntityImage() result a real picture (not the generic fallback)? */
 function soImageIsReal(array $img): bool {
-    return in_array($img['status'] ?? '', ['ok', 'manual'], true) && ($img['url'] ?? '') !== '';
+    return imageIsReal($img);
 }
 
 /**

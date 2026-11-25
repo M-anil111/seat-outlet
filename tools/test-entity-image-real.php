@@ -10,6 +10,7 @@ require_once __DIR__ . '/../inc/cli-guard.php';
 foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) { if ((string) getenv($k) === '') putenv($k . '=test-placeholder'); }
 require_once __DIR__ . '/../functions.php';
 require_once __DIR__ . '/../inc/seo-category.php';
+if (!function_exists('soCategoryHero')) require_once __DIR__ . '/../inc/genre-pages.php';
 
 $fail = 0;
 function eimgRealCheck(string $what, $got, $want): void {
@@ -29,6 +30,16 @@ $clean = function () use ($tag) {
     $st->execute();
     $st->close();
 };
+// The Cirque du Soleil hero reads the picture of a fixed name, so that row cannot be given a per-run name: it is saved first and put back at the end.
+$heroName = SO_HERO_ENTITY[2031]; $heroKey = imageEntityKey('artist', $heroName); $heroSaved = null;
+$st = MYSQLI->prepare('SELECT imgkey, entity_type, entity_name, url, status, source, source_url, license, attribution, store_key, attempts, resolved_at, expires_at FROM images WHERE imgkey = ?');
+$st->bind_param('s', $heroKey); $st->execute();
+$heroSaved = $st->get_result()->fetch_assoc() ?: null; $st->close();
+$heroRestore = function () use ($heroKey, $heroSaved) {
+    $st = MYSQLI->prepare('DELETE FROM images WHERE imgkey = ?');
+    $st->bind_param('s', $heroKey); $st->execute(); $st->close();
+    if ($heroSaved) imageRecordUpsert($heroSaved);
+};
 $clean();
 try {
     $row('artist', $name('ok'), 'ok', '/images/zq-real-ok.webp');
@@ -45,7 +56,8 @@ try {
     eimgRealCheck('a real picture keeps its address', $get('ok')['url'], '/images/zq-real-ok.webp');
 
     // The category text: an artist with a stored picture gets a photo tile with its name and picture, the others stay in the text list.
-    foreach (['artist', 'team'] as $type) $row($type, $name('Act 1'), 'ok', '/images/zq-real-tile.webp');
+    $row('artist', $name('Act 1'), 'ok', '/images/zq-real-tile.webp');
+    $row('team', $name('Act 1'), 'ok', '/images/zq-real-team.webp');   // a concert's artists are looked up as 'artist': the team row must not be used
     $artists = [];
     for ($i = 1; $i <= 3; $i++) $artists[] = ['id' => 9840000 + $i, 'name' => $name('Act ' . $i), 'n' => 4 - $i, 'first' => $i, 'cat' => ['path' => '.1859.1986.9700002.']];
     $cfg = ['id' => 9700002, 'label' => 'Zq Real', 'long' => 'zq real', 'kind' => 'concerts', 'profile' => null, 'slug' => 'zq-real'];
@@ -53,8 +65,16 @@ try {
     $html = (string) (soCategorySeo($cfg, $data)['html'] ?? '');
     eimgRealCheck('the category text shows the stored picture as a tile', substr_count($html, 'zq-real-tile.webp'), 1);
     eimgRealCheck('the tile is inside the photo list', (bool) preg_match('#<ul class="so-cseo__artists"><li><a href="/artist/[^"]+"><img src="[^"]*zq-real-tile\.webp" alt="[^"]*Act 1[^"]*"#', $html), true);
+    eimgRealCheck('a picture stored for another entity type is not used', strpos($html, 'zq-real-team.webp'), false);
     eimgRealCheck('an artist with no picture stays in the text list', strpos($html, $name('Act 2')) !== false && substr_count($html, '<img') === 1, true);
+
+    // The Cirque du Soleil category hero: its own stored picture when there is one, the theatre photo when there is not.
+    imageRecordUpsert(['imgkey' => $heroKey, 'entity_type' => 'artist', 'entity_name' => $heroName, 'url' => '/images/zq-real-hero.webp', 'status' => 'ok', 'source' => 'test']);
+    eimgRealCheck('the Cirque du Soleil hero is its stored picture', soCategoryHero(2031, '.1859.1989.2031.'), '/images/zq-real-hero.webp');
+    imageRecordUpsert(['imgkey' => $heroKey, 'entity_type' => 'artist', 'entity_name' => $heroName, 'url' => '', 'status' => 'fallback', 'source' => 'test', 'expires_at' => date('Y-m-d H:i:s', time() + 86400)]);
+    eimgRealCheck('the Cirque du Soleil hero is the theatre photo without a stored picture', soCategoryHero(2031, '.1859.1989.2031.'), '/images/loews-theatre.webp');
 } finally {
     $clean();
+    $heroRestore();
 }
 echo $fail ? "$fail failure(s)\n" : "entity image real: all passed\n"; exit($fail ? 1 : 0);
