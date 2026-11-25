@@ -3020,16 +3020,23 @@ function sendPageCacheHeaders() {
     $status = http_response_code() ?: 200;
     if (!empty($GLOBALS['tn_degraded'])) {
         header('Cache-Control: no-store');   // built without API data: never let a CDN keep it
+        header('X-Accel-Expires: 0');        // nor the web server's page cache
         ob_start('soTimingOnlyGuard');
     } elseif ($status === 404 || $status === 200) {
         header($status === 404
             ? 'Cache-Control: public, max-age=0, s-maxage=60'
             : 'Cache-Control: public, max-age=0, s-maxage=' . $ttl . ', stale-while-revalidate=' . ($ttl * 5) . ', stale-if-error=3600');
+        // The web server's own page cache (nginx fastcgi_cache, deploy/nginx/seatoutlet.com.vhost) keeps the page for the same time.
+        // nginx ignores s-maxage and would refuse max-age=0, so it gets its own header, which it reads first and never forwards.
+        // Since 24 Nov 2026 no CDN sits in front of seatoutlet.com: without this every page view rebuilt the page and asked the ticket
+        // API again, and 72% of visitor pages were served without fresh data because the call budget (about 45 a minute) ran out.
+        header('X-Accel-Expires: ' . ($status === 404 ? 60 : $ttl));
         // Listing data is fetched while the page body renders, after this header is chosen.
         // Hold the output so the header can be corrected at the end if an API call failed.
         ob_start('soDegradedGuard');
     } else {
         header('Cache-Control: no-store');
+        header('X-Accel-Expires: 0');
         ob_start('soTimingOnlyGuard');
     }
 }
@@ -3379,8 +3386,12 @@ function soServerTimingHeader(bool $countQueries = true): string {
 
 function soDegradedGuard($buffer, $phase = null) {
     if (!headers_sent()) { header('Server-Timing: ' . soServerTimingHeader()); }
-    if (!empty($GLOBALS['tn_degraded']) && !headers_sent()) {
+    // A page that lost its API data, or changed its status after the cache header was chosen (a 503, a redirect), is never kept by
+    // the web server's page cache, whatever was promised at the start.
+    $soFinalCode = http_response_code() ?: 200;
+    if ((!empty($GLOBALS['tn_degraded']) || ($soFinalCode !== 200 && $soFinalCode !== 404)) && !headers_sent()) {
         header('Cache-Control: no-store');
+        header('X-Accel-Expires: 0');
     }
     if (empty($GLOBALS['tn_degraded']) && (http_response_code() ?: 200) === 200
         && ($phase === null || (($phase & PHP_OUTPUT_HANDLER_START) && ($phase & PHP_OUTPUT_HANDLER_FINAL)))) {

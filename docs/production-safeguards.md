@@ -74,3 +74,16 @@ Around the code:
 - Before any future change of what answers the public address, run `node tools/live-watchdog.mjs https://<the new install>` against the new install first
   (a temporary address, or `--resolve` in curl) and switch DNS only when it passes. Keep the old install running until the new one passes for an hour.
 - Whoever changes DNS or the server for `seatoutlet.com` writes the time and the change in the pull request or an issue, so an incident can be matched to it.
+
+## Page cache on the server (25 Nov 2026)
+
+With no CDN in front of seatoutlet.com, every page view rebuilt the page and called the ticket API; on 25 Nov 72% of visitor pages were
+served without live data because the call budget (about 45 calls a minute, shared by visitors, crawlers and crons) ran out, and the
+sitemap rebuild could never get a turn. nginx now keeps each page for the time the page itself gives (`X-Accel-Expires`, set in
+`sendPageCacheHeaders()`): a good page 120 s, a 404 60 s, never a page built without API data or one that ends with any other status.
+Data endpoints that send `Cache-Control: public, max-age=N` (home feeds, load more) are kept N seconds, per full address. Never cached:
+anything but GET/HEAD, `/admin`, `/checkout`, order and thank-you pages, sign-up and search, and any request carrying the admin session
+cookie. An expired page is answered from the old copy while one request rebuilds it.
+
+Setup (once, as root, before pasting the Vhost): `mkdir -p /var/cache/nginx`. Check: `curl -sI https://seatoutlet.com/ | grep -i x-cache`
+twice; the second says `HIT`. Empty the cache after an urgent content fix: `rm -rf /var/cache/nginx/seatoutlet/*` (nginx recreates it).

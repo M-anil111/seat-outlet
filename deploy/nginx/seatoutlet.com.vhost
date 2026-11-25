@@ -2,6 +2,13 @@
 # The {{...}} placeholders are CloudPanel's own; leave them as they are. Served directly by nginx and PHP-FPM: no Varnish, no Cloudflare Worker.
 # Tested with nginx + PHP-FPM 8.3 against the repository's file layout (every address below reaches the right page; see docs/production-safeguards.md).
 # Keep this file and the live Vhost the same: change it here first (pull request), then paste it.
+# Page cache on the server (since 25 Nov 2026). No CDN sits in front of seatoutlet.com, so without it every page view rebuilt the page
+# and called the ticket API again: 72% of visitor pages lost their live data because the call budget (about 45 a minute) ran out.
+# Each page says how long it may be kept (X-Accel-Expires from sendPageCacheHeaders(): 120 s for a page, 60 s for a 404, 0 for a page
+# built without API data or any other error). Data endpoints that send "Cache-Control: public, max-age=N" are kept N seconds.
+# Create the parent folder once as root before saving this Vhost: mkdir -p /var/cache/nginx
+fastcgi_cache_path /var/cache/nginx/seatoutlet levels=1:2 keys_zone=seatoutlet_pages:32m max_size=1g inactive=30m use_temp_path=off;
+
 server {
   listen 80;
   listen [::]:80;
@@ -105,6 +112,12 @@ server {
   # Branded 404 page for addresses nginx cannot find (pages send their own 404s).
   error_page 404 /404.php;
 
+  # Never from the page cache: anything but GET/HEAD, admin, checkout and order pages, sign-up and search, and a signed-in admin.
+  set $so_no_cache 0;
+  if ($request_method !~ ^(GET|HEAD)$) { set $so_no_cache 1; }
+  if ($request_uri ~* "^/(admin|checkout|order-confirmation|thank-you|unsubscribe|newsletter|search|cron|tools)") { set $so_no_cache 1; }
+  if ($http_cookie ~* "admin_session") { set $so_no_cache 1; }
+
   # ---- Clean page addresses -> the PHP page that renders them ----
   rewrite ^/artist/([^/]+)/?$    /performer.php?slug=$1 last;
   rewrite ^/performer/([^/]+)/?$ /performer.php?slug=$1 last;
@@ -143,6 +156,15 @@ server {
     fastcgi_param HTTPS "on";
     fastcgi_param SERVER_PORT 443;
     fastcgi_intercept_errors off;
+    fastcgi_cache seatoutlet_pages;
+    fastcgi_cache_key "$scheme$request_method$host$request_uri";
+    fastcgi_cache_bypass $so_no_cache;
+    fastcgi_no_cache $so_no_cache;
+    fastcgi_cache_lock on;                       # one build per page at a time; the others wait for it
+    fastcgi_cache_lock_timeout 10s;
+    fastcgi_cache_use_stale error timeout updating http_500 http_503;
+    fastcgi_cache_background_update on;          # an expired page is answered from the old copy while one request rebuilds it
+    add_header X-Cache $upstream_cache_status always;
     fastcgi_read_timeout 300;
     fastcgi_send_timeout 300;
     fastcgi_pass 127.0.0.1:{{php_fpm_port}};
