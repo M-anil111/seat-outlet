@@ -43,12 +43,20 @@ $root = dirname(__DIR__);
 $router = sys_get_temp_dir() . '/so-slowlog-router-' . getmypid() . '.php';
 file_put_contents($router, "<?php\n\$p = parse_url(\$_SERVER['REQUEST_URI'], PHP_URL_PATH);\nchdir(" . var_export($root, true) . ");\nif (preg_match('#^/([a-z0-9-]+)\$#', \$p, \$m) && is_file(" . var_export($root, true) . " . '/' . \$m[1] . '.php')) { \$_SERVER['SCRIPT_NAME'] = '/' . \$m[1] . '.php'; \$_SERVER['SCRIPT_FILENAME'] = " . var_export($root, true) . " . '/' . \$m[1] . '.php'; require \$_SERVER['SCRIPT_FILENAME']; return true; }\nreturn false;\n");
 $serve = function (string $extraEnv, string $path) use ($router): array {
-    $port = 8700 + random_int(0, 90);
+    $sock = stream_socket_server('tcp://127.0.0.1:0', $en, $es);   // ask the system for a free port, then hand it to the server
+    $port = $sock ? (int) substr((string) strrchr((string) stream_socket_get_name($sock, false), ':'), 1) : 0;
+    if ($sock) fclose($sock);
+    if ($port <= 0) { echo "FAIL could not find a free port\n"; return [0, []]; }
     $err = sys_get_temp_dir() . '/so-slowlog-err-' . getmypid() . '-' . $port . '.log';
     $env = $extraEnv . ' SO_SLUG_MIN_ROWS=-1 SO_AUTO_MIGRATE=0 ';
     foreach (['CONSUMER_KEY', 'CONSUMER_SECRET', 'GAPI_KEY', 'AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'RECAPTCHA_SECRET_KEY'] as $k) { if ((string) getenv($k) === '') $env .= $k . '=test-placeholder '; }
     $proc = proc_open('exec env ' . $env . 'php -S 127.0.0.1:' . $port . ' ' . escapeshellarg($router), [1 => ['file', '/dev/null', 'w'], 2 => ['file', $err, 'w']], $pipes);
-    usleep(900000);
+    $up = false;   // wait until the server accepts connections (up to 15 s), not a fixed pause
+    for ($i = 0; $i < 150 && !$up; $i++) {
+        $c = @fsockopen('127.0.0.1', $port, $en2, $es2, 0.2);
+        if ($c) { fclose($c); $up = true; } else { usleep(100000); }
+    }
+    if (!$up) { proc_terminate($proc); proc_close($proc); echo "FAIL the test server did not start on port $port\n"; return [0, []]; }
     $ctx = stream_context_create(['http' => ['timeout' => 40, 'ignore_errors' => true, 'follow_location' => 0, 'max_redirects' => 0]]);
     @file_get_contents('http://127.0.0.1:' . $port . $path, false, $ctx);
     $code = 0;
@@ -68,8 +76,9 @@ slowLogCheck('the line does not cost a database query (no query count in it)', s
 slowLogCheck('the query string never reaches the log', strpos($lines1[0] ?? '', 'secretvalue') === false, true);
 [$c2, $lines2] = $serve('SO_SLOW_LOG_MS=600000', '/worry-free-guarantee');   // far above any real page time, so a slow CI runner cannot make this flaky
 slowLogCheck('a page under the limit writes no line', [$c2, count($lines2)], [200, 0]);
-[$c3, $lines3] = $serve('SO_SLOW_LOG_MS=1 DB_PASS=wrong-password-for-the-test', '/worry-free-guarantee');
+[$c3, $lines3] = $serve('SO_SLOW_LOG_MS=1 DB_PORT=1', '/worry-free-guarantee');   // nothing listens on port 1: the connection fails whatever inc/env.local.php sets (it never sets DB_PORT)
 slowLogCheck('a failed database connection answers 503', $c3, 503);
+slowLogCheck('the failed connection line carries the connection time', preg_match('/\[app;dur=\d+.*dbconn;dur=\d+/', $lines3[0] ?? '') === 1, true);
 slowLogCheck('a failed database connection is logged as a slow request too', strpos($lines3[0] ?? '', 'slow request: /worry-free-guarantee status 503 took ') !== false, true);
 @unlink($router);
 
