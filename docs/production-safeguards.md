@@ -53,5 +53,24 @@ this repository in the same change. Everything it did is now done by the live in
 
 ## Not covered (outside the repository)
 
-- Edge caching. With `seatoutlet.com` on DNS only, Cloudflare no longer caches pages or static files; every request reaches the server. The app's own page snapshots and the Vhost's static-file cache headers remain. Putting the apex record back on the Cloudflare proxy (without any Worker) would bring edge caching and the visitor location headers back; that is the owner's decision.
+- Edge caching. With `seatoutlet.com` on DNS only, Cloudflare no longer caches pages or static files; every request reaches the server. The app's own page snapshots and the Vhost's static-file cache headers remain. Putting the apex record back on the Cloudflare proxy (without any Worker) would bring edge caching and the visitor location headers back; that is the owner's decision. The steps, the cache rules and the rollback are in `docs/cloudflare-proxy.md`.
 - Images are served from `cdn-beta.seatoutlet.com` (`AWS_CDN_URL`). They work; a `cdn.seatoutlet.com` name would need a new bucket or DNS record.
+
+## Safeguards against a repeat of the 24 Nov empty-site window
+
+What was seen: for about 80 minutes the public address answered with a site that had no ticket data ("Invalid event.", artists without events).
+Why event pages said "Invalid event.": a clean event address (`/event/name-city-date`) carries no id, and is resolved only through the `url_slugs`
+table. On an install whose database was not filled, every real address looks made up. What caused that install to serve the public address is not
+confirmed (see above).
+
+In the code (this change):
+- `soSlugRegistryMissing($type)` (`inc/slugs.php`): when the install holds fewer than `SO_SLUG_MIN_ROWS` (default 200) stored addresses of a type
+  (event, performer, venue), or the table is missing, an unknown address answers **503 with `Retry-After: 30`** (no `noindex`), never a 404 that
+  search engines act on by dropping pages. A healthy site holds thousands of each type, so it never reaches this. Set `SO_SLUG_MIN_ROWS=-1`
+  to switch it off (the test servers do). Test: `tools/test-empty-registry.php`.
+
+Around the code:
+- The watchdog (`tools/live-watchdog.mjs`, every 15 minutes) reports what a visitor would see: "Invalid event.", no events, `noindex`, beta addresses, no deploy marker.
+- Before any future change of what answers the public address, run `node tools/live-watchdog.mjs https://<the new install>` against the new install first
+  (a temporary address, or `--resolve` in curl) and switch DNS only when it passes. Keep the old install running until the new one passes for an hour.
+- Whoever changes DNS or the server for `seatoutlet.com` writes the time and the change in the pull request or an issue, so an incident can be matched to it.

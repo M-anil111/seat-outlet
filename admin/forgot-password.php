@@ -29,13 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $token = bin2hex(random_bytes(32));
                 $tokenHash = hash('sha256', $token);
-                $expiresAt = date('Y-m-d H:i:s', time() + 30 * 60);
-
+                // The expiry is set by the database clock, the same clock admin_find_valid_reset() checks it against (NOW()).
+                // It used to be PHP's date() in SITE_TIMEZONE (America/Los_Angeles) while the database runs on UTC, so every link was
+                // written about 7.5 hours in the past and opened as expired (24-25 Nov 2026).
                 $stmt = MYSQLI->prepare(
-                    'INSERT INTO admin_password_resets (admin_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, NOW())'
+                    'INSERT INTO admin_password_resets (admin_id, token_hash, expires_at, created_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE), NOW())'
                 );
                 $adminId = (int)$admin['ID'];
-                $stmt->bind_param('iss', $adminId, $tokenHash, $expiresAt);
+                $stmt->bind_param('is', $adminId, $tokenHash);
                 $stmt->execute();
                 $stmt->close();
 

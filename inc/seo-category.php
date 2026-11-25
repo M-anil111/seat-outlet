@@ -136,6 +136,16 @@ function soCategorySeo(array $cfg, array $d) {
     $hub = $kind === 'sports' ? ['/game-day-tickets', 'game day tickets'] : ($kind === 'concerts' ? ['/concert-tickets-for-sale', 'concert tickets for sale'] : ['/buy-tickets-online', 'tickets for every event']);
     $profile = soCategoryProfile($cfg['profile'] ?? '');
     $cityNames = array_map(function ($c) { return $c['label']; }, $d['cities']);
+    // The links and pictures below are asked for one by one: load the slugs of its artists, venues and cities with one query per kind, and the
+    // artists' pictures with one more (this text was 22 + 8 slug lookups and 12 picture lookups on a category page).
+    $soWarm = [];
+    foreach ($d['artists'] as $a) { $soWarm[] = ['performer', (int) $a['id']]; }
+    foreach ($d['venues'] as $v) { $soWarm[] = ['venue', (int) $v['id']]; }
+    foreach ($d['cities'] as $c) { $soWarm[] = ['city', (int) $c['id']]; }
+    soSlugWarm($soWarm);
+    $soKeys = [];
+    foreach ($d['artists'] as $a) { $soKeys[] = imageEntityKey(imageEntityTypeForPerformer($a['cat'] ?: []), $a['name']); }
+    imagePrefetch($soKeys);
     $topCities = soCatList($cityNames, 3);
     $artistNames = array_map(function ($a) { return $a['name']; }, $d['artists']);
     $venueNames = array_map(function ($v) { return $v['name']; }, $d['venues']);

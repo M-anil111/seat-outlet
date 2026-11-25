@@ -63,7 +63,7 @@ function soContactSameOrigin(): bool {
     return true;   // no header at all (some privacy settings strip both): the signed token still has to be valid
 }
 
-function soContactClientIp(): string { return (string) ($_SERVER['REMOTE_ADDR'] ?? ''); }
+function soContactClientIp(): string { return function_exists('soClientIp') ? (string) soClientIp() : (string) ($_SERVER['REMOTE_ADDR'] ?? ''); }   // soClientIp: the visitor, also behind the Cloudflare proxy (its edge address would otherwise be shared by many visitors)
 
 function soContactIpHash(): string { return hash('sha256', soContactSecret() . '|' . soContactClientIp()); }
 

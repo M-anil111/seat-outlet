@@ -62,10 +62,11 @@ const SO_HERO_BY_ID = [
     2031 => '/images/loews-theatre.webp',
     1872 => '/images/loews-theatre.webp',   // comedy is a live show: stage picture, not a concert crowd
 ];
-function soCategoryHero($id, $path = '') {
+function soCategoryHero($id, $path = '', ?array $entities = null) {
     $id = (int) $id;
-    if (isset(SO_HERO_ENTITY[$id]) && function_exists('getEntityImage')) {
-        $im = getEntityImage('artist', SO_HERO_ENTITY[$id], ['resolve' => false]);
+    $entities = $entities ?? SO_HERO_ENTITY;   // categories whose hero is an entity's own picture; the argument is for tests
+    if (isset($entities[$id]) && function_exists('getEntityImage')) {
+        $im = getEntityImage('artist', $entities[$id], ['resolve' => false]);
         if (!empty($im['real']) && !empty($im['url'])) return $im['url'];
     }
     if (isset(SO_HERO_BY_ID[$id])) return SO_HERO_BY_ID[$id];

@@ -11,7 +11,7 @@ if ($id <= 0) {
   [$id]  = soSlugResolve('event', (string) $slug);   // stored slug, or the old name-and-id form
   $id    = (int) $id;
   if ($id <= 0) {
-    echo notFoundBlockHtml('Event');
+    echo soSlugRegistryMissing('event') ? unavailableBlockHtml('Event') : notFoundBlockHtml('Event');   // no address registry on this install: header.php sent a 503
     include 'footer.php';
     exit;
   }

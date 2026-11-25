@@ -258,6 +258,26 @@ jobs:
 
       - name: URL slug registry (clean slugs, collisions, old form still resolves)
         run: php tools/test-slugs.php
+      - name: Unstored slugs are looked up once per request, not once per link
+        run: php tools/test-slug-miss-memory.php
+      - name: A listing page loads the links and pictures of its whole list with a few queries
+        run: php tools/test-listing-warm.php
+      - name: A stored picture is marked real, so tiles and heroes show it
+        run: php tools/test-entity-image-real.php
+      - name: The event structured data uses the artist's stored picture
+        run: php tools/test-event-schema-image.php
+      - name: A slow page leaves one error-log line with its timing breakdown
+        run: php tools/test-slow-request-log.php
+      - name: A grid of cards reads its pictures with one query
+        run: php tools/test-image-prefetch.php
+      - name: Events on a performer page are remembered once an hour, not on every view
+        run: php tools/test-event-remember-once.php
+      - name: Cloudflare proxy readiness (visitor address, Vhost list, runbook)
+        run: php tools/test-cloudflare-proxy.php
+      - name: Empty URL registry answers 503, never 404
+        run: php tools/test-empty-registry.php
+      - name: "Admin password reset links open while valid (expiry on the database clock, not PHP's timezone)"
+        run: php tools/test-admin-reset-expiry.php
       - name: Database reconnect (soDbRetry)
         run: php tools/test-db-retry.php
       - name: Verified orders (record once, claim the purchase once)

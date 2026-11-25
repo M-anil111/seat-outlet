@@ -45,7 +45,7 @@ function soImageNameKnown($name) {
 /** getEntityImage() for a visitor-supplied name: never queues junk or floods. Same return shape. */
 function soGuardedEntityImage($type, $name, array $opts = []) {
     $name = trim((string) $name);
-    $fallback = ['url' => imageFallbackUrl($type, $opts['category'] ?? [], $opts['tab'] ?? ''), 'credit' => '', 'license' => '', 'source' => '', 'status' => 'fallback'];
+    $fallback = ['url' => imageFallbackUrl($type, $opts['category'] ?? [], $opts['tab'] ?? ''), 'credit' => '', 'license' => '', 'source' => '', 'status' => 'fallback', 'real' => false];
     if (!soImageNameAcceptable($name)) return $fallback;
     if (imageRecordGet(imageEntityKey($type, $name))) {
         return getEntityImage($type, $name, $opts);   // already known: serve only

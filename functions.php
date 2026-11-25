@@ -29,6 +29,8 @@ foreach ($_GET as $so_key => $so_val) {
 }
 unset($so_key, $so_val);
 
+require_once __DIR__ . '/inc/server-load.php';   // soSlowRequestLog() and soServerBusy(): no dependencies on later code
+register_shutdown_function('soSlowRequestLog');   // one error-log line for a page that took 5 s or more, with its timing breakdown; registered first so a slow failed database connection (the 503 page) is logged too
 include_once __DIR__ . '/db/config.php';
 include 'inc/constants.php';
 require 'vendor/autoload.php';
@@ -952,9 +954,18 @@ function getPerformerPageEvents($performerId, $perPage = 20) {
     [$endpoint, $params] = performerPageEventsSpec($performerId, $perPage);
     $resp = tnRequest($endpoint, $params, 'GET', 600);
     // Remember these events (performer, category, slug, date) so their pages redirect sensibly once TicketNetwork drops them; once an hour per performer.
-    if (is_array($resp) && !empty($resp['results']) && is_array($resp['results']) && (int) $performerId > 0 && cache_get('evredir_p' . (int) $performerId, 3600) === false) {
-        cache_set('evredir_p' . (int) $performerId, 1);
-        soEventRememberMany($resp['results'], 'catalog');
+    // The marker is an array (cache_get() answers false for anything else, so the number 1 made this guard never hold: every view wrote the rows).
+    // It is written first as "in progress" (held for 5 minutes, so concurrent views do not repeat the write) and rewritten as done once the rows were
+    // stored. A failed write (soEventRememberMany() swallows database errors and returns 0) is tried again after 5 minutes, not after an hour.
+    if (is_array($resp) && !empty($resp['results']) && is_array($resp['results']) && (int) $performerId > 0) {
+        $evKey  = 'evredir_p' . (int) $performerId . '_n' . (int) $perPage;   // per page size: event pages ask for 8 rows, the artist page for 20, so one must not stand in for the other
+        $evMark = cache_get($evKey, 3600);
+        $evHeld = is_array($evMark) && (!empty($evMark['ok']) || (time() - (int) ($evMark['at'] ?? 0)) < 300);
+        if (!$evHeld) {
+            cache_set($evKey, ['at' => time(), 'ok' => false]);
+            $evOk = soEventRememberMany($resp['results'], 'catalog') > 0;
+            if ($evOk) cache_set($evKey, ['at' => time(), 'ok' => true]);
+        }
     }
     return [$params, $resp];
 }
@@ -2916,7 +2927,8 @@ function renderNotFoundPage($what, $apiResponse = null, $label = '') {
     // Callers that do not hand over the API response (category, state, country pages): a request that already
     // failed in this process (throttled, down, circuit open) marks the page degraded, and that is a retryable
     // 503, never a 404 that would drop live menu pages from search engines.
-    if (($apiResponse !== null && tnEntityUnavailable($apiResponse)) || ($apiResponse === null && !empty($GLOBALS['tn_degraded']))) {
+    if (($apiResponse !== null && tnEntityUnavailable($apiResponse)) || ($apiResponse === null && !empty($GLOBALS['tn_degraded']))
+        || (function_exists('soSlugRegistryMissing') && soSlugRegistryMissing(['Performer' => 'performer', 'Venue' => 'venue', 'Event' => 'event'][$what] ?? ''))) {   // no address registry on this install: every address looks unknown, never a 404
         renderUnavailablePage($what, $label);
     }
     http_response_code(404);
@@ -3344,7 +3356,7 @@ function soTimerMark(string $name): void {
     $last = $now;
 }
 
-function soServerTimingHeader(): string {
+function soServerTimingHeader(bool $countQueries = true): string {
     $st = $GLOBALS['so_tn_stat'] ?? ['live' => 0, 'cached' => 0, 'ms' => 0.0];
     $start = (float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true));
     $r = fn(float $ms): int => (int) (round($ms / 10) * 10);
@@ -3352,7 +3364,7 @@ function soServerTimingHeader(): string {
         . ', tnlive;desc="' . (int) $st['live'] . '", tncached;desc="' . (int) $st['cached'] . '"';
     // Database queries this request has made (the connection's own counter, minus the one that reads it): a page that makes hundreds of
     // single lookups pays a round trip for each, which is slow only when the database is slow or busy.
-    if (defined('MYSQLI') && MYSQLI instanceof mysqli && PHP_SAPI !== 'cli') {
+    if ($countQueries && defined('MYSQLI') && MYSQLI instanceof mysqli && PHP_SAPI !== 'cli') {
         try {
             $q = MYSQLI->query("SHOW SESSION STATUS LIKE 'Questions'");
             $row = $q ? $q->fetch_row() : null;
@@ -4582,7 +4594,12 @@ function soFamilyCrumb($hubPath) {
 /** ItemList of up to 20 Event nodes for a listing page, or null when there is nothing listed. */
 function soEventItemList(array $events, $pageUrl) {
     $items = [];
-    foreach (array_slice($events, 0, 20) as $ev) {
+    $slice = array_slice($events, 0, 20);
+    if ($slice) {   // one query for the slugs and one for the pictures of the whole list, not one of each per event
+        if (function_exists('soSlugWarmEvents')) soSlugWarmEvents($slice);
+        if (function_exists('soImagePrefetchEvents')) soImagePrefetchEvents($slice);
+    }
+    foreach ($slice as $ev) {
         if (empty($ev['text']['name']) || (empty($ev['date']['date']) && empty($ev['date']['datetime']))) continue;
         $evNode = soEventNode($ev);
         if (!soEventHasOffer($evNode)) continue;   // an event nobody can buy has no price to state (see soEventNode())
@@ -5530,6 +5547,9 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
     $n = 0;
     // Performers with a real picture first, so the first row of cards is not a row of initials tiles.
     $related = soImageFirst(array_values($related), function ($r) { return [imageEntityTypeForPerformer($r['defaultCategory'] ?? []), trim((string) ($r['text']['name'] ?? '')), $r['defaultCategory'] ?? []]; });
+    $soRelPairs = [];
+    foreach (array_slice($related, 0, $limit * 2) as $rel) { if (!empty($rel['id'])) $soRelPairs[] = ['performer', (int) $rel['id']]; }
+    soSlugWarm($soRelPairs);   // one query for the card links below (each card built its own lookup)
     ?>
     <div class="so-related" data-so-related>
         <?php foreach ($related as $rel) {
