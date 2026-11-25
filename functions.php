@@ -4590,7 +4590,12 @@ function soFamilyCrumb($hubPath) {
 /** ItemList of up to 20 Event nodes for a listing page, or null when there is nothing listed. */
 function soEventItemList(array $events, $pageUrl) {
     $items = [];
-    foreach (array_slice($events, 0, 20) as $ev) {
+    $slice = array_slice($events, 0, 20);
+    if ($slice) {   // one query for the slugs and one for the pictures of the whole list, not one of each per event
+        if (function_exists('soSlugWarmEvents')) soSlugWarmEvents($slice);
+        if (function_exists('soImagePrefetchEvents')) soImagePrefetchEvents($slice);
+    }
+    foreach ($slice as $ev) {
         if (empty($ev['text']['name']) || (empty($ev['date']['date']) && empty($ev['date']['datetime']))) continue;
         $evNode = soEventNode($ev);
         if (!soEventHasOffer($evNode)) continue;   // an event nobody can buy has no price to state (see soEventNode())

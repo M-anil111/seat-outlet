@@ -153,6 +153,16 @@ function imagePrefetch(array $keys, $mysqli = MYSQLI): void {
     }
 }
 
+/** One query for the pictures the structured data of an event list asks for (soEventSchemaImage(): the first performer of each event, as an artist). */
+function soImagePrefetchEvents(array $events): void {
+    $keys = [];
+    foreach ($events as $e) {
+        $who = trim((string) ($e['performers'][0]['name'] ?? ''));
+        if ($who !== '') $keys[imageEntityKey('artist', $who)] = true;
+    }
+    if ($keys) imagePrefetch(array_keys($keys));
+}
+
 function imageRecordGet($key, $mysqli = MYSQLI) {
     if ($mysqli === MYSQLI) {
         $memo = &imageRowMemo();
