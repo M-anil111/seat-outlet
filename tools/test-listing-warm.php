@@ -50,7 +50,11 @@ $clean = function () use ($tag) {
     foreach (['event' => [9800001, 9800099], 'performer' => [9810001, 9810099], 'venue' => [9820001, 9820099], 'city' => [9830001, 9830099]] as $type => [$lo, $hi]) {
         MYSQLI->query("DELETE FROM url_slugs WHERE type = '$type' AND CAST(ext_id AS UNSIGNED) BETWEEN $lo AND $hi");
     }
-    MYSQLI->query("DELETE FROM images WHERE entity_type IN ('artist', 'team') AND entity_name LIKE 'Zq Warm " . MYSQLI->real_escape_string($tag) . " %'");
+    $like = 'Zq Warm ' . $tag . ' %';
+    $st = MYSQLI->prepare("DELETE FROM images WHERE entity_type IN ('artist', 'team') AND entity_name LIKE ?");
+    $st->bind_param('s', $like);
+    $st->execute();
+    $st->close();
 };
 $run = function (string $m) use ($argv, $tag): array {
     $r = json_decode((string) shell_exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($argv[0]) . ' ' . escapeshellarg($m) . ' ' . escapeshellarg($tag) . ' 2>/dev/null'), true);
