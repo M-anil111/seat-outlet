@@ -53,7 +53,7 @@ $clean = function () use ($tag) {
     MYSQLI->query("DELETE FROM images WHERE entity_type IN ('artist', 'team') AND entity_name LIKE 'Zq Warm " . MYSQLI->real_escape_string($tag) . " %'");
 };
 $run = function (string $m) use ($argv, $tag): array {
-    $r = json_decode((string) shell_exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($argv[0]) . ' ' . $m . ' ' . $tag . ' 2>/dev/null'), true);
+    $r = json_decode((string) shell_exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($argv[0]) . ' ' . escapeshellarg($m) . ' ' . escapeshellarg($tag) . ' 2>/dev/null'), true);
     return is_array($r) ? $r : ['out' => null, 'selects' => 999];
 };
 $clean();
