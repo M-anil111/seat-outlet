@@ -70,7 +70,9 @@ function soSlowRequestLine(float $elapsedMs, string $uri, int $status, string $t
 /**
  * Shutdown hook (registered first, so it runs before the background jobs): a page that took SO_SLOW_LOG_MS or more (default 5000, 0 turns it off)
  * leaves one line in the PHP error log with the same breakdown as the Server-Timing header, so a slow period can be explained afterwards from
- * the log alone (docs/resource-use.md). Pages only: command line runs and the background jobs are not logged.
+ * the log alone (docs/resource-use.md). The breakdown is built without the query count (soServerTimingHeader(false)): that is one more query,
+ * to a database that may be the slow part, and PHP runs this hook before it flushes the page, so the page's own header text does not exist yet.
+ * Pages only: command line runs and the background jobs are not logged.
  */
 function soSlowRequestLog(): void {
     if (PHP_SAPI === 'cli') return;
@@ -83,7 +85,7 @@ function soSlowRequestLog(): void {
     try {
         $l = function_exists('sys_getloadavg') ? @sys_getloadavg() : false;
         $line = soSlowRequestLine($elapsed, (string) ($_SERVER['REQUEST_URI'] ?? '/'), (int) (http_response_code() ?: 200),
-            function_exists('soServerTimingHeader') ? soServerTimingHeader() : '', is_array($l) && isset($l[0]) ? (float) $l[0] : null, $limit);
+            function_exists('soServerTimingHeader') ? soServerTimingHeader(false) : '', is_array($l) && isset($l[0]) ? (float) $l[0] : null, $limit);
         if ($line !== null) error_log($line);
     } catch (\Throwable $e) { /* diagnostics only: never turn a slow page into a failed one */ }
 }
