@@ -15,7 +15,7 @@ Why it matters: with DNS only (grey cloud) every request reaches nginx and PHP. 
 | Host header | The proxy passes the visitor's Host unchanged. The code reads only `Host` (never `X-Forwarded-Host`). |
 | Cookies | Anonymous pages set no cookie and do not vary by cookie (checked live on the home, artist, event, search and location endpoints). `order-confirmation` uses a cookie and is `no-store`. |
 | Never cached | `/checkout`, `/order-confirmation`, `/thank-you`, `/admin` and every non-GET send `Cache-Control: private, no-store`. A page built without ticket data (feed down) sends `no-store` too, and answers 503. |
-| nginx logs and limits | The Vhost sets `set_real_ip_from` (Cloudflare's ranges) and `real_ip_header CF-Connecting-IP`, so the access log shows the visitor, not Cloudflare. Harmless while the proxy is off. |
+| nginx logs and limits | Both server blocks of the Vhost (port 80 and port 443) set `set_real_ip_from` (Cloudflare's ranges) and `real_ip_header CF-Connecting-IP`, so the access log shows the visitor, not Cloudflare. Harmless while the proxy is off. |
 
 ## Steps (owner or whoever has the Cloudflare login; about 20 minutes)
 
@@ -27,16 +27,17 @@ Do this only when the server is answering normally (`node tools/live-watchdog.mj
    - If incoming requests match (Edit expression):
      `(http.host eq "seatoutlet.com") and (http.request.method eq "GET") and not starts_with(http.request.uri.path, "/admin") and not starts_with(http.request.uri.path, "/ajax") and not starts_with(http.request.uri.path, "/checkout") and not starts_with(http.request.uri.path, "/order-confirmation") and not starts_with(http.request.uri.path, "/thank-you")`
    - Then: Cache eligibility **Eligible for cache**. Edge TTL: **Use cache-control header if present, bypass cache if not** (the pages send their own `s-maxage`; anything without a header is not cached). Browser TTL: **Respect origin**. Leave "Serve stale content while revalidating" on.
-   - Deploy. (Cloudflare caches static files such as CSS, JS and images by default, and the app already sends `max-age=31536000, immutable` for them.)
+   - Deploy. (Cloudflare caches static files such as CSS, JS and images by default. The Vhost sends one-year `immutable` headers for fonts, `lib/` files and minified CSS and JS, and 30-day headers for other static files; Cloudflare follows them.)
 4. **Cache Rule to bypass the dynamic paths** (belt and braces, put it above the rule in step 3): name "Never cache dynamic paths", expression `starts_with(http.request.uri.path, "/admin") or starts_with(http.request.uri.path, "/ajax") or starts_with(http.request.uri.path, "/checkout") or starts_with(http.request.uri.path, "/order-confirmation") or starts_with(http.request.uri.path, "/thank-you")`, Cache eligibility **Bypass cache**.
 5. **Visitor location (optional).** Cloudflare > Rules > Managed Transforms > "Add visitor location headers": On. The site already falls back to MaxMind on the server when the headers are missing.
-6. **Do not challenge the order webhook.** `/ajax/` receives TicketNetwork's order webhook. If Bot Fight Mode or a WAF rule is on, add a skip rule for `/ajax/` so the webhook is never challenged.
+6. **Do not challenge the order webhook.** `/ajax/tn-order-webhook.php` receives TicketNetwork's order webhook. If Bot Fight Mode or a WAF rule is on, add a skip rule only for POST requests to `/ajax/tn-order-webhook.php`, so the webhook is never challenged while every other `/ajax/` endpoint stays protected.
 7. **Turn the proxy on.** Cloudflare > DNS > Records: the `A` record for `@` and the one for `www` (if it exists): click the grey cloud so it becomes orange (**Proxied**). Leave `beta` as **DNS only**, and leave `checkout`, `cdn-beta` and mail records as they are.
 8. **Verify** (from any computer):
    ```bash
-   curl -sI https://seatoutlet.com/artist/menopause-the-musical | grep -i 'cf-cache-status\|server\|cache-control'
-   curl -sI https://seatoutlet.com/artist/menopause-the-musical | grep -i cf-cache-status      # second request: HIT
-   curl -sI https://seatoutlet.com/checkout | grep -i 'cf-cache-status\|cache-control'          # DYNAMIC or BYPASS, never HIT
+   # GET requests that discard the body (the cache rule covers GET; a HEAD request is not a reliable test)
+   curl -s -o /dev/null -D - https://seatoutlet.com/artist/menopause-the-musical | grep -i 'cf-cache-status\|server\|cache-control'
+   curl -s -o /dev/null -D - https://seatoutlet.com/artist/menopause-the-musical | grep -i cf-cache-status      # second request: HIT
+   curl -s -o /dev/null -D - https://seatoutlet.com/checkout | grep -i 'cf-cache-status\|cache-control'          # DYNAMIC or BYPASS, never HIT
    curl -s  https://seatoutlet.com/ajax/get_ip_details.php                                     # a city for your own address
    node tools/live-watchdog.mjs https://seatoutlet.com                                          # passes
    ```
