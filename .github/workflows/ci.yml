@@ -278,6 +278,8 @@ jobs:
         run: php tools/test-empty-registry.php
       - name: "Admin password reset links open while valid (expiry on the database clock, not PHP's timezone)"
         run: php tools/test-admin-reset-expiry.php
+      - name: "Server page cache: a good page is kept 120 s, a page without API data or with an error is never kept; Vhost rules"
+        run: php tools/test-page-cache.php
       - name: "Admin dashboard opens on an older images table (no created_at); migration 0054 adds it"
         run: php tools/test-images-created-at.php
       - name: Database reconnect (soDbRetry)
