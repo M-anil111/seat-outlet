@@ -5538,6 +5538,9 @@ function renderRelatedPerformersGrid(array $related, int $limit = 8): void {
     $n = 0;
     // Performers with a real picture first, so the first row of cards is not a row of initials tiles.
     $related = soImageFirst(array_values($related), function ($r) { return [imageEntityTypeForPerformer($r['defaultCategory'] ?? []), trim((string) ($r['text']['name'] ?? '')), $r['defaultCategory'] ?? []]; });
+    $soRelPairs = [];
+    foreach (array_slice($related, 0, $limit * 2) as $rel) { if (!empty($rel['id'])) $soRelPairs[] = ['performer', (int) $rel['id']]; }
+    soSlugWarm($soRelPairs);   // one query for the card links below (each card built its own lookup)
     ?>
     <div class="so-related" data-so-related>
         <?php foreach ($related as $rel) {

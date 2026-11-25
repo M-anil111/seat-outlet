@@ -115,7 +115,49 @@ function imageDbFailed(\Throwable $e) {
     if (!$logged) { $logged = true; error_log('images table unavailable (run php db/migrate.php --status): ' . $e->getMessage()); }
 }
 
+/**
+ * Rows loaded ahead for this request: ['imgkey' => row|false]. Filled only by imagePrefetch() (a page that is about to ask for many pictures), never
+ * by imageRecordGet() itself, so cron workers and tests that call imageRecordGet() always read the table. A key written in this request is dropped from it.
+ */
+function &imageRowMemo(): array {
+    static $memo = [];
+    return $memo;
+}
+
+/**
+ * One query for the rows of many keys, remembered for this request. A page with a grid of cards (related artists: 20 ranked, 8 shown) asked for
+ * each picture with its own SELECT, twice for the shown ones. Keys with no row are remembered as such.
+ * @param array<int,string> $keys imageEntityKey() values
+ */
+function imagePrefetch(array $keys, $mysqli = MYSQLI): void {
+    if ($mysqli !== MYSQLI) return;   // the memo answers for the site's own connection only
+    $memo = &imageRowMemo();
+    $need = [];
+    foreach ($keys as $k) { $k = (string) $k; if ($k !== '' && !array_key_exists($k, $memo)) $need[$k] = true; }
+    foreach (array_chunk(array_keys($need), 200) as $chunk) {
+        try {
+            $in = implode(',', array_fill(0, count($chunk), '?'));
+            $stmt = $mysqli->prepare("SELECT * FROM images WHERE imgkey IN ($in)");
+            if (!$stmt) return;
+            $stmt->bind_param(str_repeat('s', count($chunk)), ...$chunk);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $found = [];
+            while ($row = $res->fetch_assoc()) { $found[(string) $row['imgkey']] = $row; }
+            $stmt->close();
+            foreach ($chunk as $k) { $memo[$k] = $found[$k] ?? false; }
+        } catch (\Throwable $e) {
+            imageDbFailed($e);
+            return;
+        }
+    }
+}
+
 function imageRecordGet($key, $mysqli = MYSQLI) {
+    if ($mysqli === MYSQLI) {
+        $memo = &imageRowMemo();
+        if (array_key_exists((string) $key, $memo)) return $memo[(string) $key] ?: null;
+    }
     try {
         $stmt = $mysqli->prepare('SELECT * FROM images WHERE imgkey = ? LIMIT 1');
         if (!$stmt) return null;
@@ -131,6 +173,7 @@ function imageRecordGet($key, $mysqli = MYSQLI) {
 }
 
 function imageRecordUpsert(array $r, $mysqli = MYSQLI) {
+    if (isset($r['imgkey'])) { $memo = &imageRowMemo(); unset($memo[(string) $r['imgkey']]); }   // what this request stores is read back from the table
     try {
         return imageRecordUpsertRun($r, $mysqli);
     } catch (\Throwable $e) {
@@ -166,6 +209,10 @@ function imageQueue($type, $name, $fallbackUrl = '', $mysqli = MYSQLI) {
     $name = trim((string) $name);
     if ($name === '') return false;
     $key = imageEntityKey($type, $name);
+    static $queued = [];
+    if (isset($queued[$key . '|' . spl_object_id($mysqli)])) return true;   // already queued in this request: the same card is built more than once
+    $queued[$key . '|' . spl_object_id($mysqli)] = true;
+    $memo = &imageRowMemo(); unset($memo[$key]);
     try {
         $stmt = $mysqli->prepare('INSERT IGNORE INTO images (imgkey, entity_type, entity_name, url, status) VALUES (?, ?, ?, ?, \'pending\')');
         if (!$stmt) return false;
@@ -231,6 +278,11 @@ function getEntityImage($type, $name, array $opts = []) {
  */
 function soImageFirst(array $items, callable $describe, ?callable $primary = null): array {
     if (count($items) < 2) return $items;
+    $keys = [];
+    foreach ($items as $item) {
+        try { [$t, $n] = $describe($item); if ((string) $n !== '') $keys[] = imageEntityKey($t, $n); } catch (\Throwable $e) { /* decoration only */ }
+    }
+    imagePrefetch($keys);   // one query for the whole list; the lookups below and the cards that follow read it
     $has = [];
     foreach ($items as $i => $item) {
         $has[$i] = 0;
