@@ -78,10 +78,12 @@ ipCheck('the cards that follow the ranking read nothing more from the table', $s
 ipCheck('an entity queued in this request reads back as pending from memory', (imageRecordGet($keys[11])['status'] ?? null), 'pending');
 
 // A failed insert is not remembered as queued: the next card tries again. Scratch database with no images table first, then with one.
-$scratch = 'so_imgq_' . getmypid();
+$scratch = 'so_imgq_' . bin2hex(random_bytes(6));   // collision-resistant: the test only ever drops a database it created
+$created = false;
 $admin = new mysqli(DB_HOST, DB_USER, DB_PASS, '', (int) DB_PORT);
 try {
     $admin->query("CREATE DATABASE `$scratch`");
+    $created = true;
     $admin->select_db($scratch);
     ipCheck('a queue insert that fails answers false', imageQueue('artist', 'Zq Imgp 99', '', $admin), false);
     $admin->query('CREATE TABLE images LIKE `' . DB_NAME . '`.images');
@@ -89,7 +91,7 @@ try {
     $cnt = (int) $admin->query("SELECT COUNT(*) FROM images WHERE entity_name = 'Zq Imgp 99'")->fetch_row()[0];
     ipCheck('the row was stored by the second try', $cnt, 1);
 } finally {
-    $admin->query("DROP DATABASE IF EXISTS `$scratch`");
+    if ($created) $admin->query("DROP DATABASE IF EXISTS `$scratch`");
 }
 
 ipCheck('cards with a picture come first', array_slice(array_column($ranked, 'n'), 0, 4), [$names[4], $names[3], $names[2], $names[1]]);

@@ -17,10 +17,12 @@ function regCheck(string $what, $got, $want): void {
 
 // A scratch database: no table, a table with too few rows of the type, and one with enough. The minimum is lowered to 3 for the test.
 putenv('SO_SLUG_MIN_ROWS=3');
-$scratch = 'so_empty_registry_' . getmypid();
+$scratch = 'so_empty_registry_' . bin2hex(random_bytes(6));   // collision-resistant: the test only ever drops a database it created
+$created = false;
 $db = new mysqli(DB_HOST, DB_USER, DB_PASS, '', (int) DB_PORT);
 try {
     $db->query("CREATE DATABASE `$scratch`");
+    $created = true;
     $db->select_db($scratch);
     regCheck('no table is flagged (migrations not applied)', soSlugRegistryMissing('event', $db), true);
     $db->query('CREATE TABLE url_slugs (type VARCHAR(20), ext_id VARCHAR(40), slug VARCHAR(190))');
@@ -32,7 +34,7 @@ try {
     regCheck('the minimum reached is not flagged', soSlugRegistryMissing('event', $db), false);
     regCheck('an unknown type is not flagged', soSlugRegistryMissing('nonsense', $db), false);
 } finally {
-    $db->query("DROP DATABASE IF EXISTS `$scratch`");
+    if ($created) $db->query("DROP DATABASE IF EXISTS `$scratch`");
 }
 
 // Wiring: the three page types and the event header use it.
