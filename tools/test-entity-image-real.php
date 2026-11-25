@@ -12,7 +12,7 @@ require_once __DIR__ . '/../functions.php';
 require_once __DIR__ . '/../inc/seo-category.php';
 
 $fail = 0;
-function erCheck(string $what, $got, $want): void {
+function eimgRealCheck(string $what, $got, $want): void {
     global $fail;
     if ($got !== $want) { echo "FAIL $what: got " . var_export($got, true) . ", wanted " . var_export($want, true) . "\n"; $fail++; }
 }
@@ -36,13 +36,13 @@ try {
     $row('artist', $name('miss'), 'fallback', '');
     $row('artist', $name('empty'), 'ok', '');
     $get = function (string $k) use ($name): array { return getEntityImage('artist', $name($k), ['resolve' => false]); };
-    erCheck('a stored picture is real', $get('ok')['real'], true);
-    erCheck('a picture set by hand is real', $get('manual')['real'], true);
-    erCheck('a known miss is not real', $get('miss')['real'], false);
-    erCheck('a row with no address is not real', $get('empty')['real'], false);
-    erCheck('an entity with no row is not real', $get('none')['real'], false);
-    erCheck('a blank name is not real', getEntityImage('artist', '', ['resolve' => false])['real'], false);
-    erCheck('a real picture keeps its address', $get('ok')['url'], '/images/zq-real-ok.webp');
+    eimgRealCheck('a stored picture is real', $get('ok')['real'], true);
+    eimgRealCheck('a picture set by hand is real', $get('manual')['real'], true);
+    eimgRealCheck('a known miss is not real', $get('miss')['real'], false);
+    eimgRealCheck('a row with no address is not real', $get('empty')['real'], false);
+    eimgRealCheck('an entity with no row is not real', $get('none')['real'], false);
+    eimgRealCheck('a blank name is not real', getEntityImage('artist', '', ['resolve' => false])['real'], false);
+    eimgRealCheck('a real picture keeps its address', $get('ok')['url'], '/images/zq-real-ok.webp');
 
     // The category text: an artist with a stored picture gets a photo tile with its name and picture, the others stay in the text list.
     foreach (['artist', 'team'] as $type) $row($type, $name('Act 1'), 'ok', '/images/zq-real-tile.webp');
@@ -51,9 +51,9 @@ try {
     $cfg = ['id' => 9700002, 'label' => 'Zq Real', 'long' => 'zq real', 'kind' => 'concerts', 'profile' => null, 'slug' => 'zq-real'];
     $data = ['total' => 10, 'artists' => $artists, 'venues' => [], 'cities' => [], 'min' => 31.0, 'next' => null, 'path' => '.1859.1986.9700002.'];
     $html = (string) (soCategorySeo($cfg, $data)['html'] ?? '');
-    erCheck('the category text shows the stored picture as a tile', substr_count($html, 'zq-real-tile.webp'), 1);
-    erCheck('the tile is inside the photo list', (bool) preg_match('#<ul class="so-cseo__artists"><li><a href="/artist/[^"]+"><img src="[^"]*zq-real-tile\.webp" alt="[^"]*Act 1[^"]*"#', $html), true);
-    erCheck('an artist with no picture stays in the text list', strpos($html, $name('Act 2')) !== false && substr_count($html, '<img') === 1, true);
+    eimgRealCheck('the category text shows the stored picture as a tile', substr_count($html, 'zq-real-tile.webp'), 1);
+    eimgRealCheck('the tile is inside the photo list', (bool) preg_match('#<ul class="so-cseo__artists"><li><a href="/artist/[^"]+"><img src="[^"]*zq-real-tile\.webp" alt="[^"]*Act 1[^"]*"#', $html), true);
+    eimgRealCheck('an artist with no picture stays in the text list', strpos($html, $name('Act 2')) !== false && substr_count($html, '<img') === 1, true);
 } finally {
     $clean();
 }
