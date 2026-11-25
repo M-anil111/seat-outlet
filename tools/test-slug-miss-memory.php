@@ -17,7 +17,7 @@ function smCheck(string $what, $got, $want): void {
     if ($got !== $want) { echo "FAIL $what: got " . var_export($got, true) . ", wanted " . var_export($want, true) . "\n"; $fail++; }
 }
 $questions = function (): int { return (int) MYSQLI->query("SHOW SESSION STATUS LIKE 'Questions'")->fetch_row()[1]; };
-MYSQLI->query("DELETE FROM url_slugs WHERE type = 'performer' AND ext_id BETWEEN '9400001' AND '9400099'");
+MYSQLI->query("DELETE FROM url_slugs WHERE type = 'performer' AND CAST(ext_id AS UNSIGNED) BETWEEN 9400001 AND 9400099");   // ext_id is a string: a text range would also match 94000010
 
 // 1. Ten ids that are not stored, asked for five times each with no name (so no new slug can be made: the old-form link is used).
 $pairs = []; for ($i = 1; $i <= 10; $i++) $pairs[] = ['performer', 9400000 + $i];
@@ -55,5 +55,5 @@ $before = $questions();
 smCheck('a stored slug is returned', soSlug('performer', 'whatever', 9400040), 'zq-miss-stored');
 smCheck('a warmed stored slug costs no query', $questions() - $before - 1, 0);
 
-MYSQLI->query("DELETE FROM url_slugs WHERE type = 'performer' AND ext_id BETWEEN '9400001' AND '9400099'");
+MYSQLI->query("DELETE FROM url_slugs WHERE type = 'performer' AND CAST(ext_id AS UNSIGNED) BETWEEN 9400001 AND 9400099");   // ext_id is a string: a text range would also match 94000010
 echo $fail ? "$fail failure(s)\n" : "slug miss memory: all passed\n"; exit($fail ? 1 : 0);

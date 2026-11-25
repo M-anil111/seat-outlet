@@ -954,7 +954,7 @@ function getPerformerPageEvents($performerId, $perPage = 20) {
     // It is written first as "in progress" (held for 5 minutes, so concurrent views do not repeat the write) and rewritten as done once the rows were
     // stored. A failed write (soEventRememberMany() swallows database errors and returns 0) is tried again after 5 minutes, not after an hour.
     if (is_array($resp) && !empty($resp['results']) && is_array($resp['results']) && (int) $performerId > 0) {
-        $evKey  = 'evredir_p' . (int) $performerId;
+        $evKey  = 'evredir_p' . (int) $performerId . '_n' . (int) $perPage;   // per page size: event pages ask for 8 rows, the artist page for 20, so one must not stand in for the other
         $evMark = cache_get($evKey, 3600);
         $evHeld = is_array($evMark) && (!empty($evMark['ok']) || (time() - (int) ($evMark['at'] ?? 0)) < 300);
         if (!$evHeld) {

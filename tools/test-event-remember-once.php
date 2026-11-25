@@ -15,11 +15,12 @@ function orCheck(string $what, $got, $want): void {
     global $fail;
     if ($got !== $want) { echo "FAIL $what: got " . var_export($got, true) . ", wanted " . var_export($want, true) . "\n"; $fail++; }
 }
+$rows = function (): int { return (int) MYSQLI->query('SELECT COUNT(*) FROM event_redirects WHERE event_id BETWEEN 9500001 AND 9500099')->fetch_row()[0]; };
 $status = function (string $name): int { return (int) MYSQLI->query("SHOW SESSION STATUS LIKE '$name'")->fetch_row()[1]; };
 $clean = function () {
     MYSQLI->query("DELETE FROM event_redirects WHERE event_id BETWEEN 9500001 AND 9500099");
-    MYSQLI->query("DELETE FROM url_slugs WHERE type = 'event' AND ext_id BETWEEN '9500001' AND '9500099'");
-    @unlink(cache_file_path('evredir_p9500001'));
+    MYSQLI->query("DELETE FROM url_slugs WHERE type = 'event' AND CAST(ext_id AS UNSIGNED) BETWEEN 9500001 AND 9500099");   // ext_id is a string: a text range would also match 95000010
+    @unlink(cache_file_path('evredir_p9500001_n20')); @unlink(cache_file_path('evredir_p9500001_n8'));
 };
 $clean();
 
@@ -37,7 +38,7 @@ cache_set(tnCacheKey($ep, $params, 'GET'), ['results' => $events, 'totalCount' =
 // event and happens once. The guard and the rows are reset, so the next view is the first one that remembers these events.
 foreach ($events as $e) soEventSlug($e);
 MYSQLI->query("DELETE FROM event_redirects WHERE event_id BETWEEN 9500001 AND 9500099");
-@unlink(cache_file_path('evredir_p9500001'));
+@unlink(cache_file_path('evredir_p9500001_n20'));
 $mem = &soSlugMemory(); $mem = []; $miss = &soSlugMissMemory(); $miss = [];   // a new request: nothing remembered
 
 // First view: the rows are written (one statement) and the slugs are loaded in a handful of queries, not 12 single lookups.
@@ -46,7 +47,7 @@ getPerformerPageEvents(9500001, 20);
 $firstQuestions = $status('Questions') - $q0 - 1;
 orCheck('first view writes the event rows', MYSQLI->query('SELECT COUNT(*) FROM event_redirects WHERE event_id BETWEEN 9500001 AND 9500099')->fetch_row()[0] >= 12, true);
 orCheck('first view does not look the 12 slugs up one by one', $firstQuestions < 12, true);
-orCheck('the hourly guard is stored as something cache_get() can read, marked done', (cache_get('evredir_p9500001', 3600)['ok'] ?? null), true);
+orCheck('the hourly guard is stored as something cache_get() can read, marked done', (cache_get('evredir_p9500001_n20', 3600)['ok'] ?? null), true);
 
 // Second view: nothing is remembered again (no event_redirects write, no insert at all, no query of its own).
 $i1 = $status('Com_insert'); $u1 = $status('Com_update'); $q1 = $status('Questions');
@@ -56,9 +57,18 @@ orCheck('second view inserts nothing', $status('Com_insert') - $i1, 0);
 orCheck('second view updates nothing', $status('Com_update') - $u1, 0);
 orCheck('second view asks the database nothing', $q2 - $q1 - 1, 0);
 
+// Event pages ask for 8 rows and the artist page for 20: the 8-row call must not mark the 20-row one done.
+$clean();
+[$ep8, $params8] = performerPageEventsSpec(9500001, 8);
+cache_set(tnCacheKey($ep8, $params8, 'GET'), ['results' => array_slice($events, 0, 8), 'totalCount' => 12, 'count' => 8]);
+cache_set(tnCacheKey($ep, $params, 'GET'), ['results' => $events, 'totalCount' => 12, 'count' => 12]);
+getPerformerPageEvents(9500001, 8);
+orCheck('the 8-row call remembers its 8 events', $rows() >= 8 && $rows() < 12, true);
+getPerformerPageEvents(9500001, 20);
+orCheck('and does not stop the 20-row call from remembering all 12', $rows(), 12);
+
 // Marker states: "in progress or failed" holds for 5 minutes, then the write is tried again; "done" holds for an hour.
-$rows = function (): int { return (int) MYSQLI->query('SELECT COUNT(*) FROM event_redirects WHERE event_id BETWEEN 9500001 AND 9500099')->fetch_row()[0]; };
-$key = 'evredir_p9500001';
+$key = 'evredir_p9500001_n20';
 MYSQLI->query("DELETE FROM event_redirects WHERE event_id BETWEEN 9500001 AND 9500099");
 cache_set($key, ['at' => time(), 'ok' => false]);
 getPerformerPageEvents(9500001, 20);
