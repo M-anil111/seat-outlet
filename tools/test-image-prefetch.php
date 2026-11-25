@@ -15,7 +15,7 @@ function ipCheck(string $what, $got, $want): void {
     if ($got !== $want) { echo "FAIL $what: got " . var_export($got, true) . ", wanted " . var_export($want, true) . "\n"; $fail++; }
 }
 $status = function (string $name): int { return (int) MYSQLI->query("SHOW SESSION STATUS LIKE '$name'")->fetch_row()[1]; };
-$clean = function () { MYSQLI->query("DELETE FROM images WHERE entity_name LIKE 'Zq Imgp %'"); };
+$clean = function () { MYSQLI->query("DELETE FROM images WHERE entity_type = 'artist' AND entity_name LIKE 'Zq Imgp %'"); };
 $clean();
 
 // 12 entities: 1 to 4 have a stored picture, 5 and 6 are known misses, 7 to 12 have no row at all.
@@ -71,6 +71,27 @@ $memo = &imageRowMemo(); $memo = [];   // a new request
 $sel0 = $status('Com_select');
 $ranked = soImageFirst($items, $describe);
 ipCheck('ranking 12 cards reads their pictures with one SELECT (the inserts queueing new entities are writes, not reads)', $status('Com_select') - $sel0, 1);
+// After ranking, the cards ask for the same pictures again (and queue the unseen entities): no further SELECT, because the queued rows are remembered.
+$sel0 = $status('Com_select');
+foreach ($names as $n) getEntityImage('artist', $n, ['resolve' => false]);
+ipCheck('the cards that follow the ranking read nothing more from the table', $status('Com_select') - $sel0, 0);
+ipCheck('an entity queued in this request reads back as pending from memory', (imageRecordGet($keys[11])['status'] ?? null), 'pending');
+
+// A failed insert is not remembered as queued: the next card tries again. Scratch database with no images table first, then with one.
+$scratch = 'so_imgq_' . getmypid();
+$admin = new mysqli(DB_HOST, DB_USER, DB_PASS, '', (int) DB_PORT);
+try {
+    $admin->query("CREATE DATABASE `$scratch`");
+    $admin->select_db($scratch);
+    ipCheck('a queue insert that fails answers false', imageQueue('artist', 'Zq Imgp 99', '', $admin), false);
+    $admin->query('CREATE TABLE images LIKE `' . DB_NAME . '`.images');
+    ipCheck('and the next card is not told it was already queued: it tries again and succeeds', imageQueue('artist', 'Zq Imgp 99', '', $admin), true);
+    $cnt = (int) $admin->query("SELECT COUNT(*) FROM images WHERE entity_name = 'Zq Imgp 99'")->fetch_row()[0];
+    ipCheck('the row was stored by the second try', $cnt, 1);
+} finally {
+    $admin->query("DROP DATABASE IF EXISTS `$scratch`");
+}
+
 ipCheck('cards with a picture come first', array_slice(array_column($ranked, 'n'), 0, 4), [$names[4], $names[3], $names[2], $names[1]]);
 
 $clean();

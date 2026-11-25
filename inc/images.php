@@ -210,15 +210,30 @@ function imageQueue($type, $name, $fallbackUrl = '', $mysqli = MYSQLI) {
     if ($name === '') return false;
     $key = imageEntityKey($type, $name);
     static $queued = [];
-    if (isset($queued[$key . '|' . spl_object_id($mysqli)])) return true;   // already queued in this request: the same card is built more than once
-    $queued[$key . '|' . spl_object_id($mysqli)] = true;
-    $memo = &imageRowMemo(); unset($memo[$key]);
+    $qk = $key . '|' . spl_object_id($mysqli);
+    if (isset($queued[$qk])) return true;   // already queued in this request: the same card is built more than once
     try {
         $stmt = $mysqli->prepare('INSERT IGNORE INTO images (imgkey, entity_type, entity_name, url, status) VALUES (?, ?, ?, ?, \'pending\')');
         if (!$stmt) return false;
         $stmt->bind_param('ssss', $key, $type, $name, $fallbackUrl);
         $ok = $stmt->execute();
+        $inserted = $ok && $stmt->affected_rows === 1;
         $stmt->close();
+        if ($ok) {
+            $queued[$qk] = true;   // only after the insert worked: a failed one is tried again by the next card
+            if ($mysqli === MYSQLI) {
+                // The row the table now holds, so the next lookup of this key in the request reads it from memory instead of asking again. When the
+                // insert was ignored (another request stored the row first) the real row is unknown: forget the key and let the next lookup read it.
+                $memo = &imageRowMemo();
+                if ($inserted) {
+                    $memo[$key] = ['imgkey' => $key, 'entity_type' => $type, 'entity_name' => $name, 'url' => (string) $fallbackUrl, 'status' => 'pending',
+                        'source' => null, 'source_url' => null, 'license' => null, 'attribution' => null, 'store_key' => null, 'attempts' => 0,
+                        'resolved_at' => null, 'expires_at' => null, 'miss_hits' => 0];
+                } else {
+                    unset($memo[$key]);
+                }
+            }
+        }
         return $ok;
     } catch (\Throwable $e) {
         imageDbFailed($e);
